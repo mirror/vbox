@@ -99,6 +99,9 @@ const char* UIExtraDataDefs::GUI_RestrictedRuntimeDevicesMenuActions = "GUI/Rest
 #ifdef VBOX_WITH_DEBUGGER_GUI
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeDebuggerMenuActions = "GUI/RestrictedRuntimeDebuggerMenuActions";
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+const char* UIExtraDataDefs::GUI_RestrictedRuntimeWindowMenuActions = "GUI/RestrictedRuntimeWindowMenuActions";
+#endif /* Q_WS_MAC */
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeHelpMenuActions = "GUI/RestrictedRuntimeHelpMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedVisualStates = "GUI/RestrictedVisualStates";
 const char* UIExtraDataDefs::GUI_Fullscreen = "GUI/Fullscreen";

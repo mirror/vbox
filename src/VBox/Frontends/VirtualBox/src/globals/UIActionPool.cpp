@@ -381,6 +381,60 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
     }
 };
+
+class UIActionMenuWindow : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuWindow(UIActionPool *pParent)
+        : UIActionMenu(pParent) {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuType_Window; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuType_Window); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuBar(UIExtraDataMetaDefs::MenuType_Window); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Window"));
+    }
+};
+
+class UIActionSimpleMinimize : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleMinimize(UIActionPool *pParent)
+        : UIActionSimple(pParent) {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuWindowActionType_Minimize; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Minimize); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Minimize); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("Minimize");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Minimize"));
+        setStatusTip(QApplication::translate("UIActionPool", "Minimize active machine-window"));
+    }
+};
 #endif /* RT_OS_DARWIN */
 
 class UIActionMenuHelp : public UIActionMenu
@@ -792,6 +846,20 @@ void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel lev
     m_restrictedActionsMenuApplication[level] = restriction;
     m_invalidations << UIActionIndex_M_Application;
 }
+
+bool UIActionPool::isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const
+{
+    foreach (const UIExtraDataMetaDefs::MenuWindowActionType &restriction, m_restrictedActionsMenuWindow.values())
+        if (restriction & type)
+            return false;
+    return true;
+}
+
+void UIActionPool::setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType restriction)
+{
+    m_restrictedActionsMenuWindow[level] = restriction;
+    m_invalidations << UIActionIndex_M_Window;
+}
 #endif /* Q_WS_MAC */
 
 bool UIActionPool::isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType type) const
@@ -847,6 +915,10 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_M_Application_S_About] = new UIActionSimpleAbout(this);
     m_pool[UIActionIndex_M_Application_S_Preferences] = new UIActionSimplePreferences(this);
     m_pool[UIActionIndex_M_Application_S_Close] = new UIActionSimplePerformClose(this);
+
+    /* Create 'Window' actions: */
+    m_pool[UIActionIndex_M_Window] = new UIActionMenuWindow(this);
+    m_pool[UIActionIndex_M_Window_S_Minimize] = new UIActionSimpleMinimize(this);
 #endif /* RT_OS_DARWIN */
 
     /* Create 'Help' actions: */
@@ -866,6 +938,7 @@ void UIActionPool::preparePool()
     /* Prepare update-handlers for known menus: */
 #ifdef RT_OS_DARWIN
     m_menuUpdateHandlers[UIActionIndex_M_Application].ptf = &UIActionPool::updateMenuApplication;
+    m_menuUpdateHandlers[UIActionIndex_M_Window].ptf = &UIActionPool::updateMenuWindow;
 #endif /* RT_OS_DARWIN */
     m_menuUpdateHandlers[UIActionIndex_Menu_Help].ptf = &UIActionPool::updateMenuHelp;
 
@@ -993,6 +1066,30 @@ void UIActionPool::updateMenuApplication()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Application);
+}
+
+void UIActionPool::updateMenuWindow()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndex_M_Window)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator: */
+    bool fSeparator = false;
+
+    /* 'Minimize' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Window_S_Minimize)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* This menu always remains invalid.. */
 }
 #endif /* RT_OS_DARWIN */
 

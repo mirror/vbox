@@ -955,6 +955,10 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
+#ifdef Q_WS_MAC
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window_S_Minimize));
+#endif /* Q_WS_MAC */
 
     /* Move actions into running-n-paused-n-stucked actions group: */
     m_pRunningOrPausedOrStackedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff));
@@ -1038,6 +1042,12 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltShowLogDialog()));
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef Q_WS_MAC
+    /* 'Window' action connections: */
+    connect(actionPool()->action(UIActionIndex_M_Window_S_Minimize), SIGNAL(triggered()),
+            this, SLOT(sltMinimizeActiveMachineWindow()));
+#endif /* Q_WS_MAC */
+
     /* 'Help' actions connections: */
 #ifdef RT_OS_DARWIN
     connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()),
@@ -1061,6 +1071,9 @@ void UIMachineLogic::prepareHandlers()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     m_menuUpdateHandlers[UIActionIndexRT_M_Debug] =                     &UIMachineLogic::updateMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    m_menuUpdateHandlers[UIActionIndex_M_Window] =                      &UIMachineLogic::updateMenuWindow;
+#endif /* Q_WS_MAC */
 
     /* Create keyboard/mouse handlers: */
     setKeyboardHandler(UIKeyboardHandler::create(this, visualStateType()));
@@ -1920,6 +1933,35 @@ void UIMachineLogic::sltShowLogDialog()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
+void UIMachineLogic::sltMinimizeActiveMachineWindow()
+{
+    /* Minimize active machine-window: */
+    AssertPtrReturnVoid(activeMachineWindow());
+    activeMachineWindow()->showMinimized();
+}
+
+void UIMachineLogic::sltSwitchToMachineWindow()
+{
+    /* Acquire appropriate sender action: */
+    const QAction *pSender = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pSender);
+    {
+        /* Determine sender action index: */
+        const int iIndex = pSender->data().toInt();
+        AssertReturnVoid(iIndex >= 0 && iIndex < machineWindows().size());
+        {
+            /* Raise appropriate machine-window: */
+            UIMachineWindow *pMachineWindow = machineWindows().at(iIndex);
+            AssertPtrReturnVoid(pMachineWindow);
+            {
+                pMachineWindow->show();
+                pMachineWindow->raise();
+                pMachineWindow->activateWindow();
+            }
+        }
+    }
+}
+
 void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
 {
     bool fEnabled = pAction != actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableMonitor);
@@ -2269,6 +2311,31 @@ void UIMachineLogic::updateMenuDebug(QMenu*)
         actionPool()->action(UIActionIndexRT_M_Debug_T_Logging)->setChecked(fChecked);
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#ifdef Q_WS_MAC
+void UIMachineLogic::updateMenuWindow(QMenu *pMenu)
+{
+    /* Make sure 'Switch' action(s) are allowed: */
+    AssertPtrReturnVoid(actionPool());
+    if (actionPool()->isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType_Switch))
+    {
+        /* Append menu with actions to switch to machine-window(s): */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        {
+            /* Create machine-window action: */
+            AssertPtrReturnVoid(pMachineWindow);
+            QAction *pMachineWindowAction = pMenu->addAction(pMachineWindow->windowTitle(),
+                                                             this, SLOT(sltSwitchToMachineWindow()));
+            AssertPtrReturnVoid(pMachineWindowAction);
+            {
+                pMachineWindowAction->setCheckable(true);
+                pMachineWindowAction->setChecked(activeMachineWindow() == pMachineWindow);
+                pMachineWindowAction->setData((int)pMachineWindow->screenId());
+            }
+        }
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QString() */, const QString &strControl /* = QString() */)
 {

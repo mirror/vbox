@@ -2124,6 +2124,9 @@ void UIActionPoolRuntime::updateConfiguration()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     m_restrictedActionsMenuDebug[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuDebuggerActionTypes(strMachineID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    m_restrictedActionsMenuWindow[UIActionRestrictionLevel_Base] =      gEDataManager->restrictedRuntimeMenuWindowActionTypes(strMachineID);
+#endif /* Q_WS_MAC */
     m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuHelpActionTypes(strMachineID);
 
     /* Recache visual state action restrictions: */
@@ -2247,6 +2250,12 @@ void UIActionPoolRuntime::updateMenus()
     updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef RT_OS_DARWIN
+    /* 'Window' menu: */
+    addMenu(m_mainMenus, action(UIActionIndex_M_Window));
+    updateMenuWindow();
+#endif /* RT_OS_DARWIN */
+
     /* 'Help' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_Menu_Help));
     updateMenuHelp();
@@ -2364,9 +2373,9 @@ void UIActionPoolRuntime::updateMenuView()
     /* Do we have to show resize or multiscreen menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
     const bool fAllowToShowActionMultiscreen = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen);
-    if (fAllowToShowActionResize && session())
+    if (fAllowToShowActionResize && uisession())
     {
-        for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
@@ -2378,9 +2387,9 @@ void UIActionPoolRuntime::updateMenuView()
     else if (fAllowToShowActionMultiscreen && multiScreenLayout())
     {
         /* Only for multi-screen host case: */
-        if (session()->hostScreens().size() > 1)
+        if (uisession()->hostScreens().size() > 1)
         {
-            for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
+            for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
             {
                 /* Add 'Virtual Screen %1' menu: */
                 QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
@@ -2424,9 +2433,9 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
     /* Do we have to show resize menu? */
     const bool fAllowToShowActionResize = isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize);
-    if (fAllowToShowActionResize && session())
+    if (fAllowToShowActionResize && uisession())
     {
-        for (int iGuestScreenIndex = 0; iGuestScreenIndex < session()->frameBuffers().size(); ++iGuestScreenIndex)
+        for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
@@ -2526,7 +2535,7 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
 void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 {
     /* Make sure UI session defined: */
-    AssertPtrReturnVoid(session());
+    AssertPtrReturnVoid(uisession());
 
     /* Clear contents: */
     pMenu->clear();
@@ -2547,9 +2556,9 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
 
     /* Get corresponding screen index and frame-buffer size: */
     const int iGuestScreenIndex = pMenu->property("Guest Screen Index").toInt();
-    const UIFrameBuffer* pFrameBuffer = session()->frameBuffer(iGuestScreenIndex);
+    const UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(iGuestScreenIndex);
     const QSize screenSize = QSize(pFrameBuffer->width(), pFrameBuffer->height());
-    const bool fScreenEnabled = session()->isScreenVisible(iGuestScreenIndex);
+    const bool fScreenEnabled = uisession()->isScreenVisible(iGuestScreenIndex);
 
     /* For non-primary screens: */
     if (iGuestScreenIndex > 0)
@@ -2560,7 +2569,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
         AssertPtrReturnVoid(pToggleAction);
         {
             /* Configure 'toggle' action: */
-            pToggleAction->setEnabled(session()->isGuestSupportsGraphics());
+            pToggleAction->setEnabled(uisession()->isGuestSupportsGraphics());
             pToggleAction->setProperty("Guest Screen Index", iGuestScreenIndex);
             pToggleAction->setCheckable(true);
             pToggleAction->setChecked(fScreenEnabled);
@@ -2584,7 +2593,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
             AssertPtrReturnVoid(pAction);
             {
                 /* Configure exclusive 'resize' action: */
-                pAction->setEnabled(session()->isGuestSupportsGraphics() && fScreenEnabled);
+                pAction->setEnabled(uisession()->isGuestSupportsGraphics() && fScreenEnabled);
                 pAction->setProperty("Guest Screen Index", iGuestScreenIndex);
                 pAction->setProperty("Requested Size", size);
                 pAction->setCheckable(true);
@@ -2618,7 +2627,7 @@ void UIActionPoolRuntime::updateMenuViewMultiscreen(QMenu *pMenu)
     {
         /* Configure exclusive action-group: */
         pActionGroup->setExclusive(true);
-        for (int iHostScreenIndex = 0; iHostScreenIndex < session()->hostScreens().size(); ++iHostScreenIndex)
+        for (int iHostScreenIndex = 0; iHostScreenIndex < uisession()->hostScreens().size(); ++iHostScreenIndex)
         {
             QAction *pAction = pActionGroup->addAction(UIMultiScreenLayout::tr("Use Host Screen %1")
                                                                                .arg(iHostScreenIndex + 1));

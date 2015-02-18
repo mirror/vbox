@@ -143,7 +143,7 @@ public:
       * @note For menus which uses it to build contents. */
     void setSession(UISession *pSession);
     /** Returns UI session object reference. */
-    UISession* session() const { return m_pSession; }
+    UISession* uisession() const { return m_pSession; }
 
     /** Defines UI multi-screen layout object reference.
       * @note For menus which uses it to build contents. */

@@ -152,7 +152,7 @@ namespace UIExtraDataDefs
         /** Holds restricted Runtime UI menu types. */
         extern const char* GUI_RestrictedRuntimeMenus;
 #ifdef Q_WS_MAC
-        /** Mac OS X: Holds restricted Runtime UI action types for Application menu. */
+        /** Mac OS X: Holds restricted Runtime UI action types for 'Application' menu. */
         extern const char* GUI_RestrictedRuntimeApplicationMenuActions;
 #endif /* Q_WS_MAC */
         /** Holds restricted Runtime UI action types for Machine menu. */
@@ -167,6 +167,10 @@ namespace UIExtraDataDefs
         /** Holds restricted Runtime UI action types for Debugger menu. */
         extern const char* GUI_RestrictedRuntimeDebuggerMenuActions;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+        /** Mac OS X: Holds restricted Runtime UI action types for 'Window' menu. */
+        extern const char* GUI_RestrictedRuntimeWindowMenuActions;
+#endif /* Q_WS_MAC */
         /** Holds restricted Runtime UI action types for Help menu. */
         extern const char* GUI_RestrictedRuntimeHelpMenuActions;
         /** Holds restricted Runtime UI visual-states. */
@@ -297,6 +301,9 @@ class UIExtraDataMetaDefs : public QObject
 #ifdef VBOX_WITH_DEBUGGER_GUI
     Q_ENUMS(RuntimeMenuDebuggerActionType);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef RT_OS_DARWIN
+    Q_ENUMS(MenuWindowActionType);
+#endif /* RT_OS_DARWIN */
 
 public:
 
@@ -314,7 +321,10 @@ public:
 #ifdef VBOX_WITH_DEBUGGER_GUI
         MenuType_Debug       = RT_BIT(5),
 #endif /* VBOX_WITH_DEBUGGER_GUI */
-        MenuType_Help        = RT_BIT(6),
+#ifdef RT_OS_DARWIN
+        MenuType_Window      = RT_BIT(6),
+#endif /* RT_OS_DARWIN */
+        MenuType_Help        = RT_BIT(7),
         MenuType_All         = 0xFF
     };
 
@@ -442,6 +452,17 @@ public:
         RuntimeMenuDebuggerActionType_All         = 0xFFFF
     };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#ifdef RT_OS_DARWIN
+    /** Menu "Window": Action types. */
+    enum MenuWindowActionType
+    {
+        MenuWindowActionType_Invalid  = 0,
+        MenuWindowActionType_Minimize = RT_BIT(0),
+        MenuWindowActionType_Switch   = RT_BIT(1),
+        MenuWindowActionType_All      = 0xFFFF
+    };
+#endif /* RT_OS_DARWIN */
 };
 
 /** Common UI: Global settings page types. */

@@ -188,6 +188,21 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             break;
         }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+        case UIExtraDataMetaDefs::MenuType_Window:
+        {
+            /* Get sender type: */
+            const UIExtraDataMetaDefs::MenuWindowActionType type =
+                static_cast<UIExtraDataMetaDefs::MenuWindowActionType>(pAction->property("type").toInt());
+            /* Load current menu-bar restrictions: */
+            UIExtraDataMetaDefs::MenuWindowActionType restrictions = gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID());
+            /* Invert restriction for sender type: */
+            restrictions = (UIExtraDataMetaDefs::MenuWindowActionType)(restrictions ^ type);
+            /* Save updated menu-bar restrictions: */
+            gEDataManager->setRestrictedRuntimeMenuWindowActionTypes(restrictions, machineID());
+            break;
+        }
+#endif /* Q_WS_MAC */
         case UIExtraDataMetaDefs::MenuType_Help:
         {
             /* Get sender type: */
@@ -280,6 +295,9 @@ void UIMenuBarEditorWidget::prepareMenus()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     prepareMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    prepareMenuWindow();
+#endif /* Q_WS_MAC */
     prepareMenuHelp();
 
     /* Listen for the menu-bar configuration changes: */
@@ -540,6 +558,21 @@ void UIMenuBarEditorWidget::prepareMenuDebug()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef Q_WS_MAC
+void UIMenuBarEditorWidget::prepareMenuWindow()
+{
+    /* Copy menu: */
+    QMenu *pMenu = prepareCopiedMenu(actionPool()->action(UIActionIndex_M_Window));
+    AssertPtrReturnVoid(pMenu);
+    {
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Window_S_Minimize));
+        prepareNamedAction(pMenu, tr("Switch"),
+                           UIExtraDataMetaDefs::MenuWindowActionType_Switch,
+                           gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Switch));
+    }
+}
+#endif /* Q_WS_MAC */
+
 void UIMenuBarEditorWidget::prepareMenuHelp()
 {
     /* Copy menu: */
@@ -601,6 +634,9 @@ void UIMenuBarEditorWidget::updateMenus()
 #ifdef VBOX_WITH_DEBUGGER_GUI
     updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    updateMenuWindow();
+#endif /* Q_WS_MAC */
     updateMenuHelp();
 }
 
@@ -781,6 +817,37 @@ void UIMenuBarEditorWidget::updateMenuDebug()
     }
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+#ifdef Q_WS_MAC
+void UIMenuBarEditorWidget::updateMenuWindow()
+{
+    /* Recache menu-bar configuration: */
+    const UIExtraDataMetaDefs::MenuWindowActionType restrictionsMenuWindow = gEDataManager->restrictedRuntimeMenuWindowActionTypes(machineID());
+    /* Get static meta-object: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+
+    /* We have UIExtraDataMetaDefs::MenuWindowActionType enum registered, so we can enumerate it: */
+    const int iEnumIndex = smo.indexOfEnumerator("MenuWindowActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+    /* Handle other enum-values: */
+    for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+    {
+        /* Get iterated enum-value: */
+        const UIExtraDataMetaDefs::MenuWindowActionType enumValue =
+            static_cast<const UIExtraDataMetaDefs::MenuWindowActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+        /* Skip MenuWindowActionType_Invalid & MenuWindowActionType_All enum-value: */
+        if (enumValue == UIExtraDataMetaDefs::MenuWindowActionType_Invalid ||
+            enumValue == UIExtraDataMetaDefs::MenuWindowActionType_All)
+            continue;
+        /* Which key required action registered under? */
+        const QString strKey = gpConverter->toInternalString(enumValue);
+        if (!m_actions.contains(strKey))
+            continue;
+        /* Update action 'checked' state: */
+        m_actions.value(strKey)->setChecked(!(restrictionsMenuWindow & enumValue));
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMenuBarEditorWidget::updateMenuHelp()
 {

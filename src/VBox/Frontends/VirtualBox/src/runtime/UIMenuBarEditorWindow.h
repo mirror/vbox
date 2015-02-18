@@ -127,6 +127,10 @@ private:
     /** Prepare 'Debug' menu routine. */
     void prepareMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    /** Mac OS X: Prepare 'Window' menu routine. */
+    void prepareMenuWindow();
+#endif /* Q_WS_MAC */
     /** Prepare 'Help' menu routine. */
     void prepareMenuHelp();
 
@@ -148,6 +152,10 @@ private:
     /** Updates 'Debug' menu routine. */
     void updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    /** Mac OS X: Updates 'Window' menu routine. */
+    void updateMenuWindow();
+#endif /* Q_WS_MAC */
     /** Updates 'Help' menu routine. */
     void updateMenuHelp();
 

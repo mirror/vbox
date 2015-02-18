@@ -219,6 +219,11 @@ void UIMachineLogicSeamless::prepareActionGroups()
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
+#ifdef Q_WS_MAC
+    /* Restrict 'Window' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuBar(UIActionRestrictionLevel_Logic,
+                                                        UIExtraDataMetaDefs::MenuType_Window);
+#endif /* Q_WS_MAC */
 
     /* Take care of view-action toggle state: */
     UIAction *pActionSeamless = actionPool()->action(UIActionIndexRT_M_View_T_Seamless);
@@ -345,6 +350,11 @@ void UIMachineLogicSeamless::cleanupActionGroups()
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid);
+#ifdef Q_WS_MAC
+    /* Allow 'Window' menu: */
+    actionPool()->toRuntime()->setRestrictionForMenuBar(UIActionRestrictionLevel_Logic,
+                                                        UIExtraDataMetaDefs::MenuType_Invalid);
+#endif /* Q_WS_MAC */
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();

@@ -285,6 +285,11 @@ private slots:
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
+    /* "Window" menu functionality: */
+    void sltMinimizeActiveMachineWindow();
+    void sltSwitchToMachineWindow();
+
+    /* "Dock" menu functionality: */
     void sltDockPreviewModeChanged(QAction *pAction);
     void sltDockPreviewMonitorChanged(QAction *pAction);
     void sltChangeDockIconUpdate(bool fEnabled);
@@ -316,6 +321,10 @@ private:
     /** Update 'Debug' menu routine. */
     void updateMenuDebug(QMenu *pMenu);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+    /** Update 'Window' menu routine. */
+    void updateMenuWindow(QMenu *pMenu);
+#endif /* Q_WS_MAC */
 
     /** Show Global Preferences on the page defined by @a strCategory and tab defined by @a strControl. */
     void showGlobalPreferences(const QString &strCategory = QString(), const QString &strControl = QString());

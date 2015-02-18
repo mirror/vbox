@@ -457,12 +457,12 @@ void UISession::closeRuntimeUI()
 
 UIMachineLogic* UISession::machineLogic() const
 {
-    return uimachine()->machineLogic();
+    return uimachine() ? uimachine()->machineLogic() : 0;
 }
 
 QWidget* UISession::mainMachineWindow() const
 {
-    return machineLogic()->mainMachineWindow();
+    return machineLogic() ? machineLogic()->mainMachineWindow() : 0;
 }
 
 bool UISession::isVisualStateAllowed(UIVisualStateType state) const

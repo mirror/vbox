@@ -57,6 +57,10 @@ enum UIActionIndex
     UIActionIndex_M_Application_S_About,
     UIActionIndex_M_Application_S_Preferences,
     UIActionIndex_M_Application_S_Close,
+
+    /* 'Window' menu actions: */
+    UIActionIndex_M_Window,
+    UIActionIndex_M_Window_S_Minimize,
 #endif /* RT_OS_DARWIN */
 
     /* 'Help' menu actions: */
@@ -366,6 +370,11 @@ public:
     bool isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const;
     /** Defines 'Application' menu @a restriction for passed @a level. */
     void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction);
+
+    /** Returns whether the action with passed @a type is allowed in the 'Window' menu. */
+    bool isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const;
+    /** Defines 'Window' menu @a restriction for passed @a level. */
+    void setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType restriction);
 #endif /* Q_WS_MAC */
 
     /** Returns whether the action with passed @a type is allowed in the 'Help' menu. */
@@ -418,6 +427,8 @@ protected:
 #ifdef RT_OS_DARWIN
     /** Update 'Application' menu routine. */
     virtual void updateMenuApplication();
+    /** Update 'Window' menu routine. */
+    virtual void updateMenuWindow();
 #endif /* RT_OS_DARWIN */
     /** Update 'Help' menu routine. */
     virtual void updateMenuHelp();
@@ -451,8 +462,10 @@ protected:
     /** Holds restricted menu types. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType> m_restrictedMenus;
 #ifdef Q_WS_MAC
-    /** Holds restricted action types of the Application menu. */
+    /** Holds restricted action types of the 'Application' menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType> m_restrictedActionsMenuApplication;
+    /** Holds restricted action types of the 'Window' menu. */
+    QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuWindowActionType> m_restrictedActionsMenuWindow;
 #endif /* Q_WS_MAC */
     /** Holds restricted action types of the Help menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuHelpActionType> m_restrictedActionsMenuHelp;

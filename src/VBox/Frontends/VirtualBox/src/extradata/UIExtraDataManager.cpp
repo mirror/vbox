@@ -1765,6 +1765,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #ifdef VBOX_WITH_DEBUGGER_GUI
            << GUI_RestrictedRuntimeDebuggerMenuActions
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+           << GUI_RestrictedRuntimeWindowMenuActions
+#endif /* Q_WS_MAC */
            << GUI_RestrictedRuntimeHelpMenuActions
            << GUI_RestrictedVisualStates
            << GUI_Fullscreen << GUI_Seamless << GUI_Scale
@@ -2883,6 +2886,55 @@ void UIExtraDataManager::setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraData
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef Q_WS_MAC
+UIExtraDataMetaDefs::MenuWindowActionType UIExtraDataManager::restrictedRuntimeMenuWindowActionTypes(const QString &strID)
+{
+    /* Prepare result: */
+    UIExtraDataMetaDefs::MenuWindowActionType result = UIExtraDataMetaDefs::MenuWindowActionType_Invalid;
+    /* Get restricted runtime-window-menu action-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedRuntimeWindowMenuActions, strID))
+    {
+        UIExtraDataMetaDefs::MenuWindowActionType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::MenuWindowActionType>(strValue);
+        if (value != UIExtraDataMetaDefs::MenuWindowActionType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::MenuWindowActionType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QString &strID)
+{
+    /* We have MenuWindowActionType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("MenuWindowActionType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle MenuWindowActionType_All enum-value: */
+    if (types == UIExtraDataMetaDefs::MenuWindowActionType_All)
+        result << gpConverter->toInternalString(types);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::MenuWindowActionType enumValue =
+                static_cast<const UIExtraDataMetaDefs::MenuWindowActionType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip MenuWindowActionType_Invalid & MenuWindowActionType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::MenuWindowActionType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::MenuWindowActionType_All)
+                continue;
+            if (types & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedRuntimeWindowMenuActions, result, strID);
+}
+#endif /* Q_WS_MAC */
+
 UIExtraDataMetaDefs::MenuHelpActionType UIExtraDataManager::restrictedRuntimeMenuHelpActionTypes(const QString &strID)
 {
     /* Prepare result: */
@@ -3585,6 +3637,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
 #ifdef VBOX_WITH_DEBUGGER_GUI
             strKey == GUI_RestrictedRuntimeDebuggerMenuActions ||
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#ifdef Q_WS_MAC
+            strKey == GUI_RestrictedRuntimeWindowMenuActions ||
+#endif /* Q_WS_MAC */
             strKey == GUI_RestrictedRuntimeHelpMenuActions)
             emit sigMenuBarConfigurationChange(strMachineID);
         /* Status-bar configuration change: */

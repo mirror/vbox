@@ -343,6 +343,13 @@ public:
         void setRestrictedRuntimeMenuDebuggerActionTypes(UIExtraDataMetaDefs::RuntimeMenuDebuggerActionType types, const QString &strID);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+#ifdef Q_WS_MAC
+        /** Mac OS X: Returns restricted Runtime UI action types for Window menu. */
+        UIExtraDataMetaDefs::MenuWindowActionType restrictedRuntimeMenuWindowActionTypes(const QString &strID);
+        /** Mac OS X: Defines restricted Runtime UI action types for Window menu. */
+        void setRestrictedRuntimeMenuWindowActionTypes(UIExtraDataMetaDefs::MenuWindowActionType types, const QString &strID);
+#endif /* Q_WS_MAC */
+
         /** Returns restricted Runtime UI action types for Help menu. */
         UIExtraDataMetaDefs::MenuHelpActionType restrictedRuntimeMenuHelpActionTypes(const QString &strID);
         /** Defines restricted Runtime UI action types for Help menu. */
