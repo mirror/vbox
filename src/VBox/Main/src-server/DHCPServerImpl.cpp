@@ -178,6 +178,8 @@ HRESULT DHCPServer::i_saveSettings(settings::DHCPServer &data)
 
 HRESULT DHCPServer::getNetworkName(com::Utf8Str &aName)
 {
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     aName = mName;
     return S_OK;
 }
@@ -185,8 +187,9 @@ HRESULT DHCPServer::getNetworkName(com::Utf8Str &aName)
 
 HRESULT DHCPServer::getEnabled(BOOL *aEnabled)
 {
-    *aEnabled = m->enabled;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    *aEnabled = m->enabled;
     return S_OK;
 }
 
@@ -207,32 +210,36 @@ HRESULT DHCPServer::setEnabled(BOOL aEnabled)
 
 HRESULT DHCPServer::getIPAddress(com::Utf8Str &aIPAddress)
 {
-    aIPAddress = Utf8Str(m->IPAddress);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    aIPAddress = Utf8Str(m->IPAddress);
     return S_OK;
 }
 
 
 HRESULT DHCPServer::getNetworkMask(com::Utf8Str &aNetworkMask)
 {
-    aNetworkMask = m->GlobalDhcpOptions[DhcpOpt_SubnetMask];
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    aNetworkMask = m->GlobalDhcpOptions[DhcpOpt_SubnetMask];
     return S_OK;
 }
 
 
 HRESULT DHCPServer::getLowerIP(com::Utf8Str &aIPAddress)
 {
-    aIPAddress = Utf8Str(m->lowerIP);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    aIPAddress = Utf8Str(m->lowerIP);
     return S_OK;
 }
 
 
 HRESULT DHCPServer::getUpperIP(com::Utf8Str &aIPAddress)
 {
-    aIPAddress = Utf8Str(m->upperIP);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    aIPAddress = Utf8Str(m->upperIP);
     return S_OK;
 }
 
