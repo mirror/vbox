@@ -731,7 +731,7 @@ typedef struct SUPDRVDEVEXT
     /** The set of CPUs we have completed taken measurements for. */
     RTCPUSET                        TscDeltaObtainedCpuSet;
     /** Whether the TSC-delta measurement was successful. */
-    int                             rcTscDelta;
+    int32_t volatile                rcTscDelta;
     /** @} */
 #endif
 
