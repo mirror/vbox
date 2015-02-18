@@ -544,7 +544,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	Audio/DrvAudioCommon.cpp \
 	Audio/DrvHostNullAudio.cpp
 
-  ## @todo Darwin CoreAudio driver missing!
+  ifeq ($(KBUILD_TARGET),darwin)
+   VBoxDD_SOURCES += \
+	Audio/DrvHostCoreAudio.cpp
+  endif
 
   ifeq ($(KBUILD_TARGET),win)
    VBoxDD_SOURCES += \
