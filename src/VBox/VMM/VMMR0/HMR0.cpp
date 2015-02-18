@@ -1011,7 +1011,8 @@ static int hmR0DisableCpu(RTCPUID idCpu)
         return pCpu->fConfigured ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
 
     int rc;
-    if (pCpu->fConfigured)
+    if (   pCpu->fConfigured
+        && idCpu == RTMpCpuId())    /* We may not be firing on the CPU being disabled/going offline. */
     {
         void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
         RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
@@ -1024,7 +1025,6 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     }
     else
         rc = VINF_SUCCESS; /* nothing to do */
-
     return rc;
 }
 
