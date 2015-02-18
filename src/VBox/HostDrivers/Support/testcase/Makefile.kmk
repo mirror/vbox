@@ -44,7 +44,8 @@ PROGRAMS += \
 	tstGetPagingMode \
 	tstSupLoadModule \
 	tstSupSem \
-	tstSupSem-Zombie
+	tstSupSem-Zombie \
+	tstSupTscDelta
  endif
 PROGRAMS.win += \
 	tstNtQueryStuff
@@ -99,6 +100,9 @@ tstSupSem_SOURCES     = tstSupSem.cpp
 
 tstSupSem-Zombie_TEMPLATE = VBOXR3TSTEXE
 tstSupSem-Zombie_SOURCES  = tstSupSem-Zombie.cpp
+
+tstSupTscDelta_TEMPLATE = VBOXR3TSTEXE
+tstSupTscDelta_SOURCES  = tstSupTscDelta.cpp
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
