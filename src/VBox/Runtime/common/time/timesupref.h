@@ -222,7 +222,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                                  * time without any GIP update in-between, the checks against
                                  * *pu64Prev below will force 1ns stepping.
                                  */
-                                ASMAtomicIncU32(&pData->cExpired++);
+                                ASMAtomicIncU32(&pData->cExpired);
                                 u64Delta = u32UpdateIntervalTSC;
                             }
 #if !defined(_MSC_VER) || !defined(RT_ARCH_X86) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
