@@ -43,23 +43,11 @@
  */
 RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 {
-    uint64_t    u64Delta;
-#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
-    int64_t     i64TscDelta;
-# ifdef IN_RING3
-    PSUPGIPCPU  pGipCpuAttemptedTscRecalibration = NULL;
-# endif
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA && defined(IN_RING3)
+    PSUPGIPCPU pGipCpuAttemptedTscRecalibration = NULL;
 #endif
-    uint32_t    u32NanoTSFactor0;
-    uint64_t    u64TSC;
-    uint64_t    u64NanoTS;
-    uint32_t    u32UpdateIntervalTSC;
-    uint64_t    u64PrevNanoTS;
     AssertCompile(RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS));
 
-    /*
-     * Read the GIP data and the previous value.
-     */
     for (;;)
     {
 #ifndef IN_RING3 /* This simplifies and improves everything. */
@@ -146,27 +134,26 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                  * sure all loads are done before we recheck the transaction ID
                  * without triggering serializing twice.
                  */
-                u32NanoTSFactor0        = pGip->u32UpdateIntervalNS;
+                uint32_t u32NanoTSFactor0       = pGip->u32UpdateIntervalNS;
 #if TMPL_MODE == TMPL_MODE_ASYNC
-                u32UpdateIntervalTSC    = pGipCpu->u32UpdateIntervalTSC;
-                u64NanoTS               = pGipCpu->u64NanoTS;
-                u64TSC                  = pGipCpu->u64TSC;
+                uint32_t u32UpdateIntervalTSC   = pGipCpu->u32UpdateIntervalTSC;
+                uint64_t u64NanoTS              = pGipCpu->u64NanoTS;
+                uint64_t u64TSC                 = pGipCpu->u64TSC;
 #else
-                u32UpdateIntervalTSC    = pGip->aCPUs[0].u32UpdateIntervalTSC;
-                u64NanoTS               = pGip->aCPUs[0].u64NanoTS;
-                u64TSC                  = pGip->aCPUs[0].u64TSC;
+                uint32_t u32UpdateIntervalTSC   = pGip->aCPUs[0].u32UpdateIntervalTSC;
+                uint64_t u64NanoTS              = pGip->aCPUs[0].u64NanoTS;
+                uint64_t u64TSC                 = pGip->aCPUs[0].u64TSC;
 # if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
-                i64TscDelta             = pGipCpu->i64TSCDelta;
+                int64_t i64TscDelta             = pGipCpu->i64TSCDelta;
 # endif
 #endif
+                uint64_t u64PrevNanoTS          = ASMAtomicUoReadU64(pData->pu64Prev);
 #if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
-                u64PrevNanoTS           = ASMAtomicUoReadU64(pData->pu64Prev);
                 ASMCompilerBarrier();
                 uint32_t uAux2;
-                u64Delta                = ASMReadTscWithAux(&uAux2); /* serializing */
+                uint64_t u64Delta               = ASMReadTscWithAux(&uAux2); /* serializing */
 #else
-                u64Delta                = ASMReadTSC();
-                u64PrevNanoTS           = ASMAtomicUoReadU64(pData->pu64Prev);
+                uint64_t u64Delta               = ASMReadTSC();
                 ASMCompilerBarrier();
 # if TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID /* getting APIC will serialize  */ \
   && (defined(IN_RING3) || TMPL_MODE != TMPL_MODE_ASYNC)
@@ -221,8 +208,85 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #ifndef IN_RING3
                             ASMSetFlags(uFlags);
 #endif
-                            break;
+
+                            /*
+                             * Calc NanoTS delta.
+                             */
+                            u64Delta -= u64TSC;
+                            if (RT_LIKELY(u64Delta <= u32UpdateIntervalTSC))
+                            { /* MSVC branch hint, probably pointless. */ }
+                            else
+                            {
+                                /*
+                                 * We've expired the interval, cap it. If we're here for the 2nd
+                                 * time without any GIP update in-between, the checks against
+                                 * *pu64Prev below will force 1ns stepping.
+                                 */
+                                ASMAtomicIncU32(&pData->cExpired++);
+                                u64Delta = u32UpdateIntervalTSC;
+                            }
+#if !defined(_MSC_VER) || !defined(RT_ARCH_X86) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
+                            u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
+                            u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
+#else
+                            __asm
+                            {
+                                mov     eax, dword ptr [u64Delta]
+                                mul     dword ptr [u32NanoTSFactor0]
+                                div     dword ptr [u32UpdateIntervalTSC]
+                                mov     dword ptr [u64Delta], eax
+                                xor     edx, edx
+                                mov     dword ptr [u64Delta + 4], edx
+                            }
+#endif
+
+                            /*
+                             * Calculate the time and compare it with the previously returned value.
+                             */
+                            u64NanoTS += u64Delta;
+                            uint64_t u64DeltaPrev = u64NanoTS - u64PrevNanoTS;
+                            if (RT_LIKELY(   u64DeltaPrev > 0
+                                          && u64DeltaPrev < UINT64_C(86000000000000) /* 24h */))
+                            { /* Frequent - less than 24h since last call. */ }
+                            else if (RT_LIKELY(   (int64_t)u64DeltaPrev <= 0
+                                               && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 >= 0))
+                            {
+                                /* Occasional - u64NanoTS is in the recent 'past' relative the previous call. */
+                                ASMAtomicIncU32(&pData->c1nsSteps);
+                                u64NanoTS = u64PrevNanoTS + 1;
+                            }
+                            else if (!u64PrevNanoTS)
+                                /* We're resuming (see TMVirtualResume). */;
+                            else
+                            {
+                                /* Something has gone bust, if negative offset it's real bad. */
+                                ASMAtomicIncU32(&pData->cBadPrev);
+                                pData->pfnBad(pData, u64NanoTS, u64DeltaPrev, u64PrevNanoTS);
+                            }
+
+                            /*
+                             * Attempt updating the previous value, provided we're still ahead of it.
+                             *
+                             * There is no point in recalculating u64NanoTS because we got preempted or if
+                             * we raced somebody while the GIP was updated, since these are events
+                             * that might occur at any point in the return path as well.
+                             */
+                            if (RT_LIKELY(ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS)))
+                                return u64NanoTS;
+
+                            ASMAtomicIncU32(&pData->cUpdateRaces);
+                            for (int cTries = 25; cTries > 0; cTries--)
+                            {
+                                u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
+                                if (u64PrevNanoTS >= u64NanoTS)
+                                    break;
+                                if (ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS))
+                                    break;
+                                ASMNopPause();
+                            }
+                            return u64NanoTS;
                         }
+
 #if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA && defined(IN_RING3)
                         /*
                          * Call into the support driver to try make it recalculate the delta. We
@@ -283,79 +347,5 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #endif
         return pData->pfnRediscover(pData);
     }
-
-    /*
-     * Calc NanoTS delta.
-     */
-    u64Delta -= u64TSC;
-    if (RT_UNLIKELY(u64Delta > u32UpdateIntervalTSC))
-    {
-        /*
-         * We've expired the interval, cap it. If we're here for the 2nd
-         * time without any GIP update in-between, the checks against
-         * *pu64Prev below will force 1ns stepping.
-         */
-        pData->cExpired++;
-        u64Delta = u32UpdateIntervalTSC;
-    }
-#if !defined(_MSC_VER) || defined(RT_ARCH_AMD64) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
-    u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
-    u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
-#else
-    __asm
-    {
-        mov     eax, dword ptr [u64Delta]
-        mul     dword ptr [u32NanoTSFactor0]
-        div     dword ptr [u32UpdateIntervalTSC]
-        mov     dword ptr [u64Delta], eax
-        xor     edx, edx
-        mov     dword ptr [u64Delta + 4], edx
-    }
-#endif
-
-    /*
-     * Calculate the time and compare it with the previously returned value.
-     */
-    u64NanoTS += u64Delta;
-    uint64_t u64DeltaPrev = u64NanoTS - u64PrevNanoTS;
-    if (RT_LIKELY(   u64DeltaPrev > 0
-                  && u64DeltaPrev < UINT64_C(86000000000000) /* 24h */))
-        /* Frequent - less than 24h since last call. */;
-    else if (RT_LIKELY(   (int64_t)u64DeltaPrev <= 0
-                       && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 >= 0))
-    {
-        /* Occasional - u64NanoTS is in the recent 'past' relative the previous call. */
-        ASMAtomicIncU32(&pData->c1nsSteps);
-        u64NanoTS = u64PrevNanoTS + 1;
-    }
-    else if (!u64PrevNanoTS)
-        /* We're resuming (see TMVirtualResume). */;
-    else
-    {
-        /* Something has gone bust, if negative offset it's real bad. */
-        ASMAtomicIncU32(&pData->cBadPrev);
-        pData->pfnBad(pData, u64NanoTS, u64DeltaPrev, u64PrevNanoTS);
-    }
-
-    if (RT_UNLIKELY(!ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS)))
-    {
-        /*
-         * Attempt updating the previous value, provided we're still ahead of it.
-         *
-         * There is no point in recalculating u64NanoTS because we got preempted or if
-         * we raced somebody while the GIP was updated, since these are events
-         * that might occur at any point in the return path as well.
-         */
-        pData->cUpdateRaces++;
-        for (int cTries = 25; cTries > 0; cTries--)
-        {
-            u64PrevNanoTS = ASMAtomicReadU64(pData->pu64Prev);
-            if (u64PrevNanoTS >= u64NanoTS)
-                break;
-            if (ASMAtomicCmpXchgU64(pData->pu64Prev, u64NanoTS, u64PrevNanoTS))
-                break;
-        }
-    }
-    return u64NanoTS;
 }
 
