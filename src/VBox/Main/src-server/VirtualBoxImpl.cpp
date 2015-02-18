@@ -1751,6 +1751,9 @@ HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
                                  DeviceType_T aDeviceType,
                                  ComPtr<IMedium> &aMedium)
 {
+    NOREF(aForceNewUuid);
+    NOREF(aAccessMode);
+
     HRESULT rc = S_OK;
 
     ComObjPtr<Medium> medium;
