@@ -199,7 +199,7 @@ template<> QString toString(const KDeviceType &type)
     {
         case KDeviceType_Null:         return QApplication::translate("VBoxGlobal", "None", "DeviceType");
         case KDeviceType_Floppy:       return QApplication::translate("VBoxGlobal", "Floppy", "DeviceType");
-        case KDeviceType_DVD:          return QApplication::translate("VBoxGlobal", "CD/DVD", "DeviceType");
+        case KDeviceType_DVD:          return QApplication::translate("VBoxGlobal", "Optical", "DeviceType");
         case KDeviceType_HardDisk:     return QApplication::translate("VBoxGlobal", "Hard Disk", "DeviceType");
         case KDeviceType_Network:      return QApplication::translate("VBoxGlobal", "Network", "DeviceType");
         case KDeviceType_USB:          return QApplication::translate("VBoxGlobal", "USB", "DeviceType");

@@ -1069,10 +1069,10 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                             tip = UIMachineSettingsStorage::tr ("<nobr>Add&nbsp;Hard&nbsp;Disk</nobr>");
                             break;
                         case CDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr ("<nobr>Add&nbsp;CD/DVD&nbsp;Device</nobr>");
+                            tip = UIMachineSettingsStorage::tr ("<nobr>Add&nbsp;Optical&nbsp;Drive</nobr>");
                             break;
                         case FDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr ("<nobr>Add&nbsp;Floppy&nbsp;Device</nobr>");
+                            tip = UIMachineSettingsStorage::tr ("<nobr>Add&nbsp;Floppy&nbsp;Drive</nobr>");
                             break;
                         default:
                             break;
@@ -2418,8 +2418,8 @@ void UIMachineSettingsStorage::retranslateUi()
     mDelCtrAction->setText (tr ("Remove Controller"));
     mAddAttAction->setText (tr ("Add Attachment"));
     mAddHDAttAction->setText (tr ("Add Hard Disk"));
-    mAddCDAttAction->setText (tr ("Add CD/DVD Device"));
-    mAddFDAttAction->setText (tr ("Add Floppy Device"));
+    mAddCDAttAction->setText (tr ("Add Optical Drive"));
+    mAddFDAttAction->setText (tr ("Add Floppy Drive"));
     mDelAttAction->setText (tr ("Remove Attachment"));
 
     mAddCtrAction->setWhatsThis (tr ("Adds a new controller to the end of the Storage Tree."));
@@ -2718,12 +2718,12 @@ void UIMachineSettingsStorage::getInformation()
                         mTbOpen->setToolTip(tr("Set up the virtual hard disk"));
                         break;
                     case KDeviceType_DVD:
-                        mLbMedium->setText(tr("CD/DVD &Drive:"));
+                        mLbMedium->setText(tr("Optical &Drive:"));
                         mTbOpen->setIcon(iconPool()->icon(CDAttachmentNormal));
-                        mTbOpen->setWhatsThis(tr("Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. "
+                        mTbOpen->setWhatsThis(tr("Choose a virtual optical disk or a physical drive to use with the virtual drive. "
                                                  "The virtual machine will see a disk inserted into the drive with the data "
                                                  "in the file or on the disk in the physical drive as its contents."));
-                        mTbOpen->setToolTip(tr("Set up the virtual CD/DVD drive"));
+                        mTbOpen->setToolTip(tr("Set up the virtual optical drive"));
                         break;
                     case KDeviceType_Floppy:
                         mLbMedium->setText(tr("Floppy &Drive:"));
@@ -2888,8 +2888,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             }
             case UIMediumType_DVD:
             {
-                /* Add "Choose a virtual CD/DVD disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual CD/DVD disk file..."));
+                /* Add "Choose a virtual optical disk file" action: */
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose a virtual optical disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 /* Add recent mediums list: */

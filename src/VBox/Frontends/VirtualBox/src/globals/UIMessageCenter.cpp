@@ -672,7 +672,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
 bool UIMessageCenter::warnAboutInaccessibleMedia() const
 {
     return questionBinary(0, MessageType_Warning,
-                          tr("<p>One or more virtual hard disks, CD/DVD or "
+                          tr("<p>One or more virtual hard disks, optical or "
                              "floppy disk image files are not currently accessible. As a result, you will "
                              "not be able to operate virtual machines that use these files until "
                              "they become accessible later.</p>"
@@ -1042,8 +1042,8 @@ int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControl
 int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /* = 0*/) const
 {
     return questionTrinary(pParent, MessageType_Question,
-                           tr("<p>You are about to add a new CD/DVD drive to controller <b>%1</b>.</p>"
-                              "<p>Would you like to choose a virtual CD/DVD disk to put in the drive "
+                           tr("<p>You are about to add a new optical drive to controller <b>%1</b>.</p>"
+                              "<p>Would you like to choose a virtual optical disk to put in the drive "
                               "or to leave it empty for now?</p>")
                               .arg(strControllerName),
                            0 /* auto-confirm id */,
@@ -1064,8 +1064,8 @@ int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControlle
 int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Info,
-                          tr("<p>Are you sure you want to delete the CD/DVD device?</p>"
-                             "<p>You will not be able to insert any CDs or ISO images "
+                          tr("<p>Are you sure you want to delete the optical drive?</p>"
+                             "<p>You will not be able to insert any optical disks or ISO images "
                              "or install the Guest Additions without it!</p>"),
                           0 /* auto-confirm id */,
                           tr("&Remove", "medium"));
@@ -1086,13 +1086,13 @@ void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType t
         }
         case UIMediumType_DVD:
         {
-            strMessage = tr("Failed to attach the CD/DVD device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to attach the optical drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
         case UIMediumType_Floppy:
         {
-            strMessage = tr("Failed to attach the floppy device (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to attach the floppy drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
@@ -1333,13 +1333,13 @@ void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType t
         }
         case UIMediumType_DVD:
         {
-            strMessage = tr("Failed to detach the CD/DVD device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to detach the optical drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
         case UIMediumType_Floppy:
         {
-            strMessage = tr("Failed to detach the floppy device (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to detach the floppy drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
@@ -2041,7 +2041,7 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) c
 {
     alert(0, MessageType_Error,
           tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> disk image file into the virtual machine <b>%1</b>, "
-             "as the machine has no CD/DVD drives. Please add a drive using the storage page of the "
+             "as the machine has no optical drives. Please add a drive using the storage page of the "
              "virtual machine settings window.</p>")
              .arg(strMachineName));
 }
@@ -2112,7 +2112,7 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
                           tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
-                             "<p>Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?</p>")
+                             "<p>Do you wish to register this disk image file and insert it into the virtual optical drive?</p>")
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
                           tr("Insert", "additions"));

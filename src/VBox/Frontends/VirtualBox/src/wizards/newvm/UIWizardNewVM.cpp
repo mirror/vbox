@@ -237,7 +237,7 @@ bool UIWizardNewVM::createVM()
                                                    StorageSlot(ctrHDBus, 0, 0), this);
             }
 
-            /* Attach empty CD/DVD ROM Device */
+            /* Attach empty optical drive: */
             machine.AttachDevice(strDVDName, 1, 0, KDeviceType_DVD, CMedium());
             if (!machine.isOk())
                 msgCenter().cannotAttachDevice(machine, UIMediumType_DVD, QString(), StorageSlot(strDVDBus, 1, 0), this);

@@ -1170,8 +1170,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 const CMediumAttachment &attachment = attachments[j];
                 /* Prepare current storage slot: */
                 StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
-                /* Append 'device slot name' with 'device type name' for CD/DVD devices only: */
-                QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
+                /* Append 'device slot name' with 'device type name' for optical devices only: */
+                QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(Optical Drive)") : QString();
                 if (!strDeviceType.isNull())
                     strDeviceType.prepend(' ');
                 /* Prepare current medium object: */
@@ -1778,7 +1778,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
             pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual hard disk file..."));
             break;
         case UIMediumType_DVD:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual CD/DVD disk file..."));
+            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual optical disk file..."));
             break;
         case UIMediumType_Floppy:
             pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
@@ -3485,7 +3485,7 @@ QList <QPair <QString, QString> > VBoxGlobal::HDDBackends()
 }
 
 /**
- * Figures out which CD/DVD disk formats are currently supported by VirtualBox.
+ * Figures out which optical disk formats are currently supported by VirtualBox.
  * Returned is a list of pairs with the form
  *   <tt>{"Backend Name", "*.suffix1 .suffix2 ..."}</tt>.
  */

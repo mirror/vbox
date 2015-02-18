@@ -1152,7 +1152,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&CD/DVD"));
+        setName(QApplication::translate("UIActionPool", "&Optical Drives"));
     }
 };
 
@@ -1179,7 +1179,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Floppy"));
+        setName(QApplication::translate("UIActionPool", "&Floppy Drives"));
     }
 };
 
