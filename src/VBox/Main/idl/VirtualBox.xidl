@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2014 Oracle Corporation
+    Copyright (C) 2006-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -18979,7 +18979,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IWebsessionManager" extends="$unknown"
-    uuid="dea1b4c7-2de3-418a-850d-7868617f7733"
+    uuid="930c8fea-453a-4a65-aca9-19ed9a872f88"
     internal="yes"
     wsmap="global"
     wscpp="hardcoded"
@@ -19002,8 +19002,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="getSessionObject">
       <desc>
-        Returns a managed object reference to the internal ISession object that was created
-        for this web service session when the client logged on.
+        Returns a managed object reference to a new ISession object for every
+        call to this method.
 
         <see><link to="ISession"/></see>
       </desc>
@@ -19014,8 +19014,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="logoff">
       <desc>
         Logs off the client who has previously logged on with <link to="IWebsessionManager::logon" />
-        and destroys all resources associated with the session (most importantly, all
-        managed objects created in the server while the session was active).
+        and destroys all resources associated with the websession (most
+        importantly, all managed objects created in the server while the
+        websession was active).
       </desc>
       <param name="refIVirtualBox" type="IVirtualBox" dir="in"/>
     </method>
