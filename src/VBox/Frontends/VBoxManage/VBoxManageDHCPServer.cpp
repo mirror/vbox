@@ -53,9 +53,9 @@ typedef enum enMainOpCodes
     OP_MODIFY
 } OPCODE;
 
-typedef std::map<DhcpOpt_T, std::string> DhcpOptMap;
-typedef DhcpOptMap::iterator DhcpOptIterator;
-typedef DhcpOptMap::value_type DhcpOptValuePair;
+typedef std::pair<DhcpOpt_T, std::string> DhcpOptSpec;
+typedef std::vector<DhcpOptSpec> DhcpOpts;
+typedef DhcpOpts::iterator DhcpOptIterator;
 
 struct VmNameSlotKey
 {
@@ -75,7 +75,7 @@ struct VmNameSlotKey
     }
 };
 
-typedef std::map<VmNameSlotKey, DhcpOptMap> VmSlot2OptionsM;
+typedef std::map<VmNameSlotKey, DhcpOpts> VmSlot2OptionsM;
 typedef VmSlot2OptionsM::iterator VmSlot2OptionsIterator;
 typedef VmSlot2OptionsM::value_type VmSlot2OptionsPair;
 
@@ -135,7 +135,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
     int enable = -1;
 
-    DhcpOptMap GlobalDhcpOptions;
+    DhcpOpts        GlobalDhcpOptions;
     VmSlot2OptionsM VmSlot2Options;
     VmConfigs       VmConfigs2Delete;
 
@@ -288,10 +288,10 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                         return errorSyntax(USAGE_DHCPSERVER,
                                            "--slot wasn't found");
 
-                    DhcpOptMap& map = fVmOptionRead ? VmSlot2Options[VmNameSlotKey(pszVmName, u8Slot)]
+                    DhcpOpts &opts = fVmOptionRead ? VmSlot2Options[VmNameSlotKey(pszVmName, u8Slot)]
                                                     : GlobalDhcpOptions;
                     std::string strVal = ValueUnion.psz;
-                    map.insert(DhcpOptValuePair((DhcpOpt_T)u8OptId, strVal));
+                    opts.push_back(DhcpOptSpec((DhcpOpt_T)u8OptId, strVal));
 
                 }
                 break; // --end of value
