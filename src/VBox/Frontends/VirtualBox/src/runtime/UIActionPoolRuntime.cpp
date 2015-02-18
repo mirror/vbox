@@ -492,8 +492,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Switch to &Fullscreen"));
-        setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and fullscreen mode"));
+        setName(QApplication::translate("UIActionPool", "&Full-screen Mode"));
+        setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and full-screen mode"));
     }
 };
 
@@ -529,7 +529,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Switch to Seam&less Mode"));
+        setName(QApplication::translate("UIActionPool", "Seam&less Mode"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and seamless desktop integration mode"));
     }
 };
@@ -566,7 +566,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Switch to &Scaled Mode"));
+        setName(QApplication::translate("UIActionPool", "S&caled Mode"));
         setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and scaled mode"));
     }
 };
@@ -1152,7 +1152,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&CD/DVD Devices"));
+        setName(QApplication::translate("UIActionPool", "&CD/DVD"));
     }
 };
 
@@ -1179,7 +1179,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Floppy Devices"));
+        setName(QApplication::translate("UIActionPool", "&Floppy"));
     }
 };
 
@@ -1260,7 +1260,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&USB Devices"));
+        setName(QApplication::translate("UIActionPool", "&USB"));
     }
 };
 
@@ -1684,7 +1684,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Logging...", "debug action"));
+        setName(QApplication::translate("UIActionPool", "&Logging", "debug action"));
     }
 };
 
