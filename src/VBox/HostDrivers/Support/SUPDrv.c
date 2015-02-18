@@ -4084,9 +4084,9 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
              * Check whether the IDTR.LIMIT contains a CPU number.
              */
 #ifdef RT_ARCH_X86
-            uint16_t const  cbIdt = sizeof(X86DESC64SYSTEM);
+            uint16_t const  cbIdt = sizeof(X86DESC64SYSTEM) * 256;
 #else
-            uint16_t const  cbIdt = sizeof(X86DESCGATE);
+            uint16_t const  cbIdt = sizeof(X86DESCGATE)     * 256;
 #endif
             RTIDTR          Idtr;
             ASMGetIDTR(&Idtr);
@@ -4144,8 +4144,8 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
      * Check that the iCpuSet is within the expected range.
      */
     if (RT_UNLIKELY(   iCpuSet < 0
-                    || iCpuSet >= RTCPUSET_MAX_CPUS
-                    || iCpuSet >= RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+                    || (unsigned)iCpuSet >= RTCPUSET_MAX_CPUS
+                    || (unsigned)iCpuSet >= RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
     {
         ASMAtomicCmpXchgU32(&pState->idCpuProblem, idCpu, NIL_RTCPUID);
         LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x - CPU set index is out of range.\n",
