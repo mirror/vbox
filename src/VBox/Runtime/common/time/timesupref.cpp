@@ -36,107 +36,183 @@
 #include <iprt/asm-math.h>
 #include <iprt/asm-amd64-x86.h>
 #include <VBox/sup.h>
+#ifdef IN_RC
+# include <VBox/vmm/vmm.h>
+# include <VBox/vmm/vm.h>
+#endif
 #include "internal/time.h"
 
 
-#define GIP_MODE_SYNC_NO_DELTA          1
-#define GIP_MODE_SYNC_WITH_DELTA        2
-#define GIP_MODE_ASYNC                  3
-#define GIP_MODE_INVARIANT_NO_DELTA     4
-#define GIP_MODE_INVARIANT_WITH_DELTA   5
-#define IS_GIP_MODE_WITH_DELTA(a_enmMode) \
-    ((a_enmMode) == GIP_MODE_SYNC_WITH_DELTA || (a_enmMode) == GIP_MODE_INVARIANT_WITH_DELTA)
+#define TMPL_MODE_SYNC_INVAR_NO_DELTA       1
+#define TMPL_MODE_SYNC_INVAR_WITH_DELTA     2
+#define TMPL_MODE_ASYNC                     3
 
 
 /*
- * Use the CPUID instruction for some kind of serialization.
+ * Use the XCHG instruction for some kind of serialization.
  */
-#define GIP_MODE GIP_MODE_SYNC_NO_DELTA
-#undef  USE_LFENCE
-#define NEED_TRANSACTION_ID
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncNoDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncNoDelta);
+#define TMPL_READ_FENCE()        ASMReadFence()
 
-#undef  GIP_MODE
-#define GIP_MODE  GIP_MODE_SYNC_NO_DELTA
+#undef  TMPL_MODE
+#define TMPL_MODE                TMPL_MODE_SYNC_INVAR_NO_DELTA
+#undef  TMPL_GET_CPU_METHOD
+#define TMPL_GET_CPU_METHOD      0
 #undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncWithDelta
+#define rtTimeNanoTSInternalRef  RTTimeNanoTSLegacySyncInvarNoDelta
 #include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncWithDelta);
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncInvarNoDelta);
 
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_ASYNC
-#ifdef IN_RC
-# undef NEED_TRANSACTION_ID
-#endif
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsync
-#include "timesupref.h"
+#ifdef IN_RING3
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_APIC_ID
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim);
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_ASYNC
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_APIC_ID
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsyncUseApicId
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseApicId);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsyncUseRdtscp
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseRdtscp);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsyncUseIdtrLim
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsyncUseIdtrLim);
+
+#else  /* IN_RC || IN_RING0: Disable interrupts and call getter function. */
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     UINT32_MAX
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacySyncInvarWithDelta
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLegacySyncInvarWithDelta);
+
+# undef  TMPL_MODE
+# define TMPL_MODE TMPL_MODE_ASYNC
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyAsync
+# include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyAsync);
 
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_INVARIANT_NO_DELTA
-#undef  NEED_TRANSACTION_ID
-#define NEED_TRANSACTION_ID
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyInvariantNoDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyInvariantNoDelta);
-
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_INVARIANT_WITH_DELTA
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLegacyInvariantWithDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLegacyInvariantWithDelta);
+#endif
 
 
 /*
  * Use LFENCE for load serialization.
  */
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_SYNC_NO_DELTA
-#define USE_LFENCE
-#undef  NEED_TRANSACTION_ID
-#define NEED_TRANSACTION_ID
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncNoDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncNoDelta);
+#undef  TMPL_READ_FENCE
+#define TMPL_READ_FENCE()        ASMReadFenceSSE2()
 
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_SYNC_WITH_DELTA
+#undef  TMPL_MODE
+#define TMPL_MODE                TMPL_MODE_SYNC_INVAR_NO_DELTA
+#undef  TMPL_GET_CPU_METHOD
+#define TMPL_GET_CPU_METHOD      0
 #undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncWithDelta
+#define rtTimeNanoTSInternalRef  RTTimeNanoTSLFenceSyncInvarNoDelta
 #include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncWithDelta);
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncInvarNoDelta);
 
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_ASYNC
-#ifdef IN_RC
-# undef NEED_TRANSACTION_ID
-#endif
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsync
-#include "timesupref.h"
+#ifdef IN_RING3
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_APIC_ID
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim);
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_ASYNC
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_APIC_ID
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsyncUseApicId
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseApicId);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsyncUseRdtscp
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseRdtscp);
+
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsyncUseIdtrLim
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsyncUseIdtrLim);
+
+#else  /* IN_RC || IN_RING0: Disable interrupts and call getter function. */
+
+# undef  TMPL_MODE
+# define TMPL_MODE               TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# undef  TMPL_GET_CPU_METHOD
+# define TMPL_GET_CPU_METHOD     UINT32_MAX
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceSyncInvarWithDelta
+# include "timesupref.h"
+RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceSyncInvarWithDelta);
+
+# undef  TMPL_MODE
+# define TMPL_MODE TMPL_MODE_ASYNC
+# undef  rtTimeNanoTSInternalRef
+# define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceAsync
+# include "timesupref.h"
 RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceAsync);
 
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_INVARIANT_NO_DELTA
-#undef  NEED_TRANSACTION_ID
-#define NEED_TRANSACTION_ID
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceInvariantNoDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceInvariantNoDelta);
-
-#undef  GIP_MODE
-#define GIP_MODE GIP_MODE_INVARIANT_WITH_DELTA
-#undef  rtTimeNanoTSInternalRef
-#define rtTimeNanoTSInternalRef RTTimeNanoTSLFenceInvariantWithDelta
-#include "timesupref.h"
-RT_EXPORT_SYMBOL(RTTimeNanoTSLFenceInvariantWithDelta);
+#endif
 
 
 #endif /* !IN_GUEST && !RT_NO_GIP */

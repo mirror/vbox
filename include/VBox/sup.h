@@ -436,6 +436,8 @@ typedef enum SUPGIPMODE
     SUPGIPMODE_ASYNC_TSC,
     /** The TSC of the cores are non-stop and have a constant frequency. */
     SUPGIPMODE_INVARIANT_TSC,
+    /** End of valid GIP mode values (exclusive). */
+    SUPGIPMODE_END,
     /** The usual 32-bit hack. */
     SUPGIPMODE_32BIT_HACK = 0x7fffffff
 } SUPGIPMODE;

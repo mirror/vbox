@@ -765,8 +765,10 @@ int                     tmCpuTickResumeLocked(PVM pVM, PVMCPU pVCpu);
 
 int                     tmVirtualPauseLocked(PVM pVM);
 int                     tmVirtualResumeLocked(PVM pVM);
-DECLEXPORT(void)        tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
+DECLEXPORT(void)        tmVirtualNanoTSBadPrev(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS,
+                                               uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS);
 DECLEXPORT(uint64_t)    tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData);
+DECLEXPORT(uint64_t)    tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu);
 
 #ifdef IN_RING3
 static const char *     tmR3GetTSCModeNameEx(TMTSCMODE enmMode);

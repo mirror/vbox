@@ -44,89 +44,250 @@
 RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 {
     uint64_t    u64Delta;
-#if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
     int64_t     i64TscDelta;
+# ifdef IN_RING3
+    PSUPGIPCPU  pGipCpuAttemptedTscRecalibration = NULL;
+# endif
 #endif
     uint32_t    u32NanoTSFactor0;
     uint64_t    u64TSC;
     uint64_t    u64NanoTS;
     uint32_t    u32UpdateIntervalTSC;
     uint64_t    u64PrevNanoTS;
+    AssertCompile(RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS));
 
     /*
      * Read the GIP data and the previous value.
      */
     for (;;)
     {
+#ifndef IN_RING3 /* This simplifies and improves everything. */
+        RTCCUINTREG const  uFlags = ASMIntDisableFlags();
+#endif
+
+        /*
+         * Check that the GIP is sane and that the premises for this worker function
+         * hasn't changed (CPU onlined with bad delta or missing features).
+         */
         PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-#ifdef IN_RING3
-        if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
-            return pData->pfnRediscover(pData);
-#endif
-#if GIP_MODE == GIP_MODE_ASYNC || IS_GIP_MODE_WITH_DELTA(GIP_MODE)
-        uint8_t const u8ApicId  = ASMGetApicId();
-        PSUPGIPCPU pGipCpu      = &pGip->aCPUs[pGip->aiCpuFromApicId[u8ApicId]];
-#endif
-
-#ifdef NEED_TRANSACTION_ID
-# if GIP_MODE == GIP_MODE_ASYNC
-        uint32_t u32TransactionId = pGipCpu->u32TransactionId;
-# else
-        uint32_t u32TransactionId = pGip->aCPUs[0].u32TransactionId;
-# endif
-# ifdef USE_LFENCE
-        ASMReadFenceSSE2();
-# else
-        ASMReadFence();
-# endif
-#endif
-
-#if GIP_MODE == GIP_MODE_ASYNC
-        u32UpdateIntervalTSC    = pGipCpu->u32UpdateIntervalTSC;
-        u64NanoTS               = pGipCpu->u64NanoTS;
-        u64TSC                  = pGipCpu->u64TSC;
+        if (   RT_LIKELY(pGip)
+            && RT_LIKELY(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC)
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
+            && RT_LIKELY(pGip->enmUseTscDelta >= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
 #else
-        u32UpdateIntervalTSC    = pGip->aCPUs[0].u32UpdateIntervalTSC;
-        u64NanoTS               = pGip->aCPUs[0].u64NanoTS;
-        u64TSC                  = pGip->aCPUs[0].u64TSC;
-# if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
-        i64TscDelta             = pGipCpu->i64TSCDelta;
-# endif
+            && RT_LIKELY(pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
 #endif
-        u32NanoTSFactor0        = pGip->u32UpdateIntervalNS;
-        u64Delta                = ASMReadTSC();
-        u64PrevNanoTS           = ASMAtomicReadU64(pData->pu64Prev);
+#if defined(IN_RING3) && TMPL_GET_CPU_METHOD != 0 && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID
+            && RT_LIKELY(pGip->fGetGipCpu & TMPL_GET_CPU_METHOD)
+#endif
+           )
+        {
+            /*
+             * Resolve pGipCpu if needed.  If the instruction is serializing, we
+             * read the transaction id first if possible.
+             */
+#if TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# if   defined(IN_RING0)
+            uint32_t const  iCpuSet  = RTMpCpuIdToSetIndex(RTMpCpuId());
+            uint16_t const  iGipCpu  = iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
+                                     ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
+# elif defined(IN_RC)
+            uint32_t const  iCpuSet  = VMMGetCpu(&g_VM)->iHostCpuSet;
+            uint16_t const  iGipCpu  = iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
+                                     ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID
+#  if TMPL_MODE != TMPL_MODE_ASYNC
+            uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+#  endif
+            uint8_t  const  idApic   = ASMGetApicId();
+            uint16_t const  iGipCpu  = pGip->aiCpuFromApicId[idApic];
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+#  if TMPL_MODE != TMPL_MODE_ASYNC
+            uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+#  endif
+            uint32_t        uAux;
+            ASMReadTscWithAux(&uAux);
+            uint16_t const  iCpuSet  = uAux & (RTCPUSET_MAX_CPUS - 1);
+            uint16_t const  iGipCpu  = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+            uint16_t const  cbLim    = ASMGetIdtrLimit();
+            uint16_t const  iCpuSet  = (cbLim - 256 * (ARCH_BITS == 64 ? 16 : 8)) & (RTCPUSET_MAX_CPUS - 1);
+            uint16_t const  iGipCpu  = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+# else
+#  error "What?"
+# endif
+            if (RT_LIKELY(iGipCpu < pGip->cCpus))
+            {
+                PSUPGIPCPU pGipCpu = &pGip->aCPUs[iGipCpu];
+#else
+            {
+#endif
+                /*
+                 * Get the transaction ID if necessary and we haven't already
+                 * read it before a serializing instruction above.  We can skip
+                 * this for ASYNC_TSC mode in ring-0 and raw-mode context since
+                 * we disable interrupts.
+                 */
+#if TMPL_MODE == TMPL_MODE_ASYNC && defined(IN_RING3)
+                uint32_t const u32TransactionId = pGipCpu->u32TransactionId;
+                ASMCompilerBarrier();
+                TMPL_READ_FENCE();
+#elif TMPL_MODE != TMPL_MODE_ASYNC \
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID \
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+                uint32_t const u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+                ASMCompilerBarrier();
+                TMPL_READ_FENCE();
+#endif
 
-#ifdef NEED_TRANSACTION_ID
-# if GIP_MODE == GIP_MODE_ASYNC || IS_GIP_MODE_WITH_DELTA(GIP_MODE)
-        if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
-            continue;
-# elif defined(USE_LFENCE)
-        ASMWriteFenceSSE();
-# else
-        ASMWriteFence();
-# endif
-# if GIP_MODE == GIP_MODE_ASYNC
-        if (RT_UNLIKELY(   pGipCpu->u32TransactionId != u32TransactionId
-                        || (u32TransactionId & 1)))
-            continue;
-# else
-        if (RT_UNLIKELY(   pGip->aCPUs[0].u32TransactionId != u32TransactionId
-                        || (u32TransactionId & 1)))
-            continue;
+                /*
+                 * Gather all the data we need.  The mess at the end is to make
+                 * sure all loads are done before we recheck the transaction ID
+                 * without triggering serializing twice.
+                 */
+                u32NanoTSFactor0        = pGip->u32UpdateIntervalNS;
+#if TMPL_MODE == TMPL_MODE_ASYNC
+                u32UpdateIntervalTSC    = pGipCpu->u32UpdateIntervalTSC;
+                u64NanoTS               = pGipCpu->u64NanoTS;
+                u64TSC                  = pGipCpu->u64TSC;
+#else
+                u32UpdateIntervalTSC    = pGip->aCPUs[0].u32UpdateIntervalTSC;
+                u64NanoTS               = pGip->aCPUs[0].u64NanoTS;
+                u64TSC                  = pGip->aCPUs[0].u64TSC;
+# if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
+                i64TscDelta             = pGipCpu->i64TSCDelta;
 # endif
 #endif
-        break;
+#if TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+                u64PrevNanoTS           = ASMAtomicUoReadU64(pData->pu64Prev);
+                ASMCompilerBarrier();
+                uint32_t uAux2;
+                u64Delta                = ASMReadTscWithAux(&uAux2); /* serializing */
+#else
+                u64Delta                = ASMReadTSC();
+                u64PrevNanoTS           = ASMAtomicUoReadU64(pData->pu64Prev);
+                ASMCompilerBarrier();
+# if TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID /* getting APIC will serialize  */ \
+  && (defined(IN_RING3) || TMPL_MODE != TMPL_MODE_ASYNC)
+                TMPL_READ_FENCE(); /* Expensive (~30 ticks).  Would like convincing argumentation that let us remove it. */
+# endif
+#endif
+
+                /*
+                 * Check that we didn't change CPU.
+                 */
+#if defined(IN_RING3) && ( TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA )
+# if   TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID
+                if (RT_LIKELY(ASMGetApicId() == idApic))
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS
+                if (RT_LIKELY(uAux2 == uAux))
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
+                if (RT_LIKELY(ASMGetIdtrLimit() == cbLim))
+# endif
+#endif
+                {
+                    /*
+                     * Check the transaction ID (see above for R0/RC + ASYNC).
+                     */
+#if defined(IN_RING3) || TMPL_MODE != TMPL_MODE_ASYNC
+# if TMPL_MODE == TMPL_MODE_ASYNC
+                    if (RT_LIKELY(pGipCpu->u32TransactionId       == u32TransactionId && !(u32TransactionId & 1) ))
+# else
+                    if (RT_LIKELY(pGip->aCPUs[0].u32TransactionId == u32TransactionId && !(u32TransactionId & 1) ))
+# endif
+#endif
+                    {
+
+                        /*
+                         * Apply the TSC delta.  If the delta is invalid and the
+                         * execution allows it, try trigger delta recalibration.
+                         */
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA && defined(IN_RING3)
+                        if (RT_LIKELY(   i64TscDelta != INT64_MAX
+                                      || pGipCpu == pGipCpuAttemptedTscRecalibration))
+#endif
+                        {
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
+# ifndef IN_RING3
+                            if (RT_LIKELY(i64TscDelta != INT64_MAX))
+# endif
+                                u64Delta -= i64TscDelta;
+#endif
+
+                            /*
+                             * Bingo! We've got a consistent set of data.
+                             */
+#ifndef IN_RING3
+                            ASMSetFlags(uFlags);
+#endif
+                            break;
+                        }
+#if TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA && defined(IN_RING3)
+                        /*
+                         * Call into the support driver to try make it recalculate the delta. We
+                         * remember which GIP CPU structure we're probably working on so we won't
+                         * end up in a loop if the driver for some reason cannot get the job done.
+                         */
+                        else /* else is unecessary, but helps checking the preprocessor spaghetti. */
+                        {
+                            pGipCpuAttemptedTscRecalibration = pGipCpu;
+                            uint64_t u64TscTmp;
+                            uint16_t idApicUpdate;
+                            int rc = SUPR3ReadTsc(&u64TscTmp, &idApicUpdate);
+                            if (RT_SUCCESS(rc) && idApicUpdate <= RT_ELEMENTS(pGip->aiCpuFromApicId))
+                            {
+                                uint32_t iUpdateGipCpu = pGip->aiCpuFromApicId[idApicUpdate];
+                                if (iUpdateGipCpu < pGip->cCpus)
+                                    pGipCpuAttemptedTscRecalibration = &pGip->aCPUs[iUpdateGipCpu];
+                            }
+                        }
+#endif
+                    }
+                }
+
+                /*
+                 * No joy must try again.
+                 */
+#ifndef IN_RING3
+                ASMSetFlags(uFlags);
+#endif
+                ASMNopPause();
+                continue;
+            }
+
+#if TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
+            /*
+             * We've got a bad CPU or APIC index of some kind.
+             */
+            else /* else is unecessary, but helps checking the preprocessor spaghetti. */
+            {
+# ifndef IN_RING3
+                ASMSetFlags(uFlags);
+# endif
+# if defined(IN_RING0) || defined(IN_RC) || TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID
+                return pData->pfnBadCpuIndex(pData, UINT16_MAX-1, iCpuSet, iGipCpu);
+# else
+                return pData->pfnBadCpuIndex(pData, idApic, UINT16_MAX-1, iGipCpu);
+# endif
+            }
+#endif
+        }
+
+        /*
+         * Something changed in the GIP config or it was unmapped, figure out
+         * the right worker function to use now.
+         */
+#ifndef IN_RING3
+        ASMSetFlags(uFlags);
+#endif
+        return pData->pfnRediscover(pData);
     }
 
     /*
      * Calc NanoTS delta.
      */
     u64Delta -= u64TSC;
-#if IS_GIP_MODE_WITH_DELTA(GIP_MODE)
-    if (RT_LIKELY(i64TscDelta != INT64_MAX))
-        u64Delta -= i64TscDelta;
-#endif
     if (RT_UNLIKELY(u64Delta > u32UpdateIntervalTSC))
     {
         /*

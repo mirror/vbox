@@ -87,15 +87,11 @@ EXPORTS
     RTAssertShouldPanic
     RTCrc32
     RTOnceSlow
-    RTTimeNanoTSLegacyInvariantNoDelta
-    RTTimeNanoTSLegacyInvariantWithDelta
-    RTTimeNanoTSLegacySyncNoDelta
-    RTTimeNanoTSLegacySyncWithDelta
+    RTTimeNanoTSLegacySyncInvarNoDelta
+    RTTimeNanoTSLegacySyncInvarWithDelta
     RTTimeNanoTSLegacyAsync
-    RTTimeNanoTSLFenceInvariantNoDelta
-    RTTimeNanoTSLFenceInvariantWithDelta
-    RTTimeNanoTSLFenceSyncNoDelta
-    RTTimeNanoTSLFenceSyncWithDelta
+    RTTimeNanoTSLFenceSyncInvarNoDelta
+    RTTimeNanoTSLFenceSyncInvarWithDelta
     RTTimeNanoTSLFenceAsync
     RTTimeSystemNanoTS
     RTTimeNanoTS

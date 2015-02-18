@@ -64,6 +64,7 @@ EXPORTS
     TRPMGCHandlerTrap12
     MMGCRamWriteNoTrapHandler
     MMGCRamReadNoTrapHandler
+    VMMGetCpu
     VMMGetSvnRev
     VMMRCProbeFire
     vmmGCLoggerFlush
@@ -91,15 +92,11 @@ EXPORTS
     RTAssertMsg2Weak
     RTAssertShouldPanic
     RTLogDefaultInstance
-    RTTimeNanoTSLegacyInvariantNoDelta
-    RTTimeNanoTSLegacyInvariantWithDelta
-    RTTimeNanoTSLegacySyncNoDelta
-    RTTimeNanoTSLegacySyncWithDelta
+    RTTimeNanoTSLegacySyncInvarNoDelta
+    RTTimeNanoTSLegacySyncInvarWithDelta
     RTTimeNanoTSLegacyAsync
-    RTTimeNanoTSLFenceInvariantNoDelta
-    RTTimeNanoTSLFenceInvariantWithDelta
-    RTTimeNanoTSLFenceSyncNoDelta
-    RTTimeNanoTSLFenceSyncWithDelta
+    RTTimeNanoTSLFenceSyncInvarNoDelta
+    RTTimeNanoTSLFenceSyncInvarWithDelta
     RTTimeNanoTSLFenceAsync
     RTTimeNanoTS
     RTCrc32

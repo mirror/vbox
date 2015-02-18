@@ -29,6 +29,14 @@
 %include "iprt/asmdefs.mac"
 %include "VBox/sup.mac"
 
+;
+; Use the C reference implementation for now.
+;
+%error "This is out of date, use C code.  Not worth it for a couple of ticks in some functions and equal or worse performance in others."
+This is out of date
+This is out of date
+This is out of date
+
 
 ;; Keep this in sync with iprt/time.h.
 struc RTTIMENANOTSDATA

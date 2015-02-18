@@ -27,14 +27,18 @@
 EXPORTS
     ASMMultU64ByU32DivByU32
 
-    RTTimeNanoTSLegacyInvariantNoDelta
-    RTTimeNanoTSLegacyInvariantWithDelta
-    RTTimeNanoTSLegacySyncNoDelta
-    RTTimeNanoTSLegacySyncWithDelta
-    RTTimeNanoTSLegacyAsync
-    RTTimeNanoTSLFenceInvariantNoDelta
-    RTTimeNanoTSLFenceInvariantWithDelta
-    RTTimeNanoTSLFenceSyncNoDelta
-    RTTimeNanoTSLFenceSyncWithDelta
-    RTTimeNanoTSLFenceAsync
+    RTTimeNanoTSLegacySyncInvarNoDelta
+    RTTimeNanoTSLFenceSyncInvarNoDelta
+    RTTimeNanoTSLegacyAsyncUseApicId
+    RTTimeNanoTSLegacyAsyncUseRdtscp
+    RTTimeNanoTSLegacyAsyncUseIdtrLim
+    RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId
+    RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp
+    RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim
+    RTTimeNanoTSLFenceAsyncUseApicId
+    RTTimeNanoTSLFenceAsyncUseRdtscp
+    RTTimeNanoTSLFenceAsyncUseIdtrLim
+    RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId
+    RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp
+    RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim
 

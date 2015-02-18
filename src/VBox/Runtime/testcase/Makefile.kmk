@@ -370,13 +370,10 @@ ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_LIBS = \
  	$(PATH_STAGE_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
- ifeq ($(VBOX_LDR_FMT32),pe)
+ if1of ($(VBOX_LDR_FMT32),lx pe)
  tstLdrObj_LIBS += \
- 	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
- endif # PE
- ifeq ($(VBOX_LDR_FMT32),lx)
- tstLdrObj_LIBS += \
- 	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
  endif
 endif # VBOX_WITH_RAW_MODE
 

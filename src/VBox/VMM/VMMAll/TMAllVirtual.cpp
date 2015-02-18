@@ -43,45 +43,110 @@
 
 
 /**
- * Helper function that's used by the assembly routines when something goes bust.
- *
- * @param   pData           Pointer to the data structure.
- * @param   u64NanoTS       The calculated nano ts.
- * @param   u64DeltaPrev    The delta relative to the previously returned timestamp.
- * @param   u64PrevNanoTS   The previously returned timestamp (as it was read it).
+ * @interface_method_impl{RTTIMENANOTSDATA, pfnBadPrev}
  */
-DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev, uint64_t u64PrevNanoTS)
+DECLEXPORT(void) tmVirtualNanoTSBadPrev(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS, uint64_t u64DeltaPrev,
+                                        uint64_t u64PrevNanoTS)
 {
-    //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
+    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
     pData->cBadPrev++;
     if ((int64_t)u64DeltaPrev < 0)
-        LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64\n",
-                u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+        LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 pVM=%p\n",
+                u64DeltaPrev, u64PrevNanoTS, u64NanoTS, pVM));
     else
-        Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 (debugging?)\n",
-             u64DeltaPrev, u64PrevNanoTS, u64NanoTS));
+        Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 pVM=%p (debugging?)\n",
+             u64DeltaPrev, u64PrevNanoTS, u64NanoTS, pVM));
 }
 
 
 /**
- * Called the first time somebody asks for the time or when the GIP
- * is mapped/unmapped.
+ * @interface_method_impl{RTTIMENANOTSDATA, pfnRediscover}
  *
- * This should never ever happen.
+ * This is the initial worker, so the first call in each context ends up here.
+ * It is also used should the delta rating of the host CPUs change or if the
+ * fGetGipCpu feature the current worker relies upon becomes unavailable.  The
+ * last two events may occur as CPUs are taken online.
  */
 DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
 {
-    NOREF(pData);
-    //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
+    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+
+    /*
+     * We require a valid GIP for the selection below.  Invalid GIP is fatal.
+     */
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    AssertFatalMsgFailed(("pGip=%p u32Magic=%#x\n", pGip, VALID_PTR(pGip) ? pGip->u32Magic : 0));
-#ifndef _MSC_VER
-    return 0; /* gcc false positive warning */
+    AssertFatalMsg(RT_VALID_PTR(pGip), ("pVM=%p pGip=%p\n", pVM, pGip));
+    AssertFatalMsg(pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC, ("pVM=%p pGip=%p u32Magic=%#x\n", pVM, pGip, pGip->u32Magic));
+    AssertFatalMsg(pGip->u32Mode > SUPGIPMODE_INVALID && pGip->u32Mode < SUPGIPMODE_END,
+                   ("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
+
+    /*
+     * Determine the new worker.
+     */
+    PFNTIMENANOTSINTERNAL   pfnWorker;
+    bool const              fLFence = RT_BOOL(ASMCpuId_EDX(1) & X86_CPUID_FEATURE_EDX_SSE2);
+    switch (pGip->u32Mode)
+    {
+        case SUPGIPMODE_SYNC_TSC:
+        case SUPGIPMODE_INVARIANT_TSC:
+#if defined(IN_RC) || defined(IN_RING0)
+            if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta;
+            else
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceSyncInvarWithDelta  : RTTimeNanoTSLegacySyncInvarWithDelta;
+#else
+            if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim : RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp : RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp;
+            else
+                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId;
 #endif
+            break;
+
+        case SUPGIPMODE_ASYNC_TSC:
+#if defined(IN_RC) || defined(IN_RING0)
+            pfnWorker = fLFence ? RTTimeNanoTSLFenceAsync : RTTimeNanoTSLegacyAsync;
+#else
+            if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseIdtrLim     : RTTimeNanoTSLegacyAsyncUseIdtrLim;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscp      : RTTimeNanoTSLegacyAsyncUseRdtscp;
+            else
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicId      : RTTimeNanoTSLegacyAsyncUseApicId;
+#endif
+            break;
+
+        default:
+            AssertFatalMsgFailed(("pVM=%p pGip=%p u32Mode=%#x\n", pVM, pGip, pGip->u32Mode));
+    }
+
+    /*
+     * Update the pfnVirtualGetRaw pointer and call the worker we selected.
+     */
+    ASMAtomicWritePtr((void * volatile *)&CTX_SUFF(pVM->tm.s.pfnVirtualGetRaw), (void *)(uintptr_t)pfnWorker);
+    return pfnWorker(pData);
 }
 
 
-#if 1
+/**
+ * @interface_method_impl{RTTIMENANOTSDATA, pfnBadGipIndex}
+ */
+DECLEXPORT(uint64_t) tmVirtualNanoTSBadCpuIndex(PRTTIMENANOTSDATA pData, uint16_t idApic, uint16_t iCpuSet, uint16_t iGipCpu)
+{
+    PVM pVM = RT_FROM_MEMBER(pData, VM, CTX_SUFF(tm.s.VirtualGetRawData));
+    AssertFatalMsgFailed(("pVM=%p idApic=%#x iCpuSet=%#x iGipCpu=%#x\n", pVM, idApic, iCpuSet, iGipCpu));
+#ifndef _MSC_VER
+    return UINT64_MAX;
+#endif
+}
+
 
 /**
  * Wrapper around the IPRT GIP time methods.
@@ -99,183 +164,6 @@ DECLINLINE(uint64_t) tmVirtualGetRawNanoTS(PVM pVM)
     /*DBGFTRACE_POS_U64(pVM, u64);*/
     return u64;
 }
-
-#else
-
-/**
- * This is (mostly) the same as rtTimeNanoTSInternal() except
- * for the two globals which live in TM.
- *
- * @returns Nanosecond timestamp.
- * @param   pVM     Pointer to the VM.
- */
-static uint64_t tmVirtualGetRawNanoTS(PVM pVM)
-{
-    uint64_t    u64Delta;
-    uint32_t    u32NanoTSFactor0;
-    uint64_t    u64TSC;
-    uint64_t    u64NanoTS;
-    uint32_t    u32UpdateIntervalTSC;
-    uint64_t    u64PrevNanoTS;
-
-    /*
-     * Read the GIP data and the previous value.
-     */
-    for (;;)
-    {
-        uint32_t u32TransactionId;
-        PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-#ifdef IN_RING3
-        if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC))
-            return RTTimeSystemNanoTS();
-#endif
-
-        if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-        {
-            u32TransactionId = pGip->aCPUs[0].u32TransactionId;
-#ifdef RT_OS_L4
-            Assert((u32TransactionId & 1) == 0);
-#endif
-            u32UpdateIntervalTSC = pGip->aCPUs[0].u32UpdateIntervalTSC;
-            u64NanoTS = pGip->aCPUs[0].u64NanoTS;
-            u64TSC = pGip->aCPUs[0].u64TSC;
-            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-            u64Delta = ASMReadTSC();
-            u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
-            if (RT_UNLIKELY(    pGip->aCPUs[0].u32TransactionId != u32TransactionId
-                            ||  (u32TransactionId & 1)))
-                continue;
-        }
-        else
-        {
-            /* SUPGIPMODE_ASYNC_TSC */
-            PSUPGIPCPU pGipCpu;
-
-            uint8_t u8ApicId = ASMGetApicId();
-            if (RT_LIKELY(u8ApicId < RT_ELEMENTS(pGip->aCPUs)))
-                pGipCpu = &pGip->aCPUs[u8ApicId];
-            else
-            {
-                AssertMsgFailed(("%x\n", u8ApicId));
-                pGipCpu = &pGip->aCPUs[0];
-            }
-
-            u32TransactionId = pGipCpu->u32TransactionId;
-#ifdef RT_OS_L4
-            Assert((u32TransactionId & 1) == 0);
-#endif
-            u32UpdateIntervalTSC = pGipCpu->u32UpdateIntervalTSC;
-            u64NanoTS = pGipCpu->u64NanoTS;
-            u64TSC = pGipCpu->u64TSC;
-            u32NanoTSFactor0 = pGip->u32UpdateIntervalNS;
-            u64Delta = ASMReadTSC();
-            u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
-#ifdef IN_RC
-            Assert(!(ASMGetFlags() & X86_EFL_IF));
-#else
-            if (RT_UNLIKELY(u8ApicId != ASMGetApicId()))
-                continue;
-            if (RT_UNLIKELY(    pGipCpu->u32TransactionId != u32TransactionId
-                            ||  (u32TransactionId & 1)))
-                continue;
-#endif
-        }
-        break;
-    }
-
-    /*
-     * Calc NanoTS delta.
-     */
-    u64Delta -= u64TSC;
-    if (u64Delta > u32UpdateIntervalTSC)
-    {
-        /*
-         * We've expired the interval, cap it. If we're here for the 2nd
-         * time without any GIP update in-between, the checks against
-         * pVM->tm.s.u64VirtualRawPrev below will force 1ns stepping.
-         */
-        u64Delta = u32UpdateIntervalTSC;
-    }
-#if !defined(_MSC_VER) || defined(RT_ARCH_AMD64) /* GCC makes very pretty code from these two inline calls, while MSC cannot. */
-    u64Delta = ASMMult2xU32RetU64((uint32_t)u64Delta, u32NanoTSFactor0);
-    u64Delta = ASMDivU64ByU32RetU32(u64Delta, u32UpdateIntervalTSC);
-#else
-    __asm
-    {
-        mov     eax, dword ptr [u64Delta]
-        mul     dword ptr [u32NanoTSFactor0]
-        div     dword ptr [u32UpdateIntervalTSC]
-        mov     dword ptr [u64Delta], eax
-        xor     edx, edx
-        mov     dword ptr [u64Delta + 4], edx
-    }
-#endif
-
-    /*
-     * Calculate the time and compare it with the previously returned value.
-     *
-     * Since this function is called *very* frequently when the VM is running
-     * and then mostly on EMT, we can restrict the valid range of the delta
-     * (-1s to 2*GipUpdates) and simplify/optimize the default path.
-     */
-    u64NanoTS += u64Delta;
-    uint64_t u64DeltaPrev = u64NanoTS - u64PrevNanoTS;
-    if (RT_LIKELY(u64DeltaPrev < 1000000000 /* 1s */))
-        /* frequent - less than 1s since last call. */;
-    else if (   (int64_t)u64DeltaPrev < 0
-             && (int64_t)u64DeltaPrev + u32NanoTSFactor0 * 2 > 0)
-    {
-        /* occasional - u64NanoTS is in the 'past' relative to previous returns. */
-        ASMAtomicIncU32(&pVM->tm.s.CTX_SUFF(VirtualGetRawData).c1nsSteps);
-        u64NanoTS = u64PrevNanoTS + 1;
-#ifndef IN_RING3
-        VM_FF_SET(pVM, VM_FF_TO_R3); /* S10 hack */
-#endif
-    }
-    else if (u64PrevNanoTS)
-    {
-        /* Something has gone bust, if negative offset it's real bad. */
-        ASMAtomicIncU32(&pVM->tm.s.CTX_SUFF(VirtualGetRawData).cBadPrev);
-        if ((int64_t)u64DeltaPrev < 0)
-            LogRel(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
-                    u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
-        else
-            Log(("TM: u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64 (debugging?)\n",
-                 u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
-#ifdef DEBUG_bird
-        /** @todo there are some hickups during boot and reset that can cause 2-5 seconds delays. Investigate... */
-        AssertMsg(u64PrevNanoTS > UINT64_C(100000000000) /* 100s */,
-                  ("u64DeltaPrev=%RI64 u64PrevNanoTS=0x%016RX64 u64NanoTS=0x%016RX64 u64Delta=%#RX64\n",
-                  u64DeltaPrev, u64PrevNanoTS, u64NanoTS, u64Delta));
-#endif
-    }
-    /* else: We're resuming (see TMVirtualResume). */
-    if (RT_LIKELY(ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualRawPrev, u64NanoTS, u64PrevNanoTS)))
-        return u64NanoTS;
-
-    /*
-     * Attempt updating the previous value, provided we're still ahead of it.
-     *
-     * There is no point in recalculating u64NanoTS because we got preempted or if
-     * we raced somebody while the GIP was updated, since these are events
-     * that might occur at any point in the return path as well.
-     */
-    for (int cTries = 50;;)
-    {
-        u64PrevNanoTS = ASMAtomicReadU64(&pVM->tm.s.u64VirtualRawPrev);
-        if (u64PrevNanoTS >= u64NanoTS)
-            break;
-        if (ASMAtomicCmpXchgU64(&pVM->tm.s.u64VirtualRawPrev, u64NanoTS, u64PrevNanoTS))
-            break;
-        AssertBreak(--cTries <= 0);
-        if (cTries < 25 && !VM_IS_EMT(pVM)) /* give up early */
-            break;
-    }
-
-    return u64NanoTS;
-}
-
-#endif
 
 
 /**
