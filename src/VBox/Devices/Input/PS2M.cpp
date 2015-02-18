@@ -508,8 +508,8 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
     int         dX, dY, dZ;
 
     /* Clamp the accumulated delta values to the allowed range. */
-    dX = RT_MIN(RT_MAX(pThis->iAccumX, -256), 255);
-    dY = RT_MIN(RT_MAX(pThis->iAccumY, -256), 255);
+    dX = RT_MIN(RT_MAX(pThis->iAccumX, -255), 255);
+    dY = RT_MIN(RT_MAX(pThis->iAccumY, -255), 255);
     dZ = RT_MIN(RT_MAX(pThis->iAccumZ, -8), 7);
 
     /* Start with the sync bit and buttons 1-3. */
@@ -601,8 +601,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
         case ACMD_REQ_STATUS:
             /* Report current status, sample rate, and resolution. */
-            //@todo: buttons
-            u8Val  = pThis->u8State;
+            u8Val  = pThis->u8State | (pThis->fCurrB & PS2M_STD_BTN_MASK);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8Resolution);
