@@ -57,15 +57,12 @@ typedef std::map<DhcpOpt_T, std::string> DhcpOptMap;
 typedef DhcpOptMap::iterator DhcpOptIterator;
 typedef DhcpOptMap::value_type DhcpOptValuePair;
 
-struct VmNameSlotKey;
-typedef struct VmNameSlotKey VmNameSlotKey;
-
 struct VmNameSlotKey
 {
-    std::string VmName;
+    const std::string VmName;
     uint8_t u8Slot;
 
-    VmNameSlotKey(std::string aVmName, uint8_t aSlot) :
+    VmNameSlotKey(const std::string &aVmName, uint8_t aSlot) :
       VmName(aVmName),
       u8Slot(aSlot) {}
 
