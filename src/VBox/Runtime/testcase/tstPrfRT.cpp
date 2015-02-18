@@ -43,7 +43,9 @@ void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, 
 }
 
 # define ITERATE(preexpr, expr, postexpr, cIterations) \
-    for (i = 0, u64TotalTS = 0, u64MinTS = ~0, u64MaxTS = 0; i < (cIterations); i++) \
+    AssertCompile(((cIterations) % 8) == 0); \
+    /* Min and max value. */ \
+    for (i = 0, u64MinTS = ~0, u64MaxTS = 0; i < (cIterations); i++) \
     { \
         { preexpr } \
         uint64_t u64StartTS = ASMReadTSC(); \
@@ -59,7 +61,28 @@ void PrintResult(uint64_t u64Ticks, uint64_t u64MaxTicks, uint64_t u64MinTicks, 
             u64MinTS = u64ElapsedTS; \
         if (u64ElapsedTS > u64MaxTS) \
             u64MaxTS = u64ElapsedTS; \
-        u64TotalTS += u64ElapsedTS; \
+    } \
+    { \
+        /* Calculate a good average value (may be smaller than min). */ \
+        i = (cIterations); \
+        AssertRelease((i % 8) == 0); \
+        { preexpr } \
+        uint64_t u64StartTS = ASMReadTSC(); \
+        while (i != 0) \
+        { \
+            { expr } \
+            { expr } \
+            { expr } \
+            { expr } \
+            { expr } \
+            { expr } \
+            { expr } \
+            { expr } \
+            i -= 8; \
+        } \
+        u64TotalTS = ASMReadTSC() - u64StartTS; \
+        { postexpr } \
+        i = (cIterations); \
     }
 
 #else  /* !AMD64 && !X86 */
@@ -106,7 +129,7 @@ int main(int argc, char **argv)
     /*
      * RTTimeNanoTS, RTTimeProgramNanoTS, RTTimeMilliTS, and RTTimeProgramMilliTS.
      */
-    ITERATE(RT_NOTHING, RTTimeNanoTS();, RT_NOTHING, 1000000);
+    ITERATE(RT_NOTHING, RTTimeNanoTS();, RT_NOTHING, _1M * 32);
     PrintResult(u64TotalTS, u64MaxTS, u64MinTS, i, "RTTimeNanoTS");
 
     ITERATE(RT_NOTHING, RTTimeProgramNanoTS();, RT_NOTHING, 1000000);
