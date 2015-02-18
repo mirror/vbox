@@ -2,7 +2,7 @@
  * vboxweb.h:
  *      header file for "real" web server code.
  *
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -12,16 +12,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
-/****************************************************************************
- *
- * debug macro
- *
- ****************************************************************************/
-
-void WebLog(const char *pszFormat, ...);
-
-#define WEBDEBUG(a) do { if (g_fVerbose) { WebLog a; } } while (0)
 
 #ifdef DEBUG
 #define LOG_GROUP LOG_GROUP_WEBSERVICE
@@ -34,9 +24,21 @@ void WebLog(const char *pszFormat, ...);
 
 #include <VBox/err.h>
 
-#include <iprt/stream.h>
+#include <iprt/asm.h>
 
 #include <string>
+
+/****************************************************************************
+ *
+ * debug macro
+ *
+ ****************************************************************************/
+
+RT_C_DECLS_BEGIN
+extern void WebLog(const char *pszFormat, ...);
+RT_C_DECLS_END
+
+#define WEBDEBUG(a) do { if (g_fVerbose) { WebLog a; } } while (0)
 
 /****************************************************************************
  *
@@ -45,7 +47,7 @@ void WebLog(const char *pszFormat, ...);
  ****************************************************************************/
 
 // type used by gSOAP-generated code
-typedef std::string WSDLT_ID;               // combined managed object ref (session ID plus object ID)
+typedef std::string WSDLT_ID;               // combined managed object ref (websession ID plus object ID)
 typedef std::string vbox__uuid;
 
 /****************************************************************************
@@ -56,10 +58,7 @@ typedef std::string vbox__uuid;
 
 extern bool g_fVerbose;
 
-extern PRTSTREAM g_pstrLog;
-
-extern util::WriteLockHandle  *g_pAuthLibLockHandle;
-extern util::WriteLockHandle  *g_pSessionsLockHandle;
+extern util::WriteLockHandle  *g_pWebsessionsLockHandle;
 
 extern const WSDLT_ID          g_EmptyWSDLID;
 
@@ -69,9 +68,9 @@ extern const WSDLT_ID          g_EmptyWSDLID;
  *
  ****************************************************************************/
 
-void RaiseSoapInvalidObjectFault(struct soap *soap, WSDLT_ID obj);
+extern void RaiseSoapInvalidObjectFault(struct soap *soap, WSDLT_ID obj);
 
-void RaiseSoapRuntimeFault(struct soap *soap, const WSDLT_ID &idThis, const char *pcszMethodName, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
+extern void RaiseSoapRuntimeFault(struct soap *soap, const WSDLT_ID &idThis, const char *pcszMethodName, HRESULT apirc, IUnknown *pObj, const com::Guid &iid);
 
 /****************************************************************************
  *
@@ -79,13 +78,14 @@ void RaiseSoapRuntimeFault(struct soap *soap, const WSDLT_ID &idThis, const char
  *
  ****************************************************************************/
 
-std::string ConvertComString(const com::Bstr &bstr);
+extern std::string ConvertComString(const com::Bstr &bstr);
 
-std::string ConvertComString(const com::Guid &bstr);
+extern std::string ConvertComString(const com::Guid &bstr);
 
-std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
+extern std::string Base64EncodeByteArray(ComSafeArrayIn(BYTE, aData));
 
-void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeArrayOut(BYTE, aData), const WSDLT_ID &idThis, const char *pszMethodName, IUnknown *pObj, const com::Guid &iid);
+extern void Base64DecodeByteArray(struct soap *soap, const std::string& aStr, ComSafeArrayOut(BYTE, aData), const WSDLT_ID &idThis, const char *pszMethodName, IUnknown *pObj, const com::Guid &iid);
+
 /****************************************************************************
  *
  * managed object reference classes
@@ -98,18 +98,17 @@ class ManagedObjectRef;
 /**
  *  An instance of this gets created for every client that logs onto the
  *  webservice (via the special IWebsessionManager::logon() SOAP API) and
- *  maintains the managed object references for that session.
+ *  maintains the managed object references for that websession.
  */
 class WebServiceSession
 {
     friend class ManagedObjectRef;
 
     private:
-        uint64_t                    _uSessionID;
+        uint64_t                    _uWebsessionID;
+        uint64_t                    _uNextObjectID;
         WebServiceSessionPrivate    *_pp;               // opaque data struct (defined in vboxweb.cpp)
         bool                        _fDestructing;
-
-        ManagedObjectRef            *_pISession;
 
         time_t                      _tLastObjectLookup;
 
@@ -129,10 +128,14 @@ class WebServiceSession
 
         uint64_t getID() const
         {
-            return _uSessionID;
+            return _uWebsessionID;
         }
 
-        const WSDLT_ID& getSessionWSDLID() const;
+        uint64_t createObjectID()
+        {
+            uint64_t id = ASMAtomicIncU64(&_uNextObjectID);
+            return id - 1;
+        }
 
         void touch();
 
@@ -141,25 +144,25 @@ class WebServiceSession
             return _tLastObjectLookup;
         }
 
-        static WebServiceSession* findSessionFromRef(const WSDLT_ID &id);
+        static WebServiceSession* findWebsessionFromRef(const WSDLT_ID &id);
 
         void DumpRefs();
 };
 
 /**
  *  ManagedObjectRef is used to map COM pointers to object IDs
- *  within a session. Such object IDs are 64-bit integers.
+ *  within a websession. Such object IDs are 64-bit integers.
  *
  *  When a webservice method call is invoked on an object, it
  *  has an opaque string called a "managed object reference". Such
- *  a string consists of a session ID combined with an object ID.
+ *  a string consists of a websession ID combined with an object ID.
  *
  */
 class ManagedObjectRef
 {
     protected:
-        // owning session:
-        WebServiceSession           &_session;
+        // owning websession:
+        WebServiceSession           &_websession;
 
 
         IUnknown                    *_pobjUnknown;          // pointer to IUnknown interface for this MOR
@@ -178,7 +181,7 @@ class ManagedObjectRef
         WSDLT_ID                    _strID;
 
     public:
-        ManagedObjectRef(WebServiceSession &session,
+        ManagedObjectRef(WebServiceSession &websession,
                          IUnknown *pobjUnknown,
                          void *pobjInterface,
                          const com::Guid &guidInterface,
@@ -223,11 +226,6 @@ class ManagedObjectRef
         static int findRefFromId(const WSDLT_ID &id,
                                  ManagedObjectRef **pRef,
                                  bool fNullAllowed);
-
-        static ManagedObjectRef* findFromPtr(ComPtr<IUnknown> pcu);
-        static ManagedObjectRef* create(const WSDLT_ID &idParent,
-                                        ComPtr<IUnknown> pcu);
-
 };
 
 /**
@@ -262,7 +260,7 @@ int findComPtrFromId(struct soap *soap,
                      bool fNullAllowed)
 {
     // findRefFromId requires thelock
-    util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+    util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
     int rc;
     ManagedObjectRef *pRef;
@@ -313,21 +311,22 @@ int findComPtrFromId(struct soap *soap,
 }
 
 /**
- * Creates a new managed object for the given COM pointer. If a reference already exists
- * for the given pointer, then that reference's ID is returned instead.
+ * Creates a new managed object reference for the given COM pointer. If one
+ * already exists for the given pointer, then that reference's ID is returned.
  *
- * This gets called from tons of generated code in methodmaps.cpp to
- * resolve objects *returned* from COM methods (i.e. create MOR strings from COM objects
- * which might have been newly created).
+ * This gets called from tons of generated code in methodmaps.cpp to resolve
+ * objects *returned* from COM methods (i.e. create MOR strings from COM
+ * objects which might have been newly created).
  *
- * @param idParent managed object reference of calling object; used to extract session ID
+ * @param idParent managed object reference of calling object; used to extract
+ *              websession ID
  * @param pc COM object for which to create a reference
  * @return existing or new managed object reference
  */
 template <class T>
 const WSDLT_ID& createOrFindRefFromComPtr(const WSDLT_ID &idParent,
                                           const char *pcszInterface,
-                                          ComPtr<T> &pc)
+                                          const ComPtr<T> &pc)
 {
     // NULL comptr should return NULL MOR
     if (pc.isNull())
@@ -336,17 +335,17 @@ const WSDLT_ID& createOrFindRefFromComPtr(const WSDLT_ID &idParent,
         return g_EmptyWSDLID;
     }
 
-    util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
-    WebServiceSession *pSession;
-    if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
+    util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+    WebServiceSession *pWebsession;
+    if ((pWebsession = WebServiceSession::findWebsessionFromRef(idParent)))
     {
         ManagedObjectRef *pRef;
 
         // we need an IUnknown pointer for the MOR
         ComPtr<IUnknown> pobjUnknown = pc;
 
-        if (    ((pRef = pSession->findRefFromPtr(pobjUnknown)))
-             || ((pRef = new ManagedObjectRef(*pSession,
+        if (    ((pRef = pWebsession->findRefFromPtr(pobjUnknown)))
+             || ((pRef = new ManagedObjectRef(*pWebsession,
                                               pobjUnknown,          // IUnknown *pobjUnknown
                                               pc,                   // void *pobjInterface
                                               COM_IIDOF(T),
@@ -355,7 +354,7 @@ const WSDLT_ID& createOrFindRefFromComPtr(const WSDLT_ID &idParent,
             return pRef->getWSDLID();
     }
 
-    // session has expired, return an empty MOR instead of allocating a
+    // websession has expired, return an empty MOR instead of allocating a
     // new reference which couldn't be used anyway.
     return g_EmptyWSDLID;
 }

@@ -1216,20 +1216,19 @@ print version;</screen></para>
                 xreflabel="IWebsessionManager::logon()" />.</para>
 
                 <para>Upon logon, the websession manager creates one instance
-                of <xref linkend="IVirtualBox" xreflabel="IVirtualBox" /> and
-                another object of <xref linkend="ISession"
-                xreflabel="ISession" /> representing the web service session.
-                This can be retrieved using <xref
+                of <xref linkend="IVirtualBox" xreflabel="IVirtualBox" />,
+                which can be used for directly performing calls to its
+                methods, or used as a parameter for calling some methods of
+                <xref linkend="IWebsessionManager" xreflabel="IWebsessionManager" />.
+                Creating Main API session objects is performed using <xref
                 linkend="IWebsessionManager__getSessionObject"
                 xreflabel="IWebsessionManager::getSessionObject()" />.</para>
 
                 <para>(Technically, there is always only one <xref
                 linkend="IVirtualBox" xreflabel="IVirtualBox" /> object, which
-                is shared between all sessions and clients, as it is a COM
+                is shared between all websessions and clients, as it is a COM
                 singleton. However, each session receives its own managed
-                object reference to it. The <xref linkend="ISession"
-                xreflabel="ISession" /> object, however, is created and
-                destroyed for each session.)</para>
+                object reference to it.)</para>
               </listitem>
 
               <listitem>
@@ -1527,7 +1526,7 @@ mgr = VirtualBoxManager(None, None)
 vbox = mgr.vbox
 name = "Linux"
 mach = vbox.findMachine(name)
-session = mgr.mgr.getSessionObject(vbox)
+session = mgr.getSessionObject(vbox)
 progress = mach.launchVMProcess(session, "gui", "")
 progress.waitForCompletion(-1)
 mgr.closeMachineSession(session)
@@ -1548,7 +1547,7 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
         <computeroutput>vbox.machines</computeroutput> to access a list of
         available virtual machines in case of XPCOM), and a mechanism of
         uniform session creation and closing
-        (<computeroutput>mgr.mgr.getSessionObject()</computeroutput>).</para>
+        (<computeroutput>mgr.getSessionObject()</computeroutput>).</para>
 
         <para>In case you want to use the glue layer with a different Python
         installation, use these steps in a shell to add the necessary
@@ -2291,11 +2290,11 @@ String name = machine.getName();</screen>Boolean attribute getters can
       "sessions", in particular, the <xref linkend="ISession"
       xreflabel="ISession" /> interface. Each process which talks to
       VirtualBox needs its own instance of ISession. In the web service, you
-      cannot create such an object, but
-      <computeroutput>vboxwebsrv</computeroutput> creates one for you when you
-      log on, which you can obtain by calling <xref
+      can request the creation of such an object by calling <xref
       linkend="IWebsessionManager__getSessionObject"
-      xreflabel="IWebsessionManager::getSessionObject()" />.</para>
+      xreflabel="IWebsessionManager::getSessionObject()" />. More complex
+      management tasks might need multiple instances of ISession, and each call
+      returns a new one.</para>
 
       <para>This session object must then be used like a mutex semaphore in
       common programming environments. Before you can change machine settings,
@@ -3906,6 +3905,15 @@ AuthResult AUTHCALL AuthEntry(
           </listitem>
 
           </itemizedlist></para>
+        </listitem>
+
+        <listitem>
+          <para>The method <xref linkend="IWebsessionManager__getSessionObject"
+          xreflabel="IWebsessionManager::getSessionObject()" /> now returns
+          a new <xref linkend="ISession" xreflabel="ISession" /> instance for
+          every invocation. This puts the behavior in line with other binding
+          styles, which never forced the equivalent of establishing another
+          connection and logging in again to get another instance.</para>
         </listitem>
       </itemizedlist>
     </sect1>

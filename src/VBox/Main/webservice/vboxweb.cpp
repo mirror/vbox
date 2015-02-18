@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2007-2014 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -85,19 +85,17 @@ static void WebLogSoapError(struct soap *soap);
  *
  ****************************************************************************/
 
-typedef std::map<uint64_t, ManagedObjectRef*>
-            ManagedObjectsMapById;
-typedef std::map<uint64_t, ManagedObjectRef*>::iterator
-            ManagedObjectsIteratorById;
-typedef std::map<uintptr_t, ManagedObjectRef*>
-            ManagedObjectsMapByPtr;
+typedef std::map<uint64_t, ManagedObjectRef*>   ManagedObjectsMapById;
+typedef ManagedObjectsMapById::iterator         ManagedObjectsIteratorById;
+typedef std::map<uintptr_t, ManagedObjectRef*>  ManagedObjectsMapByPtr;
+typedef ManagedObjectsMapByPtr::iterator        ManagedObjectsIteratorByPtr;
 
-typedef std::map<uint64_t, WebServiceSession*>
-            SessionsMap;
-typedef std::map<uint64_t, WebServiceSession*>::iterator
-            SessionsMapIterator;
+typedef std::map<uint64_t, WebServiceSession*>  WebsessionsMap;
+typedef WebsessionsMap::iterator                WebsessionsMapIterator;
 
-int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser);
+typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
+
+static int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser);
 
 /****************************************************************************
  *
@@ -109,40 +107,41 @@ static ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
 
 // generated strings in methodmaps.cpp
 extern const char       *g_pcszISession,
-                        *g_pcszIVirtualBox;
+                        *g_pcszIVirtualBox,
+                        *g_pcszIVirtualBoxErrorInfo;
 
 // globals for vboxweb command-line arguments
 #define DEFAULT_TIMEOUT_SECS 300
 #define DEFAULT_TIMEOUT_SECS_STRING "300"
-int                     g_iWatchdogTimeoutSecs = DEFAULT_TIMEOUT_SECS;
-int                     g_iWatchdogCheckInterval = 5;
+static int              g_iWatchdogTimeoutSecs = DEFAULT_TIMEOUT_SECS;
+static int              g_iWatchdogCheckInterval = 5;
 
-const char              *g_pcszBindToHost = NULL;       // host; NULL = localhost
-unsigned int            g_uBindToPort = 18083;          // port
-unsigned int            g_uBacklog = 100;               // backlog = max queue size for requests
+static const char       *g_pcszBindToHost = NULL;       // host; NULL = localhost
+static unsigned int     g_uBindToPort = 18083;          // port
+static unsigned int     g_uBacklog = 100;               // backlog = max queue size for requests
 
 #ifdef WITH_OPENSSL
-bool                    g_fSSL = false;                 // if SSL is enabled
-const char              *g_pcszKeyFile = NULL;          // server key file
-const char              *g_pcszPassword = NULL;         // password for server key
-const char              *g_pcszCACert = NULL;           // file with trusted CA certificates
-const char              *g_pcszCAPath = NULL;           // directory with trusted CA certificates
-const char              *g_pcszDHFile = NULL;           // DH file name or DH key length in bits, NULL=use RSA
-const char              *g_pcszRandFile = NULL;         // file with random data seed
-const char              *g_pcszSID = "vboxwebsrv";      // server ID for SSL session cache
+static bool             g_fSSL = false;                 // if SSL is enabled
+static const char       *g_pcszKeyFile = NULL;          // server key file
+static const char       *g_pcszPassword = NULL;         // password for server key
+static const char       *g_pcszCACert = NULL;           // file with trusted CA certificates
+static const char       *g_pcszCAPath = NULL;           // directory with trusted CA certificates
+static const char       *g_pcszDHFile = NULL;           // DH file name or DH key length in bits, NULL=use RSA
+static const char       *g_pcszRandFile = NULL;         // file with random data seed
+static const char       *g_pcszSID = "vboxwebsrv";      // server ID for SSL session cache
 #endif /* WITH_OPENSSL */
 
-unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker threads
-unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
+static unsigned int     g_cMaxWorkerThreads = 100;      // max. no. of worker threads
+static unsigned int     g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
 
-const char              *g_pcszAuthentication = NULL;   // web service authentication
+static const char       *g_pcszAuthentication = NULL;   // web service authentication
 
-uint32_t                g_cHistory = 10;                // enable log rotation, 10 files
-uint32_t                g_uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
-uint64_t                g_uHistoryFileSize = 100 * _1M; // max 100MB per file
+static uint32_t         g_cHistory = 10;                // enable log rotation, 10 files
+static uint32_t         g_uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
+static uint64_t         g_uHistoryFileSize = 100 * _1M; // max 100MB per file
 bool                    g_fVerbose = false;             // be verbose
 
-bool                    g_fDaemonize = false;           // run in background.
+static bool             g_fDaemonize = false;           // run in background.
 
 const WSDLT_ID          g_EmptyWSDLID;                  // for NULL MORs
 
@@ -154,32 +153,27 @@ const WSDLT_ID          g_EmptyWSDLID;                  // for NULL MORs
 
 // The one global SOAP queue created by main().
 class SoapQ;
-SoapQ               *g_pSoapQ = NULL;
+static SoapQ                    *g_pSoapQ = NULL;
 
 // this mutex protects the auth lib and authentication
-util::WriteLockHandle  *g_pAuthLibLockHandle;
+static util::WriteLockHandle    *g_pAuthLibLockHandle;
 
 // this mutex protects the global VirtualBox reference below
-static util::RWLockHandle *g_pVirtualBoxLockHandle;
+static util::RWLockHandle       *g_pVirtualBoxLockHandle;
 
-static ComPtr<IVirtualBox> g_pVirtualBox = NULL;
+static ComPtr<IVirtualBox>      g_pVirtualBox = NULL;
 
 // this mutex protects all of the below
-util::WriteLockHandle  *g_pSessionsLockHandle;
+util::WriteLockHandle           *g_pWebsessionsLockHandle;
 
-SessionsMap         g_mapSessions;
-ULONG64             g_iMaxManagedObjectID = 0;
-ULONG64             g_cManagedObjects = 0;
+static WebsessionsMap           g_mapWebsessions;
+static ULONG64                  g_cManagedObjects = 0;
 
 // this mutex protects g_mapThreads
-util::RWLockHandle  *g_pThreadsLockHandle;
-
-// this mutex synchronizes logging
-util::WriteLockHandle *g_pWebLogLockHandle;
+static util::RWLockHandle       *g_pThreadsLockHandle;
 
 // Threads map, so we can quickly map an RTTHREAD struct to a logger prefix
-typedef std::map<RTTHREAD, com::Utf8Str> ThreadsMap;
-ThreadsMap          g_mapThreads;
+static ThreadsMap               g_mapThreads;
 
 /****************************************************************************
  *
@@ -217,7 +211,7 @@ static const RTGETOPTDEF g_aOptions[]
         { "--loginterval",      'I', RTGETOPT_REQ_UINT32 }
     };
 
-void DisplayHelp()
+static void DisplayHelp()
 {
     RTStrmPrintf(g_pStdErr, "\nUsage: vboxwebsrv [options]\n\nSupported options (default values in brackets):\n");
     for (unsigned i = 0;
@@ -639,18 +633,18 @@ public:
                         g_pVirtualBox = NULL;
                     }
                     {
-                        // we're messing with sessions, so lock them
-                        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
-                        WEBDEBUG(("SVC unavailable: deleting %d sessions\n", g_mapSessions.size()));
+                        // we're messing with websessions, so lock them
+                        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+                        WEBDEBUG(("SVC unavailable: deleting %d websessions\n", g_mapWebsessions.size()));
 
-                        SessionsMap::iterator it = g_mapSessions.begin(),
-                                              itEnd = g_mapSessions.end();
+                        WebsessionsMapIterator it = g_mapWebsessions.begin(),
+                                               itEnd = g_mapWebsessions.end();
                         while (it != itEnd)
                         {
-                            WebServiceSession *pSession = it->second;
-                            WEBDEBUG(("SVC unavailable: Session %llX stale, deleting\n", pSession->getID()));
-                            delete pSession;
-                            it = g_mapSessions.begin();
+                            WebServiceSession *pWebsession = it->second;
+                            WEBDEBUG(("SVC unavailable: websession %#llx stale, deleting\n", pWebsession->getID()));
+                            delete pWebsession;
+                            it = g_mapWebsessions.begin();
                         }
                     }
                 }
@@ -828,7 +822,7 @@ static void CRYPTO_thread_cleanup()
  *
  ****************************************************************************/
 
-void doQueuesLoop()
+static void doQueuesLoop()
 {
 #ifdef WITH_OPENSSL
     if (g_fSSL && CRYPTO_thread_setup())
@@ -908,7 +902,7 @@ void doQueuesLoop()
  * the loop that takes SOAP calls from HTTP and serves them by handing sockets to the
  * SOAP queue worker threads.
  */
-int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
+static int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
     util::AutoWriteLock thrLock(g_pThreadsLockHandle COMMA_LOCKVAL_SRC_POS);
@@ -1201,9 +1195,8 @@ int main(int argc, char *argv[])
     // create the global mutexes
     g_pAuthLibLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
     g_pVirtualBoxLockHandle = new util::RWLockHandle(util::LOCKCLASS_WEBSERVICE);
-    g_pSessionsLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
+    g_pWebsessionsLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
     g_pThreadsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
-    g_pWebLogLockHandle = new util::WriteLockHandle(util::LOCKCLASS_WEBSERVICE);
 
     // SOAP queue pumper thread
     rc = RTThreadCreate(NULL,
@@ -1265,10 +1258,11 @@ int main(int argc, char *argv[])
 /**
  * Watchdog thread, runs in the background while the webservice is alive.
  *
- * This gets started by main() and runs in the background to check all sessions
+ * This gets started by main() and runs in the background to check all websessions
  * for whether they have been no requests in a configurable timeout period. In
- * that case, the session is automatically logged off.
+ * that case, the websession is automatically logged off.
  */
+/* static */
 int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
 {
     // store a log prefix for this thread
@@ -1286,23 +1280,21 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
         time_t                      tNow;
         time(&tNow);
 
-        // we're messing with sessions, so lock them
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
-        WEBDEBUG(("Watchdog: checking %d sessions\n", g_mapSessions.size()));
+        // we're messing with websessions, so lock them
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        WEBDEBUG(("Watchdog: checking %d websessions\n", g_mapWebsessions.size()));
 
-        SessionsMap::iterator it = g_mapSessions.begin(),
-                              itEnd = g_mapSessions.end();
+        WebsessionsMapIterator it = g_mapWebsessions.begin(),
+                               itEnd = g_mapWebsessions.end();
         while (it != itEnd)
         {
-            WebServiceSession *pSession = it->second;
-            WEBDEBUG(("Watchdog: tNow: %d, session timestamp: %d\n", tNow, pSession->getLastObjectLookup()));
-            if (   tNow
-                 > pSession->getLastObjectLookup() + g_iWatchdogTimeoutSecs
-               )
+            WebServiceSession *pWebsession = it->second;
+            WEBDEBUG(("Watchdog: tNow: %d, websession timestamp: %d\n", tNow, pWebsession->getLastObjectLookup()));
+            if (tNow > pWebsession->getLastObjectLookup() + g_iWatchdogTimeoutSecs)
             {
-                WEBDEBUG(("Watchdog: Session %llX timed out, deleting\n", pSession->getID()));
-                delete pSession;
-                it = g_mapSessions.begin();
+                WEBDEBUG(("Watchdog: websession %#llx timed out, deleting\n", pWebsession->getID()));
+                delete pWebsession;
+                it = g_mapWebsessions.begin();
             }
             else
                 ++it;
@@ -1337,10 +1329,10 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
  * @param extype
  * @param ex
  */
-void RaiseSoapFault(struct soap *soap,
-                    const char *pcsz,
-                    int extype,
-                    void *ex)
+static void RaiseSoapFault(struct soap *soap,
+                           const char *pcsz,
+                           int extype,
+                           void *ex)
 {
     // raise the fault
     soap_sender_fault(soap, pcsz, NULL);
@@ -1514,7 +1506,7 @@ void RaiseSoapRuntimeFault(struct soap *soap,
     ComPtr<IVirtualBoxErrorInfo> pVirtualBoxErrorInfo;
     info.getVirtualBoxErrorInfo(pVirtualBoxErrorInfo);
     ex->resultCode = apirc;
-    ex->returnval = createOrFindRefFromComPtr(idThis, "IVirtualBoxErrorInfo", pVirtualBoxErrorInfo);
+    ex->returnval = createOrFindRefFromComPtr(idThis, g_pcszIVirtualBoxErrorInfo, pVirtualBoxErrorInfo);
 
     RaiseSoapFault(soap,
                    str.c_str(),
@@ -1528,26 +1520,18 @@ void RaiseSoapRuntimeFault(struct soap *soap,
  *
  ****************************************************************************/
 
-uint64_t str2ulonglong(const char *pcsz)
-{
-    uint64_t u = 0;
-    RTStrToUInt64Full(pcsz, 16, &u);
-    return u;
-}
-
 /**
- * Splits a managed object reference (in string form, as
- * passed in from a SOAP method call) into two integers for
- * session and object IDs, respectively.
+ * Splits a managed object reference (in string form, as passed in from a SOAP
+ * method call) into two integers for websession and object IDs, respectively.
  *
  * @param id
- * @param sessid
- * @param objid
+ * @param pWebsessId
+ * @param pObjId
  * @return
  */
-bool SplitManagedObjectRef(const WSDLT_ID &id,
-                           uint64_t *pSessid,
-                           uint64_t *pObjid)
+static bool SplitManagedObjectRef(const WSDLT_ID &id,
+                                  uint64_t *pWebsessId,
+                                  uint64_t *pObjId)
 {
     // 64-bit numbers in hex have 16 digits; hence
     // the object-ref string must have 16 + "-" + 16 characters
@@ -1559,10 +1543,10 @@ bool SplitManagedObjectRef(const WSDLT_ID &id,
         char psz[34];
         memcpy(psz, id.c_str(), 34);
         psz[16] = '\0';
-        if (pSessid)
-            *pSessid = str2ulonglong(psz);
-        if (pObjid)
-            *pObjid = str2ulonglong(psz + 17);
+        if (pWebsessId)
+            RTStrToUInt64Full(psz, 16, pWebsessId);
+        if (pObjId)
+            RTStrToUInt64Full(psz + 17, 16, pObjId);
         return true;
     }
 
@@ -1571,20 +1555,20 @@ bool SplitManagedObjectRef(const WSDLT_ID &id,
 
 /**
  * Creates a managed object reference (in string form) from
- * two integers representing a session and object ID, respectively.
+ * two integers representing a websession and object ID, respectively.
  *
  * @param sz Buffer with at least 34 bytes space to receive MOR string.
- * @param sessid
- * @param objid
+ * @param websessId
+ * @param objId
  * @return
  */
-void MakeManagedObjectRef(char *sz,
-                          uint64_t &sessid,
-                          uint64_t &objid)
+static void MakeManagedObjectRef(char *sz,
+                                 uint64_t websessId,
+                                 uint64_t objId)
 {
-    RTStrFormatNumber(sz, sessid, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
+    RTStrFormatNumber(sz, websessId, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
     sz[16] = '-';
-    RTStrFormatNumber(sz + 17, objid, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
+    RTStrFormatNumber(sz + 17, objId, 16, 16, 0, RTSTR_F_64BIT | RTSTR_F_ZEROPAD);
 }
 
 /****************************************************************************
@@ -1601,51 +1585,45 @@ class WebServiceSessionPrivate
 };
 
 /**
- * Constructor for the session object.
+ * Constructor for the websession object.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
  * @param username
  * @param password
  */
 WebServiceSession::WebServiceSession()
-    : _fDestructing(false),
-      _pISession(NULL),
+    : _uNextObjectID(1),        // avoid 0 for no real reason
+      _fDestructing(false),
       _tLastObjectLookup(0)
 {
     _pp = new WebServiceSessionPrivate;
-    _uSessionID = RTRandU64();
+    _uWebsessionID = RTRandU64();
 
-    // register this session globally
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
-    g_mapSessions[_uSessionID] = this;
+    // register this websession globally
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
+    g_mapWebsessions[_uWebsessionID] = this;
 }
 
 /**
  * Destructor. Cleans up and destroys all contained managed object references on the way.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  */
 WebServiceSession::~WebServiceSession()
 {
     // delete us from global map first so we can't be found
     // any more while we're cleaning up
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
-    g_mapSessions.erase(_uSessionID);
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
+    g_mapWebsessions.erase(_uWebsessionID);
 
     // notify ManagedObjectRef destructor so it won't
     // remove itself from the maps; this avoids rebalancing
     // the map's tree on every delete as well
     _fDestructing = true;
 
-    // if (_pISession)
-    // {
-    //     delete _pISession;
-    //     _pISession = NULL;
-    // }
-
-    ManagedObjectsMapById::iterator it,
-                                    end = _pp->_mapManagedObjectsById.end();
+    ManagedObjectsIteratorById it,
+                               end = _pp->_mapManagedObjectsById.end();
     for (it = _pp->_mapManagedObjectsById.begin();
          it != end;
          ++it)
@@ -1770,40 +1748,11 @@ int WebServiceSession::authenticate(const char *pcszUsername,
 
     lock.release();
 
-    if (!rc)
-    {
-        do
-        {
-            // now create the ISession object that this webservice session can use
-            // (and of which IWebsessionManager::getSessionObject returns a managed object reference)
-            ComPtr<ISession> session;
-            rc = g_pVirtualBoxClient->COMGETTER(Session)(session.asOutParam());
-            if (FAILED(rc))
-            {
-                WEBDEBUG(("ERROR: cannot create session object!"));
-                break;
-            }
-
-            ComPtr<IUnknown> p2 = session;
-            _pISession = new ManagedObjectRef(*this,
-                                              p2,                               // IUnknown *pobjUnknown
-                                              session,                          // void *pobjInterface
-                                              com::Guid(COM_IIDOF(ISession)),
-                                              g_pcszISession);
-
-            if (g_fVerbose)
-            {
-                ISession *p = session;
-                WEBDEBUG(("   * %s: created session object with comptr %#p, MOR = %s\n", __FUNCTION__, p, _pISession->getWSDLID().c_str()));
-            }
-        } while (0);
-    }
-
     return rc;
 }
 
 /**
- *  Look up, in this session, whether a ManagedObjectRef has already been
+ *  Look up, in this websession, whether a ManagedObjectRef has already been
  *  created for the given COM pointer.
  *
  *  Note how we require that a ComPtr<IUnknown> is passed, which causes a
@@ -1812,18 +1761,18 @@ int WebServiceSession::authenticate(const char *pcszUsername,
  *  ComPtr<IVirtualBox>, for example. As we store the ComPtr<IUnknown> in
  *  our private hash table, we must search for one too.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
  * @param pcu pointer to a COM object.
  * @return The existing ManagedObjectRef that represents the COM object, or NULL if there's none yet.
  */
 ManagedObjectRef* WebServiceSession::findRefFromPtr(const IUnknown *pObject)
 {
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
 
     uintptr_t ulp = (uintptr_t)pObject;
     // WEBDEBUG(("   %s: looking up %#lx\n", __FUNCTION__, ulp));
-    ManagedObjectsMapByPtr::iterator it = _pp->_mapManagedObjectsByPtr.find(ulp);
+    ManagedObjectsIteratorByPtr it = _pp->_mapManagedObjectsByPtr.find(ulp);
     if (it != _pp->_mapManagedObjectsByPtr.end())
     {
         ManagedObjectRef *pRef = it->second;
@@ -1835,47 +1784,38 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const IUnknown *pObject)
 }
 
 /**
- * Static method which attempts to find the session for which the given managed
- * object reference was created, by splitting the reference into the session and
- * object IDs and then looking up the session object for that session ID.
+ * Static method which attempts to find the websession for which the given
+ * managed object reference was created, by splitting the reference into the
+ * websession and object IDs and then looking up the websession object.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle in read mode.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle in read mode.
  *
- * @param id Managed object reference (with combined session and object IDs).
+ * @param id Managed object reference (with combined websession and object IDs).
  * @return
  */
-WebServiceSession* WebServiceSession::findSessionFromRef(const WSDLT_ID &id)
+WebServiceSession *WebServiceSession::findWebsessionFromRef(const WSDLT_ID &id)
 {
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
 
-    WebServiceSession *pSession = NULL;
-    uint64_t sessid;
+    WebServiceSession *pWebsession = NULL;
+    uint64_t websessId;
     if (SplitManagedObjectRef(id,
-                              &sessid,
+                              &websessId,
                               NULL))
     {
-        SessionsMapIterator it = g_mapSessions.find(sessid);
-        if (it != g_mapSessions.end())
-            pSession = it->second;
+        WebsessionsMapIterator it = g_mapWebsessions.find(websessId);
+        if (it != g_mapWebsessions.end())
+            pWebsession = it->second;
     }
-    return pSession;
+    return pWebsession;
 }
 
 /**
+ * Touches the websession to prevent it from timing out.
  *
- */
-const WSDLT_ID& WebServiceSession::getSessionWSDLID() const
-{
-    return _pISession->getWSDLID();
-}
-
-/**
- * Touches the webservice session to prevent it from timing out.
- *
- * Each webservice session has an internal timestamp that records
- * the last request made to it from the client that started it.
- * If no request was made within a configurable timeframe, then
- * the client is logged off automatically,
+ * Each websession has an internal timestamp that records the last request made
+ * to it from the client that started it. If no request was made within a
+ * configurable timeframe, then the client is logged off automatically,
  * by calling IWebsessionManager::logoff()
  */
 void WebServiceSession::touch()
@@ -1892,9 +1832,10 @@ void WebServiceSession::touch()
 
 /**
  *  Constructor, which assigns a unique ID to this managed object
- *  reference and stores it two global hashes:
+ *  reference and stores it in two hashes (living in the associated
+ *  WebServiceSession object):
  *
- *   a) G_mapManagedObjectsById, which maps ManagedObjectID's to
+ *   a) _mapManagedObjectsById, which maps ManagedObjectID's to
  *      instances of this class; this hash is then used by the
  *      findObjectFromRef() template function in vboxweb.h
  *      to quickly retrieve the COM object from its managed
@@ -1902,7 +1843,7 @@ void WebServiceSession::touch()
  *      in methodmaps.cpp, when a web service client passes in
  *      a managed object ID);
  *
- *   b) G_mapManagedObjectsByComPtr, which maps COM pointers to
+ *   b) _mapManagedObjectsByPtr, which maps COM pointers to
  *      instances of this class; this hash is used by
  *      createRefFromObject() to quickly figure out whether an
  *      instance already exists for a given COM pointer.
@@ -1921,20 +1862,20 @@ void WebServiceSession::touch()
  *  createOrFindRefFromComPtr() template function in vboxweb.h, which
  *  does perform that check.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
- * @param session Session to which the MOR will be added.
+ * @param websession Websession to which the MOR will be added.
  * @param pobjUnknown Pointer to IUnknown* interface for the COM object; this will be used in the hashes.
  * @param pobjInterface Pointer to a specific interface for the COM object, described by guidInterface.
  * @param guidInterface Interface which pobjInterface points to.
  * @param pcszInterface String representation of that interface (e.g. "IMachine") for readability and logging.
  */
-ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
+ManagedObjectRef::ManagedObjectRef(WebServiceSession &websession,
                                    IUnknown *pobjUnknown,
                                    void *pobjInterface,
                                    const com::Guid &guidInterface,
                                    const char *pcszInterface)
-    : _session(session),
+    : _websession(websession),
       _pobjUnknown(pobjUnknown),
       _pobjInterface(pobjInterface),
       _guidInterface(guidInterface),
@@ -1948,21 +1889,21 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
     uint32_t cRefs2 = ((IUnknown*)pobjInterface)->AddRef();
     _ulp = (uintptr_t)pobjUnknown;
 
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
-    _id = ++g_iMaxManagedObjectID;
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
+    _id = websession.createObjectID();
     // and count globally
     ULONG64 cTotal = ++g_cManagedObjects;           // raise global count and make a copy for the debug message below
 
     char sz[34];
-    MakeManagedObjectRef(sz, session._uSessionID, _id);
+    MakeManagedObjectRef(sz, websession._uWebsessionID, _id);
     _strID = sz;
 
-    session._pp->_mapManagedObjectsById[_id] = this;
-    session._pp->_mapManagedObjectsByPtr[_ulp] = this;
+    websession._pp->_mapManagedObjectsById[_id] = this;
+    websession._pp->_mapManagedObjectsByPtr[_ulp] = this;
 
-    session.touch();
+    websession.touch();
 
-    WEBDEBUG(("   * %s: MOR created for %s*=%#p (IUnknown*=%#p; COM refcount now %RI32/%RI32), new ID is %llX; now %lld objects total\n",
+    WEBDEBUG(("   * %s: MOR created for %s*=%#p (IUnknown*=%#p; COM refcount now %RI32/%RI32), new ID is %#llx; now %lld objects total\n",
               __FUNCTION__,
               pcszInterface,
               pobjInterface,
@@ -1977,11 +1918,11 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
  * Destructor; removes the instance from the global hash of
  * managed objects. Calls Release() on the contained COM object.
  *
- * Preconditions: Caller must have locked g_pSessionsLockHandle.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  */
 ManagedObjectRef::~ManagedObjectRef()
 {
-    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
+    Assert(g_pWebsessionsLockHandle->isWriteLockOnCurrentThread());
     ULONG64 cTotal = --g_cManagedObjects;
 
     Assert(_pobjUnknown);
@@ -1991,17 +1932,17 @@ ManagedObjectRef::~ManagedObjectRef()
     // both as well, but in reverse order
     uint32_t cRefs2 = ((IUnknown*)_pobjInterface)->Release();
     uint32_t cRefs1 = _pobjUnknown->Release();
-    WEBDEBUG(("   * %s: deleting MOR for ID %llX (%s; COM refcount now %RI32/%RI32); now %lld objects total\n", __FUNCTION__, _id, _pcszInterface, cRefs1, cRefs2, cTotal));
+    WEBDEBUG(("   * %s: deleting MOR for ID %#llx (%s; COM refcount now %RI32/%RI32); now %lld objects total\n", __FUNCTION__, _id, _pcszInterface, cRefs1, cRefs2, cTotal));
 
-    // if we're being destroyed from the session's destructor,
+    // if we're being destroyed from the websession's destructor,
     // then that destructor is iterating over the maps, so
     // don't remove us there! (data integrity + speed)
-    if (!_session._fDestructing)
+    if (!_websession._fDestructing)
     {
-        WEBDEBUG(("   * %s: removing from session maps\n", __FUNCTION__));
-        _session._pp->_mapManagedObjectsById.erase(_id);
-        if (_session._pp->_mapManagedObjectsByPtr.erase(_ulp) != 1)
-            WEBDEBUG(("   WARNING: could not find %llX in _mapManagedObjectsByPtr\n", _ulp));
+        WEBDEBUG(("   * %s: removing from websession maps\n", __FUNCTION__));
+        _websession._pp->_mapManagedObjectsById.erase(_id);
+        if (_websession._pp->_mapManagedObjectsByPtr.erase(_ulp) != 1)
+            WEBDEBUG(("   WARNING: could not find %#llx in _mapManagedObjectsByPtr\n", _ulp));
     }
 }
 
@@ -2012,11 +1953,11 @@ ManagedObjectRef::~ManagedObjectRef()
  * This has been extracted into this non-template function to reduce
  * code bloat as we have the actual STL map lookup only in this function.
  *
- * This also "touches" the timestamp in the session whose ID is encoded
- * in the given integer ID, in order to prevent the session from timing
+ * This also "touches" the timestamp in the websession whose ID is encoded
+ * in the given integer ID, in order to prevent the websession from timing
  * out.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pWebsessionsLockHandle.
  *
  * @param strId
  * @param iter
@@ -2037,31 +1978,31 @@ int ManagedObjectRef::findRefFromId(const WSDLT_ID &id,
             return 0;
         }
 
-        uint64_t sessid;
-        uint64_t objid;
+        uint64_t websessId;
+        uint64_t objId;
         WEBDEBUG(("   %s(): looking up objref %s\n", __FUNCTION__, id.c_str()));
         if (!SplitManagedObjectRef(id,
-                                   &sessid,
-                                   &objid))
+                                   &websessId,
+                                   &objId))
         {
             rc = VERR_WEB_INVALID_MANAGED_OBJECT_REFERENCE;
             break;
         }
 
-        SessionsMapIterator it = g_mapSessions.find(sessid);
-        if (it == g_mapSessions.end())
+        WebsessionsMapIterator it = g_mapWebsessions.find(websessId);
+        if (it == g_mapWebsessions.end())
         {
-            WEBDEBUG(("   %s: cannot find session for objref %s\n", __FUNCTION__, id.c_str()));
+            WEBDEBUG(("   %s: cannot find websession for objref %s\n", __FUNCTION__, id.c_str()));
             rc = VERR_WEB_INVALID_SESSION_ID;
             break;
         }
 
-        WebServiceSession *pSess = it->second;
-        // "touch" session to prevent it from timing out
-        pSess->touch();
+        WebServiceSession *pWebsession = it->second;
+        // "touch" websession to prevent it from timing out
+        pWebsession->touch();
 
-        ManagedObjectsIteratorById iter = pSess->_pp->_mapManagedObjectsById.find(objid);
-        if (iter == pSess->_pp->_mapManagedObjectsById.end())
+        ManagedObjectsIteratorById iter = pWebsession->_pp->_mapManagedObjectsById.find(objId);
+        if (iter == pWebsession->_pp->_mapManagedObjectsById.end())
         {
             WEBDEBUG(("   %s: cannot find comobj for objref %s\n", __FUNCTION__, id.c_str()));
             rc = VERR_WEB_INVALID_OBJECT_ID;
@@ -2103,7 +2044,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     do
     {
         // findRefFromId require the lock
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
         if (!ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false))
@@ -2138,7 +2079,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     do
     {
         // findRefFromId and the delete call below require the lock
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
         ManagedObjectRef *pRef;
         if ((rc = ManagedObjectRef::findRefFromId(req->_USCOREthis, &pRef, false)))
@@ -2173,14 +2114,8 @@ int __vbox__IManagedObjectRef_USCORErelease(
  * webservice will do anything useful.
  *
  * This returns a managed object reference to the global IVirtualBox object; into this
- * reference a session ID is encoded which remains constant with all managed object
+ * reference a websession ID is encoded which remains constant with all managed object
  * references returned by other methods.
- *
- * This also creates an instance of ISession, which is stored internally with the
- * webservice session and can be retrieved with IWebsessionManager::getSessionObject
- * (__vbox__IWebsessionManager_USCOREgetSessionObject). In order for the
- * VirtualBox web service to do anything useful, one usually needs both a
- * VirtualBox and an ISession object, for which these two methods are designed.
  *
  * When the webservice client is done, it should call IWebsessionManager::logoff. This
  * will clean up internally (destroy all remaining managed object references and
@@ -2209,34 +2144,28 @@ int __vbox__IWebsessionManager_USCORElogon(
     do
     {
         // WebServiceSession constructor tinkers with global MOR map and requires a write lock
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
-        // create new session; the constructor stores the new session
+        // create new websession; the constructor stores the new websession
         // in the global map automatically
-        WebServiceSession *pSession = new WebServiceSession();
+        WebServiceSession *pWebsession = new WebServiceSession();
         ComPtr<IVirtualBox> pVirtualBox;
 
         // authenticate the user
-        if (!(pSession->authenticate(req->username.c_str(),
-                                     req->password.c_str(),
-                                     pVirtualBox.asOutParam())))
+        if (!(pWebsession->authenticate(req->username.c_str(),
+                                        req->password.c_str(),
+                                        pVirtualBox.asOutParam())))
         {
-            // in the new session, create a managed object reference (MOR) for the
-            // global VirtualBox object; this encodes the session ID in the MOR so
+            // fake up a "root" MOR for this websession
+            char sz[34];
+            MakeManagedObjectRef(sz, pWebsession->getID(), 0ULL);
+            WSDLT_ID id = sz;
+
+            // in the new websession, create a managed object reference (MOR) for the
+            // global VirtualBox object; this encodes the websession ID in the MOR so
             // that it will be implicitly be included in all future requests of this
             // webservice client
-            ComPtr<IUnknown> p2 = pVirtualBox;
-            if (pVirtualBox.isNull() || p2.isNull())
-            {
-                rc = E_FAIL;
-                break;
-            }
-            ManagedObjectRef *pRef = new ManagedObjectRef(*pSession,
-                                                          p2,                       // IUnknown *pobjUnknown
-                                                          pVirtualBox,              // void *pobjInterface
-                                                          COM_IIDOF(IVirtualBox),
-                                                          g_pcszIVirtualBox);
-            resp->returnval = pRef->getWSDLID();
+            resp->returnval = createOrFindRefFromComPtr(id, g_pcszIVirtualBox, pVirtualBox);
             WEBDEBUG(("VirtualBox object ref is %s\n", resp->returnval.c_str()));
         }
         else
@@ -2250,8 +2179,10 @@ int __vbox__IWebsessionManager_USCORElogon(
 }
 
 /**
- * Returns the ISession object that was created for the webservice client
- * on logon.
+ * Returns a new ISession object every time.
+ *
+ * No longer connected in any way to logons, one websession can easily
+ * handle multiple sessions.
  */
 int __vbox__IWebsessionManager_USCOREgetSessionObject(
         struct soap*,
@@ -2263,13 +2194,18 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
 
     do
     {
-        // findSessionFromRef needs lock
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        // create a new ISession object
+        ComPtr<ISession> pSession;
+        rc = g_pVirtualBoxClient->COMGETTER(Session)(pSession.asOutParam());
+        if (FAILED(rc))
+        {
+            WEBDEBUG(("ERROR: cannot create session object!"));
+            break;
+        }
 
-        WebServiceSession* pSession;
-        if ((pSession = WebServiceSession::findSessionFromRef(req->refIVirtualBox)))
-            resp->returnval = pSession->getSessionWSDLID();
-
+        // return its MOR
+        resp->returnval = createOrFindRefFromComPtr(req->refIVirtualBox, g_pcszISession, pSession);
+        WEBDEBUG(("Session object ref is %s\n", resp->returnval.c_str()));
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: %#lx\n", __FUNCTION__, rc));
@@ -2296,16 +2232,17 @@ int __vbox__IWebsessionManager_USCORElogoff(
 
     do
     {
-        // findSessionFromRef and the session destructor require the lock
-        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+        // findWebsessionFromRef and the websession destructor require the lock
+        util::AutoWriteLock lock(g_pWebsessionsLockHandle COMMA_LOCKVAL_SRC_POS);
 
-        WebServiceSession* pSession;
-        if ((pSession = WebServiceSession::findSessionFromRef(req->refIVirtualBox)))
+        WebServiceSession* pWebsession;
+        if ((pWebsession = WebServiceSession::findWebsessionFromRef(req->refIVirtualBox)))
         {
-            delete pSession;
+            WEBDEBUG(("websession logoff, deleting websession %#llx\n", pWebsession->getID()));
+            delete pWebsession;
                 // destructor cleans up
 
-            WEBDEBUG(("session destroyed, %d sessions left open\n", g_mapSessions.size()));
+            WEBDEBUG(("websession destroyed, %d websessions left open\n", g_mapWebsessions.size()));
         }
     } while (0);
 
