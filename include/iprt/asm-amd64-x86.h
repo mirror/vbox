@@ -640,7 +640,9 @@ DECLINLINE(uint64_t) ASMReadTscWithAux(uint32_t *puAux)
 {
     RTUINT64U u;
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("rdtscp\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux));
+    /* rdtscp is not supported by ancient linux build VM of course :-( */
+    /*__asm__ __volatile__("rdtscp\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux)); */
+    __asm__ __volatile__(".byte 0x0f,0x01,0xf9\n\t" : "=a" (u.s.Lo), "=d" (u.s.Hi), "=c" (*puAux));
 # else
 #  if RT_INLINE_ASM_USES_INTRIN >= 15
     u.u = __rdtscp(puAux);
