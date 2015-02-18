@@ -1642,8 +1642,9 @@ DECLINLINE(uint64_t) ASMAtomicReadU64(volatile uint64_t *pu64)
  *                  The memory pointed to must be writable.
  * @remark  This will fault if the memory is read-only!
  */
-#if (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
- || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC
+#if !defined(RT_ARCH_AMD64) \
+  && (   (RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN) \
+      || RT_INLINE_DONT_MIX_CMPXCHG8B_AND_PIC)
 DECLASM(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64);
 #else
 DECLINLINE(uint64_t) ASMAtomicUoReadU64(volatile uint64_t *pu64)
