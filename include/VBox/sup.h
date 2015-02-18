@@ -1531,8 +1531,9 @@ SUPR3DECL(int) SUPR3ResumeSuspendedKeyboards(void);
  *                              specified CPU has a (possibly) valid TSC delta.
  * @param   cRetries            Number of times to retry failed delta
  *                              measurements.
+ * @param   cMsWaitRetry        Number of milliseconds to wait between retries.
  */
-SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries);
+SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uint8_t cRetries, uint8_t cMsWaitRetry);
 
 /**
  * Reads the delta-adjust TSC value.
