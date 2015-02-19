@@ -2250,16 +2250,16 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
  * Updates the use of TSC offsetting mode for the CPU and adjusts the necessary
  * intercepts.
  *
+ * @param   pVM         The shared VM handle.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
+static void hmR0SvmUpdateTscOffsetting(PVM pVM, PVMCPU pVCpu)
 {
-    bool fParavirtTsc;
-    bool fCanUseRealTsc;
+    bool     fParavirtTsc;
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
+    bool fCanUseRealTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVmcb->ctrl.u64TSCOffset, &fParavirtTsc);
     if (fCanUseRealTsc)
     {
         pVmcb->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
@@ -2278,7 +2278,7 @@ static void hmR0SvmUpdateTscOffsetting(PVMCPU pVCpu)
      *        VM-entry. */
     if (fParavirtTsc)
     {
-        int rc = GIMR0UpdateParavirtTsc(pVCpu->CTX_SUFF(pVM), 0 /* u64Offset */);
+        int rc = GIMR0UpdateParavirtTsc(pVM, 0 /* u64Offset */);
         AssertRC(rc);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTscParavirt);
     }
@@ -3067,7 +3067,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (   pSvmTransient->fUpdateTscOffsetting
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
-        hmR0SvmUpdateTscOffsetting(pVCpu);
+        hmR0SvmUpdateTscOffsetting(pVM, pVCpu);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
 
@@ -3189,7 +3189,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     }
 
     if (!(pVmcb->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);     /** @todo use SUPReadTSC() eventually. */
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVmcb->ctrl.u64TSCOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */

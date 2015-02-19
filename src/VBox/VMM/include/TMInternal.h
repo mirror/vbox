@@ -758,6 +758,7 @@ void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
 
+uint64_t                tmR3CpuTickGetRawVirtualNoCheck(PVM pVM);
 int                     tmCpuTickPause(PVMCPU pVCpu);
 int                     tmCpuTickPauseLocked(PVM pVM, PVMCPU pVCpu);
 int                     tmCpuTickResume(PVM pVM, PVMCPU pVCpu);

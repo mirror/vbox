@@ -49,24 +49,25 @@
  * directly.
  *
  * @returns TSC with delta applied.
+ * @param   pGip        Pointer to the GIP.
  *
  * @remarks May be called with interrupts disabled in ring-0!  This is why the
  *          ring-0 code doesn't attempt to figure the delta.
  *
  * @internal
  */
-SUPDECL(uint64_t) SUPReadTscWithDelta(void)
+SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE  pGip)
 {
-    PSUPGLOBALINFOPAGE  pGip = g_pSUPGlobalInfoPage;
     uint64_t            uTsc;
     uint16_t            iGipCpu;
     AssertCompile(RT_IS_POWER_OF_TWO(RTCPUSET_MAX_CPUS));
     AssertCompile(RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx) >= RTCPUSET_MAX_CPUS);
-    Assert(GIP_ARE_TSC_DELTAS_APPLICABLE(pGip));
+    Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO);
 
     /*
      * Read the TSC and get the corresponding aCPUs index.
      */
+#ifdef IN_RING3
     if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
     {
         /* RDTSCP gives us all we need, no loops/cli. */
@@ -75,7 +76,6 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void)
         iCpuSet  &= RTCPUSET_MAX_CPUS - 1;
         iGipCpu   = pGip->aiCpuFromCpuSetIdx[iCpuSet];
     }
-# ifndef IN_RING0
     else if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
     {
         /* Storing the IDTR is normally very quick, but we need to loop. */
@@ -99,11 +99,9 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void)
             cTries++;
         }
     }
-# endif /* !IN_RING0 */
     else
     {
-# ifdef IN_RING3
-        /* Ring-3: Get APIC ID via the slow CPUID instruction, requires looping. */
+        /* Get APIC ID via the slow CPUID instruction, requires looping. */
         uint32_t cTries = 0;
         for (;;)
         {
@@ -121,32 +119,31 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void)
             }
             cTries++;
         }
-
-# elif defined(IN_RING0)
-        /* Ring-0: Use use RTMpCpuId(), no loops. */
-        RTCCUINTREG uFlags  = ASMIntDisableFlags();
-        int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
-        if (RT_LIKELY((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
-            iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
-        else
-            iGipCpu = UINT16_MAX;
-        uTsc = ASMReadTSC();
-        ASMSetFlags(uFlags);
+    }
+#elif defined(IN_RING0)
+    /* Ring-0: Use use RTMpCpuId(), no loops. */
+    RTCCUINTREG uFlags  = ASMIntDisableFlags();
+    int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
+    if (RT_LIKELY((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    else
+        iGipCpu = UINT16_MAX;
+    uTsc = ASMReadTSC();
+    ASMSetFlags(uFlags);
 
 # elif defined(IN_RC)
-        /* Raw-mode context: We can get the host CPU set index via VMCPU, no loops. */
-        RTCCUINTREG uFlags  = ASMIntDisableFlags(); /* Are already disable, but play safe. */
-        uint32_t    iCpuSet = VMMGetCpu(&g_VM)->iHostCpuSet;
-        if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
-            iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
-        else
-            iGipCpu = UINT16_MAX;
-        uTsc = ASMReadTSC();
-        ASMSetFlags(uFlags);
-# else
-#  error "IN_RING3, IN_RC or IN_RING0 must be defined!"
-# endif
-    }
+    /* Raw-mode context: We can get the host CPU set index via VMCPU, no loops. */
+    RTCCUINTREG uFlags  = ASMIntDisableFlags(); /* Are already disable, but play safe. */
+    uint32_t    iCpuSet = VMMGetCpu(&g_VM)->iHostCpuSet;
+    if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    else
+        iGipCpu = UINT16_MAX;
+    uTsc = ASMReadTSC();
+    ASMSetFlags(uFlags);
+#else
+# error "IN_RING3, IN_RC or IN_RING0 must be defined!"
+#endif
 
     /*
      * If the delta is valid, apply it.
@@ -176,6 +173,101 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(void)
     AssertMsgFailed(("iGipCpu=%d (%#x) cCpus=%d fGetGipCpu=%#x\n", iGipCpu, iGipCpu, pGip->cCpus, pGip->fGetGipCpu));
     return uTsc;
 }
+
+
+/**
+ * Internal worker for getting the GIP CPU array index for the calling CPU.
+ *
+ * @returns Index into SUPGLOBALINFOPAGE::aCPUs or UINT16_MAX.
+ * @param   pGip    The GIP.
+ */
+DECLINLINE(uint16_t) supGetGipCpuIndex(PSUPGLOBALINFOPAGE pGip)
+{
+    uint16_t iGipCpu;
+#ifdef IN_RING3
+    if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
+    {
+        /* Storing the IDTR is normally very fast. */
+        uint16_t cbLim = ASMGetIdtrLimit();
+        uint16_t iCpuSet = cbLim - 256 * (ARCH_BITS == 64 ? 16 : 8);
+        iCpuSet  &= RTCPUSET_MAX_CPUS - 1;
+        iGipCpu   = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    }
+    else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
+    {
+        /* RDTSCP gives us what need need and more. */
+        uint32_t iCpuSet;
+        ASMReadTscWithAux(&iCpuSet);
+        iCpuSet  &= RTCPUSET_MAX_CPUS - 1;
+        iGipCpu   = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    }
+    else
+    {
+        /* Get APIC ID via the slow CPUID instruction. */
+        uint8_t idApic = ASMGetApicId();
+        iGipCpu = pGip->aiCpuFromApicId[idApic];
+    }
+#elif defined(IN_RING0)
+    /* Ring-0: Use use RTMpCpuId() (disables cli to avoid host OS assertions about unsafe CPU number usage). */
+    RTCCUINTREG uFlags  = ASMIntDisableFlags();
+    int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
+    if (RT_LIKELY((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    else
+        iGipCpu = UINT16_MAX;
+    ASMSetFlags(uFlags);
+
+# elif defined(IN_RC)
+    /* Raw-mode context: We can get the host CPU set index via VMCPU. */
+    uint32_t    iCpuSet = VMMGetCpu(&g_VM)->iHostCpuSet;
+    if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+        iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    else
+        iGipCpu = UINT16_MAX;
+#else
+# error "IN_RING3, IN_RC or IN_RING0 must be defined!"
+#endif
+    return iGipCpu;
+}
+
+
+/**
+ * Slow path in SUPGetTscDelta, don't call directly.
+ *
+ * @returns See SUPGetTscDelta.
+ * @param   pGip        The GIP.
+ * @internal
+ */
+SUPDECL(uint64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip)
+{
+    uint16_t iGipCpu = supGetGipCpuIndex(pGip);
+    if (RT_LIKELY(iGipCpu < pGip->cCpus))
+    {
+        int64_t iTscDelta = pGip->aCPUs[iGipCpu].i64TSCDelta;
+        if (iTscDelta != INT64_MAX)
+            return iTscDelta;
+    }
+    AssertFailed();
+    return 0;
+}
+
+
+/**
+ * Slow path in SUPGetCpuHzFromGip, don't call directly.
+ *
+ * @returns See SUPGetCpuHzFromGip.
+ * @param   pGip        The GIP.
+ * @internal
+ */
+SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip)
+{
+    uint16_t iGipCpu = supGetGipCpuIndex(pGip);
+    if (RT_LIKELY(iGipCpu < pGip->cCpus))
+        return pGip->aCPUs[iGipCpu].u64CpuHz;
+    AssertFailed();
+    return pGip->u64CpuHz;
+}
+
 
 #endif /* RT_ARCH_AMD64 || RT_ARCH_X86 */
 

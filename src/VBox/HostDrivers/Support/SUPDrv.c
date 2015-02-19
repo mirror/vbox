@@ -214,6 +214,9 @@ static SUPFUNC g_aFunctions[] =
         /* Normal function pointers: */
     { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },            /* SED: DATA */
     { "SUPGetGIP",                              (void *)SUPGetGIP },
+    { "SUPReadTscWithDelta",                    (void *)SUPReadTscWithDelta },
+    { "SUPGetTscDeltaSlow",                     (void *)SUPGetTscDeltaSlow },
+    { "SUPGetCpuHzFromGipForAsyncMode",         (void *)SUPGetCpuHzFromGipForAsyncMode },
     { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
     { "SUPR0ComponentQueryFactory",             (void *)SUPR0ComponentQueryFactory },
     { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },

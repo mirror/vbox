@@ -5602,23 +5602,23 @@ VMMR0DECL(void) VMXReadCachedVmcsStore(PVMCPU pVCpu, PVMCSCACHE pCache)
  * VMX preemption timer.
  *
  * @returns VBox status code.
+ * @param   pVM             Pointer to the cross context VM structure.
  * @param   pVCpu           Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
+static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVM pVM, PVMCPU pVCpu)
 {
-    int  rc            = VERR_INTERNAL_ERROR_5;
-    bool fOffsettedTsc = false;
-    bool fParavirtTsc  = false;
-    PVM pVM            = pVCpu->CTX_SUFF(pVM);
+    int  rc;
+    bool fOffsettedTsc;
+    bool fParavirtTsc;
     if (pVM->hm.s.vmx.fUsePreemptTimer)
     {
-        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fOffsettedTsc,
-                                                                     &fParavirtTsc);
+        uint64_t cTicksToDeadline = TMCpuTickGetDeadlineAndTscOffset(pVM, pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset,
+                                                                     &fOffsettedTsc, &fParavirtTsc);
 
         /* Make sure the returned values have sane upper and lower boundaries. */
-        uint64_t u64CpuHz  = SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage);
+        uint64_t u64CpuHz  = SUPGetCpuHzFromGipBySetIndex(g_pSUPGlobalInfoPage, pVCpu->iHostCpuSet);
         cTicksToDeadline   = RT_MIN(cTicksToDeadline, u64CpuHz / 64);      /* 1/64th of a second */
         cTicksToDeadline   = RT_MAX(cTicksToDeadline, u64CpuHz / 2048);    /* 1/2048th of a second */
         cTicksToDeadline >>= pVM->hm.s.vmx.cPreemptTimerShift;
@@ -5627,7 +5627,7 @@ static void hmR0VmxUpdateTscOffsettingAndPreemptTimer(PVMCPU pVCpu)
         rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_PREEMPT_TIMER_VALUE, cPreemptionTickCount);        AssertRC(rc);
     }
     else
-        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
+        fOffsettedTsc = TMCpuTickCanUseRealTSC(pVM, pVCpu, &pVCpu->hm.s.vmx.u64TSCOffset, &fParavirtTsc);
 
     /** @todo later optimize this to be done elsewhere and not before every
      *        VM-entry. */
@@ -8636,7 +8636,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     if (   pVmxTransient->fUpdateTscOffsettingAndPreemptTimer
         || idCurrentCpu != pVCpu->hm.s.idLastCpu)
     {
-        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVCpu);
+        hmR0VmxUpdateTscOffsettingAndPreemptTimer(pVM, pVCpu);
         pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = false;
     }
 
@@ -8717,7 +8717,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     pVmxTransient->fVectoringDoublePF  = false;                 /* Vectoring double page-fault needs to be determined later. */
 
     if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);     /** @todo use SUPReadTSC() eventually. */
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hm.s.vmx.u64TSCOffset);
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */

@@ -454,7 +454,7 @@ typedef enum SUPGIPMODE
  *          thinking that values doesn't change even if members are marked
  *          as volatile. Thus, there is no PCSUPGLOBALINFOPAGE type.
  */
-#if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_RC)
+#ifdef IN_SUP_R3
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 
 #elif !defined(IN_RING0) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
@@ -488,38 +488,183 @@ extern DECLIMPORT(SUPGLOBALINFOPAGE)    g_SUPGlobalInfoPage;
  */
 SUPDECL(PSUPGLOBALINFOPAGE)             SUPGetGIP(void);
 
-/** Whether the application of TSC-deltas is required. */
-#define GIP_ARE_TSC_DELTAS_APPLICABLE(a_pGip)  ((a_pGip)->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
 
+/** @internal  */
+SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip);
 
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 /**
  * Gets the TSC frequency of the calling CPU.
  *
  * @returns TSC frequency, UINT64_MAX on failure.
  * @param   pGip        The GIP pointer.
  */
-DECLINLINE(uint64_t) SUPGetCpuHzFromGIP(PSUPGLOBALINFOPAGE pGip)
+DECLINLINE(uint64_t) SUPGetCpuHzFromGip(PSUPGLOBALINFOPAGE pGip)
 {
-    unsigned iCpu;
-
-    if (RT_UNLIKELY(!pGip || pGip->u32Magic != SUPGLOBALINFOPAGE_MAGIC || !pGip->u64CpuHz))
-        return UINT64_MAX;
-
-    if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-        || pGip->u32Mode == SUPGIPMODE_SYNC_TSC)
-        iCpu = 0;
-    else
+    if (RT_LIKELY(   pGip
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+                  && pGip->u64CpuHz))
     {
-        Assert(pGip->u32Mode == SUPGIPMODE_ASYNC_TSC);
-        iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
-        if (RT_UNLIKELY(iCpu >= pGip->cCpus))
-            return UINT64_MAX;
+        switch (pGip->u32Mode)
+        {
+            case SUPGIPMODE_INVARIANT_TSC:
+            case SUPGIPMODE_SYNC_TSC:
+                return pGip->aCPUs[0].u64CpuHz;
+            case SUPGIPMODE_ASYNC_TSC:
+                return SUPGetCpuHzFromGipForAsyncMode(pGip);
+            default: break; /* shut up gcc */
+        }
     }
-
-    return pGip->aCPUs[iCpu].u64CpuHz;
+    AssertFailed();
+    return UINT64_MAX;
 }
+
+
+/**
+ * Gets the TSC frequency of the specified CPU.
+ *
+ * @returns TSC frequency, UINT64_MAX on failure.
+ * @param   pGip        The GIP pointer.
+ * @param   iCpuSet     The CPU set index of the CPU in question.
+ */
+DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint32_t iCpuSet)
+{
+    if (RT_LIKELY(   pGip
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
+                  && pGip->u64CpuHz))
+    {
+        switch (pGip->u32Mode)
+        {
+            case SUPGIPMODE_INVARIANT_TSC:
+            case SUPGIPMODE_SYNC_TSC:
+                return pGip->aCPUs[0].u64CpuHz;
+            case SUPGIPMODE_ASYNC_TSC:
+                if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+                {
+                    uint16_t iCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+                    if (RT_LIKELY(iCpu < pGip->cCpus))
+                        return pGip->aCPUs[iCpu].u64CpuHz;
+                }
+                break;
+            default: break; /* shut up gcc */
+        }
+    }
+    AssertFailed();
+    return UINT64_MAX;
+}
+
+
+/**
+ * Checks if the provided TSC frequency is close enough to the computed TSC
+ * frequency of the host.
+ *
+ * @returns true if it's compatible, false otherwise.
+ */
+DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (   pGip
+        && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+    {
+        if (pGip->u64CpuHz != u64CpuHz)
+        {
+            /* Arbitrary tolerance threshold, tweak later if required, perhaps
+               more tolerance on lower frequencies and less tolerance on higher. */
+            uint64_t uLo = (pGip->u64CpuHz << 10) / 1025;
+            uint64_t uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
+            if (   u64CpuHz < uLo
+                || u64CpuHz > uHi)
+                return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+
+/** @internal */
+SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip);
+
+/**
+ * Read the host TSC value and applies the TSC delta if appropriate.
+ *
+ * @returns the TSC value.
+ * @remarks Requires GIP to be initialized and valid.
+ */
+DECLINLINE(uint64_t) SUPReadTsc(void)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+        return ASMReadTSC();
+    return SUPReadTscWithDelta(pGip);
+}
+
 #endif /* X86 || AMD64 */
+
+/** @internal */
+SUPDECL(uint64_t) SUPGetTscDeltaSlow(PSUPGLOBALINFOPAGE pGip);
+
+/**
+ * Gets the TSC delta for the current CPU.
+ *
+ * @returns The TSC delta value (will not return the special INT64_MAX value).
+ * @remarks Requires GIP to be initialized and valid.
+ */
+DECLINLINE(int64_t) SUPGetTscDelta(void)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+        return 0;
+    return SUPGetTscDeltaSlow(pGip);
+}
+
+
+/**
+ * Gets the TSC delta for a given CPU.
+ *
+ * @returns The TSC delta value (will not return the special INT64_MAX value).
+ * @param   iCpuSet         The CPU set index of the CPU which TSC delta we want.
+ * @remarks Requires GIP to be initialized and valid.
+ */
+DECLINLINE(int64_t) SUPGetTscDeltaByCpuSetIndex(uint32_t iCpuSet)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+        return 0;
+    if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+    {
+        uint16_t iCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+        if (RT_LIKELY(iCpu < pGip->cCpus))
+        {
+            int64_t iTscDelta = pGip->aCPUs[iCpu].i64TSCDelta;
+            if (iTscDelta != INT64_MAX)
+                return iTscDelta;
+        }
+    }
+    AssertFailed();
+    return 0;
+}
+
+
+/**
+ * Gets the descriptive GIP mode name.
+ *
+ * @returns The name.
+ * @param   pGip      Pointer to the GIP.
+ */
+DECLINLINE(const char *) SUPGetGIPModeName(PSUPGLOBALINFOPAGE pGip)
+{
+    AssertReturn(pGip, NULL);
+    switch (pGip->u32Mode)
+    {
+        case SUPGIPMODE_INVARIANT_TSC:  return "Invariant";
+        case SUPGIPMODE_SYNC_TSC:       return "Synchronous";
+        case SUPGIPMODE_ASYNC_TSC:      return "Asynchronous";
+        case SUPGIPMODE_INVALID:        return "Invalid";
+        default:                        return "???";
+    }
+}
+
 
 /**
  * Request for generic VMMR0Entry calls.
@@ -1547,77 +1692,6 @@ SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
 
 /** @} */
 #endif /* IN_RING3 */
-
-
-/**
- * Gets the descriptive GIP mode name.
- *
- * @returns The name.
- * @param   pGip      Pointer to the GIP.
- */
-DECLINLINE(const char *) SUPGetGIPModeName(PSUPGLOBALINFOPAGE pGip)
-{
-    AssertReturn(pGip, NULL);
-    switch (pGip->u32Mode)
-    {
-        case SUPGIPMODE_INVARIANT_TSC:  return "Invariant";
-        case SUPGIPMODE_SYNC_TSC:       return "Synchronous";
-        case SUPGIPMODE_ASYNC_TSC:      return "Asynchronous";
-        case SUPGIPMODE_INVALID:        return "Invalid";
-        default:                        return "???";
-    }
-}
-
-
-/**
- * Checks if the provided TSC frequency is close enough to the computed TSC
- * frequency of the host.
- *
- * @returns true if it's compatible, false otherwise.
- */
-DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
-{
-    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
-    if (   pGip
-        && pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-    {
-        if (pGip->u64CpuHz != u64CpuHz)
-        {
-            /* Arbitrary tolerance threshold, tweak later if required, perhaps
-               more tolerance on lower frequencies and less tolerance on higher. */
-            uint64_t uLo = (pGip->u64CpuHz << 10) / 1025;
-            uint64_t uHi = pGip->u64CpuHz + (pGip->u64CpuHz - uLo);
-            if (   u64CpuHz < uLo
-                || u64CpuHz > uHi)
-                return false;
-        }
-        return true;
-    }
-    return false;
-}
-
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-
-/** @internal */
-SUPDECL(uint64_t) SUPReadTscWithDelta(void);
-
-/**
- * Reads the host TSC value.
- *
- * If applicable, normalizes the host TSC value with intercpu TSC deltas.
- *
- * @returns the TSC value.
- *
- * @remarks Requires GIP to be initialized.
- */
-DECLINLINE(uint64_t) SUPReadTsc(void)
-{
-    if (g_pSUPGlobalInfoPage->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
-        return ASMReadTSC();
-    return SUPReadTscWithDelta();
-}
-
-#endif /* X86 || AMD64 */
 
 
 /** @name User mode module flags (SUPR3TracerRegisterModule & SUP_IOCTL_TRACER_UMOD_REG).

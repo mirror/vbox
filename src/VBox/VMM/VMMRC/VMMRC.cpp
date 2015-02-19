@@ -135,8 +135,8 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
          */
         case VMMGC_DO_TESTCASE_INTERRUPT_MASKING:
         {
-            uint64_t u64MaxTicks = (SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage) != ~(uint64_t)0
-                                    ? SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage)
+            uint64_t u64MaxTicks = (SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage) != ~(uint64_t)0
+                                    ? SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage)
                                     : _2G)
                                    / 10000;
             uint64_t u64StartTSC = ASMReadTSC();

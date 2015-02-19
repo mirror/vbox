@@ -132,8 +132,8 @@ VMM_INT_DECL(uint64_t)  TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
  */
 VMMDECL(uint64_t)       TMCpuTickGet(PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPU pVCpu);
-VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
-VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
+VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfParavirtTsc);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetDeadlineAndTscOffset(PVM pVM, PVMCPU pVCpu, uint64_t *poffRealTSC, bool *pfOffsettedTsc, bool *pfParavirtTsc);
 VMM_INT_DECL(int)       TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
 VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPU pVCpu);
