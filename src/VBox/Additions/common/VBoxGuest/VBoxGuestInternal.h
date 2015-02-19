@@ -194,10 +194,6 @@ typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
 /**
  * The VBoxGuest per session data.
- *
- * @remark  Not quite sure whether this will be useful or not, but since
- *          its already there let's keep it for now in case it might come
- *          in handy later.
  */
 typedef struct VBOXGUESTSESSION
 {
