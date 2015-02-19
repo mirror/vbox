@@ -54,6 +54,7 @@ int main(int argc, char **argv)
     };
 
     uint32_t cIterations = 0; /* Currently 0 so that it doesn't upset testing. */
+    uint32_t cMsSleepBetweenIterations = 10;
 
     int           ch;
     RTGETOPTUNION ValueUnion;
@@ -87,6 +88,9 @@ int main(int argc, char **argv)
             if (pGip->enmUseTscDelta < SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
                 return RTTestSkipAndDestroy(hTest, "No deltas to play with: enmUseTscDelta=%d\n", pGip->enmUseTscDelta);
 
+            /*
+             * Init stats.
+             */
             struct
             {
                 int64_t iLowest;
@@ -97,7 +101,15 @@ int main(int argc, char **argv)
                 uint64_t uAbsTotal;
             } aCpuStats[RTCPUSET_MAX_CPUS];
             RT_ZERO(aCpuStats);
+            for (uint32_t i = 0; i < pGip->cCpus; i++)
+            {
+                aCpuStats[i].iLowest = INT64_MAX;
+                aCpuStats[i].uAbsMin = UINT64_MAX;
+            }
 
+            /*
+             * Do the work.
+             */
             for (uint32_t iIteration = 0; ; iIteration++)
             {
                 /*
@@ -148,7 +160,7 @@ int main(int argc, char **argv)
                 /*
                  * Force a new measurement.
                  */
-                RTThreadSleep(16);
+                RTThreadSleep(cMsSleepBetweenIterations);
                 for (uint32_t iCpu = 0; iCpu < pGip->cCpus; iCpu++)
                     if (pGip->aCPUs[iCpu].enmState == SUPGIPCPUSTATE_ONLINE)
                     {
@@ -178,10 +190,12 @@ int main(int argc, char **argv)
                              aCpuStats[iCpu].iHighest,
                              aCpuStats[iCpu].iTotal / cIterations,
                              aCpuStats[iCpu].iHighest - aCpuStats[iCpu].iLowest);
-                    RTPrintf(  "tstSupTscDelta:      absmin=%-12llu   absmax=%-12llu   absavg=%-12llu\n",
+                    RTPrintf(  "tstSupTscDelta:      absmin=%-12llu   absmax=%-12llu   absavg=%-12llu  idCpu=%#4x  idApic=%#4x\n",
                              aCpuStats[iCpu].uAbsMin,
                              aCpuStats[iCpu].uAbsMax,
-                             aCpuStats[iCpu].uAbsTotal / cIterations);
+                             aCpuStats[iCpu].uAbsTotal / cIterations,
+                             pGip->aCPUs[iCpu].idCpu,
+                             pGip->aCPUs[iCpu].idApic);
                     if (iLowest > aCpuStats[iCpu].iLowest)
                         iLowest = aCpuStats[iCpu].iLowest;
                     if (iHighest < aCpuStats[iCpu].iHighest)
