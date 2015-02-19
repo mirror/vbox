@@ -380,23 +380,26 @@ public:
     /** Runtime UI: Menu "View": Action types. */
     enum RuntimeMenuViewActionType
     {
-        RuntimeMenuViewActionType_Invalid           = 0,
-        RuntimeMenuViewActionType_Fullscreen        = RT_BIT(0),
-        RuntimeMenuViewActionType_Seamless          = RT_BIT(1),
-        RuntimeMenuViewActionType_Scale             = RT_BIT(2),
-        RuntimeMenuViewActionType_GuestAutoresize   = RT_BIT(3),
-        RuntimeMenuViewActionType_AdjustWindow      = RT_BIT(4),
-        RuntimeMenuViewActionType_TakeScreenshot    = RT_BIT(5),
-        RuntimeMenuViewActionType_MenuBar           = RT_BIT(6),
-        RuntimeMenuViewActionType_MenuBarSettings   = RT_BIT(7),
-        RuntimeMenuViewActionType_ToggleMenuBar     = RT_BIT(8),
-        RuntimeMenuViewActionType_StatusBar         = RT_BIT(9),
-        RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(10),
-        RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(11),
-        RuntimeMenuViewActionType_ScaleFactor       = RT_BIT(12),
-        RuntimeMenuViewActionType_Resize            = RT_BIT(13),
-        RuntimeMenuViewActionType_Multiscreen       = RT_BIT(14),
-        RuntimeMenuViewActionType_All               = 0xFFFF
+        RuntimeMenuViewActionType_Invalid              = 0,
+        RuntimeMenuViewActionType_Fullscreen           = RT_BIT(0),
+        RuntimeMenuViewActionType_Seamless             = RT_BIT(1),
+        RuntimeMenuViewActionType_Scale                = RT_BIT(2),
+        RuntimeMenuViewActionType_GuestAutoresize      = RT_BIT(3),
+        RuntimeMenuViewActionType_AdjustWindow         = RT_BIT(4),
+        RuntimeMenuViewActionType_TakeScreenshot       = RT_BIT(5),
+        RuntimeMenuViewActionType_VideoCapture         = RT_BIT(6),
+        RuntimeMenuViewActionType_VideoCaptureSettings = RT_BIT(7),
+        RuntimeMenuViewActionType_StartVideoCapture    = RT_BIT(8),
+        RuntimeMenuViewActionType_MenuBar              = RT_BIT(9),
+        RuntimeMenuViewActionType_MenuBarSettings      = RT_BIT(10),
+        RuntimeMenuViewActionType_ToggleMenuBar        = RT_BIT(11),
+        RuntimeMenuViewActionType_StatusBar            = RT_BIT(12),
+        RuntimeMenuViewActionType_StatusBarSettings    = RT_BIT(13),
+        RuntimeMenuViewActionType_ToggleStatusBar      = RT_BIT(14),
+        RuntimeMenuViewActionType_ScaleFactor          = RT_BIT(15),
+        RuntimeMenuViewActionType_Resize               = RT_BIT(16),
+        RuntimeMenuViewActionType_Multiscreen          = RT_BIT(17),
+        RuntimeMenuViewActionType_All                  = 0xFFFF
     };
 
     /** Runtime UI: Menu "Input": Action types. */
@@ -432,11 +435,8 @@ public:
         RuntimeMenuDevicesActionType_SharedFolders         = RT_BIT(11),
         RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(12),
         RuntimeMenuDevicesActionType_VRDEServer            = RT_BIT(13),
-        RuntimeMenuDevicesActionType_VideoCapture          = RT_BIT(14),
-        RuntimeMenuDevicesActionType_VideoCaptureSettings  = RT_BIT(15),
-        RuntimeMenuDevicesActionType_StartVideoCapture     = RT_BIT(16),
-        RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(17),
-        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(18),
+        RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(14),
+        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(15),
         RuntimeMenuDevicesActionType_All                   = 0xFFFF
     };
 

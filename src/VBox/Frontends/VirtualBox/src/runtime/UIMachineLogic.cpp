@@ -926,6 +926,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
@@ -951,9 +954,6 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
 #ifdef Q_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
@@ -998,6 +998,10 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltAdjustWindow()));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
             this, SLOT(sltTakeScreenshot()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings), SIGNAL(triggered()),
+            this, SLOT(sltOpenVideoCaptureOptions()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleVideoCapture(bool)));
 
     /* 'Input' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
@@ -1023,10 +1027,6 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenSharedFoldersSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVRDE(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleVideoCapture(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenVideoCaptureOptions()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
@@ -1284,35 +1284,6 @@ void UIMachineLogic::sltHandleMenuPrepare(int iIndex, QMenu *pMenu)
         (this->*(m_menuUpdateHandlers.value(iIndex)))(pMenu);
 }
 
-void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Toggle guest-autoresize feature for all view(s)! */
-    foreach(UIMachineWindow *pMachineWindow, machineWindows())
-        pMachineWindow->machineView()->setGuestAutoresizeEnabled(fEnabled);
-}
-
-void UIMachineLogic::sltAdjustWindow()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Adjust all window(s)! */
-    foreach(UIMachineWindow *pMachineWindow, machineWindows())
-    {
-        /* Exit maximized window state if actual: */
-        if (pMachineWindow->isMaximized())
-            pMachineWindow->showNormal();
-
-        /* Normalize window geometry: */
-        pMachineWindow->normalizeGeometry(true /* adjust position */);
-    }
-}
-
 void UIMachineLogic::sltShowKeyboardSettings()
 {
     /* Do not process if window(s) missed! */
@@ -1518,6 +1489,35 @@ void UIMachineLogic::sltClose()
     activeMachineWindow()->close();
 }
 
+void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Toggle guest-autoresize feature for all view(s)! */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->machineView()->setGuestAutoresizeEnabled(fEnabled);
+}
+
+void UIMachineLogic::sltAdjustWindow()
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Adjust all window(s)! */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+    {
+        /* Exit maximized window state if actual: */
+        if (pMachineWindow->isMaximized())
+            pMachineWindow->showNormal();
+
+        /* Normalize window geometry: */
+        pMachineWindow->normalizeGeometry(true /* adjust position */);
+    }
+}
+
 void UIMachineLogic::sltTakeScreenshot()
 {
     /* Do not process if window(s) missed! */
@@ -1585,6 +1585,49 @@ void UIMachineLogic::sltTakeScreenshot()
     /* Do the screenshot. */
     if (!strFilename.isEmpty())
         takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
+}
+
+void UIMachineLogic::sltOpenVideoCaptureOptions()
+{
+    /* Open VM settings : Display page : Video Capture tab: */
+    sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
+}
+
+void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Make sure something had changed: */
+    if (machine().GetVideoCaptureEnabled() == static_cast<BOOL>(fEnabled))
+        return;
+
+    /* Update Video Capture state: */
+    AssertMsg(machine().isOk(), ("Machine should be OK!\n"));
+    machine().SetVideoCaptureEnabled(fEnabled);
+    /* Machine is not OK? */
+    if (!machine().isOk())
+    {
+        /* Notify about the error: */
+        msgCenter().cannotToggleVideoCapture(machine(), fEnabled);
+        /* Make sure action is updated! */
+        uisession()->updateStatusVideoCapture();
+    }
+    /* Machine is OK? */
+    else
+    {
+        /* Save machine-settings: */
+        machine().SaveSettings();
+        /* Machine is not OK? */
+        if (!machine().isOk())
+        {
+            /* Notify about the error: */
+            msgCenter().cannotSaveMachineSettings(machine());
+            /* Make sure action is updated! */
+            uisession()->updateStatusVideoCapture();
+        }
+    }
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
@@ -1807,49 +1850,6 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
             uisession()->updateStatusVRDE();
         }
     }
-}
-
-void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Make sure something had changed: */
-    if (machine().GetVideoCaptureEnabled() == static_cast<BOOL>(fEnabled))
-        return;
-
-    /* Update Video Capture state: */
-    AssertMsg(machine().isOk(), ("Machine should be OK!\n"));
-    machine().SetVideoCaptureEnabled(fEnabled);
-    /* Machine is not OK? */
-    if (!machine().isOk())
-    {
-        /* Notify about the error: */
-        msgCenter().cannotToggleVideoCapture(machine(), fEnabled);
-        /* Make sure action is updated! */
-        uisession()->updateStatusVideoCapture();
-    }
-    /* Machine is OK? */
-    else
-    {
-        /* Save machine-settings: */
-        machine().SaveSettings();
-        /* Machine is not OK? */
-        if (!machine().isOk())
-        {
-            /* Notify about the error: */
-            msgCenter().cannotSaveMachineSettings(machine());
-            /* Make sure action is updated! */
-            uisession()->updateStatusVideoCapture();
-        }
-    }
-}
-
-void UIMachineLogic::sltOpenVideoCaptureOptions()
-{
-    /* Open VM settings : Display page : Video Capture tab: */
-    sltOpenVMSettingsDialog("#display", "m_pCheckboxVideoCapture");
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()

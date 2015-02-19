@@ -573,22 +573,25 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
     QString strResult;
     switch (runtimeMenuViewActionType)
     {
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen:        strResult = "Fullscreen"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless:          strResult = "Seamless"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:           strResult = "MenuBar"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:   strResult = "MenuBarSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:     strResult = "ToggleMenuBar"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:         strResult = "StatusBar"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings: strResult = "StatusBarSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:   strResult = "ToggleStatusBar"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor:       strResult = "ScaleFactor"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize:            strResult = "Resize"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen:       strResult = "Multiscreen"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_All:               strResult = "All"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen:           strResult = "Fullscreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless:             strResult = "Seamless"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:                strResult = "Scale"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:      strResult = "GuestAutoresize"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:         strResult = "AdjustWindow"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot:       strResult = "TakeScreenshot"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture:         strResult = "VideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings: strResult = "VideoCaptureSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture:    strResult = "StartVideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:              strResult = "MenuBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:      strResult = "MenuBarSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:        strResult = "ToggleMenuBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:            strResult = "StatusBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings:    strResult = "StatusBarSettings"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:      strResult = "ToggleStatusBar"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor:          strResult = "ScaleFactor"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize:               strResult = "Resize"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen:          strResult = "Multiscreen"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_All:                  strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", runtimeMenuViewActionType));
@@ -603,23 +606,26 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuViewActionType> values;
-    keys << "Fullscreen";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
-    keys << "Seamless";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
-    keys << "Scale";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
-    keys << "GuestAutoresize";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
-    keys << "AdjustWindow";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
-    keys << "TakeScreenshot";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
-    keys << "MenuBar";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
-    keys << "MenuBarSettings";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
-    keys << "ToggleMenuBar";     values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
-    keys << "StatusBar";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
-    keys << "StatusBarSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
-    keys << "ToggleStatusBar";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
-    keys << "ScaleFactor";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor;
-    keys << "Resize";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
-    keys << "Multiscreen";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen;
-    keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
+    QStringList keys;               QList<UIExtraDataMetaDefs::RuntimeMenuViewActionType> values;
+    keys << "Fullscreen";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Fullscreen;
+    keys << "Seamless";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Seamless;
+    keys << "Scale";                values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
+    keys << "GuestAutoresize";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
+    keys << "AdjustWindow";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    keys << "TakeScreenshot";       values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
+    keys << "VideoCapture";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture;
+    keys << "VideoCaptureSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings;
+    keys << "StartVideoCapture";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture;
+    keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
+    keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
+    keys << "ToggleMenuBar";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
+    keys << "StatusBar";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
+    keys << "StatusBarSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
+    keys << "ToggleStatusBar";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;
+    keys << "ScaleFactor";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ScaleFactor;
+    keys << "Resize";               values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize;
+    keys << "Multiscreen";          values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Multiscreen;
+    keys << "All";                  values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuViewActionType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
@@ -693,9 +699,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture:          strResult = "VideoCapture"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings:  strResult = "VideoCaptureSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture:     strResult = "StartVideoCapture"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing:               strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
@@ -728,9 +731,6 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<
     keys << "SharedFolders";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
     keys << "SharedFoldersSettings"; values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
     keys << "VRDEServer";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer;
-    keys << "VideoCapture";          values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture;
-    keys << "VideoCaptureSettings";  values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings;
-    keys << "StartVideoCapture";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture;
     keys << "InstallGuestTools";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
     keys << "Nothing";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
     keys << "All";                   values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;

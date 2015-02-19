@@ -241,8 +241,6 @@ private slots:
     void sltHandleMenuPrepare(int iIndex, QMenu *pMenu);
 
     /* "Machine" menu functionality: */
-    void sltToggleGuestAutoresize(bool fEnabled);
-    void sltAdjustWindow();
     void sltShowKeyboardSettings();
     void sltToggleMouseIntegration(bool fDisabled);
     void sltTypeCAD();
@@ -259,7 +257,11 @@ private slots:
     void sltClose();
 
     /* "View" menu functionality: */
+    void sltToggleGuestAutoresize(bool fEnabled);
+    void sltAdjustWindow();
     void sltTakeScreenshot();
+    void sltOpenVideoCaptureOptions();
+    void sltToggleVideoCapture(bool fEnabled);
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
@@ -274,8 +276,6 @@ private slots:
     void sltToggleNetworkAdapterConnection();
     void sltChangeDragAndDropType(QAction *pAction);
     void sltToggleVRDE(bool fEnabled);
-    void sltToggleVideoCapture(bool fEnabled);
-    void sltOpenVideoCaptureOptions();
     void sltInstallGuestAdditions();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

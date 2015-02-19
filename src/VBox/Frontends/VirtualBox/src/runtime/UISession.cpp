@@ -762,7 +762,7 @@ void UISession::sltVRDEChange()
 void UISession::sltVideoCaptureChange()
 {
     /* Check/Uncheck Video Capture action depending on feature status: */
-    actionPool()->action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)->setChecked(machine().GetVideoCaptureEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->setChecked(machine().GetVideoCaptureEnabled());
     /* Notify listeners about Video Capture change: */
     emit sigVideoCaptureChange();
 }

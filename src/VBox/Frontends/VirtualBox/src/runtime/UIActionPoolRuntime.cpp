@@ -643,6 +643,92 @@ protected:
     }
 };
 
+class UIActionMenuVideoCapture : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuVideoCapture(UIActionPool *pParent)
+        : UIActionMenu(pParent) {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+    }
+};
+
+class UIActionSimpleShowVideoCaptureSettingsDialog : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleShowVideoCaptureSettingsDialog(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/video_capture_settings_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("VideoCaptureSettingsDialog");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture settings"));
+    }
+};
+
+class UIActionToggleVideoCapture : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleVideoCapture(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/video_capture_on_16px.png", ":/video_capture_16px.png",
+                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("VideoCapture");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle video capture"));
+    }
+};
+
 class UIActionMenuMenuBar : public UIActionMenu
 {
     Q_OBJECT;
@@ -1455,92 +1541,6 @@ protected:
     }
 };
 
-class UIActionMenuVideoCapture : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionMenuVideoCapture(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCapture); }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Video Capture"));
-    }
-};
-
-class UIActionToggleVideoCapture : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionToggleVideoCapture(UIActionPool *pParent)
-        : UIActionToggle(pParent,
-                         ":/video_capture_on_16px.png", ":/video_capture_16px.png",
-                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_StartVideoCapture); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("VideoCapture");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Video Capture"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle video capture"));
-    }
-};
-
-class UIActionSimpleShowVideoCaptureSettingsDialog : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimpleShowVideoCaptureSettingsDialog(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/video_capture_settings_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("VideoCaptureSettingsDialog");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture settings"));
-    }
-};
-
 class UIActionSimplePerformInstallGuestTools : public UIActionSimple
 {
     Q_OBJECT;
@@ -2013,6 +2013,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
+    m_pool[UIActionIndexRT_M_View_M_VideoCapture_T_Start] = new UIActionToggleVideoCapture(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
@@ -2048,9 +2051,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuSharedFolders(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_T_VRDEServer] = new UIActionToggleVRDEServer(this);
-    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture] = new UIActionMenuVideoCapture(this);
-    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture_T_Start] = new UIActionToggleVideoCapture(this);
-    m_pool[UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2074,6 +2074,7 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_Machine].ptfr =                 &UIActionPoolRuntime::updateMenuMachine;
     m_menuUpdateHandlers[UIActionIndexRT_M_View].ptfr =                    &UIActionPoolRuntime::updateMenuView;
     m_menuUpdateHandlers[UIActionIndexRT_M_ViewPopup].ptfr =               &UIActionPoolRuntime::updateMenuViewPopup;
+    m_menuUpdateHandlers[UIActionIndexRT_M_View_M_VideoCapture].ptfr =     &UIActionPoolRuntime::updateMenuViewVideoCapture;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_MenuBar].ptfr =          &UIActionPoolRuntime::updateMenuViewMenuBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_StatusBar].ptfr =        &UIActionPoolRuntime::updateMenuViewStatusBar;
     m_menuUpdateHandlers[UIActionIndexRT_M_View_M_ScaleFactor].ptfr =      &UIActionPoolRuntime::updateMenuViewScaleFactor;
@@ -2085,7 +2086,6 @@ void UIActionPoolRuntime::preparePool()
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_Network].ptfr =       &UIActionPoolRuntime::updateMenuDevicesNetwork;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_USBDevices].ptfr =    &UIActionPoolRuntime::updateMenuDevicesUSBDevices;
     m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_SharedFolders].ptfr = &UIActionPoolRuntime::updateMenuDevicesSharedFolders;
-    m_menuUpdateHandlers[UIActionIndexRT_M_Devices_M_VideoCapture].ptfr =  &UIActionPoolRuntime::updateMenuDevicesVideoCapture;
 #ifdef VBOX_WITH_DEBUGGER_GUI
     m_menuUpdateHandlers[UIActionIndexRT_M_Debug].ptfr =                   &UIActionPoolRuntime::updateMenuDebug;
 #endif /* VBOX_WITH_DEBUGGER_GUI */
@@ -2149,6 +2149,8 @@ void UIActionPoolRuntime::updateConfiguration()
     {
         m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
             (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog);
+        m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+            (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings);
         m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuInputActionType)
             (m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuInputActionType_KeyboardSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
@@ -2159,8 +2161,6 @@ void UIActionPoolRuntime::updateConfiguration()
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevicesSettings);
         m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
             (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings);
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VideoCaptureSettings);
     }
 
     /* Recache snapshot related action restrictions: */
@@ -2352,6 +2352,11 @@ void UIActionPoolRuntime::updateMenuView()
 
     /* 'Take Screenshot' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_TakeScreenshot)) || fSeparator;
+    /* 'Video Capture' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture), false) || fSeparator;
+    updateMenuViewVideoCapture();
+    /* 'Video Capture Start' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2455,6 +2460,34 @@ void UIActionPoolRuntime::updateMenuViewPopup()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_ViewPopup);
+}
+
+void UIActionPoolRuntime::updateMenuViewVideoCapture()
+{
+    /* Get corresponding menu: */
+    UIMenu *pMenu = action(UIActionIndexRT_M_View_M_VideoCapture)->menu();
+    AssertPtrReturnVoid(pMenu);
+    /* Clear contents: */
+    pMenu->clear();
+
+    /* Separator: */
+    bool fSeparator = false;
+
+    /* 'Video Capture Settings' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Start Video Capture' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)) || fSeparator;
+
+    /* Mark menu as valid: */
+    m_invalidations.remove(UIActionIndexRT_M_View_M_VideoCapture);
 }
 
 void UIActionPoolRuntime::updateMenuViewMenuBar()
@@ -2771,11 +2804,6 @@ void UIActionPoolRuntime::updateMenuDevices()
 
     /* 'VRDE Server' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_T_VRDEServer)) || fSeparator;
-    /* 'Video Capture' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture), false) || fSeparator;
-    updateMenuDevicesVideoCapture();
-    /* 'Video Capture Start' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2867,34 +2895,6 @@ void UIActionPoolRuntime::updateMenuDevicesSharedFolders()
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Devices_M_SharedFolders);
-}
-
-void UIActionPoolRuntime::updateMenuDevicesVideoCapture()
-{
-    /* Get corresponding menu: */
-    UIMenu *pMenu = action(UIActionIndexRT_M_Devices_M_VideoCapture)->menu();
-    AssertPtrReturnVoid(pMenu);
-    /* Clear contents: */
-    pMenu->clear();
-
-    /* Separator: */
-    bool fSeparator = false;
-
-    /* 'Video Capture Settings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings)) || fSeparator;
-
-    /* Separator: */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-    /* 'Start Video Capture' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_VideoCapture_T_Start)) || fSeparator;
-
-    /* Mark menu as valid: */
-    m_invalidations.remove(UIActionIndexRT_M_Devices_M_VideoCapture);
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

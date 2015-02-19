@@ -61,6 +61,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
     UIActionIndexRT_M_View_S_TakeScreenshot,
+    UIActionIndexRT_M_View_M_VideoCapture,
+    UIActionIndexRT_M_View_M_VideoCapture_S_Settings,
+    UIActionIndexRT_M_View_M_VideoCapture_T_Start,
     UIActionIndexRT_M_View_M_MenuBar,
     UIActionIndexRT_M_View_M_MenuBar_S_Settings,
     UIActionIndexRT_M_View_M_MenuBar_T_Visibility,
@@ -96,9 +99,6 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Devices_M_SharedFolders,
     UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings,
     UIActionIndexRT_M_Devices_T_VRDEServer,
-    UIActionIndexRT_M_Devices_M_VideoCapture,
-    UIActionIndexRT_M_Devices_M_VideoCapture_S_Settings,
-    UIActionIndexRT_M_Devices_M_VideoCapture_T_Start,
     UIActionIndexRT_M_Devices_S_InstallGuestTools,
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -226,6 +226,8 @@ protected:
     void updateMenuView();
     /** Update 'View' : 'Popup' menu routine. */
     void updateMenuViewPopup();
+    /** Update 'View' : 'Video Capture' menu routine. */
+    void updateMenuViewVideoCapture();
     /** Update 'View' : 'Menu Bar' menu routine. */
     void updateMenuViewMenuBar();
     /** Update 'View' : 'Status Bar' menu routine. */
@@ -252,8 +254,6 @@ protected:
     void updateMenuDevicesUSBDevices();
     /** Update 'Devices' : 'Shared Folders' menu routine. */
     void updateMenuDevicesSharedFolders();
-    /** Update 'Devices' : 'Video Capture' menu routine. */
-    void updateMenuDevicesVideoCapture();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Update 'Debug' menu routine. */
     void updateMenuDebug();
