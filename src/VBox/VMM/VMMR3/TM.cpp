@@ -598,14 +598,14 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /*
      * Dump the GIPCPU TSC-deltas, iterate using the Apic Id to get master at the beginning in most cases.
      */
-    LogRel(("TM: GIP - enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%#x\n",
+    LogRel(("TM: GIP - enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%d\n",
             pGip->enmUseTscDelta, pGip->fGetGipCpu, pGip->cCpus));
     for (uint32_t i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
     {
         uint16_t iCpu = pGip->aiCpuFromApicId[i];
 #if 1
         if (iCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%RI64\n", pGip->aCPUs[iCpu].idCpu,
+            LogRel(("TM: GIP - CPU[%3d]: idApic=%d i64TSCDelta=%RI64\n", pGip->aCPUs[iCpu].idCpu,
                     pGip->aCPUs[iCpu].idApic, pGip->aCPUs[iCpu].i64TSCDelta));
 #else
         /* Dump 2 entries per line, saves vertical space in release log but more dumps bytes due to formatting. */
