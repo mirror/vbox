@@ -6002,7 +6002,7 @@ static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHe
 static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
 {
     PSUPDRVDEVEXT     pDevExt = (PSUPDRVDEVEXT)pvUser;
-    uint32_t          cTimesMeasured = 0;
+    bool              fInitialMeasurement = true;
     uint32_t          cConsecutiveTimeouts = 0;
     int               rc = VERR_INTERNAL_ERROR_2;
     for (;;)
@@ -6062,10 +6062,11 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
             case kTscDeltaThreadState_Measuring:
             {
                 cConsecutiveTimeouts = 0;
-                if (!cTimesMeasured++)
+                if (fInitialMeasurement)
                 {
                     int cTries = 8;
                     int cMsWaitPerTry = 10;
+                    fInitialMeasurement = false;
                     do
                     {
                         rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
@@ -6083,9 +6084,6 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 {
                     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
                     unsigned iCpu;
-
-                    if (cTimesMeasured == UINT32_MAX)
-                        cTimesMeasured = 1;
 
                     /* Measure TSC-deltas only for the CPUs that are in the set. */
                     rc = VINF_SUCCESS;
