@@ -164,7 +164,7 @@ int main(int argc, char **argv)
                 for (uint32_t iCpu = 0; iCpu < pGip->cCpus; iCpu++)
                     if (pGip->aCPUs[iCpu].enmState == SUPGIPCPUSTATE_ONLINE)
                     {
-                        rc = SUPR3TscDeltaMeasure(pGip->aCPUs[iCpu].idCpu, false /*fAsync*/, true /*fForce*/,  64, 16 /*ms*/);
+                        rc = SUPR3TscDeltaMeasure(pGip->aCPUs[iCpu].idCpu, false /*fAsync*/, true /*fForce*/, 64, 16 /*ms*/);
                         if (RT_FAILURE(rc))
                             RTTestFailed(hTest, "SUPR3TscDeltaMeasure failed on %#x: %Rrc", pGip->aCPUs[iCpu].idCpu, rc);
                     }

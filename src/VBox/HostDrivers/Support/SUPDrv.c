@@ -6040,6 +6040,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 if (   RT_FAILURE(rc)
                     && rc != VERR_TIMEOUT)
                     return supdrvTscDeltaThreadButchered(pDevExt, false /* fSpinlockHeld */, "RTThreadUserWait", rc);
+                RTThreadUserReset(pDevExt->hTscDeltaThread);
                 break;
             }
 
@@ -6060,8 +6061,20 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 cConsecutiveTimeouts = 0;
                 if (!cTimesMeasured++)
                 {
-                    rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
-                    RTCpuSetCopy(&pDevExt->TscDeltaObtainedCpuSet, &pDevExt->pGip->OnlineCpuSet);
+                    int cTries = 8;
+                    int cMsWaitPerTry = 10;
+                    do
+                    {
+                        rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
+                        if (   RT_SUCCESS(rc)
+                            || (   RT_FAILURE(rc)
+                                && rc != VERR_TRY_AGAIN
+                                && rc != VERR_CPU_OFFLINE))
+                        {
+                            break;
+                        }
+                        RTThreadSleep(cMsWaitPerTry);
+                    } while (cTries-- > 0);
                 }
                 else
                 {
@@ -6080,9 +6093,6 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                             && RTCpuSetIsMember(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu))
                         {
                             rc |= supdrvMeasureTscDeltaOne(pDevExt, iCpu);
-                            RTCpuSetDel(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu);
-                            if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
-                                RTCpuSetAdd(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->idCpu);
                         }
                     }
                 }
@@ -6230,10 +6240,8 @@ static int supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt)
         rc = RTSemEventCreate(&pDevExt->hTscDeltaEvent);
         if (RT_SUCCESS(rc))
         {
-            pDevExt->enmTscDeltaThreadState   = kTscDeltaThreadState_Creating;
+            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Creating;
             pDevExt->cMsTscDeltaTimeout = 1;
-            RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
-            RTCpuSetEmpty(&pDevExt->TscDeltaObtainedCpuSet);
             rc = RTThreadCreate(&pDevExt->hTscDeltaThread, supdrvTscDeltaThread, pDevExt, 0 /* cbStack */,
                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxTscThread");
             if (RT_SUCCESS(rc))
@@ -6313,7 +6321,7 @@ static int supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt)
     if (RT_UNLIKELY(pDevExt->hTscDeltaThread == NIL_RTTHREAD))
         return VERR_THREAD_NOT_WAITABLE;
 
-    cMsTotalWait = RT_MIN(pGip->cPresentCpus + 2, 150);
+    cMsTotalWait = RT_MIN(pGip->cPresentCpus + 10, 200);
     while (cTriesLeft-- > 0)
     {
         if (RTCpuSetIsEqual(&pDevExt->TscDeltaObtainedCpuSet, &pGip->OnlineCpuSet))
@@ -6732,6 +6740,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
         return VERR_INTERNAL_ERROR_2;
     }
 
+    RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
+    RTCpuSetEmpty(&pDevExt->TscDeltaObtainedCpuSet);
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
@@ -6758,7 +6768,8 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                     do
                     {
                         rc = supdrvMeasureTscDeltas(pDevExt, NULL /* pidxMaster */);
-                        if (rc != VERR_TRY_AGAIN)
+                        if (   rc != VERR_TRY_AGAIN
+                            && rc != VERR_CPU_OFFLINE)
                             break;
                     } while (--cTries > 0);
                     for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
@@ -6942,6 +6953,19 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
     supdrvGipUpdate(pDevExt, u64NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
     ASMSetFlags(uFlags);
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    if (   pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED
+        && !RTCpuSetIsEmpty(&pDevExt->TscDeltaCpuSet))
+    {
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
+            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
+            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        /** @todo Do the actual poking using -- RTThreadUserSignal() */
+    }
+#endif
 }
 
 
@@ -7062,25 +7086,20 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     /* Update the Mp online/offline counter. */
     ASMAtomicIncU32(&pDevExt->cMpOnOffEvents);
 
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-    /*
-     * Add this CPU to the set of CPUs that require their TSC delta to be measured.
-     *
-     * We cannot poke the TSC-delta measurement thread from this context (on all OSs), so we only
-     * update the state and it'll get serviced when the thread's listening interval times out.
-     */
+    /* Add this CPU to the set of CPUs for which we need to calculate their TSC-deltas. */
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
-        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
         RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
         if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
             || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
         {
             pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
         }
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-    }
 #endif
+    }
 
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
@@ -7127,14 +7146,12 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
         ASMAtomicWriteU64(&pGip->aCPUs[i].u64TSCSample, ~GIP_TSC_DELTA_RSVD);
     }
 
-    /* Reset the TSC delta, we will recalculate it lazily. */
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
     {
+        /* Reset the TSC delta, we will recalculate it lazily. */
         ASMAtomicWriteS64(&pGip->aCPUs[i].i64TSCDelta, INT64_MAX);
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
         /* Remove this CPU from the set of CPUs that we have obtained the TSC deltas. */
         RTCpuSetDel(&pDevExt->TscDeltaObtainedCpuSet, idCpu);
-#endif
     }
 
     /* commit it */
@@ -7438,7 +7455,19 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
         }
 
         if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
+        {
+            if (idCpu == idMaster)
+            {
+                RTCpuSetDel(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->idCpu);
+                RTCpuSetAdd(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->idCpu);
+            }
+            else
+            {
+                RTCpuSetDel(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu);
+                RTCpuSetAdd(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->idCpu);
+            }
             break;
+        }
     }
 }
 
@@ -7615,7 +7644,7 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
     {
         PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
         if (   iCpu != idxMaster
-            && RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpuWorker->idCpu))
+            && RTCpuSetIsMember(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu))
         {
             rc = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
             if (RT_FAILURE(rc))
@@ -7627,7 +7656,7 @@ static int supdrvMeasureTscDeltas(PSUPDRVDEVEXT pDevExt, uint32_t *pidxMaster)
 
             if (ASMAtomicReadU32(&pDevExt->cMpOnOffEvents) != cMpOnOffEvents)
             {
-                SUPR0Printf("One or more CPUs transitioned between online & offline states. I'm confused, retrying...\n");
+                SUPR0Printf("One or more CPUs transitioned between online & offline states. I'm confused, retry...\n");
                 rc = VERR_TRY_AGAIN;
                 break;
             }
@@ -8063,7 +8092,6 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
             u64TSCDelta >>= 1;
         }
     }
-
 
     /*
      * TSC History.
