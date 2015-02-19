@@ -4320,7 +4320,7 @@ SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS 
                 if (RT_SUCCESS(rc))
                 {
                     SUPDRVGIPDETECTGETCPU DetectState;
-                    RT_ZERO(DetectState.bmApicId);
+                    RT_BZERO((void *)&DetectState.bmApicId, sizeof(DetectState.bmApicId));
                     DetectState.fSupported   = UINT32_MAX;
                     DetectState.idCpuProblem = NIL_RTCPUID;
                     rc = RTMpOnAll(supdrvGipDetectGetGipCpuCallback, &DetectState, pGipR0);
@@ -5966,35 +5966,6 @@ static int supdrvIOCtl_MsrProber(PSUPDRVDEVEXT pDevExt, PSUPMSRPROBER pReq)
 #endif
 }
 
-
-/**
- * Returns whether the host CPU sports an invariant TSC or not.
- *
- * @returns true if invariant TSC is supported, false otherwise.
- */
-static bool supdrvIsInvariantTsc(void)
-{
-    static bool s_fQueried        = false;
-    static bool s_fIsInvariantTsc = false;
-    if (!s_fQueried)
-    {
-        if (ASMHasCpuId())
-        {
-            uint32_t uEax, uEbx, uEcx, uEdx;
-            ASMCpuId(0x80000000, &uEax, &uEbx, &uEcx, &uEdx);
-            if (uEax >= 0x80000007)
-            {
-                ASMCpuId(0x80000007, &uEax, &uEbx, &uEcx, &uEdx);
-                if (uEdx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
-                    s_fIsInvariantTsc = true;
-            }
-        }
-        s_fQueried = true;
-    }
-
-    return s_fIsInvariantTsc;
-}
-
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
 
 /**
@@ -7158,13 +7129,13 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 
     /* Reset the TSC delta, we will recalculate it lazily. */
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+    {
         ASMAtomicWriteS64(&pGip->aCPUs[i].i64TSCDelta, INT64_MAX);
-
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
-    /* Remove this CPU from the set of CPUs that we have obtained the TSC deltas. */
-    if (supdrvIsInvariantTsc())
+        /* Remove this CPU from the set of CPUs that we have obtained the TSC deltas. */
         RTCpuSetDel(&pDevExt->TscDeltaObtainedCpuSet, idCpu);
 #endif
+    }
 
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
@@ -7768,69 +7739,92 @@ static bool supdrvDetermineAsyncTsc(uint64_t *poffMin)
 
 
 /**
- * Determine the GIP TSC mode.
+ * supdrvGipInit() worker that determines the GIP TSC mode.
  *
  * @returns The most suitable TSC mode.
  * @param   pDevExt     Pointer to the device instance data.
  */
-static SUPGIPMODE supdrvGipDetermineTscMode(PSUPDRVDEVEXT pDevExt)
+static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
 {
-    /* Trust CPUs that declare their TSC to be invariant. */
-#if 0       /** @todo this cannot be enabled until Michal's AMD laptop with insane deltas are working. */
-    if (supdrvIsInvariantTsc())
+    uint64_t u64DiffCoresIgnored;
+    uint32_t uEAX, uEBX, uECX, uEDX;
+
+    /*
+     * Establish whether the CPU advertises TSC as invariant, we need that in
+     * a couple of places below.
+     */
+    bool fInvariantTsc = false;
+    if (ASMHasCpuId())
+    {
+        uEAX = ASMCpuId_EAX(0x80000000);
+        if (ASMIsValidExtRange(uEAX) && uEAX >= 0x80000007)
+        {
+            uEDX = ASMCpuId_EDX(0x80000007);
+            if (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR)
+                fInvariantTsc = true;
+        }
+    }
+
+    /*
+     * On single CPU systems, we don't need to consider ASYNC mode.
+     */
+    if (RTMpGetCount() <= 1)
+        return fInvariantTsc ? SUPGIPMODE_INVARIANT_TSC : SUPGIPMODE_SYNC_TSC;
+
+    /*
+     * Allow the user and/or OS specific bits to force async mode.
+     */
+    if (supdrvOSGetForcedAsyncTscMode(pDevExt))
+        return SUPGIPMODE_ASYNC_TSC;
+
+
+#if 0 /** @todo enable this when i64TscDelta is applied in all places where it's needed */
+    /*
+     * Use invariant mode if the CPU says TSC is invariant.
+     */
+    if (fInvariantTsc)
         return SUPGIPMODE_INVARIANT_TSC;
 #endif
 
     /*
-     * Without invariant CPU ID bit - On SMP we're faced with two problems:
+     * TSC is not invariant and we're on SMP, this presents two problems:
+     *
      *      (1) There might be a skew between the CPU, so that cpu0
      *          returns a TSC that is slightly different from cpu1.
+     *          This screw may be due to (2), bad TSC initialization
+     *          or slightly different TSC rates.
+     *
      *      (2) Power management (and other things) may cause the TSC
      *          to run at a non-constant speed, and cause the speed
      *          to be different on the cpus. This will result in (1).
      *
-     * So, on SMP systems we'll have to select the ASYNC update method
-     * if there are symptoms of these problems.
+     * If any of the above is detected, we will have to use ASYNC mode.
      */
-    if (RTMpGetCount() > 1)
+
+    /* (1). Try check for current differences between the cpus. */
+    if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
+        return SUPGIPMODE_ASYNC_TSC;
+
+#if 1 /** @todo remove once i64TscDelta is applied everywhere. Enable #if 0 above. */
+    if (fInvariantTsc)
+        return SUPGIPMODE_INVARIANT_TSC;
+#endif
+
+    /* (2) If it's an AMD CPU with power management, we won't trust its TSC. */
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    if (   ASMIsValidStdRange(uEAX)
+        && ASMIsAmdCpuEx(uEBX, uECX, uEDX))
     {
-        uint32_t uEAX, uEBX, uECX, uEDX;
-        uint64_t u64DiffCoresIgnored;
-
-        /* Permit the user and/or the OS specific bits to force async mode. */
-        if (supdrvOSGetForcedAsyncTscMode(pDevExt))
-            return SUPGIPMODE_ASYNC_TSC;
-
-        /* Try check for current differences between the cpus. */
-        if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
-            return SUPGIPMODE_ASYNC_TSC;
-
-        /*
-         * If the CPU supports power management and is an AMD one we
-         * won't trust it unless it has the TscInvariant bit is set.
-         */
-        /** @todo this is now redundant. remove later. */
-        /* Check for "AuthenticAMD" */
-        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-        if (   uEAX >= 1
-            && ASMIsAmdCpuEx(uEBX, uECX, uEDX))
+        /* Check for APM support. */
+        uEAX = ASMCpuId_EAX(0x80000000);
+        if (ASMIsValidExtRange(uEAX) && uEAX >= 0x80000007)
         {
-            /* Check for APM support and that TscInvariant is cleared. */
-            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
-            if (uEAX >= 0x80000007)
-            {
-                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                if (    !(uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
-                    &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
-                    return SUPGIPMODE_ASYNC_TSC;
-            }
+            uEDX = ASMCpuId_EDX(0x80000007);
+            if (uEDX & 0x3e)  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
+                return SUPGIPMODE_ASYNC_TSC;
         }
     }
 
-    /** @todo later remove this when the above todo with AMD laptop is done (i.e.
-     *        TSC deltas handled everywhere). */
-    if (supdrvIsInvariantTsc())
-        return SUPGIPMODE_INVARIANT_TSC;
     return SUPGIPMODE_SYNC_TSC;
 }
 
@@ -7906,10 +7900,10 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
 
     pGip->u32Magic                = SUPGLOBALINFOPAGE_MAGIC;
     pGip->u32Version              = SUPGLOBALINFOPAGE_VERSION;
-    pGip->u32Mode                 = supdrvGipDetermineTscMode(pDevExt);
+    pGip->u32Mode                 = supdrvGipInitDetermineTscMode(pDevExt);
     if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
         /*|| pGip->u32Mode == SUPGIPMODE_SYNC_TSC */)
-        pGip->enmUseTscDelta      = supdrvIsInvariantTsc() && supdrvOSAreTscDeltasInSync() /* Allow OS override (windows). */
+        pGip->enmUseTscDelta      = supdrvOSAreTscDeltasInSync() /* Allow OS override (windows). */
                                   ? SUPGIPUSETSCDELTA_ZERO_CLAIMED : SUPGIPUSETSCDELTA_PRACTICALLY_ZERO /* downgrade later */;
     else
         pGip->enmUseTscDelta      = SUPGIPUSETSCDELTA_NOT_APPLICABLE;
