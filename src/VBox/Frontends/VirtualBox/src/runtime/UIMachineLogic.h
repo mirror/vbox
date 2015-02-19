@@ -262,6 +262,7 @@ private slots:
     void sltTakeScreenshot();
     void sltOpenVideoCaptureOptions();
     void sltToggleVideoCapture(bool fEnabled);
+    void sltToggleVRDE(bool fEnabled);
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
@@ -275,7 +276,6 @@ private slots:
     void sltChangeSharedClipboardType(QAction *pAction);
     void sltToggleNetworkAdapterConnection();
     void sltChangeDragAndDropType(QAction *pAction);
-    void sltToggleVRDE(bool fEnabled);
     void sltInstallGuestAdditions();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

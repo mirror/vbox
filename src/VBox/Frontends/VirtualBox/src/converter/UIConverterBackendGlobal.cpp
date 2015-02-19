@@ -582,6 +582,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture:         strResult = "VideoCapture"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings: strResult = "VideoCaptureSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture:    strResult = "StartVideoCapture"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer:           strResult = "VRDEServer"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:              strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:      strResult = "MenuBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:        strResult = "ToggleMenuBar"; break;
@@ -616,6 +617,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "VideoCapture";         values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCapture;
     keys << "VideoCaptureSettings"; values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VideoCaptureSettings;
     keys << "StartVideoCapture";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StartVideoCapture;
+    keys << "VRDEServer";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
     keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
     keys << "ToggleMenuBar";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
@@ -698,7 +700,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuDevice
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop:           strResult = "DragAndDrop"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders:         strResult = "SharedFolders"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings: strResult = "SharedFoldersSettings"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer:            strResult = "VRDEServer"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools:     strResult = "InstallGuestTools"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing:               strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All:                   strResult = "All"; break;
@@ -730,7 +731,6 @@ template<> UIExtraDataMetaDefs::RuntimeMenuDevicesActionType fromInternalString<
     keys << "DragAndDrop";           values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_DragAndDrop;
     keys << "SharedFolders";         values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFolders;
     keys << "SharedFoldersSettings"; values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_SharedFoldersSettings;
-    keys << "VRDEServer";            values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer;
     keys << "InstallGuestTools";     values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_InstallGuestTools;
     keys << "Nothing";               values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Nothing;
     keys << "All";                   values << UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_All;

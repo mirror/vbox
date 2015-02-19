@@ -729,6 +729,38 @@ protected:
     }
 };
 
+class UIActionToggleVRDEServer : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleVRDEServer(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/vrdp_on_16px.png", ":/vrdp_16px.png",
+                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("VRDPServer");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "R&emote Display"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle remote desktop (RDP) connections to this machine"));
+    }
+};
+
 class UIActionMenuMenuBar : public UIActionMenu
 {
     Q_OBJECT;
@@ -1509,38 +1541,6 @@ protected:
     }
 };
 
-class UIActionToggleVRDEServer : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionToggleVRDEServer(UIActionPool *pParent)
-        : UIActionToggle(pParent,
-                         ":/vrdp_on_16px.png", ":/vrdp_16px.png",
-                         ":/vrdp_on_disabled_16px.png", ":/vrdp_disabled_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuDevices(UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("VRDPServer");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "R&emote Display"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle remote desktop (RDP) connections to this machine"));
-    }
-};
-
 class UIActionSimplePerformInstallGuestTools : public UIActionSimple
 {
     Q_OBJECT;
@@ -2016,6 +2016,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuVideoCapture(this);
     m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
     m_pool[UIActionIndexRT_M_View_M_VideoCapture_T_Start] = new UIActionToggleVideoCapture(this);
+    m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
@@ -2050,7 +2051,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Devices_M_DragAndDrop] = new UIActionMenuDragAndDrop(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders] = new UIActionMenuSharedFolders(this);
     m_pool[UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings] = new UIActionSimpleShowSharedFoldersSettingsDialog(this);
-    m_pool[UIActionIndexRT_M_Devices_T_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRT_M_Devices_S_InstallGuestTools] = new UIActionSimplePerformInstallGuestTools(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -2176,8 +2176,8 @@ void UIActionPoolRuntime::updateConfiguration()
     bool fExtensionPackOperationsAllowed = !extPack.isNull() && extPack.GetUsable();
     if (!fExtensionPackOperationsAllowed)
     {
-        m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)
-            (m_restrictedActionsMenuDevices[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_VRDEServer);
+        m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
+            (m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
     }
 
     /* Recache close related action restrictions: */
@@ -2357,6 +2357,8 @@ void UIActionPoolRuntime::updateMenuView()
     updateMenuViewVideoCapture();
     /* 'Video Capture Start' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)) || fSeparator;
+    /* 'VRDE Server' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_VRDEServer)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2790,10 +2792,6 @@ void UIActionPoolRuntime::updateMenuDevices()
     /* 'Shared Folders' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedFolders)) || fSeparator;
     updateMenuDevicesSharedFolders();
-    /* 'Shared Clipboard' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedClipboard)) || fSeparator;
-    /* 'Drag&Drop' submenu: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_DragAndDrop)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
@@ -2802,8 +2800,10 @@ void UIActionPoolRuntime::updateMenuDevices()
         fSeparator = false;
     }
 
-    /* 'VRDE Server' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_T_VRDEServer)) || fSeparator;
+    /* 'Shared Clipboard' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_SharedClipboard)) || fSeparator;
+    /* 'Drag&Drop' submenu: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Devices_M_DragAndDrop)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)

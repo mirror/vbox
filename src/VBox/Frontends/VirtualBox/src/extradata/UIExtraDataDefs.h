@@ -390,15 +390,16 @@ public:
         RuntimeMenuViewActionType_VideoCapture         = RT_BIT(6),
         RuntimeMenuViewActionType_VideoCaptureSettings = RT_BIT(7),
         RuntimeMenuViewActionType_StartVideoCapture    = RT_BIT(8),
-        RuntimeMenuViewActionType_MenuBar              = RT_BIT(9),
-        RuntimeMenuViewActionType_MenuBarSettings      = RT_BIT(10),
-        RuntimeMenuViewActionType_ToggleMenuBar        = RT_BIT(11),
-        RuntimeMenuViewActionType_StatusBar            = RT_BIT(12),
-        RuntimeMenuViewActionType_StatusBarSettings    = RT_BIT(13),
-        RuntimeMenuViewActionType_ToggleStatusBar      = RT_BIT(14),
-        RuntimeMenuViewActionType_ScaleFactor          = RT_BIT(15),
-        RuntimeMenuViewActionType_Resize               = RT_BIT(16),
-        RuntimeMenuViewActionType_Multiscreen          = RT_BIT(17),
+        RuntimeMenuViewActionType_VRDEServer           = RT_BIT(9),
+        RuntimeMenuViewActionType_MenuBar              = RT_BIT(10),
+        RuntimeMenuViewActionType_MenuBarSettings      = RT_BIT(11),
+        RuntimeMenuViewActionType_ToggleMenuBar        = RT_BIT(12),
+        RuntimeMenuViewActionType_StatusBar            = RT_BIT(13),
+        RuntimeMenuViewActionType_StatusBarSettings    = RT_BIT(14),
+        RuntimeMenuViewActionType_ToggleStatusBar      = RT_BIT(15),
+        RuntimeMenuViewActionType_ScaleFactor          = RT_BIT(16),
+        RuntimeMenuViewActionType_Resize               = RT_BIT(17),
+        RuntimeMenuViewActionType_Multiscreen          = RT_BIT(18),
         RuntimeMenuViewActionType_All                  = 0xFFFF
     };
 
@@ -434,9 +435,8 @@ public:
         RuntimeMenuDevicesActionType_DragAndDrop           = RT_BIT(10),
         RuntimeMenuDevicesActionType_SharedFolders         = RT_BIT(11),
         RuntimeMenuDevicesActionType_SharedFoldersSettings = RT_BIT(12),
-        RuntimeMenuDevicesActionType_VRDEServer            = RT_BIT(13),
-        RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(14),
-        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(15),
+        RuntimeMenuDevicesActionType_InstallGuestTools     = RT_BIT(13),
+        RuntimeMenuDevicesActionType_Nothing               = RT_BIT(14),
         RuntimeMenuDevicesActionType_All                   = 0xFFFF
     };
 

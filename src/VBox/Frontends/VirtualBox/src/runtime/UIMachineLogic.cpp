@@ -929,6 +929,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
@@ -953,7 +954,6 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
 #ifdef Q_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndex_M_Window));
@@ -1002,6 +1002,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenVideoCaptureOptions()));
     connect(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleVideoCapture(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleVRDE(bool)));
 
     /* 'Input' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
@@ -1025,8 +1027,6 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenUSBDevicesSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenSharedFoldersSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleVRDE(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), SIGNAL(triggered()),
             this, SLOT(sltInstallGuestAdditions()));
 
@@ -1630,6 +1630,51 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
     }
 }
 
+void UIMachineLogic::sltToggleVRDE(bool fEnabled)
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Access VRDE server: */
+    CVRDEServer server = machine().GetVRDEServer();
+    AssertMsg(!server.isNull(), ("VRDE server should NOT be null!\n"));
+    if (!machine().isOk() || server.isNull())
+        return;
+
+    /* Make sure something had changed: */
+    if (server.GetEnabled() == static_cast<BOOL>(fEnabled))
+        return;
+
+    /* Server is OK? */
+    if (server.isOk())
+    {
+        /* Update VRDE server state: */
+        server.SetEnabled(fEnabled);
+        /* Server still OK? */
+        if (server.isOk())
+        {
+            /* Save machine-settings: */
+            machine().SaveSettings();
+            /* Machine still OK? */
+            if (!machine().isOk())
+            {
+                /* Notify about the error: */
+                msgCenter().cannotSaveMachineSettings(machine());
+                /* Make sure action is updated! */
+                uisession()->updateStatusVRDE();
+            }
+        }
+        else
+        {
+            /* Notify about the error: */
+            msgCenter().cannotToggleVRDEServer(server, machineName(), fEnabled);
+            /* Make sure action is updated! */
+            uisession()->updateStatusVRDE();
+        }
+    }
+}
+
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
                                              const QString &strControl /* = QString()*/)
 {
@@ -1805,51 +1850,6 @@ void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)
     /* Assign new mode (without save): */
     KDnDMode mode = pAction->data().value<KDnDMode>();
     machine().SetDnDMode(mode);
-}
-
-void UIMachineLogic::sltToggleVRDE(bool fEnabled)
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Access VRDE server: */
-    CVRDEServer server = machine().GetVRDEServer();
-    AssertMsg(!server.isNull(), ("VRDE server should NOT be null!\n"));
-    if (!machine().isOk() || server.isNull())
-        return;
-
-    /* Make sure something had changed: */
-    if (server.GetEnabled() == static_cast<BOOL>(fEnabled))
-        return;
-
-    /* Server is OK? */
-    if (server.isOk())
-    {
-        /* Update VRDE server state: */
-        server.SetEnabled(fEnabled);
-        /* Server still OK? */
-        if (server.isOk())
-        {
-            /* Save machine-settings: */
-            machine().SaveSettings();
-            /* Machine still OK? */
-            if (!machine().isOk())
-            {
-                /* Notify about the error: */
-                msgCenter().cannotSaveMachineSettings(machine());
-                /* Make sure action is updated! */
-                uisession()->updateStatusVRDE();
-            }
-        }
-        else
-        {
-            /* Notify about the error: */
-            msgCenter().cannotToggleVRDEServer(server, machineName(), fEnabled);
-            /* Make sure action is updated! */
-            uisession()->updateStatusVRDE();
-        }
-    }
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()

@@ -497,6 +497,7 @@ void UIMenuBarEditorWidget::prepareMenuView()
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start));
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_View_M_StatusBar));
@@ -535,10 +536,9 @@ void UIMenuBarEditorWidget::prepareMenuDevices()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_WebCams));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders));
+        pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_SharedClipboard));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_M_DragAndDrop));
-        pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_T_VRDEServer));
         pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools));
     }
