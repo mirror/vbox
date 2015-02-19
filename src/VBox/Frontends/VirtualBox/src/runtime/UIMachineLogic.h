@@ -250,7 +250,6 @@ private slots:
     void sltTypeCABS();
 #endif /* Q_WS_X11 */
     void sltTakeSnapshot();
-    void sltTakeScreenshot();
     void sltShowInformationDialog();
     void sltReset();
     void sltPause(bool fOn);
@@ -258,6 +257,9 @@ private slots:
     void sltShutdown();
     void sltPowerOff();
     void sltClose();
+
+    /* "View" menu functionality: */
+    void sltTakeScreenshot();
 
     /* "Device" menu functionality: */
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());

@@ -923,9 +923,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Save));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
-    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
+    m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
@@ -971,8 +971,6 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltOpenVMSettingsDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), SIGNAL(triggered()),
             this, SLOT(sltTakeSnapshot()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeScreenshot), SIGNAL(triggered()),
-            this, SLOT(sltTakeScreenshot()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
             this, SLOT(sltShowInformationDialog()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
@@ -998,6 +996,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
             this, SLOT(sltAdjustWindow()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
+            this, SLOT(sltTakeScreenshot()));
 
     /* 'Input' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
@@ -1424,75 +1424,6 @@ void UIMachineLogic::sltTakeSnapshot()
     }
 }
 
-void UIMachineLogic::sltTakeScreenshot()
-{
-    /* Do not process if window(s) missed! */
-    if (!isMachineWindowsCreated())
-        return;
-
-    /* Which image formats for writing does this Qt version know of? */
-    QList<QByteArray> formats = QImageWriter::supportedImageFormats();
-    QStringList filters;
-    /* Build a filters list out of it. */
-    for (int i = 0; i < formats.size(); ++i)
-    {
-        const QString &s = formats.at(i) + " (*." + formats.at(i).toLower() + ")";
-        /* Check there isn't an entry already (even if it just uses another capitalization) */
-        if (filters.indexOf(QRegExp(QRegExp::escape(s), Qt::CaseInsensitive)) == -1)
-            filters << s;
-    }
-    /* Try to select some common defaults. */
-    QString strFilter;
-    int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
-    if (i == -1)
-    {
-        i = filters.indexOf(QRegExp(".*jpe+g.*", Qt::CaseInsensitive));
-        if (i == -1)
-            i = filters.indexOf(QRegExp(".*bmp.*", Qt::CaseInsensitive));
-    }
-    if (i != -1)
-    {
-        filters.prepend(filters.takeAt(i));
-        strFilter = filters.first();
-    }
-
-#ifdef Q_WS_WIN
-    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
-     * does not retreive the focus from the currently focused machine-view,
-     * as the result guest keyboard remains captured, so we should
-     * clear the focus from this machine-view initially: */
-    if (activeMachineWindow())
-        activeMachineWindow()->machineView()->clearFocus();
-#endif /* Q_WS_WIN */
-
-    /* Request the filename from the user. */
-    QFileInfo fi(machine().GetSettingsFilePath());
-    QString strAbsolutePath(fi.absolutePath());
-    QString strCompleteBaseName(fi.completeBaseName());
-    QString strStart = QDir(strAbsolutePath).absoluteFilePath(strCompleteBaseName);
-    QString strFilename = QIFileDialog::getSaveFileName(strStart,
-                                                        filters.join(";;"),
-                                                        activeMachineWindow(),
-                                                        tr("Select a filename for the screenshot ..."),
-                                                        &strFilter,
-                                                        true /* resolve symlinks */,
-                                                        true /* confirm overwrite */);
-
-#ifdef Q_WS_WIN
-    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
-     * does not retreive the focus from the currently focused machine-view,
-     * as the result guest keyboard remains captured, so we already
-     * cleared the focus from this machine-view and should return
-     * that focus finally: */
-    if (activeMachineWindow())
-        activeMachineWindow()->machineView()->setFocus();
-#endif /* Q_WS_WIN */
-
-    /* Do the screenshot. */
-    if (!strFilename.isEmpty())
-        takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
-}
-
 void UIMachineLogic::sltShowInformationDialog()
 {
     /* Do not process if window(s) missed! */
@@ -1585,6 +1516,75 @@ void UIMachineLogic::sltClose()
 
     /* Try to close active machine-window: */
     activeMachineWindow()->close();
+}
+
+void UIMachineLogic::sltTakeScreenshot()
+{
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    /* Which image formats for writing does this Qt version know of? */
+    QList<QByteArray> formats = QImageWriter::supportedImageFormats();
+    QStringList filters;
+    /* Build a filters list out of it. */
+    for (int i = 0; i < formats.size(); ++i)
+    {
+        const QString &s = formats.at(i) + " (*." + formats.at(i).toLower() + ")";
+        /* Check there isn't an entry already (even if it just uses another capitalization) */
+        if (filters.indexOf(QRegExp(QRegExp::escape(s), Qt::CaseInsensitive)) == -1)
+            filters << s;
+    }
+    /* Try to select some common defaults. */
+    QString strFilter;
+    int i = filters.indexOf(QRegExp(".*png.*", Qt::CaseInsensitive));
+    if (i == -1)
+    {
+        i = filters.indexOf(QRegExp(".*jpe+g.*", Qt::CaseInsensitive));
+        if (i == -1)
+            i = filters.indexOf(QRegExp(".*bmp.*", Qt::CaseInsensitive));
+    }
+    if (i != -1)
+    {
+        filters.prepend(filters.takeAt(i));
+        strFilter = filters.first();
+    }
+
+#ifdef Q_WS_WIN
+    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
+     * does not retreive the focus from the currently focused machine-view,
+     * as the result guest keyboard remains captured, so we should
+     * clear the focus from this machine-view initially: */
+    if (activeMachineWindow())
+        activeMachineWindow()->machineView()->clearFocus();
+#endif /* Q_WS_WIN */
+
+    /* Request the filename from the user. */
+    QFileInfo fi(machine().GetSettingsFilePath());
+    QString strAbsolutePath(fi.absolutePath());
+    QString strCompleteBaseName(fi.completeBaseName());
+    QString strStart = QDir(strAbsolutePath).absoluteFilePath(strCompleteBaseName);
+    QString strFilename = QIFileDialog::getSaveFileName(strStart,
+                                                        filters.join(";;"),
+                                                        activeMachineWindow(),
+                                                        tr("Select a filename for the screenshot ..."),
+                                                        &strFilter,
+                                                        true /* resolve symlinks */,
+                                                        true /* confirm overwrite */);
+
+#ifdef Q_WS_WIN
+    /* Due to Qt bug, modal QFileDialog appeared above the active machine-window
+     * does not retreive the focus from the currently focused machine-view,
+     * as the result guest keyboard remains captured, so we already
+     * cleared the focus from this machine-view and should return
+     * that focus finally: */
+    if (activeMachineWindow())
+        activeMachineWindow()->machineView()->setFocus();
+#endif /* Q_WS_WIN */
+
+    /* Do the screenshot. */
+    if (!strFilename.isEmpty())
+        takeScreenshot(strFilename, strFilter.split(" ").value(0, "png"));
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,

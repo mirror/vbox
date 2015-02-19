@@ -521,7 +521,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
     {
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog:    strResult = "SettingsDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot:      strResult = "TakeSnapshot"; break;
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog: strResult = "InformationDialog"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause:             strResult = "Pause"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset:             strResult = "Reset"; break;
@@ -550,7 +549,6 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     QStringList keys;            QList<UIExtraDataMetaDefs::RuntimeMenuMachineActionType> values;
     keys << "SettingsDialog";    values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SettingsDialog;
     keys << "TakeSnapshot";      values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeSnapshot;
-    keys << "TakeScreenshot";    values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot;
     keys << "InformationDialog"; values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_InformationDialog;
     keys << "Pause";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Pause;
     keys << "Reset";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Reset;
@@ -580,6 +578,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale:             strResult = "Scale"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize:   strResult = "GuestAutoresize"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow:      strResult = "AdjustWindow"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot:    strResult = "TakeScreenshot"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:           strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:   strResult = "MenuBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:     strResult = "ToggleMenuBar"; break;
@@ -610,6 +609,7 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "Scale";             values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_Scale;
     keys << "GuestAutoresize";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_GuestAutoresize;
     keys << "AdjustWindow";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow;
+    keys << "TakeScreenshot";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot;
     keys << "MenuBar";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";   values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
     keys << "ToggleMenuBar";     values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;

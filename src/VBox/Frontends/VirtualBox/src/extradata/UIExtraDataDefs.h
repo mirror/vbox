@@ -364,17 +364,16 @@ public:
         RuntimeMenuMachineActionType_Invalid           = 0,
         RuntimeMenuMachineActionType_SettingsDialog    = RT_BIT(0),
         RuntimeMenuMachineActionType_TakeSnapshot      = RT_BIT(1),
-        RuntimeMenuMachineActionType_TakeScreenshot    = RT_BIT(2),
-        RuntimeMenuMachineActionType_InformationDialog = RT_BIT(3),
-        RuntimeMenuMachineActionType_Pause             = RT_BIT(10),
-        RuntimeMenuMachineActionType_Reset             = RT_BIT(11),
-        RuntimeMenuMachineActionType_SaveState         = RT_BIT(12),
-        RuntimeMenuMachineActionType_Shutdown          = RT_BIT(13),
-        RuntimeMenuMachineActionType_PowerOff          = RT_BIT(14),
+        RuntimeMenuMachineActionType_InformationDialog = RT_BIT(2),
+        RuntimeMenuMachineActionType_Pause             = RT_BIT(3),
+        RuntimeMenuMachineActionType_Reset             = RT_BIT(4),
+        RuntimeMenuMachineActionType_SaveState         = RT_BIT(5),
+        RuntimeMenuMachineActionType_Shutdown          = RT_BIT(6),
+        RuntimeMenuMachineActionType_PowerOff          = RT_BIT(7),
 #ifndef RT_OS_DARWIN
-        RuntimeMenuMachineActionType_Close             = RT_BIT(15),
+        RuntimeMenuMachineActionType_Close             = RT_BIT(8),
 #endif /* !RT_OS_DARWIN */
-        RuntimeMenuMachineActionType_Nothing           = RT_BIT(16),
+        RuntimeMenuMachineActionType_Nothing           = RT_BIT(9),
         RuntimeMenuMachineActionType_All               = 0xFFFF
     };
 
@@ -387,15 +386,16 @@ public:
         RuntimeMenuViewActionType_Scale             = RT_BIT(2),
         RuntimeMenuViewActionType_GuestAutoresize   = RT_BIT(3),
         RuntimeMenuViewActionType_AdjustWindow      = RT_BIT(4),
-        RuntimeMenuViewActionType_MenuBar           = RT_BIT(5),
-        RuntimeMenuViewActionType_MenuBarSettings   = RT_BIT(6),
-        RuntimeMenuViewActionType_ToggleMenuBar     = RT_BIT(7),
-        RuntimeMenuViewActionType_StatusBar         = RT_BIT(8),
-        RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(9),
-        RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(10),
-        RuntimeMenuViewActionType_ScaleFactor       = RT_BIT(11),
-        RuntimeMenuViewActionType_Resize            = RT_BIT(12),
-        RuntimeMenuViewActionType_Multiscreen       = RT_BIT(13),
+        RuntimeMenuViewActionType_TakeScreenshot    = RT_BIT(5),
+        RuntimeMenuViewActionType_MenuBar           = RT_BIT(6),
+        RuntimeMenuViewActionType_MenuBarSettings   = RT_BIT(7),
+        RuntimeMenuViewActionType_ToggleMenuBar     = RT_BIT(8),
+        RuntimeMenuViewActionType_StatusBar         = RT_BIT(9),
+        RuntimeMenuViewActionType_StatusBarSettings = RT_BIT(10),
+        RuntimeMenuViewActionType_ToggleStatusBar   = RT_BIT(11),
+        RuntimeMenuViewActionType_ScaleFactor       = RT_BIT(12),
+        RuntimeMenuViewActionType_Resize            = RT_BIT(13),
+        RuntimeMenuViewActionType_Multiscreen       = RT_BIT(14),
         RuntimeMenuViewActionType_All               = 0xFFFF
     };
 

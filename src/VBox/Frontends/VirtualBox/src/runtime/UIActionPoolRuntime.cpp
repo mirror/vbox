@@ -134,41 +134,6 @@ protected:
     }
 };
 
-class UIActionSimplePerformTakeScreenshot : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_TakeScreenshot); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("TakeScreenshot");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("E");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "Take Screensh&ot..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Take a screenshot of the virtual machine"));
-    }
-};
-
 class UIActionSimpleShowInformationDialog : public UIActionSimple
 {
     Q_OBJECT;
@@ -640,6 +605,41 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Adjust Window Size"));
         setStatusTip(QApplication::translate("UIActionPool", "Adjust window size and position to best fit the guest display"));
+    }
+};
+
+class UIActionSimplePerformTakeScreenshot : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformTakeScreenshot(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/screenshot_take_16px.png", ":/screenshot_take_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_TakeScreenshot); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("TakeScreenshot");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("E");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Take Screensh&ot..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Take a screenshot of the virtual machine"));
     }
 };
 
@@ -1994,7 +1994,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine] = new UIActionMenuMachineRuntime(this);
     m_pool[UIActionIndexRT_M_Machine_S_Settings] = new UIActionSimpleShowSettingsDialog(this);
     m_pool[UIActionIndexRT_M_Machine_S_TakeSnapshot] = new UIActionSimplePerformTakeSnapshot(this);
-    m_pool[UIActionIndexRT_M_Machine_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionTogglePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimplePerformReset(this);
@@ -2013,6 +2012,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
+    m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
@@ -2276,8 +2276,6 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Settings)) || fSeparator;
     /* 'Take Snapshot' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeSnapshot)) || fSeparator;
-    /* 'Take Screenshot' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_TakeScreenshot)) || fSeparator;
     /* 'Information Dialog' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_ShowInformation)) || fSeparator;
 
@@ -2344,6 +2342,16 @@ void UIActionPoolRuntime::updateMenuView()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_AdjustWindow)) || fSeparator;
     /* 'Guest Autoresize' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_T_GuestAutoresize)) || fSeparator;
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
+    /* 'Take Screenshot' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_View_S_TakeScreenshot)) || fSeparator;
 
     /* Separator: */
     if (fSeparator)
