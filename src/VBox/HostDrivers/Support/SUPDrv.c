@@ -7394,9 +7394,9 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
                     {
                         int64_t iDelta = pGipCpuWorker->u64TSCSample
                                        - (pGipCpuMaster->u64TSCSample - pGipCpuMaster->i64TSCDelta);
-                        /** @todo r=bird: Why isn't this code using absolute values? Guess it mostly works fine because
-                         * the detection code is biased thowards positive deltas (see tstSupTscDelta.cpp output) ... */
-                        if (iDelta < pGipCpuWorker->i64TSCDelta)
+                        if (  iDelta >= 0
+                            ? iDelta < pGipCpuWorker->i64TSCDelta
+                            : iDelta > pGipCpuWorker->i64TSCDelta || pGipCpuWorker->i64TSCDelta == INT64_MAX)
                             pGipCpuWorker->i64TSCDelta = iDelta;
                     }
                 }
