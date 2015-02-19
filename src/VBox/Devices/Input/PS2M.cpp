@@ -241,9 +241,10 @@ typedef struct PS2M
     uint32_t            fAccumB;
     /** Instantaneous button data. */
     uint32_t            fCurrB;
+    /** Button state last sent to the guest. */
+    uint32_t            fReportedB;
     /** Throttling delay in milliseconds. */
     uint32_t            uThrottleDelay;
-    uint32_t            Alignment0;
 
     /** The device critical section protecting everything - R3 Ptr */
     R3PTRTYPE(PPDMCRITSECT) pCritSectR3;
@@ -457,7 +458,7 @@ static void ps2mSetDefaults(PPS2M pThis)
 
     /* Event queue, eccumulators, and button status bits are cleared. */
     ps2kClearQueue((GeneriQ *)&pThis->evtQ);
-    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->fAccumB = pThis->fCurrB = 0;
+    pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = pThis->fAccumB;
 }
 
 /* Handle the sampling rate 'knock' sequence which selects protocol. */
@@ -540,11 +541,14 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
         }
     }
 
-    /* Clear the movement accumulators. */
+    /* Clear the movement accumulators, but not necessarily button state. */
     pThis->iAccumX = pThis->iAccumY = pThis->iAccumZ = 0;
     /* Clear accumulated button state only when it's being used. */
     if (fAccumBtns)
-        pThis->fAccumB = 0;
+    {
+        pThis->fReportedB = pThis->fAccumB;
+        pThis->fAccumB    = 0;
+    }
 }
 
 
@@ -777,7 +781,7 @@ static DECLCALLBACK(void) ps2mThrottleTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
     /* If the input queue is not empty, restart the timer. */
 #else
     /* If more movement is accumulated, report it and restart the timer. */
-    uHaveEvents = pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ | pThis->fAccumB;
+    uHaveEvents = pThis->iAccumX | pThis->iAccumY | pThis->iAccumZ | (pThis->fCurrB != pThis->fReportedB);
     LogFlowFunc(("Have%s events\n", uHaveEvents ? "" : " no"));
 
     if (uHaveEvents)
