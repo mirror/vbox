@@ -2261,7 +2261,7 @@ ifdef VBOX_WITH_RAW_MODE
  # RuntimeRC - Raw-mode context library.
  #
  RuntimeRC_TEMPLATE      = VBoxRc
- RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_R0 IN_VMM_RC
+ RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
 	common/checksum/alt-md5.cpp \
