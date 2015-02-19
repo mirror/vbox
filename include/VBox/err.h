@@ -1781,7 +1781,8 @@
 /** Failed to measure the TSC delta between two CPUs, continue without any
  *  TSC-delta. */
 #define VWRN_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED     3746
-
+/** A TSC-delta measurement request is currently being serviced. */
+#define VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY      (-3747)
 /** @} */
 
 

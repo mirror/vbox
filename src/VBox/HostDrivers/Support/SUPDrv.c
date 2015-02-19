@@ -6011,7 +6011,7 @@ static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHe
     if (!fSpinlockHeld)
         RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
 
-    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Butchered;
+    pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Butchered;
     RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
     OSDBGPRINT(("supdrvTscDeltaThreadButchered: %s. rc=%Rrc\n", rcFailed));
     return rcFailed;
@@ -6036,21 +6036,21 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
         /*
          * Switch on the current state.
          */
-        SUPDRVTSCDELTASTATE enmState;
+        SUPDRVTSCDELTATHREADSTATE enmState;
         RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-        enmState = pDevExt->enmTscDeltaState;
+        enmState = pDevExt->enmTscDeltaThreadState;
         switch (enmState)
         {
-            case kSupDrvTscDeltaState_Creating:
+            case kTscDeltaThreadState_Creating:
             {
-                pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Listening;
+                pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Listening;
                 rc = RTSemEventSignal(pDevExt->hTscDeltaEvent);
                 if (RT_FAILURE(rc))
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
                 /* fall thru */
             }
 
-            case kSupDrvTscDeltaState_Listening:
+            case kTscDeltaThreadState_Listening:
             {
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
 
@@ -6072,9 +6072,9 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 break;
             }
 
-            case kSupDrvTscDeltaState_WaitAndMeasure:
+            case kTscDeltaThreadState_WaitAndMeasure:
             {
-                pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Measuring;
+                pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Measuring;
                 rc = RTSemEventSignal(pDevExt->hTscDeltaEvent);
                 if (RT_FAILURE(rc))
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
@@ -6084,7 +6084,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                 /* fall thru */
             }
 
-            case kSupDrvTscDeltaState_Measuring:
+            case kTscDeltaThreadState_Measuring:
             {
                 cConsecutiveTimeouts = 0;
                 if (!cTimesMeasured++)
@@ -6116,19 +6116,19 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                     }
                 }
                 RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-                if (pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
-                    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Listening;
+                if (pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
+                    pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Listening;
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
                 Assert(rc != VERR_NOT_AVAILABLE);   /* VERR_NOT_AVAILABLE is used as the initial value. */
                 ASMAtomicWriteS32(&pDevExt->rcTscDelta, rc);
                 break;
             }
 
-            case kSupDrvTscDeltaState_Terminating:
+            case kTscDeltaThreadState_Terminating:
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
                 return VINF_SUCCESS;
 
-            case kSupDrvTscDeltaState_Butchered:
+            case kTscDeltaThreadState_Butchered:
             default:
                 return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "Invalid state", VERR_INVALID_STATE);
         }
@@ -6148,7 +6148,8 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
  * @param   enmCurState     The current state.
  * @param   enmNewState     The new state we're waiting for it to enter.
  */
-static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTASTATE enmCurState, SUPDRVTSCDELTASTATE enmNewState)
+static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADSTATE enmCurState,
+                                    SUPDRVTSCDELTATHREADSTATE enmNewState)
 {
     /*
      * Wait a short while for the expected state transition.
@@ -6156,12 +6157,12 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTASTATE e
     int rc;
     RTSemEventWait(pDevExt->hTscDeltaEvent, RT_MS_1SEC);
     RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-    if (pDevExt->enmTscDeltaState == enmNewState)
+    if (pDevExt->enmTscDeltaThreadState == enmNewState)
     {
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
         rc = VINF_SUCCESS;
     }
-    else if (pDevExt->enmTscDeltaState == enmCurState)
+    else if (pDevExt->enmTscDeltaThreadState == enmCurState)
     {
         /*
          * Wait longer if the state has not yet transitioned to the one we want.
@@ -6174,9 +6175,9 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTASTATE e
             /*
              * Check the state whether we've succeeded.
              */
-            SUPDRVTSCDELTASTATE enmState;
+            SUPDRVTSCDELTATHREADSTATE enmState;
             RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-            enmState = pDevExt->enmTscDeltaState;
+            enmState = pDevExt->enmTscDeltaThreadState;
             RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
             if (enmState == enmNewState)
                 rc = VINF_SUCCESS;
@@ -6216,7 +6217,7 @@ static void supdrvTscDeltaThreadTerminate(PSUPDRVDEVEXT pDevExt)
 {
     int rc;
     RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_Terminating;
+    pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_Terminating;
     RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
     RTThreadUserSignal(pDevExt->hTscDeltaThread);
     rc = RTThreadWait(pDevExt->hTscDeltaThread, 50 * RT_MS_1SEC, NULL /* prc */);
@@ -6258,7 +6259,7 @@ static int supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt)
         rc = RTSemEventCreate(&pDevExt->hTscDeltaEvent);
         if (RT_SUCCESS(rc))
         {
-            pDevExt->enmTscDeltaState   = kSupDrvTscDeltaState_Creating;
+            pDevExt->enmTscDeltaThreadState   = kTscDeltaThreadState_Creating;
             pDevExt->cMsTscDeltaTimeout = 1;
             RTCpuSetEmpty(&pDevExt->TscDeltaCpuSet);
             RTCpuSetEmpty(&pDevExt->TscDeltaObtainedCpuSet);
@@ -6266,7 +6267,7 @@ static int supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt)
                                 RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "VBoxTscThread");
             if (RT_SUCCESS(rc))
             {
-                rc = supdrvTscDeltaThreadWait(pDevExt, kSupDrvTscDeltaState_Creating, kSupDrvTscDeltaState_Listening);
+                rc = supdrvTscDeltaThreadWait(pDevExt, kTscDeltaThreadState_Creating, kTscDeltaThreadState_Listening);
                 if (RT_SUCCESS(rc))
                 {
                     ASMAtomicWriteS32(&pDevExt->rcTscDelta, VERR_NOT_AVAILABLE);
@@ -7101,10 +7102,10 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     {
         RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
         RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, idCpu);
-        if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
-            || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
+            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
         {
-            pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
         }
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
     }
@@ -8347,15 +8348,38 @@ static int supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
                  *        thread. Check if anyone uses/needs fAsync before implementing this. */
                 RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
                 RTCpuSetAdd(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->idCpu);
-                if (   pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Listening
-                    || pDevExt->enmTscDeltaState == kSupDrvTscDeltaState_Measuring)
+                if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
+                    || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
                 {
-                    pDevExt->enmTscDeltaState = kSupDrvTscDeltaState_WaitAndMeasure;
+                    pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
                 }
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
                 RTThreadUserSignal(pDevExt->hTscDeltaThread);
                 return VINF_SUCCESS;
             }
+
+            /*
+             * If a TSC-delta measurement request is already being serviced by the thread,
+             * wait 'cTries' times if a retry-timeout is provided, otherwise bail as busy.
+             */
+            while (cTries-- > 0)
+            {
+                SUPDRVTSCDELTATHREADSTATE enmState;
+                RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+                enmState = pDevExt->enmTscDeltaThreadState;
+                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+
+                if (   enmState == kTscDeltaThreadState_Measuring
+                    || enmState == kTscDeltaThreadState_WaitAndMeasure)
+                {
+                    if (   !cTries
+                        || !cMsWaitRetry)
+                        return VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY;
+                    if (cMsWaitRetry)
+                        RTThreadSleep(cMsWaitRetry);
+                }
+            }
+            cTries = RT_MAX(pReq->u.In.cRetries + 1, 10);
 #endif
 
             while (cTries-- > 0)

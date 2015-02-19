@@ -230,7 +230,7 @@
 # undef SUPDRV_WITH_MSR_PROBER
 #endif
 
-#if 0
+#if 1
 /**  Use a dedicated kernel thread to service TSC-delta measurement requests.
  *   @todo Test on servers with many CPUs and sockets. */
 #define SUPDRV_USE_TSC_DELTA_THREAD
@@ -246,27 +246,27 @@ typedef struct SUPDRVDEVEXT *PSUPDRVDEVEXT;
 /**
  * TSC-delta measurement thread state machine.
  */
-typedef enum SUPDRVTSCDELTASTATE
+typedef enum SUPDRVTSCDELTATHREADSTATE
 {
     /** Uninitialized/invalid value. */
-    kSupDrvTscDeltaState_Invalid = 0,
+    kTscDeltaThreadState_Invalid = 0,
     /** The thread is being created. */
-    kSupDrvTscDeltaState_Creating,
+    kTscDeltaThreadState_Creating,
     /** The thread is listening for events. */
-    kSupDrvTscDeltaState_Listening,
+    kTscDeltaThreadState_Listening,
     /** The thread is sleeping before starting a measurement. */
-    kSupDrvTscDeltaState_WaitAndMeasure,
+    kTscDeltaThreadState_WaitAndMeasure,
     /** The thread is currently servicing a measurement request. */
-    kSupDrvTscDeltaState_Measuring,
+    kTscDeltaThreadState_Measuring,
     /** The thread is terminating. */
-    kSupDrvTscDeltaState_Terminating,
+    kTscDeltaThreadState_Terminating,
     /** The thread is butchered due to an unexpected error. */
-    kSupDrvTscDeltaState_Butchered,
+    kTscDeltaThreadState_Butchered,
     /** The thread is destroyed. */
-    kSupDrvTscDeltaState_Destroyed,
+    kTscDeltaThreadState_Destroyed,
     /** The usual 32-bit blowup hack. */
-    kSupDrvTscDeltaState_32BitHack = 0x7fffffff
-} SUPDRVTSCDELTASTATE;
+    kTscDeltaThreadState_32BitHack = 0x7fffffff
+} SUPDRVTSCDELTATHREADSTATE, *PSUPDRVTSCDELTATHREADSTATE;
 #endif
 
 /**
@@ -716,14 +716,14 @@ typedef struct SUPDRVDEVEXT
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
     /** @name TSC-delta measurement thread.
      *  @{ */
-    /** Spinlock protecting enmTscDeltaState. */
+    /** Spinlock protecting enmTscDeltaThreadState. */
     RTSPINLOCK                      hTscDeltaSpinlock;
     /** TSC-delta measurement thread. */
     RTTHREAD                        hTscDeltaThread;
     /** The event signalled during state changes to the TSC-delta thread. */
     RTSEMEVENT                      hTscDeltaEvent;
     /** The state of the TSC-delta measurement thread. */
-    SUPDRVTSCDELTASTATE             enmTscDeltaState;
+    SUPDRVTSCDELTATHREADSTATE       enmTscDeltaThreadState;
     /** Thread timeout time before rechecking state in ms. */
     RTMSINTERVAL                    cMsTscDeltaTimeout;
     /** The set of CPUs we need to take measurements for. */
