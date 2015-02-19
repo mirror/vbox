@@ -7236,6 +7236,10 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
             /*
              * Adjust all the TSC deltas against the new GIP master.
              */
+            /** @todo this needs fixing, we cannot dynamically re-adjust the base unless
+             *        GIP isn't mapped and no other consumers of TSC-deltas. Basically,
+             *        we need to adjust the master's own TSC-delta (can be non-zero)
+             *        while computing the deltas. */
             if (pGip)
             {
                 idxNewGipMaster = supdrvGipCpuIndexFromCpuId(pGip, idNewGipMaster);
