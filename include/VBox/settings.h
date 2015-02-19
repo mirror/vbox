@@ -345,7 +345,7 @@ struct DHCPServer
                     strIPLower,
                     strIPUpper;
     bool            fEnabled;
-    std::map<DhcpOpt_T, com::Utf8Str>  GlobalDhcpOptions;
+    DhcpOptionMap     GlobalDhcpOptions;
     VmSlot2OptionsMap VmSlot2OptionsM;
 };
 typedef std::list<DHCPServer> DHCPServersList;
