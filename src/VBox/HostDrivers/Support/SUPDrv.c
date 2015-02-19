@@ -127,6 +127,13 @@
 #define GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO    32
 /** The TSC-delta threshold for the SUPGIPUSETSCDELTA_ROUGHLY_ZERO rating */
 #define GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO        448
+/** The TSC delta value for the initial GIP master - 0 in regular builds.
+ * To test the delta code this can be set to a non-zero value.  */
+#if 1
+# define GIP_TSC_DELTA_INITIAL_MASTER_VALUE INT64_C(170139095182512) /* 0x00009abd9854acb0 */
+#else
+# define GIP_TSC_DELTA_INITIAL_MASTER_VALUE INT64_C(0)
+#endif
 
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS < GIP_TSC_DELTA_READ_TIME_LOOPS);
 AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_TSC_DELTA_LOOPS);
@@ -7533,7 +7540,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     if (pGipCpuWorker->idCpu == idMaster)
     {
         if (pGipCpuWorker->i64TSCDelta == INT64_MAX) /* This shouldn't happen, but just in case. */
-            ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, 0);
+            ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
         return VINF_SUCCESS;
     }
 
@@ -7629,7 +7636,7 @@ static int supdrvMeasureInitialTscDeltas(PSUPDRVDEVEXT pDevExt)
             if (RTCpuSetIsMember(&pGip->OnlineCpuSet, pGipCpu->idCpu))
             {
                 idxMaster = idxCpu;
-                pGipCpu->i64TSCDelta = 0;
+                pGipCpu->i64TSCDelta = GIP_TSC_DELTA_INITIAL_MASTER_VALUE;
                 break;
             }
         }
