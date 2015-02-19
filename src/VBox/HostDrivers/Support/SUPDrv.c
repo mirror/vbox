@@ -6002,7 +6002,7 @@ static int supdrvTscDeltaThreadButchered(PSUPDRVDEVEXT pDevExt, bool fSpinlockHe
 static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
 {
     PSUPDRVDEVEXT     pDevExt = (PSUPDRVDEVEXT)pvUser;
-    static uint32_t   cTimesMeasured = 0;
+    uint32_t          cTimesMeasured = 0;
     uint32_t          cConsecutiveTimeouts = 0;
     int               rc = VERR_INTERNAL_ERROR_2;
     for (;;)
