@@ -311,7 +311,24 @@ struct MachineRegistryEntry
 };
 typedef std::list<MachineRegistryEntry> MachinesRegistry;
 
-typedef std::map<DhcpOpt_T, com::Utf8Str> DhcpOptionMap;
+struct DhcpOptValue
+{
+    enum Encoding {
+	LEGACY,
+	HEX,
+    };
+
+    com::Utf8Str text;
+    Encoding encoding;
+
+    DhcpOptValue()
+      : text(), encoding(LEGACY) {}
+
+    DhcpOptValue(const com::Utf8Str &aText, Encoding aEncoding = LEGACY)
+      : text(aText), encoding(aEncoding) {}
+};
+
+typedef std::map<DhcpOpt_T, DhcpOptValue> DhcpOptionMap;
 typedef DhcpOptionMap::value_type DhcpOptValuePair;
 typedef DhcpOptionMap::iterator DhcpOptIterator;
 typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;

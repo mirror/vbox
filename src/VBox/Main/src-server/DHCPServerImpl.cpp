@@ -107,7 +107,7 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 
     unconst(mName) = aName;
     m->IPAddress = "0.0.0.0";
-    m->GlobalDhcpOptions.insert(DhcpOptValuePair(DhcpOpt_SubnetMask, Bstr("0.0.0.0")));
+    m->GlobalDhcpOptions[DhcpOpt_SubnetMask] = DhcpOptValue("0.0.0.0");
     m->enabled = FALSE;
 
     m->lowerIP = "0.0.0.0";
@@ -221,7 +221,7 @@ HRESULT DHCPServer::getNetworkMask(com::Utf8Str &aNetworkMask)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aNetworkMask = m->GlobalDhcpOptions[DhcpOpt_SubnetMask];
+    aNetworkMask = m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text;
     return S_OK;
 }
 
@@ -293,7 +293,12 @@ HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValue)
     size_t i = 0;
     for (it = m->GlobalDhcpOptions.begin(); it != m->GlobalDhcpOptions.end(); ++it, ++i)
     {
-        aValue[i] = Utf8StrFmt("%d:%s", (*it).first, (*it).second.c_str());
+        uint32_t OptCode = (*it).first;
+        const DhcpOptValue &OptValue = (*it).second;
+
+        // XXX: TODO: factor out and share with getVmSlotOptions()
+        if (OptValue.encoding == DhcpOptValue::LEGACY)
+            aValue[i] = Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
     }
 
     return S_OK;
@@ -355,7 +360,12 @@ HRESULT DHCPServer::getVmSlotOptions(const com::Utf8Str &aVmName,
     DhcpOptionMap::const_iterator it;
     for (it = map.begin(); it != map.end(); ++it, ++i)
     {
-        aValues[i] = com::Utf8StrFmt("%d:%s", (*it).first, (*it).second.c_str());
+        uint32_t OptCode = (*it).first;
+        const DhcpOptValue &OptValue = (*it).second;
+
+        // XXX: TODO: factor out and share with getGlobalOptions()
+        if (OptValue.encoding == DhcpOptValue::LEGACY)
+            aValues[i] = com::Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
     }
 
     return S_OK;
@@ -435,7 +445,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
                  guid.raw()->au8[2]);
     m->dhcp.setOption(NetworkServiceRunner::kNsrMacAddress, strMAC);
     m->dhcp.setOption(NetworkServiceRunner::kNsrIpAddress,  Utf8Str(m->IPAddress).c_str());
-    m->dhcp.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask]).c_str());
+    m->dhcp.setOption(NetworkServiceRunner::kNsrIpNetmask, Utf8Str(m->GlobalDhcpOptions[DhcpOpt_SubnetMask].text).c_str());
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyLowerIp, Utf8Str(m->lowerIP).c_str());
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyUpperIp, Utf8Str(m->upperIP).c_str());
 

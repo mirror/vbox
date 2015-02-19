@@ -20,17 +20,13 @@
 #ifndef ____H_H_DHCPSERVERIMPL
 #define ____H_H_DHCPSERVERIMPL
 
+#include <VBox/settings.h>
 #include "DHCPServerWrap.h"
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 struct NETIFINFO;
 #endif
 
-namespace settings
-{
-    struct DHCPServer;
-    struct VmNameSlotKey;
-}
 #ifdef RT_OS_WINDOWS
 # define DHCP_EXECUTABLE_NAME "VBoxNetDHCP.exe"
 #else
@@ -61,14 +57,15 @@ public:
  *  the middle.
  */
 
-typedef std::map<DhcpOpt_T, com::Utf8Str> DhcpOptionMap;
-typedef DhcpOptionMap::value_type DhcpOptValuePair;
-typedef DhcpOptionMap::const_iterator DhcpOptConstIterator;
-typedef DhcpOptionMap::iterator DhcpOptIterator;
+using settings::DhcpOptValue;
+using settings::DhcpOptionMap;
+using settings::DhcpOptValuePair;
+using settings::DhcpOptConstIterator;
+using settings::DhcpOptIterator;
 
-typedef std::map<settings::VmNameSlotKey, DhcpOptionMap> VmSlot2OptionsMap;
-typedef VmSlot2OptionsMap::value_type VmSlot2OptionsPair;
-typedef VmSlot2OptionsMap::iterator VmSlot2OptionsIterator;
+using settings::VmSlot2OptionsMap;
+using settings::VmSlot2OptionsPair;
+using settings::VmSlot2OptionsIterator;
 
 
 class ATL_NO_VTABLE DHCPServer :

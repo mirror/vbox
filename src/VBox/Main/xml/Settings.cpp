@@ -1345,7 +1345,7 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
             DHCPServer srv;
             if (   pelmServer->getAttributeValue("networkName", srv.strNetworkName)
                 && pelmServer->getAttributeValue("IPAddress", srv.strIPAddress)
-                && pelmServer->getAttributeValue("networkMask", srv.GlobalDhcpOptions[DhcpOpt_SubnetMask])
+                && pelmServer->getAttributeValue("networkMask", srv.GlobalDhcpOptions[DhcpOpt_SubnetMask].text)
                 && pelmServer->getAttributeValue("lowerIP", srv.strIPLower)
                 && pelmServer->getAttributeValue("upperIP", srv.strIPUpper)
                 && pelmServer->getAttributeValue("enabled", srv.fEnabled) )
@@ -1384,15 +1384,18 @@ void MainConfigFile::readDhcpOptions(DhcpOptionMap& map,
     while ((opt = nl2.forAllNodes()))
     {
         DhcpOpt_T OptName;
-        com::Utf8Str OptValue;
+        com::Utf8Str OptText;
+        int32_t OptEnc = DhcpOptValue::LEGACY;
+
         opt->getAttributeValue("name", (uint32_t&)OptName);
 
         if (OptName == DhcpOpt_SubnetMask)
             continue;
 
-        opt->getAttributeValue("value", OptValue);
+        opt->getAttributeValue("value", OptText);
+        opt->getAttributeValue("encoding", OptEnc);
 
-        map.insert(std::map<DhcpOpt_T, Utf8Str>::value_type(OptName, OptValue));
+        map[OptName] = DhcpOptValue(OptText, (DhcpOptValue::Encoding)OptEnc);
     } /* end of forall("Option") */
 
 }
@@ -1534,7 +1537,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
             "HostInterfaceNetworking-vboxnet0";
 #endif
         srv.strIPAddress = "192.168.56.100";
-        srv.GlobalDhcpOptions[DhcpOpt_SubnetMask] = "255.255.255.0";
+        srv.GlobalDhcpOptions[DhcpOpt_SubnetMask] = DhcpOptValue("255.255.255.0");
         srv.strIPLower = "192.168.56.101";
         srv.strIPUpper = "192.168.56.254";
         srv.fEnabled = true;
@@ -1596,7 +1599,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmThis->setAttribute("networkName", d.strNetworkName);
         pelmThis->setAttribute("IPAddress", d.strIPAddress);
         if (itOpt != d.GlobalDhcpOptions.end())
-            pelmThis->setAttribute("networkMask", itOpt->second);
+            pelmThis->setAttribute("networkMask", itOpt->second.text);
         pelmThis->setAttribute("lowerIP", d.strIPLower);
         pelmThis->setAttribute("upperIP", d.strIPUpper);
         pelmThis->setAttribute("enabled", (d.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
@@ -1621,7 +1624,9 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
                     break;
 
                 pelmOpt->setAttribute("name", itOpt->first);
-                pelmOpt->setAttribute("value", itOpt->second);
+                pelmOpt->setAttribute("value", itOpt->second.text);
+                if (itOpt->second.encoding != DhcpOptValue::LEGACY)
+                    pelmOpt->setAttribute("encoding", (int)itOpt->second.encoding);
             }
         } /* end of if */
 
@@ -1643,7 +1648,9 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
                 {
                     xml::ElementNode *pelmOpt = pelmCfg->createChild("Option");
                     pelmOpt->setAttribute("name", itOpt1->first);
-                    pelmOpt->setAttribute("value", itOpt1->second);
+                    pelmOpt->setAttribute("value", itOpt1->second.text);
+                    if (itOpt1->second.encoding != DhcpOptValue::LEGACY)
+                        pelmOpt->setAttribute("encoding", (int)itOpt1->second.encoding);
                 }
             }
         } /* and of if */
