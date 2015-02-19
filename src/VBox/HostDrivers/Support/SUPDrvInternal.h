@@ -250,24 +250,38 @@ typedef enum SUPDRVTSCDELTATHREADSTATE
 {
     /** Uninitialized/invalid value. */
     kTscDeltaThreadState_Invalid = 0,
-    /** The thread is being created. */
+    /** The thread is being created.
+     * Next state: Listening, Butchered, Terminating  */
     kTscDeltaThreadState_Creating,
-    /** The thread is listening for events. */
+    /** The thread is listening for events.
+     * Previous state: Creating, Measuring
+     * Next state: WaitAndMeasure, Butchered, Terminated */
     kTscDeltaThreadState_Listening,
-    /** The thread is sleeping before starting a measurement. */
+    /** The thread is sleeping before starting a measurement.
+     * Previous state: Listening, Measuring
+     * Next state:     Measuring, Butchered, Terminating
+     * @remarks The thread won't enter this state on its own, it is put into this
+     *          state by the GIP timer, the CPU online callback and by the
+     *          SUP_IOCTL_TSC_DELTA_MEASURE code. */
     kTscDeltaThreadState_WaitAndMeasure,
-    /** The thread is currently servicing a measurement request. */
+    /** The thread is currently servicing a measurement request.
+     * Previous state: WaitAndMeasure
+     * Next state:     Listening, WaitAndMeasure, Terminate */
     kTscDeltaThreadState_Measuring,
-    /** The thread is terminating. */
+    /** The thread is terminating.
+     * @remarks The thread won't enter this state on its own, is put into this state
+     *          by supdrvTscDeltaTerm. */
     kTscDeltaThreadState_Terminating,
-    /** The thread is butchered due to an unexpected error. */
+    /** The thread is butchered due to an unexpected error.
+     * Previous State: Creating, Listening, WaitAndMeasure  */
     kTscDeltaThreadState_Butchered,
-    /** The thread is destroyed. */
+    /** The thread is destroyed (final).
+     * Previous state: Terminating */
     kTscDeltaThreadState_Destroyed,
     /** The usual 32-bit blowup hack. */
     kTscDeltaThreadState_32BitHack = 0x7fffffff
-} SUPDRVTSCDELTATHREADSTATE, *PSUPDRVTSCDELTATHREADSTATE;
-#endif
+} SUPDRVTSCDELTATHREADSTATE;
+#endif /* SUPDRV_USE_TSC_DELTA_THREAD */
 
 /**
  * Memory reference types.
@@ -649,7 +663,10 @@ typedef struct SUPDRVDEVEXT
     /** If non-zero we've successfully called RTTimerRequestSystemGranularity(). */
     uint32_t                        u32SystemTimerGranularityGrant;
     /** The CPU id of the GIP master.
-     * This CPU is responsible for the updating the common GIP data. */
+     * This CPU is responsible for the updating the common GIP data and it is
+     * the one used to calculate TSC deltas relative to.
+     * (The initial master will have a 0 zero value, but it it goes offline the
+     * new master may have a non-zero value.) */
     RTCPUID volatile                idGipMaster;
 
     /** Component factory mutex.
