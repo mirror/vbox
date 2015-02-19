@@ -1427,27 +1427,27 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
 
 
 /**
- * Helper for supdrvIOCtl. Check if pszStr contains any character of pszChars.
- * We would use strpbrk here if this function would be contained in the RedHat kABI white
- * list, see http://www.kerneldrivers.org/RHEL5.
+ * Helper for supdrvIOCtl used to validate module names passed to SUP_IOCTL_LDR_OPEN.
  *
- * @returns  1 if pszStr does contain any character of pszChars, 0 otherwise.
- * @param    pszStr     String to check
- * @param    pszChars   Character set
+ * Check if pszStr contains any character of pszChars.  We would use strpbrk
+ * here if this function would be contained in the RedHat kABI white list, see
+ * http://www.kerneldrivers.org/RHEL5.
+ *
+ * @returns  true if fine, false if not.
+ * @param    pszName        The module name to check.
  */
-static int supdrvCheckInvalidChar(const char *pszStr, const char *pszChars)
+static bool supdrvIsLdrModuleNameValid(const char *pszName)
 {
     int chCur;
-    while ((chCur = *pszStr++) != '\0')
+    while ((chCur = *pszName++) != '\0')
     {
-        int ch;
-        const char *psz = pszChars;
-        while ((ch = *psz++) != '\0')
-            if (ch == chCur)
-                return 1;
-
+        static const char s_szInvalidChars[] = ";:()[]{}/\\|&*%#@!~`\"'";
+        unsigned offInv = RT_ELEMENTS(s_szInvalidChars);
+        while (offInv-- > 0)
+            if (s_szInvalidChars[offInv] == chCur)
+                return false;
     }
-    return 0;
+    return true;
 }
 
 
@@ -1663,7 +1663,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.cbImageBits < pReq->u.In.cbImageWithTabs);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, pReq->u.In.szName[0]);
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szName, sizeof(pReq->u.In.szName)));
-            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, !supdrvCheckInvalidChar(pReq->u.In.szName, ";:()[]{}/\\|&*%#@!~`\"'"));
+            REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, supdrvIsLdrModuleNameValid(pReq->u.In.szName));
             REQ_CHECK_EXPR(SUP_IOCTL_LDR_OPEN, RTStrEnd(pReq->u.In.szFilename, sizeof(pReq->u.In.szFilename)));
 
             /* execute */
