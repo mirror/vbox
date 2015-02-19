@@ -548,6 +548,72 @@
       key.</para>
     </sect2>
 
+    <sect2 id="ts_host-freq-boost">
+      <title>Performance variation with frequency boosting</title>
+
+      <para>
+          Many newer multi-core processors support some form of frequency
+          boosting, which means that if only one core is utilized, it can run
+          faster (possibly 50% faster or even more) than the rated CPU frequency.
+          This causes measured performance to vary somewhat as a function of the
+          momentary overall system load. The exact behavior depends strongly
+          on the specific processor model.
+      </para>
+
+      <para>
+          As a consequence, benchmarking on systems which utilize frequency
+          boosting may produce unstable and non-repeatable results, especially
+          if benchmark runs are short (on the order of seconds). To obtain stable
+          results, benchmarks must be run over longer periods of time and with a
+          constant system load apart from the VM being tested.
+      </para>
+    </sect2>
+
+    <sect2 id="ts_host-freq-scaling">
+      <title>Frequency scaling effect on CPU usage</title>
+
+      <para>
+          On some hardware platforms and operating systems, CPU frequency
+          scaling may cause CPU usage reporting to be highly misleading. This
+          happens in situations when the host CPU load is significant but not
+          heavy, such as 15-30% of the maximum.
+      </para>
+
+      <para>
+          Most operating systems determine CPU usage in terms of time spent,
+          measuring for example how many nanoseconds the systems or a process
+          was active within one second. However, in order to save energy, modern
+          systems can significantly scale down CPU speed when the system is not
+          fully loaded. Naturally, when the CPU is running at (for example) one
+          half of its maximum speed, the same number of instructions will take
+          roughly twice as long to execute compared to running at full speed.
+      </para>
+
+      <para>
+          Depending on the specific hardware and host OS, this effect can very
+          significantly skew the CPU usage reported by the OS; the reported CPU
+          usage can be several times higher than what it would have been had the
+          CPU been running at full speed. The effect can be observed both on
+          the host OS and in a guest OS.
+      </para>
+    </sect2>
+
+    <sect2 id="ts_win-cpu-usage-rept">
+      <title>Inaccurate Windows CPU usage reporting</title>
+
+      <para>
+          CPU usage reporting tools which come with Windows (Task Manager, Resource
+          Monitor) do not take the time spent processing hardware interrupts into
+          account. If the interrupt load is heavy (thousands of interrupts per second),
+          CPU usage may be significantly underreported.
+      </para>
+
+      <para>
+          This problem affects Windows as both host and guest OS. Sysinternals tools
+          (e.g. Process Explorer) do not suffer from this problem.
+      </para>
+    </sect2>
+
     <sect2 id="ts_host-powermgmt">
       <title>Poor performance caused by host power management</title>
 
@@ -589,7 +655,7 @@
     </sect2>
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_win-guests">
     <title>Windows guests</title>
 
     <sect2>
@@ -888,7 +954,7 @@
 
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_lin-x11-guests">
     <title>Linux and X11 guests</title>
 
     <sect2>
@@ -974,17 +1040,17 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
     </sect2>
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_sol-guests">
     <title>Solaris guests</title>
 
     <sect2>
-      <title>Older Solaris 10 releases hang in 64-bit mode</title>
+      <title>Older Solaris 10 releases crash in 64-bit mode</title>
 
       <para>Solaris 10 releases up to and including Solaris 10 8/07 ("S10U4")
           incorrectly detect newer Intel processors produced since 2007. This 
-          problem leads to the 64-bit Solaris kernel hanging or crashing almost 
-          immediately during startup, in both virtualized and physical 
-          environments.
+          problem leads to the 64-bit Solaris kernel crashing (and usually causing
+          a triple fault) almost immediately during startup, in both virtualized
+          and physical environments.
       </para>
       <para>
           The recommended solution is upgrading to at least Solaris 10 5/08 
@@ -994,9 +1060,46 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
       </para>
     
     </sect2>
+
+    <sect2>
+      <title>Solaris 8 5/01 and earlier may crash on startup</title>
+
+      <para>
+          Solaris 2.6, 7 and 8 releases up to and including Solaris 8 4/01 ("S8U4")
+          incorrectly set up Machine Check Exception (MCE) MSRs on Pentium 4 and
+          somene later Intel CPUs. The problem leads to the Solaris kernel crashing
+          (and usually causing a triple fault) almost immediately during startup, in both
+          virtualized and physical environments. Solaris 9 and later releases are
+          not affected by this problem, and neither is Solaris 2.5.1 and earlier.
+      </para>
+      <para>
+          The recommended solution is upgrading to at least Solaris 8 7/01 
+          ("S8U5"). Alternative solutions include applying a patch for bugs 4408508
+          and 4414557 (on an unaffected system).
+      </para>
+
+    </sect2>
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_fbsd-guests">
+    <title>FreeBSD guests</title>
+
+    <sect2>
+        <title>FreeBSD 10.0 may hang with xHCI</title>
+
+        <para>
+            If xHCI (USB 3.0) emulation is enabled for FreeBSD 10.0 guests, the guest
+            OS will hang. This is caused by the guest OS incorrectly handling systems
+            where MSIs (Message Signaled Interrupts) are not used with the xHCI device.
+        </para>
+        <para>
+            The problem does not exist in earlier FreeBSD releases and was fixed in
+            FreeBSD 10.1.
+        </para>
+    </sect2>
+  </sect1>
+
+  <sect1 id="ts_win-hosts">
     <title>Windows hosts</title>
 
     <sect2>
@@ -1147,7 +1250,7 @@ VirtualBox</screen>
     </sect2>
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_lin-hosts">
     <title>Linux hosts</title>
 
     <sect2 id="ts_linux-kernelmodule-fails-to-load">
@@ -1379,7 +1482,7 @@ none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Re
     </sect2>
   </sect1>
 
-  <sect1>
+  <sect1 id="ts_sol-hosts">
     <title>Solaris hosts</title>
 
     <sect2>
