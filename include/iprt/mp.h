@@ -350,8 +350,8 @@ typedef enum RTMPEVENT
  * KeRegisterProcessorChangeCallback documentation - unrestricted API access.
  * Probably not being called on the onlined/offlined CPU...
  *
- * On Solaris we're holding the cpu_lock, IPL/SPL/PIL is not yet known.  Looks
- * like we're being called on the CPU that's being onlined/offlined.
+ * On Solaris we're holding the cpu_lock, IPL/SPL/PIL is not yet known, however
+ * we will most likely -not- be firing on the CPU going offline/online.
  *
  * On Linux it looks like we're called on the CPU in question.  Interrupts may
  * be disabled, it seems.

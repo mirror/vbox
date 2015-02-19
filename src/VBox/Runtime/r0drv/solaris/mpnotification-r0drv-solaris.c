@@ -131,6 +131,8 @@ static int rtMpNotificationCpuEvent(cpu_setup_t CpuState, int iCpu, void *pvArg)
     }
     else
     {
+        /** @todo We should probably be using thread_affinity_set() here, see
+         *        cpu_online() code. */
         /*
          * We're not on the target CPU, schedule (synchronous) the event notification callback
          * to run on the target CPU i.e. the CPU that was online'd.
