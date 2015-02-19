@@ -59,6 +59,7 @@ class HostDnsInformation
     std::vector<std::string> servers;
     std::string domain;
     std::vector<std::string> searchList;
+    bool equals(const HostDnsInformation &) const;
 };
 
 /**

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -65,6 +65,15 @@ ALock::~ALock()
     RTCritSectLeave(const_cast<PRTCRITSECT>(lockee->lock()));
 }
 
+/* HostDnsInformation */
+
+bool HostDnsInformation::equals(const HostDnsInformation &info) const
+{
+    return    (servers == info.servers)
+           && (domain == info.domain)
+           && (searchList == info.searchList);
+}
+
 inline static void detachVectorOfString(const std::vector<std::string>& v,
                                         std::vector<com::Utf8Str> &aArray)
 {
@@ -76,10 +85,14 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 
 struct HostDnsMonitor::Data
 {
-    Data(bool aThreaded):fThreaded(aThreaded){}
+    Data(bool aThreaded) :
+        fInfoModified(false),
+        fThreaded(aThreaded)
+    {}
 
     std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
+    bool fInfoModified;
     const bool fThreaded;
     RTTHREAD hMonitoringThread;
     RTSEMEVENT hDnsInitEvent;
@@ -187,15 +200,27 @@ const HostDnsInformation &HostDnsMonitor::getInfo() const
 void HostDnsMonitor::notifyAll() const
 {
     ALock l(this);
-    std::vector<PCHostDnsMonitorProxy>::const_iterator it;
-    for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
-        (*it)->notify();
+    if (m->fInfoModified)
+    {
+        m->fInfoModified = false;
+        std::vector<PCHostDnsMonitorProxy>::const_iterator it;
+        for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
+            (*it)->notify();
+    }
 }
 
 void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 {
     ALock l(this);
-    m->info = info;
+    // Check for actual modifications, as the Windows specific code seems to
+    // often set the same information as before, without any change to the
+    // previous state. Here we have the previous state, so make sure we don't
+    // ever tell our clients about unchanged info.
+    if (info.equals(m->info))
+    {
+        m->info = info;
+        m->fInfoModified = true;
+    }
 }
 
 HRESULT HostDnsMonitor::init()
