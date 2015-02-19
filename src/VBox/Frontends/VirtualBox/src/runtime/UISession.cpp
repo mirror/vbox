@@ -745,16 +745,16 @@ void UISession::sltStateChange(KMachineState state)
 
 void UISession::sltVRDEChange()
 {
-    /* Get VRDE server: */
-    const CVRDEServer &server = machine().GetVRDEServer();
-    bool fIsVRDEServerAvailable = !server.isNull();
-    /* Show/Hide VRDE action depending on VRDE server availability status: */
-    // TODO: Is this status can be changed at runtime?
-    //       Because if no => the place for that stuff is in prepareActions().
-    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setVisible(fIsVRDEServerAvailable);
-    /* Check/Uncheck VRDE action depending on VRDE server activity status: */
-    if (fIsVRDEServerAvailable)
-        actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setChecked(server.GetEnabled());
+    /* Make sure VRDE server is present: */
+    const CVRDEServer server = machine().GetVRDEServer();
+    AssertMsgReturnVoid(machine().isOk() && !server.isNull(),
+                        ("VRDE server should NOT be null!\n"));
+
+    /* Check/Uncheck VRDE Server action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(true);
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->setChecked(server.GetEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer)->blockSignals(false);
+
     /* Notify listeners about VRDE change: */
     emit sigVRDEChange();
 }
@@ -762,7 +762,10 @@ void UISession::sltVRDEChange()
 void UISession::sltVideoCaptureChange()
 {
     /* Check/Uncheck Video Capture action depending on feature status: */
+    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->blockSignals(true);
     actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->setChecked(machine().GetVideoCaptureEnabled());
+    actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture_T_Start)->blockSignals(false);
+
     /* Notify listeners about Video Capture change: */
     emit sigVideoCaptureChange();
 }
@@ -1073,7 +1076,16 @@ void UISession::prepareActions()
 
         /* Get host: */
         const CHost host = vboxGlobal().host();
-        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restriction = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
+        UIExtraDataMetaDefs::RuntimeMenuViewActionType restrictionForView = UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid;
+        UIExtraDataMetaDefs::RuntimeMenuDevicesActionType restrictionForDevices = UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Invalid;
+
+        /* VRDE server stuff: */
+        {
+            /* Initialize 'View' menu: */
+            const CVRDEServer server = machine().GetVRDEServer();
+            if (server.isNull())
+                restrictionForView = (UIExtraDataMetaDefs::RuntimeMenuViewActionType)(restrictionForView | UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer);
+        }
 
         /* Storage stuff: */
         {
@@ -1092,9 +1104,9 @@ void UISession::prepareActions()
             pOpticalDevicesMenu->setData(iDevicesCountCD);
             pFloppyDevicesMenu->setData(iDevicesCountFD);
             if (!iDevicesCountCD)
-                restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
+                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_OpticalDevices);
             if (!iDevicesCountFD)
-                restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
+                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_FloppyDevices);
         }
 
         /* Network stuff: */
@@ -1113,7 +1125,7 @@ void UISession::prepareActions()
                 }
             }
             if (!fAtLeastOneAdapterActive)
-                restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
+                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_Network);
         }
 
         /* USB stuff: */
@@ -1123,7 +1135,7 @@ void UISession::prepareActions()
                                      && !machine().GetUSBControllers().isEmpty()
                                      && machine().GetUSBProxyAvailable();
             if (!fUSBEnabled)
-                restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
+                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_USBDevices);
         }
 
         /* WebCams stuff: */
@@ -1132,11 +1144,13 @@ void UISession::prepareActions()
             host.GetVideoInputDevices();
             const bool fWebCamsEnabled = host.isOk() && !machine().GetUSBControllers().isEmpty();
             if (!fWebCamsEnabled)
-                restriction = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restriction | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
+                restrictionForDevices = (UIExtraDataMetaDefs::RuntimeMenuDevicesActionType)(restrictionForDevices | UIExtraDataMetaDefs::RuntimeMenuDevicesActionType_WebCams);
         }
 
-        /* Apply cumulative restriction: */
-        actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restriction);
+        /* Apply cumulative restriction for 'View' menu: */
+        actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Session, restrictionForView);
+        /* Apply cumulative restriction for 'Devices' menu: */
+        actionPool()->toRuntime()->setRestrictionForMenuDevices(UIActionRestrictionLevel_Session, restrictionForDevices);
 
 #ifdef Q_WS_MAC
         /* Create Mac OS X menu-bar: */

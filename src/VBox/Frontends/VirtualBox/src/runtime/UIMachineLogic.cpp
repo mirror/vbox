@@ -1604,29 +1604,23 @@ void UIMachineLogic::sltToggleVideoCapture(bool fEnabled)
         return;
 
     /* Update Video Capture state: */
-    AssertMsg(machine().isOk(), ("Machine should be OK!\n"));
     machine().SetVideoCaptureEnabled(fEnabled);
-    /* Machine is not OK? */
     if (!machine().isOk())
     {
-        /* Notify about the error: */
-        msgCenter().cannotToggleVideoCapture(machine(), fEnabled);
-        /* Make sure action is updated! */
+        /* Make sure action is updated: */
         uisession()->updateStatusVideoCapture();
+        /* Notify about the error: */
+        return msgCenter().cannotToggleVideoCapture(machine(), fEnabled);
     }
-    /* Machine is OK? */
-    else
+
+    /* Save machine-settings: */
+    machine().SaveSettings();
+    if (!machine().isOk())
     {
-        /* Save machine-settings: */
-        machine().SaveSettings();
-        /* Machine is not OK? */
-        if (!machine().isOk())
-        {
-            /* Notify about the error: */
-            msgCenter().cannotSaveMachineSettings(machine());
-            /* Make sure action is updated! */
-            uisession()->updateStatusVideoCapture();
-        }
+        /* Make sure action is updated: */
+        uisession()->updateStatusVideoCapture();
+        /* Notify about the error: */
+        return msgCenter().cannotSaveMachineSettings(machine());
     }
 }
 
@@ -1638,40 +1632,31 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
 
     /* Access VRDE server: */
     CVRDEServer server = machine().GetVRDEServer();
-    AssertMsg(!server.isNull(), ("VRDE server should NOT be null!\n"));
-    if (!machine().isOk() || server.isNull())
-        return;
+    AssertMsgReturnVoid(machine().isOk() && !server.isNull(),
+                        ("VRDE server should NOT be null!\n"));
 
     /* Make sure something had changed: */
     if (server.GetEnabled() == static_cast<BOOL>(fEnabled))
         return;
 
-    /* Server is OK? */
-    if (server.isOk())
+    /* Update VRDE server state: */
+    server.SetEnabled(fEnabled);
+    if (!server.isOk())
     {
-        /* Update VRDE server state: */
-        server.SetEnabled(fEnabled);
-        /* Server still OK? */
-        if (server.isOk())
-        {
-            /* Save machine-settings: */
-            machine().SaveSettings();
-            /* Machine still OK? */
-            if (!machine().isOk())
-            {
-                /* Notify about the error: */
-                msgCenter().cannotSaveMachineSettings(machine());
-                /* Make sure action is updated! */
-                uisession()->updateStatusVRDE();
-            }
-        }
-        else
-        {
-            /* Notify about the error: */
-            msgCenter().cannotToggleVRDEServer(server, machineName(), fEnabled);
-            /* Make sure action is updated! */
-            uisession()->updateStatusVRDE();
-        }
+        /* Make sure action is updated: */
+        uisession()->updateStatusVRDE();
+        /* Notify about the error: */
+        return msgCenter().cannotToggleVRDEServer(server, machineName(), fEnabled);
+    }
+
+    /* Save machine-settings: */
+    machine().SaveSettings();
+    if (!machine().isOk())
+    {
+        /* Make sure action is updated: */
+        uisession()->updateStatusVRDE();
+        /* Notify about the error: */
+        return msgCenter().cannotSaveMachineSettings(machine());
     }
 }
 
@@ -1827,22 +1812,31 @@ void UIMachineLogic::sltChangeSharedClipboardType(QAction *pAction)
     machine().SetClipboardMode(mode);
 }
 
-/** Toggles network adapter's <i>Cable Connected</i> state. */
 void UIMachineLogic::sltToggleNetworkAdapterConnection()
 {
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
     /* Get and check 'the sender' action object: */
     QAction *pAction = qobject_cast<QAction*>(sender());
-    AssertReturnVoid(pAction);
+    AssertMsgReturnVoid(pAction, ("Sender action should NOT be null!\n"));
 
     /* Get operation target: */
     CNetworkAdapter adapter = machine().GetNetworkAdapter((ULONG)pAction->property("slot").toInt());
-    AssertReturnVoid(machine().isOk() && !adapter.isNull());
+    AssertMsgReturnVoid(machine().isOk() && !adapter.isNull(),
+                        ("Network adapter should NOT be null!\n"));
 
     /* Connect/disconnect cable to/from target: */
-    adapter.SetCableConnected(!adapter.GetCableConnected());
+    const bool fConnect = !adapter.GetCableConnected();
+    adapter.SetCableConnected(fConnect);
+    if (!adapter.isOk())
+        return msgCenter().cannotToggleNetworkAdapterCable(adapter, machineName(), fConnect);
+
+    /* Save machine-settings: */
     machine().SaveSettings();
     if (!machine().isOk())
-        msgCenter().cannotSaveMachineSettings(machine());
+        return msgCenter().cannotSaveMachineSettings(machine());
 }
 
 void UIMachineLogic::sltChangeDragAndDropType(QAction *pAction)

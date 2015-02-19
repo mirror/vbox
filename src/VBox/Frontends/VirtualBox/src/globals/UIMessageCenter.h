@@ -297,8 +297,9 @@ public:
     void cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInfo, const QString &strDevice, const QString &strMachineName) const;
     void cannotAttachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const;
     void cannotDetachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const;
-    void cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable);
     void cannotToggleVideoCapture(const CMachine &machine, bool fEnable);
+    void cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable);
+    void cannotToggleNetworkAdapterCable(const CNetworkAdapter &adapter, const QString &strMachineName, bool fConnect);
     void remindAboutGuestAdditionsAreNotActive() const;
     void cannotMountGuestAdditions(const QString &strMachineName) const;
 

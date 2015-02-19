@@ -244,8 +244,9 @@ public:
     /** Returns existing frame-buffer vector. */
     const QVector<ComObjPtr<UIFrameBuffer> >& frameBuffers() const { return m_frameBufferVector; }
 
-    /* Temporary API: */
+    /** Updates VRDE Server action state. */
     void updateStatusVRDE() { sltVRDEChange(); }
+    /** Updates Video Capture action state. */
     void updateStatusVideoCapture() { sltVideoCaptureChange(); }
 
 signals:

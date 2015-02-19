@@ -68,6 +68,7 @@
 # include "CExtPackFile.h"
 # include "CHostNetworkInterface.h"
 # include "CVRDEServer.h"
+# include "CNetworkAdapter.h"
 # include "CEmulatedUSB.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CGuest.h"
@@ -2006,15 +2007,6 @@ void UIMessageCenter::cannotDetachWebCam(const CEmulatedUSB &dispatcher, const Q
           formatErrorInfo(dispatcher));
 }
 
-void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable)
-{
-    error(0, MessageType_Error,
-          fEnable ?
-              tr("Failed to enable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName),
-          formatErrorInfo(server));
-}
-
 void UIMessageCenter::cannotToggleVideoCapture(const CMachine &machine, bool fEnable)
 {
     /* Get machine-name preserving error-info: */
@@ -2024,6 +2016,24 @@ void UIMessageCenter::cannotToggleVideoCapture(const CMachine &machine, bool fEn
               tr("Failed to enable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName) :
               tr("Failed to disable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName),
           formatErrorInfo(machine));
+}
+
+void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable)
+{
+    error(0, MessageType_Error,
+          fEnable ?
+              tr("Failed to enable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disable the remote desktop server for the virtual machine <b>%1</b>.").arg(strMachineName),
+          formatErrorInfo(server));
+}
+
+void UIMessageCenter::cannotToggleNetworkAdapterCable(const CNetworkAdapter &adapter, const QString &strMachineName, bool fConnect)
+{
+    error(0, MessageType_Error,
+          fConnect ?
+              tr("Failed to connect network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disconnect network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName),
+          formatErrorInfo(adapter));
 }
 
 void UIMessageCenter::remindAboutGuestAdditionsAreNotActive() const
