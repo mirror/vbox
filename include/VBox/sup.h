@@ -454,7 +454,7 @@ typedef enum SUPGIPMODE
  *          thinking that values doesn't change even if members are marked
  *          as volatile. Thus, there is no PCSUPGLOBALINFOPAGE type.
  */
-#ifdef IN_SUP_R3
+#if defined(IN_SUP_R3) || defined(IN_SUP_R0)
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 
 #elif !defined(IN_RING0) || defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS)
@@ -464,7 +464,7 @@ extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 # if !defined(__GNUC__) || defined(RT_OS_DARWIN) || !defined(RT_ARCH_AMD64)
 #  define g_pSUPGlobalInfoPage          (&g_SUPGlobalInfoPage)
 # else
-#  define g_pSUPGlobalInfoPage          (SUPGetGIPHlp())
+#  define g_pSUPGlobalInfoPage          (KBUILD_DEVTOOLS_HST())
 /** Workaround for ELF+GCC problem on 64-bit hosts.
  * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
 DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIPHlp(void)
