@@ -279,6 +279,7 @@ void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, const VirtualBox* aPar
 
 void HostDnsMonitorProxy::notify() const
 {
+    LogRel(("HostDnsMonitorProxy::notify\n"));
     m->fModified = true;
     const_cast<VirtualBox *>(m->virtualbox)->i_onHostNameResolutionConfigurationChange();
 }
