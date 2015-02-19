@@ -464,7 +464,7 @@ extern DECLIMPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 # if !defined(__GNUC__) || defined(RT_OS_DARWIN) || !defined(RT_ARCH_AMD64)
 #  define g_pSUPGlobalInfoPage          (&g_SUPGlobalInfoPage)
 # else
-#  define g_pSUPGlobalInfoPage          (KBUILD_DEVTOOLS_HST())
+#  define g_pSUPGlobalInfoPage          (SUPGetGIPHlp())
 /** Workaround for ELF+GCC problem on 64-bit hosts.
  * (GCC emits a mov with a R_X86_64_32 reloc, we need R_X86_64_64.) */
 DECLINLINE(PSUPGLOBALINFOPAGE) SUPGetGIPHlp(void)
