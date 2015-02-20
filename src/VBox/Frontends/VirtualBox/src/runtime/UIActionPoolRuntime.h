@@ -83,6 +83,8 @@ enum UIActionIndexRT
 #ifdef Q_WS_X11
     UIActionIndexRT_M_Input_S_TypeCABS,
 #endif /* Q_WS_X11 */
+    UIActionIndexRT_M_Input_S_TypeCtrlBreak,
+    UIActionIndexRT_M_Input_S_TypeInsert,
 
     /* 'Devices' menu actions: */
     UIActionIndexRT_M_Devices,

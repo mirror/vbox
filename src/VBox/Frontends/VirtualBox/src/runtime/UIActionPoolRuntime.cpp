@@ -1124,8 +1124,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Insert Ctrl-Alt-Del"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the Ctrl-Alt-Del sequence to the virtual machine"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Alt-Del"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Del"));
     }
 };
 
@@ -1160,11 +1160,71 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Ins&ert Ctrl-Alt-Backspace"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Alt-Backspace"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
     }
 };
 #endif /* Q_WS_X11 */
+
+class UIActionSimplePerformTypeCtrlBreak : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformTypeCtrlBreak(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("TypeCtrlBreak");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Break"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Break"));
+    }
+};
+
+class UIActionSimplePerformTypeInsert : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformTypeInsert(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/hostkey_16px.png", ":/hostkey_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("TypeInsert");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Insert"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Insert"));
+    }
+};
 
 class UIActionMenuDevices : public UIActionMenu
 {
@@ -2035,6 +2095,8 @@ void UIActionPoolRuntime::preparePool()
 #ifdef Q_WS_X11
     m_pool[UIActionIndexRT_M_Input_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
 #endif /* Q_WS_X11 */
+    m_pool[UIActionIndexRT_M_Input_S_TypeCtrlBreak] = new UIActionSimplePerformTypeCtrlBreak(this);
+    m_pool[UIActionIndexRT_M_Input_S_TypeInsert] = new UIActionSimplePerformTypeInsert(this);
 
     /* 'Devices' actions: */
     m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuDevices(this);
@@ -2743,6 +2805,10 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
     /* 'Type CABS' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeCABS)) || fSeparator;
 #endif /* Q_WS_X11 */
+    /* 'Type Ctrl-Break' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeCtrlBreak)) || fSeparator;
+    /* 'Type Insert' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeInsert)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Input_M_Keyboard);

@@ -415,6 +415,8 @@ public:
 #ifdef Q_WS_X11
         RuntimeMenuInputActionType_TypeCABS          = RT_BIT(5),
 #endif /* Q_WS_X11 */
+        RuntimeMenuInputActionType_TypeCtrlBreak     = RT_BIT(6),
+        RuntimeMenuInputActionType_TypeInsert        = RT_BIT(7),
         RuntimeMenuInputActionType_All               = 0xFFFF
     };
 

@@ -247,6 +247,8 @@ private slots:
 #ifdef Q_WS_X11
     void sltTypeCABS();
 #endif /* Q_WS_X11 */
+    void sltTypeCtrlBreak();
+    void sltTypeInsert();
     void sltTakeSnapshot();
     void sltShowInformationDialog();
     void sltReset();

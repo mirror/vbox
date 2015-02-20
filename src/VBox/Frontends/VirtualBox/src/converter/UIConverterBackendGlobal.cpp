@@ -649,6 +649,8 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuInputA
 #ifdef Q_WS_X11
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS:          strResult = "TypeCABS"; break;
 #endif /* Q_WS_X11 */
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak:     strResult = "TypeCtrlBreak"; break;
+        case UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert:        strResult = "TypeInsert"; break;
         case UIExtraDataMetaDefs::RuntimeMenuInputActionType_All:               strResult = "All"; break;
         default:
         {
@@ -673,6 +675,8 @@ template<> UIExtraDataMetaDefs::RuntimeMenuInputActionType fromInternalString<UI
 #ifdef Q_WS_X11
     keys << "TypeCABS";          values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCABS;
 #endif /* Q_WS_X11 */
+    keys << "TypeCtrlBreak";     values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeCtrlBreak;
+    keys << "TypeInsert";        values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_TypeInsert;
     keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuInputActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strRuntimeMenuInputActionType, Qt::CaseInsensitive))

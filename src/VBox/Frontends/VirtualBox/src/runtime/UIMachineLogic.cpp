@@ -918,6 +918,8 @@ void UIMachineLogic::prepareActionGroups()
 #ifdef Q_WS_X11
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS));
 #endif /* Q_WS_X11 */
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCtrlBreak));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeInsert));
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Save));
@@ -1016,6 +1018,10 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS), SIGNAL(triggered()),
             this, SLOT(sltTypeCABS()));
 #endif /* Q_WS_X11 */
+    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCtrlBreak), SIGNAL(triggered()),
+            this, SLOT(sltTypeCtrlBreak()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeInsert), SIGNAL(triggered()),
+            this, SLOT(sltTypeInsert()));
 
     /* 'Devices' actions connections: */
     connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));
@@ -1314,16 +1320,38 @@ void UIMachineLogic::sltTypeCAD()
 void UIMachineLogic::sltTypeCABS()
 {
     static QVector<LONG> sequence(6);
-    sequence[0] = 0x1d; /* Ctrl down */
-    sequence[1] = 0x38; /* Alt down */
-    sequence[2] = 0x0E; /* Backspace down */
-    sequence[3] = 0x8E; /* Backspace up */
-    sequence[4] = 0xb8; /* Alt up */
-    sequence[5] = 0x9d; /* Ctrl up */
+    sequence[0] = 0x1d;        /* Ctrl down */
+    sequence[1] = 0x38;        /* Alt down */
+    sequence[2] = 0x0E;        /* Backspace down */
+    sequence[3] = 0x0E | 0x80; /* Backspace up */
+    sequence[4] = 0x38 | 0x80; /* Alt up */
+    sequence[5] = 0x1d | 0x80; /* Ctrl up */
     keyboard().PutScancodes(sequence);
     AssertWrapperOk(keyboard());
 }
 #endif /* Q_WS_X11 */
+
+void UIMachineLogic::sltTypeCtrlBreak()
+{
+    static QVector<LONG> sequence(4);
+    sequence[0] = 0x1d;        /* Ctrl down */
+    sequence[1] = 0x46;        /* Break down */
+    sequence[2] = 0x46 | 0x80; /* Break up */
+    sequence[3] = 0x1d | 0x80; /* Ctrl up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
+
+void UIMachineLogic::sltTypeInsert()
+{
+    static QVector<LONG> sequence(4);
+    sequence[0] = 0xE0;        /* Extended flag */
+    sequence[1] = 0x52;        /* Insert down */
+    sequence[2] = 0xE0;        /* Extended flag */
+    sequence[3] = 0x52 | 0x80; /* Insert up */
+    keyboard().PutScancodes(sequence);
+    AssertWrapperOk(keyboard());
+}
 
 void UIMachineLogic::sltTakeSnapshot()
 {
