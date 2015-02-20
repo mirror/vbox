@@ -109,7 +109,7 @@ private:
                              const com::Utf8Str &aToIPAddress);
     HRESULT getVmSlotOptions(const com::Utf8Str &aVmName,
                              LONG aSlot,
-                             std::vector<com::Utf8Str> &aValue);
+                             std::vector<com::Utf8Str> &aValues);
 
     // Wrapped IDHCPServer Methods
     HRESULT addGlobalOption(DhcpOpt_T aOption,

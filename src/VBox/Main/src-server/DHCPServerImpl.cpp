@@ -285,10 +285,10 @@ HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValu
 }
 
 
-HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValue)
+HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aValue.resize(m->GlobalDhcpOptions.size());
+    aValues.resize(m->GlobalDhcpOptions.size());
     DhcpOptionMap::const_iterator it;
     size_t i = 0;
     for (it = m->GlobalDhcpOptions.begin(); it != m->GlobalDhcpOptions.end(); ++it, ++i)
@@ -298,21 +298,21 @@ HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValue)
 
         // XXX: TODO: factor out and share with getVmSlotOptions()
         if (OptValue.encoding == DhcpOptValue::LEGACY)
-            aValue[i] = Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
+            aValues[i] = Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
     }
 
     return S_OK;
 }
 
-HRESULT DHCPServer::getVmConfigs(std::vector<com::Utf8Str> &aValue)
+HRESULT DHCPServer::getVmConfigs(std::vector<com::Utf8Str> &aValues)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    aValue.resize(m->VmSlot2Options.size());
+    aValues.resize(m->VmSlot2Options.size());
     VmSlot2OptionsMap::const_iterator it;
     size_t i = 0;
     for (it = m->VmSlot2Options.begin(); it != m->VmSlot2Options.end(); ++it, ++i)
     {
-        aValue[i] = Utf8StrFmt("[%s]:%d", it->first.VmName.c_str(), it->first.Slot);
+        aValues[i] = Utf8StrFmt("[%s]:%d", it->first.VmName.c_str(), it->first.Slot);
     }
 
     return S_OK;
