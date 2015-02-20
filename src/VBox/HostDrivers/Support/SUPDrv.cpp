@@ -1680,7 +1680,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_VMMR0(0)):
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_VMMR0_NO_SIZE()):
         {
             /* validate */
             PSUPCALLVMMR0 pReq = (PSUPCALLVMMR0)pReqHdr;
@@ -1898,7 +1898,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_SERVICE(0)):
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_CALL_SERVICE_NO_SIZE()):
         {
             /* validate */
             PSUPCALLSERVICE pReq = (PSUPCALLSERVICE)pReqHdr;
@@ -1922,7 +1922,7 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
-        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LOGGER_SETTINGS(0)):
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_LOGGER_SETTINGS_NO_SIZE()):
         {
             /* validate */
             PSUPLOGGERSETTINGS pReq = (PSUPLOGGERSETTINGS)pReqHdr;
@@ -4574,8 +4574,8 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (RT_SUCCESS(rc))
     {
         pImage->uState = SUP_IOCTL_LDR_LOAD;
-        pImage->pfnModuleInit = pReq->u.In.pfnModuleInit;
-        pImage->pfnModuleTerm = pReq->u.In.pfnModuleTerm;
+        pImage->pfnModuleInit = (PFNR0MODULEINIT)pReq->u.In.pfnModuleInit;
+        pImage->pfnModuleTerm = (PFNR0MODULETERM)pReq->u.In.pfnModuleTerm;
 
         if (pImage->fNative)
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage, pReq);
@@ -4602,7 +4602,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                                           pReq->u.In.EP.VMMR0.pvVMMR0EntryFast, pReq->u.In.EP.VMMR0.pvVMMR0EntryEx);
                 break;
             case SUPLDRLOADEP_SERVICE:
-                pImage->pfnServiceReqHandler = pReq->u.In.EP.Service.pfnServiceReq;
+                pImage->pfnServiceReqHandler = (PFNSUPR0SERVICEREQHANDLER)pReq->u.In.EP.Service.pfnServiceReq;
                 rc = VINF_SUCCESS;
                 break;
         }
@@ -4888,7 +4888,7 @@ static int supdrvIDC_LdrGetSymbol(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession
         for (i = 0; i < RT_ELEMENTS(g_aFunctions); i++)
             if (!strcmp(g_aFunctions[i].szName, pszSymbol))
             {
-                pReq->u.Out.pfnSymbol = g_aFunctions[i].pfn;
+                pReq->u.Out.pfnSymbol = (PFNRT)g_aFunctions[i].pfn;
                 break;
             }
     }
@@ -4957,10 +4957,11 @@ static int supdrvLdrSetVMMR0EPs(PSUPDRVDEVEXT pDevExt, void *pvVMMR0, void *pvVM
      */
     if (!pDevExt->pvVMMR0)
     {
-        pDevExt->pvVMMR0            = pvVMMR0;
-        pDevExt->pfnVMMR0EntryInt   = pvVMMR0EntryInt;
-        pDevExt->pfnVMMR0EntryFast  = pvVMMR0EntryFast;
-        pDevExt->pfnVMMR0EntryEx    = pvVMMR0EntryEx;
+        pDevExt->pvVMMR0 = pvVMMR0;
+        *(void **)&pDevExt->pfnVMMR0EntryInt  = pvVMMR0EntryInt;
+        *(void **)&pDevExt->pfnVMMR0EntryFast = pvVMMR0EntryFast;
+        *(void **)&pDevExt->pfnVMMR0EntryEx   = pvVMMR0EntryEx;
+        ASMCompilerBarrier(); /* the above isn't nice, so be careful... */
     }
     else
     {

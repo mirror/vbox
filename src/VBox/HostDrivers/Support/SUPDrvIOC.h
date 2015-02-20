@@ -402,9 +402,9 @@ typedef struct SUPLDRLOAD
         struct
         {
             /** The address of module initialization function. Similar to _DLL_InitTerm(hmod, 0). */
-            PFNR0MODULEINIT pfnModuleInit;
+            RTR0PTR pfnModuleInit;
             /** The address of module termination function. Similar to _DLL_InitTerm(hmod, 1). */
-            PFNR0MODULETERM pfnModuleTerm;
+            RTR0PTR pfnModuleTerm;
             /** Special entry points. */
             union
             {
@@ -526,6 +526,7 @@ typedef struct SUPLDRGETSYMBOL
  * @{
  */
 #define SUP_IOCTL_CALL_VMMR0(cbReq)                     SUP_CTL_CODE_SIZE(7, SUP_IOCTL_CALL_VMMR0_SIZE(cbReq))
+#define SUP_IOCTL_CALL_VMMR0_NO_SIZE()                  SUP_CTL_CODE_SIZE(7, 0)
 #define SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)                RT_UOFFSETOF(SUPCALLVMMR0, abReqPkt[cbReq])
 #define SUP_IOCTL_CALL_VMMR0_SIZE_IN(cbReq)             SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
 #define SUP_IOCTL_CALL_VMMR0_SIZE_OUT(cbReq)            SUP_IOCTL_CALL_VMMR0_SIZE(cbReq)
@@ -986,6 +987,7 @@ typedef struct SUPGIPUNMAP
  * @{
  */
 #define SUP_IOCTL_CALL_SERVICE(cbReq)                   SUP_CTL_CODE_SIZE(22, SUP_IOCTL_CALL_SERVICE_SIZE(cbReq))
+#define SUP_IOCTL_CALL_SERVICE_NO_SIZE(cbReq)           SUP_CTL_CODE_SIZE(22, 0)
 #define SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)              RT_UOFFSETOF(SUPCALLSERVICE, abReqPkt[cbReq])
 #define SUP_IOCTL_CALL_SERVICE_SIZE_IN(cbReq)           SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)
 #define SUP_IOCTL_CALL_SERVICE_SIZE_OUT(cbReq)          SUP_IOCTL_CALL_SERVICE_SIZE(cbReq)
@@ -1016,6 +1018,7 @@ typedef struct SUPCALLSERVICE
  * @{
  */
 #define SUP_IOCTL_LOGGER_SETTINGS(cbStrTab)             SUP_CTL_CODE_SIZE(23, SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab))
+#define SUP_IOCTL_LOGGER_SETTINGS_NO_SIZE()             SUP_CTL_CODE_SIZE(23, 0)
 #define SUP_IOCTL_LOGGER_SETTINGS_SIZE(cbStrTab)        RT_UOFFSETOF(SUPLOGGERSETTINGS, u.In.szStrings[cbStrTab])
 #define SUP_IOCTL_LOGGER_SETTINGS_SIZE_IN(cbStrTab)     RT_UOFFSETOF(SUPLOGGERSETTINGS, u.In.szStrings[cbStrTab])
 #define SUP_IOCTL_LOGGER_SETTINGS_SIZE_OUT              sizeof(SUPREQHDR)

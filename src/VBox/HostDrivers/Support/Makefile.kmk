@@ -615,9 +615,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  endif
  VBoxDrv_SOURCES          = \
  	SUPDrv.d \
- 	SUPDrv.c \
+ 	SUPDrv.cpp \
  	SUPDrvGip.cpp \
- 	SUPDrvSem.c \
+ 	SUPDrvSem.cpp \
   	SUPDrvTracer.cpp \
 	SUPLibAll.cpp
  ifdef VBOX_WITH_NATIVE_DTRACE
