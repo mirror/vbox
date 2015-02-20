@@ -754,7 +754,7 @@ static int dsoundCaptureOpen (DSoundVoiceIn *ds)
     WAVEFORMATEX wfx;
     DSCBUFFERDESC bd;
     DSCBCAPS bc;
-    DWORD cpos;
+    DWORD rpos;
 
     DSLOGF(("DSound: capture open %p size %d samples, freq %d, chan %d, bits %d, sign %d\n",
             ds,
@@ -795,9 +795,9 @@ static int dsoundCaptureOpen (DSoundVoiceIn *ds)
 
     /* Query the actual parameters. */
 
-    hr = IDirectSoundCaptureBuffer_GetCurrentPosition (ds->dsound_capture_buffer, &cpos, NULL);
+    hr = IDirectSoundCaptureBuffer_GetCurrentPosition (ds->dsound_capture_buffer, NULL, &rpos);
     if (FAILED (hr)) {
-        cpos = 0;
+        rpos = 0;
         DSLOGF(("DSound: open GetCurrentPosition %Rhrc\n", hr));
     }
 
@@ -845,7 +845,7 @@ static int dsoundCaptureOpen (DSoundVoiceIn *ds)
 
     /* Initial state: reading at the initial capture position. */
     ds->hw.wpos = 0;
-    ds->last_read_pos = cpos >> ds->hw.info.shift;
+    ds->last_read_pos = rpos >> ds->hw.info.shift;
     ds->capture_buffer_size = bc.dwBufferBytes >> ds->hw.info.shift;
     DSLOGF(("DSound: capture open last_read_pos %d, capture_buffer_size %d\n", ds->last_read_pos, ds->capture_buffer_size));
 
@@ -1155,7 +1155,7 @@ static int dsound_run_in (HWVoiceIn *hw)
     DWORD blen1, blen2;
     int len1, len2;
     int decr;
-    DWORD cpos;
+    DWORD rpos;
     LPVOID p1, p2;
     int hwshift;
 
@@ -1174,8 +1174,8 @@ static int dsound_run_in (HWVoiceIn *hw)
 
     hr = IDirectSoundCaptureBuffer_GetCurrentPosition (
         dscb,
-        &cpos,
-        NULL
+        NULL,
+        &rpos
         );
     if (FAILED (hr)) {
         if (hr != ds->hr_last_run_in) {
@@ -1186,14 +1186,14 @@ static int dsound_run_in (HWVoiceIn *hw)
     }
     ds->hr_last_run_in = hr;
 
-    if (cpos & hw->info.align) {
-        DSLOGF(("DSound: run_in misaligned capture position %ld(%d)\n", cpos, hw->info.align));
+    if (rpos & hw->info.align) {
+        DSLOGF(("DSound: run_in misaligned read position %ld(%d)\n", rpos, hw->info.align));
     }
 
-    cpos >>= hwshift;
+    rpos >>= hwshift;
 
     /* Number of samples available in the capture buffer. */
-    len = audio_ring_dist (cpos, ds->last_read_pos, ds->capture_buffer_size);
+    len = audio_ring_dist (rpos, ds->last_read_pos, ds->capture_buffer_size);
     if (!len) {
         return 0;
     }
