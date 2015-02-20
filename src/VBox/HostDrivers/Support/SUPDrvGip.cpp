@@ -3262,7 +3262,44 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADS
 
 
 /**
- * Terminates the TSC-delta measurement thread.
+ * Waits for TSC-delta measurements to be completed for all online CPUs.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ */
+static int supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt)
+{
+    int cTriesLeft = 5;
+    int cMsTotalWait;
+    int cMsWaited = 0;
+    int cMsWaitGranularity = 1;
+
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    AssertReturn(pGip, VERR_INVALID_POINTER);
+
+    if (RT_UNLIKELY(pDevExt->hTscDeltaThread == NIL_RTTHREAD))
+        return VERR_THREAD_NOT_WAITABLE;
+
+    cMsTotalWait = RT_MIN(pGip->cPresentCpus + 10, 200);
+    while (cTriesLeft-- > 0)
+    {
+        if (RTCpuSetIsEqual(&pDevExt->TscDeltaObtainedCpuSet, &pGip->OnlineCpuSet))
+            return VINF_SUCCESS;
+        RTThreadSleep(cMsWaitGranularity);
+        cMsWaited += cMsWaitGranularity;
+        if (cMsWaited >= cMsTotalWait)
+            break;
+    }
+
+    return VERR_TIMEOUT;
+}
+
+
+/**
+ * Terminates the actual thread running supdrvTscDeltaThread().
+ *
+ * This is an internal worker function for supdrvTscDeltaThreadInit() and
+ * supdrvTscDeltaTerm().
  *
  * @param   pDevExt   Pointer to the device instance data.
  */
@@ -3373,39 +3410,6 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
     ASMAtomicWriteS32(&pDevExt->rcTscDelta, VERR_NOT_AVAILABLE);
 }
 
-
-/**
- * Waits for TSC-delta measurements to be completed for all online CPUs.
- *
- * @returns VBox status code.
- * @param   pDevExt         Pointer to the device instance data.
- */
-static int supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt)
-{
-    int cTriesLeft = 5;
-    int cMsTotalWait;
-    int cMsWaited = 0;
-    int cMsWaitGranularity = 1;
-
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-    AssertReturn(pGip, VERR_INVALID_POINTER);
-
-    if (RT_UNLIKELY(pDevExt->hTscDeltaThread == NIL_RTTHREAD))
-        return VERR_THREAD_NOT_WAITABLE;
-
-    cMsTotalWait = RT_MIN(pGip->cPresentCpus + 10, 200);
-    while (cTriesLeft-- > 0)
-    {
-        if (RTCpuSetIsEqual(&pDevExt->TscDeltaObtainedCpuSet, &pGip->OnlineCpuSet))
-            return VINF_SUCCESS;
-        RTThreadSleep(cMsWaitGranularity);
-        cMsWaited += cMsWaitGranularity;
-        if (cMsWaited >= cMsTotalWait)
-            break;
-    }
-
-    return VERR_TIMEOUT;
-}
 
 #endif /* SUPDRV_USE_TSC_DELTA_THREAD */
 
