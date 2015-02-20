@@ -56,7 +56,7 @@
  *
  * @internal
  */
-SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE  pGip)
+SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip)
 {
     uint64_t            uTsc;
     uint16_t            iGipCpu;
