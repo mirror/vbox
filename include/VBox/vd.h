@@ -241,6 +241,19 @@ typedef struct VBOXHDDRAW
 #define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH | VD_OPEN_FLAGS_INFORM_ABOUT_ZERO_BLOCKS | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS)
 /** @}*/
 
+/** @name VBox HDD container filter flags
+ * @{
+ */
+/** The filter is applied during writes. */
+#define VD_FILTER_FLAGS_WRITE RT_BIT(0)
+/** The filter is applied during reads. */
+#define VD_FILTER_FLAGS_READ  RT_BIT(1)
+/** Default set of filter flags. */
+#define VD_FILTER_FLAGS_DEFAULT (VD_FILTER_FLAGS_WRITE | VD_FILTER_FLAGS_READ)
+/** Mask of valid flags. */
+#define VD_FILTER_FLAGS_MASK    (VD_FILTER_FLAGS_WRITE | VD_FILTER_FLAGS_READ)
+/** @} */
+
 /**
  * Helper functions to handle open flags.
  */
@@ -640,9 +653,11 @@ VBOXDDU_DECL(int) VDCacheOpen(PVBOXHDD pDisk, const char *pszBackend,
  * @returns VBox status code.
  * @param   pDisk           Pointer to the HDD container which should use the filter.
  * @param   pszFilter       Name of the filter backend to use (case insensitive).
+ * @param   fFlags          Flags which apply to the filter, combination of VD_FILTER_FLAGS_*
+ *                          defines.
  * @param   pVDIfsFilter    Pointer to the per-filter VD interface list.
  */
-VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter,
+VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter, uint32_t fFlags,
                               PVDINTERFACE pVDIfsFilter);
 
 /**
@@ -906,13 +921,14 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
 VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete);
 
 /**
- * Removes the last added filter in the HDD container.
+ * Removes the last added filter in the HDD container from the specified chain.
  *
  * @return  VBox status code.
  * @retval  VERR_VD_NOT_OPENED if no filter is present for the disk.
  * @param   pDisk           Pointer to HDD container.
+ * @param   fFlags          Combination of VD_FILTER_FLAGS_* defines.
  */
-VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk);
+VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk, uint32_t fFlags);
 
 /**
  * Closes the currently opened cache image file in HDD container.
