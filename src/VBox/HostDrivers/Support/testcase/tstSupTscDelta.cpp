@@ -51,6 +51,7 @@ int main(int argc, char **argv)
     static const RTGETOPTDEF g_aOptions[] =
     {
         { "--iterations",       'i', RTGETOPT_REQ_INT32 },
+        { "--delay",            'd', RTGETOPT_REQ_INT32 },
     };
 
     uint32_t cIterations = 0; /* Currently 0 so that it doesn't upset testing. */
@@ -64,6 +65,9 @@ int main(int argc, char **argv)
     {
         switch (ch)
         {
+            case 'd':
+                cMsSleepBetweenIterations = ValueUnion.u32;
+                break;
             case 'i':
                 cIterations = ValueUnion.u32;
                 break;
