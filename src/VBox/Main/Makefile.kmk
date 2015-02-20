@@ -352,6 +352,7 @@ VBoxSVC_SOURCES = \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
 	src-all/HashedPw.cpp \
+	src-all/KeyStore.cpp \
 	src-all/Logging.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
@@ -711,6 +712,7 @@ VBoxC_SOURCES = \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
 	src-all/HashedPw.cpp \
+	src-all/KeyStore.cpp \
 	src-all/Logging.cpp \
 	src-all/PCIDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
