@@ -647,6 +647,34 @@ DECLINLINE(int64_t) SUPGetTscDeltaByCpuSetIndex(uint32_t iCpuSet)
 
 
 /**
+ * Checks if the TSC delta is available for a given CPU (if TSC-deltas are
+ * relevant).
+ *
+ * @returns true if it's okay to read the TSC, false otherwise.
+ *
+ * @param   iCpuSet   The CPU set index of the CPU which TSC delta we check.
+ * @remarks Requires GIP to be initialized and valid.
+ */
+DECLINLINE(bool) SUPIsTscDeltaAvailableForCpuSetIndex(uint32_t iCpuSet)
+{
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
+        return true;
+    if (RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)))
+    {
+        uint16_t iCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+        if (RT_LIKELY(iCpu < pGip->cCpus))
+        {
+            int64_t iTscDelta = pGip->aCPUs[iCpu].i64TSCDelta;
+            if (iTscDelta != INT64_MAX)
+                return true;
+        }
+    }
+    return false;
+}
+
+
+/**
  * Gets the descriptive GIP mode name.
  *
  * @returns The name.
