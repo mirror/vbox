@@ -133,8 +133,8 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 
 /** Helper to work round different ways of getting the root window in different
  * server versions. */
-#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 700000000 \
-    && XORG_VERSION_CURRENT >= 100900000
+#if defined(XORG_VERSION_CURRENT) && XORG_VERSION_CURRENT < 70000000 \
+    && XORG_VERSION_CURRENT >= 10900000
 # define ROOT_WINDOW(pScrn) screenInfo.screens[(pScrn)->scrnIndex]->root
 #else
 # define ROOT_WINDOW(pScrn) WindowTable[(pScrn)->scrnIndex]
