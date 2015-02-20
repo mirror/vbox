@@ -1335,7 +1335,7 @@ VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6);
 VMMR0_INT_DECL(void)    CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6);
 VMMR0_INT_DECL(void)    CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6);
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, RTCPUID idHostCpu);
+VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet);
 #endif
 
 /** @} */

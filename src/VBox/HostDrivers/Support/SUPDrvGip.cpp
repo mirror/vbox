@@ -2792,6 +2792,8 @@ DECLINLINE(void) supdrvClearTscSamples(PSUPDRVDEVEXT pDevExt, bool fClearDeltas)
  * CPU.
  *
  * @returns VBox status code.
+ * @retval  VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED on pure measurement
+ *          failure.
  * @param   pDevExt         Pointer to the device instance data.
  * @param   idxWorker       The index of the worker CPU from the GIP's array of
  *                          CPUs.
@@ -3402,8 +3404,175 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
     ASMAtomicWriteS32(&pDevExt->rcTscDelta, VERR_NOT_AVAILABLE);
 }
 
-
 #endif /* SUPDRV_USE_TSC_DELTA_THREAD */
+
+/**
+ * Measure the TSC delta for the CPU given by its CPU set index.
+ *
+ * @returns VBox status code.
+ * @retval  VERR_INTERRUPTED if interrupted while waiting.
+ * @retval  VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED if we were unable to get a
+ *          measurment.
+ * @retval  VERR_CPU_OFFLINE if the specified CPU is offline.
+ * @retval  VERR_CPU_OFFLINE if the specified CPU is offline.
+ *
+ * @param   pSession        The caller's session.  GIP must've been mapped.
+ * @param   iCpuSet         The CPU set index of the CPU to measure.
+ * @param   fFlags          Flags, SUP_TSCDELTA_MEASURE_F_XXX.
+ * @param   cMsWaitRetry    Number of milliseconds to wait between each retry.
+ * @param   cMsWaitThread   Number of milliseconds to wait for the thread to get
+ *                          ready.
+ * @param   cTries          Number of times to try, pass 0 for the default.
+ */
+SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t iCpuSet, uint32_t fFlags,
+                                              RTMSINTERVAL cMsWaitRetry, RTMSINTERVAL cMsWaitThread, uint32_t cTries)
+{
+    PSUPDRVDEVEXT       pDevExt;
+    PSUPGLOBALINFOPAGE  pGip;
+    uint16_t            iGipCpu;
+    int                 rc;
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    uint64_t            msTsStartWait;
+    uint32_t            iWaitLoop;
+#endif
+
+    /*
+     * Validate and adjust the input.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    if (!pSession->fGipReferenced)
+        return VERR_WRONG_ORDER;
+
+    pDevExt = pSession->pDevExt;
+    AssertReturn(SUP_IS_DEVEXT_VALID(pDevExt), VERR_INVALID_PARAMETER);
+
+    pGip = pDevExt->pGip;
+    AssertPtrReturn(pGip, VERR_INTERNAL_ERROR_2);
+
+    AssertReturn(iCpuSet < RTCPUSET_MAX_CPUS, VERR_INVALID_CPU_INDEX);
+    AssertReturn(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx), VERR_INVALID_CPU_INDEX);
+    iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+    AssertReturn(iGipCpu < pGip->cCpus, VERR_INVALID_CPU_INDEX);
+
+    if (fFlags & ~SUP_TSCDELTA_MEASURE_F_VALID_MASK)
+        return VERR_INVALID_FLAGS;
+
+    if (cTries == 0)
+        cTries = 12;
+    else if (cTries > 256)
+        cTries = 256;
+
+    if (cMsWaitRetry > 1000)
+        cMsWaitRetry = 1000;
+
+    /*
+     * The request is a noop if the TSC delta isn't being used.
+     */
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+        return VINF_SUCCESS;
+
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+    /*
+     * Has the TSC already been measured and we're not forced to redo it?
+     */
+    if (   pGip->aCPUs[iGipCpu].i64TSCDelta != INT64_MAX
+        && !(fFlags & SUP_TSCDELTA_MEASURE_F_FORCE))
+        return VINF_SUCCESS;
+
+    /*
+     * Asynchronous request? Forward it to the thread, no waiting.
+     */
+    if (fFlags & SUP_TSCDELTA_MEASURE_F_ASYNC)
+    {
+        /** @todo Async. doesn't implement options like retries, waiting. We'll need
+         *        to pass those options to the thread somehow and implement it in the
+         *        thread. Check if anyone uses/needs fAsync before implementing this. */
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, iCpuSet);
+        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
+            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
+        {
+            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_THREAD_IS_DEAD;
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        RTThreadUserSignal(pDevExt->hTscDeltaThread);
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * If a TSC-delta measurement request is already being serviced by the thread,
+     * wait 'cTries' times if a retry-timeout is provided, otherwise bail as busy.
+     */
+    msTsStartWait = RTTimeSystemMilliTS();
+    for (iWaitLoop = 0;; iWaitLoop++)
+    {
+        uint64_t cMsElapsed;
+        SUPDRVTSCDELTATHREADSTATE enmState;
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        enmState = pDevExt->enmTscDeltaThreadState;
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+
+        if (enmState == kTscDeltaThreadState_Measuring)
+        { /* Must wait, the thread is busy. */ }
+        else if (enmState == kTscDeltaThreadState_WaitAndMeasure)
+        { /* Must wait, this state only says what will happen next. */ }
+        else if (enmState == kTscDeltaThreadState_Terminating)
+        { /* Must wait, this state only says what should happen next. */ }
+        else
+            break; /* All other states, the thread is either idly listening or dead. */
+
+        /* Wait or fail. */
+        if (cMsWaitThread == 0)
+            return VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY;
+        cMsElapsed = RTTimeSystemMilliTS() - msTsStartWait;
+        if (cMsElapsed >= cMsWaitThread)
+            return VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY;
+
+        rc = RTThreadSleep(RT_MIN(cMsWaitThread - cMsElapsed, RT_MIN(iWaitLoop + 1, 10)));
+        if (rc == VERR_INTERRUPTED)
+            return rc;
+    }
+#endif /* SUPDRV_USE_TSC_DELTA_THREAD */
+
+    /*
+     * Try measure the TSC delta the given number of times.
+     */
+    for (;;)
+    {
+        /* Unless we're forced to measure the delta, check whether it's done already. */
+        if (   !(fFlags & SUP_TSCDELTA_MEASURE_F_FORCE)
+            && pGip->aCPUs[iGipCpu].i64TSCDelta != INT64_MAX)
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+
+        /* Measure it. */
+        rc = supdrvMeasureTscDeltaOne(pDevExt, iGipCpu);
+        if (rc != VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED)
+        {
+            Assert(pGip->aCPUs[iGipCpu].i64TSCDelta != INT64_MAX || RT_FAILURE_NP(rc));
+            break;
+        }
+
+        /* Retry? */
+        if (cTries <= 1)
+            break;
+        cTries--;
+
+        if (cMsWaitRetry)
+        {
+            rc = RTThreadSleep(cMsWaitRetry);
+            if (rc == VERR_INTERRUPTED)
+                break;
+        }
+    }
+
+    return rc;
+}
 
 
 /**
@@ -3416,104 +3585,35 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
  */
 int VBOXCALL supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCDELTAMEASURE pReq)
 {
-    PSUPGLOBALINFOPAGE pGip;
-    RTCPUID            idCpuWorker;
-    int                rc;
-    int16_t            cTries;
-    RTMSINTERVAL       cMsWaitRetry;
-    uint16_t           iCpu;
+    uint32_t        cTries;
+    uint32_t        iCpuSet;
+    uint32_t        fFlags;
+    RTMSINTERVAL    cMsWaitRetry;
 
     /*
-     * Validate.
+     * Validate and adjust/resolve the input so they can be passed onto SUPR0TscDeltaMeasureBySetIndex.
      */
     AssertPtr(pDevExt); AssertPtr(pSession); AssertPtr(pReq); /* paranoia^2 */
-    if (pSession->GipMapObjR3 == NIL_RTR0MEMOBJ)
-        return VERR_WRONG_ORDER;
-    pGip = pDevExt->pGip;
-    AssertReturn(pGip, VERR_INTERNAL_ERROR_2);
 
-    idCpuWorker = pReq->u.In.idCpu;
-    if (idCpuWorker == NIL_RTCPUID)
+    if (pReq->u.In.idCpu == NIL_RTCPUID)
         return VERR_INVALID_CPU_ID;
-    cTries       = RT_MAX(pReq->u.In.cRetries + 1, 10);
+    iCpuSet = RTMpCpuIdToSetIndex(pReq->u.In.idCpu);
+    if (iCpuSet >= RTCPUSET_MAX_CPUS)
+        return VERR_INVALID_CPU_ID;
+
+    cTries = pReq->u.In.cRetries == 0 ? 0 : (uint32_t)pReq->u.In.cRetries + 1;
+
     cMsWaitRetry = RT_MAX(pReq->u.In.cMsWaitRetry, 5);
 
-    /*
-     * The request is a noop if the TSC delta isn't being used.
-     */
-    pGip = pDevExt->pGip;
-    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED)
-        return VINF_SUCCESS;
+    fFlags = 0;
+    if (pReq->u.In.fAsync)
+        fFlags |= SUP_TSCDELTA_MEASURE_F_ASYNC;
+    if (pReq->u.In.fForce)
+        fFlags |= SUP_TSCDELTA_MEASURE_F_FORCE;
 
-    rc = VERR_CPU_NOT_FOUND;
-    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-    {
-        PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
-        if (pGipCpuWorker->idCpu == idCpuWorker)
-        {
-            if (   pGipCpuWorker->i64TSCDelta != INT64_MAX
-                && !pReq->u.In.fForce)
-                return VINF_SUCCESS;
-
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-            if (pReq->u.In.fAsync)
-            {
-                /** @todo Async. doesn't implement options like retries, waiting. We'll need
-                 *        to pass those options to the thread somehow and implement it in the
-                 *        thread. Check if anyone uses/needs fAsync before implementing this. */
-                RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-                RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
-                if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
-                    || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
-                {
-                    pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
-                }
-                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-                RTThreadUserSignal(pDevExt->hTscDeltaThread);
-                return VINF_SUCCESS;
-            }
-
-            /*
-             * If a TSC-delta measurement request is already being serviced by the thread,
-             * wait 'cTries' times if a retry-timeout is provided, otherwise bail as busy.
-             */
-            while (cTries-- > 0)
-            {
-                SUPDRVTSCDELTATHREADSTATE enmState;
-                RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-                enmState = pDevExt->enmTscDeltaThreadState;
-                RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-
-                if (   enmState == kTscDeltaThreadState_Measuring
-                    || enmState == kTscDeltaThreadState_WaitAndMeasure)
-                {
-                    if (   !cTries
-                        || !cMsWaitRetry)
-                        return VERR_SUPDRV_TSC_DELTA_MEASUREMENT_BUSY;
-                    if (cMsWaitRetry)
-                        RTThreadSleep(cMsWaitRetry);
-                }
-            }
-            cTries = RT_MAX(pReq->u.In.cRetries + 1, 10);
-#endif
-
-            while (cTries-- > 0)
-            {
-                rc = supdrvMeasureTscDeltaOne(pDevExt, iCpu);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(pGipCpuWorker->i64TSCDelta != INT64_MAX);
-                    break;
-                }
-
-                if (cMsWaitRetry)
-                    RTThreadSleep(cMsWaitRetry);
-            }
-
-            break;
-        }
-    }
-    return rc;
+    return SUPR0TscDeltaMeasureBySetIndex(pSession, iCpuSet, fFlags, cMsWaitRetry,
+                                          cTries == 0 ? 5*RT_MS_1SEC : cMsWaitRetry * cTries /*cMsWaitThread*/,
+                                          cTries);
 }
 
 

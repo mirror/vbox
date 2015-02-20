@@ -212,9 +212,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Fix SUPTSCREAD padding (#if 0 -> #if 1).
+ *          - (nothing)
  */
-#define SUPDRV_IOC_VERSION                              0x001f0001
+#define SUPDRV_IOC_VERSION                              0x001f0002
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

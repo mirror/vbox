@@ -179,6 +179,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0PageAllocEx",                       (void *)SUPR0PageAllocEx },
     { "SUPR0PageFree",                          (void *)SUPR0PageFree },
     { "SUPR0Printf",                            (void *)SUPR0Printf },
+    { "SUPR0TscDeltaMeasureBySetIndex",         (void *)SUPR0TscDeltaMeasureBySetIndex },
     { "SUPR0TracerDeregisterDrv",               (void *)SUPR0TracerDeregisterDrv },
     { "SUPR0TracerDeregisterImpl",              (void *)SUPR0TracerDeregisterImpl },
     { "SUPR0TracerFireProbe",                   (void *)SUPR0TracerFireProbe },

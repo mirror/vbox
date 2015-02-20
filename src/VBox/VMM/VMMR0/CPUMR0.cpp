@@ -997,13 +997,13 @@ static void cpumR0UnmapLocalApics(void)
  *
  * @param   pVCpu       Pointer to the cross context CPU structure of the
  *                      calling EMT.
- * @param   idHostCpu   The ID of the current host CPU.
+ * @param   iHostCpuSet The CPU set index of the current host CPU.
  */
-VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPU pVCpu, RTCPUID idHostCpu)
+VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPU pVCpu, uint32_t iHostCpuSet)
 {
-    int idxCpu = RTMpCpuIdToSetIndex(idHostCpu);
-    pVCpu->cpum.s.pvApicBase = g_aLApics[idxCpu].pv;
-    pVCpu->cpum.s.fX2Apic    = g_aLApics[idxCpu].fX2Apic;
+    Assert(iHostCpuSet <= RT_ELEMENTS(g_aLApics));
+    pVCpu->cpum.s.pvApicBase = g_aLApics[iHostCpuSet].pv;
+    pVCpu->cpum.s.fX2Apic    = g_aLApics[iHostCpuSet].fX2Apic;
 //    Log6(("CPUMR0SetLApic: pvApicBase=%p fX2Apic=%d\n", g_aLApics[idxCpu].pv, g_aLApics[idxCpu].fX2Apic));
 }
 

@@ -1805,6 +1805,11 @@ SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
 SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void);
 SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);
+#define SUP_TSCDELTA_MEASURE_F_FORCE        RT_BIT_32(0)
+#define SUP_TSCDELTA_MEASURE_F_ASYNC        RT_BIT_32(1)
+#define SUP_TSCDELTA_MEASURE_F_VALID_MASK   UINT32_C(0x00000003)
+SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t iCpuSet, uint32_t fFlags,
+                                              RTMSINTERVAL cMsWaitRetry, RTMSINTERVAL cMsWaitThread, uint32_t cTries);
 
 /** @name Absolute symbols
  * Take the address of these, don't try call them.
