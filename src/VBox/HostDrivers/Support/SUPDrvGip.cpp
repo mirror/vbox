@@ -1412,13 +1412,11 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
         return SUPGIPMODE_ASYNC_TSC;
 
 
-#if 0 /** @todo enable this when i64TscDelta is applied in all places where it's needed */
     /*
      * Use invariant mode if the CPU says TSC is invariant.
      */
     if (fInvariantTsc)
         return SUPGIPMODE_INVARIANT_TSC;
-#endif
 
     /*
      * TSC is not invariant and we're on SMP, this presents two problems:
@@ -1434,15 +1432,9 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
      *
      * If any of the above is detected, we will have to use ASYNC mode.
      */
-
     /* (1). Try check for current differences between the cpus. */
     if (supdrvGipInitDetermineAsyncTsc(&u64DiffCoresIgnored))
         return SUPGIPMODE_ASYNC_TSC;
-
-#if 1 /** @todo remove once i64TscDelta is applied everywhere. Enable #if 0 above. */
-    if (fInvariantTsc)
-        return SUPGIPMODE_INVARIANT_TSC;
-#endif
 
     /* (2) If it's an AMD CPU with power management, we won't trust its TSC. */
     ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
