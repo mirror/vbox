@@ -389,7 +389,7 @@ ifdef VBOX_USE_SYSTEM_XORG_HEADERS
  vboxvideo_drv_system_TEMPLATE = VBOXGUESTR3XORGMOD
  vboxvideo_drv_system_CFLAGS := \
         $(vboxvideo_drv_70_CFLAGS) -include xorg-server.h
- vboxvideo_drv_system_DEFS := $(vboxvideo_15_DEFS)
+ vboxvideo_drv_system_DEFS := $(filter-out _XORG_SERVER_H_ _DIX_CONFIG_H_, $(vboxvideo_15_DEFS))
  vboxvideo_drv_system_INCS += \
         $(PATH_ROOT)/src/VBox/Runtime/include \
         /usr/include/x11 \
