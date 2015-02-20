@@ -399,22 +399,14 @@
       <listitem>
         <para><emphasis role="bold">Windows</emphasis> hosts:<itemizedlist>
             <listitem>
-              <para>Windows XP, all service packs (32-bit)</para>
-            </listitem>
-
-            <listitem>
-              <para>Windows Server 2003 (32-bit)</para>
-            </listitem>
-
-            <listitem>
-              <para>Windows Vista (32-bit and 64-bit<footnote>
+              <para>Windows Vista SP1 and later (32-bit and 64-bit<footnote>
                   <para>Support for 64-bit Windows was added with VirtualBox
                   1.5.</para>
                 </footnote>).</para>
             </listitem>
 
             <listitem>
-              <para>Windows Server 2008 (32-bit and 64-bit)</para>
+              <para>Windows Server 2008 (64-bit)</para>
             </listitem>
 
             <listitem>
@@ -448,26 +440,22 @@
         <para><emphasis role="bold">Mac OS X</emphasis> hosts:<footnote>
             <para>Preliminary Mac OS X support (beta stage) was added with
             VirtualBox 1.4, full support with 1.6. Mac OS X 10.4 (Tiger)
-            support was removed with VirtualBox 3.1.</para>
+            support was removed with VirtualBox 3.1. Mac OS X 10.7 (Lion)
+            and earlier was removed with VirtualBox 4.4</para>
           </footnote></para>
 
         <itemizedlist>
           <listitem>
-            <para>10.6 (Snow Leopard, 32-bit and 64-bit)</para>
+            <para>10.8 (Mountain Lion)</para>
           </listitem>
 
           <listitem>
-            <para>10.7 (Lion, 32-bit and 64-bit)</para>
+            <para>10.9 (Mavericks)</para>
           </listitem>
 
           <listitem>
-            <para>10.8 (Mountain Lion, 64-bit)</para>
+            <para>10.10 (Yosemite)</para>
           </listitem>
-
-          <listitem>
-            <para>10.9 (Mavericks, 64-bit)</para>
-          </listitem>
-
         </itemizedlist>
 
         <para>Intel hardware is required; please see <xref
@@ -528,11 +516,11 @@
         supported with the restrictions listed in <xref
         linkend="KnownIssues" />:<itemizedlist>
             <listitem>
-              <para>Solaris 11 including Solaris 11 Express</para>
+              <para>Solaris 11</para>
             </listitem>
 
             <listitem>
-              <para>Solaris 10 (u8 and higher)</para>
+              <para>Solaris 10 (U10 and higher)</para>
             </listitem>
           </itemizedlist></para>
       </listitem>
@@ -570,6 +558,11 @@
           and provides the following added functionality:<orderedlist>
               <listitem>
                 <para>The virtual USB 2.0 (EHCI) device; see <xref
+                linkend="settings-usb" />.</para>
+              </listitem>
+
+              <listitem>
+                <para>The virtual USB 3.0 (xHCI) device; see <xref
                 linkend="settings-usb" />.</para>
               </listitem>
 
