@@ -451,7 +451,7 @@ if1of ($(VBOX_LDR_FMT), pe lx)
  SUPR0_SOURCES       = $(SUPR0_0_OUTDIR)/SUPR0.def
  SUPR0_CLEAN         = $(SUPR0_0_OUTDIR)/SUPR0.def
 $$(SUPR0_0_OUTDIR)/SUPR0.def: \
-		$(PATH_SUB_CURRENT)/SUPDrv.c \
+		$(PATH_SUB_CURRENT)/SUPDrv.cpp \
 		$(PATH_SUB_CURRENT)/SUPR0-def-$(VBOX_LDR_FMT).sed \
 		| $$(dir $$@)
 	$(SED) \
@@ -516,9 +516,9 @@ VBoxDrvLib_INCS      := \
 	$(PATH_ROOT)/src/VBox/Runtime/include
 VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
-	SUPDrv.c \
-	SUPDrvGip.c \
-	SUPDrvSem.c \
+	SUPDrv.cpp \
+	SUPDrvGip.cpp \
+	SUPDrvSem.cpp \
 	SUPLibAll.cpp
 
 endif # os2
