@@ -881,9 +881,6 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
             cbReadTotal += cbRead;
         }
 
-        if (RT_FAILURE(rc))
-            break;
-
 #ifndef RT_OS_L4
         /* Update read pointer. */
         if (pThisStrmOut->fMemMapped)
