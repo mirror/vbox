@@ -6098,7 +6098,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                     {
                         PSUPGIPCPU pGipCpuWorker = &pGip->aCPUs[iCpu];
                         if (   pGipCpuWorker->i64TSCDelta == INT64_MAX
-                            && RTCpuSetIsMember(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet))
+                            && RTCpuSetIsMemberByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet))
                         {
                             rc |= supdrvMeasureTscDeltaOne(pDevExt, iCpu);
                         }
@@ -7525,29 +7525,34 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
  * @param   pvUser2     Unused.
  *
  * @remarks Measuring TSC deltas between the CPUs is tricky because we need to
- *     read the TSC at exactly the same time on both the master and the worker
- *     CPUs. Due to DMA, bus arbitration, cache locality, contention, SMI,
- *     pipelining etc. there is no guaranteed way of doing this on x86 CPUs. We
- *     try to minimize the measurement error by computing the minimum read time
- *     of the compare statement in the worker by taking TSC measurements across
- *     it.
+ *          read the TSC at exactly the same time on both the master and the
+ *          worker CPUs. Due to DMA, bus arbitration, cache locality,
+ *          contention, SMI, pipelining etc. there is no guaranteed way of
+ *          doing this on x86 CPUs.
  *
- *     We ignore the first few runs of the loop in order to prime the cache.
- *     Also, be careful about using 'pause' instruction in critical busy-wait
- *     loops in this code - it can cause undesired behaviour with
- *     hyperthreading.
+ *          GIP_TSC_DELTA_METHOD_1:
+ *          We ignore the first few runs of the loop in order to prime the
+ *          cache. Also, we need to be careful about using 'pause' instruction
+ *          in critical busy-wait loops in this code - it can cause undesired
+ *          behaviour with hyperthreading.
  *
- *     It must be noted that the computed minimum read time is mostly to
- *     eliminate huge deltas when the worker is too early and doesn't by itself
- *     help produce more accurate deltas. We allow two times the computed
- *     minimum as an arbibtrary acceptable threshold. Therefore, it is still
- *     possible to get negative deltas where there are none when the worker is
- *     earlier. As long as these occasional negative deltas are lower than the
- *     time it takes to exit guest-context and the OS to reschedule EMT on a
- *     different CPU we won't expose a TSC that jumped backwards. It is because
- *     of the existence of the negative deltas we don't recompute the delta with
- *     the master and worker interchanged to eliminate the remaining measurement
- *     error.
+ *          We try to minimize the measurement error by computing the minimum
+ *          read time of the compare statement in the worker by taking TSC
+ *          measurements across it.
+ *
+ *          It must be noted that the computed minimum read time is mostly to
+ *          eliminate huge deltas when the worker is too early and doesn't by
+ *          itself help produce more accurate deltas. We allow two times the
+ *          computed minimum as an arbibtrary acceptable threshold. Therefore,
+ *          it is still possible to get negative deltas where there are none
+ *          when the worker is earlier. As long as these occasional negative
+ *          deltas are lower than the time it takes to exit guest-context and
+ *          the OS to reschedule EMT on a different CPU we won't expose a TSC
+ *          that jumped backwards. It is because of the existence of the
+ *          negative deltas we don't recompute the delta with the master and
+ *          worker interchanged to eliminate the remaining measurement error.
+ *
+ *          @todo document working of GIP_TSC_DELTA_METHOD_2.
  */
 static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
@@ -7817,7 +7822,7 @@ DECLINLINE(void) supdrvClearTscSamples(PSUPDRVDEVEXT pDevExt, bool fClearDeltas)
  * @param   idxWorker       The index of the worker CPU from the GIP's array of
  *                          CPUs.
  *
- * @remarks This can be called with preemption disabled!
+ * @remarks This must be called with preemption enabled!
  */
 static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 {
@@ -7831,6 +7836,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     /* Validate input a bit. */
     AssertReturn(pGip, VERR_INVALID_PARAMETER);
     Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
+    Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
      * Don't attempt measuring the delta for the GIP master.
@@ -7884,7 +7890,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
          * Sleep here rather than spin as there is a parallel measurement
          * being executed and that can take a good while to be done.
          */
-        RTThreadSleep(1); /** @todo r=bird: This won't work with preemption disabled, not on real OSes anyway. */
+        RTThreadSleep(1);
     }
 
     if (RTCpuSetIsMemberByIndex(&pGip->OnlineCpuSet, pGipCpuWorker->iCpuSet))
