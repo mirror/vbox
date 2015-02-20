@@ -110,7 +110,7 @@
 #define GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO        448
 /** The TSC delta value for the initial GIP master - 0 in regular builds.
  * To test the delta code this can be set to a non-zero value.  */
-#if 1
+#if 0
 # define GIP_TSC_DELTA_INITIAL_MASTER_VALUE INT64_C(170139095182512) /* 0x00009abd9854acb0 */
 #else
 # define GIP_TSC_DELTA_INITIAL_MASTER_VALUE INT64_C(0)
@@ -2300,9 +2300,9 @@ typedef struct SUPDRVGIPTSCDELTARGS
         PSUPDRVTSCDELTAMETHOD2  pMasterData;
         PSUPDRVTSCDELTAMETHOD2  pWorkerData;
         uint32_t                cHits;
-        /*uint32_t                cOffByOne;*/
         bool                    fLagMaster;
         bool                    fLagWorker;
+        bool volatile           fQuitEarly;
     } M2;
 #endif
 } SUPDRVGIPTSCDELTARGS;
@@ -2524,46 +2524,36 @@ static void supdrvTscDeltaMethod1Delete(PSUPDRVGIPTSCDELTARGS pArgs)
 /*
  * TSC delta measurement algorithm \#2 configuration and code - Experimental!!
  */
-# undef  GIP_TSC_DELTA_LOOPS
-# undef  GIP_TSC_DELTA_READ_TIME_LOOPS
-# undef  GIP_TSC_DELTA_PRIMER_LOOPS
-# define GIP_TSC_DELTA_LOOPS             17
-# define GIP_TSC_DELTA_PRIMER_LOOPS      1
-# define GIP_TSC_DELTA_READ_TIME_LOOPS   GIP_TSC_DELTA_PRIMER_LOOPS /* no read-time-loops necessary */
+
+# define GIP_TSC_DELTA_M2_LOOPS             (12 + GIP_TSC_DELTA_M2_PRIMER_LOOPS)
+# define GIP_TSC_DELTA_M2_PRIMER_LOOPS      1
 
 
-static void supdrvTscDeltaMethod2ProcessDataSet(PSUPDRVGIPTSCDELTARGS pArgs, PSUPDRVTSCDELTAMETHOD2 pMyData,
-                                                bool fIsMaster, uint32_t cResults,
-                                                PSUPDRVTSCDELTAMETHOD2 pOtherData, int64_t iMasterTscDelta,
-                                                int64_t volatile *piWorkerTscDelta)
+static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs, uint32_t iLoop)
 {
-    uint32_t cHits      = 0;
-#if 0
-    uint32_t cOffByOne  = 0;
-#endif
-    uint32_t idxResult  = 0;
-    int64_t  iBestDelta = *piWorkerTscDelta;
+    PSUPDRVTSCDELTAMETHOD2  pMasterData      = pArgs->M2.pMasterData;
+    PSUPDRVTSCDELTAMETHOD2  pOtherData       = pArgs->M2.pWorkerData;
+    int64_t                 iMasterTscDelta  = pArgs->pMaster->i64TSCDelta;
+    int64_t                 iBestDelta       = pArgs->pWorker->i64TSCDelta;
+    uint32_t                idxResult;
+    uint32_t                cHits            = 0;
 
-    if (cResults > RT_ELEMENTS(pMyData->aResults))
-        cResults = RT_ELEMENTS(pMyData->aResults);
-
-    for (idxResult = 0; idxResult < cResults; idxResult++)
+    /*
+     * Look for matching entries in the master and worker tables.
+     */
+    for (idxResult = 0; idxResult < RT_ELEMENTS(pMasterData->aResults); idxResult++)
     {
-        uint32_t idxOther = pMyData->aResults[idxResult].iSeqOther;
+        uint32_t idxOther = pMasterData->aResults[idxResult].iSeqOther;
         if (idxOther & 1)
         {
             idxOther >>= 1;
             if (idxOther < RT_ELEMENTS(pOtherData->aResults))
             {
-                if (pOtherData->aResults[idxOther].iSeqOther == pMyData->aResults[idxResult].iSeqMine)
+                if (pOtherData->aResults[idxOther].iSeqOther == pMasterData->aResults[idxResult].iSeqMine)
                 {
                     int64_t iDelta;
-                    if (fIsMaster)
-                        iDelta = pOtherData->aResults[idxOther].uTsc
-                               - (pMyData->aResults[idxResult].uTsc - iMasterTscDelta);
-                    else
-                        iDelta = (pOtherData->aResults[idxResult].uTsc - iMasterTscDelta)
-                               - pMyData->aResults[idxOther].uTsc;
+                    iDelta = pOtherData->aResults[idxOther].uTsc
+                           - (pMasterData->aResults[idxResult].uTsc - iMasterTscDelta);
                     if (  iDelta >= GIP_TSC_DELTA_INITIAL_MASTER_VALUE
                         ? iDelta < iBestDelta
                         : iDelta > iBestDelta || iBestDelta == INT64_MAX)
@@ -2572,45 +2562,44 @@ static void supdrvTscDeltaMethod2ProcessDataSet(PSUPDRVGIPTSCDELTARGS pArgs, PSU
                 }
             }
         }
-#if 0  /* Can be used to detect battles between threads on the same core. Decided to change the master instead.  */
-        else
-        {
-            idxOther >>= 1;
-            if (   idxOther < RT_ELEMENTS(pOtherData->aResults)
-                && pOtherData->aResults[idxOther].iSeqOther == pMyData->aResults[idxResult].iSeqMine)
-                cOffByOne++;
-        }
-#endif
     }
 
-    if (cHits > 0)
-        *piWorkerTscDelta = iBestDelta;
+    /*
+     * Save the results.
+     */
+    if (cHits > 2)
+        pArgs->pWorker->i64TSCDelta = iBestDelta;
     pArgs->M2.cHits     += cHits;
-#if 0
-    pArgs->M2.cOffByOne += cOffByOne;
-#endif
+
+    /*
+     * Check and see if we can quit a little early.  If the result is already
+     * extremely good (+/-16 ticks seems reasonable), just stop.
+     */
+    if (  iBestDelta >=   0 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
+        ? iBestDelta <=  16 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
+        : iBestDelta >= -16 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE)
+    {
+        /*SUPR0Printf("quitting early #1: hits=%#x iLoop=%d iBestDelta=%lld\n", cHits, iLoop, iBestDelta);*/
+        ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, true);
+    }
+    /*
+     * After a while, just stop if we get sufficent hits.
+     */
+    else if (   iLoop >= GIP_TSC_DELTA_M2_LOOPS / 3
+             && cHits > 8)
+    {
+        uint32_t const cHitsNeeded = GIP_TSC_DELTA_M2_LOOPS * RT_ELEMENTS(pArgs->M2.pMasterData->aResults) / 4; /* 25% */
+        if (   pArgs->M2.cHits >= cHitsNeeded
+            && (  iBestDelta >=  0                                        + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
+                ? iBestDelta <=  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
+                : iBestDelta >= -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO + GIP_TSC_DELTA_INITIAL_MASTER_VALUE) )
+        {
+            /*SUPR0Printf("quitting early hits=%#x (%#x) needed=%#x iLoop=%d iBestDelta=%lld\n",
+                        pArgs->M2.cHits, cHits, cHitsNeeded, iLoop, iBestDelta);*/
+            ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, true);
+        }
+    }
 }
-
-
-static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs)
-{
-    supdrvTscDeltaMethod2ProcessDataSet(pArgs,
-                                        pArgs->M2.pMasterData,
-                                        true /*fIsMaster*/,
-                                        RT_ELEMENTS(pArgs->M2.pMasterData->aResults),
-                                        pArgs->M2.pWorkerData,
-                                        pArgs->pMaster->i64TSCDelta,
-                                        &pArgs->pWorker->i64TSCDelta);
-
-    supdrvTscDeltaMethod2ProcessDataSet(pArgs,
-                                        pArgs->M2.pWorkerData,
-                                        false /*fIsMaster*/,
-                                        ASMAtomicReadU32(&pArgs->M2.pWorkerData->iCurSeqNo) >> 1,
-                                        pArgs->M2.pMasterData,
-                                        pArgs->pMaster->i64TSCDelta,
-                                        &pArgs->pWorker->i64TSCDelta);
-}
-
 
 
 /**
@@ -2669,7 +2658,11 @@ static void supdrvTscDeltaMethod2CollectData(PSUPDRVTSCDELTAMETHOD2 pMyData, uin
 static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC pSync, bool fIsMaster, uint32_t iTry)
 {
     unsigned iLoop;
-    for (iLoop = 0; iLoop < GIP_TSC_DELTA_LOOPS; iLoop++)
+
+    if (fIsMaster)
+        ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, false);
+
+    for (iLoop = 0; iLoop < GIP_TSC_DELTA_M2_LOOPS; iLoop++)
     {
         if (fIsMaster)
         {
@@ -2678,19 +2671,22 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * Adjust the loop lag fudge.
              */
-            if (iLoop < GIP_TSC_DELTA_PRIMER_LOOPS)
+# if GIP_TSC_DELTA_M2_PRIMER_LOOPS > 0
+            if (iLoop < GIP_TSC_DELTA_M2_PRIMER_LOOPS)
             {
                 /* Lag during the priming to be nice to everyone.. */
                 pArgs->M2.fLagMaster = true;
                 pArgs->M2.fLagWorker = true;
             }
-            else if (iLoop < (GIP_TSC_DELTA_LOOPS - GIP_TSC_DELTA_PRIMER_LOOPS) / 4)
+            else
+# endif
+            if (iLoop < (GIP_TSC_DELTA_M2_LOOPS - GIP_TSC_DELTA_M2_PRIMER_LOOPS) / 4)
             {
                 /* 25 % of the body without lagging. */
                 pArgs->M2.fLagMaster = false;
                 pArgs->M2.fLagWorker = false;
             }
-            else if (iLoop < (GIP_TSC_DELTA_LOOPS - GIP_TSC_DELTA_PRIMER_LOOPS) / 4 * 2)
+            else if (iLoop < (GIP_TSC_DELTA_M2_LOOPS - GIP_TSC_DELTA_M2_PRIMER_LOOPS) / 4 * 2)
             {
                 /* 25 % of the body with both lagging. */
                 pArgs->M2.fLagMaster = true;
@@ -2713,8 +2709,10 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * Process the data.
              */
-            if (iLoop > GIP_TSC_DELTA_PRIMER_LOOPS)
-                supdrvTscDeltaMethod2ProcessDataOnMaster(pArgs);
+# if GIP_TSC_DELTA_M2_PRIMER_LOOPS > 0
+            if (iLoop >= GIP_TSC_DELTA_M2_PRIMER_LOOPS)
+# endif
+                supdrvTscDeltaMethod2ProcessDataOnMaster(pArgs, iLoop);
 
             TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pSync);
         }
@@ -2727,6 +2725,10 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
             TSCDELTA_OTHER_SYNC_AFTER(pSync);
         }
+
+        if (ASMAtomicReadBool(&pArgs->M2.fQuitEarly))
+            break;
+
     }
 }
 
@@ -2759,7 +2761,9 @@ static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
 {
     RTMemFreeEx(pArgs->M2.pMasterData, sizeof(*pArgs->M2.pMasterData));
     RTMemFreeEx(pArgs->M2.pWorkerData, sizeof(*pArgs->M2.pWorkerData));
-    /*SUPR0Printf("cHits=%d cOffByOne=%d m=%d w=%d\n", pArgs->M2.cHits, pArgs->M2.cOffByOne, pArgs->pMaster->idApic, pArgs->pWorker->idApic);*/
+# if 0
+    SUPR0Printf("cHits=%d m=%d w=%d\n", pArgs->M2.cHits, pArgs->pMaster->idApic, pArgs->pWorker->idApic);
+# endif
 }
 
 
