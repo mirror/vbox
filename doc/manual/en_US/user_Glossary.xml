@@ -470,6 +470,15 @@
     <title>X</title>
 
     <glossentry>
+      <glossterm>xHCI</glossterm>
+
+      <glossdef>
+        <para>eXtended Host Controller Interface, the interface that
+        implements the USB 3.0 standard.</para>
+      </glossdef>
+    </glossentry>
+
+    <glossentry>
       <glossterm>XML</glossterm>
 
       <glossdef>

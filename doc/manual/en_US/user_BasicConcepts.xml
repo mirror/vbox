@@ -97,8 +97,8 @@
           11 Express)</glossterm>
 
           <glossdef>
-            <para>Fully supported (32 bits and 64 bits). Guest Additions are
-            available.</para>
+            <para>Fully supported (64 bits, prior to Solaris 11 11/11 also 32 bits).
+            Guest Additions are available.</para>
           </glossdef>
         </glossentry>
 
@@ -297,11 +297,18 @@
         </listitem>
 
         <listitem>
-          <para><emphasis role="bold">USB.</emphasis> VirtualBox emulates two
-          USB host controllers, EHCI and OHCI. There is a need for two host
-          controllers because OHCI only handles USB low- and full-speed
+          <para><emphasis role="bold">USB.</emphasis> VirtualBox emulates three
+          USB host controllers: xHCI, EHCI, and OHCI. While xHCI handles all USB
+          transfer speeds, only guest operating systems released approximately
+          after 2011 support xHCI. Note that for Windows 7 guests, 3rd party
+          drivers must be installed for xHCI support.</para>
+          <para>
+          Older operating systems typically support OHCI and EHCI. The two
+          controllers are needed because OHCI only handles USB low- and full-speed
           devices (both USB 1.x and 2.0), while EHCI only handles high-speed
-          devices (USB 2.0 only). The emulated USB controllers do not
+          devices (USB 2.0 only).</para>
+          <para>
+          The emulated USB controllers do not
           communicate directly with devices on the host but rather with a
           virtual USB layer which abstracts the USB protocol and allows the
           use of remote USB devices.</para>
@@ -1217,14 +1224,17 @@
       this, see <xref linkend="usb-over-rdp" />.</para>
 
       <para>In the Settings dialog, you can first configure whether USB is
-      available in the guest at all, and in addition also optionally enable
-      the USB 2.0 (EHCI) controller for the guest. If so, you can determine in
-      detail which devices are available. For this, you must create so-called
-      "filters" by specifying certain properties of the USB device.<note>
-          <para>The EHCI controller is shipped as a VirtualBox extension
+      available in the guest at all, and then choose the level of USB support:
+      OHCI for USB 1.1, EHCI (which will also enable OHCI) for USB 2.0,
+      or xHCI for all USB speeds. <note>
+          <para>The xHCI and EHCI controllers are shipped as a VirtualBox extension
           package, which must be installed separately. See <xref
           linkend="intro-installing" /> for more information.</para>
         </note></para>
+
+      <para>When USB support is enabled for a VM, you can determine in
+      detail which devices are available. For this, you must create so-called
+      "filters" by specifying certain properties of the USB device.</para>
 
       <para>Clicking on the "+" button to the right of the "USB Device
       Filters" window creates a <emphasis role="bold">new filter.</emphasis>

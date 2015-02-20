@@ -378,8 +378,8 @@
           </listitem>
 
           <listitem>
-            <para><computeroutput>ohci/ehci</computeroutput> -- print a subset
-            of the OHCI/EHCI USB controller state</para>
+            <para><computeroutput>ohci/ehci/xhci</computeroutput> -- print a subset
+            of the OHCI/EHCI/xHCI USB controller state</para>
           </listitem>
 
           <listitem>
