@@ -72,6 +72,7 @@ override MODULE = vboxdrv
 OBJS   = \
 	linux/SUPDrv-linux.o \
 	SUPDrv.o \
+	SUPDrvGip.o \
 	SUPDrvSem.o \
 	SUPDrvTracer.o \
 	SUPLibAll.o \

@@ -36,6 +36,7 @@ CFLAGS += -DRT_OS_FREEBSD -DIN_RING0 -DIN_RT_R0 -DIN_SUP_R0 -DSUPDRV_WITH_RELEAS
 
 SRCS = \
 	SUPDrv.c \
+	SUPDrvGip.c \
 	SUPDrvSem.c \
 	SUPDrvTracer.c \
 	SUPLibAll.c \
