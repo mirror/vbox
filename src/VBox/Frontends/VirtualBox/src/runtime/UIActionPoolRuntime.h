@@ -77,14 +77,14 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Input,
     UIActionIndexRT_M_Input_M_Keyboard,
     UIActionIndexRT_M_Input_M_Keyboard_S_Settings,
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD,
+#ifdef Q_WS_X11
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS,
+#endif /* Q_WS_X11 */
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak,
+    UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert,
     UIActionIndexRT_M_Input_M_Mouse,
     UIActionIndexRT_M_Input_M_Mouse_T_Integration,
-    UIActionIndexRT_M_Input_S_TypeCAD,
-#ifdef Q_WS_X11
-    UIActionIndexRT_M_Input_S_TypeCABS,
-#endif /* Q_WS_X11 */
-    UIActionIndexRT_M_Input_S_TypeCtrlBreak,
-    UIActionIndexRT_M_Input_S_TypeInsert,
 
     /* 'Devices' menu actions: */
     UIActionIndexRT_M_Devices,

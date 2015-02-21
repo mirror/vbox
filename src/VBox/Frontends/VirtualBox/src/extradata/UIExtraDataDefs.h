@@ -409,14 +409,14 @@ public:
         RuntimeMenuInputActionType_Invalid           = 0,
         RuntimeMenuInputActionType_Keyboard          = RT_BIT(0),
         RuntimeMenuInputActionType_KeyboardSettings  = RT_BIT(1),
-        RuntimeMenuInputActionType_Mouse             = RT_BIT(2),
-        RuntimeMenuInputActionType_MouseIntegration  = RT_BIT(3),
-        RuntimeMenuInputActionType_TypeCAD           = RT_BIT(4),
+        RuntimeMenuInputActionType_TypeCAD           = RT_BIT(2),
 #ifdef Q_WS_X11
-        RuntimeMenuInputActionType_TypeCABS          = RT_BIT(5),
+        RuntimeMenuInputActionType_TypeCABS          = RT_BIT(3),
 #endif /* Q_WS_X11 */
-        RuntimeMenuInputActionType_TypeCtrlBreak     = RT_BIT(6),
-        RuntimeMenuInputActionType_TypeInsert        = RT_BIT(7),
+        RuntimeMenuInputActionType_TypeCtrlBreak     = RT_BIT(4),
+        RuntimeMenuInputActionType_TypeInsert        = RT_BIT(5),
+        RuntimeMenuInputActionType_Mouse             = RT_BIT(6),
+        RuntimeMenuInputActionType_MouseIntegration  = RT_BIT(7),
         RuntimeMenuInputActionType_All               = 0xFFFF
     };
 

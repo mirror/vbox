@@ -914,12 +914,12 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_Scale));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize));
     m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCAD));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD));
 #ifdef Q_WS_X11
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS));
 #endif /* Q_WS_X11 */
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCtrlBreak));
-    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_S_TypeInsert));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak));
+    m_pRunningActions->addAction(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert));
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_Save));
@@ -1010,18 +1010,18 @@ void UIMachineLogic::prepareActionConnections()
     /* 'Input' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltShowKeyboardSettings()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleMouseIntegration(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCAD), SIGNAL(triggered()),
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD), SIGNAL(triggered()),
             this, SLOT(sltTypeCAD()));
 #ifdef Q_WS_X11
-    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCABS), SIGNAL(triggered()),
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS), SIGNAL(triggered()),
             this, SLOT(sltTypeCABS()));
 #endif /* Q_WS_X11 */
-    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeCtrlBreak), SIGNAL(triggered()),
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak), SIGNAL(triggered()),
             this, SLOT(sltTypeCtrlBreak()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_S_TypeInsert), SIGNAL(triggered()),
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert), SIGNAL(triggered()),
             this, SLOT(sltTypeInsert()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleMouseIntegration(bool)));
 
     /* 'Devices' actions connections: */
     connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));

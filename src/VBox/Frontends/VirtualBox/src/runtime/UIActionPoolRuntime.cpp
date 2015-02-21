@@ -1033,67 +1033,6 @@ protected:
     }
 };
 
-class UIActionMenuMouse : public UIActionMenu
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionMenuMouse(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Mouse"));
-    }
-};
-
-class UIActionToggleMouseIntegration : public UIActionToggle
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionToggleMouseIntegration(UIActionPool *pParent)
-        : UIActionToggle(pParent,
-                         ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
-                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("MouseIntegration");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("I");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "Disable &Mouse Integration"));
-        setStatusTip(QApplication::translate("UIActionPool", "Temporarily disable host mouse pointer integration"));
-    }
-};
-
 class UIActionSimplePerformTypeCAD : public UIActionSimple
 {
     Q_OBJECT;
@@ -1223,6 +1162,67 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Insert"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Insert"));
+    }
+};
+
+class UIActionMenuMouse : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuMouse(UIActionPool *pParent)
+        : UIActionMenu(pParent) {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_Mouse); }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Mouse"));
+    }
+};
+
+class UIActionToggleMouseIntegration : public UIActionToggle
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionToggleMouseIntegration(UIActionPool *pParent)
+        : UIActionToggle(pParent,
+                         ":/mouse_can_seamless_on_16px.png", ":/mouse_can_seamless_16px.png",
+                         ":/mouse_can_seamless_on_disabled_16px.png", ":/mouse_can_seamless_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuInput(UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("MouseIntegration");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("I");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "Disable &Mouse Integration"));
+        setStatusTip(QApplication::translate("UIActionPool", "Temporarily disable host mouse pointer integration"));
     }
 };
 
@@ -2089,14 +2089,14 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Input] = new UIActionMenuInput(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard] = new UIActionMenuKeyboard(this);
     m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_Settings] = new UIActionSimpleKeyboardSettings(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
+#ifdef Q_WS_X11
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
+#endif /* Q_WS_X11 */
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak] = new UIActionSimplePerformTypeCtrlBreak(this);
+    m_pool[UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert] = new UIActionSimplePerformTypeInsert(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse] = new UIActionMenuMouse(this);
     m_pool[UIActionIndexRT_M_Input_M_Mouse_T_Integration] = new UIActionToggleMouseIntegration(this);
-    m_pool[UIActionIndexRT_M_Input_S_TypeCAD] = new UIActionSimplePerformTypeCAD(this);
-#ifdef Q_WS_X11
-    m_pool[UIActionIndexRT_M_Input_S_TypeCABS] = new UIActionSimplePerformTypeCABS(this);
-#endif /* Q_WS_X11 */
-    m_pool[UIActionIndexRT_M_Input_S_TypeCtrlBreak] = new UIActionSimplePerformTypeCtrlBreak(this);
-    m_pool[UIActionIndexRT_M_Input_S_TypeInsert] = new UIActionSimplePerformTypeInsert(this);
 
     /* 'Devices' actions: */
     m_pool[UIActionIndexRT_M_Devices] = new UIActionMenuDevices(this);
@@ -2800,15 +2800,15 @@ void UIActionPoolRuntime::updateMenuInputKeyboard()
     }
 
     /* 'Type CAD' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeCAD)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD)) || fSeparator;
 #ifdef Q_WS_X11
     /* 'Type CABS' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeCABS)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS)) || fSeparator;
 #endif /* Q_WS_X11 */
     /* 'Type Ctrl-Break' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeCtrlBreak)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak)) || fSeparator;
     /* 'Type Insert' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_S_TypeInsert)) || fSeparator;
+    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Input_M_Keyboard);
