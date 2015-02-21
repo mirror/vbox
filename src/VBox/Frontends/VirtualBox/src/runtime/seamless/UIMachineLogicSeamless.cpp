@@ -208,9 +208,6 @@ void UIMachineLogicSeamless::prepareActionGroups()
     /* Call to base-class: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Restrict 'Disable Mouse Integration' action for 'Machine' menu: */
-    actionPool()->toRuntime()->setRestrictionForMenuInput(UIActionRestrictionLevel_Logic,
-                                                          UIExtraDataMetaDefs::RuntimeMenuInputActionType_MouseIntegration);
     /* Restrict 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
@@ -344,9 +341,6 @@ void UIMachineLogicSeamless::cleanupActionGroups()
         pActionSeamless->blockSignals(false);
     }
 
-    /* Allow 'Disable Mouse Integration' action for 'Machine' menu: */
-    actionPool()->toRuntime()->setRestrictionForMenuInput(UIActionRestrictionLevel_Logic,
-                                                          UIExtraDataMetaDefs::RuntimeMenuInputActionType_Invalid);
     /* Allow 'Adjust Window', 'Guest Autoresize', 'Status Bar' and 'Resize' actions for 'View' menu: */
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_Invalid);

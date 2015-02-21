@@ -519,6 +519,7 @@ void UIMenuBarEditorWidget::prepareMenuInput()
     AssertPtrReturnVoid(pMenu);
     {
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard));
+        pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration));
     }
 }

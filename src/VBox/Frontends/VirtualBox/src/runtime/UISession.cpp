@@ -1368,6 +1368,9 @@ void UISession::loadSessionSettings()
             pActionStatusBarSwitch->blockSignals(false);
         }
 
+        /* Input options: */
+        actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)->setChecked(isMouseIntegrated());
+
         /* What is the default close action and the restricted are? */
         m_defaultCloseAction = gEDataManager->defaultMachineCloseAction(strMachineID);
         m_restrictedCloseActions = gEDataManager->restrictedMachineCloseActions(strMachineID);

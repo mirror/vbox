@@ -242,7 +242,7 @@ private slots:
 
     /* "Machine" menu functionality: */
     void sltShowKeyboardSettings();
-    void sltToggleMouseIntegration(bool fDisabled);
+    void sltToggleMouseIntegration(bool fEnabled);
     void sltTypeCAD();
 #ifdef Q_WS_X11
     void sltTypeCABS();

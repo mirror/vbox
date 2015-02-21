@@ -594,7 +594,7 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     QAction *pAction = actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration);
     pAction->setEnabled(fIsMouseSupportsAbsolute && fIsMouseSupportsRelative && !fIsMouseHostCursorNeeded);
     if (fIsMouseHostCursorNeeded)
-        pAction->setChecked(false);
+        pAction->setChecked(true);
 }
 
 void UIMachineLogic::sltHidLedsSyncStateChanged(bool fEnabled)
@@ -1300,14 +1300,14 @@ void UIMachineLogic::sltShowKeyboardSettings()
     showGlobalPreferences("#input", "m_pMachineTable");
 }
 
-void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
+void UIMachineLogic::sltToggleMouseIntegration(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
     /* Disable/Enable mouse-integration for all view(s): */
-    mouseHandler()->setMouseIntegrationEnabled(!fOff);
+    mouseHandler()->setMouseIntegrationEnabled(fEnabled);
 }
 
 void UIMachineLogic::sltTypeCAD()

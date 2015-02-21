@@ -1221,8 +1221,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Disable &Mouse Integration"));
-        setStatusTip(QApplication::translate("UIActionPool", "Temporarily disable host mouse pointer integration"));
+        setName(QApplication::translate("UIActionPool", "&Mouse Integration"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable host mouse pointer integration"));
     }
 };
 
@@ -2771,6 +2771,14 @@ void UIActionPoolRuntime::updateMenuInput()
     /* 'Mouse' submenu: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Mouse), false) || fSeparator;
     updateMenuInputMouse();
+
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+
     /* 'Mouse Integration' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Input_M_Mouse_T_Integration)) || fSeparator;
 
