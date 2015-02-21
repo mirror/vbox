@@ -568,6 +568,7 @@ void UIMenuBarEditorWidget::prepareMenuWindow()
     AssertPtrReturnVoid(pMenu);
     {
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Window_S_Minimize));
+        pMenu->addSeparator();
         prepareNamedAction(pMenu, tr("Switch"),
                            UIExtraDataMetaDefs::MenuWindowActionType_Switch,
                            gpConverter->toInternalString(UIExtraDataMetaDefs::MenuWindowActionType_Switch));
