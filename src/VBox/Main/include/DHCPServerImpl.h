@@ -90,6 +90,8 @@ public:
                                             LONG Slot);
 
 private:
+    HRESULT encodeOption(com::Utf8Str &aEncoded,
+			 uint32_t aOptCode, const DhcpOptValue &aOptValue);
 
     // wrapped IDHCPServer properties
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);

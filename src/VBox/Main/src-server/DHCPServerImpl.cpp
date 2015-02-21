@@ -268,6 +268,55 @@ HRESULT DHCPServer::setConfiguration(const com::Utf8Str &aIPAddress,
 }
 
 
+HRESULT DHCPServer::encodeOption(com::Utf8Str &aEncoded,
+                                 uint32_t aOptCode, const DhcpOptValue &aOptValue)
+{
+    switch (aOptValue.encoding)
+    {
+        case DhcpOptValue::LEGACY:
+        {
+            /*
+             * This is original encoding which assumed that for each
+             * option we know its format and so we know how option
+             * "value" text is to be interpreted.
+             *
+             *   "2:10800"           # integer 32
+             *   "6:1.2.3.4 8.8.8.8" # array of ip-address
+             */
+            aEncoded = Utf8StrFmt("%d:%s", aOptCode, aOptValue.text.c_str());
+            break;
+        }
+
+        case DhcpOptValue::HEX:
+        {
+            /*
+             * This is a bypass for any option - preformatted value as
+             * hex string with no semantic involved in formatting the
+             * value for the DHCP reply.
+             *
+             *   234=68:65:6c:6c:6f:2c:20:77:6f:72:6c:64
+             */
+            aEncoded = Utf8StrFmt("%d=%s", aOptCode, aOptValue.text.c_str());
+            break;
+        }
+
+        default:
+        {
+            /*
+             * Try to be forward compatible.
+             *
+             *   "254@42=i hope you know what this means"
+             */
+            aEncoded = Utf8StrFmt("%d@%d=%s", aOptCode, (int)aOptValue.encoding,
+                                  aOptValue.text.c_str());
+            break;
+        }
+    }
+
+    return S_OK;
+}
+
+
 HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValue)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -296,9 +345,7 @@ HRESULT DHCPServer::getGlobalOptions(std::vector<com::Utf8Str> &aValues)
         uint32_t OptCode = (*it).first;
         const DhcpOptValue &OptValue = (*it).second;
 
-        // XXX: TODO: factor out and share with getVmSlotOptions()
-        if (OptValue.encoding == DhcpOptValue::LEGACY)
-            aValues[i] = Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
+        encodeOption(aValues[i], OptCode, OptValue);
     }
 
     return S_OK;
@@ -363,9 +410,7 @@ HRESULT DHCPServer::getVmSlotOptions(const com::Utf8Str &aVmName,
         uint32_t OptCode = (*it).first;
         const DhcpOptValue &OptValue = (*it).second;
 
-        // XXX: TODO: factor out and share with getGlobalOptions()
-        if (OptValue.encoding == DhcpOptValue::LEGACY)
-            aValues[i] = com::Utf8StrFmt("%d:%s", OptCode, OptValue.text.c_str());
+        encodeOption(aValues[i], OptCode, OptValue);
     }
 
     return S_OK;
