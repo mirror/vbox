@@ -1621,7 +1621,6 @@ static SUPGIPMODE supdrvGipInitDetermineTscMode(PSUPDRVDEVEXT pDevExt)
     if (supdrvOSGetForcedAsyncTscMode(pDevExt))
         return SUPGIPMODE_ASYNC_TSC;
 
-
     /*
      * Use invariant mode if the CPU says TSC is invariant.
      */
