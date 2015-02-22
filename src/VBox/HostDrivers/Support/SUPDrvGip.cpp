@@ -2549,19 +2549,15 @@ typedef struct SUPTSCDELTASYNC2
     /** Padding to make sure the uVar1 is in its own cache line. */
     uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
     /** The synchronization variable, holds values GIP_TSC_DELTA_SYNC_*. */
-    volatile uint32_t           uVar1;
+    volatile uint32_t           uSyncVar;
     /** Unused. */
-    volatile uint32_t           uVar2;
-
-    /** Start RDTSC value.  This does not need to be in its own cache line, it's
-     * just put here to save stack space. */
-    uint64_t                    uTscStart;
-    /** Max number of ticks we can allow to elapse in the RTMpOn callback.
-     * This is estimated from the CPU frequency...  */
-    uint64_t                    cMaxTicks;
+    volatile uint32_t           u32Padding;
 
     /** Padding to make sure the uVar1 is in its own cache line. */
-    uint64_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t) - 2];
+    uint64_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t) - 1];
+
+    /** Start RDTSC value.  Put here mainly to save stack space. */
+    uint64_t                    uTscStart;
 } SUPTSCDELTASYNC2;
 AssertCompileSize(SUPTSCDELTASYNC2, GIP_TSC_DELTA_CACHE_LINE_SIZE * 2 + sizeof(uint64_t));
 typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
@@ -2574,15 +2570,20 @@ typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
 typedef struct SUPDRVGIPTSCDELTARGS
 {
     /** The device extension.   */
-    PSUPDRVDEVEXT           pDevExt;
+    PSUPDRVDEVEXT               pDevExt;
     /** Pointer to the GIP CPU array entry for the worker. */
-    PSUPGIPCPU              pWorker;
+    PSUPGIPCPU                  pWorker;
     /** Pointer to the GIP CPU array entry for the master. */
-    PSUPGIPCPU              pMaster;
+    PSUPGIPCPU                  pMaster;
     /** Pointer to the master's synchronization struct (on stack). */
-    PSUPTSCDELTASYNC2       pSyncMaster;
+    PSUPTSCDELTASYNC2 volatile  pSyncMaster;
     /** Pointer to the worker's synchronization struct (on stack). */
-    PSUPTSCDELTASYNC2       pSyncWorker;
+    PSUPTSCDELTASYNC2 volatile  pSyncWorker;
+    /** The maximum number of ticks to spend in supdrvMeasureTscDeltaCallback.
+     * (This is what we need a rough TSC frequency for.)  */
+    uint64_t                    cMaxTscTicks;
+    /** Used to abort synchronization setup. */
+    bool volatile               fAbortSetup;
 
 #if 0
     /** Method 1 data. */
@@ -2610,44 +2611,44 @@ typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
  *        the algorithms.
  * @{
  */
-#define TSCDELTA_MASTER_SYNC_BEFORE(a_pTscDeltaSync) \
+#define TSCDELTA_MASTER_SYNC_BEFORE(a_pSync1, a_pMySync, a_pOtherSync) \
     do {\
-        ASMAtomicWriteU32(&(a_pTscDeltaSync)->u, GIP_TSC_DELTA_SYNC_START); \
+        ASMAtomicWriteU32(&(a_pSync1)->u, GIP_TSC_DELTA_SYNC_START); \
         \
         /* Disable interrupts only in the master for as short a period \
            as possible, thanks again to Windows. See @bugref{6710} comment #73. */ \
         uFlags = ASMIntDisableFlags(); \
         \
-        while (ASMAtomicReadU32(&(a_pTscDeltaSync)->u) == GIP_TSC_DELTA_SYNC_START) \
+        while (ASMAtomicReadU32(&(a_pSync1)->u) == GIP_TSC_DELTA_SYNC_START) \
         { /* nothing */ } \
     } while (0)
-#define TSCDELTA_MASTER_SYNC_AFTER(a_pTscDeltaSync) \
+#define TSCDELTA_MASTER_SYNC_AFTER(a_pSync1, a_pMySync, a_pOtherSync) \
     do {\
         /* Sync up with worker. */ \
         ASMSetFlags(uFlags); \
         \
-        while (ASMAtomicReadU32(&(a_pTscDeltaSync)->u) != GIP_TSC_DELTA_SYNC_WORKER_DONE) \
+        while (ASMAtomicReadU32(&(a_pSync1)->u) != GIP_TSC_DELTA_SYNC_WORKER_DONE) \
         { /* nothing */ } \
     } while (0)
-#define TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(a_pTscDeltaSync) \
+#define TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(a_pSync1, a_pMySync, a_pOtherSync) \
     do {\
-        ASMAtomicWriteU32(&(a_pTscDeltaSync)->u, GIP_TSC_DELTA_SYNC_STOP); \
+        ASMAtomicWriteU32(&(a_pSync1)->u, GIP_TSC_DELTA_SYNC_STOP); \
     } while (0)
 
-#define TSCDELTA_OTHER_SYNC_BEFORE(a_pTscDeltaSync, a_MidSyncExpr) \
+#define TSCDELTA_OTHER_SYNC_BEFORE(a_pSync1, a_pMySync, a_pOtherSync, a_MidSyncExpr) \
     do { \
-        while (ASMAtomicReadU32(&(a_pTscDeltaSync)->u) != GIP_TSC_DELTA_SYNC_START) \
+        while (ASMAtomicReadU32(&(a_pSync1)->u) != GIP_TSC_DELTA_SYNC_START) \
         { /* nothing */ } \
         a_MidSyncExpr; \
-        ASMAtomicWriteU32(&(a_pTscDeltaSync)->u, GIP_TSC_DELTA_SYNC_WORKER_READY); \
+        ASMAtomicWriteU32(&(a_pSync1)->u, GIP_TSC_DELTA_SYNC_WORKER_READY); \
     } while (0)
-#define TSCDELTA_OTHER_SYNC_AFTER(a_pTscDeltaSync) \
+#define TSCDELTA_OTHER_SYNC_AFTER(a_pSync1, a_pMySync, a_pOtherSync) \
     do { \
         /* Tell master we're done collecting our data. */ \
-        ASMAtomicWriteU32(&(a_pTscDeltaSync)->u, GIP_TSC_DELTA_SYNC_WORKER_DONE); \
+        ASMAtomicWriteU32(&(a_pSync1)->u, GIP_TSC_DELTA_SYNC_WORKER_DONE); \
         \
         /* Wait for the master to process the data. */ \
-        while (ASMAtomicReadU32(&(a_pTscDeltaSync)->u) == GIP_TSC_DELTA_SYNC_WORKER_DONE) \
+        while (ASMAtomicReadU32(&(a_pSync1)->u) == GIP_TSC_DELTA_SYNC_WORKER_DONE) \
             ASMNopPause(); \
     } while (0)
 /** @} */
@@ -2681,12 +2682,13 @@ typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
  *
  *
  * @param   pArgs               The argument/state data.
- * @param   pSync               The synchronization structure
+ * @param   pSync1              The synchronization structure
  *                              (pDevExt->pTscDeltaSync).
  * @param   fIsMaster           Set if master, clear if worker.
  * @param   iTry                The attempt number.
  */
-static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC pSync, bool fIsMaster, uint32_t iTry)
+static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC pSync1,
+                                      PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync, bool fIsMaster, uint32_t iTry)
 {
     PSUPGIPCPU  pGipCpuWorker   = pArgs->pWorker;
     PSUPGIPCPU  pGipCpuMaster   = pArgs->pMaster;
@@ -2705,7 +2707,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             AssertMsg(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD,
                       ("%#llx idMaster=%#x idWorker=%#x (idGipMaster=%#x)\n",
                        pGipCpuMaster->u64TSCSample, pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, pArgs->pDevExt->idGipMaster));
-            TSCDELTA_MASTER_SYNC_BEFORE(pSync);
+            TSCDELTA_MASTER_SYNC_BEFORE(pSync1, pMySync, pOtherSync);
 
             do
             {
@@ -2713,7 +2715,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                 ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, ASMReadTSC());
             } while (pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
 
-            TSCDELTA_MASTER_SYNC_AFTER(pSync);
+            TSCDELTA_MASTER_SYNC_AFTER(pSync1, pMySync, pOtherSync);
 
             /* Process the data. */
             if (iLoop > GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS)
@@ -2731,7 +2733,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 
             /* Reset our TSC sample and tell the worker to move on. */
             ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, GIP_TSC_DELTA_RSVD);
-            TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pSync);
+            TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pSync1, pMySync, pOtherSync);
         }
         else
         {
@@ -2743,7 +2745,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             uint64_t uCmpReadTime;
 
             ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
-            TSCDELTA_OTHER_SYNC_BEFORE(pSync, Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD));
+            TSCDELTA_OTHER_SYNC_BEFORE(pSync1, pMySync, pOtherSync, Assert(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD));
 
             /*
              * Keep reading the TSC until we notice that the master has read his. Reading
@@ -2778,7 +2780,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                     uMinCmpReadTime = uCmpReadTime;
             }
 
-            TSCDELTA_OTHER_SYNC_AFTER(pSync);
+            TSCDELTA_OTHER_SYNC_AFTER(pSync1, pMySync, pOtherSync);
         }
     }
 
@@ -2947,12 +2949,13 @@ static void supdrvTscDeltaMethod2CollectData(PSUPDRVTSCDELTAMETHOD2 pMyData, uin
  * See supdrvTscDeltaMethod2CollectData for algorithm details.
  *
  * @param   pArgs               The argument/state data.
- * @param   pSync               The synchronization structure
+ * @param   pSync1               The synchronization structure
  *                              (pDevExt->pTscDeltaSync).
  * @param   fIsMaster           Set if master, clear if worker.
  * @param   iTry                The attempt number.
  */
-static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC pSync, bool fIsMaster, uint32_t iTry)
+static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC pSync1,
+                                      PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync, bool fIsMaster, uint32_t iTry)
 {
     unsigned iLoop;
 
@@ -2999,9 +3002,9 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * Sync up with the worker and collect data.
              */
-            TSCDELTA_MASTER_SYNC_BEFORE(pSync);
+            TSCDELTA_MASTER_SYNC_BEFORE(pSync1, pMySync, pOtherSync);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pMasterData, &pArgs->M2.pWorkerData->iCurSeqNo, pArgs->M2.fLagMaster);
-            TSCDELTA_MASTER_SYNC_AFTER(pSync);
+            TSCDELTA_MASTER_SYNC_AFTER(pSync1, pMySync, pOtherSync);
 
             /*
              * Process the data.
@@ -3011,16 +3014,16 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 # endif
                 supdrvTscDeltaMethod2ProcessDataOnMaster(pArgs, iLoop);
 
-            TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pSync);
+            TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pSync1, pMySync, pOtherSync);
         }
         else
         {
             /*
              * The worker.
              */
-            TSCDELTA_OTHER_SYNC_BEFORE(pSync, (void)0);
+            TSCDELTA_OTHER_SYNC_BEFORE(pSync1, pMySync, pOtherSync, (void)0);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
-            TSCDELTA_OTHER_SYNC_AFTER(pSync);
+            TSCDELTA_OTHER_SYNC_AFTER(pSync1, pMySync, pOtherSync);
         }
 
         if (ASMAtomicReadBool(&pArgs->M2.fQuitEarly))
@@ -3067,26 +3070,62 @@ static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
 #endif /* GIP_TSC_DELTA_METHOD_2 */
 
 /** Prestart wait. */
-#define GIP_TSC_DELTA_SYNC2_PRESTART_WAIT    UINT32_C(0xffe)
+#define GIP_TSC_DELTA_SYNC2_PRESTART_WAIT    UINT32_C(0x0ffe)
+/** Prestart aborted. */
+#define GIP_TSC_DELTA_SYNC2_PRESTART_ABORT   UINT32_C(0x0fff)
+/** Start testing. */
+#define GIP_TSC_DELTA_SYNC2_START            UINT32_C(0x1000)
 
-/** Start measurement of TSC delta. */
-#define GIP_TSC_DELTA_SYNC2_START            UINT32_C(1)
-/** Worker thread is ready for reading the TSC. */
-#define GIP_TSC_DELTA_SYNC2_WORKER_READY     UINT32_C(2)
-/** Worker thread is done updating TSC delta info. */
-#define GIP_TSC_DELTA_SYNC2_WORKER_DONE      UINT32_C(3)
-/** When IPRT is isn't concurrent safe: Master is ready and will wait for worker
- *  with a timeout. */
-#define GIP_TSC_DELTA_SYNC2_PRESTART_MASTER  UINT32_C(4)
+
+/** The other party won't touch the sync struct ever again. */
+#define GIP_TSC_DELTA_SYNC2_FINAL            UINT32_C(0x1fff)
+
+
+
+static int supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync,
+                                                       bool fIsMaster, bool fTimeout)
+{
+    PSUPTSCDELTASYNC2 volatile *ppMySync    = fIsMaster ? &pArgs->pSyncMaster : &pArgs->pSyncWorker;
+    PSUPTSCDELTASYNC2 volatile *ppOtherSync = fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster;
+#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+    uint32_t iTry = 0;
+#endif
+
+    /*
+     * Clear our sync pointer and make sure the abort flag is set.
+     */
+    ASMAtomicWriteNullPtr(ppMySync);
+    ASMAtomicWriteBool(&pArgs->fAbortSetup, true);
+
+    /*
+     * Make sure the other party is out of there and won't be touching our
+     * sync state again (would cause stack corruption).
+     */
+    while (ASMAtomicReadPtrT(ppOtherSync, PSUPTSCDELTASYNC2) != NULL)
+    {
+        ASMNopPause();
+        ASMNopPause();
+        ASMNopPause();
+#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+if (++iTry == 0) __debugbreak();
+#endif
+    }
+
+    return 0;
+}
 
 
 /**
- * Callback used by supdrvMeasureInitialTscDeltas() to read the TSC on two CPUs
+ * This is used by supdrvMeasureInitialTscDeltas() to read the TSC on two CPUs
  * and compute the delta between them.
  *
+ * To reduce code size a good when timeout handling was added, a dummy return
+ * value had to be added (saves 1-3 lines per timeout case), thus this
+ * 'Unwrapped' function and the dummy 0 return value.
+ *
+ * @returns 0 (dummy, ignored)
  * @param   idCpu       The CPU we are current scheduled on.
- * @param   pvUser1     Pointer to a parameter package (SUPDRVGIPTSCDELTARGS).
- * @param   pvUser2     Unused.
+ * @param   pArgs       Pointer to a parameter package.
  *
  * @remarks Measuring TSC deltas between the CPUs is tricky because we need to
  *          read the TSC at exactly the same time on both the master and the
@@ -3094,112 +3133,86 @@ static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
  *          contention, SMI, pipelining etc. there is no guaranteed way of
  *          doing this on x86 CPUs.
  */
-static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDELTARGS pArgs)
 {
-    PSUPDRVGIPTSCDELTARGS   pArgs = (PSUPDRVGIPTSCDELTARGS)pvUser1;
-    PSUPDRVDEVEXT           pDevExt          = pArgs->pDevExt;
-    PSUPTSCDELTASYNC        pSync            = pDevExt->pTscDeltaSync;
-    PSUPGIPCPU              pGipCpuWorker    = pArgs->pWorker;
-    PSUPGIPCPU              pGipCpuMaster    = pArgs->pMaster;
-    bool const              fIsMaster        = idCpu == pGipCpuMaster->idCpu;
-    uint32_t                iTry;
-#if 0
-    PSUPTSCDELTASYNC2       pOtherSync;
-    SUPTSCDELTASYNC2        MySync;
-#endif
+    PSUPDRVDEVEXT               pDevExt          = pArgs->pDevExt;
+    PSUPTSCDELTASYNC            pSync1           = pDevExt->pTscDeltaSync;
+    PSUPGIPCPU                  pGipCpuWorker    = pArgs->pWorker;
+    PSUPGIPCPU                  pGipCpuMaster    = pArgs->pMaster;
+    bool const                  fIsMaster        = idCpu == pGipCpuMaster->idCpu;
+    uint32_t                    iTry;
+    PSUPTSCDELTASYNC2 volatile *ppMySync         = fIsMaster ? &pArgs->pSyncMaster : &pArgs->pSyncWorker;
+    PSUPTSCDELTASYNC2 volatile *ppOtherSync      = fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster;
+    SUPTSCDELTASYNC2            MySync;
+    PSUPTSCDELTASYNC2           pOtherSync;
 
     /* A bit of paranoia first. */
     if (!pGipCpuMaster || !pGipCpuWorker)
-        return;
+        return 0;
 
     /*
      * If the CPU isn't part of the measurement, return immediately.
      */
     if (   !fIsMaster
         && idCpu != pGipCpuWorker->idCpu)
-        return;
+        return 0;
 
-#if 0
     /*
      * Set up my synchronization stuff and wait for the other party to show up.
-     * We don't wait forever since the other party may have gone fishing after
-     * we checked it out in supdrvMeasureTscDeltaOne, and then there is of course
-     * windows and it's BSOD if we waste too much time here.
+     *
+     * We don't wait forever since the other party may be off fishing (offline,
+     * spinning with ints disables, whatever), we must play nice to the rest of
+     * the system as this context generally isn't one in which we will get
+     * preempted and we may hold up a number of lower priority interrupts.
      */
-    if (fIsMaster)
-    {
-        MySync.uVar1 = GIP_TSC_DELTA_SYNC2_PRESTART_WAIT;
-        ASMSerializeInstruction(); ASMCompilerBarrier();
-        ASMAtomicWritePtr(&pArgs->pSyncMaster, &MySync);
-    }
-    else
-    {
-        MySync.uVar1 = GIP_TSC_DELTA_SYNC2_PRESTART_WAIT;
-        ASMSerializeInstruction(); ASMCompilerBarrier();
-        ASMAtomicWritePtr(&pArgs->pSyncWorker, &MySync);
-    }
-
+    ASMAtomicWriteU32(&MySync.uSyncVar, GIP_TSC_DELTA_SYNC2_PRESTART_WAIT);
+    ASMAtomicWritePtr(ppMySync, &MySync);
     MySync.uTscStart = ASMReadTSC();
-    MySync.cMaxTicks = u64CpuHz
 
-    while ((pOtherSync = ASMAtomicReadPtr((void * volatile *)(fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster))) != NULL)
+    /* Look for the partner, might not be here yet... Special abort considerations. */
+    iTry = 0;
+    while ((pOtherSync = ASMAtomicReadPtrT(ppOtherSync, PSUPTSCDELTASYNC2)) == NULL)
     {
-        uint32_t cInner = 10240;
-        while (   cInner-- > 0
-               && ASMAtomicUoReadU32(MySync.uVar1) == GIP_TSC_DELTA_SYNC2_PRESTART_WAIT)
-            ASMNopPause();
-
-    }
+        ASMNopPause();
+        if (   ASMAtomicReadBool(&pArgs->fAbortSetup)
+            || !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuWorker->idCpu) )
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
+        if (   (iTry++ & 0xff) == 0
+            && ASMReadTSC() - MySync.uTscStart > pArgs->cMaxTscTicks)
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, true /*fTimeout*/);
+#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+if (iTry == 0) __debugbreak();
 #endif
-
-
-    /* If the IPRT API isn't concurrent safe, the master and worker wait for each other
-       with a timeout to avoid deadlocking the entire system. */
-    if (!RTMpOnAllIsConcurrentSafe())
-    {
-        /** @todo This was introduced for Windows, but since Windows doesn't use this
-         *        code path any longer (as DPC timeouts BSOD regardless of interrupts,
-         *        see @bugref{6710} comment 81), eventually phase it out. */
-        uint64_t       uTscNow;
-        uint64_t       uTscStart;
-        uint64_t const cWaitTicks = 130000;  /* Arbitrary value, can be tweaked later. */
-
-        ASMSerializeInstruction();
-        uTscStart = ASMReadTSC();
-        if (fIsMaster)
-        {
-            ASMAtomicWriteU32(&pDevExt->pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_PRESTART_MASTER);
-            while (ASMAtomicReadU32(&pDevExt->pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_PRESTART_WORKER)
-            {
-                ASMSerializeInstruction();
-                uTscNow = ASMReadTSC();
-                if (uTscNow - uTscStart > cWaitTicks)
-                {
-                    /* Set the worker delta to indicate failure, not the master. */
-                    ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
-                    return;
-                }
-
-                ASMNopPause();
-            }
-        }
-        else
-        {
-            while (ASMAtomicReadU32(&pDevExt->pTscDeltaSync->u) != GIP_TSC_DELTA_SYNC_PRESTART_MASTER)
-            {
-                ASMSerializeInstruction();
-                uTscNow = ASMReadTSC();
-                if (uTscNow - uTscStart > cWaitTicks)
-                {
-                    ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
-                    return;
-                }
-
-                ASMNopPause();
-            }
-            ASMAtomicWriteU32(&pDevExt->pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_PRESTART_WORKER);
-        }
+        ASMNopPause();
     }
+
+    /* I found my partner, waiting to be found... Special abort considerations. */
+    if (fIsMaster)
+        if (!ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_START, GIP_TSC_DELTA_SYNC2_PRESTART_WAIT)) /* parnaoia */
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
+
+    iTry = 0;
+    while (ASMAtomicReadU32(&MySync.uSyncVar) == GIP_TSC_DELTA_SYNC2_PRESTART_WAIT)
+    {
+        ASMNopPause();
+        if (ASMAtomicReadBool(&pArgs->fAbortSetup))
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
+        if (   (iTry++ & 0xff) == 0
+            && ASMReadTSC() - MySync.uTscStart > pArgs->cMaxTscTicks)
+        {
+            if (   fIsMaster
+                && !ASMAtomicCmpXchgU32(&MySync.uSyncVar, GIP_TSC_DELTA_SYNC2_PRESTART_ABORT, GIP_TSC_DELTA_SYNC2_PRESTART_WAIT))
+                break; /* race #1: slave has moved on, handle timeout in loop instead. */
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, true /*fTimeout*/);
+        }
+#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+if (iTry == 0) __debugbreak();
+#endif
+    }
+
+    if (!fIsMaster)
+        if (!ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_START, GIP_TSC_DELTA_SYNC2_PRESTART_WAIT)) /* race #1 */
+            return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
 
     /*
      * Retry loop.
@@ -3207,16 +3220,21 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
     Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
     for (iTry = 0; iTry < 12; iTry++)
     {
+        if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_START)
+            break;
+
         /*
          * Do the measurements.
          */
 #ifdef GIP_TSC_DELTA_METHOD_1
-        supdrvTscDeltaMethod1Loop(pArgs, pSync, fIsMaster, iTry);
+        supdrvTscDeltaMethod1Loop(pArgs, pSync1, &MySync, pOtherSync, fIsMaster, iTry);
 #elif defined(GIP_TSC_DELTA_METHOD_2)
-        supdrvTscDeltaMethod2Loop(pArgs, pSync, fIsMaster, iTry);
+        supdrvTscDeltaMethod2Loop(pArgs, pSync1, &MySync, pOtherSync, fIsMaster, iTry);
 #else
 # error "huh??"
 #endif
+        if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_START)
+            break;
 
         /*
          * Success? If so, stop trying.
@@ -3236,30 +3254,40 @@ static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvU
             break;
         }
     }
+
+    /*
+     * End the synchroniziation dance.  We tell the other that we're done,
+     * then wait for the same kind of reply.
+     */
+    ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_FINAL);
+    ASMAtomicWriteNullPtr(ppMySync);
+    iTry = 0;
+    while (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_FINAL)
+    {
+        iTry++;
+        if (   iTry == 0
+            && !RTMpIsCpuOnline(fIsMaster ? pGipCpuWorker->idCpu : pGipCpuWorker->idCpu))
+            break; /* this really shouldn't happen. */
+#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+if (iTry == 0) __debugbreak();
+#endif
+        ASMNopPause();
+    }
+
+    return 0;
 }
 
-
 /**
- * Clears TSC delta related variables.
+ * Callback used by supdrvMeasureInitialTscDeltas() to read the TSC on two CPUs
+ * and compute the delta between them.
  *
- * Clears all TSC samples as well as the delta synchronization variable on the
- * all the per-CPU structs.  Optionally also clears the per-cpu deltas too.
- *
- * @param   pDevExt         Pointer to the device instance data.
- * @param   fClearDeltas    Whether the deltas are also to be cleared.
+ * @param   idCpu       The CPU we are current scheduled on.
+ * @param   pvUser1     Pointer to a parameter package (SUPDRVGIPTSCDELTARGS).
+ * @param   pvUser2     Unused.
  */
-DECLINLINE(void) supdrvClearTscSamples(PSUPDRVDEVEXT pDevExt, bool fClearDeltas)
+static DECLCALLBACK(void) supdrvMeasureTscDeltaCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    unsigned iCpu;
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
-    {
-        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
-        ASMAtomicWriteU64(&pGipCpu->u64TSCSample, GIP_TSC_DELTA_RSVD);
-        if (fClearDeltas)
-            ASMAtomicWriteS64(&pGipCpu->i64TSCDelta, INT64_MAX);
-    }
-    ASMAtomicWriteU32(&pDevExt->pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
+    supdrvMeasureTscDeltaCallbackUnwrapped(idCpu, (PSUPDRVGIPTSCDELTARGS)pvUser1);
 }
 
 
@@ -3347,16 +3375,24 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 
     if (RTCpuSetIsMemberByIndex(&pGip->OnlineCpuSet, pGipCpuWorker->iCpuSet))
     {
+        /** @todo we need to check that the master is online...
+         * The old supdrvMeasureTscDeltaCallback code would spin forever. */
         /*
          * Initialize data package for the RTMpOnAll callback.
          */
         SUPDRVGIPTSCDELTARGS Args;
         RT_ZERO(Args);
-        Args.pWorker     = pGipCpuWorker;
-        Args.pMaster     = pGipCpuMaster;
-        Args.pDevExt     = pDevExt;
-        Args.pSyncMaster = NULL;
-        Args.pSyncWorker = NULL;
+        Args.pWorker      = pGipCpuWorker;
+        Args.pMaster      = pGipCpuMaster;
+        Args.pDevExt      = pDevExt;
+        Args.pSyncMaster  = NULL;
+        Args.pSyncWorker  = NULL;
+#if 0 /* later */
+        Args.cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 2048; /* 488 us */
+#else
+        Args.cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 1024; /* 976 us */
+#endif
+
 #ifdef GIP_TSC_DELTA_METHOD_1
         rc = supdrvTscDeltaMethod1Init(&Args);
 #elif defined(GIP_TSC_DELTA_METHOD_2)
@@ -3415,6 +3451,30 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 
     ASMAtomicWriteU32(&pDevExt->idTscDeltaInitiator, NIL_RTCPUID);
     return rc;
+}
+
+
+/**
+ * Clears TSC delta related variables.
+ *
+ * Clears all TSC samples as well as the delta synchronization variable on the
+ * all the per-CPU structs.  Optionally also clears the per-cpu deltas too.
+ *
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   fClearDeltas    Whether the deltas are also to be cleared.
+ */
+static void supdrvClearTscSamples(PSUPDRVDEVEXT pDevExt, bool fClearDeltas)
+{
+    unsigned iCpu;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    for (iCpu = 0; iCpu < pGip->cCpus; iCpu++)
+    {
+        PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
+        ASMAtomicWriteU64(&pGipCpu->u64TSCSample, GIP_TSC_DELTA_RSVD);
+        if (fClearDeltas)
+            ASMAtomicWriteS64(&pGipCpu->i64TSCDelta, INT64_MAX);
+    }
+    ASMAtomicWriteU32(&pDevExt->pTscDeltaSync->u, GIP_TSC_DELTA_SYNC_STOP);
 }
 
 
@@ -3943,7 +4003,9 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
     else if (cTries > 256)
         cTries = 256;
 
-    if (cMsWaitRetry > 1000)
+    if (cMsWaitRetry == 0)
+        cMsWaitRetry = 2;
+    else if (cMsWaitRetry > 1000)
         cMsWaitRetry = 1000;
 
     /*
@@ -4044,12 +4106,11 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
             break;
         cTries--;
 
-        if (cMsWaitRetry)
-        {
-            rc = RTThreadSleep(cMsWaitRetry);
-            if (rc == VERR_INTERRUPTED)
-                break;
-        }
+        /* Always delay between retries (be nice to the rest of the system
+           and avoid the BSOD hounds). */
+        rc = RTThreadSleep(cMsWaitRetry);
+        if (rc == VERR_INTERRUPTED)
+            break;
     }
 
     return rc;
@@ -4171,6 +4232,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                 /* Need to measure the delta an try again. */
                 rc = supdrvMeasureTscDeltaOne(pDevExt, iGipCpu);
                 Assert(pGip->aCPUs[iGipCpu].i64TSCDelta != INT64_MAX || RT_FAILURE_NP(rc));
+                /** @todo should probably delay on failure... dpc watchdogs   */
             }
             else
             {
