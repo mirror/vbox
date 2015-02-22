@@ -767,6 +767,14 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  *
  */
 
+/**
+ * Used by supdrvInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
+ * to update the TSC frequency related GIP variables.
+ *
+ * @param   pGip                The GIP.
+ * @param   nsElapsed           The number of nano seconds elapsed.
+ * @param   cElapsedTscTicks    The corresponding number of TSC ticks.
+ */
 static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed, uint64_t cElapsedTscTicks)
 {
     /*
@@ -804,7 +812,7 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
  * @param   pvUser      Opaque pointer to the device instance data.
  * @param   iTick       The timer tick.
  */
-static DECLCALLBACK(void) supdrvInitRefineInvariantTscTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip = pDevExt->pGip;
@@ -936,8 +944,6 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscTimer(PRTTIMER pTimer, voi
  *
  * @param   pDevExt         Pointer to the device instance data.
  * @param   pGip            Pointer to the GIP.
- *
- * @remarks We cannot use this
  */
 static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
 {
@@ -982,7 +988,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
      */
     rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, 0 /* one-shot */,
                          RTTIMER_FLAGS_CPU(RTMpCpuIdToSetIndex(pDevExt->idCpuInvarTscRefine)),
-                         supdrvInitRefineInvariantTscTimer, pDevExt);
+                         supdrvInitRefineInvariantTscFreqTimer, pDevExt);
     if (RT_SUCCESS(rc))
     {
         rc = RTTimerStart(pDevExt->pInvarTscRefineTimer, 2*RT_NS_100MS);
@@ -994,7 +1000,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     if (rc == VERR_CPU_OFFLINE || rc == VERR_NOT_SUPPORTED)
     {
         rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, 0 /* one-shot */, RTTIMER_FLAGS_CPU_ANY,
-                             supdrvInitRefineInvariantTscTimer, pDevExt);
+                             supdrvInitRefineInvariantTscFreqTimer, pDevExt);
         if (RT_SUCCESS(rc))
         {
             rc = RTTimerStart(pDevExt->pInvarTscRefineTimer, 2*RT_NS_100MS);
@@ -1151,6 +1157,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
              */
             else if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
             {
+/** @todo This section of code is never reached atm, consider dropping it later on... */
                 if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
                 {
                     uint32_t iStartCpuSet   = RTMpCpuIdToSetIndex(idCpuStart);
@@ -2129,45 +2136,84 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
     u64TSCDelta = u64TSC - pGipCpu->u64TSC;
     ASMAtomicWriteU64(&pGipCpu->u64TSC, u64TSC);
 
-    /* We don't need to keep realculating the frequency when it's invariant. */
-    if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
-        return;
-
-    if (u64TSCDelta >> 32)
-    {
-        u64TSCDelta = pGipCpu->u32UpdateIntervalTSC;
-        pGipCpu->cErrors++;
-    }
-
     /*
-     * On the 2nd and 3rd callout, reset the history with the current TSC
-     * interval since the values entered by supdrvGipInit are totally off.
-     * The interval on the 1st callout completely unreliable, the 2nd is a bit
-     * better, while the 3rd should be most reliable.
+     * We don't need to keep realculating the frequency when it's invariant, so
+     * the remainder of this function is only for the sync and async TSC modes.
      */
-    u32TransactionId = pGipCpu->u32TransactionId;
-    if (RT_UNLIKELY(   (   u32TransactionId == 5
-                        || u32TransactionId == 7)
-                    && (   iTick == 2
-                        || iTick == 3) ))
+    if (pGip->u32Mode != SUPGIPMODE_INVARIANT_TSC)
     {
-        unsigned i;
-        for (i = 0; i < RT_ELEMENTS(pGipCpu->au32TSCHistory); i++)
-            ASMAtomicUoWriteU32(&pGipCpu->au32TSCHistory[i], (uint32_t)u64TSCDelta);
-    }
+        if (u64TSCDelta >> 32)
+        {
+            u64TSCDelta = pGipCpu->u32UpdateIntervalTSC;
+            pGipCpu->cErrors++;
+        }
 
-    /*
-     * Validate the NanoTS deltas between timer fires with an arbitrary threshold of 0.5%.
-     * Wait until we have at least one full history since the above history reset. The
-     * assumption is that the majority of the previous history values will be tolerable.
-     * See @bugref{6710} comment #67.
-     */
-    if (   u32TransactionId > 23 /* 7 + (8 * 2) */
-        && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-    {
-        uint32_t uNanoTsThreshold = pGip->u32UpdateIntervalNS / 200;
-        if (   pGipCpu->u32PrevUpdateIntervalNS > pGip->u32UpdateIntervalNS + uNanoTsThreshold
-            || pGipCpu->u32PrevUpdateIntervalNS < pGip->u32UpdateIntervalNS - uNanoTsThreshold)
+        /*
+         * On the 2nd and 3rd callout, reset the history with the current TSC
+         * interval since the values entered by supdrvGipInit are totally off.
+         * The interval on the 1st callout completely unreliable, the 2nd is a bit
+         * better, while the 3rd should be most reliable.
+         */
+        /** @todo Could we drop this now that we initializes the history
+         *        with nominal TSC frequency values? */
+        u32TransactionId = pGipCpu->u32TransactionId;
+        if (RT_UNLIKELY(   (   u32TransactionId == 5
+                            || u32TransactionId == 7)
+                        && (   iTick == 2
+                            || iTick == 3) ))
+        {
+            unsigned i;
+            for (i = 0; i < RT_ELEMENTS(pGipCpu->au32TSCHistory); i++)
+                ASMAtomicUoWriteU32(&pGipCpu->au32TSCHistory[i], (uint32_t)u64TSCDelta);
+        }
+
+        /*
+         * Validate the NanoTS deltas between timer fires with an arbitrary threshold of 0.5%.
+         * Wait until we have at least one full history since the above history reset. The
+         * assumption is that the majority of the previous history values will be tolerable.
+         * See @bugref{6710} comment #67.
+         */
+        /** @todo Could we drop the fuding there now that we initializes the history
+         *        with nominal TSC frequency values?  */
+        if (   u32TransactionId > 23 /* 7 + (8 * 2) */
+            && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+        {
+            uint32_t uNanoTsThreshold = pGip->u32UpdateIntervalNS / 200;
+            if (   pGipCpu->u32PrevUpdateIntervalNS > pGip->u32UpdateIntervalNS + uNanoTsThreshold
+                || pGipCpu->u32PrevUpdateIntervalNS < pGip->u32UpdateIntervalNS - uNanoTsThreshold)
+            {
+                uint32_t u32;
+                u32  = pGipCpu->au32TSCHistory[0];
+                u32 += pGipCpu->au32TSCHistory[1];
+                u32 += pGipCpu->au32TSCHistory[2];
+                u32 += pGipCpu->au32TSCHistory[3];
+                u32 >>= 2;
+                u64TSCDelta  = pGipCpu->au32TSCHistory[4];
+                u64TSCDelta += pGipCpu->au32TSCHistory[5];
+                u64TSCDelta += pGipCpu->au32TSCHistory[6];
+                u64TSCDelta += pGipCpu->au32TSCHistory[7];
+                u64TSCDelta >>= 2;
+                u64TSCDelta += u32;
+                u64TSCDelta >>= 1;
+            }
+        }
+
+        /*
+         * TSC History.
+         */
+        Assert(RT_ELEMENTS(pGipCpu->au32TSCHistory) == 8);
+        iTSCHistoryHead = (pGipCpu->iTSCHistoryHead + 1) & 7;
+        ASMAtomicWriteU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
+        ASMAtomicWriteU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
+
+        /*
+         * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
+         *
+         * On Windows, we have an occasional (but recurring) sour value that messed up
+         * the history but taking only 1 interval reduces the precision overall.
+         */
+        if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
+            || pGip->u32UpdateHz >= 1000)
         {
             uint32_t u32;
             u32  = pGipCpu->au32TSCHistory[0];
@@ -2175,75 +2221,42 @@ static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint
             u32 += pGipCpu->au32TSCHistory[2];
             u32 += pGipCpu->au32TSCHistory[3];
             u32 >>= 2;
-            u64TSCDelta  = pGipCpu->au32TSCHistory[4];
-            u64TSCDelta += pGipCpu->au32TSCHistory[5];
-            u64TSCDelta += pGipCpu->au32TSCHistory[6];
-            u64TSCDelta += pGipCpu->au32TSCHistory[7];
-            u64TSCDelta >>= 2;
-            u64TSCDelta += u32;
-            u64TSCDelta >>= 1;
+            u32UpdateIntervalTSC  = pGipCpu->au32TSCHistory[4];
+            u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[5];
+            u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[6];
+            u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[7];
+            u32UpdateIntervalTSC >>= 2;
+            u32UpdateIntervalTSC += u32;
+            u32UpdateIntervalTSC >>= 1;
+
+            /* Value chosen for a 2GHz Athlon64 running linux 2.6.10/11. */
+            u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
         }
+        else if (pGip->u32UpdateHz >= 90)
+        {
+            u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
+            u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[(iTSCHistoryHead - 1) & 7];
+            u32UpdateIntervalTSC >>= 1;
+
+            /* value chosen on a 2GHz thinkpad running windows */
+            u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 7;
+        }
+        else
+        {
+            u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
+
+            /* This value hasn't be checked yet.. waiting for OS/2 and 33Hz timers.. :-) */
+            u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
+        }
+        ASMAtomicWriteU32(&pGipCpu->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
+
+        /*
+         * CpuHz.
+         */
+        u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, RT_NS_1SEC);
+        u64CpuHz /= pGip->u32UpdateIntervalNS;
+        ASMAtomicWriteU64(&pGipCpu->u64CpuHz, u64CpuHz);
     }
-
-    /*
-     * TSC History.
-     */
-    Assert(RT_ELEMENTS(pGipCpu->au32TSCHistory) == 8);
-    iTSCHistoryHead = (pGipCpu->iTSCHistoryHead + 1) & 7;
-    ASMAtomicWriteU32(&pGipCpu->iTSCHistoryHead, iTSCHistoryHead);
-    ASMAtomicWriteU32(&pGipCpu->au32TSCHistory[iTSCHistoryHead], (uint32_t)u64TSCDelta);
-
-    /*
-     * UpdateIntervalTSC = average of last 8,2,1 intervals depending on update HZ.
-     *
-     * On Windows, we have an occasional (but recurring) sour value that messed up
-     * the history but taking only 1 interval reduces the precision overall.
-     * However, this problem existed before the invariant mode was introduced.
-     */
-    if (   pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC
-        || pGip->u32UpdateHz >= 1000)
-    {
-        uint32_t u32;
-        u32  = pGipCpu->au32TSCHistory[0];
-        u32 += pGipCpu->au32TSCHistory[1];
-        u32 += pGipCpu->au32TSCHistory[2];
-        u32 += pGipCpu->au32TSCHistory[3];
-        u32 >>= 2;
-        u32UpdateIntervalTSC  = pGipCpu->au32TSCHistory[4];
-        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[5];
-        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[6];
-        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[7];
-        u32UpdateIntervalTSC >>= 2;
-        u32UpdateIntervalTSC += u32;
-        u32UpdateIntervalTSC >>= 1;
-
-        /* Value chosen for a 2GHz Athlon64 running linux 2.6.10/11. */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 14;
-    }
-    else if (pGip->u32UpdateHz >= 90)
-    {
-        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
-        u32UpdateIntervalTSC += pGipCpu->au32TSCHistory[(iTSCHistoryHead - 1) & 7];
-        u32UpdateIntervalTSC >>= 1;
-
-        /* value chosen on a 2GHz thinkpad running windows */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 7;
-    }
-    else
-    {
-        u32UpdateIntervalTSC  = (uint32_t)u64TSCDelta;
-
-        /* This value hasn't be checked yet.. waiting for OS/2 and 33Hz timers.. :-) */
-        u32UpdateIntervalTSCSlack = u32UpdateIntervalTSC >> 6;
-    }
-    ASMAtomicWriteU32(&pGipCpu->u32UpdateIntervalTSC, u32UpdateIntervalTSC + u32UpdateIntervalTSCSlack);
-
-    /*
-     * CpuHz.
-     */
-    u64CpuHz = ASMMult2xU32RetU64(u32UpdateIntervalTSC, RT_NS_1SEC);
-    u64CpuHz /= pGip->u32UpdateIntervalNS;
-    ASMAtomicWriteU64(&pGipCpu->u64CpuHz, u64CpuHz);
 }
 
 
