@@ -711,14 +711,20 @@ typedef struct SUPDRVDEVEXT
     int32_t                         cSessions;
     /** @} */
 
+    /** @name Invariant TSC frequency refinement.
+     * @{ */
+    /** Nanosecond timestamp at the start of the TSC frequency refinement phase. */
+    uint64_t                        nsStartInvarTscRefine;
+    /** TSC reading at the start of the TSC frequency refinement phase. */
+    uint64_t                        uTscStartInvarTscRefine;
+    /** The CPU id of the CPU that u64TscAnchor was measured on. */
+    RTCPUID                         idCpuInvarTscRefine;
+    /** Pointer to the timer used to refine the TSC frequency. */
+    PRTTIMER                        pInvarTscRefineTimer;
+    /** @} */
+
     /** @name TSC-delta measurement.
      *  @{ */
-    /** TSC reading during start of TSC frequency refinement phase. */
-    uint64_t                        u64TscAnchor;
-    /** Timestamp (in nanosec) during start of TSC frequency refinement phase. */
-    uint64_t                        u64NanoTSAnchor;
-    /** Pointer to the timer used to refine the TSC frequency. */
-    PRTTIMER                        pTscRefineTimer;
     /** Pointer to the TSC delta sync. struct. */
     void                           *pvTscDeltaSync;
     /** The TSC delta measurement initiator Cpu Id. */

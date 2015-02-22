@@ -495,14 +495,13 @@ SUPDECL(uint64_t) SUPGetCpuHzFromGipForAsyncMode(PSUPGLOBALINFOPAGE pGip);
 /**
  * Gets the TSC frequency of the calling CPU.
  *
- * @returns TSC frequency, UINT64_MAX on failure.
+ * @returns TSC frequency, UINT64_MAX on failure (asserted).
  * @param   pGip        The GIP pointer.
  */
 DECLINLINE(uint64_t) SUPGetCpuHzFromGip(PSUPGLOBALINFOPAGE pGip)
 {
     if (RT_LIKELY(   pGip
-                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-                  && pGip->u64CpuHz))
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC))
     {
         switch (pGip->u32Mode)
         {
@@ -522,15 +521,14 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGip(PSUPGLOBALINFOPAGE pGip)
 /**
  * Gets the TSC frequency of the specified CPU.
  *
- * @returns TSC frequency, UINT64_MAX on failure.
+ * @returns TSC frequency, UINT64_MAX on failure (asserted).
  * @param   pGip        The GIP pointer.
  * @param   iCpuSet     The CPU set index of the CPU in question.
  */
 DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint32_t iCpuSet)
 {
     if (RT_LIKELY(   pGip
-                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC
-                  && pGip->u64CpuHz))
+                  && pGip->u32Magic == SUPGLOBALINFOPAGE_MAGIC))
     {
         switch (pGip->u32Mode)
         {
@@ -553,6 +551,7 @@ DECLINLINE(uint64_t) SUPGetCpuHzFromGipBySetIndex(PSUPGLOBALINFOPAGE pGip, uint3
 }
 
 
+#if 0 /* Not used anywhere.  Unsure where this would be useful. */
 /**
  * Checks if the provided TSC frequency is close enough to the computed TSC
  * frequency of the host.
@@ -579,6 +578,7 @@ DECLINLINE(bool) SUPIsTscFreqCompatible(uint64_t u64CpuHz)
     }
     return false;
 }
+#endif
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 
