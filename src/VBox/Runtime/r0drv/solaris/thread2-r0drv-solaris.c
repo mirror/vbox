@@ -85,6 +85,13 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
+{
+    kthread_t *pThread = (kthread_t *)pThread->Core.Key;
+    thread_join(pThread);
+}
+
+
 DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);

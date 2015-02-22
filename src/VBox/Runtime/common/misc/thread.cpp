@@ -73,7 +73,9 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The AVL thread containing the threads. */
-static PAVLPVNODECORE   g_ThreadTree;
+static PAVLPVNODECORE       g_ThreadTree;
+/** The number of threads in the tree (for ring-0 termination kludge). */
+static uint32_t volatile    g_cThreadInTree;
 #ifdef IN_RING3
 /** The RW lock protecting the tree. */
 static RTSEMRW          g_ThreadRWSem = NIL_RTSEMRW;
@@ -454,6 +456,8 @@ DECLHIDDEN(void) rtThreadInsert(PRTTHREADINT pThread, RTNATIVETHREAD NativeThrea
                 ASMAtomicWritePtr(&pThread->Core.Key, (void *)NativeThread);
                 fRc = RTAvlPVInsert(&g_ThreadTree, &pThread->Core);
                 ASMAtomicOrU32(&pThread->fIntFlags, RTTHREADINT_FLAG_IN_TREE);
+                if (fRc)
+                    ASMAtomicIncU32(&g_cThreadInTree);
 
                 AssertReleaseMsg(fRc, ("Lock problem? %p (%RTnthrd) %s\n", pThread, NativeThread, pThread->szName));
                 NOREF(fRc);
@@ -478,7 +482,8 @@ static void rtThreadRemoveLocked(PRTTHREADINT pThread)
     AssertMsg(pThread2 == pThread, ("%p(%s) != %p (%p/%s)\n", pThread2, pThread2  ? pThread2->szName : "<null>",
                                     pThread, pThread->Core.Key, pThread->szName));
 #endif
-    NOREF(pThread2);
+    if (pThread2)
+        ASMAtomicDecU32(&g_cThreadInTree);
 }
 
 
@@ -1175,7 +1180,19 @@ static int rtThreadWait(RTTHREAD Thread, RTMSINTERVAL cMillies, int *prc, bool f
                      * init cRef in rtThreadAlloc()).
                      */
                     if (ASMAtomicBitTestAndClear(&pThread->fFlags, RTTHREADFLAGS_WAITABLE_BIT))
+                    {
                         rtThreadRelease(pThread);
+#ifdef IN_RING0
+                        /*
+                         * IPRT termination kludge. Call native code to make sure
+                         * the last thread is really out of IPRT to prevent it from
+                         * crashing after we destroyed the spinlock in rtThreadTerm.
+                         */
+                        if (   ASMAtomicReadU32(&g_cThreadInTree) == 1
+                            && ASMAtomicReadU32(&pThread->cRefs) > 1)
+                            rtThreadNativeWaitKludge(pThread);
+#endif
+                    }
                 }
             }
             else

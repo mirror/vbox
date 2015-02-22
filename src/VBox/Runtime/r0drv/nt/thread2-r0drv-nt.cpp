@@ -87,6 +87,14 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
+{
+    PVOID pvThreadObj = pThread->Core.Key;
+    NTSTATUS rcNt = KeWaitForSingleObject(pvThreadObj, Executive, KernelMode, FALSE, NULL);
+    AssertMsg(rcNt == STATUS_SUCCESS, ("rcNt=%#x\n", rcNt));
+}
+
+
 DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);

@@ -40,7 +40,7 @@
 #include "internal/thread.h"
 
 
-int rtThreadNativeInit(void)
+DECLHIDDEN(int) rtThreadNativeInit(void)
 {
     /* No TLS in Ring-0. :-/ */
     return VINF_SUCCESS;
@@ -53,7 +53,7 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 
 
-int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
+DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     int32 iPriority;
     status_t status;
@@ -81,13 +81,20 @@ int rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 }
 
 
-int rtThreadNativeAdopt(PRTTHREADINT pThread)
+DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 {
     return VERR_NOT_IMPLEMENTED;
 }
 
 
-void rtThreadNativeDestroy(PRTTHREADINT pThread)
+DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
+{
+    /** @todo fix RTThreadWait/RTR0Term race on freebsd. */
+    RTThreadSleep(1);
+}
+
+
+DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);
 }
@@ -114,7 +121,7 @@ static status_t rtThreadNativeMain(void *pvArg)
 }
 
 
-int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
+DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
     thread_id NativeThread;
     RT_ASSERT_PREEMPTIBLE();

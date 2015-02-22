@@ -102,6 +102,13 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 }
 
 
+DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
+{
+    /** @todo fix RTThreadWait/RTR0Term race on linux. */
+    RTThreadSleep(1); NOREF(pThread);
+}
+
+
 DECLHIDDEN(void) rtThreadNativeDestroy(PRTTHREADINT pThread)
 {
     NOREF(pThread);
