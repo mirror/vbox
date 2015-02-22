@@ -1905,7 +1905,8 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 if (RT_SUCCESS(rc))
                 {
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
-                    RTThreadUserSignal(pDevExt->hTscDeltaThread);
+                    if (pDevExt->hTscDeltaThread != NIL_RTTHREAD)
+                        RTThreadUserSignal(pDevExt->hTscDeltaThread);
 #else
                     uint16_t iCpu;
                     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
