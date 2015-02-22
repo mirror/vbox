@@ -77,7 +77,7 @@ static DECLCALLBACK(int) rtAsn1OctetStringEncodeCompare(const void *pvBuf, size_
 {
     RTASN1OCTETSTRINGWRITERCTX *pCtx = (RTASN1OCTETSTRINGWRITERCTX *)pvUser;
     AssertReturn(cbToWrite <= pCtx->cbBuf - pCtx->offBuf, VERR_BUFFER_OVERFLOW);
-    if (!memcmp(&pCtx->pbBuf[pCtx->offBuf], pvBuf, cbToWrite) != 0)
+    if (memcmp(&pCtx->pbBuf[pCtx->offBuf], pvBuf, cbToWrite) != 0)
         return VERR_NOT_EQUAL;
     pCtx->offBuf += (uint32_t)cbToWrite;
     return VINF_SUCCESS;
