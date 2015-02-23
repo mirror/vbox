@@ -203,7 +203,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   PROGRAMS += tstRTR0DbgKrnlInfoDriver
   SYSMODS += tstRTR0DbgKrnlInfo
  endif
- if1of ($(KBUILD_TARGET), linux)
+ if1of ($(KBUILD_TARGET), linux solaris win)
   PROGRAMS += tstRTR0ThreadDriver
   SYSMODS += tstRTR0Thread
  endif
