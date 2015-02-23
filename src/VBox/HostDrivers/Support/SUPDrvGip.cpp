@@ -3477,6 +3477,10 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
  * @param   fIsMaster           Set if we're the master, clear if worker.
  * @param   fTimeout            Set if it's a timeout.
  */
+
+/* XXX See linux-3.14/include/linux/compiler-gcc.h:
+ *     #define noinline __attribute__((noinline)) */
+#undef noinline
 DECL_NO_INLINE(static, int)
 supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync, bool fIsMaster, bool fTimeout)
 {
