@@ -203,6 +203,11 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   PROGRAMS += tstRTR0DbgKrnlInfoDriver
   SYSMODS += tstRTR0DbgKrnlInfo
  endif
+ if1of ($(KBUILD_TARGET), linux)
+  PROGRAMS += tstRTR0ThreadDriver
+  SYSMODS += tstRTR0Thread
+ endif
+
 endif
 if1of ($(VBOX_LDR_FMT)), lx pe)
  LIBRARIES += \
@@ -712,6 +717,27 @@ else
  tstRTR0SemMutexDriver_TEMPLATE = VBOXR3TSTEXE
 endif
 tstRTR0SemMutexDriver_SOURCES = tstRTR0SemMutexDriver.cpp
+
+
+tstRTR0Thread_TEMPLATE = VBoxR0
+tstRTR0Thread_INST = $(INST_TESTCASE)
+tstRTR0Thread_DEFS = IN_RT_R0
+tstRTR0Thread_SYSSUFF = .r0
+tstRTR0Thread_SOURCES = tstRTR0Thread.cpp
+tstRTR0Thread_LIBS = $(PATH_STAGE_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ tstRTR0Thread_LIBS += $(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
+endif
+if defined(VBOX_WITH_HARDENING) && "$(KBUILD_TARGET)" == "win"
+ tstRTR0ThreadDriverHardened_TEMPLATE = VBoxR3HardenedTstExe
+ tstRTR0ThreadDriverHardened_NAME = tstRTR0ThreadDriver
+ tstRTR0ThreadDriverHardened_DEFS = PROGRAM_NAME_STR=\"tstRTR0ThreadDriver\"
+ tstRTR0ThreadDriverHardened_SOURCES = ../../HostDrivers/Support/SUPR3HardenedMainTemplate.cpp
+ tstRTR0ThreadDriver_TEMPLATE = VBoxR3TstDll
+else
+ tstRTR0ThreadDriver_TEMPLATE = VBOXR3TSTEXE
+endif
+tstRTR0ThreadDriver_SOURCES = tstRTR0ThreadDriver.cpp
 
 
 tstRTR0Timer_TEMPLATE = VBoxR0
