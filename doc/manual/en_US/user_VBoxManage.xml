@@ -1657,68 +1657,65 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpenabled on|off</computeroutput> if enabled 
-        VirtualBox uses video recording to
-        record VM session into webm/vp8 file.</para>
+        <para><computeroutput>videocap on|off</computeroutput> enables or disables
+        recording a VM session into a WebM/VP8 file.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpscreens</computeroutput> determines for which
-        screens video recording is enabled.</para>
+        <para><computeroutput>videocapscreens all|&lt;screen ID&gt; [&lt;screen ID&gt; ...]]</computeroutput> 
+        allows to specify which screens of the VM are being recorded. This setting 
+        cannot be changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpfile</computeroutput> determines the filename
+        <para><computeroutput>videocapfile &lt;file&gt;</computeroutput> sets the filename
         VirtualBox uses to save the recorded content. This setting cannot be changed
         while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpwidth</computeroutput> determines the horizontal
-        resolution of the recorded video. This setting cannot be changed while
-        video capturing is enabled.</para>
+        <para><computeroutput>videocapres &lt;width&gt; &lt;height&gt;</computeroutput> 
+        sets the resolution (in pixels) of the recorded video. This setting cannot be
+        changed while video capturing is enabled.</para>
+      </listitem>
+
+      <listitem> <!-- @todo r=andy Clarify rate. -->
+        <para><computeroutput>videocaprate &lt;rate&gt;</computeroutput> sets the 
+        bitrate in kilobits (kb) per second. Increasing this value makes the video 
+        look better for the cost of an increased file size. This setting cannot be 
+        changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpheight</computeroutput> determines the vertical
-        resolution of the recorded video. This setting cannot be changed while
-        video capturing is enabled.</para>
-      </listitem>
-
-      <listitem>
-        <para><computeroutput>vcprate</computeroutput> determines the bitrate
-        in kilobits per second. Increasing this value makes the video look better
-        for the cost of an increased file size. This setting cannot be changed
+        <para><computeroutput>videocapfps &lt;fps&gt;</computeroutput> sets the 
+        maximum number of frames per second (FPS) to be recorded. Frames with a
+        higher frequency will be skipped. Reducing this value increases the number
+        of skipped frames and reduces the file size. This setting cannot be changed
         while video capturing is enabled.</para>
       </listitem>
 
-      <listitem>
-        <para><computeroutput>vcpfps</computeroutput> determines the maximum
-        number of frames per second. Frames with a higher frequency will be skipped.
-        Reducing this value increases the number of skipped frames and reduces the
-        file size. This setting cannot be changed while video capturing
-        is enabled.</para>
+      <listitem> <!-- @todo r=andy Clarify time format. -->
+        <para><computeroutput>videocapmaxtime &lt;time&gt;</computeroutput> sets 
+        the maximum time the video capturing will take place since activation. 
+        The capturing stops when the defined time interval has elapsed. If this 
+        value is zero the capturing is not limited by time. This setting cannot 
+        be changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpmaxtime</computeroutput> determines the maximum time
-        video capturing works. The capture stops when the defined time interval
-        has elapsed. If this value is zero the capturing is not limited
-        by time. This setting cannot be changed while video capturing is enabled.</para>
+        <para><computeroutput>videocapmaxsize &lt;MB&gt;</computeroutput> limits
+        the maximum size of the captured video file (in MB). The capturing stops
+        when file size has reached the specified size. If this value is zero 
+        the capturing will not be limited by file size. This setting cannot be
+        changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>vcpmaxsize</computeroutput> determines the maximum
-        size of captured video file in MB. The capture stops when captured video file size
-        has reached the defined. If this value is zero the capturing
-        will not be limited by file size. This setting cannot be changed
-        while video capturing is enabled.</para>
-      </listitem>
-
-      <listitem>
-        <para><computeroutput>vcpoptions</computeroutput> contains any additional
-        video capturing options required in comma-separated key=value format. This setting
-        cannot be changed while video capturing is enabled.</para>
+        <para><computeroutput>videocapopts &lt;key=value&gt; [&lt;key=value&gt; ...]</computeroutput>
+        can be used to specify additional video capturing options. These options 
+        only are for advanced users and must be specified in a comma-separated 
+        key=value format, e.g. <computeroutput>foo=bar,a=b</computeroutput>.
+        This setting cannot be changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
