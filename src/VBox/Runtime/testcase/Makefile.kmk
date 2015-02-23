@@ -198,7 +198,7 @@ if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  	tstRTR0MemUserKernel \
  	tstRTR0SemMutex \
  	tstRTR0Timer \
- 	tstR0ThreadPreemption
+ 	tstR0ThreadPreemption \
  	tstRTR0Thread
  ifdef VBOX_WITH_RAW_MODE
   SYSMODS += tstLdrObj
