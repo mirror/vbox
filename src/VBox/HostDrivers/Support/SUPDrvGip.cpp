@@ -2634,7 +2634,7 @@ typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
  *
  * @{
  */
-#if 1
+#if 0
 #define TSCDELTA_MASTER_SYNC_BEFORE(a_pSync1, a_pMySync, a_pOtherSync) \
     do {\
         ASMAtomicWriteU32(&(a_pSync1)->u, GIP_TSC_DELTA_SYNC_START); \
