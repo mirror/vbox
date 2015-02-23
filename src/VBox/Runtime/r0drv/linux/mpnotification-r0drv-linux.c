@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,7 +31,6 @@
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
 
-#include <iprt/mp.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/err.h>
 #include <iprt/cpuset.h>
@@ -69,62 +68,17 @@ static RTCPUSET g_MpPendingOfflineSet;
 
 
 /**
- * Notification wrapper that updates CPU states and invokes our notification
- * callbacks.
- *
- * @param idCpu             The CPU Id.
- * @param pvUser1           Pointer to the notifier_block (unused).
- * @param pvUser2           The notification event.
- * @remarks This can be invoked in interrupt context.
- */
-static DECLCALLBACK(void) rtMpNotificationLinuxOnCurrentCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
-{
-    unsigned long ulNativeEvent = *(unsigned long *)pvUser2;
-    NOREF(pvUser1);
-
-    AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    AssertReleaseMsg(idCpu == RTMpCpuId(),  /* ASSUMES iCpu == RTCPUID */
-                     ("idCpu=%u RTMpCpuId=%d ApicId=%d\n", idCpu, RTMpCpuId(), ASMGetApicId() ));
-
-    switch (ulNativeEvent)
-    {
-# ifdef CPU_DOWN_FAILED
-        case CPU_DOWN_FAILED:
-#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
-        case CPU_DOWN_FAILED_FROZEN:
-#  endif
-# endif
-        case CPU_ONLINE:
-# if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
-        case CPU_ONLINE_FROZEN:
-# endif
-            rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
-            break;
-
-# ifdef CPU_DOWN_PREPARE
-        case CPU_DOWN_PREPARE:
-#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
-        case CPU_DOWN_PREPARE_FROZEN:
-#  endif
-            rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
-            break;
-# endif
-    }
-}
-
-
-/**
  * The native callback.
  *
  * @returns NOTIFY_DONE.
  * @param   pNotifierBlock  Pointer to g_NotifierBlock.
  * @param   ulNativeEvent   The native event.
  * @param   pvCpu           The cpu id cast into a pointer value.
+ *
  * @remarks This can fire with preemption enabled and on any CPU.
  */
 static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, unsigned long ulNativeEvent, void *pvCpu)
 {
-    int rc;
     bool fProcessEvent = false;
     RTCPUID idCpu      = (uintptr_t)pvCpu;
     NOREF(pNotifierBlock);
@@ -187,11 +141,31 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
     if (!fProcessEvent)
         return NOTIFY_DONE;
 
-    /*
-     * Reschedule the callbacks to fire on the specific CPU with preemption disabled.
-     */
-    rc = RTMpOnSpecific(idCpu, rtMpNotificationLinuxOnCurrentCpu, pNotifierBlock, &ulNativeEvent);
-    Assert(RT_SUCCESS(rc)); NOREF(rc);
+    switch (ulNativeEvent)
+    {
+# ifdef CPU_DOWN_FAILED
+        case CPU_DOWN_FAILED:
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_FAILED_FROZEN)
+        case CPU_DOWN_FAILED_FROZEN:
+#  endif
+# endif
+        case CPU_ONLINE:
+# if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
+        case CPU_ONLINE_FROZEN:
+# endif
+            rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
+            break;
+
+# ifdef CPU_DOWN_PREPARE
+        case CPU_DOWN_PREPARE:
+#  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
+        case CPU_DOWN_PREPARE_FROZEN:
+#  endif
+            rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
+            break;
+# endif
+    }
+
     return NOTIFY_DONE;
 }
 

@@ -993,7 +993,7 @@ VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
  * Disable VT-x or AMD-V on the current CPU.
  *
  * @returns VBox status code.
- * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   idCpu       The identifier for the CPU this function is called on.
  *
  * @remarks Must be called with preemption disabled.
  */
@@ -1006,13 +1006,13 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured || pCpu->hMemObj != NIL_RTR0MEMOBJ);
+    AssertRelease(idCpu == RTMpCpuId());
 
     if (pCpu->hMemObj == NIL_RTR0MEMOBJ)
         return pCpu->fConfigured ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
 
     int rc;
-    if (   pCpu->fConfigured
-        && idCpu == RTMpCpuId())    /* We may not be firing on the CPU being disabled/going offline. */
+    if (pCpu->fConfigured)
     {
         void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
         RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
@@ -1046,6 +1046,22 @@ static DECLCALLBACK(void) hmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, v
 
 
 /**
+ * Worker function passed to RTMpOnSpecific() that is to be called on the target
+ * CPU.
+ *
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     Null, not used.
+ * @param   pvUser2     Null, not used.
+ */
+static DECLCALLBACK(void) hmR0DisableCpuOnSpecificCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    NOREF(pvUser1);
+    NOREF(pvUser2);
+    hmR0DisableCpu(idCpu);
+}
+
+
+/**
  * Callback function invoked when a cpu goes online or offline.
  *
  * @param   enmEvent            The Mp event.
@@ -1060,13 +1076,23 @@ static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu,
      * We only care about uninitializing a CPU that is going offline. When a
      * CPU comes online, the initialization is done lazily in HMR0Enter().
      */
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     switch (enmEvent)
     {
         case RTMPEVENT_OFFLINE:
         {
-            int rc = hmR0DisableCpu(idCpu);
-            AssertRC(rc);
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            if (idCpu == RTMpCpuId())
+            {
+                int rc = hmR0DisableCpu(idCpu);
+                AssertRC(rc);
+                RTThreadPreemptRestore(&PreemptState);
+            }
+            else
+            {
+                RTThreadPreemptRestore(&PreemptState);
+                RTMpOnSpecific(idCpu, hmR0DisableCpuOnSpecificCallback, NULL /* pvUser1 */, NULL /* pvUser2 */);
+            }
             break;
         }
 

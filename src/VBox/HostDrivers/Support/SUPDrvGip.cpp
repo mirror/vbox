@@ -108,7 +108,7 @@
  *  master with a timeout. */
 #define GIP_TSC_DELTA_SYNC_PRESTART_WORKER  5
 /** The TSC-refinement interval in seconds. */
-#define GIP_TSC_REFINE_PREIOD_IN_SECS       5
+#define GIP_TSC_REFINE_PERIOD_IN_SECS       5
 /** The TSC-delta threshold for the SUPGIPUSETSCDELTA_PRACTICALLY_ZERO rating */
 #define GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO    32
 /** The TSC-delta threshold for the SUPGIPUSETSCDELTA_ROUGHLY_ZERO rating */
@@ -141,10 +141,12 @@ AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_T
 static DECLCALLBACK(void)   supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS, uint64_t uCpuHz);
+static int                  supdrvMeasureInitialTscDeltas(PSUPDRVDEVEXT pDevExt);
+static int                  supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker);
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
 static int                  supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt);
-static int                  supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt);
+static void                 supdrvTscDeltaThreadStartMeasurement(PSUPDRVDEVEXT pDevExt);
 #endif
 
 
@@ -196,7 +198,7 @@ static uint32_t supdrvGipFindCpuIndexForCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID i
  *
  * @note    Don't you dare change the delta calculation.  If you really do, make
  *          sure you update all places where it's used (IPRT, SUPLibAll.cpp,
- *          SUPDrv.c, supdrvGipMpEvent, and more).
+ *          SUPDrv.c, supdrvGipMpEvent(), and more).
  */
 DECLINLINE(int) supdrvTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *pfDeltaApplied)
 {
@@ -768,8 +770,9 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  */
 
 /**
- * Used by supdrvInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
- * to update the TSC frequency related GIP variables.
+ * Used by supdrvInitRefineInvariantTscFreqTimer() and
+ * supdrvGipInitMeasureTscFreq() to update the TSC frequency related GIP
+ * variables.
  *
  * @param   pGip                The GIP.
  * @param   nsElapsed           The number of nano seconds elapsed.
@@ -806,7 +809,7 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
  * Timer callback function for TSC frequency refinement in invariant GIP mode.
  *
  * This is started during driver init and fires once
- * GIP_TSC_REFINE_PREIOD_IN_SECS seconds later.
+ * GIP_TSC_REFINE_PERIOD_IN_SECS seconds later.
  *
  * @param   pTimer      The timer.
  * @param   pvUser      Opaque pointer to the device instance data.
@@ -833,7 +836,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
      * PORTME: If timers are called from the clock interrupt handler, or
      *         an interrupt handler with higher priority than the clock
      *         interrupt, or spinning for ages in timer handlers is frowned
-     *         upon, this look must be disabled!
+     *         upon, this code must be disabled!
      *
      * Darwin, FreeBSD, Linux, Solaris, Windows 8.1+:
      *      High RTTimeSystemNanoTS resolution should prevent any noticable
@@ -862,7 +865,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
 
     /*
      * If the above measurement was taken on a different CPU than the one we
-     * started the rprocess on, cTscTicksElapsed will need to be adjusted with
+     * started the process on, cTscTicksElapsed will need to be adjusted with
      * the TSC deltas of both the CPUs.
      *
      * We ASSUME that the delta calculation process takes less time than the
@@ -895,7 +898,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
          * Allow 5 times the refinement period to elapse before we give up on the TSC delta
          * calculations.
          */
-        else if (cNsElapsed <= GIP_TSC_REFINE_PREIOD_IN_SECS * 5 * RT_NS_1SEC_64)
+        else if (cNsElapsed <= GIP_TSC_REFINE_PERIOD_IN_SECS * 5 * RT_NS_1SEC_64)
         {
             int rc = RTTimerStart(pTimer, RT_NS_1SEC);
             AssertRC(rc);
@@ -904,7 +907,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
         else
         {
             SUPR0Printf("vboxdrv: Failed to refine invariant TSC frequency because deltas are unavailable after %u (%u) seconds\n",
-                        (uint32_t)(cNsElapsed / RT_NS_1SEC), GIP_TSC_REFINE_PREIOD_IN_SECS);
+                        (uint32_t)(cNsElapsed / RT_NS_1SEC), GIP_TSC_REFINE_PERIOD_IN_SECS);
             SUPR0Printf("vboxdrv: start: %u, %u, %#llx  stop: %u, %u, %#llx\n",
                         iStartCpuSet, iStartGipCpu, iStartTscDelta, iStopCpuSet, iStopGipCpu, iStopTscDelta);
             return;
@@ -926,7 +929,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
         /*
          * Reschedule the timer if we haven't yet reached the defined refinement period.
          */
-        if (cNsElapsed < GIP_TSC_REFINE_PREIOD_IN_SECS * RT_NS_1SEC_64)
+        if (cNsElapsed < GIP_TSC_REFINE_PERIOD_IN_SECS * RT_NS_1SEC_64)
         {
             int rc = RTTimerStart(pTimer, RT_NS_1SEC);
             AssertRC(rc);
@@ -979,13 +982,13 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
      * theory.  If it's too long though, ring-3 may already be starting its
      * first VMs before we're done.  On most systems we will be loading the
      * support driver during boot and VMs won't be started for a while yet,
-     * it is really only a problem during development (especiall with
+     * it is really only a problem during development (especially with
      * on-demand driver starting on windows).
      *
-     * To avoid wasting time doing a long supdrvGipInitMeasureTscFreq call
-     * to calculate the frequencey during driver loading, the timer is set
+     * To avoid wasting time doing a long supdrvGipInitMeasureTscFreq() call
+     * to calculate the frequency during driver loading, the timer is set
      * to fire after 200 ms the first time. It will then reschedule itself
-     * to fire every second until GIP_TSC_REFINE_PREIOD_IN_SECS has been
+     * to fire every second until GIP_TSC_REFINE_PERIOD_IN_SECS has been
      * reached or it notices that there is a user land client with GIP
      * mapped (we want a stable frequency for all VMs).
      */
@@ -1291,6 +1294,7 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
 
     AssertPtrReturnVoid(pGip);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertRelease(idCpu == RTMpCpuId());
     Assert(pGip->cPossibleCpus == RTMpGetCount());
 
@@ -1332,28 +1336,31 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
 
+    /* Add this CPU to this set of CPUs we need to calculate the TSC-delta for. */
+    RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, RTMpCpuIdToSetIndex(idCpu));
+
     /* Update the Mp online/offline counter. */
     ASMAtomicIncU32(&pDevExt->cMpOnOffEvents);
 
-    /* Add this CPU to the set of CPUs for which we need to calculate their TSC-deltas. */
-    if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
-    {
-        RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, iCpuSet);
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
-            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
-        {
-            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
-        }
-        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-#endif
-    }
-
-    /* commit it */
+    /* Commit it. */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 
     RTSpinlockRelease(pDevExt->hGipSpinlock);
+}
+
+
+/**
+ * RTMpOnSpecific callback wrapper for supdrvGipMpEventOnlineOrInitOnCpu().
+ *
+ * @param   idCpu     The CPU ID we are running on.
+ * @param   pvUser1    Opaque pointer to the device instance data.
+ * @param   pvUser2    Not used.
+ */
+static DECLCALLBACK(void) supdrvGipMpEventOnlineCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser1;
+    NOREF(pvUser2);
+    supdrvGipMpEventOnlineOrInitOnCpu(pDevExt, idCpu);
 }
 
 
@@ -1395,7 +1402,7 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
         RTCpuSetDelByIndex(&pDevExt->TscDeltaObtainedCpuSet, iCpuSet);
     }
 
-    /* commit it */
+    /* Commit it. */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 
     RTSpinlockRelease(pDevExt->hGipSpinlock);
@@ -1411,29 +1418,46 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
  * @param   enmEvent    The event.
  * @param   idCpu       The cpu it applies to.
  * @param   pvUser      Pointer to the device extension.
- *
- * @remarks This function -must- fire on the newly online'd CPU for the
- *          RTMPEVENT_ONLINE case and can fire on any CPU for the
- *          RTMPEVENT_OFFLINE case.
  */
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
 {
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
 
-    AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
-    /*
-     * Update the GIP CPU data.
-     */
     if (pGip)
     {
+        RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
         switch (enmEvent)
         {
             case RTMPEVENT_ONLINE:
-                AssertRelease(idCpu == RTMpCpuId());
-                supdrvGipMpEventOnlineOrInitOnCpu(pDevExt, idCpu);
+            {
+                RTThreadPreemptDisable(&PreemptState);
+                if (idCpu == RTMpCpuId())
+                {
+                    supdrvGipMpEventOnlineOrInitOnCpu(pDevExt, idCpu);
+                    RTThreadPreemptRestore(&PreemptState);
+                }
+                else
+                {
+                    RTThreadPreemptRestore(&PreemptState);
+                    RTMpOnSpecific(idCpu, supdrvGipMpEventOnlineCallback, pDevExt, NULL /* pvUser2 */);
+                }
+
+                /*
+                 * Recompute TSC-delta for the newly online'd CPU.
+                 */
+                if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+                {
+#ifdef SUPDRV_USE_TSC_DELTA_THREAD
+                    supdrvTscDeltaThreadStartMeasurement(pDevExt);
+#else
+                    uint32_t iCpu = supdrvGipFindOrAllocCpuIndexForCpuId(pGip, idCpu);
+                    supdrvMeasureTscDeltaOne(pDevExt, iCpu);
+#endif
+                }
                 break;
+            }
+
             case RTMPEVENT_OFFLINE:
                 supdrvGipMpEventOffline(pDevExt, idCpu);
                 break;
@@ -1688,7 +1712,7 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
     ASMAtomicWriteS16(&pCpu->iCpuSet,   -1);
     ASMAtomicWriteU16(&pCpu->idApic,    UINT16_MAX);
 
-    /* 
+    /*
      * The first time we're called, we don't have a CPU frequency handy,
      * so pretend it's a 4 GHz CPU.  On CPUs that are online, we'll get
      * called again and at that point we have a more plausible CPU frequency
@@ -1872,16 +1896,16 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      *
      * If we're in any of the other two modes, neither which require MP init,
      * notifications or deltas for the job, do the full measurement now so
-     * that supdrvGipInitOnCpu can populate the TSC interval and history
+     * that supdrvGipInitOnCpu() can populate the TSC interval and history
      * array with more reasonable values.
      */
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /*fRough*/); /* cannot fail */
+        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /* fRough */); /* cannot fail */
         supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt, pGip);
     }
     else
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /*fRough*/);
+        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /* fRough */);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1909,8 +1933,7 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
                 if (RT_SUCCESS(rc))
                 {
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
-                    if (pDevExt->hTscDeltaThread != NIL_RTTHREAD)
-                        RTThreadUserSignal(pDevExt->hTscDeltaThread);
+                    supdrvTscDeltaThreadStartMeasurement(pDevExt);
 #else
                     uint16_t iCpu;
                     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
@@ -2431,19 +2454,6 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
     supdrvGipUpdate(pDevExt, u64NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
     ASMSetFlags(uFlags);
-
-#ifdef SUPDRV_USE_TSC_DELTA_THREAD
-    if (   pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED
-        && !RTCpuSetIsEmpty(&pDevExt->TscDeltaCpuSet))
-    {
-        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
-        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
-            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
-            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
-        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
-        /** @todo Do the actual poking using -- RTThreadUserSignal() */
-    }
-#endif
 }
 
 
@@ -2576,7 +2586,7 @@ typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
 
 
 /**
- * Argument package/state passed by supdrvMeasureTscDeltaOne to the RTMpOn
+ * Argument package/state passed by supdrvMeasureTscDeltaOne() to the RTMpOn
  * callback worker.
  */
 typedef struct SUPDRVGIPTSCDELTARGS
@@ -3156,8 +3166,8 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
  *
  * The idea here is that we have the two CPUs execute the exact same code
  * collecting a largish set of TSC samples.  The code has one data dependency on
- * the other CPU which intention it is to synchronize the execution as well as
- * help cross references the two sets of TSC samples (the sequence numbers).
+ * the other CPU with the intention to synchronize the execution as well
+ * as help cross references the two sets of TSC samples (the sequence numbers).
  *
  * The @a fLag parameter is used to modify the execution a tiny bit on one or
  * both of the CPUs.  When @a fLag differs between the CPUs, it is thought that
@@ -3810,7 +3820,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
          * Initialize data package for the RTMpOnAll callback.
          */
         PSUPDRVGIPTSCDELTARGS pArgs = (PSUPDRVGIPTSCDELTARGS)RTMemAllocZ(sizeof(*pArgs));
-        if (pArgs)
+        if (RT_LIKELY(pArgs))
         {
             pArgs->pWorker      = pGipCpuWorker;
             pArgs->pMaster      = pGipCpuMaster;
@@ -4105,7 +4115,7 @@ static DECLCALLBACK(int) supdrvTscDeltaThread(RTTHREAD hThread, void *pvUser)
                     return supdrvTscDeltaThreadButchered(pDevExt, true /* fSpinlockHeld */, "RTSemEventSignal", rc);
                 RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
                 pDevExt->cMsTscDeltaTimeout = 1;
-                RTThreadSleep(10);
+                RTThreadSleep(1);
                 /* fall thru */
             }
 
@@ -4255,36 +4265,23 @@ static int supdrvTscDeltaThreadWait(PSUPDRVDEVEXT pDevExt, SUPDRVTSCDELTATHREADS
 
 
 /**
- * Waits for TSC-delta measurements to be completed for all online CPUs.
+ * Signals the TSC-delta thread to start measuring TSC-deltas.
  *
- * @returns VBox status code.
- * @param   pDevExt         Pointer to the device instance data.
+ * @param   pDevExt     Pointer to the device instance data.
  */
-static int supdrvTscDeltaThreadWaitForOnlineCpus(PSUPDRVDEVEXT pDevExt)
+static void supdrvTscDeltaThreadStartMeasurement(PSUPDRVDEVEXT pDevExt)
 {
-    int cTriesLeft = 5;
-    int cMsTotalWait;
-    int cMsWaited = 0;
-    int cMsWaitGranularity = 1;
-
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-    AssertReturn(pGip, VERR_INVALID_POINTER);
-
-    if (RT_UNLIKELY(pDevExt->hTscDeltaThread == NIL_RTTHREAD))
-        return VERR_THREAD_NOT_WAITABLE;
-
-    cMsTotalWait = RT_MIN(pGip->cPresentCpus + 10, 200);
-    while (cTriesLeft-- > 0)
+    if (RT_LIKELY(pDevExt->hTscDeltaThread != NIL_RTTHREAD))
     {
-        if (RTCpuSetIsEqual(&pDevExt->TscDeltaObtainedCpuSet, &pGip->OnlineCpuSet))
-            return VINF_SUCCESS;
-        RTThreadSleep(cMsWaitGranularity);
-        cMsWaited += cMsWaitGranularity;
-        if (cMsWaited >= cMsTotalWait)
-            break;
+        RTSpinlockAcquire(pDevExt->hTscDeltaSpinlock);
+        if (   pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Listening
+            || pDevExt->enmTscDeltaThreadState == kTscDeltaThreadState_Measuring)
+        {
+            pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
+        }
+        RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
+        RTThreadUserSignal(pDevExt->hTscDeltaThread);
     }
-
-    return VERR_TIMEOUT;
 }
 
 
@@ -4456,6 +4453,12 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
     if (fFlags & ~SUP_TSCDELTA_MEASURE_F_VALID_MASK)
         return VERR_INVALID_FLAGS;
 
+    /*
+     * The request is a noop if the TSC delta isn't being used.
+     */
+    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+        return VINF_SUCCESS;
+
     if (cTries == 0)
         cTries = 12;
     else if (cTries > 256)
@@ -4465,12 +4468,6 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
         cMsWaitRetry = 2;
     else if (cMsWaitRetry > 1000)
         cMsWaitRetry = 1000;
-
-    /*
-     * The request is a noop if the TSC delta isn't being used.
-     */
-    if (pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ZERO_CLAIMED)
-        return VINF_SUCCESS;
 
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
     /*
@@ -4496,7 +4493,7 @@ SUPR0DECL(int) SUPR0TscDeltaMeasureBySetIndex(PSUPDRVSESSION pSession, uint32_t 
             pDevExt->enmTscDeltaThreadState = kTscDeltaThreadState_WaitAndMeasure;
             rc = VINF_SUCCESS;
         }
-        else
+        else if (pDevExt->enmTscDeltaThreadState != kTscDeltaThreadState_WaitAndMeasure)
             rc = VERR_THREAD_IS_DEAD;
         RTSpinlockRelease(pDevExt->hTscDeltaSpinlock);
         RTThreadUserSignal(pDevExt->hTscDeltaThread);
@@ -4612,7 +4609,7 @@ int VBOXCALL supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
         fFlags |= SUP_TSCDELTA_MEASURE_F_FORCE;
 
     return SUPR0TscDeltaMeasureBySetIndex(pSession, iCpuSet, fFlags, cMsWaitRetry,
-                                          cTries == 0 ? 5*RT_MS_1SEC : cMsWaitRetry * cTries /*cMsWaitThread*/,
+                                          cTries == 0 ? 5 * RT_MS_1SEC : cMsWaitRetry * cTries /*cMsWaitThread*/,
                                           cTries);
 }
 
@@ -4690,7 +4687,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                 /* Need to measure the delta an try again. */
                 rc = supdrvMeasureTscDeltaOne(pDevExt, iGipCpu);
                 Assert(pGip->aCPUs[iGipCpu].i64TSCDelta != INT64_MAX || RT_FAILURE_NP(rc));
-                /** @todo should probably delay on failure... dpc watchdogs   */
+                /** @todo should probably delay on failure... dpc watchdogs */
             }
             else
             {
