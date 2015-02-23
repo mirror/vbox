@@ -286,8 +286,8 @@ static int drvAudioProcessOptions(PCFGMNODE pCfgHandle, const char *pszPrefix, s
             }
 
             default:
-                LogFlowFunc(("Bad value tag for option `%s' - %d\n",
-                             opt->name, opt->tag));
+                LogFlowFunc(("Bad value tag for option `%s' - %d\n", opt->name, opt->tag));
+                fUseDefault = false;
                 break;
         }
 

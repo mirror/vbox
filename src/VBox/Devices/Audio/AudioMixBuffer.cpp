@@ -37,7 +37,7 @@
 # define LOG_GROUP LOG_GROUP_DEV_AUDIO
 # include <VBox/log.h>
 #else
-# define AUDMIXBUF_LOG(x)
+# define AUDMIXBUF_LOG(x) do {} while (0)
 #endif
 
 /*

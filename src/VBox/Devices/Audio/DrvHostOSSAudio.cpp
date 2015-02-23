@@ -358,7 +358,8 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
         return VINF_SUCCESS;
 #endif
 
-    int rc, mask;
+    int rc = VINF_SUCCESS;
+    int mask;
     switch (enmStreamCmd)
     {
         case PDMAUDIOSTREAMCMD_ENABLE:
@@ -369,8 +370,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
             mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
             {
-                LogRel(("OSS: Failed to enable output stream: %s\n",
-                        strerror(errno)));
+                LogRel(("OSS: Failed to enable output stream: %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
             }
 
@@ -382,8 +382,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
             mask = 0;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
             {
-                LogRel(("OSS: Failed to disable output stream: %s\n",
-                       strerror(errno)));
+                LogRel(("OSS: Failed to disable output stream: %s\n", strerror(errno)));
                 rc = RTErrConvertFromErrno(errno);
             }
 
@@ -780,7 +779,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     POSSAUDIOSTREAMOUT pThisStrmOut = (POSSAUDIOSTREAMOUT)pHstStrmOut;
 
-    int rc;
+    int rc = VINF_SUCCESS;
     uint32_t cbReadTotal = 0;
     count_info cntinfo;
 
