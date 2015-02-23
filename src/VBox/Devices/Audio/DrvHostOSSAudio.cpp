@@ -432,7 +432,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
     {
         cbTemp = RT_MIN(cbToRead, pThisStrmIn->cbBuf);
         AssertBreakStmt(cbTemp, rc = VERR_NO_DATA);
-        cbRead = read(pThisStrmIn->hFile, pThisStrmIn->pvBuf + offWrite, cbTemp);
+        cbRead = read(pThisStrmIn->hFile, (uint8_t *)pThisStrmIn->pvBuf + offWrite, cbTemp);
 
         LogFlowFunc(("cbRead=%zi, cbTemp=%RU32, cbToRead=%zu\n",
                      cbRead, cbTemp, cbToRead));
