@@ -4849,8 +4849,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
             {
                 /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_HOST_CONTEXT
-                                                 | HM_CHANGED_VMX_EXIT_CTLS
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_VMX_EXIT_CTLS
                                                  | HM_CHANGED_VMX_ENTRY_CTLS
                                                  | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
             }
@@ -4870,8 +4869,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pVCpu->hm.s.vmx.pfnStartVM != NULL) /* Very first entry would have saved host-state already, ignore it. */
             {
                 /* Currently, all mode changes sends us back to ring-3, so these should be set. See @bugref{6944}. */
-                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_HOST_CONTEXT
-                                                 | HM_CHANGED_VMX_EXIT_CTLS
+                AssertMsg(HMCPU_CF_IS_SET(pVCpu,   HM_CHANGED_VMX_EXIT_CTLS
                                                  | HM_CHANGED_VMX_ENTRY_CTLS
                                                  | HM_CHANGED_GUEST_EFER_MSR), ("flags=%#x\n", HMCPU_CF_VALUE(pVCpu)));
             }
@@ -8594,6 +8592,8 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
      * Load the host state bits as we may've been preempted (only happens when
      * thread-context hooks are used or when hmR0VmxSetupVMRunHandler() changes pfnStartVM).
      */
+    /** @todo Why should hmR0VmxSetupVMRunHandler() changing pfnStartVM have
+     *        any effect to the host state needing to be saved? */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT))
     {
         /* This ASSUMES that pfnStartVM has been set up already. */
