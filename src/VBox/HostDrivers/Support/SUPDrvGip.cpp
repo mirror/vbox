@@ -966,6 +966,9 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     pDevExt->idCpuInvarTscRefine     = RTMpCpuId();
     ASMSetFlags(uFlags);
 
+/** @todo we need a power management callback that disables the timer if the
+ *        system suspends/resumes. */
+
     /*
      * Create a timer that runs on the same CPU so we won't have a depencency
      * on the TSC-delta and can run in parallel to it. On systems that does not
