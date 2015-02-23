@@ -19,6 +19,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: improved timing on Solaris hosts with older VT-x hosts
+          without preemption timers</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: when exporting an appliance, support the suppression
            of MAC addresses, which means they will be always recreated on
            import, avoiding duplicate MAC addresses for VMs which are imported
