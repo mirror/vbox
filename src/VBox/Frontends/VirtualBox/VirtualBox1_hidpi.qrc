@@ -12,7 +12,6 @@
         <file alias="attachment_add_disabled_16px_hidpi.png">images/hidpi/attachment_add_disabled_16px_hidpi.png</file>
         <file alias="attachment_remove_16px_hidpi.png">images/hidpi/attachment_remove_16px_hidpi.png</file>
         <file alias="attachment_remove_disabled_16px_hidpi.png">images/hidpi/attachment_remove_disabled_16px_hidpi.png</file>
-        <file alias="auto_resize_off_16px_hidpi.png">images/hidpi/auto_resize_off_16px_hidpi.png</file>
         <file alias="auto_resize_on_16px_hidpi.png">images/hidpi/auto_resize_on_16px_hidpi.png</file>
         <file alias="auto_resize_on_disabled_16px_hidpi.png">images/hidpi/auto_resize_on_disabled_16px_hidpi.png</file>
         <file alias="auto_resize_on_on_16px_hidpi.png">images/hidpi/auto_resize_on_on_16px_hidpi.png</file>
