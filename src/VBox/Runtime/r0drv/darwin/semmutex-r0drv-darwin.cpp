@@ -121,7 +121,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX hMutexSem)
      * Validate input.
      */
     PRTSEMMUTEXINTERNAL pThis = (PRTSEMMUTEXINTERNAL)hMutexSem;
-    if (!pThis)
+    if (pThis == NIL_RTSEMMUTEX)
         return VERR_INVALID_PARAMETER;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTSEMMUTEX_MAGIC, ("u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis), VERR_INVALID_HANDLE);
