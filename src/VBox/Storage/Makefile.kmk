@@ -60,7 +60,8 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   VDPluginCrypt_LDFLAGS.linux = -Wl,--no-undefined
 
   VDPluginCrypt_SOURCES  = \
-	VDFilterCrypt.cpp
+	VDFilterCrypt.cpp \
+	VDKeyStore.cpp
   VDPluginCrypt_SOURCES.win = VDPluginCrypt.rc
  endif
 endif # VBOX_WITH_EXTPACK_PUEL
