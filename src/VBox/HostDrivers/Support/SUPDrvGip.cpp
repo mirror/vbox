@@ -883,7 +883,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
                                 ? pGip->aiCpuFromCpuSetIdx[iStopCpuSet]  : UINT16_MAX;
         int64_t  iStartTscDelta = iStartGipCpu < pGip->cCpus ? pGip->aCPUs[iStartGipCpu].i64TSCDelta : INT64_MAX;
         int64_t  iStopTscDelta  = iStopGipCpu  < pGip->cCpus ? pGip->aCPUs[iStopGipCpu].i64TSCDelta  : INT64_MAX;
-        if (RT_LIKELY(iStartTscDelta != INT64_MAX && iStopGipCpu != INT64_MAX))
+        if (RT_LIKELY(iStartTscDelta != INT64_MAX && iStopTscDelta != INT64_MAX))
         {
             if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
             {
@@ -1171,7 +1171,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
                                             ? pGip->aiCpuFromCpuSetIdx[iStopCpuSet]  : UINT16_MAX;
                     int64_t  iStartTscDelta = iStartGipCpu < pGip->cCpus ? pGip->aCPUs[iStartGipCpu].i64TSCDelta : INT64_MAX;
                     int64_t  iStopTscDelta  = iStopGipCpu  < pGip->cCpus ? pGip->aCPUs[iStopGipCpu].i64TSCDelta  : INT64_MAX;
-                    if (RT_LIKELY(iStartTscDelta != INT64_MAX && iStopGipCpu != INT64_MAX))
+                    if (RT_LIKELY(iStartTscDelta != INT64_MAX && iStopTscDelta != INT64_MAX))
                     {
                         if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
                         {
@@ -2652,10 +2652,12 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
      * The master tells the worker to get on it's mark.
      */
     if (fIsMaster)
+    {
         if (RT_LIKELY(ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_STEADY, GIP_TSC_DELTA_SYNC2_READY)))
         { /* likely*/ }
         else
             return false;
+    }
 
     /*
      * Wait for the on your mark signal (ack in the master case). We process timeouts here.
@@ -2709,6 +2711,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
      * need to get into position as well.
      */
     if (!fIsMaster)
+    {
         if (RT_LIKELY(ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_STEADY, GIP_TSC_DELTA_SYNC2_READY)))
         { /* likely */ }
         else
@@ -2716,11 +2719,13 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
             ASMSetFlags(fEFlags);
             return false;
         }
+    }
 
     /*
      * The master sends the 'go' to the worker and wait for ACK.
      */
     if (fIsMaster)
+    {
         if (RT_LIKELY(ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO, GIP_TSC_DELTA_SYNC2_STEADY)))
         { /* likely */ }
         else
@@ -2728,6 +2733,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
             ASMSetFlags(fEFlags);
             return false;
         }
+    }
 
     /*
      * Wait for the 'go' signal (ack in the master case).
@@ -2754,6 +2760,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
      * The worker acks the 'go' (shouldn't fail).
      */
     if (!fIsMaster)
+    {
         if (RT_LIKELY(ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO, GIP_TSC_DELTA_SYNC2_STEADY)))
         { /* likely */ }
         else
@@ -2761,6 +2768,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
             ASMSetFlags(fEFlags);
             return false;
         }
+    }
 
     /*
      * Try enter mostly lockstep execution with it.
@@ -3534,7 +3542,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
     rc = RTSemMutexRequest(pDevExt->mtxTscDelta, RT_INDEFINITE_WAIT);
 #else
-    rc = RTSemFastMutexRequest(pDevExt->mtxTscDelta, RT_INDEFINITE_WAIT);
+    rc = RTSemFastMutexRequest(pDevExt->mtxTscDelta);
 #endif
     if (RT_FAILURE(rc))
         return rc;
