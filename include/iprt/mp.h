@@ -346,15 +346,15 @@ typedef enum RTMPEVENT
  * The context this is called in differs a bit from platform to platform, so be
  * careful while in here.
  *
- * On Windows we're running with IRQL=PASSIVE_LEVEL according to the
- * KeRegisterProcessorChangeCallback documentation - unrestricted API access.
- * Probably not being called on the onlined/offlined CPU...
+ * On Windows we're running with IRQL=PASSIVE_LEVEL (reschedulable) according to
+ * the KeRegisterProcessorChangeCallback documentation - unrestricted API
+ * access. Probably not being called on the onlined/offlined CPU...
  *
  * On Solaris we're holding the cpu_lock, IPL/SPL/PIL is not yet known, however
  * we will most likely -not- be firing on the CPU going offline/online.
  *
- * On Linux it looks like we're called on the CPU in question.  Interrupts may
- * be disabled, it seems.
+ * On Linux it looks like we're called with preemption enabled on any CPU and
+ * not necessarily on the CPU going offline/online.
  *
  * There is no callbacks for darwin at the moment, due to lack of suitable KPI.
  *
