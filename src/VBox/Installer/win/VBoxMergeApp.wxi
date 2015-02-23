@@ -238,7 +238,7 @@
               Source="$(env.PATH_OUT)\bin\VBoxAuthSimple.dll" />
 
         <!-- Include resource DLL (icons, ...) -->
-        <File Id="file_VBoxRes.dll" Name="VBoxRes.dll" DiskId="$(var.Property_DiskIdCommon)"
+        <File Id="file_VBoxRes.dll" Name="VBoxRes.dll"
               Source="$(env.PATH_OUT)\bin\VBoxRes.dll" />
 
         <File Id="file_VMMGC.gc" Name="VMMGC.gc"
