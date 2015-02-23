@@ -2566,6 +2566,8 @@ typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
 #define GIP_TSC_DELTA_SYNC2_STEADY           UINT32_C(0x1001)
 /** Go! */
 #define GIP_TSC_DELTA_SYNC2_GO               UINT32_C(0x1002)
+/** Used by the verfication test. */
+#define GIP_TSC_DELTA_SYNC2_GO_GO            UINT32_C(0x1003)
 
 /** We reached the time limit. */
 #define GIP_TSC_DELTA_SYNC2_TIMEOUT          UINT32_C(0x1ffe)
@@ -2585,10 +2587,6 @@ typedef struct SUPDRVGIPTSCDELTARGS
     PSUPGIPCPU                  pWorker;
     /** Pointer to the GIP CPU array entry for the master. */
     PSUPGIPCPU                  pMaster;
-    /** Pointer to the master's synchronization struct (on stack). */
-    PSUPTSCDELTASYNC2 volatile  pSyncMaster;
-    /** Pointer to the worker's synchronization struct (on stack). */
-    PSUPTSCDELTASYNC2 volatile  pSyncWorker;
     /** The maximum number of ticks to spend in supdrvMeasureTscDeltaCallback.
      * (This is what we need a rough TSC frequency for.)  */
     uint64_t                    cMaxTscTicks;
@@ -2613,6 +2611,34 @@ typedef struct SUPDRVGIPTSCDELTARGS
         bool volatile           fQuitEarly;
     } M2;
 #endif
+
+
+    /** Padding to make sure the master variables live in its own cache lines. */
+    uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
+    /** Pointer to the master's synchronization struct (on stack). */
+    PSUPTSCDELTASYNC2 volatile  pSyncMaster;
+    /** Verification test TSC values for the master. */
+    uint64_t volatile           auVerifyMasterTscs[32];
+    /** The verifier verdict, VINF_SUCCESS if ok, VERR_OUT_OF_RANGE if not,
+     * VERR_TRY_AGAIN on timeout. */
+    int32_t                     rcVerify;
+    /** The maximum difference between TSC read during delta verification. */
+    int64_t                     cMaxVerifyTscTicks;
+    /** The minimum difference between two TSC reads during verification. */
+    int64_t                     cMinVerifyTscTicks;
+    /** The bad TSC diff, worker relative to master (= worker - master).
+     * Negative value means the worker is behind the master.  */
+    int64_t                     iVerifyBadTscDiff;
+
+    /** Padding to make sure the uVar1 is in its own cache line. */
+    uint64_t                    au64CacheLinePaddingBetween[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
+    /** Pointer to the worker's synchronization struct (on stack). */
+    PSUPTSCDELTASYNC2 volatile  pSyncWorker;
+    /** Verification test TSC values for the worker. */
+    uint64_t volatile           auVerifyWorkerTscs[32];
+
+    /** Padding to make sure the above is in its own cache line. */
+    uint64_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
 } SUPDRVGIPTSCDELTARGS;
 typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
 
@@ -2625,10 +2651,11 @@ typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
  *
  * @{
  */
-#if defined(DEBUG_bird) && defined(RT_OS_WINDOWS)
+#if defined(DEBUG_bird) /* || defined(VBOX_STRICT) */
 # define TSCDELTA_DBG_VARS()            uint32_t iDbgCounter
 # define TSCDELTA_DBG_START_LOOP()      do { iDbgCounter = 0; } while (0)
-# define TSCDELTA_DBG_CHECK_LOOP()      do { if (++iDbgCounter == 0) RT_BREAKPOINT(); } while (0)
+# define TSCDELTA_DBG_CHECK_LOOP() \
+    do { iDbgCounter++; if ((iDbgCounter & UINT32_C(0x01ffffff)) == 0) RT_BREAKPOINT(); } while (0)
 #else
 # define TSCDELTA_DBG_VARS()            ((void)0)
 # define TSCDELTA_DBG_START_LOOP()      ((void)0)
@@ -3293,8 +3320,165 @@ static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
 
 
 
-static int supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync,
-                                                       bool fIsMaster, bool fTimeout)
+static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync,
+                                PSUPTSCDELTASYNC2 pOtherSync, bool fIsMaster, int64_t iWorkerTscDelta)
+{
+    PSUPGIPCPU pGipCpuWorker = pArgs->pWorker;
+    PSUPGIPCPU pGipCpuMaster = pArgs->pMaster;
+    uint32_t   i;
+    TSCDELTA_DBG_VARS();
+
+    for (;;)
+    {
+        RTCCUINTREG uFlags;
+        AssertCompile((RT_ELEMENTS(pArgs->auVerifyMasterTscs) & 1) == 0);
+        AssertCompile(RT_ELEMENTS(pArgs->auVerifyWorkerTscs) == RT_ELEMENTS(pArgs->auVerifyMasterTscs));
+
+        if (fIsMaster)
+        {
+            uint64_t uTscWorker;
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync);
+
+            /*
+             * Collect TSC, master goes first.
+             */
+            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyMasterTscs); i += 2)
+            {
+                /* Read, kick & wait #1. */
+                uint64_t register uTsc = ASMReadTSC();
+                ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO_GO);
+                ASMSerializeInstruction();
+                pArgs->auVerifyMasterTscs[i] = uTsc;
+                TSCDELTA_DBG_START_LOOP();
+                while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO)
+                {
+                    TSCDELTA_DBG_CHECK_LOOP();
+                    ASMNopPause();
+                }
+
+                /* Read, kick & wait #2. */
+                uTsc = ASMReadTSC();
+                ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO);
+                ASMSerializeInstruction();
+                pArgs->auVerifyMasterTscs[i + 1] = uTsc;
+                TSCDELTA_DBG_START_LOOP();
+                while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO_GO)
+                {
+                    TSCDELTA_DBG_CHECK_LOOP();
+                    ASMNopPause();
+                }
+            }
+
+            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync);
+
+            /*
+             * Process the data.
+             */
+            pArgs->cMaxVerifyTscTicks = INT64_MIN;
+            pArgs->cMinVerifyTscTicks = INT64_MAX;
+            pArgs->iVerifyBadTscDiff  = 0;
+            ASMAtomicWriteS32(&pArgs->rcVerify, VINF_SUCCESS);
+            uTscWorker = 0;
+            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyMasterTscs); i++)
+            {
+                /* Master vs previous worker entry. */
+                uint64_t uTscMaster = pArgs->auVerifyMasterTscs[i] - pGipCpuMaster->i64TSCDelta;
+                int64_t  iDiff;
+                if (i > 0)
+                {
+                    iDiff = uTscMaster - uTscWorker;
+                    if (iDiff > pArgs->cMaxVerifyTscTicks)
+                        pArgs->cMaxVerifyTscTicks = iDiff;
+                    if (iDiff < pArgs->cMinVerifyTscTicks)
+                        pArgs->cMinVerifyTscTicks = iDiff;
+                    if (iDiff < 0)
+                    {
+                        pArgs->iVerifyBadTscDiff = -iDiff;
+                        ASMAtomicWriteS32(&pArgs->rcVerify, VERR_OUT_OF_RANGE);
+                        break;
+                    }
+                }
+
+                /* Worker vs master. */
+                uTscWorker = pArgs->auVerifyWorkerTscs[i] - iWorkerTscDelta;
+                iDiff = uTscWorker - uTscMaster;
+                if (iDiff > pArgs->cMaxVerifyTscTicks)
+                    pArgs->cMaxVerifyTscTicks = iDiff;
+                if (iDiff < pArgs->cMinVerifyTscTicks)
+                    pArgs->cMinVerifyTscTicks = iDiff;
+                if (iDiff < 0)
+                {
+                    pArgs->iVerifyBadTscDiff = iDiff;
+                    ASMAtomicWriteS32(&pArgs->rcVerify, VERR_OUT_OF_RANGE);
+                    break;
+                }
+            }
+
+            /* Done. */
+            TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(pMySync, pOtherSync);
+        }
+        else
+        {
+            /*
+             * The worker, master leads.
+             */
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync);
+
+            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyWorkerTscs); i += 2)
+            {
+                uint64_t register uTsc;
+
+                /* Wait, Read and Kick #1. */
+                TSCDELTA_DBG_START_LOOP();
+                while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO)
+                {
+                    TSCDELTA_DBG_CHECK_LOOP();
+                    ASMNopPause();
+                }
+                uTsc = ASMReadTSC();
+                ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO_GO);
+                ASMSerializeInstruction();
+                pArgs->auVerifyWorkerTscs[i] = uTsc;
+
+                /* Wait, Read and Kick #2. */
+                TSCDELTA_DBG_START_LOOP();
+                while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO_GO)
+                {
+                    TSCDELTA_DBG_CHECK_LOOP();
+                    ASMNopPause();
+                }
+                uTsc = ASMReadTSC();
+                ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO);
+                ASMSerializeInstruction();
+                pArgs->auVerifyWorkerTscs[i + 1] = uTsc;
+            }
+
+            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync);
+        }
+        return pArgs->rcVerify;
+    }
+
+    /*
+     * Timed out, please retry.
+     */
+    ASMAtomicWriteS32(&pArgs->rcVerify, VERR_TRY_AGAIN);
+    return VERR_TIMEOUT;
+}
+
+
+
+/**
+ * Handles the special abort procedure during synchronization setup in
+ * supdrvMeasureTscDeltaCallbackUnwrapped().
+ *
+ * @returns 0 (dummy, ignored)
+ * @param   pArgs               Pointer to argument/state data.
+ * @param   pMySync             Pointer to my sync structure.
+ * @param   fIsMaster           Set if we're the master, clear if worker.
+ * @param   fTimeout            Set if it's a timeout.
+ */
+DECL_NO_INLINE(static, int)
+supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync, bool fIsMaster, bool fTimeout)
 {
     PSUPTSCDELTASYNC2 volatile *ppMySync    = fIsMaster ? &pArgs->pSyncMaster : &pArgs->pSyncWorker;
     PSUPTSCDELTASYNC2 volatile *ppOtherSync = fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster;
@@ -3352,6 +3536,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
     PSUPTSCDELTASYNC2 volatile *ppOtherSync      = fIsMaster ? &pArgs->pSyncWorker : &pArgs->pSyncMaster;
     SUPTSCDELTASYNC2            MySync;
     PSUPTSCDELTASYNC2           pOtherSync;
+    int                         rc;
     TSCDELTA_DBG_VARS();
 
     /* A bit of paranoia first. */
@@ -3421,44 +3606,71 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
         if (!ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_PRESTART_WAIT)) /* race #1 */
             return supdrvMeasureTscDeltaCallbackAbortSyncSetup(pArgs, &MySync, fIsMaster, false /*fTimeout*/);
 
-    /*
-     * Retry loop.
-     */
-    Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
-    for (iTry = 0; iTry < 12; iTry++)
-    {
-        if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
-            break;
+/** @todo Add a resumable state to pArgs so we don't waste time if we time
+ *        out or something.  Timeouts are legit, any of the two CPUs may get
+ *        interrupted. */
 
-        /*
-         * Do the measurements.
-         */
+    /*
+     * Start by seeing if we have a zero delta between the two CPUs.
+     * This should normally be the case.
+     */
+    rc = supdrvTscDeltaVerify(pArgs, &MySync, pOtherSync, fIsMaster, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
+    if (RT_SUCCESS(rc))
+    {
+        if (fIsMaster)
+        {
+            ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
+            RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->iCpuSet);
+            RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->iCpuSet);
+        }
+        else
+        {
+            RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
+            RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
+        }
+    }
+    /*
+     * If the verification didn't time out, do regular delta measurements.
+     * We retry this until we get a reasonable value.
+     */
+    else if (rc != VERR_TIMEOUT)
+    {
+        Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
+        for (iTry = 0; iTry < 12; iTry++)
+        {
+            if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
+                break;
+
+            /*
+             * Do the measurements.
+             */
 #ifdef GIP_TSC_DELTA_METHOD_1
-        supdrvTscDeltaMethod1Loop(pArgs, &MySync, pOtherSync, fIsMaster, iTry);
+            supdrvTscDeltaMethod1Loop(pArgs, &MySync, pOtherSync, fIsMaster, iTry);
 #elif defined(GIP_TSC_DELTA_METHOD_2)
-        supdrvTscDeltaMethod2Loop(pArgs, &MySync, pOtherSync, fIsMaster, iTry);
+            supdrvTscDeltaMethod2Loop(pArgs, &MySync, pOtherSync, fIsMaster, iTry);
 #else
 # error "huh??"
 #endif
-        if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
-            break;
+            if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
+                break;
 
-        /*
-         * Success? If so, stop trying.
-         */
-        if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
-        {
-            if (fIsMaster)
+            /*
+             * Success? If so, stop trying.
+             */
+            if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
             {
-                RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->iCpuSet);
-                RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->iCpuSet);
+                if (fIsMaster)
+                {
+                    RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->iCpuSet);
+                    RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->iCpuSet);
+                }
+                else
+                {
+                    RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
+                    RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
+                }
+                break;
             }
-            else
-            {
-                RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
-                RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
-            }
-            break;
         }
     }
 
@@ -3626,6 +3838,10 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
                 rc = RTMpOnAll(supdrvMeasureTscDeltaCallback, pArgs, NULL);
                 if (RT_SUCCESS(rc))
                 {
+#if 0
+                    SUPR0Printf("rcVerify=%d iVerifyBadTscDiff=%lld cMinVerifyTscTicks=%lld cMaxVerifyTscTicks=%lld\n",
+                                pArgs->rcVerify, pArgs->iVerifyBadTscDiff, pArgs->cMinVerifyTscTicks, pArgs->cMaxVerifyTscTicks);
+#endif
                     if (RT_LIKELY(pGipCpuWorker->i64TSCDelta != INT64_MAX))
                     {
                         /*
