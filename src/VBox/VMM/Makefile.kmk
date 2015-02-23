@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2013 Oracle Corporation
+# Copyright (C) 2006-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -102,6 +102,9 @@ ifdef VBOX_WITH_NETSHAPER
 endif
 ifdef VBOX_WITH_RAW_MODE
  VBoxVMM_DEFS   += VBOX_WITH_RAW_MODE VBOX_WITH_RAW_MODE_NOT_R0
+endif
+ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+ VBoxVMM_DEFS   += VBOX_WITH_PDM_AUDIO_DRIVER
 endif
 ifdef VBOX_WITH_VMM_R0_SWITCH_STACK
  VBoxVMM_DEFS   += VMM_R0_SWITCH_STACK

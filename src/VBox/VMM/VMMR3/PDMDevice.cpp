@@ -171,7 +171,7 @@ int pdmR3DevInit(PVM pVM)
         Log(("PDM: No devices were configured!\n"));
         return VINF_SUCCESS;
     }
-    Log2(("PDM: cDevs=%d!\n", cDevs));
+    Log2(("PDM: cDevs=%u\n", cDevs));
 
     /*
      * Collect info on each device instance.

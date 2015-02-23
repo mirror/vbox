@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -277,8 +277,12 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The PDM saved state version. */
-#define PDM_SAVED_STATE_VERSION             4
-#define PDM_SAVED_STATE_VERSION_PRE_NMI_FF  3
+#define PDM_SAVED_STATE_VERSION               5
+/** Before the PDM audio architecture was introduced there was an "AudioSniffer"
+ *  device which took care of multiplexing input/output audio data from/to various places.
+ *  Thus this device is not needed/used anymore. */
+#define PDM_SAVED_STATE_VERSION_PRE_PDM_AUDIO 4
+#define PDM_SAVED_STATE_VERSION_PRE_NMI_FF    3
 
 /** The number of nanoseconds a suspend callback needs to take before
  * PDMR3Suspend warns about it taking too long. */
@@ -896,7 +900,8 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
      * Validate version.
      */
     if (    uVersion != PDM_SAVED_STATE_VERSION
-        &&  uVersion != PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
+        &&  uVersion != PDM_SAVED_STATE_VERSION_PRE_NMI_FF
+        &&  uVersion != PDM_SAVED_STATE_VERSION_PRE_PDM_AUDIO)
     {
         AssertMsgFailed(("Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -1017,7 +1022,7 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         /* Try locate it. */
         PPDMDEVINS pDevIns;
         for (pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
-            if (   !strcmp(szName, pDevIns->pReg->szName)
+            if (   !RTStrCmp(szName, pDevIns->pReg->szName)
                 && pDevIns->iInstance == iInstance)
             {
                 AssertLogRelMsgReturn(!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND),
@@ -1026,11 +1031,23 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
                 pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_FOUND;
                 break;
             }
+
         if (!pDevIns)
         {
-            LogRel(("Device '%s'/%d not found in current config\n", szName, iInstance));
-            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device '%s'/%d not found in current config"), szName, iInstance);
+            bool fSkip = false;
+
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+            /* Skip the non-existing "AudioSniffer" device stored in the saved state. */
+            if (   uVersion <= PDM_SAVED_STATE_VERSION_PRE_PDM_AUDIO
+                && !RTStrCmp(szName, "AudioSniffer"))
+                fSkip = true;
+#endif
+            if (!fSkip)
+            {
+                LogRel(("Device '%s'/%d not found in current config\n", szName, iInstance));
+                if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                    return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device '%s'/%d not found in current config"), szName, iInstance);
+            }
         }
     }
 
