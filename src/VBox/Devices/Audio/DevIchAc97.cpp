@@ -250,6 +250,7 @@ typedef struct AC97DRIVER
     uint32_t                           PaddingFlags;
     /** LUN # to which this driver has been assigned. */
     uint8_t                            uLUN;
+    uint8_t                            Padding[5];
     /** Audio connector interface to the underlying
      *  host backend. */
     R3PTRTYPE(PPDMIAUDIOCONNECTOR)     pConnector;
