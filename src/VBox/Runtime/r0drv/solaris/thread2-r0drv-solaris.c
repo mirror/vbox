@@ -87,8 +87,7 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 
 DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
 {
-    kthread_t *pNativeThread = (kthread_t *)pThread->Core.Key;
-    //thread_join(pNativeThread);
+    thread_join(pThread->tid);
 }
 
 
@@ -107,6 +106,14 @@ static void rtThreadNativeMain(void *pvThreadInt)
 {
     PRTTHREADINT pThreadInt = (PRTTHREADINT)pvThreadInt;
 
+    /* thread_join takes the t_did value. There seems to be no interface for
+       retrieving t_did, so we have to gamble on the Solaris guys not messing
+       up its position in the _kthread struct.  We access t_intr which is
+       16 bytes earlier in the struct from semeventwait-r0drv-solaris.h, so
+       maybe we're lucky.  Maybe, but experience indicates that the odds
+       are against us... */
+    pThreadInt->tid = curthread->t_did;
+
     rtThreadMain(pThreadInt, RTThreadNativeSelf(), &pThreadInt->szName[0]);
     thread_exit();
 }
@@ -114,16 +121,20 @@ static void rtThreadNativeMain(void *pvThreadInt)
 
 DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
+    kthread_t *pThread;
     RT_ASSERT_PREEMPTIBLE();
-    kthread_t *pThread = thread_create(NULL,                            /* Stack, use base */
-                                       0,                               /* Stack size */
-                                       rtThreadNativeMain,              /* Thread function */
-                                       pThreadInt,                      /* Function data */
-                                       0,                               /* Data size */
-                                       (proc_t *)RTR0ProcHandleSelf(),  /* Process handle */
-                                       TS_RUN,                          /* Ready to run */
-                                       minclsyspri                      /* Priority */
-                                       );
+
+    pThreadInt->tid = UINT64_MAX;
+
+    pThread = thread_create(NULL,                            /* Stack, use base */
+                            0,                               /* Stack size */
+                            rtThreadNativeMain,              /* Thread function */
+                            pThreadInt,                      /* Function data */
+                            0,                               /* Data size */
+                            (proc_t *)RTR0ProcHandleSelf(),  /* Process handle */
+                            TS_RUN,                          /* Ready to run */
+                            minclsyspri                      /* Priority */
+                            );
     if (RT_LIKELY(pThread))
     {
         *pNativeThread = (RTNATIVETHREAD)pThread;

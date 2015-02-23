@@ -75,6 +75,10 @@ typedef struct RTTHREADINT
      * This is not valid before rtThreadMain has been called by the new thread.  */
     pid_t                   tid;
 #endif
+#if defined(RT_OS_SOLARIS) && defined(IN_RING0)
+    /** Debug thread ID needed for thread_join. */
+    uint64_t                tid;
+#endif
     /** The user event semaphore. */
     RTSEMEVENTMULTI         EventUser;
     /** The terminated event semaphore. */
