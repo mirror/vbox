@@ -455,7 +455,19 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
     pDevExt->Spinlock = NIL_RTSPINLOCK;
     pDevExt->hGipSpinlock = NIL_RTSPINLOCK;
     pDevExt->hSessionHashTabSpinlock = NIL_RTSPINLOCK;
-    pDevExt->idTscDeltaInitiator = NIL_RTCPUID;
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    pDevExt->mtxLdr = NIL_RTSEMMUTEX;
+#else
+    pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
+#endif
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    pDevExt->mtxGip = NIL_RTSEMMUTEX;
+    pDevExt->mtxTscDelta = NIL_RTSEMMUTEX;
+#else
+    pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+    pDevExt->mtxTscDelta = NIL_RTSEMFASTMUTEX;
+#endif
+
     rc = RTSpinlockCreate(&pDevExt->Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "SUPDrvDevExt");
     if (RT_SUCCESS(rc))
         rc = RTSpinlockCreate(&pDevExt->hGipSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "SUPDrvGip");
@@ -469,11 +481,17 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
         rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
 #endif
     if (RT_SUCCESS(rc))
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+        rc = RTSemMutexCreate(&pDevExt->mtxTscDelta);
+#else
+        rc = RTSemFastMutexCreate(&pDevExt->mtxTscDelta);
+#endif
+    if (RT_SUCCESS(rc))
     {
         rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
         if (RT_SUCCESS(rc))
         {
-#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
             rc = RTSemMutexCreate(&pDevExt->mtxGip);
 #else
             rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
@@ -560,15 +578,22 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
             RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
             pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
         }
-#ifdef SUPDRV_USE_MUTEX_FOR_LDR
-        RTSemMutexDestroy(pDevExt->mtxLdr);
-        pDevExt->mtxLdr = NIL_RTSEMMUTEX;
-#else
-        RTSemFastMutexDestroy(pDevExt->mtxLdr);
-        pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
-#endif
     }
 
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSemMutexDestroy(pDevExt->mtxTscDelta);
+    pDevExt->mtxTscDelta = NIL_RTSEMMUTEX;
+#else
+    RTSemFastMutexDestroy(pDevExt->mtxTscDelta);
+    pDevExt->mtxTscDelta = NIL_RTSEMFASTMUTEX;
+#endif
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+    RTSemMutexDestroy(pDevExt->mtxLdr);
+    pDevExt->mtxLdr = NIL_RTSEMMUTEX;
+#else
+    RTSemFastMutexDestroy(pDevExt->mtxLdr);
+    pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
+#endif
     RTSpinlockDestroy(pDevExt->Spinlock);
     pDevExt->Spinlock = NIL_RTSPINLOCK;
     RTSpinlockDestroy(pDevExt->hGipSpinlock);
@@ -601,9 +626,13 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
     RTSemMutexDestroy(pDevExt->mtxGip);
     pDevExt->mtxGip = NIL_RTSEMMUTEX;
+    RTSemMutexDestroy(pDevExt->mtxTscDelta);
+    pDevExt->mtxTscDelta = NIL_RTSEMMUTEX;
 #else
     RTSemFastMutexDestroy(pDevExt->mtxGip);
     pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+    RTSemFastMutexDestroy(pDevExt->mtxTscDelta);
+    pDevExt->mtxTscDelta = NIL_RTSEMFASTMUTEX;
 #endif
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
     RTSemMutexDestroy(pDevExt->mtxLdr);

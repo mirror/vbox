@@ -569,20 +569,6 @@ typedef struct SUPDRVSESSION
 
 
 /**
- * The TSC delta synchronization struct. rounded to cache line size.
- */
-typedef union SUPTSCDELTASYNC
-{
-    /** The synchronization variable, holds values GIP_TSC_DELTA_SYNC_*. */
-    volatile uint32_t   u;
-    /** Padding to cache line size. */
-    uint8_t             u8Padding[64];
-} SUPTSCDELTASYNC;
-AssertCompileSize(SUPTSCDELTASYNC, 64);
-typedef SUPTSCDELTASYNC *PSUPTSCDELTASYNC;
-
-
-/**
  * Device extension.
  */
 typedef struct SUPDRVDEVEXT
@@ -725,15 +711,18 @@ typedef struct SUPDRVDEVEXT
 
     /** @name TSC-delta measurement.
      *  @{ */
-    /** Pointer to the TSC delta sync. struct. */
-    void                           *pvTscDeltaSync;
-    /** The TSC delta measurement initiator Cpu Id. */
-    RTCPUID volatile                idTscDeltaInitiator;
+    /** TSC-delta measurement mutext.
+     * At the moment, we don't want to have more than one measurement going on at
+     * any one time.  We might be using broadcast IPIs which are heavy and could
+     * perhaps get in each others way. */
+#ifdef SUPDRV_USE_MUTEX_FOR_GIP
+    RTSEMMUTEX                      mtxTscDelta;
+#else
+    RTSEMFASTMUTEX                  mtxTscDelta;
+#endif
     /** Number of online/offline events, incremented each time a CPU goes online
      *  or offline. */
     uint32_t volatile               cMpOnOffEvents;
-    /** Aligned pointer to the TSC delta sync. struct. */
-    PSUPTSCDELTASYNC                pTscDeltaSync;
     /** The set of CPUs we need to take measurements for. */
     RTCPUSET                        TscDeltaCpuSet;
     /** The set of CPUs we have completed taken measurements for. */
