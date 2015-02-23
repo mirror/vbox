@@ -2727,11 +2727,11 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         if (u32Tmp != GIP_TSC_DELTA_SYNC2_READY)
             break;
 
-        /* Check for timeouts every so often (not every loop in case RDTSC is trapping or something). */
+        /* Check for timeouts every so often (not every loop in case RDTSC is
+           trapping or something).  Must check the first time around. */
 #if 0 /* For debugging the timeout paths. */
         static uint32_t volatile xxx;
 #endif
-        iSync2Loops++;
         if (   (   (iSync2Loops & 0x3ff) == 0
                 && ASMReadTSC() - pMySync->uTscStart > pMySync->cMaxTscTicks)
 #if 0 /* This is crazy, I know, but enable this code and the results are markedly better when enabled on the 1.4GHz AMD (debug). */
@@ -2747,6 +2747,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
                 return false;
             }
         }
+        iSync2Loops++;
     }
 
     /*
