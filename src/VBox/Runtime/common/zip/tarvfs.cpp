@@ -372,7 +372,7 @@ static int rtZipTarHdrValidate(PCRTZIPTARHDR pTar, PRTZIPTARTYPE penmType)
     {
         case RTZIPTARTYPE_POSIX:
             if (   !RT_C_IS_ALNUM(pTar->Common.typeflag)
-                && !pTar->Common.typeflag == '\0')
+                && pTar->Common.typeflag != '\0')
                 return VERR_TAR_UNKNOWN_TYPE_FLAG;
             break;
 
