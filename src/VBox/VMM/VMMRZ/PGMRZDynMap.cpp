@@ -1589,7 +1589,6 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
     uint32_t            cGuard      = 0;
     uint32_t            cLoad       = 0;
     PPGMRZDYNMAPENTRY   paPages     = pThis->paPages;
-    uint32_t            iPage       = pThis->cPages;
 
 #ifndef IN_RC
     if (pThis->fLegacyMode)
@@ -1598,6 +1597,7 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
 #ifdef IN_RING0
         PCX86PGUINT     paSavedPTEs = (PCX86PGUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
 #endif
+        uint32_t        iPage       = pThis->cPages;
         while (iPage-- > 0)
         {
             CHECK_RET(!((uintptr_t)paPages[iPage].pvPage & PAGE_OFFSET_MASK), ("#%u: %p\n", iPage, paPages[iPage].pvPage));
@@ -1640,6 +1640,7 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
 #ifdef IN_RING0
         PCX86PGPAEUINT  paSavedPTEs = (PCX86PGPAEUINT)pThis->pvSavedPTEs; NOREF(paSavedPTEs);
 #endif
+        uint32_t        iPage       = pThis->cPages;
         while (iPage-- > 0)
         {
             CHECK_RET(!((uintptr_t)paPages[iPage].pvPage & PAGE_OFFSET_MASK), ("#%u: %p\n", iPage, paPages[iPage].pvPage));
