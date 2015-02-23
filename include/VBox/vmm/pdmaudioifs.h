@@ -556,18 +556,18 @@ typedef struct PDMIAUDIOCONNECTOR
 #define PDMIAUDIOCONNECTOR_IID                  "a41ca770-ed07-4f57-a0a6-41377d9d484f"
 
 /** Defines all needed interface callbacks for an audio backend. */
-#define PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(_aDrvName) \
-    pThis->IHostAudioR3.pfnCaptureIn  = _aDrvName##CaptureIn;  \
-    pThis->IHostAudioR3.pfnControlIn  = _aDrvName##ControlIn;  \
-    pThis->IHostAudioR3.pfnControlOut = _aDrvName##ControlOut; \
-    pThis->IHostAudioR3.pfnFiniIn     = _aDrvName##FiniIn;     \
-    pThis->IHostAudioR3.pfnFiniOut    = _aDrvName##FiniOut;    \
-    pThis->IHostAudioR3.pfnGetConf    = _aDrvName##GetConf;    \
-    pThis->IHostAudioR3.pfnInit       = _aDrvName##Init;       \
-    pThis->IHostAudioR3.pfnInitIn     = _aDrvName##InitIn;     \
-    pThis->IHostAudioR3.pfnInitOut    = _aDrvName##InitOut;    \
-    pThis->IHostAudioR3.pfnIsEnabled  = _aDrvName##IsEnabled;  \
-    pThis->IHostAudioR3.pfnPlayOut    = _aDrvName##PlayOut;
+#define PDMAUDIO_IHOSTAUDIO_CALLBACKS(_aDrvName) \
+    pThis->IHostAudio.pfnCaptureIn  = _aDrvName##CaptureIn;  \
+    pThis->IHostAudio.pfnControlIn  = _aDrvName##ControlIn;  \
+    pThis->IHostAudio.pfnControlOut = _aDrvName##ControlOut; \
+    pThis->IHostAudio.pfnFiniIn     = _aDrvName##FiniIn;     \
+    pThis->IHostAudio.pfnFiniOut    = _aDrvName##FiniOut;    \
+    pThis->IHostAudio.pfnGetConf    = _aDrvName##GetConf;    \
+    pThis->IHostAudio.pfnInit       = _aDrvName##Init;       \
+    pThis->IHostAudio.pfnInitIn     = _aDrvName##InitIn;     \
+    pThis->IHostAudio.pfnInitOut    = _aDrvName##InitOut;    \
+    pThis->IHostAudio.pfnIsEnabled  = _aDrvName##IsEnabled;  \
+    pThis->IHostAudio.pfnPlayOut    = _aDrvName##PlayOut;
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;

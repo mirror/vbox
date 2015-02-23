@@ -80,7 +80,7 @@ typedef struct DRVAUDIOVIDEOREC
     AudioVideoRec      *pAudioVideoRec;
     PPDMDRVINS          pDrvIns;
     /** Pointer to the driver instance structure. */
-    PDMIHOSTAUDIO       IHostAudioR3;
+    PDMIHOSTAUDIO       IHostAudio;
     ConsoleVRDPServer *pConsoleVRDPServer;
     /** Pointer to the DrvAudio port interface that is above it. */
     PPDMIAUDIOCONNECTOR       pUpPort;
@@ -379,7 +379,7 @@ static int vrdeRecordingCallback(PVIDEORECAUDIOIN pVRDEVoice, uint32_t cbSamples
 static DECLCALLBACK(int) drvAudioVideoRecInitOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHostVoiceOut, PPDMAUDIOSTREAMCFG pCfg)
 {
     LogFlowFuncEnter();
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
 
     PVIDEORECAUDIOOUT pVRDEVoiceOut = (PVIDEORECAUDIOOUT)pHostVoiceOut;
     pHostVoiceOut->cSamples = _4K; /* 4096 samples * 4 = 16K bytes total. */
@@ -390,7 +390,7 @@ static DECLCALLBACK(int) drvAudioVideoRecInitOut(PPDMIHOSTAUDIO pInterface, PPDM
 static DECLCALLBACK(int) drvAudioVideoRecInitIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHostVoiceIn, PPDMAUDIOSTREAMCFG pCfg)
 {
     LogFlowFuncEnter();
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
 
     PVIDEORECAUDIOIN pVRDEVoice = (PVIDEORECAUDIOIN)pHostVoiceIn;
     pHostVoiceIn->cSamples = _4K; /* 4096 samples * 4 = 16K bytes total. */
@@ -477,7 +477,7 @@ static DECLCALLBACK(int) drvAudioVideoRecCaptureIn(PPDMIHOSTAUDIO pInterface, PP
 static DECLCALLBACK(int) drvAudioVideoRecPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHostVoiceOut,
                                                  uint32_t *pcSamplesPlayed)
 {
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
     PVIDEORECAUDIOOUT pVRDEVoiceOut = (PVIDEORECAUDIOOUT)pHostVoiceOut;
 
     /*
@@ -534,7 +534,7 @@ static DECLCALLBACK(int) drvAudioVideoRecPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
 static DECLCALLBACK(int) drvAudioVideoRecFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN hw)
 {
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
     LogFlowFuncEnter();
     pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL);
 
@@ -543,7 +543,7 @@ static DECLCALLBACK(int) drvAudioVideoRecFiniIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
 static DECLCALLBACK(int) drvAudioVideoRecFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHostVoiceOut)
 {
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
     LogFlowFuncEnter();
 
     return VINF_SUCCESS;
@@ -552,7 +552,7 @@ static DECLCALLBACK(int) drvAudioVideoRecFiniOut(PPDMIHOSTAUDIO pInterface, PPDM
 static DECLCALLBACK(int) drvAudioVideoRecControlOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT hw,
                                                     PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
     LogFlowFuncEnter();
 
     return VINF_SUCCESS;
@@ -561,7 +561,7 @@ static DECLCALLBACK(int) drvAudioVideoRecControlOut(PPDMIHOSTAUDIO pInterface, P
 static DECLCALLBACK(int) drvAudioVideoRecControlIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHostVoiceIn,
                                                    PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudioR3);
+    PDRVAUDIOVIDEOREC pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVIDEOREC, IHostAudio);
 
     /* Initialize  VRDEVoice and return to VRDP server which returns this struct back to us
      * in the form void * pvContext
@@ -636,7 +636,7 @@ static DECLCALLBACK(void *) drvAudioVideoRecQueryInterface(PPDMIBASE pInterface,
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVAUDIOVIDEOREC  pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVIDEOREC);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudioR3);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
     return NULL;
 }
 
@@ -810,8 +810,8 @@ DECLCALLBACK(int) AudioVideoRec::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVideoRecQueryInterface;
-    /* IHostAudioR3 */
-    PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(drvAudioVideoRec);
+    /* IHostAudio */
+    PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvAudioVideoRec);
 
     /* Get VRDPServer pointer. */
     void *pvUser;

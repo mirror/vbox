@@ -47,8 +47,8 @@ typedef struct DRVHOSTOSSAUDIO
 {
     /** Pointer to the driver instance structure. */
     PPDMDRVINS         pDrvIns;
-    /** Pointer to R3 host audio interface. */
-    PDMIHOSTAUDIO      IHostAudioR3;
+    /** Pointer to host audio interface. */
+    PDMIHOSTAUDIO      IHostAudio;
     /** Error count for not flooding the release log.
      *  UINT32_MAX for unlimited logging. */
     uint32_t           cLogErrors;
@@ -914,7 +914,7 @@ static DECLCALLBACK(void *) drvHostOSSAudioQueryInterface(PPDMIBASE pInterface, 
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVHOSTOSSAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTOSSAUDIO);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudioR3);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
 
     return NULL;
 }
@@ -939,8 +939,8 @@ static DECLCALLBACK(int) drvHostOSSAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvHostOSSAudioQueryInterface;
-    /* IHostAudioR3 */
-    PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(drvHostOSSAudio);
+    /* IHostAudio */
+    PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostOSSAudio);
 
     return VINF_SUCCESS;
 }

@@ -48,7 +48,7 @@ typedef struct DRVAUDIOVRDE
     AudioVRDE           *pAudioVRDE;
     PPDMDRVINS           pDrvIns;
     /** Pointer to the driver instance structure. */
-    PDMIHOSTAUDIO        IHostAudioR3;
+    PDMIHOSTAUDIO        IHostAudio;
     /** Pointer to the VRDP's console object. */
     ConsoleVRDPServer   *pConsoleVRDPServer;
     /** Pointer to the DrvAudio port interface that is above us. */
@@ -88,7 +88,7 @@ static DECLCALLBACK(int) drvAudioVRDEInitIn(PPDMIHOSTAUDIO pInterface,
                                             PDMAUDIORECSOURCE enmRecSource,
                                             uint32_t *pcSamples)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     PVRDESTREAMIN pVRDEStrmIn = (PVRDESTREAMIN)pHstStrmIn;
@@ -104,7 +104,7 @@ static DECLCALLBACK(int) drvAudioVRDEInitOut(PPDMIHOSTAUDIO pInterface,
                                              PPDMAUDIOHSTSTRMOUT pHstStrmOut, PPDMAUDIOSTREAMCFG pCfg,
                                              uint32_t *pcSamples)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     LogFlowFunc(("pHstStrmOut=%p, pCfg=%p\n", pHstStrmOut, pCfg));
@@ -120,7 +120,7 @@ static DECLCALLBACK(int) drvAudioVRDEInitOut(PPDMIHOSTAUDIO pInterface,
 
 static DECLCALLBACK(bool) drvAudioVRDEIsEnabled(PPDMIHOSTAUDIO pInterface, PDMAUDIODIR enmDir)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, false);
 
     NOREF(enmDir);
@@ -148,7 +148,7 @@ static DECLCALLBACK(int) drvAudioVRDECaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAU
     AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
     AssertPtrReturn(pcSamplesCaptured, VERR_INVALID_POINTER);
 
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     PVRDESTREAMIN pVRDEStrmIn = (PVRDESTREAMIN)pHstStrmIn;
@@ -196,7 +196,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
     AssertPtrReturn(pHstStrmOut, VERR_INVALID_POINTER);
     /* pcSamplesPlayed is optional. */
 
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     PVRDESTREAMOUT pVRDEStrmOut = (PVRDESTREAMOUT)pHstStrmOut;
@@ -274,7 +274,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
 
 static DECLCALLBACK(int) drvAudioVRDEFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     if (pDrv->pConsoleVRDPServer)
@@ -285,7 +285,7 @@ static DECLCALLBACK(int) drvAudioVRDEFiniIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIO
 
 static DECLCALLBACK(int) drvAudioVRDEFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     return VINF_SUCCESS;
@@ -294,7 +294,7 @@ static DECLCALLBACK(int) drvAudioVRDEFiniOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
 static DECLCALLBACK(int) drvAudioVRDEControlOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
                                                 PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     PVRDESTREAMIN pVRDEStrmOut = (PVRDESTREAMIN)pHstStrmOut;
@@ -310,7 +310,7 @@ static DECLCALLBACK(int) drvAudioVRDEControlOut(PPDMIHOSTAUDIO pInterface, PPDMA
 static DECLCALLBACK(int) drvAudioVRDEControlIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn,
                                                PDMAUDIOSTREAMCMD enmStreamCmd)
 {
-    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudioR3);
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
     AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
 
     PVRDESTREAMIN pVRDEStrmIn = (PVRDESTREAMIN)pHstStrmIn;
@@ -366,7 +366,7 @@ static DECLCALLBACK(void *) drvAudioVRDEQueryInterface(PPDMIBASE pInterface, con
     PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudioR3);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
     return NULL;
 }
 
@@ -482,8 +482,8 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface = drvAudioVRDEQueryInterface;
-    /* IHostAudioR3 */
-    PDMAUDIO_IHOSTAUDIOR3_CALLBACKS(drvAudioVRDE);
+    /* IHostAudio */
+    PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvAudioVRDE);
 
     /* Init defaults. */
     pThis->fEnabled = false;
