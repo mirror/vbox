@@ -198,7 +198,7 @@ static DECLCALLBACK(int) dbgDiggerDarwinIDmsg_QueryKernelLog(PDBGFOSIDMESG pThis
         uint64_t msg_bufc; /**< Size depends on windows size. */
     } MsgBuf;
     rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, DBGFR3AddrFromFlat(pUVM, &Addr, GCPtrMsgBufP),
-                       &GCPtrMsgBufP, sizeof(MsgBuf) - (pData->f64Bit ? 0 : sizeof(uint32_t)) );
+                       &MsgBuf, sizeof(MsgBuf) - (pData->f64Bit ? 0 : sizeof(uint32_t)) );
     if (RT_FAILURE(rc))
     {
         Log(("dbgDiggerDarwinIDmsg_QueryKernelLog: failed to read msgbuf struct at %RGv: %Rrc\n", Addr.FlatPtr, rc));
