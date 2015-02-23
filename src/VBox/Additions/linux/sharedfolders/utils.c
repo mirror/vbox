@@ -98,7 +98,10 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     inode->i_mapping->a_ops = &sf_reg_aops;
+# if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
+    /* XXX Was this ever necessary? */
     inode->i_mapping->backing_dev_info = &sf_g->bdi;
+# endif
 #endif
 
     if (RTFS_IS_DIRECTORY(attr->fMode))
@@ -863,12 +866,12 @@ struct dentry_operations sf_dentry_ops =
 int sf_init_backing_dev(struct sf_glob_info *sf_g)
 {
     int rc = 0;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
     /* Each new shared folder map gets a new uint64_t identifier,
      * allocated in sequence.  We ASSUME the sequence will not wrap. */
     static uint64_t s_u64Sequence = 0;
     uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     sf_g->bdi.ra_pages = 0; /* No readahead */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 12)
     sf_g->bdi.capabilities  = BDI_CAP_MAP_DIRECT    /* MAP_SHARED */
@@ -885,13 +888,13 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g)
                           (unsigned long long)u64CurrentSequence);
 #  endif /* >= 2.6.26 */
 # endif /* >= 2.6.24 */
-#endif /* >= 2.6.0 */
+#endif /* >= 2.6.0 && <= 3.19.0 */
     return rc;
 }
 
 void sf_done_backing_dev(struct sf_glob_info *sf_g)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24) && LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19, 0)
     bdi_destroy(&sf_g->bdi); /* includes bdi_unregister() */
 #endif
 }
