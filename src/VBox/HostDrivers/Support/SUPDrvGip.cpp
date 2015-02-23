@@ -141,12 +141,13 @@ AssertCompile(GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS < GIP_T
 static DECLCALLBACK(void)   supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static DECLCALLBACK(void)   supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS, uint64_t uCpuHz);
-static int                  supdrvMeasureInitialTscDeltas(PSUPDRVDEVEXT pDevExt);
-static int                  supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker);
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
 static int                  supdrvTscDeltaThreadInit(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt);
 static void                 supdrvTscDeltaThreadStartMeasurement(PSUPDRVDEVEXT pDevExt);
+#else
+static int                  supdrvMeasureInitialTscDeltas(PSUPDRVDEVEXT pDevExt);
+static int                  supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker);
 #endif
 
 
@@ -183,72 +184,6 @@ static uint32_t supdrvGipFindCpuIndexForCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID i
     return UINT32_MAX;
 }
 
-
-/**
- * Applies the TSC delta to the supplied raw TSC value.
- *
- * @returns VBox status code. (Ignored by all users, just FYI.)
- * @param   pGip            Pointer to the GIP.
- * @param   puTsc           Pointer to a valid TSC value before the TSC delta has been applied.
- * @param   idApic          The APIC ID of the CPU @c puTsc corresponds to.
- * @param   fDeltaApplied   Where to store whether the TSC delta was succesfully
- *                          applied or not (optional, can be NULL).
- *
- * @remarks Maybe called with interrupts disabled in ring-0!
- *
- * @note    Don't you dare change the delta calculation.  If you really do, make
- *          sure you update all places where it's used (IPRT, SUPLibAll.cpp,
- *          SUPDrv.c, supdrvGipMpEvent(), and more).
- */
-DECLINLINE(int) supdrvTscDeltaApply(PSUPGLOBALINFOPAGE pGip, uint64_t *puTsc, uint16_t idApic, bool *pfDeltaApplied)
-{
-    int rc;
-
-    /*
-     * Validate input.
-     */
-    AssertPtr(puTsc);
-    AssertPtr(pGip);
-    Assert(pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED);
-
-    /*
-     * Carefully convert the idApic into a GIPCPU entry.
-     */
-    if (RT_LIKELY(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId)))
-    {
-        uint16_t iCpu = pGip->aiCpuFromApicId[idApic];
-        if (RT_LIKELY(iCpu < pGip->cCpus))
-        {
-            PSUPGIPCPU pGipCpu = &pGip->aCPUs[iCpu];
-
-            /*
-             * Apply the delta if valid.
-             */
-            if (RT_LIKELY(pGipCpu->i64TSCDelta != INT64_MAX))
-            {
-                *puTsc -= pGipCpu->i64TSCDelta;
-                if (pfDeltaApplied)
-                    *pfDeltaApplied = true;
-                return VINF_SUCCESS;
-            }
-
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            AssertMsgFailed(("iCpu=%u cCpus=%u\n", iCpu, pGip->cCpus));
-            rc = VERR_INVALID_CPU_INDEX;
-        }
-    }
-    else
-    {
-        AssertMsgFailed(("idApic=%u\n", idApic));
-        rc = VERR_INVALID_CPU_ID;
-    }
-    if (pfDeltaApplied)
-        *pfDeltaApplied = false;
-    return rc;
-}
 
 
 /*
@@ -770,9 +705,8 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  */
 
 /**
- * Used by supdrvInitRefineInvariantTscFreqTimer() and
- * supdrvGipInitMeasureTscFreq() to update the TSC frequency related GIP
- * variables.
+ * Used by supdrvInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
+ * to update the TSC frequency related GIP variables.
  *
  * @param   pGip                The GIP.
  * @param   nsElapsed           The number of nano seconds elapsed.
@@ -836,7 +770,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
      * PORTME: If timers are called from the clock interrupt handler, or
      *         an interrupt handler with higher priority than the clock
      *         interrupt, or spinning for ages in timer handlers is frowned
-     *         upon, this code must be disabled!
+     *         upon, this loop must be disabled!
      *
      * Darwin, FreeBSD, Linux, Solaris, Windows 8.1+:
      *      High RTTimeSystemNanoTS resolution should prevent any noticable
@@ -1901,11 +1835,11 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      */
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /* fRough */); /* cannot fail */
+        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /*fRough*/); /* cannot fail */
         supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt, pGip);
     }
     else
-        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /* fRough */);
+        rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /*fRough*/);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -2438,17 +2372,29 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
     {
         /*
-         * The calculations in supdrvGipUpdate() is very timing sensitive and doesn't handle
-         * missed timer ticks. So for now it is better to use a delta of 0 and have the TSC rate
-         * affected a bit until we get proper TSC deltas than implementing options like
-         * rescheduling the tick to be delivered on the right CPU or missing the tick entirely.
+         * The calculations in supdrvGipUpdate() is somewhat timing sensitive,
+         * missing timer ticks is not an option for GIP because the GIP users
+         * will end up incrementing the time in 1ns per time getter call until
+         * there is a complete timer update.   So, if the delta has yet to be
+         * calculated, we just pretend it is zero for now (the GIP users
+         * probably won't have it for a wee while either and will do the same).
          *
-         * The likely hood of this happening is really low. On Windows, Linux, and Solaris
-         * timers fire on the CPU they were registered/started on.  Darwin timers doesn't
-         * necessarily (they are high priority threads waiting).
+         * We could maybe on some platforms try cross calling a CPU with a
+         * working delta here, but it's not worth the hassle since the
+         * likelyhood of this happening is really low.  On Windows, Linux, and
+         * Solaris timers fire on the CPU they were registered/started on.
+         * Darwin timers doesn't necessarily (they are high priority threads).
          */
+        uint32_t iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
+        uint16_t iGipCpu = RT_LIKELY(iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx))
+                         ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
         Assert(!ASMIntAreEnabled());
-        supdrvTscDeltaApply(pGip, &u64TSC, ASMGetApicId(), NULL /* pfDeltaApplied */);
+        if (RT_LIKELY(iGipCpu < pGip->cCpus))
+        {
+            int64_t iTscDelta = pGip->aCPUs[iGipCpu].i64TSCDelta;
+            if (iTscDelta != INT64_MAX)
+                u64TSC -= iTscDelta;
+        }
     }
 
     supdrvGipUpdate(pDevExt, u64NanoTS, u64TSC, NIL_RTCPUID, iTick);
@@ -3166,8 +3112,8 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
  *
  * The idea here is that we have the two CPUs execute the exact same code
  * collecting a largish set of TSC samples.  The code has one data dependency on
- * the other CPU with the intention to synchronize the execution as well
- * as help cross references the two sets of TSC samples (the sequence numbers).
+ * the other CPU which intention it is to synchronize the execution as well as
+ * help cross references the two sets of TSC samples (the sequence numbers).
  *
  * The @a fLag parameter is used to modify the execution a tiny bit on one or
  * both of the CPUs.  When @a fLag differs between the CPUs, it is thought that
@@ -3820,7 +3766,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
          * Initialize data package for the RTMpOnAll callback.
          */
         PSUPDRVGIPTSCDELTARGS pArgs = (PSUPDRVGIPTSCDELTARGS)RTMemAllocZ(sizeof(*pArgs));
-        if (RT_LIKELY(pArgs))
+        if (pArgs)
         {
             pArgs->pWorker      = pGipCpuWorker;
             pArgs->pMaster      = pGipCpuMaster;
