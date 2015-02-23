@@ -679,7 +679,7 @@ int handleModifyVM(HandlerArg *a)
                 uint32_t id = ValueUnion.u32;
                 uint32_t aValue[4];
 
-                for (unsigned i = 0 ; i < 4 ; i++)
+                for (unsigned i = 0; i < 4; i++)
                 {
                     int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_HEX);
                     if (RT_FAILURE(vrc))

@@ -345,7 +345,6 @@ int handleControlVM(HandlerArg *a)
         {
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
-
             unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -429,7 +428,6 @@ int handleControlVM(HandlerArg *a)
         {
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
-
             unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -476,7 +474,6 @@ int handleControlVM(HandlerArg *a)
         {
             /* Get the number of network adapters */
             ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
-            ComPtr<INATEngine> engine;
             unsigned n = parseNum(&a->argv[1][5], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -498,6 +495,7 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
+            ComPtr<INATEngine> engine;
             CHECK_ERROR(adapter, COMGETTER(NATEngine)(engine.asOutParam()));
             if (!engine)
             {
@@ -569,7 +567,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nicproperty", 11))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox,sessionMachine) ;
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][11], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -627,7 +625,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nicpromisc", 10))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox,sessionMachine) ;
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][10], NetworkAdapterCount, "NIC");
             if (!n)
             {
@@ -674,7 +672,7 @@ int handleControlVM(HandlerArg *a)
         else if (!strncmp(a->argv[1], "nic", 3))
         {
             /* Get the number of network adapters */
-            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox,sessionMachine) ;
+            ULONG NetworkAdapterCount = getMaxNics(a->virtualBox, sessionMachine);
             unsigned n = parseNum(&a->argv[1][3], NetworkAdapterCount, "NIC");
             if (!n)
             {
