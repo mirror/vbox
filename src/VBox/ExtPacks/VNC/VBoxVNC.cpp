@@ -79,7 +79,7 @@ public:
             RTMemFree(mFrameBuffer);
         if (mCursor)
             rfbFreeCursor(mCursor);
-        memset(szVNCPassword, '\0', sizeof(szVNCPassword));
+        RT_ZERO(szVNCPassword);
         if (mVNCServer)
             rfbScreenCleanup(mVNCServer);
     }
@@ -260,12 +260,24 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
 #endif
     LogFlowFunc(("enter\n"));
 
-    // query server for the framebuffer
-    VRDEFRAMEBUFFERINFO info;
-    int rc = instance->mCallbacks->VRDECallbackFramebufferQuery(instance->mCallback, 0, &info);
+    // At this point, VRDECallbackFramebufferQuery will not succeed.
+    // Initialize VNC with 640x480 and wait for VRDEResize to get actual size.
+    int dummyWidth = 640, dummyHeight = 480;
 
-    rfbScreenInfoPtr vncServer = rfbGetScreen(0, NULL, info.cWidth, info.cHeight, 8, 3, VNC_SIZEOFRGBA);
+    rfbScreenInfoPtr vncServer = rfbGetScreen(0, NULL, dummyWidth, dummyHeight, 8, 3, VNC_SIZEOFRGBA);
     instance->mVNCServer = vncServer;
+
+    VRDEFRAMEBUFFERINFO info;
+    RT_ZERO(info);
+    info.cWidth = dummyWidth, info.cHeight = dummyHeight;
+    info.cBitsPerPixel = 24;
+    info.pu8Bits = NULL;
+    unsigned char *FrameBuffer = (unsigned char *)RTMemAlloc(info.cWidth * info.cHeight * VNC_SIZEOFRGBA); // RGBA
+    rfbNewFramebuffer(instance->mVNCServer, (char *)FrameBuffer, info.cWidth, info.cHeight, 8, 3, VNC_SIZEOFRGBA);
+    instance->mFrameBuffer = FrameBuffer;
+    instance->mScreenBuffer = (unsigned char *)info.pu8Bits;
+    instance->FrameInfo = info;
+
     vncServer->serverFormat.redShift = 16;
     vncServer->serverFormat.greenShift = 8;
     vncServer->serverFormat.blueShift = 0;
@@ -277,7 +289,7 @@ DECLCALLBACK(int) VNCServerImpl::VRDEEnableConnections(HVRDESERVER hServer, bool
     // get listen address
     char szAddress[VNC_ADDRESSSIZE + 1] = {0};
     uint32_t cbOut = 0;
-    rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
+    int rc = instance->mCallbacks->VRDECallbackProperty(instance->mCallback,
                                                     VRDE_QP_NETWORK_ADDRESS,
                                                     &szAddress, sizeof(szAddress), &cbOut);
     Assert(cbOut <= sizeof(szAddress));
@@ -715,11 +727,9 @@ DECLCALLBACK(void) VNCServerImpl::VRDEResize(HVRDESERVER hServer)
 {
     VNCServerImpl *instance = (VNCServerImpl *)hServer;
     VRDEFRAMEBUFFERINFO info;
-    int rc = instance->mCallbacks->VRDECallbackFramebufferQuery(instance->mCallback, 0, &info);
-    if (!RT_SUCCESS(rc))
-    {
+    bool fAvail = instance->mCallbacks->VRDECallbackFramebufferQuery(instance->mCallback, 0, &info);
+    if (!fAvail)
         return;
-    }
 
     LogRel(("VNCServerImpl::VRDEResize to %dx%dx%dbpp\n", info.cWidth, info.cHeight, info.cBitsPerPixel));
 
