@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1356,23 +1356,24 @@ int handleControlVM(HandlerArg *a)
             vrc = RTFileOpen(&pngFile, a->argv[2], RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_TRUNCATE | RTFILE_O_DENY_ALL);
             if (RT_FAILURE(vrc))
             {
-                RTMsgError("Failed to create file '%s'. rc=%Rrc", a->argv[2], vrc);
+                RTMsgError("Failed to create file '%s' (%Rrc)", a->argv[2], vrc);
                 rc = E_FAIL;
                 break;
             }
             vrc = RTFileWrite(pngFile, saScreenshot.raw(), saScreenshot.size(), NULL);
             if (RT_FAILURE(vrc))
             {
-                RTMsgError("Failed to write screenshot to file '%s'. rc=%Rrc", a->argv[2], vrc);
+                RTMsgError("Failed to write screenshot to file '%s' (%Rrc)", a->argv[2], vrc);
                 rc = E_FAIL;
             }
             RTFileClose(pngFile);
         }
-        else if (   !strcmp(a->argv[1], "vcpenabled"))
+#ifdef VBOX_WITH_VPX
+        else if (!strcmp(a->argv[1], "videocap"))
         {
             if (a->argc != 3)
             {
-                errorArgument("Missing argument to '%s'", a->argv[1]);
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
             }
@@ -1391,7 +1392,7 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
         }
-        else if (   !strcmp(a->argv[1], "videocapturescreens"))
+        else if (   !strcmp(a->argv[1], "videocapscreens"))
         {
             ULONG cMonitors = 64;
             CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
@@ -1409,6 +1410,8 @@ int handleControlVM(HandlerArg *a)
                 /* disable all screens */
                 for (unsigned i = 0; i < cMonitors; i++)
                     saScreens[i] = false;
+
+                /** @todo r=andy What if this is specified? */
             }
             else
             {
@@ -1437,6 +1440,133 @@ int handleControlVM(HandlerArg *a)
 
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(saScreens)));
         }
+        else if (!strcmp(a->argv[1], "videocapfile"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureFile)(Bstr(a->argv[3]).raw()));
+        }
+        else if (!strcmp(a->argv[1], "videocapres"))
+        {
+            if (a->argc != 4)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing width '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureWidth)(uVal));
+
+            vrc = RTStrToUInt32Ex(a->argv[3], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing height '%s'", a->argv[3]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureHeight)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "videocaprate"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing rate '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureRate)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "videocapfps"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }   
+
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing FPS '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureFPS)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "videocapmaxtime"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            } 
+
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing maximum time '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxTime)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "videocapmaxsize"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }   
+
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing maximum file size '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxFileSize)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "videocapopts"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }   
+
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureOptions)(Bstr(a->argv[3]).raw()));
+        }
+#endif /* VBOX_WITH_VPX */
         else if (!strcmp(a->argv[1], "webcam"))
         {
             if (a->argc < 3)
