@@ -765,7 +765,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
     uint64_t            cTscTicksElapsed;
     uint64_t            nsNow;
     uint64_t            uTsc;
-    RTCCUINTREG         uFlags;
+    RTCCUINTREG         fEFlags;
 
     /* Paranoia. */
     AssertReturnVoid(pGip);
@@ -804,11 +804,11 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
         ASMNopPause();
 #endif
 
-    uFlags  = ASMIntDisableFlags();
+    fEFlags = ASMIntDisableFlags();
     uTsc    = ASMReadTSC();
     nsNow   = RTTimeSystemNanoTS();
     idCpu   = RTMpCpuId();
-    ASMSetFlags(uFlags);
+    ASMSetFlags(fEFlags);
 
     cNsElapsed          = nsNow - pDevExt->nsStartInvarTscRefine;
     cTscTicksElapsed    = uTsc  - pDevExt->uTscStartInvarTscRefine;
@@ -918,7 +918,7 @@ static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEve
 static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip)
 {
     uint64_t    u64NanoTS;
-    RTCCUINTREG uFlags;
+    RTCCUINTREG fEFlags;
     int         rc;
 
     /*
@@ -937,11 +937,11 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     while (RTTimeSystemNanoTS() == u64NanoTS)
         ASMNopPause();
 
-    uFlags = ASMIntDisableFlags();
+    fEFlags = ASMIntDisableFlags();
     pDevExt->uTscStartInvarTscRefine = ASMReadTSC();
     pDevExt->nsStartInvarTscRefine   = RTTimeSystemNanoTS();
     pDevExt->idCpuInvarTscRefine     = RTMpCpuId();
-    ASMSetFlags(uFlags);
+    ASMSetFlags(fEFlags);
 
 /** @todo we need a power management callback that disables the timer if the
  *        system suspends/resumes. */
@@ -1002,14 +1002,14 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
  */
 DECLCALLBACK(void) supdrvGipInitReadTscAndNanoTsOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    RTCCUINTREG uFlags    = ASMIntDisableFlags();
+    RTCCUINTREG fEFlags   = ASMIntDisableFlags();
     uint64_t   *puTscStop = (uint64_t *)pvUser1;
     uint64_t   *pnsStop   = (uint64_t *)pvUser2;
 
     *puTscStop = ASMReadTSC();
     *pnsStop   = RTTimeSystemNanoTS();
 
-    ASMSetFlags(uFlags);
+    ASMSetFlags(fEFlags);
 }
 
 
@@ -1035,7 +1035,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
     int      cTriesLeft = fRough ? 4 : 2;
     while (cTriesLeft-- > 0)
     {
-        RTCCUINTREG uFlags;
+        RTCCUINTREG fEFlags;
         uint64_t    nsStart;
         uint64_t    nsStop;
         uint64_t    uTscStart;
@@ -1054,11 +1054,11 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
         /*
          * Read the TSC and current time, noting which CPU we're on.
          */
-        uFlags = ASMIntDisableFlags();
+        fEFlags = ASMIntDisableFlags();
         uTscStart   = ASMReadTSC();
         nsStart     = RTTimeSystemNanoTS();
         idCpuStart  = RTMpCpuId();
-        ASMSetFlags(uFlags);
+        ASMSetFlags(fEFlags);
 
         /*
          * Delay for a while.
@@ -1097,11 +1097,11 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
         /*
          * Read the TSC and time again.
          */
-        uFlags = ASMIntDisableFlags();
+        fEFlags = ASMIntDisableFlags();
         uTscStop    = ASMReadTSC();
         nsStop      = RTTimeSystemNanoTS();
         idCpuStop   = RTMpCpuId();
-        ASMSetFlags(uFlags);
+        ASMSetFlags(fEFlags);
 
         /*
          * If the CPU changes things get a bit complicated and what we
@@ -2827,18 +2827,14 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
     }
 }
 
-#define TSCDELTA_MASTER_SYNC_BEFORE(a_pMySync, a_pOtherSync) \
-    if (true) { \
-        if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, true /*fMaster*/, &uFlags))) \
-        { /*likely*/ } \
-        else break; \
-    } else do {} while (0)
-#define TSCDELTA_OTHER_SYNC_BEFORE(a_pMySync, a_pOtherSync) \
-    if (true) { \
-        if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, false /*fMaster*/, &uFlags))) \
-        { /*likely*/ } \
-        else break; \
-    } else do {} while (0)
+#define TSCDELTA_MASTER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, true /*fMaster*/, a_pfEFlags))) \
+    { /*likely*/ } \
+    else break
+#define TSCDELTA_OTHER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, false /*fMaster*/, a_pfEFlags))) \
+    { /*likely*/ } \
+    else break
 
 
 static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync, RTCCUINTREG fEFlags)
@@ -2866,24 +2862,20 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
     }
 }
 
-#define TSCDELTA_MASTER_SYNC_AFTER(a_pMySync, a_pOtherSync) \
-    if (true) { \
-        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags))) \
-        { /* likely */ } \
-        else break; \
-    } else do {} while (0)
+#define TSCDELTA_MASTER_SYNC_AFTER(a_pMySync, a_pOtherSync, a_fEFlags) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, a_fEFlags))) \
+    { /* likely */ } \
+    else break
 
 #define TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(a_pMySync, a_pOtherSync) \
-    if (true) { \
-        /* \
-         * Tell the worker that we're done processing the data and ready for the next round. \
-         */ \
-        if (RT_LIKELY(ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO))) \
-        { /* likely */ } \
-        else break; \
-    } else do {} while (0)
+    /* \
+     * Tell the worker that we're done processing the data and ready for the next round. \
+     */ \
+    if (RT_LIKELY(ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO))) \
+    { /* likely */ } \
+    else break
 
-#define TSCDELTA_OTHER_SYNC_AFTER(a_pMySync, a_pOtherSync) \
+#define TSCDELTA_OTHER_SYNC_AFTER(a_pMySync, a_pOtherSync, a_fEFlags) \
     if (true) { \
         /* \
          * Tell the master that we're done collecting data and wait for the next round to start. \
@@ -2892,10 +2884,10 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
         { /* likely */ } \
         else \
         { \
-            ASMSetFlags(uFlags); \
+            ASMSetFlags(a_fEFlags); \
             break; \
         } \
-        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags))) \
+        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, a_fEFlags))) \
         { /* likely */ } \
         else break; \
     }  else do {} while (0)
@@ -2946,7 +2938,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 
     for (iLoop = 0; iLoop < GIP_TSC_DELTA_LOOPS; iLoop++)
     {
-        RTCCUINTREG uFlags;
+        RTCCUINTREG fEFlags;
         if (fIsMaster)
         {
             /*
@@ -2955,7 +2947,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             AssertMsg(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD,
                       ("%#llx idMaster=%#x idWorker=%#x (idGipMaster=%#x)\n",
                        pGipCpuMaster->u64TSCSample, pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, pArgs->pDevExt->idGipMaster));
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
 
             do
             {
@@ -2963,7 +2955,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                 ASMAtomicWriteU64(&pGipCpuMaster->u64TSCSample, ASMReadTSC());
             } while (pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD);
 
-            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
 
             /* Process the data. */
             if (iLoop > GIP_TSC_DELTA_PRIMER_LOOPS + GIP_TSC_DELTA_READ_TIME_LOOPS)
@@ -2993,7 +2985,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             uint64_t uCmpReadTime;
 
             ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
 
             /*
              * Keep reading the TSC until we notice that the master has read his. Reading
@@ -3028,7 +3020,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                     uMinCmpReadTime = uCmpReadTime;
             }
 
-            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
     }
 
@@ -3214,7 +3206,7 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 
     for (iLoop = 0; iLoop < GIP_TSC_DELTA_M2_LOOPS; iLoop++)
     {
-        RTCCUINTREG uFlags;
+        RTCCUINTREG fEFlags;
         if (fIsMaster)
         {
             /*
@@ -3251,9 +3243,9 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * Sync up with the worker and collect data.
              */
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pMasterData, &pArgs->M2.pWorkerData->iCurSeqNo, pArgs->M2.fLagMaster);
-            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
 
             /*
              * Process the data.
@@ -3270,9 +3262,9 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * The worker.
              */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
-            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
 
         if (ASMAtomicReadBool(&pArgs->M2.fQuitEarly))
@@ -3330,14 +3322,14 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
 
     for (;;)
     {
-        RTCCUINTREG uFlags;
+        RTCCUINTREG fEFlags;
         AssertCompile((RT_ELEMENTS(pArgs->auVerifyMasterTscs) & 1) == 0);
         AssertCompile(RT_ELEMENTS(pArgs->auVerifyWorkerTscs) == RT_ELEMENTS(pArgs->auVerifyMasterTscs));
 
         if (fIsMaster)
         {
             uint64_t uTscWorker;
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
 
             /*
              * Collect TSC, master goes first.
@@ -3369,7 +3361,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 }
             }
 
-            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
 
             /*
              * Process the data.
@@ -3432,7 +3424,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
             /*
              * The worker, master leads.
              */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
 
             for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyWorkerTscs); i += 2)
             {
@@ -3463,7 +3455,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 pArgs->auVerifyWorkerTscs[i + 1] = uTsc;
             }
 
-            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync);
+            TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
         return pArgs->rcVerify;
     }
@@ -4670,7 +4662,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
              * Start by gathering the data, using CLI for disabling preemption
              * while we do that.
              */
-            RTCCUINTREG uFlags  = ASMIntDisableFlags();
+            RTCCUINTREG fEFlags = ASMIntDisableFlags();
             int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
             int         iGipCpu;
             if (RT_LIKELY(   (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
@@ -4679,7 +4671,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                 int64_t i64Delta   = pGip->aCPUs[iGipCpu].i64TSCDelta;
                 pReq->u.Out.idApic = pGip->aCPUs[iGipCpu].idApic;
                 pReq->u.Out.u64AdjustedTsc = ASMReadTSC();
-                ASMSetFlags(uFlags);
+                ASMSetFlags(fEFlags);
 
                 /*
                  * If we're lucky we've got a delta, but no predicitions here
@@ -4711,7 +4703,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                 AssertMsgFailed(("idCpu=%#x iCpuSet=%#x (%d)\n", RTMpCpuId(), iCpuSet, iCpuSet));
                 pReq->u.Out.idApic = ASMGetApicId();
                 pReq->u.Out.u64AdjustedTsc = ASMReadTSC();
-                ASMSetFlags(uFlags);
+                ASMSetFlags(fEFlags);
                 rc = VERR_INTERNAL_ERROR_5; /** @todo change to warning. */
                 break;
             }
@@ -4722,7 +4714,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
         /*
          * No delta to apply. Easy. Deal with preemption the lazy way.
          */
-        RTCCUINTREG uFlags  = ASMIntDisableFlags();
+        RTCCUINTREG fEFlags = ASMIntDisableFlags();
         int         iCpuSet = RTMpCpuIdToSetIndex(RTMpCpuId());
         int         iGipCpu;
         if (RT_LIKELY(   (unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
@@ -4731,7 +4723,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
         else
             pReq->u.Out.idApic = ASMGetApicId();
         pReq->u.Out.u64AdjustedTsc = ASMReadTSC();
-        ASMSetFlags(uFlags);
+        ASMSetFlags(fEFlags);
         rc = VINF_SUCCESS;
     }
 
