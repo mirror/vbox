@@ -49,6 +49,25 @@ RT_C_DECLS_BEGIN
 RTDECL(RTCPUID) RTMpCpuId(void);
 
 /**
+ * Get the CPU set index of the CPU executing the call.
+ *
+ * Same scheduling warnings as for RTMpCpuId().
+ *
+ * @returns CPU set index.
+ */
+RTDECL(int) RTMpCurSetIndex(void);
+
+/**
+ * Get the CPU set index and identifier of the CPU executing the call.
+ *
+ * Same scheduling warnings as for RTMpCpuId().
+ *
+ * @returns CPU set index.
+ * @param   pidCpu      Where to return the CPU identifier. (not optional)
+ */
+RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu);
+
+/**
  * Converts a CPU identifier to a CPU set index.
  *
  * This may or may not validate the presence of the CPU.

@@ -94,6 +94,19 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 }
 
 
+RTDECL(int) RTMpCurSetIndex(void)
+{
+    /* WDK upgrade warning: PCR->Number changed from BYTE to WORD. */
+    return KeGetCurrentProcessorNumber();
+}
+
+
+RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
+{
+    return *pidCpu = KeGetCurrentProcessorNumber();
+}
+
+
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     return idCpu < MAXIMUM_PROCESSORS ? (int)idCpu : -1;

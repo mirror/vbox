@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,6 +40,18 @@
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
     return smp_get_current_cpu();
+}
+
+
+RTDECL(int) RTMpCurSetIndex(void)
+{
+    return smp_get_current_cpu();
+}
+
+
+RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
+{
+    return *pidCpu = smp_get_current_cpu();
 }
 
 

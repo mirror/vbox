@@ -46,6 +46,20 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 RT_EXPORT_SYMBOL(RTMpCpuId);
 
 
+RTDECL(int) RTMpCurSetIndex(void)
+{
+    return smp_processor_id();
+}
+RT_EXPORT_SYMBOL(RTMpCurSetIndex);
+
+
+RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
+{
+    return *pidCpu = smp_processor_id();
+}
+RT_EXPORT_SYMBOL(RTMpCurSetIndexAndId);
+
+
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     return idCpu < RTCPUSET_MAX_CPUS && idCpu < NR_CPUS ? (int)idCpu : -1;

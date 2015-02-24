@@ -77,6 +77,18 @@ RTDECL(RTCPUID) RTMpCpuId(void)
 }
 
 
+RTDECL(int) RTMpCurSetIndex(void)
+{
+    return cpu_number();
+}
+
+
+RTDECL(int) RTMpCurSetIndexAndId(PRTCPUID pidCpu)
+{
+    return *pidCpu = cpu_number();
+}
+
+
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
     return idCpu < RTCPUSET_MAX_CPUS ? (int)idCpu : -1;
