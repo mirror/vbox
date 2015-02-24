@@ -1869,7 +1869,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/mppresent-generic.cpp \
-	generic/RTMpOnPair-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/assert-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \

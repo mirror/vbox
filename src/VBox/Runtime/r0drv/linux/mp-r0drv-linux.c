@@ -213,6 +213,20 @@ static void rtmpLinuxWrapper(void *pvInfo)
 
 
 /**
+ * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER, does hit
+ * increment after calling the worker.
+ *
+ * @param   pvInfo      Pointer to the RTMPARGS package.
+ */
+static void rtmpLinuxWrapperPostInc(void *pvInfo)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)pvInfo;
+    pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
+    ASMAtomicIncU32(&pArgs->cHits);
+}
+
+
+/**
  * Wrapper between the native linux all-cpu callbacks and PFNRTWORKER.
  *
  * @param   pvInfo      Pointer to the RTMPARGS package.
@@ -317,6 +331,126 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 RT_EXPORT_SYMBOL(RTMpOnOthers);
 
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
+/**
+ * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER
+ * employed by RTMpOnPair on older kernels that lacks smp_call_function_many.
+ *
+ * @param   pvInfo      Pointer to the RTMPARGS package.
+ */
+static void rtMpLinuxOnPairWrapper(void *pvInfo)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)pvInfo;
+    RTCPUID   idCpu = RTMpCpuId();
+
+    if (   idCpu == pArgs->idCpu
+        || idCpu == pArgs->idCpu2)
+    {
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+        ASMAtomicIncU32(&pArgs->cHits);
+    }
+}
+#endif
+
+
+RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
+{
+    int rc;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+
+    AssertReturn(idCpu1 != idCpu2, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & RTMPON_F_VALID_MASK), VERR_INVALID_FLAGS);
+
+    /*
+     * Check that both CPUs are online before doing the broadcast call.
+     */
+    RTThreadPreemptDisable(&PreemptState);
+    if (   RTMpIsCpuOnline(idCpu1)
+        && RTMpIsCpuOnline(idCpu2))
+    {
+        /*
+         * Use the smp_call_function variant taking a cpu mask where available,
+         * falling back on broadcast with filter.  Slight snag if one of the
+         * CPUs is the one we're running on, we must do the call and the post
+         * call wait ourselves.
+         */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        cpumask_t   DstCpuMask;
+        RTCPUID     idCpuSelf = RTMpCpuId();
+        bool const  fCallSelf = idCpuSelf == idCpu1 || idCpuSelf == idCpu2;
+#endif
+        RTMPARGS    Args;
+        Args.pfnWorker = pfnWorker;
+        Args.pvUser1 = pvUser1;
+        Args.pvUser2 = pvUser2;
+        Args.idCpu   = idCpu1;
+        Args.idCpu2  = idCpu2;
+        Args.cHits   = 0;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        cpumask_clear(&DstCpuMask);
+        cpumask_set_cpu(idCpu1, &DstCpuMask);
+        cpumask_set_cpu(idCpu2, &DstCpuMask);
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29)
+        smp_call_function_many(&DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
+        rc = 0;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
+        rc = smp_call_function_many(&DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        rc = smp_call_function_mask(&DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
+#else /* older kernels */
+        rc = smp_call_function(rtMpLinuxOnPairWrapper, &Args, 0 /* retry */, 0 /* wait */);
+#endif /* older kernels */
+        Assert(rc == 0);
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        /* Call ourselves if necessary and wait for the other party to be done. */
+        if (fCallSelf)
+        {
+            uint32_t cLoops = 0;
+            rtmpLinuxWrapper(&Args);
+            while (ASMAtomicReadU32(&Args.cHits) < 2)
+            {
+                if ((cLoops & 0x1ff) == 0 && !RTMpIsCpuOnline(idCpuSelf == idCpu1 ? idCpu2 : idCpu2))
+                    break;
+                cLoops++;
+                ASMNopPause();
+            }
+        }
+#endif
+
+        Assert(Args.cHits <= 2);
+        if (Args.cHits == 2)
+            rc = VINF_SUCCESS;
+        else if (Args.cHits == 1)
+            rc = VERR_NOT_ALL_CPUS_SHOWED;
+        else if (Args.cHits == 0)
+            rc = VERR_CPU_OFFLINE;
+        else
+            rc = VERR_CPU_IPE_1;
+    }
+    /*
+     * A CPU must be present to be considered just offline.
+     */
+    else if (   RTMpIsCpuPresent(idCpu1)
+             && RTMpIsCpuPresent(idCpu2))
+        rc = VERR_CPU_OFFLINE;
+    else
+        rc = VERR_CPU_NOT_FOUND;
+    RTThreadPreemptRestore(&PreemptState);;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTMpOnPair);
+
+
+RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
+{
+    return true;
+}
+RT_EXPORT_SYMBOL(RTMpOnPairIsConcurrentExecSupported);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19)
 /**
  * Wrapper between the native linux per-cpu callbacks and PFNRTWORKER

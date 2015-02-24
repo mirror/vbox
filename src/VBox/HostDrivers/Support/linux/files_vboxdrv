@@ -155,7 +155,6 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTLogWriteUser-generic.cpp=>generic/RTLogWriteUser-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTMpGetArraySize-generic.cpp=>generic/RTMpGetArraySize-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTMpGetCoreCount-generic.cpp=>generic/RTMpGetCoreCount-generic.c \
-    ${PATH_ROOT}/src/VBox/Runtime/generic/RTMpOnPair-generic.cpp=>generic/RTMpOnPair-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTSemEventWait-2-ex-generic.cpp=>generic/RTSemEventWait-2-ex-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTSemEventWaitNoResume-2-ex-generic.cpp=>generic/RTSemEventWaitNoResume-2-ex-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/generic/RTSemEventMultiWait-2-ex-generic.cpp=>generic/RTSemEventMultiWait-2-ex-generic.c \
