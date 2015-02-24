@@ -2399,15 +2399,11 @@ static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uin
  */
 static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-    RTCCUINTREG        uFlags;
-    uint64_t           u64TSC;
-    uint64_t           u64NanoTS;
-    PSUPDRVDEVEXT      pDevExt = (PSUPDRVDEVEXT)pvUser;
-    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
-
-    uFlags    = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
-    u64TSC    = ASMReadTSC();
-    u64NanoTS = RTTimeSystemNanoTS();
+    PSUPDRVDEVEXT      pDevExt   = (PSUPDRVDEVEXT)pvUser;
+    PSUPGLOBALINFOPAGE pGip      = pDevExt->pGip;
+    RTCCUINTREG        fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
+    uint64_t           u64TSC    = ASMReadTSC();
+    uint64_t           u64NanoTS = RTTimeSystemNanoTS();
 
     if (pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_PRACTICALLY_ZERO)
     {
@@ -2439,7 +2435,7 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
 
     supdrvGipUpdate(pDevExt, u64NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
-    ASMSetFlags(uFlags);
+    ASMSetFlags(fOldFlags);
 }
 
 
@@ -2451,8 +2447,8 @@ static DECLCALLBACK(void) supdrvGipSyncAndInvariantTimer(PRTTIMER pTimer, void *
  */
 static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
 {
-    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
+    RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     RTCPUID         idCpu     = RTMpCpuId();
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
@@ -2513,7 +2509,7 @@ typedef struct SUPDRVTSCDELTAMETHOD2ENTRY
 typedef struct SUPDRVTSCDELTAMETHOD2
 {
     /** Padding to make sure the iCurSeqNo is in its own cache line. */
-    uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t) - 1];
+    uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
     /** The current sequence number of this worker. */
     uint32_t volatile           iCurSeqNo;
     /** Padding to make sure the iCurSeqNo is in its own cache line. */
@@ -2611,6 +2607,8 @@ typedef struct SUPDRVGIPTSCDELTARGS
 
     /** Padding to make sure the master variables live in its own cache lines. */
     uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
+    /** The time the master spent in the MP worker.  */
+    uint64_t                    cElapsedMasterTscTicks;
     /** Pointer to the master's synchronization struct (on stack). */
     PSUPTSCDELTASYNC2 volatile  pSyncMaster;
     /** Verification test TSC values for the master. */
@@ -2632,6 +2630,8 @@ typedef struct SUPDRVGIPTSCDELTARGS
     uint64_t                    au64CacheLinePaddingBetween[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
     /** Pointer to the worker's synchronization struct (on stack). */
     PSUPTSCDELTASYNC2 volatile  pSyncWorker;
+    /** The time the worker spent in the MP worker.  */
+    uint64_t                    cElapsedWorkerTscTicks;
     /** Verification test TSC values for the worker. */
     uint64_t volatile           auVerifyWorkerTscs[32];
 
@@ -2828,17 +2828,17 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
 }
 
 #define TSCDELTA_MASTER_SYNC_BEFORE(a_pMySync, a_pOtherSync) \
-    do { \
+    if (true) { \
         if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, true /*fMaster*/, &uFlags))) \
         { /*likely*/ } \
         else break; \
-    } while (0)
+    } else do {} while (0)
 #define TSCDELTA_OTHER_SYNC_BEFORE(a_pMySync, a_pOtherSync) \
-    do { \
+    if (true) { \
         if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, false /*fMaster*/, &uFlags))) \
         { /*likely*/ } \
         else break; \
-    } while (0)
+    } else do {} while (0)
 
 
 static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync, RTCCUINTREG fEFlags)
@@ -2867,38 +2867,38 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
 }
 
 #define TSCDELTA_MASTER_SYNC_AFTER(a_pMySync, a_pOtherSync) \
-    do { \
-        if (supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags)) \
+    if (true) { \
+        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags))) \
         { /* likely */ } \
         else break; \
-    } while (0)
+    } else do {} while (0)
 
 #define TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(a_pMySync, a_pOtherSync) \
-    do {\
+    if (true) { \
         /* \
-         * Tell the woker that we're done processing the data and ready for the next round. \
+         * Tell the worker that we're done processing the data and ready for the next round. \
          */ \
-        if (!ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO)) \
-        { \
-            ASMSetFlags(uFlags); \
-            break; \
-        } \
-    } while (0)
+        if (RT_LIKELY(ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO))) \
+        { /* likely */ } \
+        else break; \
+    } else do {} while (0)
 
 #define TSCDELTA_OTHER_SYNC_AFTER(a_pMySync, a_pOtherSync) \
-    do { \
+    if (true) { \
         /* \
          * Tell the master that we're done collecting data and wait for the next round to start. \
          */ \
-        if (!ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO)) \
+        if (RT_LIKELY(ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO))) \
+        { /* likely */ } \
+        else \
         { \
             ASMSetFlags(uFlags); \
             break; \
         } \
-        if (supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags)) \
+        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, uFlags))) \
         { /* likely */ } \
         else break; \
-    } while (0)
+    }  else do {} while (0)
 /** @} */
 
 #ifdef GIP_TSC_DELTA_METHOD_1
@@ -3118,6 +3118,7 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
         pArgs->pWorker->i64TSCDelta = iBestDelta;
     pArgs->M2.cHits     += cHits;
 
+#if 1
     /*
      * Check and see if we can quit a little early.  If the result is already
      * extremely good (+/-16 ticks seems reasonable), just stop.
@@ -3146,6 +3147,7 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
             ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, true);
         }
     }
+#endif
 }
 
 
@@ -3622,7 +3624,11 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
      * Start by seeing if we have a zero delta between the two CPUs.
      * This should normally be the case.
      */
+#if 1
     rc = supdrvTscDeltaVerify(pArgs, &MySync, pOtherSync, fIsMaster, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
+#else
+    rc = VERR_OUT_OF_RANGE;
+#endif
     if (RT_SUCCESS(rc))
     {
         if (fIsMaster)
@@ -3665,7 +3671,11 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
             /*
              * Success? If so, stop trying.
              */
+#if 1
             if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
+#else
+            if (pGipCpuWorker->i64TSCDelta != INT64_MAX && iTry >= 11)
+#endif
             {
                 if (fIsMaster)
                 {
@@ -3700,6 +3710,13 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
         ASMNopPause();
     }
 
+    /*
+     * Collect some runtime stats.
+     */
+    if (fIsMaster)
+        pArgs->cElapsedMasterTscTicks = ASMReadTSC() - MySync.uTscStart;
+    else
+        pArgs->cElapsedWorkerTscTicks = ASMReadTSC() - MySync.uTscStart;
     return 0;
 }
 
@@ -3847,6 +3864,10 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
                                 supdrvMeasureTscDeltaCallback, pArgs, NULL);
                 if (RT_SUCCESS(rc))
                 {
+#if 0
+                    SUPR0Printf("mponpair ticks: %9llu %9llu  max: %9llu\n", pArgs->cElapsedMasterTscTicks,
+                                pArgs->cElapsedWorkerTscTicks, pArgs->cMaxTscTicks);
+#endif
 #if 0
                     SUPR0Printf("rcVerify=%d iVerifyBadTscDiff=%lld cMinVerifyTscTicks=%lld cMaxVerifyTscTicks=%lld\n",
                                 pArgs->rcVerify, pArgs->iVerifyBadTscDiff, pArgs->cMinVerifyTscTicks, pArgs->cMaxVerifyTscTicks);
