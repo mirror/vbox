@@ -9,7 +9,16 @@
     <itemizedlist>
 
       <listitem>
+        <para>Drag'n drop support (bidirectional) for Windows, Linux and Solaris guests</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: Support hotplugging for SATA disks</para>
+      </listitem>
+
+      <listitem>
+        <para>New, modular audio architecture for providing a better abstraction of the host
+          audio backends</para>
       </listitem>
 
     </itemizedlist>
