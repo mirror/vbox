@@ -98,7 +98,7 @@ int audioMixBufAcquire(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToRead,
 
     pMixBuf->offReadWrite = (pMixBuf->offReadWrite + cSamplesRead) % pMixBuf->cSamples;
     Assert(pMixBuf->offReadWrite <= pMixBuf->cSamples);
-    pMixBuf->cProcessed -= RT_CLAMP(cSamplesRead, 0, pMixBuf->cProcessed);
+    pMixBuf->cProcessed -= RT_MIN(cSamplesRead, pMixBuf->cProcessed);
 
     *pcSamplesRead = cSamplesRead;
 
@@ -1031,7 +1031,7 @@ int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (RT_SUCCESS(rc))
     {
         pMixBuf->offReadWrite = offRead % pMixBuf->cSamples;
-        pMixBuf->cProcessed -= RT_CLAMP(cLenSrc1 + cLenSrc2, 0, pMixBuf->cProcessed);
+        pMixBuf->cProcessed -= RT_MIN(cLenSrc1 + cLenSrc2, pMixBuf->cProcessed);
 
         if (pcRead)
             *pcRead = cLenSrc1 + cLenSrc2;
@@ -1295,8 +1295,8 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (RT_SUCCESS(rc))
     {
         pMixBuf->offReadWrite = offWrite % pMixBuf->cSamples;
-        pMixBuf->cProcessed = RT_CLAMP(pMixBuf->cProcessed + cLenDst1 + cLenDst2,
-                                       0 /* Min */, pMixBuf->cSamples /* Max */);
+        pMixBuf->cProcessed = RT_MIN(pMixBuf->cProcessed + cLenDst1 + cLenDst2,
+                                     pMixBuf->cSamples /* Max */);
         if (pcWritten)
             *pcWritten = cLenDst1 + cLenDst2;
     }
