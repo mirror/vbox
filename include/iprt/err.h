@@ -925,6 +925,10 @@ RT_C_DECLS_END
 #define VWRN_UNABLE_TO_SATISFY_REQUIREMENTS 22406
 /** The requested allocation is too big. */
 #define VERR_ALLOCATION_TOO_BIG             (-22407)
+/** Mismatch. */
+#define VERR_MISMATCH                       (-22408)
+/** Wrong type. */
+#define VERR_WRONG_TYPE                     (-22409)
 /** @} */
 
 
@@ -1601,6 +1605,10 @@ RT_C_DECLS_END
 #define VERR_CPU_OFFLINE                        (-800)
 /** The specified cpu was not found. */
 #define VERR_CPU_NOT_FOUND                      (-801)
+/** Not all of the requested CPUs showed up in the PFNRTMPWORKER. */
+#define VERR_NOT_ALL_CPUS_SHOWED                (-802)
+/** Internal processing error in the RTMp code.*/
+#define VERR_CPU_IPE_1                          (-803)
 /** @} */
 
 /** @name RTGetOpt status codes

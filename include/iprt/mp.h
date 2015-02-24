@@ -245,6 +245,18 @@ typedef DECLCALLBACK(void) FNRTMPWORKER(RTCPUID idCpu, void *pvUser1, void *pvUs
 /** Pointer to a FNRTMPWORKER. */
 typedef FNRTMPWORKER *PFNRTMPWORKER;
 
+/** @name RTMPON_F_XXX - RTMpOn flags.
+ * @{ */
+/** Caller doesn't care if pfnWorker is executed at the same time on the
+ *  specified CPUs or not, as long as it gets executed. */
+#define RTMPON_F_WHATEVER_EXEC      0
+/** The caller insists on pfnWorker being executed more or less concurrently
+ * on the specified CPUs. */
+#define RTMPON_F_CONCURRENT_EXEC    RT_BIT_32(1)
+/** Mask of valid bits. */
+#define RTMPON_F_VALID_MASK         UINT32_C(0x00000001)
+/** @}*/
+
 /**
  * Checks if the RTMpOnAll() is safe with regards to all threads executing
  * concurrently.
@@ -307,6 +319,40 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
  * @param   pvUser2         The second user argument for the worker.
  */
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
+
+/**
+ * Executes a function on two specific CPUs in the system.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_SUPPORTED if this kind of operation isn't supported by the
+ *          system or if the specified modifier flag isn't supported.
+ * @retval  VERR_CPU_OFFLINE if one or more of the CPUs are offline (see
+ *          remarks).
+ * @retval  VERR_CPU_NOT_FOUND if on or both of the CPUs weren't found.
+ * @retval  VERR_NOT_ALL_CPUS_SHOWED if one of the CPUs didn't show.
+ *
+ * @param   idCpu1          The id of the first CPU.
+ * @param   idCpu2          The id of the second CPU.
+ * @param   fFlags          Combination of RTMPON_F_XXX flags.
+ * @param   pfnWorker       The worker function.
+ * @param   pvUser1         The first user argument for the worker.
+ * @param   pvUser2         The second user argument for the worker.
+ *
+ * @remarks There is a possible race between one (or both) of the CPUs going
+ *          offline while setting up the call.  The worker function must take
+ *          this into account.
+ */
+RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2);
+
+/**
+ * Indicates whether RTMpOnPair supports running the pfnWorker concurrently on
+ * both CPUs using RTMPON_F_CONCURRENT_EXEC.
+ *
+ * @returns true if supported, false if not.
+ */
+RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void);
+
 
 /**
  * Pokes the specified CPU.

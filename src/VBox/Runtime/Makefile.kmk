@@ -1869,6 +1869,7 @@ RuntimeR0Drv_SOURCES.linux = \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
 	generic/mppresent-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	r0drv/linux/alloc-r0drv-linux.c \
 	r0drv/linux/assert-r0drv-linux.c \
 	r0drv/linux/initterm-r0drv-linux.c \
@@ -2000,6 +2001,7 @@ RuntimeR0Drv_SOURCES.win = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r0drv/generic/threadctxhooks-r0drv-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
@@ -2039,6 +2041,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/timer-generic.cpp \
 	r0drv/generic/mpnotification-r0drv-generic.cpp \
@@ -2136,6 +2139,7 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
@@ -2166,6 +2170,7 @@ RuntimeR0Drv_SOURCES.solaris = \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/RTMpGetCoreCount-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
@@ -2201,6 +2206,7 @@ RuntimeR0Drv_SOURCES.haiku = \
 	common/string/memcmp.asm \
 	common/string/strchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
+	generic/RTMpOnPair-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
