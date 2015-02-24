@@ -565,8 +565,8 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HM_DISABLE_PREEMPT_IF_NEEDED();
 
             /* We need to update the VCPU <-> host CPU mapping. */
-            RTCPUID idHostCpu    = RTMpCpuId();
-            uint32_t iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
+            RTCPUID idHostCpu;
+            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
             pVCpu->iHostCpuSet   = iHostCpuSet;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
@@ -878,8 +878,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
              * Get the host CPU identifiers, make sure they are valid and that
              * we've got a TSC delta for the CPU.
              */
-            RTCPUID  idHostCpu   = RTMpCpuId();
-            uint32_t iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
+            RTCPUID  idHostCpu;
+            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
             if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
                           && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
             {
@@ -992,8 +992,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
              * Get the host CPU identifiers, make sure they are valid and that
              * we've got a TSC delta for the CPU.
              */
-            RTCPUID  idHostCpu   = RTMpCpuId();
-            uint32_t iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
+            RTCPUID  idHostCpu;
+            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
             if (RT_LIKELY(   iHostCpuSet < RTCPUSET_MAX_CPUS
                           && SUPIsTscDeltaAvailableForCpuSetIndex(iHostCpuSet)))
             {
@@ -1326,8 +1326,8 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
              * Get the host CPU identifiers, make sure they are valid and that
              * we've got a TSC delta for the CPU.
              */
-            RTCPUID  idHostCpu   = RTMpCpuId();
-            uint32_t iHostCpuSet = RTMpCpuIdToSetIndex(idHostCpu);
+            RTCPUID  idHostCpu;
+            uint32_t iHostCpuSet = RTMpCurSetIndexAndId(&idHostCpu);
             if (RT_UNLIKELY(iHostCpuSet >= RTCPUSET_MAX_CPUS))
             {
                 ASMSetFlags(fFlags);

@@ -77,7 +77,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
              */
 #if TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA
 # if   defined(IN_RING0)
-            uint32_t const  iCpuSet  = RTMpCpuIdToSetIndex(RTMpCpuId());
+            uint32_t const  iCpuSet  = RTMpCurSetIndex();
             uint16_t const  iGipCpu  = iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx)
                                      ? pGip->aiCpuFromCpuSetIdx[iCpuSet] : UINT16_MAX;
 # elif defined(IN_RC)

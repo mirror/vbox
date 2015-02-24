@@ -244,6 +244,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTMpCpuId",                              (void *)RTMpCpuId },
     { "RTMpCpuIdFromSetIndex",                  (void *)RTMpCpuIdFromSetIndex },
     { "RTMpCpuIdToSetIndex",                    (void *)RTMpCpuIdToSetIndex },
+    { "RTMpCurSetIndex",                        (void *)RTMpCurSetIndex },
+    { "RTMpCurSetIndexAndId",                   (void *)RTMpCurSetIndexAndId },
     { "RTMpGetArraySize",                       (void *)RTMpGetArraySize },
     { "RTMpGetCount",                           (void *)RTMpGetCount },
     { "RTMpGetMaxCpuId",                        (void *)RTMpGetMaxCpuId },

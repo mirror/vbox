@@ -129,7 +129,7 @@
 #ifdef IN_RC
 # define PGMRZDYNMAP_CUR_CPU()              (0)
 #else
-# define PGMRZDYNMAP_CUR_CPU()              RTMpCpuIdToSetIndex(RTMpCpuId())
+# define PGMRZDYNMAP_CUR_CPU()              RTMpCurSetIndex()
 #endif
 
 /** PGMRZDYNMAP::u32Magic. (Jens Christian Bugge Wesseltoft) */

@@ -283,7 +283,8 @@ VMMDECL(PVMCPU) VMMGetCpu(PVM pVM)
     /* RTThreadGetNativeSelf had better be cheap. */
     RTNATIVETHREAD hThread = RTThreadNativeSelf();
 
-    /** @todo optimize for large number of VCPUs when that becomes more common. */
+    /** @todo optimize for large number of VCPUs when that becomes more common.
+     * Use a map like GIP does that's indexed by the host CPU index.  */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
