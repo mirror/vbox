@@ -2600,9 +2600,6 @@ typedef struct SUPDRVGIPTSCDELTARGS
         uint32_t                cHits;
         bool                    fLagMaster;
         bool                    fLagWorker;
-# if 0  /* pointless now */
-        bool volatile           fQuitEarly;
-# endif
     } M2;
 #endif
 
@@ -3172,37 +3169,6 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
     if (cHits > 2)
         pArgs->pWorker->i64TSCDelta = iBestDelta;
     pArgs->M2.cHits += cHits;
-
-#if 0 /* This is pointless now with supdrvTscDeltaVerify(0). */
-    /*
-     * Check and see if we can quit a little early.  If the result is already
-     * extremely good (+/-16 ticks seems reasonable), just stop.
-     */
-    if (  iBestDelta >=   0 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
-        ? iBestDelta <=  16 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
-        : iBestDelta >= -16 + GIP_TSC_DELTA_INITIAL_MASTER_VALUE)
-    {
-        /*SUPR0Printf("quitting early #1: hits=%#x iLoop=%d iBestDelta=%lld\n", cHits, iLoop, iBestDelta);*/
-        ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, true);
-    }
-    /*
-     * After a while, just stop if we get sufficent hits.
-     */
-    else if (   iLoop >= GIP_TSC_DELTA_M2_LOOPS / 3
-             && cHits > 8)
-    {
-        uint32_t const cHitsNeeded = GIP_TSC_DELTA_M2_LOOPS * RT_ELEMENTS(pArgs->M2.pMasterData->aResults) / 4; /* 25% */
-        if (   pArgs->M2.cHits >= cHitsNeeded
-            && (  iBestDelta >=  0                                        + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
-                ? iBestDelta <=  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO + GIP_TSC_DELTA_INITIAL_MASTER_VALUE
-                : iBestDelta >= -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO + GIP_TSC_DELTA_INITIAL_MASTER_VALUE) )
-        {
-            /*SUPR0Printf("quitting early hits=%#x (%#x) needed=%#x iLoop=%d iBestDelta=%lld\n",
-                        pArgs->M2.cHits, cHits, cHitsNeeded, iLoop, iBestDelta);*/
-            ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, true);
-        }
-    }
-#endif
 }
 
 
@@ -3263,11 +3229,6 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
                                       bool fIsMaster, uint32_t iTry)
 {
     unsigned iLoop;
-
-#if 0  /* pointless now */
-    if (fIsMaster)
-        ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, false);
-#endif
 
     for (iLoop = 0; iLoop < GIP_TSC_DELTA_M2_LOOPS; iLoop++)
     {
@@ -3331,12 +3292,6 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
-
-#if 0  /* pointless now */
-        if (ASMAtomicReadBool(&pArgs->M2.fQuitEarly))
-            break;
-#endif
-
     }
 }
 
@@ -3685,11 +3640,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
      * Start by seeing if we have a zero delta between the two CPUs.
      * This should normally be the case.
      */
-#if 1
     rc = supdrvTscDeltaVerify(pArgs, &MySync, pOtherSync, fIsMaster, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
-#else
-    rc = VERR_OUT_OF_RANGE;
-#endif
     if (RT_SUCCESS(rc))
     {
         if (fIsMaster)
@@ -3749,11 +3700,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
              */
             if (fIsMaster)
             {
-#if 1
                 if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
-#else
-                if (pGipCpuWorker->i64TSCDelta != INT64_MAX && iTry >= 11)
-#endif
                 {
                     RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
                     RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
@@ -3912,11 +3859,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
             pArgs->pDevExt      = pDevExt;
             pArgs->pSyncMaster  = NULL;
             pArgs->pSyncWorker  = NULL;
-#if 0 /* later */
-            pArgs->cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 2048; /* 488 us */
-#else
             pArgs->cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 1024; /* 976 us */
-#endif
 
 #ifdef GIP_TSC_DELTA_METHOD_1
             rc = supdrvTscDeltaMethod1Init(pArgs);
