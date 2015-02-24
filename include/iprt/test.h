@@ -1255,8 +1255,6 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
             break; \
         } \
     } else do {} while (0)
-
-
 /** @def RTTESTI_CHECK_RC_OK
  * Check whether a IPRT style status code indicates success.
  *
@@ -1270,6 +1268,22 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
         int rcCheck = (rcExpr); \
         if (RT_FAILURE(rcCheck)) { \
             RTTestIFailed("line %u: %s: %Rrc", __LINE__, #rcExpr, rcCheck); \
+        } \
+    } while (0)
+/** @def RTTESTI_CHECK_RC_OK_BREAK
+ * Check whether a IPRT style status code indicates success.
+ *
+ * If a different status code is return, call RTTestIFailed giving the line
+ * number, expression, actual and expected status codes, then break.
+ *
+ * @param   rcExpr          The expression resulting in an IPRT status code.
+ */
+#define RTTESTI_CHECK_RC_OK_BREAK(rcExpr) \
+    do { \
+        int rcCheck = (rcExpr); \
+        if (RT_FAILURE(rcCheck)) { \
+            RTTestIFailed("line %u: %s: %Rrc", __LINE__, #rcExpr, rcCheck); \
+            break; \
         } \
     } while (0)
 /** @def RTTESTI_CHECK_RC_OK_RET
