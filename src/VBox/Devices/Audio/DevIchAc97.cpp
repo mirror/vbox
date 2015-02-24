@@ -1368,7 +1368,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
     int rc;
     uint32_t cbWrittenTotal = 0;
 
-    while ((cbElapsed >> 1))
+    while (cbElapsed >> 1)
     {
         if (!pReg->bd_valid)
         {
