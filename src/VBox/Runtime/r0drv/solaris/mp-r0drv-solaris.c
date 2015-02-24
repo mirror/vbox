@@ -148,11 +148,10 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 /**
  * Wrapper to Solaris IPI infrastructure.
  *
+ * @returns Solaris error code.
  * @param   pCpuSet        Pointer to Solaris CPU set.
  * @param   pfnSolWorker   Function to execute on target CPU(s).
  * @param   pArgs          Pointer to RTMPARGS to pass to @a pfnSolWorker.
- *
- * @returns Solaris error code.
  */
 static void rtMpSolCrossCall(PRTSOLCPUSET pCpuSet, PFNRTMPSOLWORKER pfnSolWorker, PRTMPARGS pArgs)
 {
@@ -295,15 +294,100 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 }
 
 
+
+/**
+ * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
+ * for the RTMpOnPair API.
+ *
+ * @returns Solaris error code.
+ * @param   uArgs       Pointer to the RTMPARGS package.
+ * @param   uIgnored1   Ignored.
+ * @param   uIgnored2   Ignored.
+ */
+static int rtMpSolOnPairCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)(uArg);
+    RTCPUID idCpu = RTMpCpuId();
+
+    Assert(idCpu == pArgs->idCpu || idCpu == pArgs->idCpu2);
+    pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+    ASMAtomicIncU32(&pArgs->cHits);
+
+    NOREF(uIgnored1);
+    NOREF(uIgnored2);
+    return 0;
+}
+
+
+RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
+{
+    int rc;
+    RTMPARGS Args;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+
+    AssertReturn(idCpu1 != idCpu2, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & RTMPON_F_VALID_MASK), VERR_INVALID_FLAGS);
+
+    Args.pfnWorker = pfnWorker;
+    Args.pvUser1 = pvUser1;
+    Args.pvUser2 = pvUser2;
+    Args.idCpu   = idCpu1;
+    Args.idCpu2  = idCpu2;
+    Args.cHits   = 0;
+
+    RTSOLCPUSET CpuSet;
+    for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
+        CpuSet.auCpus[i] = 0;
+    BT_SET(CpuSet.auCpus, idCpu1);
+    BT_SET(CpuSet.auCpus, idCpu2);
+
+    /*
+     * Check that both CPUs are online before doing the broadcast call.
+     */
+    RTThreadPreemptDisable(&PreemptState);
+    if (   RTMpIsCpuOnline(idCpu1)
+        && RTMpIsCpuOnline(idCpu2))
+    {
+        rtMpSolCrossCall(&CpuSet, rtMpSolOnPairCpuWrapper, &Args);
+
+        Assert(Args.cHits <= 2);
+        if (Args.cHits == 2)
+            rc = VINF_SUCCESS;
+        else if (Args.cHits == 1)
+            rc = VERR_NOT_ALL_CPUS_SHOWED;
+        else if (Args.cHits == 0)
+            rc = VERR_CPU_OFFLINE;
+        else
+            rc = VERR_CPU_IPE_1;
+    }
+    /*
+     * A CPU must be present to be considered just offline.
+     */
+    else if (   RTMpIsCpuPresent(idCpu1)
+             && RTMpIsCpuPresent(idCpu2))
+        rc = VERR_CPU_OFFLINE;
+    else
+        rc = VERR_CPU_NOT_FOUND;
+
+    RTThreadPreemptRestore(&PreemptState);;
+    return rc;
+}
+
+
+RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
+{
+    return true;
+}
+
+
 /**
  * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
  * for the RTMpOnSpecific API.
  *
+ * @returns Solaris error code.
  * @param   uArgs       Pointer to the RTMPARGS package.
  * @param   uIgnored1   Ignored.
  * @param   uIgnored2   Ignored.
- *
- * @returns Solaris error code.
  */
 static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 {
