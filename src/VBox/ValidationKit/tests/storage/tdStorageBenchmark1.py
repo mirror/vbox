@@ -8,7 +8,7 @@ VirtualBox Validation Kit - Storage benchmark.
 
 __copyright__ = \
 """
-Copyright (C) 2012-2014 Oracle Corporation
+Copyright (C) 2012-2015 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -480,7 +480,10 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 listNames.append('TargetName');
                 listNames.append('LUN');
 
-                oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
+                if self.fpApiVer >= 4.4:
+                    oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
+                else:
+                    oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
                 oHd.type = vboxcon.MediumType_Normal;
                 oHd.setProperties(listNames, listValues);
 

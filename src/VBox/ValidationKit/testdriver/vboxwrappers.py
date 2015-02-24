@@ -8,7 +8,7 @@ VirtualBox Wrapper Classes
 
 __copyright__ = \
 """
-Copyright (C) 2010-2014 Oracle Corporation
+Copyright (C) 2010-2015 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -1712,7 +1712,10 @@ class SessionWrapper(TdTaskBase):
             return False;
 
         try:
-            oHd = self.oVBox.createHardDisk(sFmt, sHd);
+            if self.fpApiVer >= 4.4:
+                oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
+            else:
+                oHd = self.oVBox.createHardDisk(sFmt, sHd);
             oProgressXpcom = oHd.createBaseStorage(cb, (vboxcon.MediumVariant_Standard, ))
             oProgress = ProgressWrapper(oProgressXpcom, self.oVBoxMgr, self.oTstDrv, 'create disk %s' % (sHd));
             oProgress.wait();
