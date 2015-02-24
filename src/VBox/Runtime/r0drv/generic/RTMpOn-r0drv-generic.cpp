@@ -79,7 +79,7 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, PFNRTMPWORKER pfnWorker, 
     NOREF(pfnWorker);
     NOREF(pvUser1);
     NOREF(pvUser2);
-    return VERR_NOT_SUP_IN_RAW_MODE;
+    return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTMpOnPair);
 
