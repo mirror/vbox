@@ -55,7 +55,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
 {
     int rc = VINF_SUCCESS;
-    unsigned MediumVariant = (unsigned)(*pMediumVariant);
+    unsigned uMediumVariant = (unsigned)(*pMediumVariant);
     while (psz && *psz && RT_SUCCESS(rc))
     {
         size_t len;
@@ -69,19 +69,19 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
             // Parsing is intentionally inconsistent: "standard" resets the
             // variant, whereas the other flags are cumulative.
             if (!RTStrNICmp(psz, "standard", len))
-                MediumVariant = MediumVariant_Standard;
+                uMediumVariant = MediumVariant_Standard;
             else if (   !RTStrNICmp(psz, "fixed", len)
                      || !RTStrNICmp(psz, "static", len))
-                MediumVariant |= MediumVariant_Fixed;
+                uMediumVariant |= MediumVariant_Fixed;
             else if (!RTStrNICmp(psz, "Diff", len))
-                MediumVariant |= MediumVariant_Diff;
+                uMediumVariant |= MediumVariant_Diff;
             else if (!RTStrNICmp(psz, "split2g", len))
-                MediumVariant |= MediumVariant_VmdkSplit2G;
+                uMediumVariant |= MediumVariant_VmdkSplit2G;
             else if (   !RTStrNICmp(psz, "stream", len)
                      || !RTStrNICmp(psz, "streamoptimized", len))
-                MediumVariant |= MediumVariant_VmdkStreamOptimized;
+                uMediumVariant |= MediumVariant_VmdkStreamOptimized;
             else if (!RTStrNICmp(psz, "esx", len))
-                MediumVariant |= MediumVariant_VmdkESX;
+                uMediumVariant |= MediumVariant_VmdkESX;
             else
                 rc = VERR_PARSE_ERROR;
         }
@@ -92,7 +92,7 @@ static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
     }
 
     if (RT_SUCCESS(rc))
-        *pMediumVariant = (MediumVariant_T)MediumVariant;
+        *pMediumVariant = (MediumVariant_T)uMediumVariant;
     return rc;
 }
 
