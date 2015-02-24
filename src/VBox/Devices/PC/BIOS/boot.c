@@ -45,6 +45,10 @@
 #include "biosint.h"
 #include "ebda.h"
 
+/* Sanity check the LAN boot segment definition. */
+#if VBOX_LANBOOT_SEG < 0xA000
+#error VBOX_LANBOOT_SEG incorrect!
+#endif
 
 /* PnP header used with LAN boot ROMs. */
 typedef struct {
