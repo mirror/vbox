@@ -316,9 +316,6 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostOSSAudio);
     if (RT_FAILURE(rc))
         return rc;
-    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostSolAudio);
-    if (RT_FAILURE(rc))
-        return rc;
 # endif
 #endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvACPI);
