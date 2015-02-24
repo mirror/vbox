@@ -317,11 +317,76 @@ HRESULT DHCPServer::encodeOption(com::Utf8Str &aEncoded,
 }
 
 
+int DHCPServer::addOption(DhcpOptionMap &aMap,
+                          DhcpOpt_T aOption, const com::Utf8Str &aValue)
+{
+    DhcpOptValue OptValue;
+
+    if (aOption != 0)
+    {
+        OptValue = DhcpOptValue(aValue, DhcpOptValue::LEGACY);
+    }
+    /*
+     * This is a kludge to sneak in option encoding information
+     * through existing API.  We use option 0 and supply the real
+     * option/value in the same format that encodeOption() above
+     * produces for getter methods.
+     */
+    else
+    {
+        uint8_t u8Code;
+        uint32_t u32Enc;
+        char *pszNext;
+        int rc;
+
+        rc = RTStrToUInt8Ex(aValue.c_str(), &pszNext, 10, &u8Code);
+        if (!RT_SUCCESS(rc))
+            return VERR_PARSE_ERROR;
+
+        switch (*pszNext)
+        {
+            case ':':           /* support legacy format too */
+            {
+                u32Enc = DhcpOptValue::LEGACY;
+                break;
+            }
+
+            case '=':
+            {
+                u32Enc = DhcpOptValue::HEX;
+                break;
+            }
+
+            case '@':
+            {
+                rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &u32Enc);
+                if (!RT_SUCCESS(rc))
+                    return VERR_PARSE_ERROR;
+                if (*pszNext != '=')
+                    return VERR_PARSE_ERROR;
+                break;
+            }
+
+            default:
+                return VERR_PARSE_ERROR;
+        }
+
+        aOption = (DhcpOpt_T)u8Code;
+        OptValue = DhcpOptValue(pszNext + 1, (DhcpOptValue::Encoding)u32Enc);
+    }
+
+    aMap[aOption] = OptValue;
+    return VINF_SUCCESS;
+}
+
+
 HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValue)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->GlobalDhcpOptions[aOption] = aValue;
+    int rc = addOption(m->GlobalDhcpOptions, aOption, aValue);
+    if (!RT_SUCCESS(rc))
+        return E_INVALIDARG;
 
     /* Indirect way to understand that we're on NAT network */
     if (aOption == DhcpOpt_Router)
@@ -372,7 +437,12 @@ HRESULT DHCPServer::addVmSlotOption(const com::Utf8Str &aVmName,
                                     const com::Utf8Str &aValue)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->VmSlot2Options[settings::VmNameSlotKey(aVmName, aSlot)][aOption] = aValue;
+
+    DhcpOptionMap &map = m->VmSlot2Options[VmNameSlotKey(aVmName, aSlot)];
+    int rc = addOption(map, aOption, aValue);
+    if (!RT_SUCCESS(rc))
+        return E_INVALIDARG;
+
     alock.release();
 
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
