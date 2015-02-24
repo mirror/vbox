@@ -52,6 +52,7 @@ typedef struct RTMPARGS
     void       *pvUser1;
     void       *pvUser2;
     RTCPUID     idCpu;
+    RTCPUID     idCpu2;
     uint32_t volatile cHits;
 #ifdef RT_OS_WINDOWS
     /** Turns out that KeFlushQueuedDpcs doesn't necessarily wait till all

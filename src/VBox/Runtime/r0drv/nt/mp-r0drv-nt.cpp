@@ -46,6 +46,7 @@
 typedef enum
 {
     RT_NT_CPUID_SPECIFIC,
+    RT_NT_CPUID_PAIR,
     RT_NT_CPUID_OTHERS,
     RT_NT_CPUID_ALL
 } RT_NT_CPUID;
@@ -247,6 +248,26 @@ static ULONG_PTR __stdcall rtmpNtOnOthersBroadcastIpiWrapper(ULONG_PTR uUserCtx)
 
 /**
  * Wrapper between the native KIPI_BROADCAST_WORKER and IPRT's PFNRTMPWORKER for
+ * the RTMpOnPair case.
+ *
+ * @param   uUserCtx            The user context argument (PRTMPARGS).
+ */
+static ULONG_PTR __stdcall rtmpNtOnPairBroadcastIpiWrapper(ULONG_PTR uUserCtx)
+{
+    PRTMPARGS pArgs = (PRTMPARGS)uUserCtx;
+    RTCPUID idCpu = KeGetCurrentProcessorNumber();
+    if (   pArgs->idCpu  == idCpu
+        || pArgs->idCpu2 == idCpu)
+    {
+        ASMAtomicIncU32(&pArgs->cHits);
+        pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
+    }
+    return 0;
+}
+
+
+/**
+ * Wrapper between the native KIPI_BROADCAST_WORKER and IPRT's PFNRTMPWORKER for
  * the RTMpOnSpecific case.
  *
  * @param   uUserCtx            The user context argument (PRTMPARGS).
@@ -267,31 +288,34 @@ static ULONG_PTR __stdcall rtmpNtOnSpecificBroadcastIpiWrapper(ULONG_PTR uUserCt
 /**
  * Internal worker for the RTMpOn* APIs using KeIpiGenericCall.
  *
- * @returns IPRT status code.
- * @param   pfnWorker       The callback.
- * @param   pvUser1         User argument 1.
- * @param   pvUser2         User argument 2.
- * @param   enmCpuid        What to do / is idCpu valid.
- * @param   idCpu           Used if enmCpuid RT_NT_CPUID_SPECIFIC, otherwise ignored.
+ * @returns VINF_SUCCESS.
+ * @param   pfnWorker   The callback.
+ * @param   pvUser1     User argument 1.
+ * @param   pvUser2     User argument 2.
+ * @param   idCpu       First CPU to match, ultimately specific to the
+ *                      pfnNativeWrapper used.
+ * @param   idCpu2      Second CPU to match, ultimately specific to the
+ *                      pfnNativeWrapper used.
+ * @param   pcHits      Where to return the number of this. Optional.
  */
 static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
-                                     PKIPI_BROADCAST_WORKER pfnNativeWrapper, RTCPUID idCpu)
+                                     PKIPI_BROADCAST_WORKER pfnNativeWrapper, RTCPUID idCpu, RTCPUID idCpu2,
+                                     uint32_t *pcHits)
 {
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
     Args.pvUser1   = pvUser1;
     Args.pvUser2   = pvUser2;
     Args.idCpu     = idCpu;
+    Args.idCpu2    = idCpu2;
     Args.cRefs     = 0;
     Args.cHits     = 0;
 
     AssertPtr(g_pfnrtKeIpiGenericCall);
     g_pfnrtKeIpiGenericCall(pfnNativeWrapper, (uintptr_t)&Args);
-
-    if (   pfnNativeWrapper != rtmpNtOnSpecificBroadcastIpiWrapper
-        || Args.cHits > 0)
-        return VINF_SUCCESS;
-    return VERR_CPU_OFFLINE;
+    if (pcHits)
+        *pcHits = Args.cHits;
+    return VINF_SUCCESS;
 }
 
 
@@ -306,8 +330,8 @@ static int rtMpCallUsingBroadcastIpi(PFNRTMPWORKER pfnWorker, void *pvUser1, voi
 static VOID __stdcall rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID SystemArgument1, IN PVOID SystemArgument2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)DeferredContext;
-    ASMAtomicIncU32(&pArgs->cHits);
 
+    ASMAtomicIncU32(&pArgs->cHits);
     pArgs->pfnWorker(KeGetCurrentProcessorNumber(), pArgs->pvUser1, pArgs->pvUser2);
 
     /* Dereference the argument structure. */
@@ -322,13 +346,17 @@ static VOID __stdcall rtmpNtDPCWrapper(IN PKDPC Dpc, IN PVOID DeferredContext, I
  * Internal worker for the RTMpOn* APIs.
  *
  * @returns IPRT status code.
- * @param   pfnWorker       The callback.
- * @param   pvUser1         User argument 1.
- * @param   pvUser2         User argument 2.
- * @param   enmCpuid        What to do / is idCpu valid.
- * @param   idCpu           Used if enmCpuid RT_NT_CPUID_SPECIFIC, otherwise ignored.
+ * @param   pfnWorker   The callback.
+ * @param   pvUser1     User argument 1.
+ * @param   pvUser2     User argument 2.
+ * @param   enmCpuid    What to do / is idCpu valid.
+ * @param   idCpu       Used if enmCpuid is RT_NT_CPUID_SPECIFIC or
+ *                      RT_NT_CPUID_PAIR, otherwise ignored.
+ * @param   idCpu2      Used if enmCpuid is RT_NT_CPUID_PAIR, otherwise ignored.
+ * @param   pcHits      Where to return the number of this. Optional.
  */
-static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2, RT_NT_CPUID enmCpuid, RTCPUID idCpu)
+static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2,
+                             RT_NT_CPUID enmCpuid, RTCPUID idCpu, RTCPUID idCpu2, uint32_t *pcHits)
 {
     PRTMPARGS pArgs;
     KDPC     *paExecCpuDpcs;
@@ -360,6 +388,7 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     pArgs->pvUser1   = pvUser1;
     pArgs->pvUser2   = pvUser2;
     pArgs->idCpu     = NIL_RTCPUID;
+    pArgs->idCpu2    = NIL_RTCPUID;
     pArgs->cHits     = 0;
     pArgs->cRefs     = 1;
 
@@ -370,6 +399,19 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
         KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
         KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
         KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
+        pArgs->idCpu = idCpu;
+    }
+    else if (enmCpuid == RT_NT_CPUID_SPECIFIC)
+    {
+        KeInitializeDpc(&paExecCpuDpcs[0], rtmpNtDPCWrapper, pArgs);
+        KeSetImportanceDpc(&paExecCpuDpcs[0], HighImportance);
+        KeSetTargetProcessorDpc(&paExecCpuDpcs[0], (int)idCpu);
+        pArgs->idCpu = idCpu;
+
+        KeInitializeDpc(&paExecCpuDpcs[1], rtmpNtDPCWrapper, pArgs);
+        KeSetImportanceDpc(&paExecCpuDpcs[1], HighImportance);
+        KeSetTargetProcessorDpc(&paExecCpuDpcs[1], (int)idCpu2);
+        pArgs->idCpu2 = idCpu2;
     }
     else
     {
@@ -397,6 +439,16 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
     {
         ASMAtomicIncS32(&pArgs->cRefs);
         BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
+        Assert(ret);
+    }
+    else if (enmCpuid == RT_NT_CPUID_PAIR)
+    {
+        ASMAtomicIncS32(&pArgs->cRefs);
+        BOOLEAN ret = KeInsertQueueDpc(&paExecCpuDpcs[0], 0, 0);
+        Assert(ret);
+
+        ASMAtomicIncS32(&pArgs->cRefs);
+        ret = KeInsertQueueDpc(&paExecCpuDpcs[1], 0, 0);
         Assert(ret);
     }
     else
@@ -427,6 +479,9 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
      *        cRefs was added. */
     g_pfnrtNtKeFlushQueuedDpcs();
 
+    if (pcHits)
+        *pcHits = pArgs->cHits;
+
     /* Dereference the argument structure. */
     int32_t cRefs = ASMAtomicDecS32(&pArgs->cRefs);
     Assert(cRefs >= 0);
@@ -440,17 +495,75 @@ static int rtMpCallUsingDpcs(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUse
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     if (g_pfnrtKeIpiGenericCall)
-        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnAllBroadcastIpiWrapper, 0);
-    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_ALL, 0);
+        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnAllBroadcastIpiWrapper,
+                                         NIL_RTCPUID, NIL_RTCPUID, NULL);
+    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_ALL, NIL_RTCPUID, NIL_RTCPUID, NULL);
 }
 
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     if (g_pfnrtKeIpiGenericCall)
-        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnOthersBroadcastIpiWrapper, 0);
-    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, 0);
+        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnOthersBroadcastIpiWrapper,
+                                         NIL_RTCPUID, NIL_RTCPUID, NULL);
+    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_OTHERS, NIL_RTCPUID, NIL_RTCPUID, NULL);
 }
+
+
+RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
+{
+    int rc;
+    AssertReturn(idCpu1 != idCpu2, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & RTMPON_F_VALID_MASK), VERR_INVALID_FLAGS);
+    if ((fFlags & RTMPON_F_CONCURRENT_EXEC) && !g_pfnrtKeIpiGenericCall)
+        return VERR_NOT_SUPPORTED;
+
+    /*
+     * Check that both CPUs are online before doing the broadcast call.
+     */
+    if (   RTMpIsCpuOnline(idCpu1)
+        && RTMpIsCpuOnline(idCpu2))
+    {
+        /*
+         * The broadcast IPI isn't quite as bad as it could have been, because
+         * it looks like windows doesn't synchronize CPUs on the way out, they
+         * seems to get back to normal work while the pair is still busy.
+         */
+        uint32_t cHits = 0;
+        if (g_pfnrtKeIpiGenericCall)
+            rc = rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnPairBroadcastIpiWrapper, idCpu1, idCpu2, &cHits);
+        else
+            rc = rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_PAIR, idCpu1, idCpu2, &cHits);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cHits <= 2);
+            if (cHits == 2)
+                rc = VINF_SUCCESS;
+            else if (cHits == 1)
+                rc = VERR_NOT_ALL_CPUS_SHOWED;
+            else if (cHits == 0)
+                rc = VERR_CPU_OFFLINE;
+            else
+                rc = VERR_CPU_IPE_1;
+        }
+    }
+    /*
+     * A CPU must be present to be considered just offline.
+     */
+    else if (   RTMpIsCpuPresent(idCpu1)
+             && RTMpIsCpuPresent(idCpu2))
+        rc = VERR_CPU_OFFLINE;
+    else
+        rc = VERR_CPU_NOT_FOUND;
+    return rc;
+}
+
+
+RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
+{
+    return RTMpOnAllIsConcurrentSafe();
+}
+
 
 /**
  * Releases a reference to a RTMPNTONSPECIFICARGS heap allocation, freeing it
@@ -502,12 +615,24 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
      * Use the broadcast IPI routine if there are no more than two CPUs online,
      * or if the current IRQL is unsuitable for KeWaitForSingleObject.
      */
+    int rc;
+    uint32_t cHits = 0;
     if (   g_pfnrtKeIpiGenericCall
         && (   RTMpGetOnlineCount() <= 2
             || KeGetCurrentIrql()   > APC_LEVEL) )
-        return rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper, 0);
+        rc = rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper,
+                                       idCpu, NIL_RTCPUID, &cHits);
+    else
+        rc = rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu, NIL_RTCPUID, &cHits);
+    if (RT_SUCCESS(rc))
+    {
+        if (cHits == 1)
+            return VINF_SUCCESS;
+        rc = cHits == 0 ? VERR_CPU_OFFLINE : VERR_CPU_IPE_1;
+    }
+    return rc;
 
-#if 0 /** @todo untested code. needs some tuning. */
+#if 0 /** @todo Untested code replacing the rtMpCallUsingDpcs caste. Needs some tuning too, I guess. */
     /*
      * Initialize the argument package and the objects within it.
      * The package is referenced counted to avoid unnecessary spinning to
@@ -630,9 +755,6 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 
     rtMpNtOnSpecificRelease(pArgs);
     return rc;
-
-#else
-    return rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu);
 #endif
 }
 
