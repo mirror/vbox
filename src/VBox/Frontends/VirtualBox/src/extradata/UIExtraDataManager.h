@@ -299,10 +299,12 @@ public:
         /** Defines @a geometry and @a fMaximized state for machine-window with @a uScreenIndex in @a visualStateType. */
         void setMachineWindowGeometry(UIVisualStateType visualStateType, ulong uScreenIndex, const QRect &geometry, bool fMaximized, const QString &strID);
 
+#ifndef Q_WS_MAC
         /** Returns whether Runtime UI menu-bar is enabled. */
         bool menuBarEnabled(const QString &strID);
         /** Defines whether Runtime UI menu-bar is @a fEnabled. */
         void setMenuBarEnabled(bool fEnabled, const QString &strID);
+#endif /* !Q_WS_MAC */
 
         /** Returns restricted Runtime UI menu types. */
         UIExtraDataMetaDefs::MenuType restrictedRuntimeMenuTypes(const QString &strID);

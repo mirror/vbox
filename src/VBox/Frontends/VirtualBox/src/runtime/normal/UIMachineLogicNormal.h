@@ -50,8 +50,10 @@ private slots:
     void sltOpenMenuBarSettings();
     /** Handles menu-bar editor closing.*/
     void sltMenuBarSettingsClosed();
+#ifndef RT_OS_DARWIN
     /** Toggles menu-bar presence.*/
     void sltToggleMenuBar();
+#endif /* !RT_OS_DARWIN */
 
     /** Opens status-bar editor.*/
     void sltOpenStatusBarSettings();

@@ -67,7 +67,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_VRDEServer,
     UIActionIndexRT_M_View_M_MenuBar,
     UIActionIndexRT_M_View_M_MenuBar_S_Settings,
+#ifndef RT_OS_DARWIN
     UIActionIndexRT_M_View_M_MenuBar_T_Visibility,
+#endif /* !RT_OS_DARWIN */
     UIActionIndexRT_M_View_M_StatusBar,
     UIActionIndexRT_M_View_M_StatusBar_S_Settings,
     UIActionIndexRT_M_View_M_StatusBar_T_Visibility,

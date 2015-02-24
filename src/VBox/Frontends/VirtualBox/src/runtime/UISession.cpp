@@ -1342,6 +1342,7 @@ void UISession::loadSessionSettings()
         QAction *pGuestAutoresizeSwitch = actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize);
         pGuestAutoresizeSwitch->setChecked(gEDataManager->guestScreenAutoResizeEnabled(strMachineID));
 
+#ifndef Q_WS_MAC
         /* Menu-bar options: */
         {
             const bool fEnabledGlobally = !vboxGlobal().settings().isFeatureActive("noMenuBar");
@@ -1354,6 +1355,7 @@ void UISession::loadSessionSettings()
             pActionMenuBarSwitch->setChecked(fEnabled);
             pActionMenuBarSwitch->blockSignals(false);
         }
+#endif /* !Q_WS_MAC */
 
         /* Status-bar options: */
         {

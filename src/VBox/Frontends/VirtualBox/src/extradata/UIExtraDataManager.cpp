@@ -2510,6 +2510,7 @@ void UIExtraDataManager::setMachineWindowGeometry(UIVisualStateType visualStateT
     setExtraDataStringList(strKey, data, strID);
 }
 
+#ifndef Q_WS_MAC
 bool UIExtraDataManager::menuBarEnabled(const QString &strID)
 {
     /* 'True' unless feature restricted: */
@@ -2521,6 +2522,7 @@ void UIExtraDataManager::setMenuBarEnabled(bool fEnabled, const QString &strID)
     /* 'False' if feature restricted, null-string otherwise: */
     setExtraDataString(GUI_MenuBar_Enabled, toFeatureRestricted(!fEnabled), strID);
 }
+#endif /* !Q_WS_MAC */
 
 UIExtraDataMetaDefs::MenuType UIExtraDataManager::restrictedRuntimeMenuTypes(const QString &strID)
 {
@@ -3625,7 +3627,10 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         }
 
         /* Menu-bar configuration change: */
-        if (strKey == GUI_MenuBar_Enabled ||
+        if (
+#ifndef Q_WS_MAC
+            strKey == GUI_MenuBar_Enabled ||
+#endif /* !Q_WS_MAC */
             strKey == GUI_RestrictedRuntimeMenus ||
 #ifdef Q_WS_MAC
             strKey == GUI_RestrictedRuntimeApplicationMenuActions ||

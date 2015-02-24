@@ -585,7 +585,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuViewAc
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer:           strResult = "VRDEServer"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar:              strResult = "MenuBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings:      strResult = "MenuBarSettings"; break;
+#ifndef Q_WS_MAC
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar:        strResult = "ToggleMenuBar"; break;
+#endif /* !Q_WS_MAC */
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar:            strResult = "StatusBar"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings:    strResult = "StatusBarSettings"; break;
         case UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar:      strResult = "ToggleStatusBar"; break;
@@ -620,7 +622,9 @@ template<> UIExtraDataMetaDefs::RuntimeMenuViewActionType fromInternalString<UIE
     keys << "VRDEServer";           values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_VRDEServer;
     keys << "MenuBar";              values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar;
     keys << "MenuBarSettings";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBarSettings;
+#ifndef Q_WS_MAC
     keys << "ToggleMenuBar";        values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleMenuBar;
+#endif /* !Q_WS_MAC */
     keys << "StatusBar";            values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar;
     keys << "StatusBarSettings";    values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBarSettings;
     keys << "ToggleStatusBar";      values << UIExtraDataMetaDefs::RuntimeMenuViewActionType_ToggleStatusBar;

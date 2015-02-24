@@ -815,6 +815,7 @@ protected:
     }
 };
 
+#ifndef RT_OS_DARWIN
 class UIActionToggleMenuBar : public UIActionToggle
 {
     Q_OBJECT;
@@ -845,6 +846,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Toggle menu-bar visibility for this machine"));
     }
 };
+#endif /* !RT_OS_DARWIN */
 
 class UIActionMenuStatusBar : public UIActionMenu
 {
@@ -2079,7 +2081,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_VRDEServer] = new UIActionToggleVRDEServer(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar] = new UIActionMenuMenuBar(this);
     m_pool[UIActionIndexRT_M_View_M_MenuBar_S_Settings] = new UIActionSimpleShowMenuBarSettingsWindow(this);
+#ifndef RT_OS_DARWIN
     m_pool[UIActionIndexRT_M_View_M_MenuBar_T_Visibility] = new UIActionToggleMenuBar(this);
+#endif /* !RT_OS_DARWIN */
     m_pool[UIActionIndexRT_M_View_M_StatusBar] = new UIActionMenuStatusBar(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_S_Settings] = new UIActionSimpleShowStatusBarSettingsWindow(this);
     m_pool[UIActionIndexRT_M_View_M_StatusBar_T_Visibility] = new UIActionToggleStatusBar(this);
@@ -2564,8 +2568,10 @@ void UIActionPoolRuntime::updateMenuViewMenuBar()
 
     /* 'Menu Bar Settings' action: */
     addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_S_Settings));
+#ifndef Q_WS_MAC
     /* 'Toggle Menu Bar' action: */
     addAction(pMenu, action(UIActionIndexRT_M_View_M_MenuBar_T_Visibility));
+#endif /* !Q_WS_MAC */
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_View_M_MenuBar);

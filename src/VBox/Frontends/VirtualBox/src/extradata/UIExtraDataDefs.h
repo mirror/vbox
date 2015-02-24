@@ -147,8 +147,10 @@ namespace UIExtraDataDefs
         extern const char* GUI_LastScaleWindowPosition;
         /** Holds machine-window geometry maximized state flag. */
         extern const char* GUI_Geometry_State_Max;
+#ifndef Q_WS_MAC
         /** Holds Runtime UI menu-bar availability status. */
         extern const char* GUI_MenuBar_Enabled;
+#endif /* !Q_WS_MAC */
         /** Holds restricted Runtime UI menu types. */
         extern const char* GUI_RestrictedRuntimeMenus;
 #ifdef Q_WS_MAC
@@ -393,7 +395,9 @@ public:
         RuntimeMenuViewActionType_VRDEServer           = RT_BIT(9),
         RuntimeMenuViewActionType_MenuBar              = RT_BIT(10),
         RuntimeMenuViewActionType_MenuBarSettings      = RT_BIT(11),
+#ifndef RT_OS_DARWIN
         RuntimeMenuViewActionType_ToggleMenuBar        = RT_BIT(12),
+#endif /* !RT_OS_DARWIN */
         RuntimeMenuViewActionType_StatusBar            = RT_BIT(13),
         RuntimeMenuViewActionType_StatusBarSettings    = RT_BIT(14),
         RuntimeMenuViewActionType_ToggleStatusBar      = RT_BIT(15),
