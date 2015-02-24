@@ -20,7 +20,7 @@ P.S. Our apologies for the code quality.
 
 __copyright__ = \
 """
-Copyright (C) 2009-2013 Oracle Corporation
+Copyright (C) 2009-2015 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -2208,7 +2208,7 @@ def createHddCmd(ctx, args):
     else:
         fmt = "vdi"
 
-    hdd = ctx['vb'].createHardDisk(format, loc)
+    hdd = ctx['vb'].createMedium(format, loc, ctx['global'].constants.AccessMode_ReadWrite, ctx['global'].constants.DeviceType_HardDisk)
     progress = hdd.createBaseStorage(size, (ctx['global'].constants.MediumVariant_Standard, ))
     if progressBar(ctx,progress) and hdd.id:
         print "created HDD at %s as %s" % (colPath(ctx,hdd.location), hdd.id)
