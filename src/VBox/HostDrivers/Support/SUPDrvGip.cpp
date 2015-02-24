@@ -711,8 +711,9 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  * @param   pGip                The GIP.
  * @param   nsElapsed           The number of nano seconds elapsed.
  * @param   cElapsedTscTicks    The corresponding number of TSC ticks.
+ * @param   iTick               The tick number for debugging.
  */
-static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed, uint64_t cElapsedTscTicks)
+static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed, uint64_t cElapsedTscTicks, uint32_t iTick)
 {
     /*
      * Calculate the frequency.
@@ -735,7 +736,13 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
      */
     ASMAtomicWriteU64(&pGip->u64CpuHz, uCpuHz);
     if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
+    {
         ASMAtomicWriteU64(&pGip->aCPUs[0].u64CpuHz, uCpuHz);
+
+        /* For inspecting the frequency calcs using tstGIP-2, debugger or similar. */
+        if (iTick + 1 < pGip->cCpus)
+            ASMAtomicWriteU64(&pGip->aCPUs[iTick + 1].u64CpuHz, uCpuHz);
+    }
 }
 
 
@@ -832,18 +839,14 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
          * Allow 5 times the refinement period to elapse before we give up on the TSC delta
          * calculations.
          */
-        else if (cNsElapsed <= GIP_TSC_REFINE_PERIOD_IN_SECS * 5 * RT_NS_1SEC_64)
-        {
-            int rc = RTTimerStart(pTimer, RT_NS_1SEC);
-            AssertRC(rc);
-            return;
-        }
-        else
+        else if (cNsElapsed > GIP_TSC_REFINE_PERIOD_IN_SECS * 5 * RT_NS_1SEC_64)
         {
             SUPR0Printf("vboxdrv: Failed to refine invariant TSC frequency because deltas are unavailable after %u (%u) seconds\n",
                         (uint32_t)(cNsElapsed / RT_NS_1SEC), GIP_TSC_REFINE_PERIOD_IN_SECS);
             SUPR0Printf("vboxdrv: start: %u, %u, %#llx  stop: %u, %u, %#llx\n",
                         iStartCpuSet, iStartGipCpu, iStartTscDelta, iStopCpuSet, iStopGipCpu, iStopTscDelta);
+            int rc = RTTimerStop(pTimer);
+            AssertRC(rc);
             return;
         }
     }
@@ -858,16 +861,21 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
     if (   pDevExt->cGipUsers == 0
         || cNsElapsed < RT_NS_1SEC * 2)
     {
-        supdrvGipInitSetCpuFreq(pGip, cNsElapsed, cTscTicksElapsed);
+        supdrvGipInitSetCpuFreq(pGip, cNsElapsed, cTscTicksElapsed, iTick);
 
         /*
-         * Reschedule the timer if we haven't yet reached the defined refinement period.
+         * Stop the timer once we've reached the defined refinement period.
          */
-        if (cNsElapsed < GIP_TSC_REFINE_PERIOD_IN_SECS * RT_NS_1SEC_64)
+        if (cNsElapsed > GIP_TSC_REFINE_PERIOD_IN_SECS * RT_NS_1SEC_64)
         {
-            int rc = RTTimerStart(pTimer, RT_NS_1SEC);
+            int rc = RTTimerStop(pTimer);
             AssertRC(rc);
         }
+    }
+    else
+    {
+        int rc = RTTimerStop(pTimer);
+        AssertRC(rc);
     }
 }
 
@@ -926,7 +934,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
      * reached or it notices that there is a user land client with GIP
      * mapped (we want a stable frequency for all VMs).
      */
-    rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, 0 /* one-shot */,
+    rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, RT_NS_1SEC,
                          RTTIMER_FLAGS_CPU(RTMpCpuIdToSetIndex(pDevExt->idCpuInvarTscRefine)),
                          supdrvInitRefineInvariantTscFreqTimer, pDevExt);
     if (RT_SUCCESS(rc))
@@ -939,7 +947,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
 
     if (rc == VERR_CPU_OFFLINE || rc == VERR_NOT_SUPPORTED)
     {
-        rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, 0 /* one-shot */, RTTIMER_FLAGS_CPU_ANY,
+        rc = RTTimerCreateEx(&pDevExt->pInvarTscRefineTimer, RT_NS_1SEC, RTTIMER_FLAGS_CPU_ANY,
                              supdrvInitRefineInvariantTscFreqTimer, pDevExt);
         if (RT_SUCCESS(rc))
         {
@@ -1168,7 +1176,7 @@ static int supdrvGipInitMeasureTscFreq(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
         /*
          * Calculate the TSC frequency and update it (shared with the refinement timer).
          */
-        supdrvGipInitSetCpuFreq(pGip, nsStop - nsStart, uTscStop - uTscStart);
+        supdrvGipInitSetCpuFreq(pGip, nsStop - nsStart, uTscStop - uTscStart, 0);
         return VINF_SUCCESS;
     }
 
