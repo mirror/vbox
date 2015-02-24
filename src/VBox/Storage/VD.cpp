@@ -6995,6 +6995,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                         pDisk->pVDIfsDisk,
                                         pImage->pVDIfsImage,
                                         pVDIfsOperation,
+                                        pDisk->enmType,
                                         &pImage->pBackendData);
 
         if (RT_SUCCESS(rc))
@@ -7272,6 +7273,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                         pDisk->pVDIfsDisk,
                                         pImage->pVDIfsImage,
                                         pVDIfsOperation,
+                                        pDisk->enmType,
                                         &pImage->pBackendData);
 
         if (RT_SUCCESS(rc))

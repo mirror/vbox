@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -421,9 +421,11 @@ static int parallelsOpen(const char *pszFilename, unsigned uOpenFlags,
                          PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                          VDTYPE enmType, void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p enmType=%u ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
     int rc;
     PPARALLELSIMAGE pImage;
+
+    NOREF(enmType); /**< @todo r=klaus make use of the type info. */
 
     /* Check open flags. All valid flags are supported. */
     if (uOpenFlags & ~VD_OPEN_FLAGS_MASK)
@@ -472,10 +474,11 @@ static int parallelsCreate(const char *pszFilename, uint64_t cbSize,
                            unsigned uOpenFlags, unsigned uPercentStart,
                            unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
                            PVDINTERFACE pVDIfsImage,
-                           PVDINTERFACE pVDIfsOperation, void **ppBackendData)
+                           PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
+                           void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p ppBackendData=%#p",
-                 pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
+                 pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
     int rc = VINF_SUCCESS;
     PPARALLELSIMAGE pImage;
 
@@ -486,6 +489,13 @@ static int parallelsCreate(const char *pszFilename, uint64_t cbSize,
     {
         pfnProgress = pIfProgress->pfnProgress;
         pvUser = pIfProgress->Core.pvUser;
+    }
+
+    /* Check the VD container type. */
+    if (enmType != VDTYPE_HDD)
+    {
+        rc = VERR_VD_INVALID_TYPE;
+        goto out;
     }
 
     /* Check open flags. All valid flags are supported. */

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -138,6 +138,7 @@ typedef struct VBOXHDDBACKEND
      * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+     * @param   enmType         Requested type of the image.
      * @param   ppBackendData   Opaque state data for this image.
      */
     DECLR3CALLBACKMEMBER(int, pfnCreate, (const char *pszFilename, uint64_t cbSize,
@@ -149,6 +150,7 @@ typedef struct VBOXHDDBACKEND
                                           PVDINTERFACE pVDIfsDisk,
                                           PVDINTERFACE pVDIfsImage,
                                           PVDINTERFACE pVDIfsOperation,
+                                          VDTYPE enmType,
                                           void **ppBackendData));
 
     /**

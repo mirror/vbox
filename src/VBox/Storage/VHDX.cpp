@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1791,9 +1791,11 @@ static int vhdxOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                    VDTYPE enmType, void **ppBackendData)
 {
-    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, ppBackendData));
+    LogFlowFunc(("pszFilename=\"%s\" uOpenFlags=%#x pVDIfsDisk=%#p pVDIfsImage=%#p enmType=%u ppBackendData=%#p\n", pszFilename, uOpenFlags, pVDIfsDisk, pVDIfsImage, enmType, ppBackendData));
     int rc;
     PVHDXIMAGE pImage;
+
+    NOREF(enmType); /**< @todo r=klaus make use of the type info. */
 
     /* Check open flags. All valid flags are supported. */
     if (   uOpenFlags & ~VD_OPEN_FLAGS_MASK
@@ -1821,6 +1823,24 @@ static int vhdxOpen(const char *pszFilename, unsigned uOpenFlags,
     }
 
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
+    return rc;
+}
+
+/** @interface_method_impl{VBOXHDDBACKEND,pfnCreate} */
+static DECLCALLBACK(int) vhdxCreate(const char *pszFilename, uint64_t cbSize,
+                                    unsigned uImageFlags, const char *pszComment,
+                                    PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
+                                    PCRTUUID pUuid, unsigned uOpenFlags,
+                                    unsigned uPercentStart, unsigned uPercentSpan,
+                                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                                    PVDINTERFACE pVDIfsOperation, VDTYPE enmType,
+                                    void **ppBackendData)
+{
+    LogFlowFunc(("pszFilename=\"%s\" cbSize=%llu uImageFlags=%#x pszComment=\"%s\" pPCHSGeometry=%#p pLCHSGeometry=%#p Uuid=%RTuuid uOpenFlags=%#x uPercentStart=%u uPercentSpan=%u pVDIfsDisk=%#p pVDIfsImage=%#p pVDIfsOperation=%#p enmType=%u ppBackendData=%#p",
+                 pszFilename, cbSize, uImageFlags, pszComment, pPCHSGeometry, pLCHSGeometry, pUuid, uOpenFlags, uPercentStart, uPercentSpan, pVDIfsDisk, pVDIfsImage, pVDIfsOperation, enmType, ppBackendData));
+    int rc = VERR_NOT_SUPPORTED;
+
+    LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
@@ -2447,7 +2467,7 @@ const VBOXHDDBACKEND g_VhdxBackend =
     /* pfnOpen */
     vhdxOpen,
     /* pfnCreate */
-    NULL,
+    vhdxCreate,
     /* pfnRename */
     vhdxRename,
     /* pfnClose */
