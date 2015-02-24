@@ -2609,6 +2609,10 @@ typedef struct SUPDRVGIPTSCDELTARGS
     uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
     /** The time the master spent in the MP worker.  */
     uint64_t                    cElapsedMasterTscTicks;
+    /** The iTry value when stopped at. */
+    uint32_t                    iTry;
+    /** Set if the run timed out.   */
+    bool volatile               fTimedOut;
     /** Pointer to the master's synchronization struct (on stack). */
     PSUPTSCDELTASYNC2 volatile  pSyncMaster;
     /** Verification test TSC values for the master. */
@@ -2659,10 +2663,25 @@ typedef SUPDRVGIPTSCDELTARGS *PSUPDRVGIPTSCDELTARGS;
 # define TSCDELTA_DBG_START_LOOP()      ((void)0)
 # define TSCDELTA_DBG_CHECK_LOOP()      ((void)0)
 #endif
+#if 0
+# define TSCDELTA_DBG_SYNC_MSG(a_Args)  SUPR0Printf a_Args
+#else
+# define TSCDELTA_DBG_SYNC_MSG(a_Args)  ((void)0)
+#endif
+#if 0
+# define TSCDELTA_DBG_SYNC_MSG2(a_Args) SUPR0Printf a_Args
+#else
+# define TSCDELTA_DBG_SYNC_MSG2(a_Args) ((void)0)
+#endif
+#if 0
+# define TSCDELTA_DBG_SYNC_MSG9(a_Args) SUPR0Printf a_Args
+#else
+# define TSCDELTA_DBG_SYNC_MSG9(a_Args) ((void)0)
+#endif
 
 
 static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync,
-                                       bool fIsMaster, PRTCCUINTREG pfEFlags)
+                                       bool fIsMaster, PRTCCUINTREG pfEFlags, PSUPDRVGIPTSCDELTARGS pArgs)
 {
     uint32_t        iMySeq  = fIsMaster ? 0 : 256;
     uint32_t const  iMaxSeq = iMySeq + 16;  /* For the last loop, darn linux/freebsd C-ishness. */
@@ -2681,7 +2700,10 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         if (RT_LIKELY(ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_STEADY, GIP_TSC_DELTA_SYNC2_READY)))
         { /* likely*/ }
         else
+        {
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #1 uSyncVar=%#x\n", fIsMaster ? "master" : "worker", pOtherSync->uSyncVar));
             return false;
+        }
     }
 
     /*
@@ -2694,13 +2716,15 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         u32Tmp = ASMAtomicReadU32(&pMySync->uSyncVar);
         if (u32Tmp == GIP_TSC_DELTA_SYNC2_STEADY)
             break;
-
         ASMSetFlags(fEFlags);
         ASMNopPause();
 
         /* Abort? */
         if (u32Tmp != GIP_TSC_DELTA_SYNC2_READY)
-            break;
+        {
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #2 u32Tmp=%#x\n", fIsMaster ? "master" : "worker", u32Tmp));
+            return false;
+        }
 
         /* Check for timeouts every so often (not every loop in case RDTSC is
            trapping or something).  Must check the first time around. */
@@ -2718,7 +2742,9 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
                ignore the timeout if we've got the go ahead already (simpler). */
             if (ASMAtomicCmpXchgU32(&pMySync->uSyncVar, GIP_TSC_DELTA_SYNC2_TIMEOUT, GIP_TSC_DELTA_SYNC2_READY))
             {
+                TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: timeout\n", fIsMaster ? "master" : "worker"));
                 ASMAtomicCmpXchgU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_TIMEOUT, GIP_TSC_DELTA_SYNC2_STEADY);
+                ASMAtomicWriteBool(&pArgs->fTimedOut, true);
                 return false;
             }
         }
@@ -2742,6 +2768,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         else
         {
             ASMSetFlags(fEFlags);
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #3 uSyncVar=%#x\n", fIsMaster ? "master" : "worker", pOtherSync->uSyncVar));
             return false;
         }
     }
@@ -2756,6 +2783,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         else
         {
             ASMSetFlags(fEFlags);
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #4 uSyncVar=%#x\n", fIsMaster ? "master" : "worker", pOtherSync->uSyncVar));
             return false;
         }
     }
@@ -2774,6 +2802,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         else
         {
             ASMSetFlags(fEFlags);
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #5 u32Tmp=%#x\n", fIsMaster ? "master" : "worker", u32Tmp));
             return false;
         }
 
@@ -2791,6 +2820,7 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
         else
         {
             ASMSetFlags(fEFlags);
+            TSCDELTA_DBG_SYNC_MSG(("sync/before/%s: #6 uSyncVar=%#x\n", fIsMaster ? "master" : "worker", pOtherSync->uSyncVar));
             return false;
         }
     }
@@ -2827,17 +2857,26 @@ static bool supdrvTscDeltaSync2_Before(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASY
     }
 }
 
-#define TSCDELTA_MASTER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags) \
-    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, true /*fMaster*/, a_pfEFlags))) \
+#define TSCDELTA_MASTER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags, a_pArgs) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, true /*fIsMaster*/, a_pfEFlags, a_pArgs))) \
     { /*likely*/ } \
-    else break
-#define TSCDELTA_OTHER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags) \
-    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, false /*fMaster*/, a_pfEFlags))) \
+    else if (true) \
+    { \
+        TSCDELTA_DBG_SYNC_MSG9(("sync/before/master: #89\n")); \
+        break; \
+    } else do {} while (0)
+#define TSCDELTA_OTHER_SYNC_BEFORE(a_pMySync, a_pOtherSync, a_pfEFlags, a_pArgs) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_Before(a_pMySync, a_pOtherSync, false /*fIsMaster*/, a_pfEFlags, a_pArgs))) \
     { /*likely*/ } \
-    else break
+    else if (true) \
+    { \
+        TSCDELTA_DBG_SYNC_MSG9(("sync/before/other: #89\n")); \
+        break; \
+    } else do {} while (0)
 
 
-static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync, RTCCUINTREG fEFlags)
+static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYNC2 pOtherSync,
+                                      bool fIsMaster, RTCCUINTREG fEFlags)
 {
     TSCDELTA_DBG_VARS();
 
@@ -2852,20 +2891,30 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
     for (;;)
     {
         uint32_t u32Tmp = ASMAtomicReadU32(&pMySync->uSyncVar);
-        if (u32Tmp == GIP_TSC_DELTA_SYNC2_READY)
+        if (   u32Tmp == GIP_TSC_DELTA_SYNC2_READY
+            || (u32Tmp == GIP_TSC_DELTA_SYNC2_STEADY && !fIsMaster) /* kicked twice => race */ )
             return true;
         ASMNopPause();
-        if (u32Tmp != GIP_TSC_DELTA_SYNC2_GO)
+        if (RT_LIKELY(u32Tmp == GIP_TSC_DELTA_SYNC2_GO))
+        { /* likely */}
+        else
+        {
+            TSCDELTA_DBG_SYNC_MSG(("sync/after/other: #1 u32Tmp=%#x\n", u32Tmp));
             return false; /* shouldn't ever happen! */
+        }
         TSCDELTA_DBG_CHECK_LOOP();
         ASMNopPause();
     }
 }
 
 #define TSCDELTA_MASTER_SYNC_AFTER(a_pMySync, a_pOtherSync, a_fEFlags) \
-    if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, a_fEFlags))) \
+    if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, true /*fIsMaster*/, a_fEFlags))) \
     { /* likely */ } \
-    else break
+    else if (true) \
+    { \
+        TSCDELTA_DBG_SYNC_MSG9(("sync/after/master: #97\n")); \
+        break; \
+    } else do {} while (0)
 
 #define TSCDELTA_MASTER_KICK_OTHER_OUT_OF_AFTER(a_pMySync, a_pOtherSync) \
     /* \
@@ -2873,7 +2922,11 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
      */ \
     if (RT_LIKELY(ASMAtomicCmpXchgU32(&(a_pOtherSync)->uSyncVar, GIP_TSC_DELTA_SYNC2_READY, GIP_TSC_DELTA_SYNC2_GO))) \
     { /* likely */ } \
-    else break
+    else if (true)\
+    { \
+        TSCDELTA_DBG_SYNC_MSG(("sync/after/master: #99 uSyncVar=%#x\n", (a_pOtherSync)->uSyncVar)); \
+        break; \
+    } else do {} while (0)
 
 #define TSCDELTA_OTHER_SYNC_AFTER(a_pMySync, a_pOtherSync, a_fEFlags) \
     if (true) { \
@@ -2885,12 +2938,17 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
         else \
         { \
             ASMSetFlags(a_fEFlags); \
+            TSCDELTA_DBG_SYNC_MSG(("sync/after/other: #0 uSyncVar=%#x\n", (a_pOtherSync)->uSyncVar)); \
             break; \
         } \
-        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, a_fEFlags))) \
+        if (RT_LIKELY(supdrvTscDeltaSync2_After(a_pMySync, a_pOtherSync, false /*fIsMaster*/, a_fEFlags))) \
         { /* likely */ } \
-        else break; \
-    }  else do {} while (0)
+        else \
+        { \
+            TSCDELTA_DBG_SYNC_MSG9(("sync/after/other: #98\n")); \
+            break;  \
+        } \
+    } else do {} while (0)
 /** @} */
 
 #ifdef GIP_TSC_DELTA_METHOD_1
@@ -2947,7 +3005,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             AssertMsg(pGipCpuMaster->u64TSCSample == GIP_TSC_DELTA_RSVD,
                       ("%#llx idMaster=%#x idWorker=%#x (idGipMaster=%#x)\n",
                        pGipCpuMaster->u64TSCSample, pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, pArgs->pDevExt->idGipMaster));
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
 
             do
             {
@@ -2985,7 +3043,7 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             uint64_t uCmpReadTime;
 
             ASMAtomicReadU64(&pGipCpuMaster->u64TSCSample);     /* Warm the cache line. */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
 
             /*
              * Keep reading the TSC until we notice that the master has read his. Reading
@@ -3023,6 +3081,9 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
     }
+
+    TSCDELTA_DBG_SYNC_MSG9(("sync/method1loop/%s: #92 iLoop=%u MyState=%#x\n", fIsMaster ? "master" : "worker", iLoop,
+                           pMySync->uSyncVar));
 
     /*
      * We must reset the worker TSC sample value in case it gets picked as a
@@ -3064,7 +3125,7 @@ static void supdrvTscDeltaMethod1Delete(PSUPDRVGIPTSCDELTARGS pArgs)
  * TSC delta measurement algorithm \#2 configuration and code - Experimental!!
  */
 
-# define GIP_TSC_DELTA_M2_LOOPS             (12 + GIP_TSC_DELTA_M2_PRIMER_LOOPS)
+# define GIP_TSC_DELTA_M2_LOOPS             (8 + GIP_TSC_DELTA_M2_PRIMER_LOOPS)
 # define GIP_TSC_DELTA_M2_PRIMER_LOOPS      1
 
 
@@ -3108,9 +3169,9 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
      */
     if (cHits > 2)
         pArgs->pWorker->i64TSCDelta = iBestDelta;
-    pArgs->M2.cHits     += cHits;
+    pArgs->M2.cHits += cHits;
 
-#if 1
+#if 0 /* This is pointless now with supdrvTscDeltaVerify(0). */
     /*
      * Check and see if we can quit a little early.  If the result is already
      * extremely good (+/-16 ticks seems reasonable), just stop.
@@ -3243,7 +3304,7 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * Sync up with the worker and collect data.
              */
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pMasterData, &pArgs->M2.pWorkerData->iCurSeqNo, pArgs->M2.fLagMaster);
             TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
 
@@ -3262,7 +3323,7 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             /*
              * The worker.
              */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
             supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
@@ -3315,7 +3376,7 @@ static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
 static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 pMySync,
                                 PSUPTSCDELTASYNC2 pOtherSync, bool fIsMaster, int64_t iWorkerTscDelta)
 {
-    PSUPGIPCPU pGipCpuWorker = pArgs->pWorker;
+    /*PSUPGIPCPU pGipCpuWorker = pArgs->pWorker; - unused */
     PSUPGIPCPU pGipCpuMaster = pArgs->pMaster;
     uint32_t   i;
     TSCDELTA_DBG_VARS();
@@ -3329,7 +3390,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
         if (fIsMaster)
         {
             uint64_t uTscWorker;
-            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
 
             /*
              * Collect TSC, master goes first.
@@ -3424,7 +3485,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
             /*
              * The worker, master leads.
              */
-            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags);
+            TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
 
             for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyWorkerTscs); i += 2)
             {
@@ -3491,6 +3552,8 @@ supdrvMeasureTscDeltaCallbackAbortSyncSetup(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSC
      */
     ASMAtomicWriteNullPtr(ppMySync);
     ASMAtomicWriteBool(&pArgs->fAbortSetup, true);
+    if (fTimeout)
+        ASMAtomicWriteBool(&pArgs->fTimedOut, true);
 
     /*
      * Make sure the other party is out of there and won't be touching our
@@ -3626,11 +3689,6 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
         if (fIsMaster)
         {
             ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, GIP_TSC_DELTA_INITIAL_MASTER_VALUE);
-            RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->iCpuSet);
-            RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->iCpuSet);
-        }
-        else
-        {
             RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
             RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
         }
@@ -3644,8 +3702,16 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
         Assert(pGipCpuWorker->i64TSCDelta == INT64_MAX);
         for (iTry = 0; iTry < 12; iTry++)
         {
-            if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
+            /*
+             * Check the state before we start.
+             */
+            uint32_t u32Tmp = ASMAtomicReadU32(&MySync.uSyncVar);
+            if (   u32Tmp != GIP_TSC_DELTA_SYNC2_READY
+                && (fIsMaster || u32Tmp != GIP_TSC_DELTA_SYNC2_STEADY) /* worker may be late prepping for the next round */ )
+            {
+                TSCDELTA_DBG_SYNC_MSG(("sync/loop/%s: #0 iTry=%u MyState=%#x\n", fIsMaster ? "master" : "worker", iTry, u32Tmp));
                 break;
+            }
 
             /*
              * Do the measurements.
@@ -3657,31 +3723,41 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
 #else
 # error "huh??"
 #endif
-            if (ASMAtomicReadU32(&MySync.uSyncVar) != GIP_TSC_DELTA_SYNC2_READY)
-                break;
 
             /*
-             * Success? If so, stop trying.
+             * Check the state.
              */
-#if 1
-            if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
-#else
-            if (pGipCpuWorker->i64TSCDelta != INT64_MAX && iTry >= 11)
-#endif
+            u32Tmp = ASMAtomicReadU32(&MySync.uSyncVar);
+            if (   u32Tmp != GIP_TSC_DELTA_SYNC2_READY
+                && (fIsMaster || u32Tmp != GIP_TSC_DELTA_SYNC2_STEADY) /* worker may be late prepping for the next round */ )
             {
                 if (fIsMaster)
-                {
-                    RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuMaster->iCpuSet);
-                    RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuMaster->iCpuSet);
-                }
+                    TSCDELTA_DBG_SYNC_MSG(("sync/loop/master: #1 iTry=%u MyState=%#x\n", iTry, u32Tmp));
                 else
+                    TSCDELTA_DBG_SYNC_MSG2(("sync/loop/worker: #1 iTry=%u MyState=%#x\n", iTry, u32Tmp));
+                break;
+            }
+
+            /*
+             * Success? If so, stop trying. Master decides.
+             */
+            if (fIsMaster)
+            {
+#if 0
+                if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
+#else
+                if (pGipCpuWorker->i64TSCDelta != INT64_MAX && iTry >= 11)
+#endif
                 {
                     RTCpuSetDelByIndex(&pDevExt->TscDeltaCpuSet, pGipCpuWorker->iCpuSet);
                     RTCpuSetAddByIndex(&pDevExt->TscDeltaObtainedCpuSet, pGipCpuWorker->iCpuSet);
+                    TSCDELTA_DBG_SYNC_MSG2(("sync/loop/master: #9 iTry=%u MyState=%#x\n", iTry, MySync.uSyncVar));
+                    break;
                 }
-                break;
             }
         }
+        if (fIsMaster)
+            pArgs->iTry = iTry;
     }
 
     /*
@@ -3857,8 +3933,9 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
                 if (RT_SUCCESS(rc))
                 {
 #if 0
-                    SUPR0Printf("mponpair ticks: %9llu %9llu  max: %9llu\n", pArgs->cElapsedMasterTscTicks,
-                                pArgs->cElapsedWorkerTscTicks, pArgs->cMaxTscTicks);
+                    SUPR0Printf("mponpair ticks: %9llu %9llu  max: %9llu  iTry: %u%s\n", pArgs->cElapsedMasterTscTicks,
+                                pArgs->cElapsedWorkerTscTicks, pArgs->cMaxTscTicks, pArgs->iTry,
+                                pArgs->fTimedOut ? " timed out" :"");
 #endif
 #if 0
                     SUPR0Printf("rcVerify=%d iVerifyBadTscDiff=%lld cMinVerifyTscTicks=%lld cMaxVerifyTscTicks=%lld\n",
