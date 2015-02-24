@@ -68,14 +68,14 @@ typedef struct TSTRTR0THREADCTXDATA
  * @param   enmEvent    The thread-context event.
  * @param   pvUser      Pointer to the user argument.
  */
-static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
+static DECLCALLBACK(void) tstRTR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
     PTSTRTR0THREADCTXDATA pData = (PTSTRTR0THREADCTXDATA)pvUser;
     AssertPtrReturnVoid(pData);
 
     if (pData->u32Magic != TSTRTR0THREADCTXDATA_MAGIC)
     {
-        RTStrPrintf(pData->achResult, sizeof(pData->achResult), "!tstR0ThreadCtxHook: Invalid magic.");
+        RTStrPrintf(pData->achResult, sizeof(pData->achResult), "!tstRTR0ThreadCtxHook: Invalid magic.");
         return;
     }
 
@@ -92,7 +92,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
-                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Called with preemption enabled");
+                            "!tstRTR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Called with preemption enabled");
                 break;
             }
 
@@ -100,7 +100,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             if (pData->hSourceThread != hCurrentThread)
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
-                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
+                            "!tstRTR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
                             pData->hSourceThread, hCurrentThread);
                 break;
             }
@@ -109,7 +109,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             if (pData->uSourceCpuId != uCurrentCpuId)
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
-                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: migrated uSourceCpuId=%RU32 uCurrentCpuId=%RU32",
+                            "!tstRTR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: migrated uSourceCpuId=%RU32 uCurrentCpuId=%RU32",
                             pData->uSourceCpuId, uCurrentCpuId);
                 break;
             }
@@ -129,7 +129,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             if (!pData->fPreemptingSuccess)
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
-                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Called before preempting callback was invoked.");
+                            "!tstRTR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Called before preempting callback was invoked.");
                 break;
             }
 
@@ -137,7 +137,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             if (pData->hSourceThread != hCurrentThread)
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
-                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
+                            "!tstRTR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
                             pData->hSourceThread, hCurrentThread);
                 break;
             }
@@ -161,8 +161,8 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
  * @param   u64Arg      64-bit integer argument.
  * @param   pReqHdr     The request header. Input / Output. Optional.
  */
-DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
-                                                   uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
+DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
+                                                     uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
     NOREF(pSession);
     if (u64Arg)
@@ -344,7 +344,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
             pCtxData->uSourceCpuId       = RTMpCpuId();
 
-            rc = RTThreadCtxHooksRegister(hThreadCtx, &tstR0ThreadCtxHook, pCtxData);
+            rc = RTThreadCtxHooksRegister(hThreadCtx, &tstRTR0ThreadCtxHook, pCtxData);
             if (RT_FAILURE(rc))
             {
                 RTThreadPreemptRestore(&PreemptState);
