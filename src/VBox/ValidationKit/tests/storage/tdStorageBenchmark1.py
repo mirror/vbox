@@ -481,7 +481,8 @@ class tdStorageBenchmark(vbox.TestDriver):                                      
                 listNames.append('LUN');
 
                 if self.fpApiVer >= 4.4:
-                    oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
+                    oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath, vboxcon.AccessMode_ReadWrite, \
+                                                      vboxcon.DeviceType_HardDisk);
                 else:
                     oHd = oSession.oVBox.createHardDisk(sDiskFormat, sDiskPath);
                 oHd.type = vboxcon.MediumType_Normal;
