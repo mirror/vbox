@@ -2618,6 +2618,7 @@ typedef struct SUPDRVGIPTSCDELTARGS
     /** The verifier verdict, VINF_SUCCESS if ok, VERR_OUT_OF_RANGE if not,
      * VERR_TRY_AGAIN on timeout. */
     int32_t                     rcVerify;
+#ifdef TSCDELTA_VERIFY_WITH_STATS
     /** The maximum difference between TSC read during delta verification. */
     int64_t                     cMaxVerifyTscTicks;
     /** The minimum difference between two TSC reads during verification. */
@@ -2625,6 +2626,7 @@ typedef struct SUPDRVGIPTSCDELTARGS
     /** The bad TSC diff, worker relative to master (= worker - master).
      * Negative value means the worker is behind the master.  */
     int64_t                     iVerifyBadTscDiff;
+#endif
 
     /** Padding to make sure the uVar1 is in its own cache line. */
     uint64_t                    au64CacheLinePaddingBetween[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
@@ -3370,9 +3372,11 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
             /*
              * Process the data.
              */
+#ifdef TSCDELTA_VERIFY_WITH_STATS
             pArgs->cMaxVerifyTscTicks = INT64_MIN;
             pArgs->cMinVerifyTscTicks = INT64_MAX;
             pArgs->iVerifyBadTscDiff  = 0;
+#endif
             ASMAtomicWriteS32(&pArgs->rcVerify, VINF_SUCCESS);
             uTscWorker = 0;
             for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyMasterTscs); i++)
@@ -3383,13 +3387,17 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 if (i > 0)
                 {
                     iDiff = uTscMaster - uTscWorker;
+#ifdef TSCDELTA_VERIFY_WITH_STATS
                     if (iDiff > pArgs->cMaxVerifyTscTicks)
                         pArgs->cMaxVerifyTscTicks = iDiff;
                     if (iDiff < pArgs->cMinVerifyTscTicks)
                         pArgs->cMinVerifyTscTicks = iDiff;
+#endif
                     if (iDiff < 0)
                     {
+#ifdef TSCDELTA_VERIFY_WITH_STATS
                         pArgs->iVerifyBadTscDiff = -iDiff;
+#endif
                         ASMAtomicWriteS32(&pArgs->rcVerify, VERR_OUT_OF_RANGE);
                         break;
                     }
@@ -3398,13 +3406,17 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 /* Worker vs master. */
                 uTscWorker = pArgs->auVerifyWorkerTscs[i] - iWorkerTscDelta;
                 iDiff = uTscWorker - uTscMaster;
+#ifdef TSCDELTA_VERIFY_WITH_STATS
                 if (iDiff > pArgs->cMaxVerifyTscTicks)
                     pArgs->cMaxVerifyTscTicks = iDiff;
                 if (iDiff < pArgs->cMinVerifyTscTicks)
                     pArgs->cMinVerifyTscTicks = iDiff;
+#endif
                 if (iDiff < 0)
                 {
+#ifdef TSCDELTA_VERIFY_WITH_STATS
                     pArgs->iVerifyBadTscDiff = iDiff;
+#endif
                     ASMAtomicWriteS32(&pArgs->rcVerify, VERR_OUT_OF_RANGE);
                     break;
                 }
