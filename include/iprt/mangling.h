@@ -968,6 +968,8 @@
 # define RTMpOnAll                                      RT_MANGLER(RTMpOnAll)                  /* r0drv */
 # define RTMpOnAllIsConcurrentSafe                      RT_MANGLER(RTMpOnAllIsConcurrentSafe)  /* r0drv */
 # define RTMpOnOthers                                   RT_MANGLER(RTMpOnOthers)               /* r0drv */
+# define RTMpOnPair                                     RT_MANGLER(RTMpOnPair)                 /* r0drv */
+# define RTMpOnPairIsConcurrentExecSupported            RT_MANGLER(RTMpOnPairIsConcurrentExecSupported) /* r0drv */
 # define RTMpOnSpecific                                 RT_MANGLER(RTMpOnSpecific)             /* r0drv */
 # define RTMpPokeCpu                                    RT_MANGLER(RTMpPokeCpu)                /* r0drv */
 # define RTMsgError                                     RT_MANGLER(RTMsgError)
