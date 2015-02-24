@@ -733,11 +733,13 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
         /* If it hasn't respondend yet, maybe poke it and wait some more. */
         if (rcNt == STATUS_TIMEOUT)
         {
+#ifndef IPRT_TARGET_NT4
             if (   !pArgs->fExecuting
                 && (   g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalSendSoftwareInterrupt
                     || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiW7Plus
                     || g_pfnrtMpPokeCpuWorker == rtMpPokeCpuUsingHalReqestIpiPreW7))
                 RTMpPokeCpu(idCpu);
+#endif
 
             Timeout.QuadPart = -1280000; /* 128ms */
             rcNt = KeWaitForSingleObject(&pArgs->DoneEvt, Executive, KernelMode, FALSE /* Alertable */, &Timeout);
