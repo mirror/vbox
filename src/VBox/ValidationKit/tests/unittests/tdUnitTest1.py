@@ -75,7 +75,7 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstFile': '',                     # ??
             'testcase/tstIntNet-1': '',                 # possibly same issue as solaris.
             'testcase/tstMouseImpl': '',                # STATUS_ACCESS_VIOLATION
-            'testcase/tstR0ThreadPreemptionDriver': '', # ??
+            'testcase/tstRTR0ThreadPreemptionDriver': '', # ??
             'testcase/tstRTPath': '<4.3.51r89894',
             'testcase/tstRTPipe': '',                   # ??
             'testcase/tstRTR0MemUserKernelDriver': '',  # ??
@@ -218,7 +218,7 @@ class tdUnitTest1(vbox.TestDriver):
     # @note Stripped extensions!
     kasHardened = [
         "testcase/tstIntNet-1",
-        "testcase/tstR0ThreadPreemptionDriver",
+        "testcase/tstRTR0ThreadPreemptionDriver",
         "testcase/tstRTR0MemUserKernelDriver",
         "testcase/tstRTR0SemMutexDriver",
         "testcase/tstRTR0TimerDriver",
