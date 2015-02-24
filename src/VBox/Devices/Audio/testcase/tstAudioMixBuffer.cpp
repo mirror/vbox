@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -132,11 +132,11 @@ static int tstSingle(RTTEST hTest)
 
 static int tstParentChild(RTTEST hTest)
 {
-    RTTestSubF(hTest, "Child<->Parent");
+    RTTestSubF(hTest, "2 Children -> Parent");
 
     uint32_t cBufSize = _1K;
 
-    PDMAUDIOSTREAMCFG cp =
+    PDMAUDIOSTREAMCFG cfg_p =
     {
         44100,                   /* Hz */
         2                        /* Channels */,
@@ -145,13 +145,13 @@ static int tstParentChild(RTTEST hTest)
     };
     PDMPCMPROPS props;
 
-    int rc = drvAudioStreamCfgToProps(&cp, &props);
+    int rc = drvAudioStreamCfgToProps(&cfg_p, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&parent, "Parent", &props, cBufSize));
 
-    PDMAUDIOSTREAMCFG cc =
+    PDMAUDIOSTREAMCFG cfg_c1 = /* Downmixing */
     {
         22100,                   /* Hz */
         2                        /* Channels */,
@@ -159,37 +159,61 @@ static int tstParentChild(RTTEST hTest)
         PDMAUDIOENDIANESS_LITTLE /* Endianess */
     };
 
-    rc = drvAudioStreamCfgToProps(&cc, &props);
+    rc = drvAudioStreamCfgToProps(&cfg_c1, &props);
     AssertRC(rc);
 
     PDMAUDIOMIXBUF child1;
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&child1, "Child1", &props, cBufSize));
     RTTESTI_CHECK_RC_OK(audioMixBufLinkTo(&child1, &parent));
 
+    PDMAUDIOSTREAMCFG cfg_c2 = /* Upmixing */
+    {
+        48000,                   /* Hz */
+        2                        /* Channels */,
+        AUD_FMT_S16              /* Format */,
+        PDMAUDIOENDIANESS_LITTLE /* Endianess */
+    };
+
+    rc = drvAudioStreamCfgToProps(&cfg_c2, &props);
+    AssertRC(rc);
+
     PDMAUDIOMIXBUF child2;
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&child2, "Child2", &props, cBufSize));
     RTTESTI_CHECK_RC_OK(audioMixBufLinkTo(&child2, &parent));
 
     /*
-     * Writing + mixing from child(s) -> parent, sequential.
+     * Writing + mixing from child/children -> parent, sequential.
      */
-    int16_t samples16[2] = { 0xAA, 0xBB };
-    uint32_t read = 0, written = 0, proc, mixed = 0;
+    size_t cbBuf = _1K;
+    char pvBuf[_1K];
+    int16_t samples16[32] = { 0xAA, 0xBB };
+    uint32_t read , written, proc, mixed;
 
-    RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child1, 0, &samples16, sizeof(samples16),
-                                           &written));
-    RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child1, written, &mixed));
-    RTTESTI_CHECK(mixed == 1);
-    RTTESTI_CHECK(audioMixBufMixed(&child1) == mixed);
+    uint32_t cSamplesParent1 = 16;
+    uint32_t cSamplesChild1  = 16;
+    uint32_t cSamplesParent2 = 32;
+    uint32_t cSamplesChild2  = 16;
 
-    RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child2, 0, &samples16, sizeof(samples16),
-                                           &written));
-    RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child2, written, &mixed));
-    RTTESTI_CHECK(mixed == 1);
-    RTTESTI_CHECK(audioMixBufMixed(&child2) == mixed);
+    for (int i = 0; i < 32; i++)
+    {
+        RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child1, 0, &samples16, sizeof(samples16), &written));
+        RTTESTI_CHECK(written == cSamplesChild1);
+        RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child1, written, &mixed));
+        RTTESTI_CHECK(mixed == cSamplesChild1);
+
+        RTTESTI_CHECK_RC_OK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
+        RTTESTI_CHECK(read == 31);
+
+        RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child2, 0, &samples16, sizeof(samples16), &written));
+        RTTESTI_CHECK(written == cSamplesChild2);
+        RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child2, written, &mixed));
+        RTTESTI_CHECK(mixed == cSamplesChild2);
+
+        RTTESTI_CHECK_RC_OK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
+        RTTESTI_CHECK(read == 15);
+    }
 
     RTTESTI_CHECK(audioMixBufProcessed(&parent) == 0);
-
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
@@ -207,8 +231,8 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    rc = tstSingle(hTest);
-    if (RT_SUCCESS(rc))
+    /*rc = tstSingle(hTest);
+    if (RT_SUCCESS(rc))*/
         rc = tstParentChild(hTest);
 
     /*
