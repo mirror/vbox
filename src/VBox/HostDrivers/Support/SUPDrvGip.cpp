@@ -2479,7 +2479,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 /*
  * Select TSC delta measurement algorithm.
  */
-#if 1
+#if 0
 # define GIP_TSC_DELTA_METHOD_1
 #else
 # define GIP_TSC_DELTA_METHOD_2
@@ -2515,7 +2515,7 @@ typedef struct SUPDRVTSCDELTAMETHOD2
     /** Padding to make sure the iCurSeqNo is in its own cache line. */
     uint32_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint32_t) - 1];
     /** Result table. */
-    SUPDRVTSCDELTAMETHOD2ENTRY  aResults[96];
+    SUPDRVTSCDELTAMETHOD2ENTRY  aResults[64];
 } SUPDRVTSCDELTAMETHOD2;
 /** Pointer to the data for TSC delta mesurment algorithm \#2 .*/
 typedef SUPDRVTSCDELTAMETHOD2 *PSUPDRVTSCDELTAMETHOD2;
@@ -2600,7 +2600,9 @@ typedef struct SUPDRVGIPTSCDELTARGS
         uint32_t                cHits;
         bool                    fLagMaster;
         bool                    fLagWorker;
+# if 0  /* pointless now */
         bool volatile           fQuitEarly;
+# endif
     } M2;
 #endif
 
@@ -3125,8 +3127,8 @@ static void supdrvTscDeltaMethod1Delete(PSUPDRVGIPTSCDELTARGS pArgs)
  * TSC delta measurement algorithm \#2 configuration and code - Experimental!!
  */
 
-# define GIP_TSC_DELTA_M2_LOOPS             (8 + GIP_TSC_DELTA_M2_PRIMER_LOOPS)
-# define GIP_TSC_DELTA_M2_PRIMER_LOOPS      1
+# define GIP_TSC_DELTA_M2_LOOPS             (7 + GIP_TSC_DELTA_M2_PRIMER_LOOPS)
+# define GIP_TSC_DELTA_M2_PRIMER_LOOPS      0
 
 
 static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs, uint32_t iLoop)
@@ -3262,8 +3264,10 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 {
     unsigned iLoop;
 
+#if 0  /* pointless now */
     if (fIsMaster)
         ASMAtomicWriteBool(&pArgs->M2.fQuitEarly, false);
+#endif
 
     for (iLoop = 0; iLoop < GIP_TSC_DELTA_M2_LOOPS; iLoop++)
     {
@@ -3328,8 +3332,10 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
 
+#if 0  /* pointless now */
         if (ASMAtomicReadBool(&pArgs->M2.fQuitEarly))
             break;
+#endif
 
     }
 }
@@ -3743,7 +3749,7 @@ static int supdrvMeasureTscDeltaCallbackUnwrapped(RTCPUID idCpu, PSUPDRVGIPTSCDE
              */
             if (fIsMaster)
             {
-#if 0
+#if 1
                 if (pGipCpuWorker->i64TSCDelta != INT64_MAX)
 #else
                 if (pGipCpuWorker->i64TSCDelta != INT64_MAX && iTry >= 11)
