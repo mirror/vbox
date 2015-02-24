@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -676,7 +676,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pHardDisk, &pHardDisk, DeviceType_HardDisk, treeLock);
+        rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -696,7 +696,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, DeviceType_DVD, treeLock);
+        rc = i_registerMedium(pImage, &pImage, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -716,7 +716,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = i_registerMedium(pImage, &pImage, DeviceType_Floppy, treeLock);
+        rc = i_registerMedium(pImage, &pImage, treeLock);
         if (FAILED(rc)) return rc;
     }
 
@@ -1734,25 +1734,13 @@ HRESULT VirtualBox::getMachineStates(const std::vector<ComPtr<IMachine> > &aMach
     return S_OK;
 }
 
-HRESULT VirtualBox::createHardDisk(const com::Utf8Str &aFormat,
-                                   const com::Utf8Str &aLocation,
-                                   ComPtr<IMedium> &aMedium)
-{
-    /* we don't access non-const data members so no need to lock */
-    HRESULT rc = createMedium(aFormat, aLocation, AccessMode_ReadWrite, TRUE, DeviceType_HardDisk, aMedium);
-
-    return rc;
-}
-
 HRESULT VirtualBox::createMedium(const com::Utf8Str &aFormat,
                                  const com::Utf8Str &aLocation,
                                  AccessMode_T aAccessMode,
-                                 BOOL aForceNewUuid,
                                  DeviceType_T aDeviceType,
                                  ComPtr<IMedium> &aMedium)
 {
-    NOREF(aForceNewUuid);
-    NOREF(aAccessMode);
+    NOREF(aAccessMode); /**< @todo r=klaus make use of access mode */
 
     HRESULT rc = S_OK;
 
@@ -1866,7 +1854,7 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
 
         if (SUCCEEDED(rc))
         {
-            rc = i_registerMedium(pMedium, &pMedium, aDeviceType, treeLock);
+            rc = i_registerMedium(pMedium, &pMedium, treeLock);
 
             treeLock.release();
 
@@ -4205,14 +4193,12 @@ HRESULT VirtualBox::i_registerMachine(Machine *aMachine)
  * @param ppMedium  Actually stored medium object. Can be different if due
  *                  to an unavoidable race there was a duplicate Medium object
  *                  created.
- * @param argType   Either DeviceType_HardDisk, DeviceType_DVD or DeviceType_Floppy.
  * @param mediaTreeLock Reference to the AutoWriteLock holding the media tree
  *                  lock, necessary to release it in the right spot.
  * @return
  */
 HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
                                      ComObjPtr<Medium> *ppMedium,
-                                     DeviceType_T argType,
                                      AutoWriteLock &mediaTreeLock)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
@@ -4229,7 +4215,12 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
 
     const char *pszDevType = NULL;
     ObjectsList<Medium> *pall = NULL;
-    switch (argType)
+    DeviceType_T devType;
+    {
+        AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
+        devType = pMedium->i_getDeviceType();
+    }
+    switch (devType)
     {
         case DeviceType_HardDisk:
             pall = &m->allHardDisks;
@@ -4244,7 +4235,7 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
             pall = &m->allFloppyImages;
             break;
         default:
-            AssertMsgFailedReturn(("invalid device type %d", argType), E_INVALIDARG);
+            AssertMsgFailedReturn(("invalid device type %d", devType), E_INVALIDARG);
     }
 
     Guid id;
@@ -4283,7 +4274,7 @@ HRESULT VirtualBox::i_registerMedium(const ComObjPtr<Medium> &pMedium,
             pall->getList().push_back(pMedium);
 
         // store all hard disks (even differencing images) in the map
-        if (argType == DeviceType_HardDisk)
+        if (devType == DeviceType_HardDisk)
             m->mapHardDisks[id] = pMedium;
 
         mediumCaller.release();

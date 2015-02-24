@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@ bool UIWizardCloneVD::copyVirtualDisk()
     CVirtualBox vbox = vboxGlobal().virtualBox();
 
     /* Create new virtual hard-disk: */
-    CMedium virtualDisk = vbox.CreateHardDisk(mediumFormat.GetName(), strMediumPath);
+    CMedium virtualDisk = vbox.CreateMedium(mediumFormat.GetName(), strMediumPath, KAccessMode_ReadWrite, KDeviceType_HardDisk);
     if (!vbox.isOk())
     {
         msgCenter().cannotCreateHardDiskStorage(vbox, strMediumPath, this);

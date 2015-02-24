@@ -523,7 +523,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
 
     if (fCategory & USAGE_CLOSEMEDIUM)
         RTStrmPrintf(pStrm,
-                           "%s closemedium %s     disk|dvd|floppy <uuid|filename>\n"
+                           "%s closemedium %s     [disk|dvd|floppy] <uuid|filename>\n"
                      "                            [--delete]\n"
                      "\n", SEP);
 
@@ -585,23 +585,23 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                                          K=kilobyte, M=megabyte, G=gigabyte)\n"
                      "\n", SEP);
 
-    if (fCategory & USAGE_SHOWHDINFO)
+    if (fCategory & USAGE_SHOWMEDIUMINFO)
         RTStrmPrintf(pStrm,
-                           "%s showhdinfo %s      <uuid|filename>\n"
+                           "%s showmediuminfo %s  [disk|dvd|floppy] <uuid|filename>\n"
                      "\n", SEP);
 
-    if (fCategory & USAGE_CREATEHD)
+    if (fCategory & USAGE_CREATEMEDIUM)
         RTStrmPrintf(pStrm,
-                           "%s createhd %s        --filename <filename>\n"
+                           "%s createmedium %s    [disk|dvd|floppy] --filename <filename>\n"
                      "                            [--size <megabytes>|--sizebyte <bytes>]\n"
                      "                            [--diffparent <uuid>|<filename>\n"
                      "                            [--format VDI|VMDK|VHD] (default: VDI)\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "\n", SEP);
 
-    if (fCategory & USAGE_MODIFYHD)
+    if (fCategory & USAGE_MODIFYMEDIUM)
         RTStrmPrintf(pStrm,
-                           "%s modifyhd %s        <uuid|filename>\n"
+                           "%s modifymedium %s    [disk|dvd|floppy] <uuid|filename>\n"
                      "                            [--type normal|writethrough|immutable|shareable|\n"
                      "                                    readonly|multiattach]\n"
                      "                            [--autoreset on|off]\n"
@@ -610,23 +610,23 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
                      "\n", SEP);
 
-    if (fCategory & USAGE_CLONEHD)
+    if (fCategory & USAGE_CLONEMEDIUM)
         RTStrmPrintf(pStrm,
-                           "%s clonehd %s         <uuid|inputfile> <uuid|outputfile>\n"
+                           "%s clonemedium %s     [disk|dvd|floppy] <uuid|inputfile> <uuid|outputfile>\n"
                      "                            [--format VDI|VMDK|VHD|RAW|<other>]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "                            [--existing]\n"
                      "\n", SEP);
 
-    if (fCategory & USAGE_HDPROPERTY)
+    if (fCategory & USAGE_MEDIUMPROPERTY)
         RTStrmPrintf(pStrm,
-                           "%s hdproperty %s      set <uuid|filename>\n"
+                           "%s mediumproperty %s  [disk|dvd|floppy] set <uuid|filename>\n"
                      "                            <property> <value>\n"
                      "\n"
-                     "                            get <uuid|filename>\n"
+                     "                            [disk|dvd|floppy] get <uuid|filename>\n"
                      "                            <property>\n"
                      "\n"
-                     "                            delete <uuid|filename>\n"
+                     "                            [disk|dvd|floppy] delete <uuid|filename>\n"
                      "                            <property>\n"
                      "\n", SEP);
 

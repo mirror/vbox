@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -479,15 +479,17 @@ int main(int argc, char *argv[])
             { "registervm",       USAGE_REGISTERVM,        handleRegisterVM },
             { "unregistervm",     USAGE_UNREGISTERVM,      handleUnregisterVM },
             { "clonevm",          USAGE_CLONEVM,           handleCloneVM },
-            { "hdproperty",       USAGE_HDPROPERTY,        handleMediumProperty },
-            { "createdvd",        USAGE_CREATEDVD,         handleCreateDVD },
-            { "createfloppy",     USAGE_CREATEFLOPPY,      handleCreateFloppy },
-            { "createhd",         USAGE_CREATEHD,          handleCreateHardDisk },
-            { "createvdi",        USAGE_CREATEHD,          handleCreateHardDisk }, /* backward compatibility */
-            { "modifyhd",         USAGE_MODIFYHD,          handleModifyHardDisk },
-            { "modifyvdi",        USAGE_MODIFYHD,          handleModifyHardDisk }, /* backward compatibility */
-            { "clonehd",          USAGE_CLONEHD,           handleCloneHardDisk },
-            { "clonevdi",         USAGE_CLONEHD,           handleCloneHardDisk }, /* backward compatibility */
+            { "mediumproperty",   USAGE_MEDIUMPROPERTY,    handleMediumProperty },
+            { "hdproperty",       USAGE_MEDIUMPROPERTY,    handleMediumProperty }, /* backward compatibility */
+            { "createmedium",     USAGE_CREATEMEDIUM,      handleCreateMedium },
+            { "createhd",         USAGE_CREATEMEDIUM,      handleCreateMedium }, /* backward compatibility */
+            { "createvdi",        USAGE_CREATEMEDIUM,      handleCreateMedium }, /* backward compatibility */
+            { "modifymedium",     USAGE_MODIFYMEDIUM,      handleModifyMedium },
+            { "modifyhd",         USAGE_MODIFYMEDIUM,      handleModifyMedium }, /* backward compatibility */
+            { "modifyvdi",        USAGE_MODIFYMEDIUM,      handleModifyMedium }, /* backward compatibility */
+            { "clonemedium",      USAGE_CLONEMEDIUM,       handleCloneMedium },
+            { "clonehd",          USAGE_CLONEMEDIUM,       handleCloneMedium }, /* backward compatibility */
+            { "clonevdi",         USAGE_CLONEMEDIUM,       handleCloneMedium }, /* backward compatibility */
             { "createvm",         USAGE_CREATEVM,          handleCreateVM },
             { "modifyvm",         USAGE_MODIFYVM,          handleModifyVM },
             { "startvm",          USAGE_STARTVM,           handleStartVM },
@@ -498,8 +500,9 @@ int main(int argc, char *argv[])
             { "closemedium",      USAGE_CLOSEMEDIUM,       handleCloseMedium },
             { "storageattach",    USAGE_STORAGEATTACH,     handleStorageAttach },
             { "storagectl",       USAGE_STORAGECONTROLLER, handleStorageController },
-            { "showhdinfo",       USAGE_SHOWHDINFO,        handleShowHardDiskInfo },
-            { "showvdiinfo",      USAGE_SHOWHDINFO,        handleShowHardDiskInfo }, /* backward compatibility */
+            { "showmediuminfo",   USAGE_SHOWMEDIUMINFO,    handleShowMediumInfo },
+            { "showhdinfo",       USAGE_SHOWMEDIUMINFO,    handleShowMediumInfo }, /* backward compatibility */
+            { "showvdiinfo",      USAGE_SHOWMEDIUMINFO,    handleShowMediumInfo }, /* backward compatibility */
             { "getextradata",     USAGE_GETEXTRADATA,      handleGetExtraData },
             { "setextradata",     USAGE_SETEXTRADATA,      handleSetExtraData },
             { "setproperty",      USAGE_SETPROPERTY,       handleSetProperty },

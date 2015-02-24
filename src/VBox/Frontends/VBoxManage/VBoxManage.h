@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -52,10 +52,10 @@
 #define USAGE_DISCARDSTATE          RT_BIT_64(9)
 #define USAGE_SNAPSHOT              RT_BIT_64(10)
 #define USAGE_CLOSEMEDIUM           RT_BIT_64(11)
-#define USAGE_SHOWHDINFO            RT_BIT_64(12)
-#define USAGE_CREATEHD              RT_BIT_64(13)
-#define USAGE_MODIFYHD              RT_BIT_64(14)
-#define USAGE_CLONEHD               RT_BIT_64(15)
+#define USAGE_SHOWMEDIUMINFO        RT_BIT_64(12)
+#define USAGE_CREATEMEDIUM          RT_BIT_64(13)
+#define USAGE_MODIFYMEDIUM          RT_BIT_64(14)
+#define USAGE_CLONEMEDIUM           RT_BIT_64(15)
 #define USAGE_CREATEHOSTIF          RT_BIT_64(17)
 #define USAGE_REMOVEHOSTIF          RT_BIT_64(18)
 #define USAGE_GETEXTRADATA          RT_BIT_64(19)
@@ -103,9 +103,7 @@
 #define USAGE_GUESTSTATS            RT_BIT_64(57)
 #define USAGE_REPAIRHD              RT_BIT_64(58)
 #define USAGE_NATNETWORK            RT_BIT_64(59)
-#define USAGE_HDPROPERTY            RT_BIT_64(60)
-#define USAGE_CREATEFLOPPY          RT_BIT_64(61)
-#define USAGE_CREATEDVD             RT_BIT_64(62)
+#define USAGE_MEDIUMPROPERTY        RT_BIT_64(60)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -259,20 +257,18 @@ HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
                    DeviceType_T enmDevType, AccessMode_T enmAccessMode,
                    ComPtr<IMedium> &pMedium, bool fForceNewUuidOnOpen,
                    bool fSilent);
-int handleCreateHardDisk(HandlerArg *a);
-int handleCreateDVD(HandlerArg *a);
-int handleCreateFloppy(HandlerArg *a);
-int handleModifyHardDisk(HandlerArg *a);
-int handleCloneHardDisk(HandlerArg *a);
+int handleCreateMedium(HandlerArg *a);
+int handleModifyMedium(HandlerArg *a);
+int handleCloneMedium(HandlerArg *a);
 int handleMediumProperty(HandlerArg *a);
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
 HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        const ComPtr<IMedium> &pMedium,
                        const char *pszParentUUID,
                        bool fOptLong);
-int handleShowHardDiskInfo(HandlerArg *a);
+int handleShowMediumInfo(HandlerArg *a);
 int handleCloseMedium(HandlerArg *a);
-int parseDiskType(const char *psz, MediumType_T *pDiskType);
+int parseMediumType(const char *psz, MediumType_T *penmMediumType);
 int parseBool(const char *psz, bool *pb);
 
 /* VBoxManageStorageController.cpp */

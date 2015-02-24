@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -216,7 +216,7 @@ public:
     const Utf8Str& i_homeDir() const;
     int i_calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void i_copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
-    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType,
+    HRESULT i_registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium,
                              AutoWriteLock &mediaTreeLock);
     HRESULT i_unregisterMedium(Medium *pMedium);
     void i_pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
@@ -294,13 +294,9 @@ private:
     HRESULT getMachineStates(const std::vector<ComPtr<IMachine> > &aMachines,
                              std::vector<MachineState_T> &aStates);
     HRESULT createAppliance(ComPtr<IAppliance> &aAppliance);
-    HRESULT createHardDisk(const com::Utf8Str &aFormat,
-                           const com::Utf8Str &aLocation,
-                           ComPtr<IMedium> &aMedium);
     HRESULT createMedium(const com::Utf8Str &aFormat,
                          const com::Utf8Str &aLocation,
                          AccessMode_T aAccessMode,
-                         BOOL aForceNewUuid,
                          DeviceType_T aDeviceType,
                          ComPtr<IMedium> &aMedium);
     HRESULT openMedium(const com::Utf8Str &aLocation,

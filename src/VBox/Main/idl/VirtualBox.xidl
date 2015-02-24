@@ -1819,7 +1819,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="5e67bc8a-5f8f-11e4-aa15-123b93f75cba"
+    uuid="3afa096e-2cad-4cb0-aba2-47fe3fc62bd8"
     wsmap="managed"
     >
     <desc>
@@ -2358,70 +2358,9 @@
         <desc>Whether to open the image in read/write or read-only mode. For
         a "DVD" device type, this is ignored and read-only mode is always assumed.</desc>
       </param>
-      <param name="forceNewUuid" type="boolean" dir="in">
-         <desc>Allows the caller to request a completely new medium UUID for
-           the image which is to be opened. Useful if one intends to open an exact
-           copy of a previously opened image, as this would normally fail due to
-           the duplicate UUID.</desc>
-      </param>
       <param name="aDeviceTypeType" type="DeviceType" dir="in">
         <desc>
           Must be one of "HardDisk", "DVD" or "Floppy".
-        </desc>
-      </param>
-      <param name="medium" type="IMedium" dir="return">
-        <desc>Created medium object.</desc>
-      </param>
-    </method>
-
-    <method name="createHardDisk">
-      <desc>
-        Creates a new base medium object that will use the given storage
-        format and location for medium data.
-
-        The actual storage unit is not created by this method. In order to
-        do it, and before you are able to attach the created medium to
-        virtual machines, you must call one of the following methods to
-        allocate a format-specific storage unit at the specified location:
-        <ul>
-          <li><link to="IMedium::createBaseStorage"/></li>
-          <li><link to="IMedium::createDiffStorage"/></li>
-        </ul>
-
-        Some medium attributes, such as <link to="IMedium::id"/>, may
-        remain uninitialized until the medium storage unit is successfully
-        created by one of the above methods.
-
-        After the storage unit is successfully created, it will be
-        accessible through the <link to="#openMedium"/> method and can
-        be found in the <link to="#hardDisks"/> array.
-
-        The list of all storage formats supported by this VirtualBox
-        installation can be obtained using
-        <link to="ISystemProperties::mediumFormats"/>. If the @a format
-        attribute is empty or @c null then the default storage format
-        specified by <link to="ISystemProperties::defaultHardDiskFormat"/> will
-        be used for creating a storage unit of the medium.
-
-        Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/> and IMedium for more details.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          @a format identifier is invalid. See
-          <link to="ISystemProperties::mediumFormats"/>.
-        </result>
-        <result name="VBOX_E_FILE_ERROR">
-          @a location is a not valid file name (for file-based formats only).
-        </result>
-      </desc>
-      <param name="format" type="wstring" dir="in">
-        <desc>
-          Identifier of the storage format to use for the new medium.
-        </desc>
-      </param>
-      <param name="location" type="wstring" dir="in">
-        <desc>
-          Location of the storage unit for the new medium.
         </desc>
       </param>
       <param name="medium" type="IMedium" dir="return">
@@ -9201,7 +9140,7 @@
 
         Keep in mind that the medium format identifier
         (<link to="IMediumFormat::id"/>) used in other API calls like
-        <link to="IVirtualBox::createHardDisk"/> to refer to a particular
+        <link to="IVirtualBox::createMedium"/> to refer to a particular
         medium format is a case-insensitive string. This means that, for
         example, all of the following strings:
         <pre>
@@ -9224,7 +9163,7 @@
 
         The medium format set by this attribute is used by VirtualBox
         when the medium format was not specified explicitly. One example is
-        <link to="IVirtualBox::createHardDisk"/> with the empty
+        <link to="IVirtualBox::createMedium"/> with the empty
         format argument. A more complex example is implicit creation of
         differencing media when taking a snapshot of a virtual machine:
         this operation will try to use a format of the parent medium first
@@ -9248,7 +9187,7 @@
         <see>
           <link to="#mediumFormats"/>,
           <link to="IMediumFormat::id"/>,
-          <link to="IVirtualBox::createHardDisk"/>
+          <link to="IVirtualBox::createMedium"/>
         </see>
       </desc>
     </attribute>
@@ -13517,7 +13456,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Existing media are opened using <link to="IVirtualBox::openMedium"/>;
       new hard disk media can be created with the VirtualBox API using the
-      <link to="IVirtualBox::createHardDisk"/> method. Differencing hard
+      <link to="IVirtualBox::createMedium"/> method. Differencing hard
       disks (see below) are usually implicitly created by VirtualBox as
       needed, but may also be created explicitly using <link to="#createDiffStorage"/>.
       VirtualBox cannot create CD/DVD or floppy images (ISO and RAW files); these
@@ -14845,7 +14784,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         Each medium format is identified by a string represented by the
         <link to="#id"/> attribute. This string is used in calls like
-        <link to="IVirtualBox::createHardDisk"/> to specify the desired
+        <link to="IVirtualBox::createMedium"/> to specify the desired
         format.
 
         The list of all supported medium formats can be obtained using
@@ -14869,7 +14808,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         This string is used in methods of other interfaces where it is necessary
         to specify a medium format, such as
-        <link to="IVirtualBox::createHardDisk"/>.
+        <link to="IVirtualBox::createMedium"/>.
       </desc>
     </attribute>
 

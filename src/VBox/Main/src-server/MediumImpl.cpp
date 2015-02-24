@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2014 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -882,7 +882,7 @@ void Medium::FinalRelease()
  * Initializes an empty hard disk object without creating or opening an associated
  * storage unit.
  *
- * This gets called by VirtualBox::CreateHardDisk() in which case uuidMachineRegistry
+ * This gets called by VirtualBox::CreateMedium() in which case uuidMachineRegistry
  * is empty since starting with VirtualBox 4.0, we no longer add opened media to a
  * registry automatically (this is deferred until the medium is attached to a machine).
  *
@@ -974,7 +974,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                 break;
         }
 
-        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, aDeviceType, treeLock);
+        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, treeLock);
         Assert(this == pMedium || FAILED(rc));
     }
 
@@ -1279,19 +1279,19 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     {
         const settings::Medium &med = *it;
 
-        ComObjPtr<Medium> pHD;
-        pHD.createObject();
-        rc = pHD->init(aVirtualBox,
-                       this,            // parent
-                       aDeviceType,
-                       uuidMachineRegistry,
-                       med,               // child data
-                       strMachineFolder);
+        ComObjPtr<Medium> pMedium;
+        pMedium.createObject();
+        rc = pMedium->init(aVirtualBox,
+                           this,            // parent
+                           aDeviceType,
+                           uuidMachineRegistry,
+                           med,               // child data
+                           strMachineFolder);
         if (FAILED(rc)) break;
 
         AutoWriteLock treeLock(aVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-        rc = m->pVirtualBox->i_registerMedium(pHD, &pHD, DeviceType_HardDisk, treeLock);
+        rc = m->pVirtualBox->i_registerMedium(pMedium, &pMedium, treeLock);
         if (FAILED(rc)) break;
     }
 
@@ -2379,7 +2379,7 @@ HRESULT Medium::createBaseStorage(LONG64 aLogicalSize,
                            m->strFormat.c_str());
 
         if (    (mediumVariantFlags & MediumVariant_Fixed)
-            &&  !(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_CreateDynamic))
+            &&  !(m->formatObj->i_getCapabilities() & MediumFormatCapabilities_CreateFixed))
             throw setError(VBOX_E_NOT_SUPPORTED,
                            tr("Medium format '%s' does not support fixed storage creation"),
                            m->strFormat.c_str());
@@ -5941,7 +5941,7 @@ HRESULT Medium::i_canClose()
 HRESULT Medium::i_unregisterWithVirtualBox()
 {
     /* Note that we need to de-associate ourselves from the parent to let
-     * unregisterMedium() properly save the registry */
+     * VirtualBox::i_unregisterMedium() properly save the registry */
 
     /* we modify mParent and access children */
     Assert(m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
@@ -6694,7 +6694,7 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
         if (fGenerateUuid)
         {
             id.create();
-            /* VirtualBox::registerMedium() will need UUID */
+            /* VirtualBox::i_registerMedium() will need UUID */
             unconst(m->id) = id;
         }
 
@@ -6737,9 +6737,16 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not create the medium storage unit '%s'%s"),
-                               location.c_str(), i_vdError(vrc).c_str());
+            {
+                if (vrc == VERR_VD_INVALID_TYPE)
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Parameters for creating the medium storage unit '%s' are invalid%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not create the medium storage unit '%s'%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+            }
 
             size = VDGetFileSize(hdd, 0);
             logicalSize = VDGetSize(hdd, 0);
@@ -6761,7 +6768,7 @@ HRESULT Medium::i_taskCreateBaseHandler(Medium::CreateBaseTask &task)
          * better than breaking media registry consistency) */
         AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         ComObjPtr<Medium> pMedium;
-        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, DeviceType_HardDisk, treeLock);
+        rc = m->pVirtualBox->i_registerMedium(this, &pMedium, treeLock);
         Assert(this == pMedium);
     }
 
@@ -6832,7 +6839,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
         if (fGenerateUuid)
         {
             targetId.create();
-            /* VirtualBox::registerMedium() will need UUID */
+            /* VirtualBox::i_registerMedium() will need UUID */
             unconst(pTarget->m->id) = targetId;
         }
 
@@ -6910,9 +6917,16 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
                                pTarget->m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                                tr("Could not create the differencing medium storage unit '%s'%s"),
-                                targetLocation.c_str(), i_vdError(vrc).c_str());
+            {
+                if (vrc == VERR_VD_INVALID_TYPE)
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
+                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not create the differencing medium storage unit '%s'%s"),
+                                   targetLocation.c_str(), i_vdError(vrc).c_str());
+            }
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
@@ -6948,7 +6962,7 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
          * Created state only on success (leaving an orphan file is
          * better than breaking media registry consistency) */
         ComObjPtr<Medium> pMedium;
-        mrc = m->pVirtualBox->i_registerMedium(pTarget, &pMedium, DeviceType_HardDisk, treeLock);
+        mrc = m->pVirtualBox->i_registerMedium(pTarget, &pMedium, treeLock);
         Assert(pTarget == pMedium);
 
         if (FAILED(mrc))
@@ -7183,7 +7197,6 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
             /* then, register again */
             ComObjPtr<Medium> pMedium;
             rc2 = m->pVirtualBox->i_registerMedium(pTarget, &pMedium,
-                                                   DeviceType_HardDisk,
                                                    treeLock);
             AssertComRC(rc2);
         }
@@ -7533,7 +7546,6 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
             eik.restore();
             ComObjPtr<Medium> pMedium;
             mrc = pParent->m->pVirtualBox->i_registerMedium(pTarget, &pMedium,
-                                                            DeviceType_HardDisk,
                                                             treeLock);
             Assert(   FAILED(mrc)
                    || pTarget == pMedium);
@@ -7549,7 +7561,6 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
             eik.restore();
             ComObjPtr<Medium> pMedium;
             mrc = m->pVirtualBox->i_registerMedium(pTarget, &pMedium,
-                                                   DeviceType_HardDisk,
                                                    treeLock);
             Assert(   FAILED(mrc)
                    || pTarget == pMedium);
@@ -7780,9 +7791,16 @@ HRESULT Medium::i_taskResetHandler(Medium::ResetTask &task)
                                m->vdImageIfaces,
                                task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not create the differencing medium storage unit '%s'%s"),
-                               location.c_str(), i_vdError(vrc).c_str());
+            {
+                if (vrc == VERR_VD_INVALID_TYPE)
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Parameters for creating the differencing medium storage unit '%s' are invalid%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+                else
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not create the differencing medium storage unit '%s'%s"),
+                                   location.c_str(), i_vdError(vrc).c_str());
+            }
 
             size = VDGetFileSize(hdd, VD_LAST_IMAGE);
             logicalSize = VDGetSize(hdd, VD_LAST_IMAGE);
@@ -8323,7 +8341,6 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
             eik.restore();
             ComObjPtr<Medium> pMedium;
             mrc = pParent->m->pVirtualBox->i_registerMedium(this, &pMedium,
-                                                            DeviceType_HardDisk,
                                                             treeLock);
             Assert(this == pMedium);
             eik.fetch();
@@ -8337,7 +8354,7 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
             /* just register  */
             eik.restore();
             ComObjPtr<Medium> pMedium;
-            mrc = m->pVirtualBox->i_registerMedium(this, &pMedium, DeviceType_HardDisk, treeLock);
+            mrc = m->pVirtualBox->i_registerMedium(this, &pMedium, treeLock);
             Assert(this == pMedium);
             eik.fetch();
         }

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -82,7 +82,7 @@ int handleStorageAttach(HandlerArg *a)
     bool fSetMediumType = false;
     bool fSetNewUuid = false;
     bool fSetNewParentUuid = false;
-    MediumType_T mediumType = MediumType_Normal;
+    MediumType_T enmMediumType = MediumType_Normal;
     Bstr bstrComment;
     const char *pszCtl  = NULL;
     DeviceType_T devTypeRequested = DeviceType_Null;
@@ -290,9 +290,9 @@ int handleStorageAttach(HandlerArg *a)
 
             case 'M':   // --type
             {
-                int vrc = parseDiskType(ValueUnion.psz, &mediumType);
+                int vrc = parseMediumType(ValueUnion.psz, &enmMediumType);
                 if (RT_FAILURE(vrc))
-                    return errorArgument("Invalid hard disk type '%s'", ValueUnion.psz);
+                    return errorArgument("Invalid medium type '%s'", ValueUnion.psz);
                 fSetMediumType = true;
                 break;
             }
@@ -600,9 +600,11 @@ int handleStorageAttach(HandlerArg *a)
                 else
                     bstrISCSIMedium = BstrFmt("%ls|%ls|%ls", bstrServer.raw(), bstrTarget.raw(), bstrLun.raw());
 
-                CHECK_ERROR(a->virtualBox, CreateHardDisk(Bstr("iSCSI").raw(),
-                                                          bstrISCSIMedium.raw(),
-                                                          pMedium2Mount.asOutParam()));
+                CHECK_ERROR(a->virtualBox, CreateMedium(Bstr("iSCSI").raw(),
+                                                        bstrISCSIMedium.raw(),
+                                                        AccessMode_ReadWrite,
+                                                        DeviceType_HardDisk,
+                                                        pMedium2Mount.asOutParam()));
                 if (FAILED(rc)) goto leave;
                 if (!bstrPort.isEmpty())
                     bstrServer = BstrFmt("%ls:%ls", bstrServer.raw(), bstrPort.raw());
@@ -686,7 +688,7 @@ int handleStorageAttach(HandlerArg *a)
             // set medium type, if so desired
             if (pMedium2Mount && fSetMediumType)
             {
-                CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(mediumType));
+                CHECK_ERROR(pMedium2Mount, COMSETTER(Type)(enmMediumType));
                 if (FAILED(rc))
                     throw  Utf8Str("Failed to set the medium type");
             }

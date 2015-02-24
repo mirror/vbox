@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -290,9 +290,10 @@ void createVM(IVirtualBox *virtualBox)
      * Create a virtual harddisk
      */
     nsCOMPtr<IMedium> hardDisk = 0;
-    rc = virtualBox->CreateHardDisk(NS_LITERAL_STRING("VDI").get(),
-                                    NS_LITERAL_STRING("/tmp/TestHardDisk.vdi").get(),
-                                    getter_AddRefs(hardDisk));
+    rc = virtualBox->CreateMedium(NS_LITERAL_STRING("VDI").get(),
+                                  NS_LITERAL_STRING("/tmp/TestHardDisk.vdi").get(),
+                                  AccessMode_ReadWrite, DeviceType_HardDisk,
+                                  getter_AddRefs(hardDisk));
     if (NS_FAILED(rc))
     {
         printf("Failed creating a hard disk object! rc=%#x\n", rc);
