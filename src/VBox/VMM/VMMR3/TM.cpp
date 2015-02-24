@@ -1181,8 +1181,8 @@ VMM_INT_DECL(void) TMR3Reset(PVM pVM)
     if (   pVM->tm.s.fTSCModeSwitchAllowed
         && pVM->tm.s.enmTSCMode != pVM->tm.s.enmOriginalTSCMode)
     {
-        bool fParavirtTSC = false;
-        tmR3CpuTickParavirtDisable(pVM, NULL, NULL);
+        VM_ASSERT_EMT0(pVM);
+        tmR3CpuTickParavirtDisable(pVM, &pVM->aCpus[0], NULL /* pvData */);
     }
     Assert(!GIMIsParavirtTscEnabled(pVM));
     pVM->tm.s.fParavirtTscEnabled = false;
