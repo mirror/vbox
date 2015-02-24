@@ -131,6 +131,7 @@ SRCS += \
 	RTLogWriteStdErr-stub-generic.c \
 	RTLogWriteUser-generic.c \
 	RTMpGetArraySize-generic.c \
+	RTMpOnPair-generic.c \
 	RTRandAdvCreateSystemFaster-generic.c \
 	RTRandAdvCreateSystemTruer-generic.c \
 	RTSemEventWait-2-ex-generic.c \

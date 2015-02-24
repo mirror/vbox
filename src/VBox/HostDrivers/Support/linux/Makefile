@@ -143,6 +143,7 @@ OBJS   = \
 	generic/RTLogWriteUser-generic.o \
 	generic/RTMpGetArraySize-generic.o \
 	generic/RTMpGetCoreCount-generic.o \
+	generic/RTMpOnPair-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
 	generic/RTSemEventWaitNoResume-2-ex-generic.o \
 	generic/RTSemEventMultiWait-2-ex-generic.o \
