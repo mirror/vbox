@@ -1204,7 +1204,7 @@ void UIMediumManager::prepareTab(UIMediumType type)
             /* Prepare tree-widget: */
             prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
             /* Prepare information-container: */
-            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 5 : 2);
+            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 6 : 3);
         }
     }
 }
@@ -1613,6 +1613,7 @@ void UIMediumManager::updateInformationFieldsHD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatFieldText(pCurrentItem->usage());
+        const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_HardDisk, 0))
             infoField(UIMediumType_HardDisk, 0)->setText(pCurrentItem->hardDiskType());
         if (infoField(UIMediumType_HardDisk, 1))
@@ -1623,6 +1624,8 @@ void UIMediumManager::updateInformationFieldsHD()
             infoField(UIMediumType_HardDisk, 3)->setText(strDetails);
         if (infoField(UIMediumType_HardDisk, 4))
             infoField(UIMediumType_HardDisk, 4)->setText(strUsage);
+        if (infoField(UIMediumType_HardDisk, 5))
+            infoField(UIMediumType_HardDisk, 5)->setText(strID);
     }
 
     /* Enable/disable information-panes container: */
@@ -1649,10 +1652,13 @@ void UIMediumManager::updateInformationFieldsCD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatFieldText(pCurrentItem->usage());
+        const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_DVD, 0))
             infoField(UIMediumType_DVD, 0)->setText(formatFieldText(pCurrentItem->location(), true, "end"));
         if (infoField(UIMediumType_DVD, 1))
             infoField(UIMediumType_DVD, 1)->setText(strUsage);
+        if (infoField(UIMediumType_DVD, 2))
+            infoField(UIMediumType_DVD, 2)->setText(strID);
     }
 
     /* Enable/disable information-panes container: */
@@ -1679,10 +1685,13 @@ void UIMediumManager::updateInformationFieldsFD()
         QString strUsage = pCurrentItem->usage().isNull() ?
                            formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
                            formatFieldText(pCurrentItem->usage());
+        const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_Floppy, 0))
             infoField(UIMediumType_Floppy, 0)->setText(formatFieldText(pCurrentItem->location(), true, "end"));
         if (infoField(UIMediumType_Floppy, 1))
             infoField(UIMediumType_Floppy, 1)->setText(strUsage);
+        if (infoField(UIMediumType_Floppy, 2))
+            infoField(UIMediumType_Floppy, 2)->setText(strID);
     }
 
     /* Enable/disable information-panes container: */
@@ -1792,6 +1801,8 @@ void UIMediumManager::retranslateUi()
         infoLabel(UIMediumType_HardDisk, 3)->setText(QApplication::translate("VBoxMediaManagerDlg", "Storage details:"));
     if (infoLabel(UIMediumType_HardDisk, 4))
         infoLabel(UIMediumType_HardDisk, 4)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_HardDisk, 5))
+        infoLabel(UIMediumType_HardDisk, 5)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate CD tree-widget: */
     QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);
@@ -1806,6 +1817,8 @@ void UIMediumManager::retranslateUi()
         infoLabel(UIMediumType_DVD, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
     if (infoLabel(UIMediumType_DVD, 1))
         infoLabel(UIMediumType_DVD, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_DVD, 2))
+        infoLabel(UIMediumType_DVD, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate FD tree-widget: */
     QTreeWidget *pTreeWidgetFD = treeWidget(UIMediumType_Floppy);
@@ -1820,6 +1833,8 @@ void UIMediumManager::retranslateUi()
         infoLabel(UIMediumType_Floppy, 0)->setText(QApplication::translate("VBoxMediaManagerDlg", "Location:"));
     if (infoLabel(UIMediumType_Floppy, 1))
         infoLabel(UIMediumType_Floppy, 1)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
+    if (infoLabel(UIMediumType_Floppy, 2))
+        infoLabel(UIMediumType_Floppy, 2)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate progress-bar: */
     if (m_pProgressBar)
