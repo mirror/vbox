@@ -2477,7 +2477,8 @@ es.unregisterListener(listener); </screen></para>
             format = "vdi"
 
         # Call VirtualBox API, using context's fields
-        hdd = ctx['vb'].createHardDisk(format, loc)
+        hdd = ctx['vb'].createMedium(format, loc, ctx['global'].constants.AccessMode_ReadWrite, \
+                                     ctx['global'].constants.DeviceType_HardDisk)
         # Access constants using ctx['global'].constants
         progress = hdd.createBaseStorage(size, (ctx['global'].constants.MediumVariant_Standard, ))
         # use standard progress bar mechanism
@@ -3854,6 +3855,18 @@ AuthResult AUTHCALL AuthEntry(
       <title>Incompatible API changes with version 4.4</title>
 
       <itemizedlist>
+        <listitem>
+          <para>The method <xref linkend="IVirtualBox__createMedium"
+          xreflabel="IVirtualBox::createMedium()" /> replaces
+          <computeroutput>VirtualBox::createHardDisk()</computeroutput>.
+          Adjusting existing code needs adding two parameters with
+          value <computeroutput>AccessMode_ReadWrite</computeroutput>
+          and <computeroutput>DeviceType_HardDisk</computeroutput>
+          respectively. The new method supports creating floppy and
+          DVD images, and (less obviously) further API functionality
+          such as cloning floppy images.</para>
+        </listitem>
+
         <listitem><para>Drag'n drop APIs were changed as follows:<itemizedlist>
 
           <listitem>
@@ -4590,9 +4603,9 @@ AuthResult AUTHCALL AuthEntry(
           result, a number of media-related APIs had to be modified again.
           <itemizedlist>
               <listitem>
-                <para>Neither <xref linkend="IVirtualBox__createHardDisk"
-                xreflabel="IVirtualBox::createHardDisk()" /> nor <xref
-                linkend="IVirtualBox__openMedium"
+                <para>Neither
+                <computeroutput>IVirtualBox::createHardDisk()</computeroutput>
+                nor <xref linkend="IVirtualBox__openMedium"
                 xreflabel="IVirtualBox::openMedium()" /> register media
                 automatically any more.</para>
               </listitem>
