@@ -772,6 +772,15 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
     AssertReturnVoid(pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC);
 
     /*
+     * If we got a power event, stop the refinement process.
+     */
+    if (pDevExt->fInvTscRefinePowerEvent)
+    {
+        int rc = RTTimerStop(pTimer); AssertRC(rc);
+        return;
+    }
+
+    /*
      * Try get close to the next clock tick as usual.
      *
      * PORTME: If timers are called from the clock interrupt handler, or
@@ -845,8 +854,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
                         (uint32_t)(cNsElapsed / RT_NS_1SEC), GIP_TSC_REFINE_PERIOD_IN_SECS);
             SUPR0Printf("vboxdrv: start: %u, %u, %#llx  stop: %u, %u, %#llx\n",
                         iStartCpuSet, iStartGipCpu, iStartTscDelta, iStopCpuSet, iStopGipCpu, iStopTscDelta);
-            int rc = RTTimerStop(pTimer);
-            AssertRC(rc);
+            int rc = RTTimerStop(pTimer); AssertRC(rc);
             return;
         }
     }
@@ -881,6 +889,23 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
 
 
 /**
+ * @callback_method_impl{FNRTPOWERNOTIFICATION}
+ */
+static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEvent, void *pvUser)
+{
+    PSUPDRVDEVEXT pDevExt = (PSUPDRVDEVEXT)pvUser;
+
+    /*
+     * If the TSC frequency refinement timer we need to cancel it so it doesn't screw
+     * up the frequency after a long suspend.
+     */
+    if (   enmEvent == RTPOWEREVENT_SUSPEND
+        || enmEvent == RTPOWEREVENT_RESUME)
+        ASMAtomicWriteBool(&pDevExt->fInvTscRefinePowerEvent, true);
+}
+
+
+/**
  * Start the TSC-frequency refinment timer for the invariant TSC GIP mode.
  *
  * We cannot use this in the synchronous and asynchronous tsc GIP modes because
@@ -895,6 +920,13 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     uint64_t    u64NanoTS;
     RTCCUINTREG uFlags;
     int         rc;
+
+    /*
+     * Register a power management callback.
+     */
+    pDevExt->fInvTscRefinePowerEvent = true;
+    rc = RTPowerNotificationRegister(supdrvGipPowerNotificationCallback, pDevExt);
+    AssertRC(rc); /* ignore */
 
     /*
      * Record the TSC and NanoTS as the starting anchor point for refinement

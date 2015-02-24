@@ -707,10 +707,15 @@ typedef struct SUPDRVDEVEXT
     RTCPUID                         idCpuInvarTscRefine;
     /** Pointer to the timer used to refine the TSC frequency. */
     PRTTIMER                        pInvarTscRefineTimer;
+    /** Stop the timer on the next tick because we saw a power event. */
+    bool volatile                   fInvTscRefinePowerEvent;
     /** @} */
 
     /** @name TSC-delta measurement.
      *  @{ */
+    /** Number of online/offline events, incremented each time a CPU goes online
+     *  or offline. */
+    uint32_t volatile               cMpOnOffEvents;
     /** TSC-delta measurement mutext.
      * At the moment, we don't want to have more than one measurement going on at
      * any one time.  We might be using broadcast IPIs which are heavy and could
@@ -720,9 +725,6 @@ typedef struct SUPDRVDEVEXT
 #else
     RTSEMFASTMUTEX                  mtxTscDelta;
 #endif
-    /** Number of online/offline events, incremented each time a CPU goes online
-     *  or offline. */
-    uint32_t volatile               cMpOnOffEvents;
     /** The set of CPUs we need to take measurements for. */
     RTCPUSET                        TscDeltaCpuSet;
     /** The set of CPUs we have completed taken measurements for. */
