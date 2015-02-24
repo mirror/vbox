@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,7 @@
 #include <iprt/time.h>
 #include <iprt/string.h>
 #include <VBox/sup.h>
-#include "tstR0ThreadPreemption.h"
+#include "tstRTR0ThreadPreemption.h"
 
 
 #define TSTRTR0THREADCTXDATA_MAGIC      0xc01a50da
@@ -180,14 +180,14 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
      */
     switch (uOperation)
     {
-        case TSTR0THREADPREMEPTION_SANITY_OK:
+        case TSTRTR0THREADPREEMPTION_SANITY_OK:
             break;
 
-        case TSTR0THREADPREMEPTION_SANITY_FAILURE:
+        case TSTRTR0THREADPREEMPTION_SANITY_FAILURE:
             RTStrPrintf(pszErr, cchErr, "!42failure42%1024s", "");
             break;
 
-        case TSTR0THREADPREMEPTION_BASIC:
+        case TSTRTR0THREADPREEMPTION_BASIC:
         {
             if (!ASMIntAreEnabled())
                 RTStrPrintf(pszErr, cchErr, "!Interrupts disabled");
@@ -206,12 +206,12 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             break;
         }
 
-        case TSTR0THREADPREMEPTION_IS_TRUSTY:
+        case TSTRTR0THREADPREEMPTION_IS_TRUSTY:
             if (!RTThreadPreemptIsPendingTrusty())
                 RTStrPrintf(pszErr, cchErr, "!Untrusty");
             break;
 
-        case TSTR0THREADPREMEPTION_IS_PENDING:
+        case TSTRTR0THREADPREEMPTION_IS_PENDING:
         {
             RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&State);
@@ -258,7 +258,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             break;
         }
 
-        case TSTR0THREADPREMEPTION_NESTED:
+        case TSTRTR0THREADPREEMPTION_NESTED:
         {
             bool const fDefault = RTThreadPreemptIsEnabled(NIL_RTTHREAD);
             RTTHREADPREEMPTSTATE State1 = RTTHREADPREEMPTSTATE_INITIALIZER;
@@ -293,7 +293,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             break;
         }
 
-        case TSTR0THREADPREEMPTION_CTXHOOKS:
+        case TSTRTR0THREADPREEMPTION_CTXHOOKS:
         {
             if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
             {

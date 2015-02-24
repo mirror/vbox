@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,7 +41,7 @@
 #include <iprt/thread.h>
 #ifdef VBOX
 # include <VBox/sup.h>
-# include "tstR0ThreadPreemption.h"
+# include "tstRTR0ThreadPreemption.h"
 #endif
 
 /*******************************************************************************
@@ -87,7 +87,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * Init.
      */
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstR0ThreadPreemption", &hTest);
+    int rc = RTTestInitAndCreate("tstRTR0ThreadPreemption", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
@@ -103,7 +103,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char szPath[RTPATH_MAX];
     rc = RTPathExecDir(szPath, sizeof(szPath));
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szPath, sizeof(szPath), "tstR0ThreadPreemption.r0");
+        rc = RTPathAppend(szPath, sizeof(szPath), "tstRTR0ThreadPreemption.r0");
     if (RT_FAILURE(rc))
     {
         RTTestFailed(hTest, "Failed constructing .r0 filename (rc=%Rrc)", rc);
@@ -111,8 +111,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     void *pvImageBase;
-    rc = SUPR3LoadServiceModule(szPath, "tstR0ThreadPreemption",
-                                "TSTR0ThreadPreemptionSrvReqHandler",
+    rc = SUPR3LoadServiceModule(szPath, "tstRTR0ThreadPreemption",
+                                "TSTRTR0ThreadPreemptionSrvReqHandler",
                                 &pvImageBase);
     if (RT_FAILURE(rc))
     {
@@ -134,8 +134,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_SANITY_OK, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                             TSTRTR0THREADPREEMPTION_SANITY_OK, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     RTTESTI_CHECK_MSG(Req.szMsg[0] == '\0', ("%s", Req.szMsg));
@@ -145,8 +145,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_SANITY_FAILURE, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                             TSTRTR0THREADPREEMPTION_SANITY_FAILURE, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     RTTESTI_CHECK_MSG(!strncmp(Req.szMsg, RT_STR_TUPLE("!42failure42")), ("%s", Req.szMsg));
@@ -160,8 +160,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_BASIC, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                             TSTRTR0THREADPREEMPTION_BASIC, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     if (Req.szMsg[0] == '!')
@@ -179,8 +179,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_IS_TRUSTY, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                             TSTRTR0THREADPREEMPTION_IS_TRUSTY, 0, &Req.Hdr), VINF_SUCCESS);
     if (RT_FAILURE(rc))
         return RTTestSummaryAndDestroy(hTest);
     if (Req.szMsg[0] == '!')
@@ -211,8 +211,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
         Req.Hdr.cbReq = sizeof(Req);
         Req.szMsg[0] = '\0';
-        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                                 TSTR0THREADPREMEPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                                 TSTRTR0THREADPREEMPTION_IS_PENDING, 0, &Req.Hdr), VINF_SUCCESS);
         if (    strcmp(Req.szMsg, "!cLoops=1\n")
             ||  i >= 64)
         {
@@ -240,8 +240,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREMEPTION_NESTED, 0, &Req.Hdr), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                             TSTRTR0THREADPREEMPTION_NESTED, 0, &Req.Hdr), VINF_SUCCESS);
     if (Req.szMsg[0] == '!')
         RTTestIFailed("%s", &Req.szMsg[1]);
     else if (Req.szMsg[0])
@@ -260,8 +260,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
         Req.Hdr.cbReq = sizeof(Req);
         Req.szMsg[0] = '\0';
-        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                                 TSTR0THREADPREEMPTION_CTXHOOKS, 0, &Req.Hdr), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstRTR0ThreadPreemption", sizeof("tstRTR0ThreadPreemption") - 1,
+                                                 TSTRTR0THREADPREEMPTION_CTXHOOKS, 0, &Req.Hdr), VINF_SUCCESS);
         if (RT_FAILURE(rc))
             return RTTestSummaryAndDestroy(hTest);
         if (Req.szMsg[0] == '!')
