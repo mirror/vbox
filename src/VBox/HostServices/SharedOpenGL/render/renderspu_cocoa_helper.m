@@ -218,6 +218,8 @@ static void checkGLError(char *pszFile, int iLine)
 # define DEBUG_CHECK_GL_ERROR() do {} while (0)
 #endif
 
+/* Whether we control NSView automatic content zooming on Retina/HiDPI displays. */
+//#define VBOX_WITH_CONFIGURABLE_HIDPI_SCALING    1
 
 #ifdef IN_VMSVGA3D
 
@@ -889,6 +891,10 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)vboxSetSize:(NSSize)size;
 - (NSSize)size;
 - (void)updateViewportCS;
+#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
+- (NSRect)safeConvertRectToBacking:(NSRect *)pRect;
+- (CGFloat)safeGetBackingScaleFactor;
+#endif
 - (NSRect)safeConvertToScreen:(NSRect *)pRect;
 - (void)vboxReshapePerform;
 - (void)vboxReshapeOnResizePerform;
@@ -1422,6 +1428,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_fEverSized              = false;
     
     self = [super initWithFrame:frame];
+#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
+    [self performSelector:@selector(setWantsBestResolutionOpenGLSurface:) withObject: (id)YES];
+#endif
 
     COCOA_LOG_FLOW(("%s: returns self=%p\n", __PRETTY_FUNCTION__, (void *)self));
     return self;
@@ -1721,6 +1730,102 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     [self createDockTile];
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
+
+#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
+- (NSRect)safeConvertRectToBacking:(NSRect *)pRect
+{
+    NSRect resultingRect = NSZeroRect;
+
+    NSWindow *pWindow = [m_pParentView window];
+    if (pWindow)
+    {
+        if ([pWindow respondsToSelector:@selector(convertRectToBacking:)])
+        {
+            NSMethodSignature *pSignature = [pWindow methodSignatureForSelector:@selector(convertRectToBacking:)];
+            if (pSignature)
+            {
+                NSInvocation *pInvocation = [NSInvocation invocationWithMethodSignature:pSignature];
+                if (pInvocation)
+                {
+                    [pInvocation setSelector:@selector(convertRectToBacking:)];
+                    [pInvocation setTarget:pWindow];
+                    [pInvocation setArgument:pRect atIndex:2];
+                    [pInvocation invoke];
+                    [pInvocation getReturnValue:&resultingRect];
+
+                    DEBUG_MSG(("safeConvertRectToBacking: convert [X, Y, WxH]: [%d, %d, %dx%d] -> [%d, %d, %dx%d]\n",
+                        (int)pRect       ->origin.x, (int)pRect       ->origin.y, (int)pRect       ->size.width, (int)pRect       ->size.width,
+                        (int)resultingRect.origin.x, (int)resultingRect.origin.y, (int)resultingRect.size.width, (int)resultingRect.size.width));
+
+                    return resultingRect;
+                }
+            }
+        }
+    }
+    else
+        /* Should never happen. */
+        DEBUG_WARN(("safeConvertRectToBacking: parent widget has no window.\n"));
+
+    resultingRect = *pRect;
+
+    DEBUG_MSG(("safeConvertRectToBacking (reurn as is): convert [X, Y, WxH]: [%d, %d, %dx%d] -> [%d, %d, %dx%d]\n",
+        (int)pRect       ->origin.x, (int)pRect       ->origin.y, (int)pRect       ->size.width, (int)pRect       ->size.width,
+        (int)resultingRect.origin.x, (int)resultingRect.origin.y, (int)resultingRect.size.width, (int)resultingRect.size.width));
+
+    return resultingRect;
+}
+
+
+- (CGFloat)safeGetBackingScaleFactor
+{
+    /* Assume its default value. */
+    CGFloat backingScaleFactor = 1.;
+
+    NSWindow *pWindow = [m_pParentView window];
+    if (pWindow)
+    {
+        NSScreen *pScreen = [pWindow screen];
+        if (pScreen)
+        {
+            if ([pScreen respondsToSelector:@selector(backingScaleFactor)])
+            {
+                NSMethodSignature *pSignature = [pScreen methodSignatureForSelector:@selector(backingScaleFactor)];
+                if (pSignature)
+                {
+                    NSInvocation *pInvocation = [NSInvocation invocationWithMethodSignature:pSignature];
+                    if (pInvocation)
+                    {
+                        [pInvocation setSelector:@selector(backingScaleFactor)];
+                        [pInvocation setTarget:pScreen];
+                        [pInvocation invoke];
+                        [pInvocation getReturnValue:&backingScaleFactor];
+
+                        DEBUG_MSG(("safeGetBackingScaleFactor: %d\n", (int)backingScaleFactor));
+
+                        return backingScaleFactor;
+                    }
+                    else
+                        DEBUG_WARN(("safeGetBackingScaleFactor: unable to create invocation for backingScaleFactor method signature.\n"));
+                }
+                else
+                    DEBUG_WARN(("safeGetBackingScaleFactor: unable to create method signature for backingScaleFactor selector.\n"));
+            }
+            else
+                DEBUG_WARN(("safeGetBackingScaleFactor: NSScreen does not respond to backingScaleFactor selector.\n"));
+        }
+        else
+            /* Should never happen. */
+            DEBUG_WARN(("safeGetBackingScaleFactor: parent window has no screen.\n"));
+    }
+    else
+        /* Should never happen. */
+        DEBUG_WARN(("safeGetBackingScaleFactor: parent widget has no window.\n"));
+
+    return backingScaleFactor;
+}
+
+#endif
+
 
 - (NSRect)safeConvertToScreen:(NSRect *)pRect
 {
@@ -2258,7 +2363,18 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
         
     CrVrScrCompositorConstIterInit(pCompositor, &CIter);
-        
+
+    float backingStretchFactor = 1.;
+#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
+    /* Adjust viewport according to current NSView's backing store parameters. */
+    NSRect regularBounds = [self bounds];
+    NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
+    glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
+
+    /* Update strech factor in order to satisfy current NSView's backing store parameters. */
+    backingStretchFactor = [self safeGetBackingScaleFactor];
+#endif
+
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
     glDrawBuffer(GL_BACK);
 
@@ -2299,7 +2415,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
 
                     VBoxRectTranslate(&DstRect, -RestrictDstRect.xLeft, -RestrictDstRect.yTop);
 
-                    vboxNSRectToRectUnstretched(&m_RootRect, &RestrictSrcRect, xStretch, yStretch);
+                    vboxNSRectToRectUnstretched(&m_RootRect, &RestrictSrcRect, xStretch / backingStretchFactor, yStretch / backingStretchFactor);
                     VBoxRectTranslate(&RestrictSrcRect, 
                                       -CrVrScrCompositorEntryRectGet(pEntry)->xLeft, 
                                       -CrVrScrCompositorEntryRectGet(pEntry)->yTop);
