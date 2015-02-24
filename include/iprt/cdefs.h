@@ -1158,7 +1158,7 @@
  * @remarks Don't use this macro on C++ methods.
  */
 #ifdef __GNUC__
-# define DECL_NO_INLINE(scope,type) __attribute__((noinline)) scope type
+# define DECL_NO_INLINE(scope,type) __attribute__((__noinline__)) scope type
 #elif defined(_MSC_VER)
 # define DECL_NO_INLINE(scope,type) __declspec(noinline) scope type
 #else
