@@ -620,10 +620,20 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     if (   g_pfnrtKeIpiGenericCall
         && (   RTMpGetOnlineCount() <= 2
             || KeGetCurrentIrql()   > APC_LEVEL) )
+    {
         rc = rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper,
                                        idCpu, NIL_RTCPUID, &cHits);
-    else
-        rc = rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu, NIL_RTCPUID, &cHits);
+        if (RT_SUCCESS(rc))
+        {
+            if (cHits == 1)
+                return VINF_SUCCESS;
+            rc = cHits == 0 ? VERR_CPU_OFFLINE : VERR_CPU_IPE_1;
+        }
+        return rc;
+    }
+
+#if 0
+    rc = rtMpCallUsingDpcs(pfnWorker, pvUser1, pvUser2, RT_NT_CPUID_SPECIFIC, idCpu, NIL_RTCPUID, &cHits);
     if (RT_SUCCESS(rc))
     {
         if (cHits == 1)
@@ -632,7 +642,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     }
     return rc;
 
-#if 0 /** @todo Untested code replacing the rtMpCallUsingDpcs caste. Needs some tuning too, I guess. */
+#else
     /*
      * Initialize the argument package and the objects within it.
      * The package is referenced counted to avoid unnecessary spinning to
@@ -673,7 +683,6 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     }
 
     /* Different CPU, so queue it if the CPU is still online. */
-    int rc;
     if (RTMpIsCpuOnline(idCpu))
     {
         BOOLEAN fRc = KeInsertQueueDpc(&pArgs->Dpc, 0, 0);
