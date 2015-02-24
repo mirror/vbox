@@ -3763,7 +3763,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
     if (RTCpuSetIsMemberByIndex(&pGip->OnlineCpuSet, pGipCpuWorker->iCpuSet))
     {
         /*
-         * Initialize data package for the RTMpOnAll callback.
+         * Initialize data package for the RTMpOnPair callback.
          */
         PSUPDRVGIPTSCDELTARGS pArgs = (PSUPDRVGIPTSCDELTARGS)RTMemAllocZ(sizeof(*pArgs));
         if (pArgs)
@@ -3789,13 +3789,14 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Fire TSC-read workers on all CPUs but only synchronize between master
-                 * and one worker to ease memory contention.
+                 * Do the RTMpOnPair call.  We reset i64TSCDelta first so we
+                 * and supdrvMeasureTscDeltaCallback can use it as a success check.
                  */
+                /** @todo Store the i64TSCDelta result in pArgs first?   Perhaps deals with
+                 *        that when doing the restart loop reorg.  */
                 ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
-
-                /** @todo Add RTMpOnPair and replace this ineffecient broadcast IPI.  */
-                rc = RTMpOnAll(supdrvMeasureTscDeltaCallback, pArgs, NULL);
+                rc = RTMpOnPair(pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, RTMPON_F_CONCURRENT_EXEC,
+                                supdrvMeasureTscDeltaCallback, pArgs, NULL);
                 if (RT_SUCCESS(rc))
                 {
 #if 0
