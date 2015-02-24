@@ -1369,7 +1369,12 @@ int handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_VPX
-        else if (!strcmp(a->argv[1], "videocap"))
+        /* 
+         * Note: Commands starting with "vcp" are the deprecated versions and are 
+         *       kept to ensure backwards compatibility. 
+         */
+        else if (   !strcmp(a->argv[1], "videocap")
+                 || !strcmp(a->argv[1], "vcpenabled"))
         {
             if (a->argc != 3)
             {
@@ -1392,7 +1397,8 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
         }
-        else if (   !strcmp(a->argv[1], "videocapscreens"))
+        else if (   !strcmp(a->argv[1], "videocapscreens")
+                 || !strcmp(a->argv[1], "vcpscreens"))
         {
             ULONG cMonitors = 64;
             CHECK_ERROR_BREAK(machine, COMGETTER(MonitorCount)(&cMonitors));
@@ -1440,7 +1446,8 @@ int handleControlVM(HandlerArg *a)
 
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureScreens)(ComSafeArrayAsInParam(saScreens)));
         }
-        else if (!strcmp(a->argv[1], "videocapfile"))
+        else if (   !strcmp(a->argv[1], "videocapfile")
+                 || !strcmp(a->argv[1], "vcpfile"))
         {
             if (a->argc != 3)
             {
@@ -1479,7 +1486,32 @@ int handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureHeight)(uVal));
         }
-        else if (!strcmp(a->argv[1], "videocaprate"))
+        else if (!strcmp(a->argv[1], "vcpwidth")) /* Deprecated; keeping for compatibility. */
+        {
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing width '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureWidth)(uVal));
+        }
+        else if (!strcmp(a->argv[1], "vcpheight")) /* Deprecated; keeping for compatibility. */
+        {
+            uint32_t uVal;
+            int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (RT_FAILURE(vrc))
+            {
+                errorArgument("Error parsing height '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+            CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureHeight)(uVal));
+        }
+        else if (   !strcmp(a->argv[1], "videocaprate")
+                 || !strcmp(a->argv[1], "vcprate"))
         {
             if (a->argc != 3)
             {
@@ -1498,7 +1530,8 @@ int handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureRate)(uVal));
         }
-        else if (!strcmp(a->argv[1], "videocapfps"))
+        else if (   !strcmp(a->argv[1], "videocapfps")
+                 || !strcmp(a->argv[1], "vcpfps"))
         {
             if (a->argc != 3)
             {
@@ -1517,7 +1550,8 @@ int handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureFPS)(uVal));
         }
-        else if (!strcmp(a->argv[1], "videocapmaxtime"))
+        else if (   !strcmp(a->argv[1], "videocapmaxtime")
+                 || !strcmp(a->argv[1], "vcpmaxtime"))
         {
             if (a->argc != 3)
             {
@@ -1536,7 +1570,8 @@ int handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxTime)(uVal));
         }
-        else if (!strcmp(a->argv[1], "videocapmaxsize"))
+        else if (   !strcmp(a->argv[1], "videocapmaxsize")
+                 || !strcmp(a->argv[1], "vcpmaxsize"))
         {
             if (a->argc != 3)
             {
@@ -1555,7 +1590,8 @@ int handleControlVM(HandlerArg *a)
             }
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureMaxFileSize)(uVal));
         }
-        else if (!strcmp(a->argv[1], "videocapopts"))
+        else if (   !strcmp(a->argv[1], "videocapopts")
+                 || !strcmp(a->argv[1], "vcpoptions"))
         {
             if (a->argc != 3)
             {
