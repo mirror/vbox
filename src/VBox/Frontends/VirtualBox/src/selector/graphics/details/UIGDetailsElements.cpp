@@ -1087,6 +1087,7 @@ void UIGDetailsUpdateThreadUI::run()
             }
 #endif /* Q_WS_MAC */
 
+#ifndef Q_WS_MAC
             /* Get mini-toolbar availability status: */
             const QString strMiniToolbarEnabled = localMachine.GetExtraData(UIExtraDataDefs::GUI_ShowMiniToolBar);
             {
@@ -1122,6 +1123,7 @@ void UIGDetailsUpdateThreadUI::run()
                     m_text << UITextTableLine(QApplication::translate("UIGDetails", "Mini-toolbar", "details (user interface)"),
                                               QApplication::translate("UIGDetails", "Disabled", "details (user interface/mini-toolbar)"));
             }
+#endif /* !Q_WS_MAC */
         }
         else
             m_text << UITextTableLine(QApplication::translate("UIGDetails", "Information Inaccessible", "details"), QString());

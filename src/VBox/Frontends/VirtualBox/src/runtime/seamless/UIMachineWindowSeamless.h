@@ -20,8 +20,10 @@
 /* Local includes: */
 #include "UIMachineWindow.h"
 
+#ifndef Q_WS_MAC
 /* Forward declarations: */
 class UIRuntimeMiniToolBar;
+#endif /* !Q_WS_MAC */
 
 /* Seamless machine-window implementation: */
 class UIMachineWindowSeamless : public UIMachineWindow
@@ -79,8 +81,8 @@ private:
     void setMask(const QRegion &maskGuest);
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 
-    /* Widgets: */
 #ifndef Q_WS_MAC
+    /** Holds the mini-toolbar instance. */
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 

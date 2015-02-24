@@ -216,12 +216,14 @@ namespace UIExtraDataDefs
         extern const char* GUI_HiDPI_UnscaledOutput;
         /** Holds Runtime UI HiDPI optimization type. */
         extern const char* GUI_HiDPI_Optimization;
+#ifndef Q_WS_MAC
         /** Holds whether mini-toolbar is enabled for full and seamless screens. */
         extern const char* GUI_ShowMiniToolBar;
         /** Holds whether mini-toolbar should auto-hide itself. */
         extern const char* GUI_MiniToolBarAutoHide;
         /** Holds mini-toolbar alignment. */
         extern const char* GUI_MiniToolBarAlignment;
+#endif /* !Q_WS_MAC */
         /** Holds Runtime UI status-bar availability status. */
         extern const char* GUI_StatusBar_Enabled;
         /** Holds restricted Runtime UI status-bar indicators. */
@@ -636,11 +638,13 @@ enum HiDPIOptimizationType
     HiDPIOptimizationType_Performance
 };
 
+#ifndef Q_WS_MAC
 /** Runtime UI: Mini-toolbar alignment. */
 enum MiniToolbarAlignment
 {
     MiniToolbarAlignment_Bottom,
     MiniToolbarAlignment_Top
 };
+#endif /* !Q_WS_MAC */
 
 #endif /* !___UIExtraDataDefs_h___ */

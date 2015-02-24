@@ -20,8 +20,10 @@
 /* Local includes: */
 #include "UIMachineWindow.h"
 
+#ifndef Q_WS_MAC
 /* Forward declarations: */
 class UIRuntimeMiniToolBar;
+#endif /* !Q_WS_MAC */
 
 /* Fullscreen machine-window implementation: */
 class UIMachineWindowFullscreen : public UIMachineWindow
@@ -52,14 +54,14 @@ protected:
     void handleNativeNotification(const QString &strNativeNotificationName);
     /** Mac OS X: Returns whether window is in 'fullscreen' transition. */
     bool isInFullscreenTransition() const { return m_fIsInFullscreenTransition; }
-    /** Mac OS X: Defines whether mini-toolbar should be @a fVisible. */
-    void setMiniToolbarVisible(bool fVisible);
 #endif /* Q_WS_MAC */
 
 private slots:
 
+#ifndef Q_WS_MAC
     /* Session event-handlers: */
     void sltMachineStateChanged();
+#endif /* !Q_WS_MAC */
 
 #ifdef RT_OS_DARWIN
     /** Mac OS X: Commands @a pMachineWindow to enter native 'fullscreen' mode if possible. */
@@ -75,10 +77,14 @@ private:
 
     /* Prepare helpers: */
     void prepareVisualState();
+#ifndef Q_WS_MAC
     void prepareMiniToolbar();
+#endif /* !Q_WS_MAC */
 
     /* Cleanup helpers: */
+#ifndef Q_WS_MAC
     void cleanupMiniToolbar();
+#endif /* !Q_WS_MAC */
     void cleanupVisualState();
 
     /* Show stuff: */
@@ -88,11 +94,15 @@ private:
     /** Adjusts machine-view size to correspond current machine-window size. */
     virtual void adjustMachineViewSize();
 
-    /* Update stuff: */
+#ifndef Q_WS_MAC
+    /* Update routines: */
     void updateAppearanceOf(int iElement);
+#endif /* !Q_WS_MAC */
 
-    /* Widgets: */
+#ifndef Q_WS_MAC
+    /** Holds the mini-toolbar instance. */
     UIRuntimeMiniToolBar *m_pMiniToolBar;
+#endif /* !Q_WS_MAC */
 
 #ifdef Q_WS_MAC
     /** Mac OS X: Reflects whether window is in 'fullscreen' transition. */

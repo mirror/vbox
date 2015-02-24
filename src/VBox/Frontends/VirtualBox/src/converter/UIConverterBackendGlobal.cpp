@@ -64,7 +64,9 @@ template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
+#ifndef Q_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
+#endif /* !Q_WS_MAC */
 
 /* QString <= SizeSuffix: */
 template<> QString toString(const SizeSuffix &sizeSuffix)
@@ -1452,6 +1454,7 @@ template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const
     return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
 
+#ifndef Q_WS_MAC
 /* QString <= MiniToolbarAlignment: */
 template<> QString toInternalString(const MiniToolbarAlignment &miniToolbarAlignment)
 {
@@ -1480,4 +1483,5 @@ template<> MiniToolbarAlignment fromInternalString<MiniToolbarAlignment>(const Q
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMiniToolbarAlignment, Qt::CaseInsensitive)));
 }
+#endif /* !Q_WS_MAC */
 

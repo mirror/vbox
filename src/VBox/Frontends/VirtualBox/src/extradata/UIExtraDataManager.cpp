@@ -1783,7 +1783,9 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #endif /* VBOX_WITH_VIDEOHWACCEL */
            << GUI_HiDPI_UnscaledOutput
            << GUI_HiDPI_Optimization
+#ifndef Q_WS_MAC
            << GUI_ShowMiniToolBar << GUI_MiniToolBarAutoHide << GUI_MiniToolBarAlignment
+#endif /* !Q_WS_MAC */
            << GUI_StatusBar_Enabled << GUI_RestrictedStatusBarIndicators << GUI_StatusBar_IndicatorOrder
 #ifdef Q_WS_MAC
            << GUI_PresentationModeEnabled
@@ -3168,6 +3170,7 @@ HiDPIOptimizationType UIExtraDataManager::hiDPIOptimizationType(const QString &s
     return gpConverter->fromInternalString<HiDPIOptimizationType>(extraDataString(GUI_HiDPI_Optimization, strID));
 }
 
+#ifndef Q_WS_MAC
 bool UIExtraDataManager::miniToolbarEnabled(const QString &strID)
 {
     /* 'True' unless feature restricted: */
@@ -3213,6 +3216,7 @@ void UIExtraDataManager::setMiniToolbarAlignment(Qt::AlignmentFlag alignment, co
     }
     setExtraDataString(GUI_MiniToolBarAlignment, QString(), strID);
 }
+#endif /* Q_WS_MAC */
 
 bool UIExtraDataManager::statusBarEnabled(const QString &strID)
 {

@@ -32,20 +32,23 @@ struct UIDataSettingsMachineInterface
         : m_dScaleFactor(1.0)
 #ifdef Q_WS_MAC
         , m_fUseUnscaledHiDPIOutput(false)
-#endif /* Q_WS_MAC */
+#else /* !Q_WS_MAC */
         , m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
+#endif /* !Q_WS_MAC */
     {}
 
     /* Functions: */
     bool equal(const UIDataSettingsMachineInterface &other) const
     {
-        return (m_dScaleFactor == other.m_dScaleFactor) &&
+        return    (m_dScaleFactor == other.m_dScaleFactor)
 #ifdef Q_WS_MAC
-               (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput) &&
-#endif /* Q_WS_MAC */
-               (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
-               (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
+               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
+#else /* !Q_WS_MAC */
+               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
+               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
+#endif /* !Q_WS_MAC */
+        ;
     }
 
     /* Operators: */
@@ -56,9 +59,10 @@ struct UIDataSettingsMachineInterface
     double m_dScaleFactor;
 #ifdef Q_WS_MAC
     bool m_fUseUnscaledHiDPIOutput;
-#endif /* Q_WS_MAC */
+#else /* !Q_WS_MAC */
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
+#endif /* !Q_WS_MAC */
 };
 typedef UISettingsCache<UIDataSettingsMachineInterface> UICacheSettingsMachineInterface;
 

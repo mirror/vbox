@@ -743,8 +743,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                     "Ask transient machine-window #%d to hide.\n", (int)uScreenID));
 
-            /* Make sure mini-toolbar hidden: */
-            pMachineWindowFullscreen->setMiniToolbarVisible(false);
             /* Make sure window hidden: */
             pMachineWindow->hide();
         }
@@ -756,8 +754,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
 
             /* Make sure window have proper geometry and shown: */
             pMachineWindow->showInNecessaryMode();
-            /* Make sure mini-toolbar shown: */
-            pMachineWindowFullscreen->setMiniToolbarVisible(true);
         }
     }
     /* Validate window which can be fullscreen: */
@@ -778,8 +774,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 /* Update 'presentation mode': */
                 setPresentationModeEnabled(true);
 
-                /* Make sure mini-toolbar hidden: */
-                pMachineWindowFullscreen->setMiniToolbarVisible(false);
                 /* Make sure window have proper geometry and shown: */
                 pMachineWindow->showInNecessaryMode();
 
@@ -793,8 +787,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to hide.\n", (int)uScreenID));
 
-                /* Make sure mini-toolbar hidden: */
-                pMachineWindowFullscreen->setMiniToolbarVisible(false);
                 /* Make sure window hidden: */
                 pMachineWindow->hide();
             }
@@ -822,8 +814,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 /* Mark window as invalidated: */
                 m_invalidFullscreenMachineWindows << pMachineWindow;
 
-                /* Make sure mini-toolbar hidden: */
-                pMachineWindowFullscreen->setMiniToolbarVisible(false);
                 /* Ask window to exit 'fullscreen' mode: */
                 emit sigNotifyAboutNativeFullscreenShouldBeExited(pMachineWindow);
                 return;
@@ -836,15 +826,10 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to adjust guest geometry.\n", (int)uScreenID));
 
-                /* Make sure mini-toolbar shown: */
-                pMachineWindowFullscreen->setMiniToolbarVisible(true);
                 /* Just adjust machine-view size if necessary: */
                 pMachineWindow->adjustMachineViewSize();
                 return;
             }
-
-            /* Make sure mini-toolbar shown: */
-            pMachineWindowFullscreen->setMiniToolbarVisible(true);
         }
     }
 }

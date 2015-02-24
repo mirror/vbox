@@ -413,6 +413,7 @@ public:
         /** Returns Runtime UI HiDPI optimization type. */
         HiDPIOptimizationType hiDPIOptimizationType(const QString &strID);
 
+#ifndef Q_WS_MAC
         /** Returns whether mini-toolbar is enabled for full and seamless screens. */
         bool miniToolbarEnabled(const QString &strID);
         /** Defines whether mini-toolbar is @a fEnabled for full and seamless screens. */
@@ -427,6 +428,7 @@ public:
         Qt::AlignmentFlag miniToolbarAlignment(const QString &strID);
         /** Returns mini-toolbar @a alignment. */
         void setMiniToolbarAlignment(Qt::AlignmentFlag alignment, const QString &strID);
+#endif /* Q_WS_MAC */
 
         /** Returns whether Runtime UI status-bar is enabled. */
         bool statusBarEnabled(const QString &strID);
