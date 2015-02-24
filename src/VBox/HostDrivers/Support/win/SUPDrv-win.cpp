@@ -1659,8 +1659,9 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
  */
 bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
 {
-    /* Windows writes back the hardware TSC registers to adjust for inter-CPU deltas. */
-    return true;
+    /* If IPRT didn't find KeIpiGenericCall we pretend windows(, the firmware,
+       or whoever) always configures TSCs perfectly. */
+    return !RTMpOnPairIsConcurrentExecSupported();
 }
 
 
