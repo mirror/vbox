@@ -222,6 +222,8 @@ static int rtMpSolOnAllCpuWrapper(void *uArg, void *pvIgnored1, void *pvIgnored2
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     RTMPARGS Args;
+    RTSOLCPUSET CpuSet;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RT_ASSERT_INTS_ON();
 
     Args.pfnWorker = pfnWorker;
@@ -230,11 +232,9 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
 
-    RTSOLCPUSET CpuSet;
     for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
         CpuSet.auCpus[i] = (ulong_t)-1L;
 
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
 
     rtMpSolCrossCall(&CpuSet, rtMpSolOnAllCpuWrapper, &Args);
@@ -271,6 +271,8 @@ static int rtMpSolOnOtherCpusWrapper(void *uArg, void *pvIgnored1, void *pvIgnor
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     RTMPARGS Args;
+    RTSOLCPUSET CpuSet;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RT_ASSERT_INTS_ON();
 
     Args.pfnWorker = pfnWorker;
@@ -280,10 +282,8 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.cHits = 0;
 
     /* The caller is supposed to have disabled preemption, but take no chances. */
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
 
-    RTSOLCPUSET CpuSet;
     for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
         CpuSet.auCpus[0] = (ulong_t)-1L;
     BT_CLEAR(CpuSet.auCpus, RTMpCpuId());
@@ -325,6 +325,7 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
 {
     int rc;
     RTMPARGS Args;
+    RTSOLCPUSET CpuSet;
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
 
     AssertReturn(idCpu1 != idCpu2, VERR_INVALID_PARAMETER);
@@ -337,7 +338,6 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
     Args.idCpu2    = idCpu2;
     Args.cHits     = 0;
 
-    RTSOLCPUSET CpuSet;
     for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
         CpuSet.auCpus[i] = 0;
     BT_SET(CpuSet.auCpus, idCpu1);
@@ -409,6 +409,8 @@ static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *pvIgnored1, void *pvIgn
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     RTMPARGS Args;
+    RTSOLCPUSET CpuSet;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RT_ASSERT_INTS_ON();
 
     if (idCpu >= ncpus)
@@ -423,12 +425,10 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.idCpu = idCpu;
     Args.cHits = 0;
 
-    RTSOLCPUSET CpuSet;
     for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
         CpuSet.auCpus[i] = 0;
     BT_SET(CpuSet.auCpus, idCpu);
 
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
 
     rtMpSolCrossCall(&CpuSet, rtMpSolOnSpecificCpuWrapper, &Args);
