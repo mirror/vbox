@@ -1400,7 +1400,11 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
     /* pcbWritten is optional. */
 
     if (!pThis->pHostDrvAudio->pfnIsEnabled(pThis->pHostDrvAudio, PDMAUDIODIR_IN))
-        return VERR_NOT_AVAILABLE;
+    {
+        if (pcbRead)
+            *pcbRead = 0;
+        return VINF_SUCCESS;
+    } 
 
     PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
     AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);

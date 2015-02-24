@@ -2671,7 +2671,7 @@ static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, ui
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         PAUDMIXSINK pSink;
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-        uint32_t cbWritten;
+        uint32_t cbWritten = 0;
         switch (enmSrc)
         {
             case PI_INDEX:
@@ -3187,7 +3187,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         case HDA_SSM_VERSION:
             rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
             if (cRegs != RT_ELEMENTS(pThis->au32Regs))
-                LogRel(("cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
+                LogRel(("HDA: SSM version cRegs is %RU32, expected %RU32\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
             break;
 
         default:
@@ -3220,6 +3220,8 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     bool fEnableIn    = RT_BOOL(SDCTL(pThis, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 #ifdef VBOX_WITH_HDA_MIC_IN
     bool fEnableMicIn = RT_BOOL(SDCTL(pThis, 2) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
+#else
+    bool fEnableMicIn = fEnableIn; /* Mic In == Line In */
 #endif
     bool fEnableOut   = RT_BOOL(SDCTL(pThis, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
@@ -3227,18 +3229,13 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->LineIn.pStrmIn,
-                                           fEnableIn);
+        rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->LineIn.pStrmIn, fEnableIn);
         if (RT_FAILURE(rc))
             break;
-# ifdef VBOX_WITH_HDA_MIC_IN
-        rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->MicIn.pStrmIn,
-                                           fEnableMicIn);
+        rc = pDrv->pConnector->pfnEnableIn(pDrv->pConnector, pDrv->MicIn.pStrmIn, fEnableMicIn);
         if (RT_FAILURE(rc))
             break;
-# endif
-        rc = pDrv->pConnector->pfnEnableOut(pDrv->pConnector, pDrv->Out.pStrmOut,
-                                            fEnableOut);
+        rc = pDrv->pConnector->pfnEnableOut(pDrv->pConnector, pDrv->Out.pStrmOut, fEnableOut);
         if (RT_FAILURE(rc))
             break;
     }
