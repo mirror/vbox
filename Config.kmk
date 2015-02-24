@@ -523,7 +523,7 @@ endif
 # Emulated USB smart card reader
 VBOX_WITH_USB_CARDREADER = 1
 # Disk crypt plugin
-VBOX_WITH_PLUGIN_CRYPT = 1
+VBOX_WITH_PLUGIN_CRYPT =
 # VirtualKD stub/loader device, only relevant on Windows host
 VBOX_WITH_VIRTUALKD = 1
 ## @}
