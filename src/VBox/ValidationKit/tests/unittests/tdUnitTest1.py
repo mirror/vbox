@@ -119,6 +119,7 @@ class tdUnitTest1(vbox.TestDriver):
         'testcase/tstLdrLoad': '',          # parameters required
         'testcase/tstMove': '',             # parameters required
         'testcase/tstRTR0Timer': '',        # loads 'tstRTR0Timer.r0'
+        'testcase/tstRTR0ThreadDriver': '', # loads 'tstRTR0Thread.r0'
         'testcase/tstRunTestcases': '',     # that's a script like this one
         'testcase/tstRTReqPool': '',        # fails sometimes, testcase buggy
         'testcase/tstRTS3': '',             # parameters required
@@ -221,6 +222,7 @@ class tdUnitTest1(vbox.TestDriver):
         "testcase/tstRTR0MemUserKernelDriver",
         "testcase/tstRTR0SemMutexDriver",
         "testcase/tstRTR0TimerDriver",
+        "testcase/tstRTR0ThreadDriver",
         'testcase/tstRTR0DbgKrnlInfoDriver',
         "tstInt",
         "tstVMM",
