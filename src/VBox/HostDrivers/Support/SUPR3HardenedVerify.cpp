@@ -230,7 +230,7 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     HARDENED_TESTCASE_ENTRY("tstCFGM"),
     HARDENED_TESTCASE_ENTRY("tstIntNet-1"),
     HARDENED_TESTCASE_ENTRY("tstMMHyperHeap"),
-    HARDENED_TESTCASE_ENTRY("tstR0ThreadPreemptionDriver"),
+    HARDENED_TESTCASE_ENTRY("tstRTR0ThreadPreemptionDriver"),
     HARDENED_TESTCASE_ENTRY("tstRTR0MemUserKernelDriver"),
     HARDENED_TESTCASE_ENTRY("tstRTR0SemMutexDriver"),
     HARDENED_TESTCASE_ENTRY("tstRTR0TimerDriver"),

@@ -223,7 +223,7 @@ static const char *g_apszSupNtVpAllowedVmExes[] =
     "tstCFGM.exe",
     "tstIntNet-1.exe",
     "tstMMHyperHeap.exe",
-    "tstR0ThreadPreemptionDriver.exe",
+    "tstRTR0ThreadPreemptionDriver.exe",
     "tstRTR0MemUserKernelDriver.exe",
     "tstRTR0SemMutexDriver.exe",
     "tstRTR0TimerDriver.exe",
