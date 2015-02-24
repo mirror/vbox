@@ -561,7 +561,7 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
 
 RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
 {
-    return RTMpOnAllIsConcurrentSafe();
+    return g_pfnrtKeIpiGenericCall != NULL;
 }
 
 
