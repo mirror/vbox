@@ -195,11 +195,12 @@ static void rtMpSolCrossCall(PRTSOLCPUSET pCpuSet, PFNRTMPSOLWORKER pfnSolWorker
  * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
  * for the RTMpOnAll API.
  *
+ * @returns Solaris error code.
  * @param   uArgs       Pointer to the RTMPARGS package.
- * @param   uIgnored1   Ignored.
- * @param   uIgnored2   Ignored.
+ * @param   pvIgnored1  Ignored.
+ * @param   pvIgnored2  Ignored.
  */
-static int rtMpSolOnAllCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnAllCpuWrapper(void *uArg, void *pvIgnored1, void *pvIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
 
@@ -212,8 +213,8 @@ static int rtMpSolOnAllCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 
     pArgs->pfnWorker(RTMpCpuId(), pArgs->pvUser1, pArgs->pvUser2);
 
-    NOREF(uIgnored1);
-    NOREF(uIgnored2);
+    NOREF(pvIgnored1);
+    NOREF(pvIgnored2);
     return 0;
 }
 
@@ -248,11 +249,12 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
  * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
  * for the RTMpOnOthers API.
  *
+ * @returns Solaris error code.
  * @param   uArgs       Pointer to the RTMPARGS package.
- * @param   uIgnored1   Ignored.
- * @param   uIgnored2   Ignored.
+ * @param   pvIgnored1  Ignored.
+ * @param   pvIgnored2  Ignored.
  */
-static int rtMpSolOnOtherCpusWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnOtherCpusWrapper(void *uArg, void *pvIgnored1, void *pvIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
@@ -260,8 +262,8 @@ static int rtMpSolOnOtherCpusWrapper(void *uArg, void *uIgnored1, void *uIgnored
     Assert(idCpu != pArgs->idCpu);
     pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
 
-    NOREF(uIgnored1);
-    NOREF(uIgnored2);
+    NOREF(pvIgnored1);
+    NOREF(pvIgnored2);
     return 0;
 }
 
@@ -301,10 +303,10 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
  *
  * @returns Solaris error code.
  * @param   uArgs       Pointer to the RTMPARGS package.
- * @param   uIgnored1   Ignored.
- * @param   uIgnored2   Ignored.
+ * @param   pvIgnored1  Ignored.
+ * @param   pvIgnored2  Ignored.
  */
-static int rtMpSolOnPairCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnPairCpuWrapper(void *uArg, void *pvIgnored1, void *pvIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
@@ -313,8 +315,8 @@ static int rtMpSolOnPairCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
     pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
     ASMAtomicIncU32(&pArgs->cHits);
 
-    NOREF(uIgnored1);
-    NOREF(uIgnored2);
+    NOREF(pvIgnored1);
+    NOREF(pvIgnored2);
     return 0;
 }
 
@@ -329,11 +331,11 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
     AssertReturn(!(fFlags & RTMPON_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     Args.pfnWorker = pfnWorker;
-    Args.pvUser1 = pvUser1;
-    Args.pvUser2 = pvUser2;
-    Args.idCpu   = idCpu1;
-    Args.idCpu2  = idCpu2;
-    Args.cHits   = 0;
+    Args.pvUser1   = pvUser1;
+    Args.pvUser2   = pvUser2;
+    Args.idCpu     = idCpu1;
+    Args.idCpu2    = idCpu2;
+    Args.cHits     = 0;
 
     RTSOLCPUSET CpuSet;
     for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
@@ -369,7 +371,7 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
     else
         rc = VERR_CPU_NOT_FOUND;
 
-    RTThreadPreemptRestore(&PreemptState);;
+    RTThreadPreemptRestore(&PreemptState);
     return rc;
 }
 
@@ -386,10 +388,10 @@ RTDECL(bool) RTMpOnPairIsConcurrentExecSupported(void)
  *
  * @returns Solaris error code.
  * @param   uArgs       Pointer to the RTMPARGS package.
- * @param   uIgnored1   Ignored.
- * @param   uIgnored2   Ignored.
+ * @param   pvIgnored1  Ignored.
+ * @param   pvIgnored2  Ignored.
  */
-static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *pvIgnored1, void *pvIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
@@ -398,8 +400,8 @@ static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *uIgnored1, void *uIgnor
     pArgs->pfnWorker(idCpu, pArgs->pvUser1, pArgs->pvUser2);
     ASMAtomicIncU32(&pArgs->cHits);
 
-    NOREF(uIgnored1);
-    NOREF(uIgnored2);
+    NOREF(pvIgnored1);
+    NOREF(pvIgnored2);
     return 0;
 }
 
