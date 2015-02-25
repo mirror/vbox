@@ -987,20 +987,18 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     if (pcSamples)
         *pcSamples = cSamples;
 
-    LogFunc(("cSamples=%RU32\n", cSamples));
-    return VINF_SUCCESS;
+    LogFunc(("cSamples=%RU32, rc=%Rrc\n", cSamples, rc));
+    return rc;
 }
 
 /** @todo Eventually split up this function, as this already is huge! */
 static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pcSamples)
 {
-    OSStatus err = noErr;
-
-    UInt32 cSamples; /* samples count */
-
     PCOREAUDIOSTREAMOUT pStreamOut = (PCOREAUDIOSTREAMOUT)pHstStrmOut;
 
     ASMAtomicXchgU32(&pStreamOut->status, CA_STATUS_IN_INIT);
+
+    OSStatus err = noErr;
 
     UInt32 uSize = 0;
     if (pStreamOut->deviceID == kAudioDeviceUnknown)
@@ -1202,74 +1200,47 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
     if (err != noErr)
     {
         LogRel(("CoreAudio: Failed to get maximum frame buffer size from output audio device (%RI32)\n", err));
+
+        AudioUnitUninitialize(pStreamOut->audioUnit);
         return VERR_GENERAL_FAILURE; /** @todo Fudge! */
     }
 
-    int rc = VINF_SUCCESS;
-#if 0
-    /* Calculate the ratio between the device and the stream sample rate. */
-    pStreamOut->sampleRatio = pStreamOut->streamFormat.mSampleRate / pStreamOut->deviceFormat.mSampleRate;
-
-    /* Set to zero first */
-    pStreamOut->pBuf = NULL;
-    /* Create the AudioBufferList structure with one buffer. */
-    pStreamOut->bufferList.mNumberBuffers = 1;
-    /* Initialize the buffer to nothing. */
-    pStreamOut->bufferList.mBuffers[0].mNumberChannels = pStreamOut->streamFormat.mChannelsPerFrame;
-    pStreamOut->bufferList.mBuffers[0].mDataByteSize = 0;
-    pStreamOut->bufferList.mBuffers[0].mData = NULL;
-
-    /* Make sure that the ring buffer is big enough to hold the recording
+    /*
+     * Make sure that the ring buffer is big enough to hold the recording
      * data. Compare the maximum frames per slice value with the frames
      * necessary when using the converter where the sample rate could differ.
      * The result is always multiplied by the channels per frame to get the
-     * samples count. */
-    cSamples = RT_MAX(cFrames,
-                      (cFrames * pStreamOut->deviceFormat.mBytesPerFrame * pStreamOut->sampleRatio) / pStreamOut->streamFormat.mBytesPerFrame)
-               * pStreamOut->streamFormat.mChannelsPerFrame;
-
-    if (   pHstStrmIn->cSamples != 0
-        && pHstStrmIn->cSamples != (int32_t)cSamples)
-        LogRel(("CoreAudio: Warning! After recreation, the CoreAudio ring buffer doesn't has the same size as the device buffer (%RU32 vs. %RU32).\n", cSamples, (uint32_t)pHstStrmIn->cSamples));
+     * samples count.
+     */
+    UInt32 cSamples = cFrames * pStreamOut->streamFormat.mChannelsPerFrame;
 
     /* Create the internal ring buffer. */
-    RTCircBufCreate(&pStreamIn->pBuf, cSamples << pHstStrmIn->Props.cShift);
-    if (RT_VALID_PTR(pStreamIn->pBuf))
-        rc = 0;
-    else
-        LogRel(("CoreAudio: Failed to create internal ring buffer\n"));
-#endif
-
-    if (RT_FAILURE(rc))
+    int rc = RTCircBufCreate(&pStreamOut->pBuf, cSamples << pHstStrmOut->Props.cShift);
+    if (RT_SUCCESS(rc))
     {
-        /*if (pStreamOut->pBuf)
-            RTCircBufDestroy(pStreamOut->pBuf);*/
-
-        AudioUnitUninitialize(pStreamOut->audioUnit);
-        return rc;
-    }
-
 #ifdef DEBUG
-    propAdr.mSelector = kAudioDeviceProcessorOverload;
-    propAdr.mScope    = kAudioUnitScope_Global;
-    err = AudioObjectAddPropertyListener(pStreamOut->deviceID, &propAdr,
-                                         drvHostCoreAudioPlaybackAudioDevicePropertyChanged, (void *)pStreamOut);
-    if (RT_UNLIKELY(err != noErr))
-        LogRel(("CoreAudio: Failed to register processor overload listener for output stream (%RI32)\n", err));
+        propAdr.mSelector = kAudioDeviceProcessorOverload;
+        propAdr.mScope    = kAudioUnitScope_Global;
+        err = AudioObjectAddPropertyListener(pStreamOut->deviceID, &propAdr,
+                                             drvHostCoreAudioPlaybackAudioDevicePropertyChanged, (void *)pStreamOut);
+        if (err != noErr)
+            LogRel(("CoreAudio: Failed to register processor overload listener for output stream (%RI32)\n", err));
 #endif /* DEBUG */
-    propAdr.mSelector = kAudioDevicePropertyNominalSampleRate;
-    propAdr.mScope    = kAudioUnitScope_Global;
-    err = AudioObjectAddPropertyListener(pStreamOut->deviceID, &propAdr,
-                                         drvHostCoreAudioPlaybackAudioDevicePropertyChanged, (void *)pStreamOut);
-    /* Not fatal. */
-    if (RT_UNLIKELY(err != noErr))
-        LogRel(("CoreAudio: Failed to register sample rate changed listener for output stream (%RI32)\n", err));
 
-    /* Allocate temporary buffer. */
-    pStreamOut->cbPCMBuf = _4K; /** @todo Make this configurable. */
-    pStreamOut->pvPCMBuf = RTMemAlloc(pStreamOut->cbPCMBuf);
-    if (!pStreamOut->pvPCMBuf)
-        rc = VERR_NO_MEMORY;
+        propAdr.mSelector = kAudioDevicePropertyNominalSampleRate;
+        propAdr.mScope    = kAudioUnitScope_Global;
+        err = AudioObjectAddPropertyListener(pStreamOut->deviceID, &propAdr,
+                                             drvHostCoreAudioPlaybackAudioDevicePropertyChanged, (void *)pStreamOut);
+        /* Not fatal. */
+        if (err != noErr)
+            LogRel(("CoreAudio: Failed to register sample rate changed listener for output stream (%RI32)\n", err));
+
+        /* Allocate temporary buffer. */
+        pStreamOut->cbPCMBuf = _4K; /** @todo Make this configurable. */
+        pStreamOut->pvPCMBuf = RTMemAlloc(pStreamOut->cbPCMBuf);
+        if (!pStreamOut->pvPCMBuf)
+            rc = VERR_NO_MEMORY;
+    }
 
     if (RT_SUCCESS(rc))
     {
@@ -1277,10 +1248,11 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
 
         if (pcSamples)
             *pcSamples = cSamples;
-
-        LogFunc(("cSamples=%RU32\n", cSamples));
     }
+    else
+        AudioUnitUninitialize(pStreamOut->audioUnit);
 
+    LogFunc(("cSamples=%RU32, rc=%Rrc\n", cSamples, rc));
     return rc;
 }
 
