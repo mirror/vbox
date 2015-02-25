@@ -628,6 +628,11 @@ static DECLCALLBACK(int) drvAudioVideoRecGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(void) drvAudioVideoRecShutdown(PPDMIHOSTAUDIO pInterface)
+{
+    NOREF(pInterface);
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

@@ -1272,6 +1272,11 @@ static DECLCALLBACK(int) drvHostALSAAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(void) drvHostALSAAudioShutdown(PPDMIHOSTAUDIO pInterface)
+{
+    NOREF(pInterface);
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -1283,10 +1288,6 @@ static DECLCALLBACK(void *) drvHostALSAAudioQueryInterface(PPDMIBASE pInterface,
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
 
     return NULL;
-}
-
-static DECLCALLBACK(void) drvHostAlsaAudioDestruct(PPDMDRVINS pDrvIns)
-{
 }
 
 /**
@@ -1337,7 +1338,7 @@ const PDMDRVREG g_DrvHostALSAAudio =
     /* pfnConstruct */
     drvHostAlsaAudioConstruct,
     /* pfnDestruct */
-    drvHostAlsaAudioDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */

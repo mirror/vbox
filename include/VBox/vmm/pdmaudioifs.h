@@ -567,7 +567,8 @@ typedef struct PDMIAUDIOCONNECTOR
     pThis->IHostAudio.pfnInitIn     = _aDrvName##InitIn;     \
     pThis->IHostAudio.pfnInitOut    = _aDrvName##InitOut;    \
     pThis->IHostAudio.pfnIsEnabled  = _aDrvName##IsEnabled;  \
-    pThis->IHostAudio.pfnPlayOut    = _aDrvName##PlayOut;
+    pThis->IHostAudio.pfnPlayOut    = _aDrvName##PlayOut;    \
+    pThis->IHostAudio.pfnShutdown   = _aDrvName##Shutdown;
 
 /** Pointer to a host audio interface. */
 typedef struct PDMIHOSTAUDIO *PPDMIHOSTAUDIO;
@@ -583,6 +584,15 @@ typedef struct PDMIHOSTAUDIO
      * @param   pInterface          Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(int, pfnInit, (PPDMIHOSTAUDIO pInterface));
+
+    /**
+     * Shuts down the host-specific audio device.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to the interface structure containing the called function pointer.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnShutdown, (PPDMIHOSTAUDIO pInterface));
+
     /**
      * Initialize the host-specific audio device for input stream.
      *

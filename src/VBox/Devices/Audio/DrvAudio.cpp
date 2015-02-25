@@ -1267,29 +1267,6 @@ static void drvAudioStateHandler(PPDMDRVINS pDrvIns, PDMAUDIOSTREAMCMD enmCmd)
         pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, enmCmd);
 }
 
-static void drvAudioExit(PPDMDRVINS pDrvIns)
-{
-    LogFlowFuncEnter();
-
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-
-    /* Tear down all host output streams. */
-    PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
-    while ((pHstStrmOut = drvAudioFindAnyHstOut(pThis, pHstStrmOut)))
-    {
-        pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
-        pThis->pHostDrvAudio->pfnFiniOut(pThis->pHostDrvAudio, pHstStrmOut);
-    }
-
-    /* Tear down all host input streams. */
-    PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
-    while ((pHstStrmIn = drvAudioFindNextHstIn(pThis, pHstStrmIn)))
-    {
-        pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_DISABLE);
-        pThis->pHostDrvAudio->pfnFiniIn(pThis->pHostDrvAudio, pHstStrmIn);
-    }
-}
-
 static struct audio_option audio_options[] =
 {
     /* DAC */
@@ -1816,7 +1793,28 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
     LogFlowFuncEnter();
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    drvAudioExit(pDrvIns);
+    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+
+    /* Tear down all host output streams. */
+    PPDMAUDIOHSTSTRMOUT pHstStrmOut = NULL;
+    while ((pHstStrmOut = drvAudioFindAnyHstOut(pThis, pHstStrmOut)))
+    {
+        pThis->pHostDrvAudio->pfnControlOut(pThis->pHostDrvAudio, pHstStrmOut, PDMAUDIOSTREAMCMD_DISABLE);
+        pThis->pHostDrvAudio->pfnFiniOut(pThis->pHostDrvAudio, pHstStrmOut);
+    }
+
+    /* Tear down all host input streams. */
+    PPDMAUDIOHSTSTRMIN pHstStrmIn = NULL;
+    while ((pHstStrmIn = drvAudioFindNextHstIn(pThis, pHstStrmIn)))
+    {
+        pThis->pHostDrvAudio->pfnControlIn(pThis->pHostDrvAudio, pHstStrmIn, PDMAUDIOSTREAMCMD_DISABLE);
+        pThis->pHostDrvAudio->pfnFiniIn(pThis->pHostDrvAudio, pHstStrmIn);
+    }
+
+    if (pThis->pHostDrvAudio->pfnShutdown)
+        pThis->pHostDrvAudio->pfnShutdown(pThis->pHostDrvAudio);
+
+    LogFlowFuncLeave();
 }
 
 /**

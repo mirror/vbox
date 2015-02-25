@@ -1070,25 +1070,9 @@ static DECLCALLBACK(int) drvHostPulseAudioGetConf(PPDMIHOSTAUDIO pInterface, PPD
     return VINF_SUCCESS;
 }
 
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void) drvHostPulseAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
-    AssertPtrReturn(pInterface, NULL);
-    AssertPtrReturn(pszIID, NULL);
-
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
-
-    return NULL;
-}
-
-static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
-{
-    NOREF(pDrvIns);
+    NOREF(pInterface);
 
     LogFlowFuncEnter();
 
@@ -1112,7 +1096,23 @@ static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
 }
 
 /**
- * Construct a DirectSound Audio driver instance.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    AssertPtrReturn(pInterface, NULL);
+    AssertPtrReturn(pszIID, NULL);
+
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
+
+    return NULL;
+}
+
+/**
+ * Constructs a PulseAudio Audio driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
@@ -1131,6 +1131,17 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     PDMAUDIO_IHOSTAUDIO_CALLBACKS(drvHostPulseAudio);
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Destructs a PulseAudio Audio driver instance.
+ *
+ * @copydoc FNPDMDRVCONSTRUCT
+ */
+static DECLCALLBACK(void) drvHostPulseAudioDestruct(PPDMDRVINS pDrvIns)
+{
+    NOREF(pDrvIns);
+    LogFlowFuncEnter();
 }
 
 /**

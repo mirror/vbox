@@ -1924,6 +1924,11 @@ static DECLCALLBACK(int) drvHostCoreAudioGetConf(PPDMIHOSTAUDIO pInterface, PPDM
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(void) drvHostCoreAudioShutdown(PPDMIHOSTAUDIO pInterface)
+{
+    NOREF(pInterface);
+}
+
 static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
@@ -1932,10 +1937,6 @@ static DECLCALLBACK(void *) drvHostCoreAudioQueryInterface(PPDMIBASE pInterface,
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTAUDIO, &pThis->IHostAudio);
 
     return NULL;
-}
-
-static DECLCALLBACK(void) drvHostCoreAudioDestruct(PPDMDRVINS pDrvIns)
-{
 }
 
  /* Construct a DirectSound Audio driver instance.
@@ -1985,7 +1986,7 @@ const PDMDRVREG g_DrvHostCoreAudio =
     /* pfnConstruct */
     drvHostCoreAudioConstruct,
     /* pfnDestruct */
-    drvHostCoreAudioDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */

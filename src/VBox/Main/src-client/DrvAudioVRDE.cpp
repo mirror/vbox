@@ -357,6 +357,15 @@ static DECLCALLBACK(int) drvAudioVRDEGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUDI
     return VINF_SUCCESS;
 }
 
+static DECLCALLBACK(void) drvAudioVRDEShutdown(PPDMIHOSTAUDIO pInterface)
+{
+    PDRVAUDIOVRDE pDrv = RT_FROM_MEMBER(pInterface, DRVAUDIOVRDE, IHostAudio);
+    AssertPtrReturn(pDrv, VERR_INVALID_POINTER);
+
+    if (pDrv->pConsoleVRDPServer)
+        pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL);
+}
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */

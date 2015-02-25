@@ -206,9 +206,9 @@ static DECLCALLBACK(void *) drvHostNullAudioQueryInterface(PPDMIBASE pInterface,
     return NULL;
 }
 
-static DECLCALLBACK(void) drvHostNullAudioDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvHostNullAudioShutdown(PPDMIHOSTAUDIO pInterface)
 {
-    NOREF(pDrvIns);
+    NOREF(pInterface);
 }
 
 /**
@@ -218,6 +218,9 @@ static DECLCALLBACK(void) drvHostNullAudioDestruct(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(int) drvHostNullAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
+    /* pCfg is optional. */
+
     PDRVHOSTNULLAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTNULLAUDIO);
     LogRel(("Audio: Initializing NULL driver\n"));
 
@@ -259,7 +262,7 @@ const PDMDRVREG g_DrvHostNullAudio =
     /* pfnConstruct */
     drvHostNullAudioConstruct,
     /* pfnDestruct */
-    drvHostNullAudioDestruct,
+    NULL,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
