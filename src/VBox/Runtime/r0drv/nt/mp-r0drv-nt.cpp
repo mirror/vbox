@@ -631,10 +631,8 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     int rc;
     uint32_t cHits = 0;
     if (   g_pfnrtKeIpiGenericCall
-#if 0 /* testing... */
         && (   RTMpGetOnlineCount() <= 2
             || KeGetCurrentIrql()   > APC_LEVEL)
-#endif
        )
     {
         rc = rtMpCallUsingBroadcastIpi(pfnWorker, pvUser1, pvUser2, rtmpNtOnSpecificBroadcastIpiWrapper,
