@@ -1473,7 +1473,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
             /* Transfer data into stream's own ring buffer. The playback will operate on this
              * own ring buffer separately. */
-            Assert(cbToWrite <= cRead);
+            Assert(cbToWrite <= cbRead);
             memcpy(puBuf, pStreamOut->pvPCMBuf, cbToWrite);
 
             /* Release the ring buffer, so the read thread could start reading this data. */
