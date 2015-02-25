@@ -789,7 +789,7 @@ HRESULT Mouse::i_convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAd
 
     if (pfValid)
         *pfValid = true;
-    if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_NEW_PROTOCOL))
+    if (!(mfVMMDevGuestCaps & VMMDEV_MOUSE_NEW_PROTOCOL) && !pDisplay->i_isInputMappingSet())
     {
         ULONG displayWidth, displayHeight;
         ULONG ulDummy;

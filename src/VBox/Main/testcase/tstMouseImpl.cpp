@@ -46,6 +46,7 @@ class TestDisplay : public DisplayMouseInterface
     virtual HRESULT i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved)
     { return S_OK; }
     virtual HRESULT i_reportHostCursorPosition(int32_t x, int32_t y) { return S_OK; }
+    virtual bool i_isInputMappingSet() { return true; }
 };
 
 class TestConsole : public ConsoleMouseInterface

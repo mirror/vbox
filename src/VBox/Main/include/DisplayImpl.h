@@ -125,6 +125,7 @@ public:
                                             int32_t *px2, int32_t *py2) = 0;
     virtual HRESULT i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved) = 0;
     virtual HRESULT i_reportHostCursorPosition(int32_t x, int32_t y) = 0;
+    virtual bool i_isInputMappingSet(void) = 0;
 };
 
 class VMMDev;
@@ -204,6 +205,10 @@ public:
                                             int32_t *px2, int32_t *py2);
     virtual HRESULT i_reportHostCursorCapabilities(uint32_t fCapabilitiesAdded, uint32_t fCapabilitiesRemoved);
     virtual HRESULT i_reportHostCursorPosition(int32_t x, int32_t y);
+    virtual bool i_isInputMappingSet(void)
+    {
+        return cxInputMapping != 0 && cyInputMapping != 0;
+    }
 
     static const PDMDRVREG  DrvReg;
 

@@ -1164,7 +1164,7 @@ typedef struct VBVAMODEHINT
 /** Report the rectangle relative to which absolute pointer events should be
  *  expressed.  This information remains valid until the next VBVA resize event
  *  for any screen, at which time it is reset to the bounding rectangle of all
- *  virtual screens. 
+ *  virtual screens and must be re-set. 
  *  @see VBVA_REPORT_INPUT_MAPPING. */
 typedef struct VBVAREPORTINPUTMAPPING
 {
