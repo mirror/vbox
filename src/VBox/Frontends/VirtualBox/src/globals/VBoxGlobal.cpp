@@ -988,8 +988,10 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
     /* System */
     {
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
         /* BIOS Settings holder */
         CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         /* System details row count: */
         int iRowCount = 2; /* Memory & CPU details rows initially. */

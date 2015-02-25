@@ -613,14 +613,14 @@ void UIVMInfoDialog::refreshStatistics()
         /* Deterine virtualization attributes: */
         CMachineDebugger debugger = console.GetDebugger();
         QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-            VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
+            VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
+            VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
         QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-            VBoxGlobal::tr("Enabled", "details report (Nested Paging)") :
-            VBoxGlobal::tr("Disabled", "details report (Nested Paging)");
+            VBoxGlobal::tr("Active", "details report (Nested Paging)") :
+            VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
         QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-            VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
+            VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
+            VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
         QString strParavirtProvider = gpConverter->toString(m.GetEffectiveParavirtProvider());
 
         /* Guest information: */

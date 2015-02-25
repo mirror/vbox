@@ -837,20 +837,20 @@ private:
         /* VT-x/AMD-V feature: */
         bool bVirtEnabled = debugger.GetHWVirtExEnabled();
         QString virtualization = bVirtEnabled ?
-            VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
+            VBoxGlobal::tr("Active", "details report (VT-x/AMD-V)") :
+            VBoxGlobal::tr("Inactive", "details report (VT-x/AMD-V)");
 
         /* Nested Paging feature: */
         bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
         QString nestedPaging = bNestEnabled ?
-            VBoxGlobal::tr("Enabled", "details report (Nested Paging)") :
-            VBoxGlobal::tr("Disabled", "details report (Nested Paging)");
+            VBoxGlobal::tr("Active", "details report (Nested Paging)") :
+            VBoxGlobal::tr("Inactive", "details report (Nested Paging)");
 
         /* Unrestricted Execution feature: */
         bool bUXEnabled = debugger.GetHWVirtExUXEnabled();
         QString unrestrictExec = bUXEnabled ?
-            VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
-            VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
+            VBoxGlobal::tr("Active", "details report (Unrestricted Execution)") :
+            VBoxGlobal::tr("Inactive", "details report (Unrestricted Execution)");
 
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());

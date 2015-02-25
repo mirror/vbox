@@ -1848,8 +1848,8 @@ bool UISession::postprocessInitialization()
     const bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetIs64Bit();
     const bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(guest().GetOSTypeId()).GetRecommendedVirtEx();
     AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool fIsVirtEnabled = debugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !fIsVirtEnabled)
+    const bool fIsVirtActive = debugger().GetHWVirtExEnabled();
+    if (fRecommendVirtEx && !fIsVirtActive)
     {
         /* Check whether vt-x / amd-v supported: */
         bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
@@ -1860,9 +1860,9 @@ bool UISession::postprocessInitialization()
         /* Ask the user about further actions: */
         bool fShouldWeClose;
         if (fIs64BitsGuest)
-            fShouldWeClose = msgCenter().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
+            fShouldWeClose = msgCenter().warnAboutVirtExInactiveFor64BitsGuest(fVTxAMDVSupported);
         else
-            fShouldWeClose = msgCenter().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
+            fShouldWeClose = msgCenter().warnAboutVirtExInactiveForRecommendedGuest(fVTxAMDVSupported);
 
         /* If user asked to close VM: */
         if (fShouldWeClose)

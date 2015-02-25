@@ -1789,27 +1789,24 @@ void UIMessageCenter::warnAboutVBoxSVCUnavailable() const
           0 /* auto-confirm id */);
 }
 
-bool UIMessageCenter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported) const
+bool UIMessageCenter::warnAboutVirtExInactiveFor64BitsGuest(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
         return questionBinary(0, MessageType_Error,
-                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-                                 "not operational. Your 64-bit guest will fail to detect a "
-                                 "64-bit CPU and will not be able to boot.</p><p>Please ensure "
-                                 "that you have enabled VT-x/AMD-V properly in the BIOS of your "
-                                 "host computer.</p>"),
+                              tr("<p>VT-x/AMD-V hardware acceleration has been enabled, but is not operational. "
+                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.</p>"
+                                 "<p>Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.</p>"),
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
     else
         return questionBinary(0, MessageType_Error,
                               tr("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
-                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will "
-                                 "not be able to boot."),
+                                 "Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot."),
                               0 /* auto-confirm id */,
                               tr("Close VM"), tr("Continue"));
 }
 
-bool UIMessageCenter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported) const
+bool UIMessageCenter::warnAboutVirtExInactiveForRecommendedGuest(bool fHWVirtExSupported) const
 {
     if (fHWVirtExSupported)
         return questionBinary(0, MessageType_Error,
