@@ -1152,7 +1152,7 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
         x1 = xInputMappingOrigin;
         y1 = yInputMappingOrigin;
         x2 = xInputMappingOrigin + cxInputMapping;
-        y2 = xInputMappingOrigin + cyInputMapping;
+        y2 = yInputMappingOrigin + cyInputMapping;
     }
     else
         for (unsigned i = 1; i < mcMonitors; ++i)
