@@ -869,7 +869,7 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
     if (   pDevExt->cGipUsers == 0
         || cNsElapsed < RT_NS_1SEC * 2)
     {
-        supdrvGipInitSetCpuFreq(pGip, cNsElapsed, cTscTicksElapsed, iTick);
+        supdrvGipInitSetCpuFreq(pGip, cNsElapsed, cTscTicksElapsed, (uint32_t)iTick);
 
         /*
          * Stop the timer once we've reached the defined refinement period.
@@ -1498,6 +1498,7 @@ static DECLCALLBACK(void) supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void 
  */
 static DECLCALLBACK(void) supdrvGipInitDetermineAsyncTscWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    Assert(RTMpCpuIdToSetIndex(idCpu) == (intptr_t)pvUser2);
     ASMAtomicWriteU64((uint64_t volatile *)pvUser1, ASMReadTSC());
 }
 
@@ -1535,7 +1536,8 @@ static bool supdrvGipInitDetermineAsyncTsc(uint64_t *poffMin)
         for (iCpu = 0; iCpu < iEndCpu; iCpu++)
         {
             uint64_t CurTsc;
-            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvGipInitDetermineAsyncTscWorker, &CurTsc, NULL);
+            rc = RTMpOnSpecific(RTMpCpuIdFromSetIndex(iCpu), supdrvGipInitDetermineAsyncTscWorker,
+                                &CurTsc, (void *)(uintptr_t)iCpu);
             if (RT_SUCCESS(rc))
             {
                 if (CurTsc <= PrevTsc)
@@ -3859,7 +3861,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
             pArgs->pDevExt      = pDevExt;
             pArgs->pSyncMaster  = NULL;
             pArgs->pSyncWorker  = NULL;
-            pArgs->cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 1024; /* 976 us */
+            pArgs->cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 512; /* 1953 us */
 
 #ifdef GIP_TSC_DELTA_METHOD_1
             rc = supdrvTscDeltaMethod1Init(pArgs);
