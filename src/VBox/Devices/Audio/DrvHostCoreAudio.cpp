@@ -1458,7 +1458,8 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
         {
             rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf,
                                      pStreamOut->pvPCMBuf, cbToRead, &cRead);
-            if (RT_FAILURE(rc))
+            if (   RT_FAILURE(rc)
+                || !cRead)
                 break;
 
             cbRead = AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cRead);
