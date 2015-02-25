@@ -248,8 +248,8 @@ int main(int argc, char **argv)
         return rc;
     RTTestBanner(hTest);
 
-    /*rc = tstSingle(hTest);
-    if (RT_SUCCESS(rc))*/
+    rc = tstSingle(hTest);
+    if (RT_SUCCESS(rc))
         rc = tstParentChild(hTest);
 
     /*
