@@ -144,6 +144,9 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
  * Stops and destroys a running timer.
  *
  * @returns iprt status code.
+ * @retval  VERR_WRONG_CONTEXT if executing at the wrong IRQL (windows), PIL
+ *          (solaris), or similar.  Portable code does not destroy timers with
+ *          preemption (or interrupts) disabled.
  * @param   pTimer      Timer to stop and destroy. NULL is ok.
  */
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
