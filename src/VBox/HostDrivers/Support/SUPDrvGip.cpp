@@ -2572,6 +2572,7 @@ typedef SUPTSCDELTASYNC2 *PSUPTSCDELTASYNC2;
 /**
  * Argument package/state passed by supdrvMeasureTscDeltaOne() to the RTMpOn
  * callback worker.
+ * @todo add
  */
 typedef struct SUPDRVGIPTSCDELTARGS
 {
@@ -2599,9 +2600,6 @@ typedef struct SUPDRVGIPTSCDELTARGS
     {
         PSUPDRVTSCDELTAMETHOD2  pMasterData;
         PSUPDRVTSCDELTAMETHOD2  pWorkerData;
-        uint32_t                cHits;
-        bool                    fLagMaster;
-        bool                    fLagWorker;
     } M2;
 #endif
 
@@ -2616,8 +2614,26 @@ typedef struct SUPDRVGIPTSCDELTARGS
     bool volatile               fTimedOut;
     /** Pointer to the master's synchronization struct (on stack). */
     PSUPTSCDELTASYNC2 volatile  pSyncMaster;
-    /** Verification test TSC values for the master. */
-    uint64_t volatile           auVerifyMasterTscs[32];
+    /** Master data union. */
+    union
+    {
+        /** Data (master) for delta verification. */
+        struct
+        {
+            /** Verification test TSC values for the master. */
+            uint64_t volatile       auTscs[32];
+        } Verify;
+        /** Data (master) for measurement method \#2. */
+        struct
+        {
+            /** Data and sequence number. */
+            SUPDRVTSCDELTAMETHOD2   Data;
+            /** The lag setting for the next run. */
+            bool                    fLag;
+            /** Number of hits. */
+            uint32_t                cHits;
+        } M2;
+    } uMaster;
     /** The verifier verdict, VINF_SUCCESS if ok, VERR_OUT_OF_RANGE if not,
      * VERR_TRY_AGAIN on timeout. */
     int32_t                     rcVerify;
@@ -2637,8 +2653,24 @@ typedef struct SUPDRVGIPTSCDELTARGS
     PSUPTSCDELTASYNC2 volatile  pSyncWorker;
     /** The time the worker spent in the MP worker.  */
     uint64_t                    cElapsedWorkerTscTicks;
-    /** Verification test TSC values for the worker. */
-    uint64_t volatile           auVerifyWorkerTscs[32];
+    /** Worker data union. */
+    union
+    {
+        /** Data (worker) for delta verification. */
+        struct
+        {
+            /** Verification test TSC values for the worker. */
+            uint64_t volatile       auTscs[32];
+        } Verify;
+        /** Data (worker) for measurement method \#2. */
+        struct
+        {
+            /** Data and sequence number. */
+            SUPDRVTSCDELTAMETHOD2   Data;
+            /** The lag setting for the next run (set by master). */
+            bool                    fLag;
+        } M2;
+    } uWorker;
 
     /** Padding to make sure the above is in its own cache line. */
     uint64_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
@@ -2952,8 +2984,8 @@ static bool supdrvTscDeltaSync2_After(PSUPTSCDELTASYNC2 pMySync, PSUPTSCDELTASYN
     } else do {} while (0)
 /** @} */
 
-#ifdef GIP_TSC_DELTA_METHOD_1
 
+#ifdef GIP_TSC_DELTA_METHOD_1
 /**
  * TSC delta measurment algorithm \#1 (GIP_TSC_DELTA_METHOD_1).
  *
@@ -3093,31 +3125,6 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
     if (!fIsMaster)
         ASMAtomicWriteU64(&pGipCpuWorker->u64TSCSample, GIP_TSC_DELTA_RSVD);
 }
-
-
-/**
- * Initializes the argument/state data belonging to algorithm \#1.
- *
- * @returns VBox status code.
- * @param   pArgs               The argument/state data.
- */
-static int supdrvTscDeltaMethod1Init(PSUPDRVGIPTSCDELTARGS pArgs)
-{
-    NOREF(pArgs);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Undoes what supdrvTscDeltaMethod1Init() did.
- *
- * @param   pArgs               The argument/state data.
- */
-static void supdrvTscDeltaMethod1Delete(PSUPDRVGIPTSCDELTARGS pArgs)
-{
-    NOREF(pArgs);
-}
-
 #endif /* GIP_TSC_DELTA_METHOD_1 */
 
 
@@ -3170,7 +3177,7 @@ static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs
      */
     if (cHits > 2)
         pArgs->pWorker->i64TSCDelta = iBestDelta;
-    pArgs->M2.cHits += cHits;
+    pArgs->uMaster.M2.cHits += cHits;
 }
 
 
@@ -3244,35 +3251,35 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
             if (iLoop < GIP_TSC_DELTA_M2_PRIMER_LOOPS)
             {
                 /* Lag during the priming to be nice to everyone.. */
-                pArgs->M2.fLagMaster = true;
-                pArgs->M2.fLagWorker = true;
+                pArgs->uMaster.M2.fLag = true;
+                pArgs->uWorker.M2.fLag = true;
             }
             else
 # endif
             if (iLoop < (GIP_TSC_DELTA_M2_LOOPS - GIP_TSC_DELTA_M2_PRIMER_LOOPS) / 4)
             {
                 /* 25 % of the body without lagging. */
-                pArgs->M2.fLagMaster = false;
-                pArgs->M2.fLagWorker = false;
+                pArgs->uMaster.M2.fLag = false;
+                pArgs->uWorker.M2.fLag = false;
             }
             else if (iLoop < (GIP_TSC_DELTA_M2_LOOPS - GIP_TSC_DELTA_M2_PRIMER_LOOPS) / 4 * 2)
             {
                 /* 25 % of the body with both lagging. */
-                pArgs->M2.fLagMaster = true;
-                pArgs->M2.fLagWorker = true;
+                pArgs->uMaster.M2.fLag = true;
+                pArgs->uWorker.M2.fLag = true;
             }
             else
             {
                 /* 50% of the body with alternating lag. */
-                pArgs->M2.fLagMaster = (iLoop & 1) == 0;
-                pArgs->M2.fLagWorker = (iLoop & 1) == 1;
+                pArgs->uMaster.M2.fLag = (iLoop & 1) == 0;
+                pArgs->uWorker.M2.fLag= (iLoop & 1) == 1;
             }
 
             /*
              * Sync up with the worker and collect data.
              */
             TSCDELTA_MASTER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
-            supdrvTscDeltaMethod2CollectData(pArgs->M2.pMasterData, &pArgs->M2.pWorkerData->iCurSeqNo, pArgs->M2.fLagMaster);
+            supdrvTscDeltaMethod2CollectData(&pArgs->uMaster.M2.Data, &pArgs->uWorker.M2.Data.iCurSeqNo, pArgs->uMaster.M2.fLag);
             TSCDELTA_MASTER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
 
             /*
@@ -3291,46 +3298,11 @@ static void supdrvTscDeltaMethod2Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
              * The worker.
              */
             TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
-            supdrvTscDeltaMethod2CollectData(pArgs->M2.pWorkerData, &pArgs->M2.pMasterData->iCurSeqNo, pArgs->M2.fLagWorker);
+            supdrvTscDeltaMethod2CollectData(&pArgs->uWorker.M2.Data, &pArgs->uMaster.M2.Data.iCurSeqNo, pArgs->uWorker.M2.fLag);
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
         }
     }
 }
-
-
-/**
- * Initializes the argument/state data belonging to algorithm \#2.
- *
- * @returns VBox status code.
- * @param   pArgs               The argument/state data.
- */
-static int supdrvTscDeltaMethod2Init(PSUPDRVGIPTSCDELTARGS pArgs)
-{
-    pArgs->M2.pMasterData = NULL;
-    pArgs->M2.pWorkerData = NULL;
-
-    uint32_t const fFlags = /*RTMEMALLOCEX_FLAGS_ANY_CTX |*/ RTMEMALLOCEX_FLAGS_ZEROED;
-    int rc = RTMemAllocEx(sizeof(*pArgs->M2.pWorkerData), 0, fFlags, (void **)&pArgs->M2.pWorkerData);
-    if (RT_SUCCESS(rc))
-        rc = RTMemAllocEx(sizeof(*pArgs->M2.pMasterData), 0, fFlags, (void **)&pArgs->M2.pMasterData);
-    return rc;
-}
-
-
-/**
- * Undoes what supdrvTscDeltaMethod2Init() did.
- *
- * @param   pArgs               The argument/state data.
- */
-static void supdrvTscDeltaMethod2Delete(PSUPDRVGIPTSCDELTARGS pArgs)
-{
-    RTMemFreeEx(pArgs->M2.pMasterData, sizeof(*pArgs->M2.pMasterData));
-    RTMemFreeEx(pArgs->M2.pWorkerData, sizeof(*pArgs->M2.pWorkerData));
-# if 0
-    SUPR0Printf("cHits=%d m=%d w=%d\n", pArgs->M2.cHits, pArgs->pMaster->idApic, pArgs->pWorker->idApic);
-# endif
-}
-
 
 #endif /* GIP_TSC_DELTA_METHOD_2 */
 
@@ -3347,8 +3319,8 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
     for (;;)
     {
         RTCCUINTREG fEFlags;
-        AssertCompile((RT_ELEMENTS(pArgs->auVerifyMasterTscs) & 1) == 0);
-        AssertCompile(RT_ELEMENTS(pArgs->auVerifyWorkerTscs) == RT_ELEMENTS(pArgs->auVerifyMasterTscs));
+        AssertCompile((RT_ELEMENTS(pArgs->uMaster.Verify.auTscs) & 1) == 0);
+        AssertCompile(RT_ELEMENTS(pArgs->uMaster.Verify.auTscs) == RT_ELEMENTS(pArgs->uWorker.Verify.auTscs));
 
         if (fIsMaster)
         {
@@ -3358,13 +3330,13 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
             /*
              * Collect TSC, master goes first.
              */
-            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyMasterTscs); i += 2)
+            for (i = 0; i < RT_ELEMENTS(pArgs->uMaster.Verify.auTscs); i += 2)
             {
                 /* Read, kick & wait #1. */
                 uint64_t register uTsc = ASMReadTSC();
                 ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO_GO);
                 ASMSerializeInstruction();
-                pArgs->auVerifyMasterTscs[i] = uTsc;
+                pArgs->uMaster.Verify.auTscs[i] = uTsc;
                 TSCDELTA_DBG_START_LOOP();
                 while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO)
                 {
@@ -3376,7 +3348,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 uTsc = ASMReadTSC();
                 ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO);
                 ASMSerializeInstruction();
-                pArgs->auVerifyMasterTscs[i + 1] = uTsc;
+                pArgs->uMaster.Verify.auTscs[i + 1] = uTsc;
                 TSCDELTA_DBG_START_LOOP();
                 while (ASMAtomicReadU32(&pMySync->uSyncVar) == GIP_TSC_DELTA_SYNC2_GO_GO)
                 {
@@ -3397,10 +3369,10 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
 #endif
             ASMAtomicWriteS32(&pArgs->rcVerify, VINF_SUCCESS);
             uTscWorker = 0;
-            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyMasterTscs); i++)
+            for (i = 0; i < RT_ELEMENTS(pArgs->uMaster.Verify.auTscs); i++)
             {
                 /* Master vs previous worker entry. */
-                uint64_t uTscMaster = pArgs->auVerifyMasterTscs[i] - pGipCpuMaster->i64TSCDelta;
+                uint64_t uTscMaster = pArgs->uMaster.Verify.auTscs[i] - pGipCpuMaster->i64TSCDelta;
                 int64_t  iDiff;
                 if (i > 0)
                 {
@@ -3422,7 +3394,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 }
 
                 /* Worker vs master. */
-                uTscWorker = pArgs->auVerifyWorkerTscs[i] - iWorkerTscDelta;
+                uTscWorker = pArgs->uWorker.Verify.auTscs[i] - iWorkerTscDelta;
                 iDiff = uTscWorker - uTscMaster;
 #ifdef TSCDELTA_VERIFY_WITH_STATS
                 if (iDiff > pArgs->cMaxVerifyTscTicks)
@@ -3450,7 +3422,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
              */
             TSCDELTA_OTHER_SYNC_BEFORE(pMySync, pOtherSync, &fEFlags, pArgs);
 
-            for (i = 0; i < RT_ELEMENTS(pArgs->auVerifyWorkerTscs); i += 2)
+            for (i = 0; i < RT_ELEMENTS(pArgs->uWorker.Verify.auTscs); i += 2)
             {
                 uint64_t register uTsc;
 
@@ -3464,7 +3436,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 uTsc = ASMReadTSC();
                 ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO_GO);
                 ASMSerializeInstruction();
-                pArgs->auVerifyWorkerTscs[i] = uTsc;
+                pArgs->uWorker.Verify.auTscs[i] = uTsc;
 
                 /* Wait, Read and Kick #2. */
                 TSCDELTA_DBG_START_LOOP();
@@ -3476,7 +3448,7 @@ static int supdrvTscDeltaVerify(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTASYNC2 p
                 uTsc = ASMReadTSC();
                 ASMAtomicWriteU32(&pOtherSync->uSyncVar, GIP_TSC_DELTA_SYNC2_GO);
                 ASMSerializeInstruction();
-                pArgs->auVerifyWorkerTscs[i + 1] = uTsc;
+                pArgs->uWorker.Verify.auTscs[i + 1] = uTsc;
             }
 
             TSCDELTA_OTHER_SYNC_AFTER(pMySync, pOtherSync, fEFlags);
@@ -3863,69 +3835,52 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
             pArgs->pSyncWorker  = NULL;
             pArgs->cMaxTscTicks = ASMAtomicReadU64(&pGip->u64CpuHz) / 512; /* 1953 us */
 
-#ifdef GIP_TSC_DELTA_METHOD_1
-            rc = supdrvTscDeltaMethod1Init(pArgs);
-#elif defined(GIP_TSC_DELTA_METHOD_2)
-            rc = supdrvTscDeltaMethod2Init(pArgs);
-#else
-# error "huh?"
-#endif
+            /*
+             * Do the RTMpOnPair call.  We reset i64TSCDelta first so we
+             * and supdrvMeasureTscDeltaCallback can use it as a success check.
+             */
+            /** @todo Store the i64TSCDelta result in pArgs first?   Perhaps deals with
+             *        that when doing the restart loop reorg.  */
+            ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
+            rc = RTMpOnPair(pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, RTMPON_F_CONCURRENT_EXEC,
+                            supdrvMeasureTscDeltaCallback, pArgs, NULL);
             if (RT_SUCCESS(rc))
             {
-                /*
-                 * Do the RTMpOnPair call.  We reset i64TSCDelta first so we
-                 * and supdrvMeasureTscDeltaCallback can use it as a success check.
-                 */
-                /** @todo Store the i64TSCDelta result in pArgs first?   Perhaps deals with
-                 *        that when doing the restart loop reorg.  */
-                ASMAtomicWriteS64(&pGipCpuWorker->i64TSCDelta, INT64_MAX);
-                rc = RTMpOnPair(pGipCpuMaster->idCpu, pGipCpuWorker->idCpu, RTMPON_F_CONCURRENT_EXEC,
-                                supdrvMeasureTscDeltaCallback, pArgs, NULL);
-                if (RT_SUCCESS(rc))
+#if 0
+                SUPR0Printf("mponpair ticks: %9llu %9llu  max: %9llu  iTry: %u%s\n", pArgs->cElapsedMasterTscTicks,
+                            pArgs->cElapsedWorkerTscTicks, pArgs->cMaxTscTicks, pArgs->iTry,
+                            pArgs->fTimedOut ? " timed out" :"");
+#endif
+#if 0
+                SUPR0Printf("rcVerify=%d iVerifyBadTscDiff=%lld cMinVerifyTscTicks=%lld cMaxVerifyTscTicks=%lld\n",
+                            pArgs->rcVerify, pArgs->iVerifyBadTscDiff, pArgs->cMinVerifyTscTicks, pArgs->cMaxVerifyTscTicks);
+#endif
+                if (RT_LIKELY(pGipCpuWorker->i64TSCDelta != INT64_MAX))
                 {
-#if 0
-                    SUPR0Printf("mponpair ticks: %9llu %9llu  max: %9llu  iTry: %u%s\n", pArgs->cElapsedMasterTscTicks,
-                                pArgs->cElapsedWorkerTscTicks, pArgs->cMaxTscTicks, pArgs->iTry,
-                                pArgs->fTimedOut ? " timed out" :"");
-#endif
-#if 0
-                    SUPR0Printf("rcVerify=%d iVerifyBadTscDiff=%lld cMinVerifyTscTicks=%lld cMaxVerifyTscTicks=%lld\n",
-                                pArgs->rcVerify, pArgs->iVerifyBadTscDiff, pArgs->cMinVerifyTscTicks, pArgs->cMaxVerifyTscTicks);
-#endif
-                    if (RT_LIKELY(pGipCpuWorker->i64TSCDelta != INT64_MAX))
-                    {
-                        /*
-                         * Work the TSC delta applicability rating.  It starts
-                         * optimistic in supdrvGipInit, we downgrade it here.
-                         */
-                        SUPGIPUSETSCDELTA enmRating;
-                        if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO
-                            || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO)
-                            enmRating = SUPGIPUSETSCDELTA_NOT_ZERO;
-                        else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO
-                                 || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO)
-                            enmRating = SUPGIPUSETSCDELTA_ROUGHLY_ZERO;
-                        else
-                            enmRating = SUPGIPUSETSCDELTA_PRACTICALLY_ZERO;
-                        if (pGip->enmUseTscDelta < enmRating)
-                        {
-                            AssertCompile(sizeof(pGip->enmUseTscDelta) == sizeof(uint32_t));
-                            ASMAtomicWriteU32((uint32_t volatile *)&pGip->enmUseTscDelta, enmRating);
-                        }
-                    }
+                    /*
+                     * Work the TSC delta applicability rating.  It starts
+                     * optimistic in supdrvGipInit, we downgrade it here.
+                     */
+                    SUPGIPUSETSCDELTA enmRating;
+                    if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO
+                        || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO)
+                        enmRating = SUPGIPUSETSCDELTA_NOT_ZERO;
+                    else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO
+                             || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO)
+                        enmRating = SUPGIPUSETSCDELTA_ROUGHLY_ZERO;
                     else
-                        rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
+                        enmRating = SUPGIPUSETSCDELTA_PRACTICALLY_ZERO;
+                    if (pGip->enmUseTscDelta < enmRating)
+                    {
+                        AssertCompile(sizeof(pGip->enmUseTscDelta) == sizeof(uint32_t));
+                        ASMAtomicWriteU32((uint32_t volatile *)&pGip->enmUseTscDelta, enmRating);
+                    }
                 }
-                /** @todo return try-again if we get an offline CPU error.   */
+                else
+                    rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
             }
+            /** @todo return try-again if we get an offline CPU error.   */
 
-#ifdef GIP_TSC_DELTA_METHOD_1
-            supdrvTscDeltaMethod1Delete(pArgs);
-#elif defined(GIP_TSC_DELTA_METHOD_2)
-            supdrvTscDeltaMethod2Delete(pArgs);
-#else
-# error "huh?"
-#endif
             RTMemFree(pArgs);
         }
         else
