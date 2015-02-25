@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -456,7 +456,7 @@ HRESULT BandwidthControl::getNumGroups(ULONG *aNumGroups)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aNumGroups = m->llBandwidthGroups->size();
+    *aNumGroups = (ULONG)m->llBandwidthGroups->size();
 
     return S_OK;
 }
