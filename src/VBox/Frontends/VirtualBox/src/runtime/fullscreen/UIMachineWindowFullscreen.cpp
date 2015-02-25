@@ -269,7 +269,7 @@ void UIMachineWindowFullscreen::cleanupMiniToolbar()
     delete m_pMiniToolBar;
     m_pMiniToolBar = 0;
 }
-#endif /* !Q_WS_MAC *//
+#endif /* !Q_WS_MAC */
 
 void UIMachineWindowFullscreen::cleanupVisualState()
 {
