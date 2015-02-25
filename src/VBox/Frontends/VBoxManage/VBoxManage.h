@@ -104,6 +104,7 @@
 #define USAGE_REPAIRHD              RT_BIT_64(58)
 #define USAGE_NATNETWORK            RT_BIT_64(59)
 #define USAGE_MEDIUMPROPERTY        RT_BIT_64(60)
+#define USAGE_ENCRYPTMEDIUM         RT_BIT_64(61)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -261,6 +262,7 @@ int handleCreateMedium(HandlerArg *a);
 int handleModifyMedium(HandlerArg *a);
 int handleCloneMedium(HandlerArg *a);
 int handleMediumProperty(HandlerArg *a);
+int handleEncryptMedium(HandlerArg *a);
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
 HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        const ComPtr<IMedium> &pMedium,

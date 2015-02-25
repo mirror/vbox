@@ -630,6 +630,14 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            <property>\n"
                      "\n", SEP);
 
+    if (fCategory & USAGE_ENCRYPTMEDIUM)
+        RTStrmPrintf(pStrm,
+                           "%s encryptmedium %s   <uuid|filename>\n"
+                     "                            [--newpassword <new password>]\n"
+                     "                            [--oldpassword <old password>]\n"
+                     "                            [--cipher <cipher identifier>]\n"
+                     "\n", SEP);
+
     if (fCategory & USAGE_CONVERTFROMRAW)
         RTStrmPrintf(pStrm,
                            "%s convertfromraw %s  <filename> <outputfile>\n"

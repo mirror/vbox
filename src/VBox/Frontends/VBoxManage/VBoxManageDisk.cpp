@@ -1632,4 +1632,105 @@ int handleMediumProperty(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+static const RTGETOPTDEF g_aEncryptMediumOptions[] =
+{
+    { "--newpassword",  'n', RTGETOPT_REQ_STRING },
+    { "--oldpassword",  'o', RTGETOPT_REQ_STRING },
+    { "--cipher",       'c', RTGETOPT_REQ_STRING }
+};
+
+int handleEncryptMedium(HandlerArg *a)
+{
+    HRESULT rc;
+    int vrc;
+    ComPtr<IMedium> hardDisk;
+    const char *pszPasswordNew = NULL;
+    const char *pszPasswordOld = NULL;
+    const char *pszCipher = NULL;
+    const char *pszFilenameOrUuid = NULL;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aEncryptMediumOptions, RT_ELEMENTS(g_aEncryptMediumOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'n':   // --newpassword
+                pszPasswordNew = ValueUnion.psz;
+                break;
+
+            case 'o':   // --oldpassword
+                pszPasswordOld = ValueUnion.psz;
+                break;
+
+            case 'c':   // --cipher
+                pszCipher = ValueUnion.psz;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszFilenameOrUuid)
+                    pszFilenameOrUuid = ValueUnion.psz;
+                else
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid parameter '%s'", ValueUnion.psz);
+                break;
+
+            default:
+                if (c > 0)
+                {
+                    if (RT_C_IS_PRINT(c))
+                        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid option -%c", c);
+                    else
+                        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Invalid option case %i", c);
+                }
+                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "unknown option: %s\n", ValueUnion.psz);
+                else if (ValueUnion.pDef)
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
+                else
+                    return errorSyntax(USAGE_ENCRYPTMEDIUM, "error: %Rrs", c);
+        }
+    }
+
+    if (!pszFilenameOrUuid)
+        return errorSyntax(USAGE_ENCRYPTMEDIUM, "Disk name or UUID required");
+
+    if (!pszPasswordNew && !pszPasswordOld)
+        return errorSyntax(USAGE_ENCRYPTMEDIUM, "No password specified");
+
+    /* Always open the medium if necessary, there is no other way. */
+    rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                    AccessMode_ReadWrite, hardDisk,
+                    false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (FAILED(rc))
+        return 1;
+    if (hardDisk.isNull())
+    {
+        RTMsgError("Invalid hard disk reference, avoiding crash");
+        return 1;
+    }
+
+    ComPtr<IProgress> progress;
+    CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(pszPasswordNew).raw(), Bstr(pszPasswordOld).raw(),
+                                           Bstr(pszCipher).raw(), progress.asOutParam()));
+    if (SUCCEEDED(rc))
+        rc = showProgress(progress);
+    if (FAILED(rc))
+    {
+        if (rc == E_NOTIMPL)
+            RTMsgError("Encrypt hard disk operation is not implemented!");
+        else if (rc == VBOX_E_NOT_SUPPORTED)
+            RTMsgError("Encrypt hard disk operation for this cipher is not implemented yet!");
+        else if (!progress.isNull())
+            CHECK_PROGRESS_ERROR(progress, ("Failed to encrypt hard disk"));
+        else
+            RTMsgError("Failed to encrypt hard disk!");
+    }
+
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 #endif /* !VBOX_ONLY_DOCS */
