@@ -745,7 +745,6 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
     }
 }
 
-#ifndef RT_OS_WINDOWS   /* TEMP TEMP */
 
 /**
  * Timer callback function for TSC frequency refinement in invariant GIP mode.
@@ -927,7 +926,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     /*
      * Register a power management callback.
      */
-    pDevExt->fInvTscRefinePowerEvent = true;
+    pDevExt->fInvTscRefinePowerEvent = false;
     rc = RTPowerNotificationRegister(supdrvGipPowerNotificationCallback, pDevExt);
     AssertRC(rc); /* ignore */
 
@@ -945,9 +944,6 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     pDevExt->nsStartInvarTscRefine   = RTTimeSystemNanoTS();
     pDevExt->idCpuInvarTscRefine     = RTMpCpuId();
     ASMSetFlags(fEFlags);
-
-/** @todo we need a power management callback that disables the timer if the
- *        system suspends/resumes. */
 
     /*
      * Create a timer that runs on the same CPU so we won't have a depencency
@@ -997,7 +993,6 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     OSDBGPRINT(("vboxdrv: Failed to create or start TSC frequency refinement timer: rc=%Rrc\n", rc));
 }
 
-#endif /* !RT_OS_WINDOWS */
 
 /**
  * @callback_method_impl{PFNRTMPWORKER,
@@ -1882,9 +1877,7 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
         rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /*fRough*/); /* cannot fail */
-#ifndef RT_OS_WINDOWS  /* TEMP TEMP */
         supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt, pGip);
-#endif
     }
     else
         rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /*fRough*/);
