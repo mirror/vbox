@@ -73,7 +73,7 @@ const ClientMatchCriteria *g_AnyClient = new AnyClientMatchCriteria();
 
 static ConfigurationManager *g_ConfigurationManager = ConfigurationManager::getConfigurationManager();
 
-static NetworkManager *g_NetworkManager = NetworkManager::getNetworkManager();
+NetworkManager *NetworkManager::g_NetworkManager;
 
 bool MACClientMatchCriteria::check(const Client& client) const
 {

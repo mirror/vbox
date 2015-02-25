@@ -129,6 +129,9 @@ protected:
 
     /** Listener for Host DNS changes */
     ComPtr<NATNetworkListenerImpl> m_vboxListener;
+
+    NetworkManager *m_NetworkManager;
+
     /*
      * We will ignore cmd line parameters IFF there will be some DHCP specific arguments
      * otherwise all paramters will come from Main.
@@ -191,7 +194,9 @@ static RTGETOPTDEF g_aOptionDefs[] =
 /**
  * Construct a DHCP server with a default configuration.
  */
-VBoxNetDhcp::VBoxNetDhcp():VBoxNetBaseService("VBoxNetDhcp", "VBoxNetDhcp")
+VBoxNetDhcp::VBoxNetDhcp()
+  : VBoxNetBaseService("VBoxNetDhcp", "VBoxNetDhcp"),
+    m_NetworkManager(NULL)
 {
     /*   m_enmTrunkType          = kIntNetTrunkType_WhateverNone; */
     RTMAC mac;
@@ -280,19 +285,19 @@ int VBoxNetDhcp::init()
     int rc = this->VBoxNetBaseService::init();
     AssertRCReturn(rc, rc);
 
-    NetworkManager *netManager = NetworkManager::getNetworkManager();
-
-    netManager->setOurAddress(getIpv4Address());
-    netManager->setOurNetmask(getIpv4Netmask());
-    netManager->setOurMac(getMacAddress());
-    netManager->setService(this);
-
     if (isMainNeeded())
         rc = initWithMain();
     else
         rc = initNoMain();
-
     AssertRCReturn(rc, rc);
+
+    m_NetworkManager = NetworkManager::getNetworkManager();
+    AssertPtrReturn(m_NetworkManager, VERR_INTERNAL_ERROR);
+
+    m_NetworkManager->setOurAddress(getIpv4Address());
+    m_NetworkManager->setOurNetmask(getIpv4Netmask());
+    m_NetworkManager->setOurMac(getMacAddress());
+    m_NetworkManager->setService(this);
 
     return VINF_SUCCESS;
 }
@@ -337,21 +342,21 @@ bool VBoxNetDhcp::handleDhcpMsg(uint8_t uMsgType, PCRTNETBOOTP pDhcpMsg, size_t 
 {
     if (pDhcpMsg->bp_op == RTNETBOOTP_OP_REQUEST)
     {
-        NetworkManager *networkManager = NetworkManager::getNetworkManager();
+        AssertPtrReturn(m_NetworkManager, false);
 
         switch (uMsgType)
         {
             case RTNET_DHCP_MT_DISCOVER:
-                return networkManager->handleDhcpReqDiscover(pDhcpMsg, cb);
+                return m_NetworkManager->handleDhcpReqDiscover(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_REQUEST:
-                return networkManager->handleDhcpReqRequest(pDhcpMsg, cb);
+                return m_NetworkManager->handleDhcpReqRequest(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_DECLINE:
-                return networkManager->handleDhcpReqDecline(pDhcpMsg, cb);
+                return m_NetworkManager->handleDhcpReqDecline(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_RELEASE:
-                return networkManager->handleDhcpReqRelease(pDhcpMsg, cb);
+                return m_NetworkManager->handleDhcpReqRelease(pDhcpMsg, cb);
 
             case RTNET_DHCP_MT_INFORM:
                 debugPrint(0, true, "Should we handle this?");

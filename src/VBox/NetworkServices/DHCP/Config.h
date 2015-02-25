@@ -518,6 +518,9 @@ private:
     int processParameterReqList(const Client& client, const uint8_t *pu8ReqList, int cReqList, std::vector<RawOption>& extra);
 
 private:
+    static NetworkManager *g_NetworkManager;
+
+private:
     struct Data;
     Data *m;
 
