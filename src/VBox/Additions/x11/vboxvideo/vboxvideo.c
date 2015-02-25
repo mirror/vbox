@@ -297,8 +297,6 @@ vbox_crtc_dpms(xf86CrtcPtr crtc, int mode)
     bool fEnabled = (mode != DPMSModeOff);
 
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    if (pVBox->pScreens[cDisplay].fCrtcEnabled == fEnabled)
-        return;
     pVBox->pScreens[cDisplay].fCrtcEnabled = fEnabled;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
@@ -408,8 +406,6 @@ vbox_output_dpms (xf86OutputPtr output, int mode)
     bool fEnabled = (mode == DPMSModeOn);
 
     TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    if (pVBox->pScreens[cDisplay].fOutputEnabled == fEnabled)
-        return;
     pVBox->pScreens[cDisplay].fOutputEnabled = fEnabled;
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
