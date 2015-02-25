@@ -623,7 +623,7 @@ bool UIKeyboardHandler::x11EventFilter(XEvent *pEvent, ulong uScreenId)
             unsigned scan = handleXKeyEvent(pEvent);
 
             /* Scancodes 0x00 (no valid translation) and 0x80 are ignored: */
-            if (!scan & 0x7F)
+            if (!(scan & 0x7F))
             {
                 fResult = true;
                 break;
@@ -1602,7 +1602,7 @@ bool UIKeyboardHandler::processHotKey(int iHotKey, wchar_t *pHotKey)
     {
         KeySym ks = wrapXkbKeycodeToKeysym(pDisplay, keyCode, i, 0);
         char symbol = 0;
-        if (!XkbTranslateKeySym(pDisplay, &ks, 0, &symbol, 1, NULL) == 1)
+        if (XkbTranslateKeySym(pDisplay, &ks, 0, &symbol, 1, NULL) == 0)
             symbol = 0;
         if (symbol)
         {
