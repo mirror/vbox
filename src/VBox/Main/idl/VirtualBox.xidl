@@ -13416,7 +13416,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="05f2bbb6-a3a6-4fb9-9b49-6d0dda7142ac"
+    uuid="e6aa3c67-6f51-4ba6-a012-cf4825069abb"
     wsmap="managed"
     >
     <desc>
@@ -14659,6 +14659,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           <link to="MediumState_Inaccessible"/> state.
         </result>
       </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="changeEncryption">
+      <desc>
+        Starts encryption of this medium. This means that the stored data in the
+        medium is encrypted.
+
+        This medium will be placed to <link to="MediumState_LockedWrite"/>
+        state.
+
+        Please note that the results can be either returned straight away,
+        or later as the result of the background operation via the object
+        returned via the @a progress parameter.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not supported for this medium because it is attached to more than one VM
+          or has children.
+        </result>
+      </desc>
+      <param name="newPassword" type="wstring" dir="in">
+        <desc>
+          The new password the medium should be protected with. Use an empty string
+          to indicate that the result should not be encrypted.
+        </desc>
+      </param>
+      <param name="oldPassword" type="wstring" dir="in">
+        <desc>
+          The old password the medium is protected with. Use an empty string to indicate
+          that the medium wasn't encrypted before.
+        </desc>
+      </param>
+      <param name="cipher" type="wstring" dir="in">
+        <desc>The cipher to use for encryption.</desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>

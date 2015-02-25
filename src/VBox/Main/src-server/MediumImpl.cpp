@@ -19,6 +19,7 @@
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
+#include "ExtPackManagerImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -34,11 +35,15 @@
 #include <iprt/file.h>
 #include <iprt/tcp.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/memsafer.h>
+#include <iprt/base64.h>
 
 #include <VBox/vd.h>
 
 #include <algorithm>
 #include <list>
+
+#include <openssl/rand.h>
 
 typedef std::list<Guid> GuidList;
 
@@ -665,6 +670,81 @@ private:
     bool mfKeepTargetMediumLockList;
 };
 
+class Medium::EncryptTask : public Medium::Task
+{
+public:
+    EncryptTask(Medium *aMedium,
+                const com::Utf8Str &strNewPassword,
+                const com::Utf8Str &strOldPassword,
+                const com::Utf8Str &strCipher,
+                Progress *aProgress,
+                MediumLockList *aMediumLockList)
+        : Medium::Task(aMedium, aProgress),
+          mstrNewPassword(strNewPassword),
+          mstrOldPassword(strOldPassword),
+          mstrCipher(strCipher),
+          mpMediumLockList(aMediumLockList)
+    {
+        AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
+        /* aParent may be NULL */
+        mRC = mParentCaller.rc();
+        if (FAILED(mRC))
+            return;
+
+        mVDImageIfaces = aMedium->m->vdImageIfaces;
+    }
+
+    ~EncryptTask()
+    {
+        if (mstrNewPassword.length())
+            RTMemWipeThoroughly(mstrNewPassword.mutableRaw(), mstrNewPassword.length(), 10 /* cPasses */);
+        if (mstrOldPassword.length())
+            RTMemWipeThoroughly(mstrOldPassword.mutableRaw(), mstrOldPassword.length(), 10 /* cPasses */);
+        delete mpMediumLockList;
+    }
+
+    Utf8Str mstrNewPassword;
+    Utf8Str mstrOldPassword;
+    Utf8Str mstrCipher;
+    MediumLockList *mpMediumLockList;
+    PVDINTERFACE    mVDImageIfaces;
+
+private:
+    virtual HRESULT handler();
+
+    AutoCaller mParentCaller;
+};
+
+/**
+ * Settings for a crypto filter instance.
+ */
+struct Medium::CryptoFilterSettings
+{
+    CryptoFilterSettings()
+        : fCreateKeyStore(false),
+          pszPassword(NULL),
+          pszKeyStore(NULL),
+          pszKeyStoreLoad(NULL),
+          pbDek(NULL),
+          cbDek(0),
+          pszCipher(NULL)
+    { }
+
+    bool              fCreateKeyStore;
+    const char        *pszPassword;
+    char              *pszKeyStore;
+    const char        *pszKeyStoreLoad;
+
+    const uint8_t     *pbDek;
+    size_t            cbDek;
+    const char        *pszCipher;
+
+    PVDINTERFACE      vdFilterIfaces;
+
+    VDINTERFACECONFIG vdIfCfg;
+    VDINTERFACECRYPTO vdIfCrypto;
+};
+
 /**
  * Thread function for time-consuming medium tasks.
  *
@@ -802,6 +882,14 @@ HRESULT Medium::ExportTask::handler()
 HRESULT Medium::ImportTask::handler()
 {
     return mMedium->i_taskImportHandler(*this);
+}
+
+/**
+ * Implementation code for the "encrypt" task.
+ */
+HRESULT Medium::EncryptTask::handler()
+{
+    return mMedium->i_taskEncryptHandler(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2933,6 +3021,101 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
         delete pTask;
 
     LogFlowThisFunc(("LEAVE, rc=%Rhrc\n", rc));
+
+    return rc;
+}
+
+HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Utf8Str &aOldPassword,
+                                 const com::Utf8Str &aCipher, ComPtr<IProgress> &aProgress)
+{
+    HRESULT rc = S_OK;
+    ComObjPtr<Progress> pProgress;
+    Medium::Task *pTask = NULL;
+
+    try
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        DeviceType_T devType = i_getDeviceType();
+        /* Cannot encrypt DVD or floppy images so far. */
+        if (   devType == DeviceType_DVD
+            || devType == DeviceType_Floppy)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot encrypt DVD or Floppy medium '%s'"),
+                            m->strLocationFull.c_str());
+
+        /* Cannot encrypt child media so far. */
+        if (m->pParent)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot encrypt medium '%s' because it is a differencing medium"),
+                            m->strLocationFull.c_str());
+
+        /* Cannot encrypt media which are attached to more than one virtual machine. */
+        if (m->backRefs.size() > 1)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines"),
+                            m->strLocationFull.c_str(), m->backRefs.size());
+
+        if (m->llChildren.size() != 0)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("Cannot encrypt medium '%s' because it has %d children"),
+                            m->strLocationFull.c_str(), m->llChildren.size());
+
+        /* Build the medium lock list. */
+        MediumLockList *pMediumLockList(new MediumLockList());
+        alock.release();
+        rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
+                                    true /* fMediumLockWrite */,
+                                    NULL,
+                                    *pMediumLockList);
+        alock.acquire();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        alock.release();
+        rc = pMediumLockList->Lock();
+        alock.acquire();
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw setError(rc,
+                           tr("Failed to lock media when compacting '%s'"),
+                           i_getLocationFull().c_str());
+        }
+
+        pProgress.createObject();
+        rc = pProgress->init(m->pVirtualBox,
+                             static_cast <IMedium *>(this),
+                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()).raw(),
+                             TRUE /* aCancelable */);
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
+        }
+
+        /* setup task object to carry out the operation asynchronously */
+        pTask = new Medium::EncryptTask(this, aNewPassword, aOldPassword,
+                                        aCipher, pProgress, pMediumLockList);
+        rc = pTask->rc();
+        AssertComRC(rc);
+        if (FAILED(rc))
+            throw rc;
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        rc = i_startThread(pTask);
+
+        if (SUCCEEDED(rc))
+            pProgress.queryInterfaceTo(aProgress.asOutParam());
+    }
+    else if (pTask != NULL)
+        delete pTask;
 
     return rc;
 }
@@ -6603,6 +6786,124 @@ DECLCALLBACK(int) Medium::i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
     return RTTcpGetPeerAddress(pSocketInt->hSocket, pAddr);
 }
 
+DECLCALLBACK(bool) Medium::i_vdCryptoConfigAreKeysValid(void *pvUser, const char *pszzValid)
+{
+    /* Just return always true here. */
+    return true;
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoConfigQuerySize(void *pvUser, const char *pszName, size_t *pcbValue)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    AssertReturn(VALID_PTR(pcbValue), VERR_INVALID_POINTER);
+
+    size_t cbValue = 0;
+    if (!strcmp(pszName, "Algorithm"))
+        cbValue = strlen(pSettings->pszCipher) + 1;
+    else if (!strcmp(pszName, "KeyStore"))
+        cbValue = RTBase64DecodedSize(pSettings->pszKeyStoreLoad, NULL) + 1;
+    else if (!strcmp(pszName, "CreateKeyStore"))
+        cbValue = 2; /* Single digit + terminator. */
+    else
+        return VERR_CFGM_VALUE_NOT_FOUND;
+
+    *pcbValue = cbValue + 1 /* include terminator */;
+
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszName,
+                                                char *pszValue, size_t cchValue)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    AssertReturn(VALID_PTR(pszValue), VERR_INVALID_POINTER);
+
+    if (!strcmp(pszName, "KeyStore"))
+        return RTBase64Decode(pSettings->pszKeyStoreLoad, pszValue, cchValue, NULL, NULL);
+    else
+    {
+        const char *psz = NULL;
+        if (!strcmp(pszName, "Algorithm"))
+            psz = pSettings->pszCipher;
+        else if (!strcmp(pszName, "CreateKeyStore"))
+        {
+            if (pSettings->fCreateKeyStore)
+                psz = "1";
+            else
+                psz = "0";
+        }
+        else
+            return VERR_CFGM_VALUE_NOT_FOUND;
+
+        size_t cch = strlen(psz);
+        if (cch >= cchValue)
+            return VERR_CFGM_NOT_ENOUGH_SPACE;
+
+        memcpy(pszValue, psz, cch + 1);
+    }
+
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
+                                              const uint8_t **ppbKey, size_t *pcbKey)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoKeyRelease(void *pvUser, const char *pszId)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreGetPassword(void *pvUser, const char **ppszPassword)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+
+    *ppszPassword = pSettings->pszPassword;
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKeyStore, size_t cbKeyStore)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+
+    size_t cbEnc = RTBase64EncodedLength(cbKeyStore);
+    pSettings->pszKeyStore = (char *)RTMemAllocZ(cbEnc + 1);
+    if (!pSettings->pszKeyStore)
+        return VERR_NO_MEMORY;
+
+    int rc = RTBase64Encode(pvKeyStore, cbKeyStore, pSettings->pszKeyStore, cbEnc + 1, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pSettings->pszKeyStore);
+        pSettings->pszKeyStore = NULL;
+    }
+
+    return rc;
+}
+
+DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
+                                                             const uint8_t *pbDek, size_t cbDek)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+
+    pSettings->pszCipher = pszCipher;
+    pSettings->pbDek     = pbDek;
+    pSettings->cbDek     = cbDek;
+
+    return VINF_SUCCESS;
+}
+
 /**
  * Starts a new thread driven by the appropriate Medium::Task::handler() method.
  *
@@ -8401,6 +8702,260 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
     task.mpTargetMediumLockList->Clear();
 
     return mrc;
+}
+
+/**
+ * Sets up the encryption settings for a filter.
+ */
+void Medium::i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const char *pszCipher,
+                                        const char *pszKeyStore, const char *pszPassword,
+                                        bool fCreateKeyStore)
+{
+    pSettings->pszCipher       = pszCipher;
+    pSettings->pszPassword     = pszPassword;
+    pSettings->pszKeyStoreLoad = pszKeyStore;
+    pSettings->fCreateKeyStore = fCreateKeyStore;
+    pSettings->pbDek           = NULL;
+    pSettings->cbDek           = 0;
+    pSettings->vdFilterIfaces  = NULL;
+
+    pSettings->vdIfCfg.pfnAreKeysValid = i_vdCryptoConfigAreKeysValid;
+    pSettings->vdIfCfg.pfnQuerySize    = i_vdCryptoConfigQuerySize;
+    pSettings->vdIfCfg.pfnQuery        = i_vdCryptoConfigQuery;
+    pSettings->vdIfCfg.pfnQueryBytes   = NULL;
+
+    pSettings->vdIfCrypto.pfnKeyRetain                = i_vdCryptoKeyRetain;
+    pSettings->vdIfCrypto.pfnKeyRelease               = i_vdCryptoKeyRelease;
+    pSettings->vdIfCrypto.pfnKeyStoreGetPassword      = i_vdCryptoKeyStoreGetPassword;
+    pSettings->vdIfCrypto.pfnKeyStoreSave             = i_vdCryptoKeyStoreSave;
+    pSettings->vdIfCrypto.pfnKeyStoreReturnParameters = i_vdCryptoKeyStoreReturnParameters;
+
+    int vrc = VDInterfaceAdd(&pSettings->vdIfCfg.Core,
+                             "Medium::vdInterfaceCfgCrypto",
+                             VDINTERFACETYPE_CONFIG, pSettings,
+                             sizeof(VDINTERFACECONFIG), &pSettings->vdFilterIfaces);
+    AssertRC(vrc);
+
+    vrc = VDInterfaceAdd(&pSettings->vdIfCrypto.Core,
+                         "Medium::vdInterfaceCrypto",
+                         VDINTERFACETYPE_CRYPTO, pSettings,
+                         sizeof(VDINTERFACECRYPTO), &pSettings->vdFilterIfaces);
+    AssertRC(vrc);
+}
+
+/**
+ * Implementation code for the "compact" task.
+ *
+ * @param task
+ * @return
+ */
+HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
+{
+    HRESULT rc = S_OK;
+
+    /* Lock all in {parent,child} order. The lock is also used as a
+     * signal from the task initiator (which releases it only after
+     * RTThreadCreate()) that we can start the job. */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    try
+    {
+# ifdef VBOX_WITH_EXTPACK
+        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+        static const char *s_pszVDPlugin = "VDPluginCrypt";
+        ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
+        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        {
+            /* Load the plugin */
+            Utf8Str strPlugin;
+            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            if (SUCCEEDED(rc))
+            {
+                int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Encrypting the image failed because the encryption plugin could not be loaded (%s)"),
+                                   i_vdError(vrc).c_str());
+            }
+            else
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
+                               strExtPackPuel.c_str());
+        }
+        else
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Encryption is not supported because the extension pack '%s' is missing"),
+                           strExtPackPuel.c_str());
+
+        PVBOXHDD pDisk = NULL;
+        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Medium::CryptoFilterSettings CryptoSettingsRead;
+        Medium::CryptoFilterSettings CryptoSettingsWrite;
+
+        uint8_t *pbDek = NULL;
+        size_t cbDek = 0;
+        char *pszCipherOld = NULL;
+        char *pszKeyStoreEncNew = NULL;
+        void *pvBuf = NULL;
+        try
+        {
+            /* Set up disk encryption filters. */
+            if (task.mstrOldPassword.isEmpty())
+            {
+                /*
+                 * Query whether the medium property indicating that encryption is
+                 * configured is existing.
+                 */
+                settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
+                if (it != m->mapProperties.end())
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("The password given for the encrypted image is incorrect"));
+            }
+            else
+            {
+                settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
+                if (it == m->mapProperties.end())
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("The image is not configured for encryption"));
+
+                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, it->second.c_str(), task.mstrOldPassword.c_str(),
+                                           false /* fCreateKeyStore */);
+                vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Failed to load the decryption filter: %s"),
+                                   i_vdError(vrc).c_str());
+            }
+
+            if (task.mstrNewPassword.isNotEmpty())
+            {
+                if (task.mstrCipher.isEmpty())
+                    throw setError(VBOX_E_OBJECT_NOT_FOUND,
+                                   tr("No valid cipher identifier was given for encryption"));
+
+                i_taskEncryptSettingsSetup(&CryptoSettingsWrite, task.mstrCipher.c_str(), NULL,
+                                           task.mstrNewPassword.c_str(), true /* fCreateKeyStore */);
+                vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_WRITE, CryptoSettingsWrite.vdFilterIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Failed to load the encryption filter: %s"),
+                                   i_vdError(vrc).c_str());
+            }
+
+            /* Open all media in the chain. */
+            MediumLockList::Base::const_iterator mediumListBegin =
+                task.mpMediumLockList->GetBegin();
+            MediumLockList::Base::const_iterator mediumListEnd =
+                task.mpMediumLockList->GetEnd();
+            MediumLockList::Base::const_iterator mediumListLast =
+                mediumListEnd;
+            mediumListLast--;
+            for (MediumLockList::Base::const_iterator it = mediumListBegin;
+                 it != mediumListEnd;
+                 ++it)
+            {
+                const MediumLock &mediumLock = *it;
+                const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+                AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+                /* sanity check */
+                if (it == mediumListLast)
+                    Assert(pMedium->m->state == MediumState_LockedWrite);
+                else
+                    Assert(pMedium->m->state == MediumState_LockedRead);
+
+                /* Open all media but last in read-only mode. Do not handle
+                 * shareable media, as compaction and sharing are mutually
+                 * exclusive. */
+                vrc = VDOpen(pDisk,
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
+                             m->uOpenFlagsDef | (it == mediumListLast ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY),
+                             pMedium->m->vdImageIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_FILE_ERROR,
+                                   tr("Could not open the medium storage unit '%s'%s"),
+                                   pMedium->m->strLocationFull.c_str(),
+                                   i_vdError(vrc).c_str());
+            }
+
+            Assert(m->state == MediumState_LockedWrite);
+
+            Utf8Str location(m->strLocationFull);
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.release();
+
+            /** @todo: Move the copying to the VD library and think about how to handle an I/O error
+             * in the middle of the process. Implement progress interface. */
+            uint64_t uOffset = 0;
+            size_t cbBuf = 2*_1M;
+            uint64_t cbDisk = VDGetSize(pDisk, VD_LAST_IMAGE);
+
+            if (!cbDisk)
+                throw setError(VBOX_E_FILE_ERROR,
+                               tr("Could not query the size of the disk '%s'"),
+                               m->strLocationFull.c_str());
+
+            pvBuf = RTMemAllocZ(cbBuf);
+            if (!pvBuf)
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Could not allocate %zu bytes of memory for the encryption"),
+                               cbBuf);
+
+            while (uOffset < cbDisk)
+            {
+                size_t cbCopy = RT_MIN(cbBuf, cbDisk - uOffset);
+                vrc = VDRead(pDisk, uOffset, pvBuf, cbCopy);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Could not read the original data from the image at offset %llu: %Rrc"),
+                                   uOffset, vrc);
+
+                /* Write back, the filter will do the encryption if configured. */
+                vrc = VDWrite(pDisk, uOffset, pvBuf, cbCopy);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Could not write the data to the image at offset %llu: %Rrc"),
+                                   uOffset, vrc);
+
+                uOffset += cbCopy;
+            }
+
+            thisLock.acquire();
+            /* If everything went well set the new key store. */
+            settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
+            if (it != m->mapProperties.end())
+                m->mapProperties.erase(it);
+
+            if (CryptoSettingsWrite.pszKeyStore)
+                m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
+
+            thisLock.release();
+            i_markRegistriesModified();
+            m->pVirtualBox->i_saveModifiedRegistries();
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        if (pvBuf)
+            RTMemFree(pvBuf);
+
+        VDDestroy(pDisk);
+# else
+        throw setError(VBOX_E_NOT_SUPPORTED,
+                       tr("Encryption is not supported because extension pack support is not built in"));
+# endif
+
+
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the media chain. */
+
+    return rc;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

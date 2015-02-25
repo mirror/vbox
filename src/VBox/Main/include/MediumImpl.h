@@ -274,6 +274,8 @@ private:
     HRESULT resize(LONG64 aLogicalSize,
                    ComPtr<IProgress> &aProgress);
     HRESULT reset(ComPtr<IProgress> &aProgress);
+    HRESULT changeEncryption(const com::Utf8Str &aNewPassword, const com::Utf8Str &aOldPassword,
+                             const com::Utf8Str &aCipher, ComPtr<IProgress> &aProgress);
 
     // Private internal nmethods
     HRESULT i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &autoCaller);
@@ -311,6 +313,21 @@ private:
     static DECLCALLBACK(int) i_vdTcpGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAddr);
     static DECLCALLBACK(int) i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr);
 
+    static DECLCALLBACK(bool) i_vdCryptoConfigAreKeysValid(void *pvUser,
+                                                           const char *pszzValid);
+    static DECLCALLBACK(int) i_vdCryptoConfigQuerySize(void *pvUser, const char *pszName,
+                                                       size_t *pcbValue);
+    static DECLCALLBACK(int) i_vdCryptoConfigQuery(void *pvUser, const char *pszName,
+                                                   char *pszValue, size_t cchValue);
+
+    static DECLCALLBACK(int) i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
+                                                 const uint8_t **ppbKey, size_t *pcbKey);
+    static DECLCALLBACK(int) i_vdCryptoKeyRelease(void *pvUser, const char *pszId);
+    static DECLCALLBACK(int) i_vdCryptoKeyStoreGetPassword(void *pvUser, const char **ppszPassword);
+    static DECLCALLBACK(int) i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKeyStore, size_t cbKeyStore);
+    static DECLCALLBACK(int) i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
+                                                                const uint8_t *pbDek, size_t cbDek);
+
     class Task;
     class CreateBaseTask;
     class CreateDiffTask;
@@ -322,6 +339,7 @@ private:
     class MergeTask;
     class ExportTask;
     class ImportTask;
+    class EncryptTask;
     friend class Task;
     friend class CreateBaseTask;
     friend class CreateDiffTask;
@@ -333,6 +351,7 @@ private:
     friend class MergeTask;
     friend class ExportTask;
     friend class ImportTask;
+    friend class EncryptTask;
 
     HRESULT i_startThread(Medium::Task *pTask);
     HRESULT i_runNow(Medium::Task *pTask);
@@ -347,6 +366,12 @@ private:
     HRESULT i_taskResizeHandler(Medium::ResizeTask &task);
     HRESULT i_taskExportHandler(Medium::ExportTask &task);
     HRESULT i_taskImportHandler(Medium::ImportTask &task);
+    HRESULT i_taskEncryptHandler(Medium::EncryptTask &task);
+
+    struct CryptoFilterSettings;
+    void i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const char *pszCipher,
+                                    const char *pszKeyStore,  const char *pszPassword,
+                                    bool fCreateKeyStore);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
