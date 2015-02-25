@@ -1661,11 +1661,7 @@ bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
 {
     /* If IPRT didn't find KeIpiGenericCall we pretend windows(, the firmware,
        or whoever) always configures TSCs perfectly. */
-#if 0 /* Temporary test for Dsen. */
     return !RTMpOnPairIsConcurrentExecSupported();
-#else
-    return true;
-#endif
 }
 
 
