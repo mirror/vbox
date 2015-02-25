@@ -781,7 +781,17 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
     }
 
     /*
-     * Try get close to the next clock tick as usual.
+     * Read the TSC and time, noting which CPU we are on.
+     */
+    fEFlags = ASMIntDisableFlags();
+    uTsc    = ASMReadTSC();
+    nsNow   = RTTimeSystemNanoTS();
+    idCpu   = RTMpCpuId();
+    ASMSetFlags(fEFlags);
+
+    /*
+     * Try get close to the next clock tick if possible.  Don't try forever,
+     * we're in a timer.
      *
      * PORTME: If timers are called from the clock interrupt handler, or
      *         an interrupt handler with higher priority than the clock
@@ -798,19 +808,36 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
      * OS/2:
      *      Timer callbacks are done in the clock interrupt, so skip it.
      */
-#if 0 /* Does this trigger the DPC watchdog? */
 #if !defined(RT_OS_OS2)
-    nsNow = RTTimeSystemNanoTS();
-    while (RTTimeSystemNanoTS() == nsNow)
-        ASMNopPause();
+    /** @todo r=bird: I believe this is a complete wast of time.  Where it
+     *        matters we cannot wait long enough (DPC watchdog will trigger)
+     *        and other platforms, we'll only skip a few ns that comes down
+     *        to rounding (not on windows 10 btw). */
+    if (nsNow == RTTimeSystemNanoTS())
+    {
+        uint32_t cTries = 0x10000;
+        while (cTries > 0)
+        {
+            ASMNopPause();
+            if (nsNow != RTTimeSystemNanoTS())
+            {
+                fEFlags = ASMIntDisableFlags();
+                uTsc    = ASMReadTSC();
+                nsNow   = RTTimeSystemNanoTS();
+                idCpu   = RTMpCpuId();
+                ASMSetFlags(fEFlags);
+                break;
+            }
+            ASMNopPause();
+            cTries--;
+        }
+# ifdef DEBUG
+        if (!cTries)
+            OSDBGPRINT(("supdrvInitRefineInvariantTscFreqTimer: Wasted %llu ticks waiting for the current timestamp to change...\n",
+                        ASMReadTSC() - uTsc));
+# endif
+    }
 #endif
-#endif
-
-    fEFlags = ASMIntDisableFlags();
-    uTsc    = ASMReadTSC();
-    nsNow   = RTTimeSystemNanoTS();
-    idCpu   = RTMpCpuId();
-    ASMSetFlags(fEFlags);
 
     cNsElapsed          = nsNow - pDevExt->nsStartInvarTscRefine;
     cTscTicksElapsed    = uTsc  - pDevExt->uTscStartInvarTscRefine;
