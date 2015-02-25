@@ -44,6 +44,8 @@ typedef VBGOS2IDC *PVBGOS2IDC;
 
 #define VBOXGUEST_IOCTL_WAITEVENT               2
 #define VBOXGUEST_IOCTL_VMMREQUEST              3
+#define VBOXGUEST_IOCTL_CTL_FILTER_MASK         4
+#define VBOXGUEST_IOCTL_SET_MOUSE_STATUS        10
 #define VBOXGUEST_IOCTL_OS2_IDC_DISCONNECT      48
 
 #define VBOXGUEST_WAITEVENT_OK                  0
@@ -88,12 +90,11 @@ typedef struct
     unsigned long pointerYPos;
 } VMMDevReqMouseStatus;
 
-typedef struct
+typedef struct VBoxGuestFilterMaskInfo
 {
-    VMMDevRequestHeader header;
     unsigned long u32OrMask;
     unsigned long u32NotMask;
-} VMMDevCtlGuestFilterMask;
+} VBoxGuestFilterMaskInfo;
 
 
 /* From VMMDev.h: */
