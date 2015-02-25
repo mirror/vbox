@@ -745,6 +745,7 @@ static void supdrvGipInitSetCpuFreq(PSUPGLOBALINFOPAGE pGip, uint64_t nsElapsed,
     }
 }
 
+#ifndef RT_OS_WINDOWS   /* TEMP TEMP */
 
 /**
  * Timer callback function for TSC frequency refinement in invariant GIP mode.
@@ -996,6 +997,7 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     OSDBGPRINT(("vboxdrv: Failed to create or start TSC frequency refinement timer: rc=%Rrc\n", rc));
 }
 
+#endif /* !RT_OS_WINDOWS */
 
 /**
  * @callback_method_impl{PFNRTMPWORKER,
@@ -1880,7 +1882,9 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
     {
         rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, true /*fRough*/); /* cannot fail */
+#ifndef RT_OS_WINDOWS  /* TEMP TEMP */
         supdrvGipInitStartTimerForRefiningInvariantTscFreq(pDevExt, pGip);
+#endif
     }
     else
         rc = supdrvGipInitMeasureTscFreq(pDevExt, pGip, false /*fRough*/);
