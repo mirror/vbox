@@ -34,7 +34,6 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
   	tstMediumLock \
-  	tstMouseImpl \
   	tstGuid
   PROGRAMS.linux += \
   	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
@@ -233,36 +232,6 @@ tstUSBProxyLinux_LIBS     += \
 #
 tstMediumLock_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstMediumLock_SOURCES  = tstMediumLock.cpp
-
-
-#
-# tstMouseImpl
-#
-tstMouseImpl_TEMPLATE = VBOXMAINTSTEXE
-tstMouseImpl_SOURCES  = \
-	tstMouseImpl.cpp \
-	../src-client/MouseImpl.cpp \
-	../src-all/EventImpl.cpp \
-	../src-all/AutoCaller.cpp \
-	../src-all/VirtualBoxBase.cpp \
-	../src-all/VirtualBoxErrorInfoImpl.cpp \
-	$(VBOX_AUTOGEN_EVENT_CPP) \
-	$(VBOX_XML_SCHEMADEFS_CPP)
-tstMouseImpl_INCS      = ../include \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
-	$(dir $(VBOX_XML_SCHEMADEFS_H)) \
- 	$(VBOX_MAIN_APIWRAPPER_INCS)
-tstMouseImpl_INTERMEDIATES   = $(VBOX_MAIN_APIWRAPPER_GEN_HDRS)
-
-tstMouseImpl_LIBS      = \
-	$(PATH_STAGE_LIB)/VBoxAPIWrap$(VBOX_SUFF_LIB) \
-	$(LIB_VMM)
-# Super ugly hack to make the code work well enough without having ATL/COM
-# completely initialized, without it there are crashes caused by ComObjPtr
-# and many other pieces of glue code, as the inproc code path is more picky.
-tstMouseImpl_DEFS.win  += VBOX_COM_OUTOFPROC_MODULE
 
 
 #
