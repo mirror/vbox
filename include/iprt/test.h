@@ -1125,7 +1125,7 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
     if (!(expr)) { \
         RTTestIFailed("line %u: %s", __LINE__, #expr); \
         break; \
-    } do {} while (0)
+    } else do {} while (0)
 
 
 /** @def RTTESTI_CHECK_MSG
@@ -1144,6 +1144,23 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
             RTTestIFailureDetails DetailsArgs; \
          } \
     } while (0)
+/** @def RTTESTI_CHECK_MSG_BREAK
+ * Check whether a boolean expression holds true, returns on false.
+ *
+ * If the expression is false, call RTTestIFailed giving the line number and
+ * expression.
+ *
+ * @param   expr            The expression to evaluate.
+ * @param   DetailsArgs     Argument list for RTTestIFailureDetails, including
+ *                          parenthesis.
+ * @param   rcRet           What to return on failure.
+ */
+#define RTTESTI_CHECK_MSG_BREAK(expr, DetailsArgs) \
+    if (!(expr)) { \
+        RTTestIFailed("line %u: %s", __LINE__, #expr); \
+        RTTestIFailureDetails DetailsArgs; \
+        break; \
+    } else do {} while (0)
 /** @def RTTESTI_CHECK_MSG_RET
  * Check whether a boolean expression holds true, returns on false.
  *
@@ -1179,7 +1196,6 @@ RTR3DECL(int) RTTestIFailureDetails(const char *pszFormat, ...);
             return; \
          } \
     } while (0)
-
 
 /** @def RTTESTI_CHECK_RC
  * Check whether an expression returns a specific IPRT style status code.
