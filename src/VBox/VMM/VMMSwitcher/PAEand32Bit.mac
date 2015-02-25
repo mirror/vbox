@@ -90,6 +90,7 @@ BEGINPROC vmmR0ToRawMode
     cmp     byte [edx + CPUMCPU.fX2Apic], 1
     je      gth_x2apic
 
+    ; Legacy xAPIC mode:
     mov     edx, [edx + CPUMCPU.pvApicBase]
     shr     ecx, 1
     jnc     gth_nolint0
@@ -113,6 +114,7 @@ gth_notherm:
 gth_nocmci:
     jmp     gth_apic_done
 
+    ; x2APIC mode:
 gth_x2apic:
     push    eax                         ; save eax
     push    ebx                         ; save it for fApicDisVectors
@@ -217,11 +219,12 @@ BEGINPROC vmmR0ToRawModeAsm
     pushfd
     pop     dword [edx + CPUMCPU.Host.eflags]
 
-    ; Block Local APIC NMI vectors
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    cmp     byte [edx + CPUMCPU.pvApicBase], 1
+    ; Block Local APIC NMI vectors
+    cmp     byte [edx + CPUMCPU.fX2Apic], 1
     je      htg_x2apic
 
+    ; Legacy xAPIC mode:
     mov     ebx, [edx + CPUMCPU.pvApicBase]
     or      ebx, ebx
     jz      htg_apic_done
@@ -285,6 +288,7 @@ htg_notherm:
     mov     [edx + CPUMCPU.fApicDisVectors], edi
     jmp     htg_apic_done
 
+    ; x2APIC mode:
 htg_x2apic:
     mov     esi, edx                    ; Save edx.
     xor     edi, edi                    ; fApicDisVectors

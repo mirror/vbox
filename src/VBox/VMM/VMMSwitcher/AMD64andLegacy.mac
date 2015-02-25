@@ -108,7 +108,7 @@ BEGINPROC vmmR0ToRawMode
     cmp     byte [rdx + r8 + CPUMCPU.fX2Apic], 1
     je      gth64_x2apic
 
-    ; Legacy APIC mode:
+    ; Legacy xAPIC mode:
     mov     r8, [rdx + r8 + CPUMCPU.pvApicBase]
     shr     ecx, 1
     jnc     gth64_nolint0
@@ -132,7 +132,7 @@ gth64_notherm:
 gth64_nocmci:
     jmp     gth64_apic_done
 
-    ; X2 APIC mode:
+    ; x2APIC mode:
 gth64_x2apic:
     mov     r8, rax                     ; save rax
     mov     r10, rcx
@@ -337,6 +337,8 @@ BEGINPROC vmmR0ToRawModeAsm
     ; Block Local APIC NMI vectors
     cmp     byte [rdx + r8 + CPUMCPU.fX2Apic], 1
     je      htg_x2apic
+
+    ; Legacy xAPIC mode:
     mov     rbx, [rdx + r8 + CPUMCPU.pvApicBase]
     or      rbx, rbx
     jz      htg_apic_done
@@ -399,7 +401,7 @@ htg_notherm:
     mov     [rdx + r8 + CPUMCPU.fApicDisVectors], edi
     jmp     htg_apic_done
 
-    ; X2APIC?
+    ; x2APIC mode:
 htg_x2apic:
     mov     r15, rdx                    ; save rdx
     xor     edi, edi                    ; fApicDisVectors
