@@ -698,6 +698,8 @@ struct NetworkManager::Data
     RTNETADDRIPV4 m_OurAddress;
     RTNETADDRIPV4 m_OurNetmask;
     RTMAC m_OurMac;
+
+    ComPtr<IDHCPServer>  m_DhcpServer;
     const VBoxNetHlpUDPService *m_service;
 };
 
@@ -715,10 +717,13 @@ NetworkManager::~NetworkManager()
 }
 
 
-NetworkManager *NetworkManager::getNetworkManager()
+NetworkManager *NetworkManager::getNetworkManager(ComPtr<IDHCPServer> aDhcpServer)
 {
     if (!g_NetworkManager)
+    {
         g_NetworkManager = new NetworkManager();
+        g_NetworkManager->m->m_DhcpServer = aDhcpServer;
+    }
 
     return g_NetworkManager;
 }

@@ -291,7 +291,7 @@ int VBoxNetDhcp::init()
         rc = initNoMain();
     AssertRCReturn(rc, rc);
 
-    m_NetworkManager = NetworkManager::getNetworkManager();
+    m_NetworkManager = NetworkManager::getNetworkManager(m_DhcpServer);
     AssertPtrReturn(m_NetworkManager, VERR_INTERNAL_ERROR);
 
     m_NetworkManager->setOurAddress(getIpv4Address());

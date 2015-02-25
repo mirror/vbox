@@ -20,7 +20,10 @@
 
 #include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>
+
+#include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
+#include <VBox/com/VirtualBox.h>
 
 #include "../NetLib/cpp/utils.h"
 
@@ -489,7 +492,7 @@ private:
 class NetworkManager
 {
 public:
-    static NetworkManager *getNetworkManager();
+    static NetworkManager *getNetworkManager(ComPtr<IDHCPServer> aDhcpServer = ComPtr<IDHCPServer>());
 
     const RTNETADDRIPV4& getOurAddress() const;
     const RTNETADDRIPV4& getOurNetmask() const;
