@@ -427,6 +427,8 @@ int handleCreateMedium(HandlerArg *a)
     else if (cmd == CMD_FLOPPY)
         rc = createMedium(a, format, filename, DeviceType_Floppy,
                         AccessMode_ReadWrite, pMedium);
+    else
+        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
 
     if (SUCCEEDED(rc) && pMedium)
     {
@@ -638,6 +640,8 @@ int handleModifyMedium(HandlerArg *a)
         rc = openMedium(a, pszFilenameOrUuid, DeviceType_Floppy,
                         AccessMode_ReadWrite, pMedium,
                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    else
+        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
     if (FAILED(rc))
         return 1;
     if (pMedium.isNull())
@@ -831,6 +835,8 @@ int handleCloneMedium(HandlerArg *a)
     else if (cmd == CMD_FLOPPY)
         rc = openMedium(a, pszSrc, DeviceType_Floppy, AccessMode_ReadOnly, pSrcMedium,
                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    else
+        rc = E_INVALIDARG; /* cannot happen but make gcc happy */
     if (FAILED(rc))
         return 1;
 
