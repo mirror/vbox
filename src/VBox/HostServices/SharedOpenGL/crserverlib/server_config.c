@@ -72,8 +72,8 @@ static bool crServerHasInsufficientCaps()
     if (!cr_server.head_spu)
         return true;
 
-    sRealRender  = cr_server.head_spu->dispatch_table.GetString(GL_REAL_RENDERER);
-    sRealVersion = cr_server.head_spu->dispatch_table.GetString(GL_REAL_VERSION);
+    sRealRender  = (const char *)cr_server.head_spu->dispatch_table.GetString(GL_REAL_RENDERER);
+    sRealVersion = (const char *)cr_server.head_spu->dispatch_table.GetString(GL_REAL_VERSION);
 
     if (sRealRender && RTStrCmp(sRealRender, "GDI Generic") == 0)
         if (sRealVersion && RTStrCmp(sRealVersion, "1.1.0") == 0)
