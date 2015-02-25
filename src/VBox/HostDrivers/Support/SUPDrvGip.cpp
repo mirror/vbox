@@ -798,10 +798,12 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
      * OS/2:
      *      Timer callbacks are done in the clock interrupt, so skip it.
      */
+#if 0 /* Does this trigger the DPC watchdog? */
 #if !defined(RT_OS_OS2)
     nsNow = RTTimeSystemNanoTS();
     while (RTTimeSystemNanoTS() == nsNow)
         ASMNopPause();
+#endif
 #endif
 
     fEFlags = ASMIntDisableFlags();
