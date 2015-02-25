@@ -37,7 +37,8 @@
 #include <iprt/err.h>
 #include "internal/thread.h"
 
-
+#define SOL_THREAD_ID_PTR           ((uint64_t *)((char *)curthread + g_offrtSolThreadId))
+#define SOL_THREAD_LOCKP_PTR        ((disp_lock_t **)((char *)curthread + g_offrtSolThreadLock))
 
 DECLHIDDEN(int) rtThreadNativeInit(void)
 {
@@ -54,6 +55,7 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enmType)
 {
     int iPriority;
+    disp_lock_t **ppDispLock;
     switch (enmType)
     {
         case RTTHREADTYPE_INFREQUENT_POLLER:    iPriority = 60;             break;
@@ -67,11 +69,18 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
             return VERR_INVALID_PARAMETER;
     }
 
-    kthread_t *pCurThread = curthread;
-    Assert(pCurThread);
-    thread_lock(pCurThread);
-    thread_change_pri(pCurThread, iPriority, 0);
-    thread_unlock(pCurThread);
+    Assert(curthread);
+    thread_lock(curthread);
+    thread_change_pri(curthread, iPriority, 0);
+
+    /*
+     * thread_unlock() is a macro calling disp_lock_exit() with the thread's dispatcher lock.
+     * We need to dereference the offset manually here (for S10, S11 compatibility) rather than
+     * using the macro.
+     */
+    ppDispLock = SOL_THREAD_LOCKP_PTR;
+    disp_lock_exit(*ppDispLock);
+
     return VINF_SUCCESS;
 }
 
@@ -106,14 +115,9 @@ static void rtThreadNativeMain(void *pvThreadInt)
 {
     PRTTHREADINT pThreadInt = (PRTTHREADINT)pvThreadInt;
 
-    /* thread_join takes the t_did value. There seems to be no interface for
-       retrieving t_did, so we have to gamble on the Solaris guys not messing
-       up its position in the _kthread struct.  We access t_intr which is
-       16 bytes earlier in the struct from semeventwait-r0drv-solaris.h, so
-       maybe we're lucky.  Maybe, but experience indicates that the odds
-       are against us... */
-    pThreadInt->tid = curthread->t_did;
-
+    AssertCompile(sizeof(kt_did_t) == sizeof(pThreadInt->tid));
+    uint64_t *pu64ThrId = SOL_THREAD_ID_PTR;
+    pThreadInt->tid = *pu64ThrId;
     rtThreadMain(pThreadInt, RTThreadNativeSelf(), &pThreadInt->szName[0]);
     thread_exit();
 }

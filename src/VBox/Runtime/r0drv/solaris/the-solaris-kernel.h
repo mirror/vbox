@@ -58,6 +58,7 @@
 #include <sys/ctf_api.h>
 #include <sys/modctl.h>
 #include <sys/proc.h>
+#include <sys/t_lock.h>
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
@@ -90,6 +91,9 @@ extern PFNSOL_cyclic_reprogram         g_pfnrtR0Sol_cyclic_reprogram;
 extern PFNSOL_contig_free              g_pfnrtR0Sol_contig_free;
 extern PFNSOL_page_noreloc_supported   g_pfnrtR0Sol_page_noreloc_supported;
 extern size_t                          g_offrtSolThreadPreempt;
+extern size_t                          g_offrtSolThreadIntrThread;
+extern size_t                          g_offrtSolThreadLock;
+extern size_t                          g_offrtSolThreadId;
 extern size_t                          g_offrtSolCpuPreempt;
 extern size_t                          g_offrtSolCpuForceKernelPreempt;
 extern bool                            g_frtSolInitDone;

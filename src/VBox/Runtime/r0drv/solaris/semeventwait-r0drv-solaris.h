@@ -43,6 +43,9 @@
  *       CY_HIGH_LEVEL. */
 #define RTR0SEMSOLWAIT_NO_OLD_S10_FALLBACK
 
+#define SOL_THREAD_TINTR_PTR        ((kthread_t **)((char *)curthread + g_offrtSolThreadIntrThread))
+
+
 /**
  * Solaris semaphore wait structure.
  */
@@ -454,15 +457,17 @@ DECLINLINE(void) rtR0SemSolWaitEnterMutexWithUnpinningHack(kmutex_t *pMtx)
     if (!fAcquired)
     {
         /*
-         * Note! This assumes nobody is using the RTThreadPreemptDisable in an
+         * Note! This assumes nobody is using the RTThreadPreemptDisable() in an
          *       interrupt context and expects it to work right.  The swtch will
          *       result in a voluntary preemption.  To fix this, we would have to
-         *       do our own counting in RTThreadPreemptDisable/Restore like we do
+         *       do our own counting in RTThreadPreemptDisable/Restore() like we do
          *       on systems which doesn't do preemption (OS/2, linux, ...) and
-         *       check whether preemption was disabled via RTThreadPreemptDisable
-         *       or not and only call swtch if RTThreadPreemptDisable wasn't called.
+         *       check whether preemption was disabled via RTThreadPreemptDisable()
+         *       or not and only call swtch if RTThreadPreemptDisable() wasn't called.
          */
-        if (curthread->t_intr && getpil() < DISP_LEVEL)
+        kthread_t **ppIntrThread = SOL_THREAD_TINTR_PTR;
+        if (   *ppIntrThread
+            && getpil() < DISP_LEVEL)
         {
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);

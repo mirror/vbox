@@ -89,16 +89,16 @@ RTDECL(bool) RTThreadYield(void)
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
 
-    char cThreadPreempt = SOL_THREAD_PREEMPT;
-    char cForcePreempt  = SOL_CPU_KPRUNRUN;
+    char const bThreadPreempt = SOL_THREAD_PREEMPT;
+    char const bForcePreempt  = SOL_CPU_KPRUNRUN;
     bool fWillYield = false;
-    Assert(cThreadPreempt >= 1);
+    Assert(bThreadPreempt >= 1);
 
     /*
      * If we are the last preemption enabler for this thread and if force
      * preemption is set on the CPU, only then we are guaranteed to be preempted.
      */
-    if (cThreadPreempt == 1 && cForcePreempt != 0)
+    if (bThreadPreempt == 1 && bForcePreempt != 0)
         fWillYield = true;
 
     RTThreadPreemptRestore(&PreemptState);
@@ -135,9 +135,9 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
 
-    char cPreempt      = SOL_CPU_RUNRUN;
-    char cForcePreempt = SOL_CPU_KPRUNRUN;
-    return (cPreempt != 0 || cForcePreempt != 0);
+    char const bPreempt      = SOL_CPU_RUNRUN;
+    char const bForcePreempt = SOL_CPU_KPRUNRUN;
+    return (bPreempt != 0 || bForcePreempt != 0);
 }
 
 
