@@ -26,6 +26,7 @@
 # include "UIShortcutPool.h"
 # include "UIFrameBuffer.h"
 # include "UIConverter.h"
+# include "UIIconPool.h"
 # include "UISession.h"
 # include "VBoxGlobal.h"
 
@@ -940,7 +941,7 @@ class UIActionMenuScaleFactor : public UIActionMenu
 public:
 
     UIActionMenuScaleFactor(UIActionPool *pParent)
-        : UIActionMenu(pParent) {}
+        : UIActionMenu(pParent, ":/scale_factor_16px.png", ":/scale_factor_disabled_16px.png") {}
 
 protected:
 
@@ -2459,7 +2460,9 @@ void UIActionPoolRuntime::updateMenuView()
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
-            QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
+            QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
+                                                                 ":/virtual_screen_disabled_16px.png"),
+                                             QApplication::translate("UIMultiScreenLayout",
                                                                      "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
@@ -2473,7 +2476,9 @@ void UIActionPoolRuntime::updateMenuView()
             for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
             {
                 /* Add 'Virtual Screen %1' menu: */
-                QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
+                QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
+                                                                     ":/virtual_screen_disabled_16px.png"),
+                                                 QApplication::translate("UIMultiScreenLayout",
                                                                          "Virtual Screen %1").arg(iGuestScreenIndex + 1));
                 pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
                 connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewMultiscreen()));
@@ -2519,7 +2524,9 @@ void UIActionPoolRuntime::updateMenuViewPopup()
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < uisession()->frameBuffers().size(); ++iGuestScreenIndex)
         {
             /* Add 'Virtual Screen %1' menu: */
-            QMenu *pSubMenu = pMenu->addMenu(QApplication::translate("UIMultiScreenLayout",
+            QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
+                                                                 ":/virtual_screen_disabled_16px.png"),
+                                             QApplication::translate("UIMultiScreenLayout",
                                                                      "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));

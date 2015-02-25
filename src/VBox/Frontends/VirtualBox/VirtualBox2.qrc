@@ -84,6 +84,8 @@
         <file alias="sata_expand_16px.png">images/sata_expand_16px.png</file>
         <file alias="scale_16px.png">images/scale_16px.png</file>
         <file alias="scale_disabled_16px.png">images/scale_disabled_16px.png</file>
+        <file alias="scale_factor_16px.png">images/scale_factor_16px.png</file>
+        <file alias="scale_factor_disabled_16px.png">images/scale_factor_disabled_16px.png</file>
         <file alias="scale_on_16px.png">images/scale_on_16px.png</file>
         <file alias="scale_on_disabled_16px.png">images/scale_on_disabled_16px.png</file>
         <file alias="screenshot_take_16px.png">images/screenshot_take_16px.png</file>
@@ -201,6 +203,8 @@
         <file alias="video_capture_on_16px.png">images/video_capture_on_16px.png</file>
         <file alias="video_capture_on_disabled_16px.png">images/video_capture_on_disabled_16px.png</file>
         <file alias="video_capture_settings_16px.png">images/video_capture_settings_16px.png</file>
+        <file alias="virtual_screen_16px.png">images/virtual_screen_16px.png</file>
+        <file alias="virtual_screen_disabled_16px.png">images/virtual_screen_disabled_16px.png</file>
         <file alias="vm_add_16px.png">images/vm_add_16px.png</file>
         <file alias="vm_clone_16px.png">images/vm_clone_16px.png</file>
         <file alias="vm_clone_22px.png">images/vm_clone_22px.png</file>
