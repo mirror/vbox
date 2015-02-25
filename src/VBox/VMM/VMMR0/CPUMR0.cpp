@@ -51,8 +51,6 @@ typedef struct CPUMHOSTLAPIC
     bool        fX2Apic;
     /** The APIC version number. */
     uint32_t    uVersion;
-    /** Has APIC_REG_LVT_THMR. Not used. */
-    uint32_t    fHasThermal;
     /** The physical address of the APIC registers. */
     RTHCPHYS    PhysBase;
     /** The memory object entering the physical address. */
@@ -864,7 +862,6 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUs
     if ((APIC_REG_VERSION_GET_VER(uApicVersion) & 0xF0) == 0x10)
     {
         g_aLApics[iCpu].uVersion    = uApicVersion;
-        g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(uApicVersion) >= 5;
 
 #if 0 /* enable if you need it. */
         if (g_aLApics[iCpu].fX2Apic)
