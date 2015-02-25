@@ -18,27 +18,34 @@
 
 #include <iprt/asm-math.h>
 #include <iprt/assert.h>
-#ifdef DEBUG_andy
+#ifdef DEBUG_DUMP_PCM_DATA
 # include <iprt/file.h>
 #endif
 #include <iprt/mem.h>
 #include <iprt/string.h> /* For RT_BZERO. */
+
+#ifdef LOG_GROUP
+# undef LOG_GROUP
+#endif
+#define LOG_GROUP LOG_GROUP_DEV_AUDIO
+#include <VBox/log.h>
+
 #ifdef TESTCASE
+# define LOG_ENABLED
 # include <iprt/stream.h>
 #endif
 #include <VBox/err.h>
 
 #include "AudioMixBuffer.h"
 
-#ifdef LOG_GROUP
-# undef LOG_GROUP
-#endif
 #if 0
 # define AUDMIXBUF_LOG(x) LogFlowFunc(x)
-# define LOG_GROUP LOG_GROUP_DEV_AUDIO
-# include <VBox/log.h>
 #else
-# define AUDMIXBUF_LOG(x) do {} while (0)
+# if defined(TESTCASE)
+#  define AUDMIXBUF_LOG(x) LogFunc(x)
+# else
+#  define AUDMIXBUF_LOG(x) do {} while (0)
+# endif
 #endif
 
 /*
@@ -125,8 +132,7 @@ void audioMixBufFinish(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamplesToClear)
         AUDMIXBUF_LOG(("\t%s: cMixed=%RU32 -> %RU32\n",
                        pIter->pszName, pIter->cMixed, pIter->cMixed - cSamplesToClear));
 
-        Assert(pIter->cMixed >= cSamplesToClear);
-        pIter->cMixed -= cSamplesToClear;
+        pIter->cMixed -= RT_MIN(pIter->cMixed, cSamplesToClear);
         pIter->offReadWrite = 0;
     }
 
@@ -375,20 +381,14 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
         \
         while (paDst < paDstEnd) \
         { \
-            if (paSrc >= paSrcEnd) \
-                break; \
-            \
             while (pRate->srcOffset <= (pRate->dstOffset >> 32)) \
             { \
-                AUDMIXBUF_MACRO_LOG(("foo1\n")); \
                 samLast = *paSrc++; \
                 pRate->srcOffset++; \
                 l++; \
                 if (paSrc >= paSrcEnd) \
                     break; \
-                    AUDMIXBUF_MACRO_LOG(("foo1.1\n")); \
             } \
-            AUDMIXBUF_MACRO_LOG(("foo2\n")); \
             \
             samCur = *paSrc; \
             \
@@ -409,6 +409,10 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             pRate->dstOffset += pRate->dstInc; \
             \
             AUDMIXBUF_MACRO_LOG(("\t\tpRate->dstOffset=%RU64\n", pRate->dstOffset)); \
+            \
+            if (paSrc >= paSrcEnd) \
+                break; \
+            \
         } \
         \
         AUDMIXBUF_MACRO_LOG(("End: paDst=%p - paDstStart=%p -> %zu\n", paDst, paDstStart, paDst - paDstStart)); \
@@ -902,6 +906,8 @@ static inline void audioMixBufPrint(PPDMAUDIOMIXBUF pMixBuf)
 uint32_t audioMixBufProcessed(PPDMAUDIOMIXBUF pMixBuf)
 {
     AssertPtrReturn(pMixBuf, 0);
+
+    AUDMIXBUF_LOG(("%s: cProcessed=%RU32\n", pMixBuf->pszName, pMixBuf->cProcessed));
     return pMixBuf->cProcessed;
 }
 
@@ -969,12 +975,10 @@ int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (!cbBuf)
         return VINF_SUCCESS;
 
-    uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf),
-                              pMixBuf->cProcessed);
+    uint32_t cToRead = RT_MIN(AUDIOMIXBUF_B2S(pMixBuf, cbBuf), pMixBuf->cProcessed);
 
     AUDMIXBUF_LOG(("%s: pvBuf=%p, cbBuf=%zu (%RU32 samples), cToRead=%RU32\n",
-                   pMixBuf->pszName, pvBuf,
-                   cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf), cToRead));
+                   pMixBuf->pszName, pvBuf, cbBuf, AUDIOMIXBUF_B2S(pMixBuf, cbBuf), cToRead));
 
     if (!cToRead)
     {
@@ -1166,7 +1170,7 @@ int audioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     int rc;
     uint32_t cWritten;
 
-#if 0
+#ifdef DEBUG_DUMP_PCM_DATA
     RTFILE fh;
     rc = RTFileOpen(&fh, "c:\\temp\\test_writeat.pcm",
                     RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
@@ -1284,7 +1288,7 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                                  cLenDst2, enmFmt, NULL);
     }
 
-#if 0
+#ifdef DEBUG_DUMP_PCM_DATA
         RTFILE fh;
         RTFileOpen(&fh, "c:\\temp\\test_writeex.pcm",
                    RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);

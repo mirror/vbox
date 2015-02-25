@@ -22,6 +22,7 @@
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
@@ -151,7 +152,7 @@ static int tstParentChild(RTTEST hTest)
     PDMAUDIOMIXBUF parent;
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&parent, "Parent", &props, cBufSize));
 
-    PDMAUDIOSTREAMCFG cfg_c1 = /* Downmixing */
+    PDMAUDIOSTREAMCFG cfg_c1 = /* Upmixing to parent */
     {
         22100,                   /* Hz */
         2                        /* Channels */,
@@ -166,7 +167,7 @@ static int tstParentChild(RTTEST hTest)
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&child1, "Child1", &props, cBufSize));
     RTTESTI_CHECK_RC_OK(audioMixBufLinkTo(&child1, &parent));
 
-    PDMAUDIOSTREAMCFG cfg_c2 = /* Upmixing */
+    PDMAUDIOSTREAMCFG cfg_c2 = /* Downmixing to parent */
     {
         48000,                   /* Hz */
         2                        /* Channels */,
@@ -186,34 +187,50 @@ static int tstParentChild(RTTEST hTest)
      */
     size_t cbBuf = _1K;
     char pvBuf[_1K];
-    int16_t samples16[32] = { 0xAA, 0xBB };
-    uint32_t read , written, proc, mixed;
+    int16_t samples[32] = { 0xAA, 0xBB };
+    uint32_t free, read , written, proc, mixed, temp;
 
+    uint32_t cChild1Free     = cBufSize;
+    uint32_t cChild1Mixed    = 0;
     uint32_t cSamplesParent1 = 16;
     uint32_t cSamplesChild1  = 16;
-    uint32_t cSamplesParent2 = 32;
+
+    uint32_t cChild2Free     = cBufSize;
+    uint32_t cChild2Mixed    = 0;
+    uint32_t cSamplesParent2 = 16;
     uint32_t cSamplesChild2  = 16;
 
-    for (int i = 0; i < 32; i++)
+    uint32_t t = RTRandU32() % 64;
+
+    for (uint32_t i = 0; i < t; i++)
     {
-        RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child1, 0, &samples16, sizeof(samples16), &written));
-        RTTESTI_CHECK(written == cSamplesChild1);
-        RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child1, written, &mixed));
-        RTTESTI_CHECK(mixed == cSamplesChild1);
+        RTTestPrintf(hTest, RTTESTLVL_DEBUG, "i=%RU32\n", i);
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufWriteAt(&child1, 0, &samples, sizeof(samples), &written));
+        RTTESTI_CHECK_MSG_BREAK(written == cSamplesChild1, ("Child1: Expected %RU32 written samples, got %RU32\n", cSamplesChild1, written));
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufMixToParent(&child1, written, &mixed));
+        temp = audioMixBufProcessed(&parent) - audioMixBufMixed(&child2);
+        RTTESTI_CHECK_MSG_BREAK(audioMixBufMixed(&child1) == temp, ("Child1: Expected %RU32 mixed samples, got %RU32\n", audioMixBufMixed(&child1), temp));
 
-        RTTESTI_CHECK_RC_OK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
-        RTTESTI_CHECK(read == 31);
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufWriteAt(&child2, 0, &samples, sizeof(samples), &written));
+        RTTESTI_CHECK_MSG_BREAK(written == cSamplesChild2, ("Child2: Expected %RU32 written samples, got %RU32\n", cSamplesChild2, written));
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufMixToParent(&child2, written, &mixed));
+        temp = audioMixBufProcessed(&parent) - audioMixBufMixed(&child1);
+        RTTESTI_CHECK_MSG_BREAK(audioMixBufMixed(&child2) == temp, ("Child2: Expected %RU32 mixed samples, got %RU32\n", audioMixBufMixed(&child2), temp));
+    }
 
-        RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child2, 0, &samples16, sizeof(samples16), &written));
-        RTTESTI_CHECK(written == cSamplesChild2);
-        RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child2, written, &mixed));
-        RTTESTI_CHECK(mixed == cSamplesChild2);
+    RTTESTI_CHECK(audioMixBufProcessed(&parent) == audioMixBufMixed(&child1) + audioMixBufMixed(&child2));
 
-        RTTESTI_CHECK_RC_OK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
-        RTTESTI_CHECK(read == 15);
+    for (;;)
+    {
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
+        if (!read)
+            break;
+        audioMixBufFinish(&parent, read);
     }
 
     RTTESTI_CHECK(audioMixBufProcessed(&parent) == 0);
+    RTTESTI_CHECK(audioMixBufMixed(&child1) == 0);
+    RTTESTI_CHECK(audioMixBufMixed(&child2) == 0);
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
