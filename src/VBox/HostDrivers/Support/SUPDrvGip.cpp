@@ -2594,24 +2594,11 @@ typedef struct SUPDRVGIPTSCDELTARGS
     /** Used to abort synchronization setup. */
     bool volatile               fAbortSetup;
 
-#if 0
-    /** Method 1 data. */
-    struct
-    {
-    } M1;
-#endif
-
-#ifdef GIP_TSC_DELTA_METHOD_2
-    struct
-    {
-        PSUPDRVTSCDELTAMETHOD2  pMasterData;
-        PSUPDRVTSCDELTAMETHOD2  pWorkerData;
-    } M2;
-#endif
-
-
     /** Padding to make sure the master variables live in its own cache lines. */
     uint64_t                    au64CacheLinePaddingBefore[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
+
+    /** @name Master
+     * @{ */
     /** The time the master spent in the MP worker.  */
     uint64_t                    cElapsedMasterTscTicks;
     /** The iTry value when stopped at. */
@@ -2652,9 +2639,13 @@ typedef struct SUPDRVGIPTSCDELTARGS
      * Negative value means the worker is behind the master.  */
     int64_t                     iVerifyBadTscDiff;
 #endif
+    /** @} */
 
     /** Padding to make sure the uVar1 is in its own cache line. */
     uint64_t                    au64CacheLinePaddingBetween[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
+
+    /** @name Proletarian
+     * @{ */
     /** Pointer to the worker's synchronization struct (on stack). */
     PSUPTSCDELTASYNC2 volatile  pSyncWorker;
     /** The time the worker spent in the MP worker.  */
@@ -2677,6 +2668,7 @@ typedef struct SUPDRVGIPTSCDELTARGS
             bool                    fLag;
         } M2;
     } uWorker;
+    /** @} */
 
     /** Padding to make sure the above is in its own cache line. */
     uint64_t                    au64CacheLinePaddingAfter[GIP_TSC_DELTA_CACHE_LINE_SIZE / sizeof(uint64_t)];
@@ -3145,29 +3137,27 @@ static void supdrvTscDeltaMethod1Loop(PSUPDRVGIPTSCDELTARGS pArgs, PSUPTSCDELTAS
 
 static void supdrvTscDeltaMethod2ProcessDataOnMaster(PSUPDRVGIPTSCDELTARGS pArgs, uint32_t iLoop)
 {
-    PSUPDRVTSCDELTAMETHOD2  pMasterData      = pArgs->M2.pMasterData;
-    PSUPDRVTSCDELTAMETHOD2  pOtherData       = pArgs->M2.pWorkerData;
-    int64_t                 iMasterTscDelta  = pArgs->pMaster->i64TSCDelta;
-    int64_t                 iBestDelta       = pArgs->pWorker->i64TSCDelta;
-    uint32_t                idxResult;
-    uint32_t                cHits            = 0;
+    int64_t     iMasterTscDelta  = pArgs->pMaster->i64TSCDelta;
+    int64_t     iBestDelta       = pArgs->pWorker->i64TSCDelta;
+    uint32_t    idxResult;
+    uint32_t    cHits            = 0;
 
     /*
      * Look for matching entries in the master and worker tables.
      */
-    for (idxResult = 0; idxResult < RT_ELEMENTS(pMasterData->aResults); idxResult++)
+    for (idxResult = 0; idxResult < RT_ELEMENTS(pArgs->uMaster.M2.Data.aResults); idxResult++)
     {
-        uint32_t idxOther = pMasterData->aResults[idxResult].iSeqOther;
+        uint32_t idxOther = pArgs->uMaster.M2.Data.aResults[idxResult].iSeqOther;
         if (idxOther & 1)
         {
             idxOther >>= 1;
-            if (idxOther < RT_ELEMENTS(pOtherData->aResults))
+            if (idxOther < RT_ELEMENTS(pArgs->uWorker.M2.Data.aResults))
             {
-                if (pOtherData->aResults[idxOther].iSeqOther == pMasterData->aResults[idxResult].iSeqMine)
+                if (pArgs->uWorker.M2.Data.aResults[idxOther].iSeqOther == pArgs->uMaster.M2.Data.aResults[idxResult].iSeqMine)
                 {
                     int64_t iDelta;
-                    iDelta = pOtherData->aResults[idxOther].uTsc
-                           - (pMasterData->aResults[idxResult].uTsc - iMasterTscDelta);
+                    iDelta = pArgs->uWorker.M2.Data.aResults[idxOther].uTsc
+                           - (pArgs->uMaster.M2.Data.aResults[idxResult].uTsc - iMasterTscDelta);
                     if (  iDelta >= GIP_TSC_DELTA_INITIAL_MASTER_VALUE
                         ? iDelta < iBestDelta
                         : iDelta > iBestDelta || iBestDelta == INT64_MAX)
