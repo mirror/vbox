@@ -89,26 +89,10 @@
 /** The number of loops until we keep computing the minumum read time. */
 #define GIP_TSC_DELTA_READ_TIME_LOOPS       24
 
-/** @name Master / worker synchronization values.
- * @{ */
-/** Stop measurement of TSC delta. */
-#define GIP_TSC_DELTA_SYNC_STOP             UINT32_C(0)
-/** Start measurement of TSC delta. */
-#define GIP_TSC_DELTA_SYNC_START            UINT32_C(1)
-/** Worker thread is ready for reading the TSC. */
-#define GIP_TSC_DELTA_SYNC_WORKER_READY     UINT32_C(2)
-/** Worker thread is done updating TSC delta info. */
-#define GIP_TSC_DELTA_SYNC_WORKER_DONE      UINT32_C(3)
-/** When IPRT is isn't concurrent safe: Master is ready and will wait for worker
- *  with a timeout. */
-#define GIP_TSC_DELTA_SYNC_PRESTART_MASTER  UINT32_C(4)
-/** @} */
-
-/** When IPRT is isn't concurrent safe: Worker is ready after waiting for
- *  master with a timeout. */
-#define GIP_TSC_DELTA_SYNC_PRESTART_WORKER  5
-/** The TSC-refinement interval in seconds. */
-#define GIP_TSC_REFINE_PERIOD_IN_SECS       5
+/** The TSC frequency refinement period in seconds.
+ * The timer fires after 200ms, then every second, this value just says when
+ * to stop it after that. */
+#define GIP_TSC_REFINE_PERIOD_IN_SECS       12
 /** The TSC-delta threshold for the SUPGIPUSETSCDELTA_PRACTICALLY_ZERO rating */
 #define GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO    32
 /** The TSC-delta threshold for the SUPGIPUSETSCDELTA_ROUGHLY_ZERO rating */
@@ -782,62 +766,16 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
 
     /*
      * Read the TSC and time, noting which CPU we are on.
+     *
+     * Don't bother spinning until RTTimeSystemNanoTS changes, since on
+     * systems where it matters we're in a context where we cannot waste that
+     * much time (DPC watchdog, called from clock interrupt).
      */
     fEFlags = ASMIntDisableFlags();
     uTsc    = ASMReadTSC();
     nsNow   = RTTimeSystemNanoTS();
     idCpu   = RTMpCpuId();
     ASMSetFlags(fEFlags);
-
-    /*
-     * Try get close to the next clock tick if possible.  Don't try forever,
-     * we're in a timer.
-     *
-     * PORTME: If timers are called from the clock interrupt handler, or
-     *         an interrupt handler with higher priority than the clock
-     *         interrupt, or spinning for ages in timer handlers is frowned
-     *         upon, this loop must be disabled!
-     *
-     * Darwin, FreeBSD, Linux, Solaris, Windows 8.1+:
-     *      High RTTimeSystemNanoTS resolution should prevent any noticable
-     *      spinning her.
-     *
-     * Windows 8.0 and earlier:
-     *      We're running in a DPC here, so we may trigger the DPC watchdog?
-     *
-     * OS/2:
-     *      Timer callbacks are done in the clock interrupt, so skip it.
-     */
-#if !defined(RT_OS_OS2)
-    /** @todo r=bird: I believe this is a complete wast of time.  Where it
-     *        matters we cannot wait long enough (DPC watchdog will trigger)
-     *        and other platforms, we'll only skip a few ns that comes down
-     *        to rounding (not on windows 10 btw). */
-    if (nsNow == RTTimeSystemNanoTS())
-    {
-        uint32_t cTries = 0x10000;
-        while (cTries > 0)
-        {
-            ASMNopPause();
-            if (nsNow != RTTimeSystemNanoTS())
-            {
-                fEFlags = ASMIntDisableFlags();
-                uTsc    = ASMReadTSC();
-                nsNow   = RTTimeSystemNanoTS();
-                idCpu   = RTMpCpuId();
-                ASMSetFlags(fEFlags);
-                break;
-            }
-            ASMNopPause();
-            cTries--;
-        }
-# ifdef DEBUG
-        if (!cTries)
-            OSDBGPRINT(("supdrvInitRefineInvariantTscFreqTimer: Wasted %llu ticks waiting for the current timestamp to change...\n",
-                        ASMReadTSC() - uTsc));
-# endif
-    }
-#endif
 
     cNsElapsed          = nsNow - pDevExt->nsStartInvarTscRefine;
     cTscTicksElapsed    = uTsc  - pDevExt->uTscStartInvarTscRefine;
