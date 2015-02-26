@@ -871,11 +871,32 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUs
                         ApicX2RegRead32(APIC_REG_LVT_PC), ApicX2RegRead32(APIC_REG_LVT_THMR),
                         ApicX2RegRead32(APIC_REG_LVT_CMCI));
         else
+        {
             SUPR0Printf("CPUM: APIC %02u at %RGp (mapped at %p) - ver %#010x, lint0=%#07x lint1=%#07x pc=%#07x thmr=%#07x cmci=%#07x\n",
                         iCpu, g_aLApics[iCpu].PhysBase, g_aLApics[iCpu].pv, uApicVersion,
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT0), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT1),
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_PC), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_THMR),
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_CMCI));
+            uint32_t u32EBX, u32ECX, u32EDX;
+            uint32_t uMaxExtLeaf;
+            ASMCpuId(0x80000000, &uMaxExtLeaf, &u32EBX, &u32ECX, &u32EDX);
+            if (   uMaxExtLeaf >= UINT32_C(0x8000001b)
+                && ASMIsValidExtRange(uMaxExtLeaf))
+            {
+                uint32_t uIbsFeatures;
+                ASMCpuId(0x8000001b, &uIbsFeatures, &u32EBX, &u32ECX, &u32EDX);
+                if (uIbsFeatures & 1)
+                {
+                    SUPR0Printf("CPUM: APIC %02u: IBS available. 400=%08x eilvt0=%08x %08x %08x %08x\n",
+                                iCpu,
+                                ApicRegRead(g_aLApics[iCpu].pv, 0x400),
+                                ApicRegRead(g_aLApics[iCpu].pv, 0x500),
+                                ApicRegRead(g_aLApics[iCpu].pv, 0x510),
+                                ApicRegRead(g_aLApics[iCpu].pv, 0x520),
+                                ApicRegRead(g_aLApics[iCpu].pv, 0x530));
+                }
+            }
+        }
 #endif
     }
     else
