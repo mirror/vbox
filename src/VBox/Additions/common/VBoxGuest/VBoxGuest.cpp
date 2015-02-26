@@ -66,8 +66,9 @@
 #ifdef VBOX_WITH_HGCM
 static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
-
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags);
+static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask,
+                                           uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags);
+static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 
 #define VBOXGUEST_ACQUIRE_STYLE_EVENTS (VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST)
 
@@ -134,8 +135,7 @@ DECLINLINE(bool) VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint3
  * @returns VBox status code (ignored).
  * @param   fMask       The new mask.
  */
-static int vboxGuestSetFilterMask(VMMDevCtlGuestFilterMask *pReq,
-                                  uint32_t fMask)
+static int vboxGuestSetFilterMask(VMMDevCtlGuestFilterMask *pReq, uint32_t fMask)
 {
     int rc;
 
@@ -157,8 +157,7 @@ static int vboxGuestSetFilterMask(VMMDevCtlGuestFilterMask *pReq,
  * @returns VBox status code.
  * @param   fMask       The new mask.
  */
-static int vboxGuestSetCapabilities(VMMDevReqGuestCapabilities2 *pReq,
-                                    uint32_t fMask)
+static int vboxGuestSetCapabilities(VMMDevReqGuestCapabilities2 *pReq, uint32_t fMask)
 {
     int rc;
 
@@ -196,6 +195,8 @@ static int vboxGuestSetMouseStatus(VMMDevReqMouseStatus *pReq, uint32_t fMask)
 
 /** Host flags to be updated by a given invocation of the
  * vboxGuestUpdateHostFlags() method. */
+/** @todo r=bird: Use RT_BIT_32 for the bits, preferably replace enum with
+ *        \#define. */
 enum
 {
     HostFlags_FilterMask   = 1,
@@ -217,6 +218,8 @@ static int vboxGuestGetHostFlagsFromSessions(PVBOXGUESTDEVEXT pDevExt,
     unsigned cSessions = 0;
     int rc = VINF_SUCCESS;
 
+/** @todo r=bird: Please just do the global bit counting thing.  This code
+ * gives me the [performances] creeps.  */
     RTListForEach(&pDevExt->SessionList, pIterator, VBOXGUESTSESSION, ListNode)
     {
         fFilterMask   |= pIterator->fFilterMask;
@@ -244,21 +247,27 @@ static int vboxGuestGetHostFlagsFromSessions(PVBOXGUESTDEVEXT pDevExt,
 }
 
 
-/** Check which host flags in a given category are being asserted by some guest
+/**
+ * Calls the host and set the filter mask, capabilities and/or mouse status.
+ *
+ * Check which host flags in a given category are being asserted by some guest
  * session and assert exactly those on the host which are being asserted by one
  * or more sessions.  pCallingSession is purely for sanity checking and can be
  * NULL.
+ *
  * @note Takes the session spin-lock.
  */
 static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
                                     PVBOXGUESTSESSION pSession,
-                                    unsigned enmFlags)
+                                    unsigned fFlags)
 {
     int rc;
     VMMDevCtlGuestFilterMask    *pFilterReq = NULL;
     VMMDevReqGuestCapabilities2 *pCapabilitiesReq = NULL;
     VMMDevReqMouseStatus        *pStatusReq = NULL;
-    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
+    uint32_t                     fFilterMask = 0;
+    uint32_t                     fCapabilities = 0;
+    uint32_t                     fMouseStatus = 0;
 
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pFilterReq, sizeof(*pFilterReq),
                      VMMDevReq_CtlGuestFilterMask);
@@ -269,25 +278,27 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
     if (RT_SUCCESS(rc))
         rc = VbglGRAlloc((VMMDevRequestHeader **)&pStatusReq,
                          sizeof(*pStatusReq), VMMDevReq_SetMouseStatus);
-    RTSpinlockAcquire(pDevExt->SessionSpinlock);
-    if (RT_SUCCESS(rc))
-        rc = vboxGuestGetHostFlagsFromSessions(pDevExt, pSession, &fFilterMask,
-                                               &fCapabilities, &fMouseStatus);
     if (RT_SUCCESS(rc))
     {
-        fFilterMask |= pDevExt->fFixedEvents;
-        /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
-         * capabilities we invert it again before sending it to the host. */
-        fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-        if (enmFlags & HostFlags_FilterMask)
-            vboxGuestSetFilterMask(pFilterReq, fFilterMask);
-        fCapabilities |= pDevExt->u32GuestCaps;
-        if (enmFlags & HostFlags_Capabilities)
-            vboxGuestSetCapabilities(pCapabilitiesReq, fCapabilities);
-        if (enmFlags & HostFlags_MouseStatus)
-            vboxGuestSetMouseStatus(pStatusReq, fMouseStatus);
+        RTSpinlockAcquire(pDevExt->SessionSpinlock);
+        rc = vboxGuestGetHostFlagsFromSessions(pDevExt, pSession, &fFilterMask,
+                                               &fCapabilities, &fMouseStatus);
+        if (RT_SUCCESS(rc))
+        {
+            fFilterMask |= pDevExt->fFixedEvents;
+            /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
+             * capabilities we invert it again before sending it to the host. */
+            fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+            if (fFlags & HostFlags_FilterMask)
+                vboxGuestSetFilterMask(pFilterReq, fFilterMask);
+            fCapabilities |= pDevExt->u32GuestCaps;
+            if (fFlags & HostFlags_Capabilities)
+                vboxGuestSetCapabilities(pCapabilitiesReq, fCapabilities);
+            if (fFlags & HostFlags_MouseStatus)
+                vboxGuestSetMouseStatus(pStatusReq, fMouseStatus);
+        }
+        RTSpinlockRelease(pDevExt->SessionSpinlock);
     }
-    RTSpinlockRelease(pDevExt->SessionSpinlock);
     if (pFilterReq)
         VbglGRFree(&pFilterReq->header);
     if (pCapabilitiesReq)
@@ -298,6 +309,7 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt,
 }
 
 
+/** @todo r=bird: WTF did someone add code before the globals? */
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
@@ -1332,7 +1344,6 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
     return VINF_SUCCESS;
 }
 
-static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 
 /**
  * Closes a VBoxGuest session.
@@ -1342,7 +1353,9 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
  */
 void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    unsigned i; NOREF(i);
+#ifdef VBOX_WITH_HGCM
+    unsigned i;
+#endif
     LogFlow(("VBoxGuestCloseSession: pSession=%p proc=%RTproc (%d) r0proc=%p\n",
              pSession, pSession->Process, (int)pSession->Process, (uintptr_t)pSession->R0Process)); /** @todo %RTr0proc */
 
@@ -1372,11 +1385,12 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     vboxGuestCloseMemBalloon(pDevExt, pSession);
     RTMemFree(pSession);
     /* Update the host flags (mouse status etc) not to reflect this session. */
-    vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_All
+    vboxGuestUpdateHostFlags(pDevExt, NULL,
+                               HostFlags_All
 #ifdef RT_OS_WINDOWS
-                & (~HostFlags_MouseStatus)
+                             & ~HostFlags_MouseStatus
 #endif
-            );
+                             );
 }
 
 
@@ -2080,8 +2094,7 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 }
 
 
-static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
-                                              PVBOXGUESTSESSION pSession,
+static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                               VBoxGuestFilterMaskInfo *pInfo)
 {
     int rc;
@@ -2097,14 +2110,12 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt,
 }
 
 
-static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
-                                            PVBOXGUESTSESSION pSession,
-                                            VBoxGuestSetCapabilitiesInfo *pInfo)
+static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                                VBoxGuestSetCapabilitiesInfo *pInfo)
 {
     int rc;
 
-    if (  (pInfo->u32OrMask | pInfo->u32NotMask)
-        & ~VMMDEV_GUEST_CAPABILITIES_MASK)
+    if ((pInfo->u32OrMask | pInfo->u32NotMask) & ~VMMDEV_GUEST_CAPABILITIES_MASK)
         return VERR_INVALID_PARAMETER;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     pSession->fCapabilities |= pInfo->u32OrMask;
@@ -2125,9 +2136,7 @@ static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt,
  * @param   pSession            The session.
  * @param   fFeatures           New bitmap of enabled features.
  */
-static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt,
-                                               PVBOXGUESTSESSION pSession,
-                                               uint32_t fFeatures)
+static int vboxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fFeatures)
 {
     int rc;
 
@@ -2247,7 +2256,6 @@ static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMR
                                                 pDevExt,
                                                 true /* fInterruptible */,
                                                 u32User /* cMillies */ );
-
 }
 
 
@@ -2688,7 +2696,8 @@ static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSI
  * already in "set" mode.  If @a enmFlags is not set to
  * VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE, also try to acquire those
  * capabilities for the current session and release those in @a fNotFlag. */
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags)
+static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                           uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags)
 {
     uint32_t fSetCaps = 0;
 
@@ -2776,8 +2785,8 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
         /* Failure branch
          * this is generally bad since e.g. failure to release the caps may result in other sessions not being able to use it
          * so we are not trying to restore the caps back to their values before the VBoxGuestCommonGuestCapsAcquire call,
-         * but just pretend everithing is OK.
-         * @todo: better failure handling mechanism? */
+         * but just pretend everithing is OK. */
+        /** @todo better failure handling mechanism? */
     }
 
     /* success! */
@@ -2973,10 +2982,8 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 break;
 
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:
-                CHECKRET_MIN_SIZE("CTL_FILTER_MASK",
-                                  sizeof(VBoxGuestFilterMaskInfo));
-                rc = VBoxGuestCommonIOCtl_CtlFilterMask(pDevExt, pSession,
-                                             (VBoxGuestFilterMaskInfo *)pvData);
+                CHECKRET_MIN_SIZE("CTL_FILTER_MASK", sizeof(VBoxGuestFilterMaskInfo));
+                rc = VBoxGuestCommonIOCtl_CtlFilterMask(pDevExt, pSession, (VBoxGuestFilterMaskInfo *)pvData);
                 break;
 
 #ifdef VBOX_WITH_HGCM
@@ -2993,18 +3000,21 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
             case VBOXGUEST_IOCTL_HGCM_DISCONNECT_32:
 # endif
                 CHECKRET_MIN_SIZE("HGCM_DISCONNECT", sizeof(VBoxGuestHGCMDisconnectInfo));
-                rc = VBoxGuestCommonIOCtl_HGCMDisconnect(pDevExt, pSession, (VBoxGuestHGCMDisconnectInfo *)pvData, pcbDataReturned);
+                rc = VBoxGuestCommonIOCtl_HGCMDisconnect(pDevExt, pSession, (VBoxGuestHGCMDisconnectInfo *)pvData,
+                                                         pcbDataReturned);
                 break;
 #endif /* VBOX_WITH_HGCM */
 
             case VBOXGUEST_IOCTL_CHECK_BALLOON:
                 CHECKRET_MIN_SIZE("CHECK_MEMORY_BALLOON", sizeof(VBoxGuestCheckBalloonInfo));
-                rc = VBoxGuestCommonIOCtl_CheckMemoryBalloon(pDevExt, pSession, (VBoxGuestCheckBalloonInfo *)pvData, pcbDataReturned);
+                rc = VBoxGuestCommonIOCtl_CheckMemoryBalloon(pDevExt, pSession, (VBoxGuestCheckBalloonInfo *)pvData,
+                                                             pcbDataReturned);
                 break;
 
             case VBOXGUEST_IOCTL_CHANGE_BALLOON:
                 CHECKRET_MIN_SIZE("CHANGE_MEMORY_BALLOON", sizeof(VBoxGuestChangeBalloonInfo));
-                rc = VBoxGuestCommonIOCtl_ChangeMemoryBalloon(pDevExt, pSession, (VBoxGuestChangeBalloonInfo *)pvData, pcbDataReturned);
+                rc = VBoxGuestCommonIOCtl_ChangeMemoryBalloon(pDevExt, pSession, (VBoxGuestChangeBalloonInfo *)pvData,
+                                                              pcbDataReturned);
                 break;
 
             case VBOXGUEST_IOCTL_WRITE_CORE_DUMP:
@@ -3014,8 +3024,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 
             case VBOXGUEST_IOCTL_SET_MOUSE_STATUS:
                 CHECKRET_SIZE("SET_MOUSE_STATUS", sizeof(uint32_t));
-                rc = vboxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession,
-                                                         *(uint32_t *)pvData);
+                rc = vboxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession, *(uint32_t *)pvData);
                 break;
 
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER
@@ -3032,10 +3041,8 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
                 break;
 
             case VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES:
-                CHECKRET_MIN_SIZE("SET_GUEST_CAPABILITIES",
-                                  sizeof(VBoxGuestSetCapabilitiesInfo));
-                rc = VBoxGuestCommonIOCtl_SetCapabilities(pDevExt, pSession,
-                                        (VBoxGuestSetCapabilitiesInfo *)pvData);
+                CHECKRET_MIN_SIZE("SET_GUEST_CAPABILITIES", sizeof(VBoxGuestSetCapabilitiesInfo));
+                rc = VBoxGuestCommonIOCtl_SetCapabilities(pDevExt, pSession, (VBoxGuestSetCapabilitiesInfo *)pvData);
                 break;
 
             default:
