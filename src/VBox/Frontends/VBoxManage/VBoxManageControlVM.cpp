@@ -84,6 +84,7 @@ unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach)
 int handleControlVM(HandlerArg *a)
 {
     using namespace com;
+    bool fNeedsSaving = false;
     HRESULT rc;
 
     if (a->argc < 2)
@@ -99,13 +100,14 @@ int handleControlVM(HandlerArg *a)
     /* open a session for the VM */
     CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
 
+    ComPtr<IConsole> console;
+    ComPtr<IMachine> sessionMachine;
+
     do
     {
         /* get the associated console */
-        ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
         /* ... and session machine */
-        ComPtr<IMachine> sessionMachine;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         /* which command? */
@@ -560,9 +562,8 @@ int handleControlVM(HandlerArg *a)
                         RTStrToUInt16(strHostPort), Bstr(strGuestIp).raw(), RTStrToUInt16(strGuestPort)));
 #undef ITERATE_TO_NEXT_TERM
             }
-            /* commit changes */
             if (SUCCEEDED(rc))
-                CHECK_ERROR(sessionMachine, SaveSettings());
+                fNeedsSaving = true;
         }
         else if (!strncmp(a->argv[1], "nicproperty", 11))
         {
@@ -602,6 +603,8 @@ int handleControlVM(HandlerArg *a)
                             Bstr bstrName = pszProperty;
                             Bstr bstrValue = &pDelimiter[1];
                             CHECK_ERROR(adapter, SetProperty(bstrName.raw(), bstrValue.raw()));
+                            if (SUCCEEDED(rc))
+                                fNeedsSaving = true;
                         }
                         else
                         {
@@ -664,6 +667,8 @@ int handleControlVM(HandlerArg *a)
                     }
 
                     CHECK_ERROR(adapter, COMSETTER(PromiscModePolicy)(enmPromiscModePolicy));
+                    if (SUCCEEDED(rc))
+                        fNeedsSaving = true;
                 }
                 else
                     RTMsgError("The NIC %d is currently disabled and thus its promiscuous mode can't be changed", n);
@@ -1661,6 +1666,10 @@ int handleControlVM(HandlerArg *a)
             rc = E_FAIL;
         }
     } while (0);
+
+    /* The client has to trigger saving the state explicitely. */
+    if (fNeedsSaving)
+        CHECK_ERROR(sessionMachine, SaveSettings());
 
     a->session->UnlockMachine();
 
