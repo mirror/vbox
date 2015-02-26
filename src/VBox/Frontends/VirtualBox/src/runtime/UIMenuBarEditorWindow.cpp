@@ -23,6 +23,7 @@
 # include <QHBoxLayout>
 # include <QPaintEvent>
 # include <QMetaEnum>
+# include <QCheckBox>
 # include <QMenuBar>
 # include <QPainter>
 # include <QMenu>
@@ -53,6 +54,7 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pButtonClose(0)
+    , m_pCheckBoxEnable(0)
 {
     /* Prepare: */
     prepare();
@@ -80,8 +82,26 @@ void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachi
     if (machineID() != strMachineID)
         return;
 
+    /* Update enable-checkbox: */
+    updateEnableCheckbox();
+
     /* Update menus: */
     updateMenus();
+}
+
+void UIMenuBarEditorWidget::sltHandleMenuBarEnableToggle(bool fEnabled)
+{
+    /* Toggle enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+    {
+        /* Check whether this value is really changed: */
+        const bool fMenuBarEnabled = gEDataManager->menuBarEnabled(machineID());
+        if (fMenuBarEnabled != fEnabled)
+        {
+            /* Set new value: */
+            gEDataManager->setMenuBarEnabled(fEnabled, machineID());
+        }
+    }
 }
 
 void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
@@ -235,17 +255,21 @@ void UIMenuBarEditorWidget::prepare()
     AssertPtrReturnVoid(m_pMainLayout);
     {
         /* Configure main-layout: */
-#ifdef Q_WS_MAC
-        /* Standard margins on Mac OS X are too big: */
-        m_pMainLayout->setContentsMargins(10, 5, 10, 10);
-#else /* !Q_WS_MAC */
-        /* Standard margins on Windows/X11: */
         int iLeft, iTop, iRight, iBottom;
         m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        /* Standard margins should not be too big: */
+        iLeft   = qMin(iLeft,   10);
+        iTop    = qMin(iTop,    10);
+        iRight  = qMin(iRight,  10);
+        iBottom = qMin(iBottom, 10);
+        /* Top margin should be smaller for the common case: */
         if (iTop >= 5)
             iTop -= 5;
+        /* Right margin should be bigger for the settings case: */
+        if (m_fStartedFromVMSettings)
+            iRight += 5;
+        /* Apply margins/spacing finally: */
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
-#endif /* !Q_WS_MAC */
         m_pMainLayout->setSpacing(0);
         /* Create tool-bar: */
         m_pToolBar = new UIToolBar;
@@ -271,6 +295,21 @@ void UIMenuBarEditorWidget::prepare()
                 connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
                 /* Add close-button into main-layout: */
                 m_pMainLayout->addWidget(m_pButtonClose);
+            }
+        }
+        /* Create enable-checkbox if necessary: */
+        else
+        {
+            m_pCheckBoxEnable = new QCheckBox;
+            AssertPtrReturnVoid(m_pCheckBoxEnable);
+            {
+                /* Configure enable-checkbox: */
+                m_pCheckBoxEnable->setFocusPolicy(Qt::StrongFocus);
+                connect(m_pCheckBoxEnable, SIGNAL(toggled(bool)), this, SLOT(sltHandleMenuBarEnableToggle(bool)));
+                /* Add enable-checkbox into main-layout: */
+                m_pMainLayout->addWidget(m_pCheckBoxEnable);
+                /* Update enable-checkbox: */
+                updateEnableCheckbox();
             }
         }
     }
@@ -598,6 +637,17 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
     }
 }
 
+void UIMenuBarEditorWidget::updateEnableCheckbox()
+{
+    /* Update enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+    {
+        m_pCheckBoxEnable->blockSignals(true);
+        m_pCheckBoxEnable->setChecked(gEDataManager->menuBarEnabled(machineID()));
+        m_pCheckBoxEnable->blockSignals(false);
+    }
+}
+
 void UIMenuBarEditorWidget::updateMenus()
 {
     /* Recache menu-bar configuration: */
@@ -886,6 +936,9 @@ void UIMenuBarEditorWidget::retranslateUi()
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));
+    /* Translate enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+        m_pCheckBoxEnable->setToolTip(tr("Enable Menu Bar"));
 }
 
 void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)

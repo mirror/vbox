@@ -30,6 +30,7 @@ class UIActionPool;
 class UIToolBar;
 class UIAction;
 class QIToolButton;
+class QCheckBox;
 class QHBoxLayout;
 class QAction;
 class QMenu;
@@ -85,6 +86,8 @@ private slots:
     /** Handles configuration change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
+    /** Handles menu-bar enable toggle. */
+    void sltHandleMenuBarEnableToggle(bool fEnabled);
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();
 
@@ -134,29 +137,31 @@ private:
     /** Prepare 'Help' menu routine. */
     void prepareMenuHelp();
 
-    /** Updates menus routine. */
+    /** Update enable-checkbox routine. */
+    void updateEnableCheckbox();
+    /** Update menus routine. */
     void updateMenus();
 #ifdef Q_WS_MAC
-    /** Mac OS X: Updates 'Application' menu routine. */
+    /** Mac OS X: Update 'Application' menu routine. */
     void updateMenuApplication();
 #endif /* Q_WS_MAC */
-    /** Updates 'Machine' menu routine. */
+    /** Update 'Machine' menu routine. */
     void updateMenuMachine();
-    /** Updates 'View' menu routine. */
+    /** Update 'View' menu routine. */
     void updateMenuView();
-    /** Updates 'Input' menu routine. */
+    /** Update 'Input' menu routine. */
     void updateMenuInput();
-    /** Updates 'Devices' menu routine. */
+    /** Update 'Devices' menu routine. */
     void updateMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /** Updates 'Debug' menu routine. */
+    /** Update 'Debug' menu routine. */
     void updateMenuDebug();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 #ifdef Q_WS_MAC
-    /** Mac OS X: Updates 'Window' menu routine. */
+    /** Mac OS X: Update 'Window' menu routine. */
     void updateMenuWindow();
 #endif /* Q_WS_MAC */
-    /** Updates 'Help' menu routine. */
+    /** Update 'Help' menu routine. */
     void updateMenuHelp();
 
     /** Retranslation routine. */
@@ -185,6 +190,8 @@ private:
         UIToolBar *m_pToolBar;
         /** Holds the close-button instance. */
         QIToolButton *m_pButtonClose;
+        /** Holds the enable-checkbox instance. */
+        QCheckBox *m_pCheckBoxEnable;
         /** Holds tool-bar action references. */
         QMap<QString, QAction*> m_actions;
     /** @} */
