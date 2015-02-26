@@ -26,6 +26,7 @@
 # include <QPaintEvent>
 # include <QMouseEvent>
 # include <QStatusBar>
+# include <QCheckBox>
 # include <QPainter>
 # include <QPixmap>
 # include <QDrag>
@@ -263,6 +264,7 @@ UIStatusBarEditorWidget::UIStatusBarEditorWidget(QWidget *pParent,
     , m_strMachineID(strMachineID)
     , m_pMainLayout(0), m_pButtonLayout(0)
     , m_pButtonClose(0)
+    , m_pCheckBoxEnable(0)
     , m_pButtonDropToken(0)
     , m_fDropAfterTokenButton(true)
 {
@@ -284,8 +286,26 @@ void UIStatusBarEditorWidget::sltHandleConfigurationChange(const QString &strMac
     if (machineID() != strMachineID)
         return;
 
+    /* Update enable-checkbox: */
+    updateEnableCheckbox();
+
     /* Update status buttons: */
     updateStatusButtons();
+}
+
+void UIStatusBarEditorWidget::sltHandleStatusBarEnableToggle(bool fEnabled)
+{
+    /* Toggle enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+    {
+        /* Check whether this value is really changed: */
+        const bool fStatusBarEnabled = gEDataManager->statusBarEnabled(machineID());
+        if (fStatusBarEnabled != fEnabled)
+        {
+            /* Set new value: */
+            gEDataManager->setStatusBarEnabled(fEnabled, machineID());
+        }
+    }
 }
 
 void UIStatusBarEditorWidget::sltHandleButtonClick()
@@ -338,17 +358,21 @@ void UIStatusBarEditorWidget::prepare()
     AssertPtrReturnVoid(m_pMainLayout);
     {
         /* Configure main-layout: */
-#ifdef Q_WS_MAC
-        /* Standard margins on Mac OS X are too big: */
-        m_pMainLayout->setContentsMargins(10, 10, 10, 5);
-#else /* !Q_WS_MAC */
-        /* Standard margins on Windows/X11: */
         int iLeft, iTop, iRight, iBottom;
         m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        /* Standard margins should not be too big: */
+        iLeft   = qMin(iLeft,   10);
+        iTop    = qMin(iTop,    10);
+        iRight  = qMin(iRight,  10);
+        iBottom = qMin(iBottom, 10);
+        /* Bottom margin should be smaller for the common case: */
         if (iBottom >= 5)
             iBottom -= 5;
+        /* Left margin should be bigger for the settings case: */
+        if (m_fStartedFromVMSettings)
+            iLeft += 5;
+        /* Apply margins/spacing finally: */
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
-#endif /* !Q_WS_MAC */
         m_pMainLayout->setSpacing(0);
         /* Create close-button if necessary: */
         if (!m_fStartedFromVMSettings)
@@ -363,6 +387,21 @@ void UIStatusBarEditorWidget::prepare()
                 connect(m_pButtonClose, SIGNAL(clicked(bool)), this, SIGNAL(sigCancelClicked()));
                 /* Add close-button into main-layout: */
                 m_pMainLayout->addWidget(m_pButtonClose);
+            }
+        }
+        /* Create enable-checkbox if necessary: */
+        else
+        {
+            m_pCheckBoxEnable = new QCheckBox;
+            AssertPtrReturnVoid(m_pCheckBoxEnable);
+            {
+                /* Configure enable-checkbox: */
+                m_pCheckBoxEnable->setFocusPolicy(Qt::StrongFocus);
+                connect(m_pCheckBoxEnable, SIGNAL(toggled(bool)), this, SLOT(sltHandleStatusBarEnableToggle(bool)));
+                /* Add enable-checkbox into main-layout: */
+                m_pMainLayout->addWidget(m_pCheckBoxEnable);
+                /* Update enable-checkbox: */
+                updateEnableCheckbox();
             }
         }
         /* Insert stretch: */
@@ -426,6 +465,17 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType type)
     }
 }
 
+void UIStatusBarEditorWidget::updateEnableCheckbox()
+{
+    /* Update enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+    {
+        m_pCheckBoxEnable->blockSignals(true);
+        m_pCheckBoxEnable->setChecked(gEDataManager->statusBarEnabled(machineID()));
+        m_pCheckBoxEnable->blockSignals(false);
+    }
+}
+
 void UIStatusBarEditorWidget::updateStatusButtons()
 {
     /* Recache status-bar configuration: */
@@ -460,6 +510,9 @@ void UIStatusBarEditorWidget::retranslateUi()
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));
+    /* Translate enable-checkbox if necessary: */
+    if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
+        m_pCheckBoxEnable->setToolTip(tr("Enable Status Bar"));
 }
 
 void UIStatusBarEditorWidget::paintEvent(QPaintEvent*)

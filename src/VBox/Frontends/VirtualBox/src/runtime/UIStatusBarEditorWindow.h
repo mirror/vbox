@@ -31,6 +31,7 @@ class UIStatusBarEditorButton;
 class UIMachineWindow;
 class QIToolButton;
 class QHBoxLayout;
+class QCheckBox;
 
 /** UISlidingToolBar wrapper
   * providing user with possibility to edit status-bar layout. */
@@ -75,6 +76,8 @@ private slots:
     /** Handles configuration change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
+    /** Handles status-bar enable toggle. */
+    void sltHandleStatusBarEnableToggle(bool fEnabled);
     /** Handles button click. */
     void sltHandleButtonClick();
 
@@ -90,7 +93,9 @@ private:
     /** Prepare status button routine. */
     void prepareStatusButton(IndicatorType type);
 
-    /** Updates status buttons. */
+    /** Update enable-checkbox routine. */
+    void updateEnableCheckbox();
+    /** Update status buttons routine. */
     void updateStatusButtons();
 
     /** Retranslation routine. */
@@ -129,6 +134,8 @@ private:
         QHBoxLayout *m_pButtonLayout;
         /** Holds the close-button instance. */
         QIToolButton *m_pButtonClose;
+        /** Holds the enable-checkbox instance. */
+        QCheckBox *m_pCheckBoxEnable;
         /** Holds status-bar buttons. */
         QMap<IndicatorType, UIStatusBarEditorButton*> m_buttons;
     /** @} */
