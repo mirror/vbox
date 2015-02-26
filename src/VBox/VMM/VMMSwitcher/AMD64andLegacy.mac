@@ -421,45 +421,26 @@ htg_notherm:
     jns     htg_noeilvt
 
     ; AMD Extended LVT registers
+    mov     esi, [rbx + 0x400]
+    shr     esi, 16
+    and     esi, 0xff
+    jz      htg_noeilvt
+    mov     ebp, 0x20
+htg_tsteilvtx:
     mov     eax, [rbx + APIC_REG_EILVT0]
     mov     ecx, eax
     and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
     cmp     ecx, APIC_REG_LVT_MODE_NMI
-    jne     htg_noeilvt0
-    or      edi, 0x20
+    jne     htg_noeilvtx
+    or      edi, ebp
     or      eax, APIC_REG_LVT_MASKED
     mov     [rbx + APIC_REG_EILVT0], eax
     mov     eax, [rbx + APIC_REG_EILVT0] ; write completion
-htg_noeilvt0:
-    mov     eax, [rbx + APIC_REG_EILVT1]
-    mov     ecx, eax
-    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
-    cmp     ecx, APIC_REG_LVT_MODE_NMI
-    jne     htg_noeilvt1
-    or      edi, 0x40
-    or      eax, APIC_REG_LVT_MASKED
-    mov     [rbx + APIC_REG_EILVT1], eax
-    mov     eax, [rbx + APIC_REG_EILVT1] ; write completion
-htg_noeilvt1:
-    mov     eax, [rbx + APIC_REG_EILVT2]
-    mov     ecx, eax
-    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
-    cmp     ecx, APIC_REG_LVT_MODE_NMI
-    jne     htg_noeilvt2
-    or      edi, 0x80
-    or      eax, APIC_REG_LVT_MASKED
-    mov     [rbx + APIC_REG_EILVT2], eax
-    mov     eax, [rbx + APIC_REG_EILVT2] ; write completion
-htg_noeilvt2:
-    mov     eax, [rbx + APIC_REG_EILVT3]
-    mov     ecx, eax
-    and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
-    cmp     ecx, APIC_REG_LVT_MODE_NMI
-    jne     htg_noeilvt
-    or      edi, 0x100
-    or      eax, APIC_REG_LVT_MASKED
-    mov     [rbx + APIC_REG_EILVT3], eax
-    mov     eax, [rbx + APIC_REG_EILVT3] ; write completion
+htg_noeilvtx:
+    add     rbx, 0x10                    ; clobbers rbx!
+    shl     ebp, 1
+    dec     esi
+    jnz     htg_tsteilvtx
 
 htg_noeilvt:
     mov     [rdx + r8 + CPUMCPU.fApicDisVectors], edi

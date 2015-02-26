@@ -877,24 +877,17 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUs
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT0), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT1),
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_PC), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_THMR),
                         ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_CMCI));
-            uint32_t u32EBX, u32ECX, u32EDX;
-            uint32_t uMaxExtLeaf;
-            ASMCpuId(0x80000000, &uMaxExtLeaf, &u32EBX, &u32ECX, &u32EDX);
-            if (   uMaxExtLeaf >= UINT32_C(0x8000001b)
-                && ASMIsValidExtRange(uMaxExtLeaf))
+            if (uApicVersion & 0x80000000)
             {
-                uint32_t uIbsFeatures;
-                ASMCpuId(0x8000001b, &uIbsFeatures, &u32EBX, &u32ECX, &u32EDX);
-                if (uIbsFeatures & 1)
-                {
-                    SUPR0Printf("CPUM: APIC %02u: IBS available. 400=%08x eilvt0=%08x %08x %08x %08x\n",
-                                iCpu,
-                                ApicRegRead(g_aLApics[iCpu].pv, 0x400),
-                                ApicRegRead(g_aLApics[iCpu].pv, 0x500),
-                                ApicRegRead(g_aLApics[iCpu].pv, 0x510),
-                                ApicRegRead(g_aLApics[iCpu].pv, 0x520),
-                                ApicRegRead(g_aLApics[iCpu].pv, 0x530));
-                }
+                uint32_t uExtFeatures = ApicRegRead(g_aLApics[iCpu].pv, 0x400);
+                uint32_t cEiLvt = (uExtFeatures >> 16) & 0xff;
+                SUPR0Printf("CPUM: APIC %02u: ExtSpace available. extfeat=%08x eilvt[0..3]=%08x %08x %08x %08x\n",
+                            iCpu,
+                            ApicRegRead(g_aLApics[iCpu].pv, 0x400),
+                            cEiLvt >= 1 ? ApicRegRead(g_aLApics[iCpu].pv, 0x500) : 0,
+                            cEiLvt >= 2 ? ApicRegRead(g_aLApics[iCpu].pv, 0x510) : 0,
+                            cEiLvt >= 3 ? ApicRegRead(g_aLApics[iCpu].pv, 0x520) : 0,
+                            cEiLvt >= 4 ? ApicRegRead(g_aLApics[iCpu].pv, 0x530) : 0);
             }
         }
 #endif
