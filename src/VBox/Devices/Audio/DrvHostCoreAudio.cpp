@@ -1398,7 +1398,7 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioPlaybackCallback(void             
         RTCircBufAcquireReadBlock(pStreamOut->pBuf, cbDataAvail, (void **)&pbSrc, &cbToRead);
 
         /* Break if nothing is used anymore. */
-        if (!cbToRead == 0)
+        if (!cbToRead)
             break;
 
         /* Copy the data from our ring buffer to the core audio buffer. */
@@ -1409,6 +1409,10 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioPlaybackCallback(void             
 
         /* Move offset. */
         cbRead += cbToRead;
+        Assert(pBufData->mBuffers[0].mDataByteSize >= cbRead);
+
+        Assert(cbDataAvail >= cbRead);
+        cbDataAvail -= cbRead;
     }
 
     /* Write the bytes to the core audio buffer which where really written. */
