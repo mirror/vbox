@@ -44,25 +44,27 @@ void QIDialog::setVisible(bool fVisible)
     /* Call to base-class: */
     QDialog::setVisible(fVisible);
 
-    /* Exit from the event-loop if
-     * 1. there is any and
-     * 2. we are changing our state from visible to invisible: */
+    /* Exit from the event-loop if there is any and
+     * we are changing our state from visible to hidden. */
     if (m_pEventLoop && !fVisible)
         m_pEventLoop->exit();
 }
 
-int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /* = false*/)
+int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /* = false */)
 {
+    /* Check for the recursive run: */
+    AssertMsgReturn(!m_pEventLoop, ("QIDialog::exec() is called recursively!\n"), QDialog::Rejected);
+
     /* Reset the result-code: */
     setResult(QDialog::Rejected);
 
     /* Should we delete ourself on close in theory? */
-    bool fOldDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    const bool fOldDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
     /* For the exec() time, set this attribute to 'false': */
     setAttribute(Qt::WA_DeleteOnClose, false);
 
     /* Which is the current window-modality? */
-    Qt::WindowModality oldModality = windowModality();
+    const Qt::WindowModality oldModality = windowModality();
     /* For the exec() time, set this attribute to 'window-modal' or 'application-modal': */
     setWindowModality(!fApplicationModal ? Qt::WindowModal : Qt::ApplicationModal);
 
@@ -90,7 +92,7 @@ int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /* = false*/)
     }
 
     /* Save the result-code early (we can delete ourself on close): */
-    int iResultCode = result();
+    const int iResultCode = result();
 
     /* Return old modality: */
     setWindowModality(oldModality);

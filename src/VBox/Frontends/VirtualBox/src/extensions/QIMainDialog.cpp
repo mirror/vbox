@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBox Qt GUI - VirtualBox Qt extensions: QIMainDialog class implementation.
+ * VBox Qt GUI - Qt extensions: QIMainDialog class implementation.
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,163 +19,189 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-# include "QIMainDialog.h"
-# include "VBoxUtils.h"
-# include "VBoxGlobal.h"
-
-# include <iprt/assert.h>
-
-/* Qt includes */
-# include <QProcess>
-# include <QEventLoop>
-# include <QApplication>
+/* Qt includes: */
 # include <QDir>
 # include <QUrl>
 # include <QMenu>
+# include <QProcess>
+# include <QSizeGrip>
+# include <QEventLoop>
 # include <QPushButton>
+# include <QApplication>
 # include <QDialogButtonBox>
+
+/* GUI includes: */
+# include "QIMainDialog.h"
+# include "VBoxGlobal.h"
+# include "VBoxUtils.h"
+
+/* Other VBox includes: */
+# include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <QSizeGrip>
-
-
-QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
-                            Qt::WindowFlags aFlags /* = Qt::Dialog */)
-    : QMainWindow (aParent, aFlags)
-    , mRescode (QDialog::Rejected)
-    , mPolished (false)
-    , mIsAutoCentering (true)
-    , mCenterWidget (aParent)
+QIMainDialog::QIMainDialog(QWidget *pParent /* = 0 */,
+                           Qt::WindowFlags enmFlags /* = Qt::Dialog */,
+                           bool fIsAutoCentering /* = true */)
+    : QMainWindow(pParent, enmFlags)
+    , m_fIsAutoCentering(fIsAutoCentering)
+    , m_fPolished(false)
+    , m_enmResult(QDialog::Rejected)
 {
-    qApp->installEventFilter (this);
+    /* Install event-filter: */
+    qApp->installEventFilter(this);
 }
 
-QDialog::DialogCode QIMainDialog::exec()
+QDialog::DialogCode QIMainDialog::exec(bool fApplicationModal /* = true */)
 {
     /* Check for the recursive run: */
-    AssertMsg(!mEventLoop, ("QIMainDialog::exec() is called recursively!\n"));
+    AssertMsgReturn(!m_pEventLoop, ("QIMainDialog::exec() is called recursively!\n"), QDialog::Rejected);
 
     /* Reset the result code: */
     setResult(QDialog::Rejected);
 
-    /* Tune some attributes: */
-    bool fDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose); NOREF(fDeleteOnClose);
-    AssertMsg(!fDeleteOnClose, ("QIMainDialog is NOT supposed to be run in 'delete-on-close' mode!"));
+    /* Should we delete ourself on close in theory? */
+    const bool fOldDeleteOnClose = testAttribute(Qt::WA_DeleteOnClose);
+    /* For the exec() time, set this attribute to 'false': */
     setAttribute(Qt::WA_DeleteOnClose, false);
-    bool fWasShowModal = testAttribute(Qt::WA_ShowModal);
-    setAttribute(Qt::WA_ShowModal, true);
+
+    /* Which is the current window-modality? */
+    const Qt::WindowModality oldModality = windowModality();
+    /* For the exec() time, set this attribute to 'window-modal' or 'application-modal': */
+    setWindowModality(!fApplicationModal ? Qt::WindowModal : Qt::ApplicationModal);
+
+    /* Show ourself: */
+    show();
 
     /* Create a local event-loop: */
-    QEventLoop eventLoop;
-    mEventLoop = &eventLoop;
-    /* Show the window: */
-    show();
-    /* A guard to ourself for the case we destroy ourself: */
-    QPointer<QIMainDialog> guard = this;
-    /* Start the event-loop: */
-    eventLoop.exec();
-    /* Check if dialog is still valid: */
-    if (guard.isNull())
-        return QDialog::Rejected;
-    mEventLoop = 0;
-    /* Prepare result: */
-    QDialog::DialogCode res = result();
-    /* Restore old show-modal attribute: */
-    setAttribute(Qt::WA_ShowModal, fWasShowModal);
-    /* Return the final result: */
-    return res;
-}
-
-QDialog::DialogCode QIMainDialog::result() const
-{
-    return mRescode;
-}
-
-void QIMainDialog::setSizeGripEnabled (bool aEnabled)
-{
-    if (!mSizeGrip && aEnabled)
     {
-        mSizeGrip = new QSizeGrip (this);
-        mSizeGrip->resize (mSizeGrip->sizeHint());
-        mSizeGrip->show();
+        QEventLoop eventLoop;
+        m_pEventLoop = &eventLoop;
+
+        /* Guard ourself for the case
+         * we destroyed ourself in our event-loop: */
+        QPointer<QIMainDialog> guard = this;
+
+        /* Start the blocking event-loop: */
+        eventLoop.exec();
+
+        /* Are we still valid? */
+        if (guard.isNull())
+            return QDialog::Rejected;
+
+        m_pEventLoop = 0;
     }
-    else if (mSizeGrip && !aEnabled)
-        delete mSizeGrip;
-}
 
-bool QIMainDialog::isSizeGripEnabled() const
-{
-    return mSizeGrip;
-}
+    /* Save the result code early (we can delete ourself on close): */
+    const QDialog::DialogCode enmResultCode = result();
 
-void QIMainDialog::setDefaultButton (QPushButton* aButton)
-{
-    mDefaultButton = aButton;
+    /* Return old modality: */
+    setWindowModality(oldModality);
+
+    /* Reset attribute to previous value: */
+    setAttribute(Qt::WA_DeleteOnClose, fOldDeleteOnClose);
+    /* Delete ourself if we should do that on close: */
+    if (fOldDeleteOnClose)
+        delete this;
+
+    /* Return the result code: */
+    return enmResultCode;
 }
 
 QPushButton* QIMainDialog::defaultButton() const
 {
-    return mDefaultButton;
+    return m_pDefaultButton;
 }
 
-void QIMainDialog::setAutoCenteringEnabled(bool fIsAutoCentering)
+void QIMainDialog::setDefaultButton(QPushButton *pButton)
 {
-    mIsAutoCentering = fIsAutoCentering;
+    m_pDefaultButton = pButton;
 }
 
-void QIMainDialog::setVisible (bool aVisible)
+bool QIMainDialog::isSizeGripEnabled() const
 {
-    QMainWindow::setVisible (aVisible);
-    /* Exit from the event loop if there is any and we are changing our state
-     * from visible to invisible. */
-    if (mEventLoop && !aVisible)
-        mEventLoop->exit();
+    return m_pSizeGrip;
 }
 
-bool QIMainDialog::event (QEvent *aEvent)
+void QIMainDialog::setSizeGripEnabled(bool fEnabled)
 {
-     switch (aEvent->type())
-     {
-          case QEvent::Polish:
-          {
-              /* Initially search for the default button. */
-              mDefaultButton = searchDefaultButton();
-              break;
-          }
-          default:
-              break;
-     }
-     return QMainWindow::event (aEvent);
+    /* Create if missed: */
+    if (!m_pSizeGrip && fEnabled)
+    {
+        m_pSizeGrip = new QSizeGrip(this);
+        m_pSizeGrip->resize(m_pSizeGrip->sizeHint());
+        m_pSizeGrip->show();
+    }
+    /* Destroy if present: */
+    else if (m_pSizeGrip && !fEnabled)
+    {
+        delete m_pSizeGrip;
+        m_pSizeGrip = 0;
+    }
 }
 
-void QIMainDialog::showEvent (QShowEvent *aEvent)
+void QIMainDialog::setVisible(bool fVisible)
 {
-    QMainWindow::showEvent (aEvent);
+    /* Call to base-class: */
+    QMainWindow::setVisible(fVisible);
 
-    /* Polishing border */
-    if (mPolished)
+    /* Exit from the event-loop if there is any and
+     * we are changing our state from visible to hidden. */
+    if (m_pEventLoop && !fVisible)
+        m_pEventLoop->exit();
+}
+
+bool QIMainDialog::event(QEvent *pEvent)
+{
+    /* Depending on event-type: */
+    switch (pEvent->type())
+    {
+        case QEvent::Polish:
+        {
+            /* Initially search for the default-button: */
+            m_pDefaultButton = searchDefaultButton();
+            break;
+        }
+        default:
+            break;
+    }
+
+    /* Call to base-class: */
+    return QMainWindow::event(pEvent);
+}
+
+void QIMainDialog::showEvent(QShowEvent *pEvent)
+{
+    /* Make sure we should polish dialog: */
+    if (m_fPolished)
         return;
-    mPolished = true;
 
-    /* Explicit widget centering relatively to it's centering
-     * widget if any or desktop if centering widget is missed. */
-    if (mIsAutoCentering)
-        VBoxGlobal::centerWidget (this, mCenterWidget, false);
+    /* Call to polish-event: */
+    polishEvent(pEvent);
+
+    /* Mark dialog as polished: */
+    m_fPolished = true;
 }
 
-void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
+void QIMainDialog::polishEvent(QShowEvent*)
 {
-    QMainWindow::resizeEvent (aEvent);
+    /* Explicit centering according to our parent: */
+    if (m_fIsAutoCentering)
+        VBoxGlobal::centerWidget(this, parentWidget(), false);
+}
 
-    /* Adjust the size-grip location for the current resize event */
-    if (mSizeGrip)
+void QIMainDialog::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QMainWindow::resizeEvent(pEvent);
+
+    /* Adjust the size-grip location for the current resize event: */
+    if (m_pSizeGrip)
     {
         if (isRightToLeft())
-            mSizeGrip->move (rect().bottomLeft() - mSizeGrip->rect().bottomLeft());
+            m_pSizeGrip->move(rect().bottomLeft() - m_pSizeGrip->rect().bottomLeft());
         else
-            mSizeGrip->move (rect().bottomRight() - mSizeGrip->rect().bottomRight());
-        aEvent->accept();
+            m_pSizeGrip->move(rect().bottomRight() - m_pSizeGrip->rect().bottomRight());
     }
 }
 
@@ -233,90 +259,78 @@ void QIMainDialog::keyPressEvent(QKeyEvent *pEvent)
         /* Default handling for others: */
         default: break;
     }
+
     /* Call to base-class: */
     return QMainWindow::keyPressEvent(pEvent);
 }
 
-bool QIMainDialog::eventFilter (QObject *aObject, QEvent *aEvent)
+bool QIMainDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    /* Skip for inactive window: */
     if (!isActiveWindow())
-        return QMainWindow::eventFilter (aObject, aEvent);
+        return QMainWindow::eventFilter(pObject, pEvent);
 
-    if (qobject_cast<QWidget*> (aObject) &&
-        qobject_cast<QWidget*> (aObject)->window() != this)
-        return QMainWindow::eventFilter (aObject, aEvent);
+    /* Skip for children of other than this one window: */
+    if (qobject_cast<QWidget*>(pObject) &&
+        qobject_cast<QWidget*>(pObject)->window() != this)
+        return QMainWindow::eventFilter(pObject, pEvent);
 
-    switch (aEvent->type())
+    /* Depending on event-type: */
+    switch (pEvent->type())
     {
-        /* Auto-default button focus-in processor used to move the "default"
+        /* Auto-default-button focus-in processor used to move the "default"
          * button property into the currently focused button. */
         case QEvent::FocusIn:
         {
-            if (qobject_cast<QPushButton*> (aObject) &&
-                (aObject->parent() == centralWidget() ||
-                 qobject_cast<QDialogButtonBox*> (aObject->parent())))
+            if (qobject_cast<QPushButton*>(pObject) &&
+                (pObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
             {
-                qobject_cast<QPushButton*> (aObject)->setDefault (aObject != mDefaultButton);
-                if (mDefaultButton)
-                    mDefaultButton->setDefault (aObject == mDefaultButton);
+                qobject_cast<QPushButton*>(pObject)->setDefault(pObject != m_pDefaultButton);
+                if (m_pDefaultButton)
+                    m_pDefaultButton->setDefault(pObject == m_pDefaultButton);
             }
             break;
         }
-        /* Auto-default button focus-out processor used to remove the "default"
+        /* Auto-default-button focus-out processor used to remove the "default"
          * button property from the previously focused button. */
         case QEvent::FocusOut:
         {
-            if (qobject_cast<QPushButton*> (aObject) &&
-                (aObject->parent() == centralWidget() ||
-                 qobject_cast<QDialogButtonBox*> (aObject->parent())))
+            if (qobject_cast<QPushButton*>(pObject) &&
+                (pObject->parent() == centralWidget() ||
+                 qobject_cast<QDialogButtonBox*>(pObject->parent())))
             {
-                if (mDefaultButton)
-                    mDefaultButton->setDefault (aObject != mDefaultButton);
-                qobject_cast<QPushButton*> (aObject)->setDefault (aObject == mDefaultButton);
+                if (m_pDefaultButton)
+                    m_pDefaultButton->setDefault(pObject != m_pDefaultButton);
+                qobject_cast<QPushButton*>(pObject)->setDefault(pObject == m_pDefaultButton);
             }
             break;
         }
         default:
             break;
     }
-    return QMainWindow::eventFilter (aObject, aEvent);
+
+    /* Call to base-class: */
+    return QMainWindow::eventFilter(pObject, pEvent);
 }
 
 QPushButton* QIMainDialog::searchDefaultButton() const
 {
-    /* Search for the first default button in the dialog. */
-    QList<QPushButton*> list = qFindChildren<QPushButton*> (this);
-    foreach (QPushButton *button, list)
-        if (button->isDefault() &&
-            (button->parent() == centralWidget() ||
-             qobject_cast<QDialogButtonBox*> (button->parent())))
-            return button;
-    return NULL;
+    /* Search for the first default-button in the dialog: */
+    QList<QPushButton*> list = qFindChildren<QPushButton*>(this);
+    foreach (QPushButton *pButton, list)
+        if (pButton->isDefault() &&
+            (pButton->parent() == centralWidget() ||
+             qobject_cast<QDialogButtonBox*>(pButton->parent())))
+            return pButton;
+    return 0;
 }
 
-
-void QIMainDialog::accept()
+void QIMainDialog::done(QDialog::DialogCode enmResult)
 {
-    done (QDialog::Accepted);
-}
-
-void QIMainDialog::reject()
-{
-    done (QDialog::Rejected);
-}
-
-void QIMainDialog::done (QDialog::DialogCode aResult)
-{
-    /* Set the final result */
-    setResult (aResult);
-    /* Hide this window */
+    /* Set the final result: */
+    setResult(enmResult);
+    /* Hide: */
     hide();
-    /* And close the window */
-    close();
-}
-
-void QIMainDialog::setResult (QDialog::DialogCode aRescode)
-{
-    mRescode = aRescode;
 }
 

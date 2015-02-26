@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,73 +14,104 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __QIMainDialog_h__
-#define __QIMainDialog_h__
+#ifndef ___QIMainDialog_h___
+#define ___QIMainDialog_h___
 
-/* Qt includes */
+/* Qt includes: */
 #include <QMainWindow>
-#include <QDialog>
 #include <QPointer>
+#include <QDialog>
 
+/* Forward declarations: */
+class QPushButton;
 class QEventLoop;
 class QSizeGrip;
 
+/** QDialog analog based on QMainWindow. */
 class QIMainDialog: public QMainWindow
 {
     Q_OBJECT;
 
 public:
 
-    QIMainDialog (QWidget *aParent = 0, Qt::WindowFlags aFlags = Qt::Dialog);
+    /** Constructor.
+      * @param pParent           holds the parent widget passed to the base-class,
+      * @param enmFlags          holds the cumulative window flags passed to the base-class,
+      * @param fIsAutoCentering  defines whether this dialog should be centered according it's parent. */
+    QIMainDialog(QWidget *pParent = 0,
+                 Qt::WindowFlags enmFlags = Qt::Dialog,
+                 bool fIsAutoCentering = true);
 
-    QDialog::DialogCode exec();
-    QDialog::DialogCode result() const;
+    /** Returns the dialog's result code. */
+    QDialog::DialogCode result() const { return m_enmResult; }
 
-    void setSizeGripEnabled (bool aEnabled);
-    bool isSizeGripEnabled () const;
+    /** Executes the dialog, launching local event-loop.
+      * @param fApplicationModal defines whether this dialog should be modal to application or window. */
+    QDialog::DialogCode exec(bool fApplicationModal = true);
 
-    void setDefaultButton (QPushButton *aButton);
-    QPushButton* defaultButton () const;
+    /** Returns dialog's default-button. */
+    QPushButton* defaultButton() const;
+    /** Defines dialog's default-button. */
+    void setDefaultButton(QPushButton *pButton);
 
-    void setAutoCenteringEnabled(bool fIsAutoCentering);
+    /** Returns whether size-grip was enabled for that dialog. */
+    bool isSizeGripEnabled() const;
+    /** Defines whether size-grip should be @a fEnabled for that dialog. */
+    void setSizeGripEnabled(bool fEnabled);
 
 public slots:
 
-    virtual void setVisible (bool aVisible);
+    /** Defines whether the dialog is @a fVisible. */
+    virtual void setVisible(bool fVisible);
 
 protected:
 
-    virtual bool event (QEvent *aEvent);
-    virtual void showEvent (QShowEvent *aEvent);
-    virtual void resizeEvent (QResizeEvent *aEvent);
+    /** General event handler. */
+    virtual bool event(QEvent *pEvent);
+    /** Show event handler. */
+    virtual void showEvent(QShowEvent *pEvent);
+    /** Our own polish event handler. */
+    virtual void polishEvent(QShowEvent *pEvent);
+    /** Resize event handler. */
+    virtual void resizeEvent(QResizeEvent *pEvent);
+    /** Key-press event handler. */
     virtual void keyPressEvent(QKeyEvent *pEvent);
-    virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
+    /** General event filter. */
+    virtual bool eventFilter(QObject *aObject, QEvent *pEvent);
 
+    /** Function to search for dialog's default-button. */
     QPushButton* searchDefaultButton() const;
-
-    void centerAccording (QWidget *aWidget) { mCenterWidget = aWidget; }
 
 protected slots:
 
-    virtual void accept();
-    virtual void reject();
+    /** Sets the modal dialog's result code to @a enmResult. */
+    void setResult(QDialog::DialogCode enmResult) { m_enmResult = enmResult; }
 
-    void done (QDialog::DialogCode aRescode);
-    void setResult (QDialog::DialogCode aRescode);
+    /** Closes the modal dialog and sets its result code to @a enmResult.
+      * If this dialog is shown with exec(), done() causes the local
+      * event-loop to finish, and exec() to return @a enmResult. */
+    virtual void done(QDialog::DialogCode enmResult);
+    /** Hides the modal dialog and sets the result code to Accepted. */
+    virtual void accept() { done(QDialog::Accepted); }
+    /** Hides the modal dialog and sets the result code to Rejected. */
+    virtual void reject() { done(QDialog::Rejected); }
 
 private:
 
-    /* Private member vars */
-    QDialog::DialogCode mRescode;
-    QPointer<QEventLoop> mEventLoop;
+    /** Holds whether this dialog should be centered according it's parent. */
+    const bool m_fIsAutoCentering;
+    /** Holds whether this dialog is polished. */
+    bool m_fPolished;
 
-    QPointer<QSizeGrip> mSizeGrip;
-    QPointer<QPushButton> mDefaultButton;
+    /** Holds modal dialog's result code. */
+    QDialog::DialogCode m_enmResult;
+    /** Holds modal dialog's event-loop. */
+    QPointer<QEventLoop> m_pEventLoop;
 
-    bool mPolished;
-    bool mIsAutoCentering;
-    QWidget *mCenterWidget;
+    /** Holds dialog's default-button. */
+    QPointer<QPushButton> m_pDefaultButton;
+    /** Holds dialog's size-grip. */
+    QPointer<QSizeGrip> m_pSizeGrip;
 };
 
-#endif /* __QIMainDialog_h__ */
-
+#endif /* !___QIMainDialog_h___ */
