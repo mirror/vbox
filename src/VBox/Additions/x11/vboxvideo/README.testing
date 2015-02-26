@@ -6,21 +6,15 @@ known to fail in the past to this file as we discover them.
    (CentOS 6 and 7, current Ubuntu/Fedora).  Test Solaris guests (10 and 11?).
  * Dynamic resizing should work, on CentOS 6 and later Linux guests it should
    work without VBoxClient running.
- * Disabling and enabling virtual screens (VBoxManage in 4.3).
+ * Disabling and enabling virtual screens (only possible as of 4.4).
  * Dynamic resizing with one of more virtual screens disabled.
  * Test switching to virtual terminals and back from windowed, full screen and
-   seamless modes (seamless currently only works properly with VBoxClient
-   running).
+   seamless modes.
  * Test switching directly between normal, full-screen, seamless and scaled
    modes.
+ * Test enabling and disabling guest screens from the host.
  * execute "xprop -root | grep VBOX" after resizing a screen: VBOX_SIZE_HINTS
    should be set, and VBOX_SIZE_HINTS_MISMATCH should equal 0 on CentOS 6 and
-   later (4.4 and later).
- * Test re-ordering the virtual screen using the native guest operating system
-   tools and make sure that mouse integration still works as expected.
- * Test disabling and re-enabling guest screens with the native system tools.
- * Try disabling and re-enabling mouse integration and check that capturing
-   works with multiple guest screens.
+   later.
  * Shutting down and re-starting a virtual machine should restore the last size
-   for all monitors (note: currently only after log-in).  Full shut-down, not
-   a reboot.
+   for all monitors (note: currently only after log-in).

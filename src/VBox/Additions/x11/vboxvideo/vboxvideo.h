@@ -95,12 +95,6 @@ if (!(expr)) \
     vbvxAbortServer(); \
 }
 
-#define VBVXCAST(type, val) \
-         ((long long)(type)(val) == (long long)(val) \
-      && (unsigned long long)(type)(val) == (unsigned long long)(val) \
-    ? ((type)(val)) \
-    : (vbvxMsg("Cannot convert " #val " to " #type ".\n"), vbvxAbortServer(), 0))
-
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
 #include <VBox/Hardware/VBoxVideoVBE.h>
@@ -153,7 +147,9 @@ struct VBoxScreen
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation;
     /** Is this CRTC enabled or in DPMS off state? */
-    Bool fPowerOn;
+    Bool fCrtcEnabled;
+    /** Is this output enabled or in DPMS low power state? */
+    Bool fOutputEnabled;
 #ifdef VBOXVIDEO_13
     /** The virtual crtcs. */
     struct _xf86Crtc *paCrtcs;
@@ -168,7 +164,8 @@ struct VBoxScreen
     RTRECTSIZE aPreferredSize;
     /** Has this screen been enabled by the host? */
     Bool afConnected;
-    Bool afLastConnected;
+    /** The last mode hint data read from the X11 property. */
+    int32_t lastModeHintFromProperty;
 };
 
 typedef struct VBOXRec
@@ -200,16 +197,30 @@ typedef struct VBOXRec
     xf86CursorInfoPtr pCurs;
     /** Do we currently want to use the host cursor? */
     Bool fUseHardwareCursor;
+    /** The last cursor capabilities data read from the X11 property. */
+    int32_t fLastCursorCapabilitiesFromProperty;
     /** Number of screens attached */
     uint32_t cScreens;
     /** Information about each virtual screen. */
     struct VBoxScreen *pScreens;
-    /** Can we get mode hint and cursor integration information from HGSMI? */
-    bool fHaveHGSMIModeHints;
+    /** The last requested framebuffer size. */
+    RTRECTSIZE FBSize;
+#ifdef VBOXVIDEO_13
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
-    /** Should we force a screen mode update next time the handler is called? */
-    bool fForceModeUpdate;
+# ifdef RT_OS_LINUX
+    /** Input device file descriptor for getting ACPI hot-plug events. */
+    int fdACPIDevices;
+    /** Input handler handle for ACPI hot-plug listener. */
+    void *hACPIEventHandler;
+# endif
+    /** Have we read all available HGSMI mode hint data? */
+    bool fHaveReadHGSMIModeHintData;
+#else
+    /** The original CreateScreenResources procedure which we wrap with our own.
+     */
+    CreateScreenResourcesProcPtr pfnCreateScreenResources;
+#endif
     /** HGSMI guest heap context */
     HGSMIGUESTCOMMANDCONTEXT guestCtx;
     /** Unrestricted horizontal resolution flag. */
@@ -232,46 +243,28 @@ extern void vbvxAbortServer(void);
 extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
 #define VBOXGetRec vbvxGetRec  /* Temporary */
 extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
-extern void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData, int32_t *paData, Bool fSendEvent);
 extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
 
 /* setmode.c */
-
-/** Structure describing the virtual frame buffer.  It starts at the beginning
- * of the video RAM. */
-struct vbvxFrameBuffer {
-    /** X offset of first screen in frame buffer. */
-    int x0;
-    /** Y offset of first screen in frame buffer. */
-    int y0;
-    /** Frame buffer virtual width. */
-    unsigned cWidth;
-    /** Frame buffer virtual height. */
-    unsigned cHeight;
-    /** Bits per pixel. */
-    unsigned cBPP;
-};
-
-extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
-extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
-                        bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
-extern void vbvxSetSolarisMouseRange(int width, int height);
-
-/* pointer.c */
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
+extern void vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
 
-/* vbva.c */
-extern void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects);
-extern void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM);
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern void vboxDisableVbva(ScrnInfoPtr pScrn);
 
 /* getmode.c */
+extern unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
+                                     uint32_t *pcx, uint32_t *pcy);
 extern void vboxAddModes(ScrnInfoPtr pScrn);
 extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
-extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
-extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
+extern void VBoxUpdateSizeHints(ScrnInfoPtr pScrn);
+#ifndef VBOXVIDEO_13
+extern void VBoxSetUpRandR11(ScreenPtr pScreen);
+#else
+void VBoxSetUpLinuxACPI(ScreenPtr pScreen);
+void VBoxCleanUpLinuxACPI(ScreenPtr pScreen);
+#endif
 
 /* DRI stuff */
 extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
@@ -284,6 +277,32 @@ extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 #ifdef VBOXVIDEO_13
 extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
 #endif
+
+/* Utilities */
+
+/** Calculate the BPP from the screen depth */
+static inline uint16_t vboxBPP(ScrnInfoPtr pScrn)
+{
+    return pScrn->depth == 24 ? 32 : 16;
+}
+
+/** Calculate the scan line length for a display width */
+static inline int32_t vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
+{
+    uint32_t cbLine = (cDisplayWidth * vboxBPP(pScrn) / 8 + 3) & ~3;
+    return cbLine < INT32_MAX ? cbLine : INT32_MAX;
+}
+
+/** Calculate the display pitch from the scan line length */
+static inline int32_t vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
+{
+    return cbLine * 8 / vboxBPP(pScrn);
+}
+
+extern void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY);
+extern Bool VBOXSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth,
+                        unsigned cHeight, int x, int y);
+extern Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height);
 
 #endif /* _VBOXVIDEO_H_ */
 

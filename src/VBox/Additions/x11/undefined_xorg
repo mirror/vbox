@@ -105,9 +105,8 @@ realpath
 __realpath_chk
 __register_frame_info_bases
 rename
-RRCrtcSet
+RRChangeOutputProperty
 RRGetInfo
-RRScreenSizeSet
 setenv
 ShadowFBInit2
 sigdelset
@@ -157,7 +156,6 @@ xf86CrtcConfigInit
 xf86CrtcConfigPrivateIndex
 xf86CrtcCreate
 xf86CrtcScreenInit
-xf86CrtcSetMode
 xf86CrtcSetSizeRange
 xf86DestroyCursorInfoRec
 xf86DPMSSet
