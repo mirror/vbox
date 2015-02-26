@@ -315,7 +315,7 @@ struct DhcpOptValue
 {
     enum Encoding {
 	LEGACY,
-	HEX,
+	HEX
     };
 
     com::Utf8Str text;
