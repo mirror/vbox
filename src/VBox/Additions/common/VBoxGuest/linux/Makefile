@@ -86,11 +86,13 @@ MOD_OBJS   = \
 	generic/RTAssertShouldPanic-generic.o \
         generic/RTLogWriteStdErr-stub-generic.o \
         generic/RTLogWriteStdOut-stub-generic.o \
+	generic/RTMpGetCoreCount-generic.o \
 	generic/RTSemEventWait-2-ex-generic.o \
 	generic/RTSemEventWaitNoResume-2-ex-generic.o \
 	generic/RTSemEventMultiWait-2-ex-generic.o \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.o \
 	generic/errvars-generic.o \
+	generic/mppresent-generic.o \
 	VBox/log-vbox.o \
 	VBox/logbackdoor.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
