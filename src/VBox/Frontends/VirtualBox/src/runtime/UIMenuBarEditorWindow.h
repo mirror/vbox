@@ -30,7 +30,9 @@ class UIActionPool;
 class UIToolBar;
 class UIAction;
 class QIToolButton;
+#ifndef Q_WS_MAC
 class QCheckBox;
+#endif /* !Q_WS_MAC */
 class QHBoxLayout;
 class QAction;
 class QMenu;
@@ -86,8 +88,10 @@ private slots:
     /** Handles configuration change. */
     void sltHandleConfigurationChange(const QString &strMachineID);
 
-    /** Handles menu-bar enable toggle. */
+#ifndef RT_OS_DARWIN
+    /** Non Mac OS X: Handles menu-bar enable toggle. */
     void sltHandleMenuBarEnableToggle(bool fEnabled);
+#endif /* !RT_OS_DARWIN */
     /** Handles menu-bar menu click. */
     void sltHandleMenuBarMenuClick();
 
@@ -137,8 +141,10 @@ private:
     /** Prepare 'Help' menu routine. */
     void prepareMenuHelp();
 
-    /** Update enable-checkbox routine. */
+#ifndef Q_WS_MAC
+    /** Non Mac OS X: Update enable-checkbox routine. */
     void updateEnableCheckbox();
+#endif /* !Q_WS_MAC */
     /** Update menus routine. */
     void updateMenus();
 #ifdef Q_WS_MAC
@@ -190,8 +196,10 @@ private:
         UIToolBar *m_pToolBar;
         /** Holds the close-button instance. */
         QIToolButton *m_pButtonClose;
-        /** Holds the enable-checkbox instance. */
+#ifndef Q_WS_MAC
+        /** Non Mac OS X: Holds the enable-checkbox instance. */
         QCheckBox *m_pCheckBoxEnable;
+#endif /* !Q_WS_MAC */
         /** Holds tool-bar action references. */
         QMap<QString, QAction*> m_actions;
     /** @} */

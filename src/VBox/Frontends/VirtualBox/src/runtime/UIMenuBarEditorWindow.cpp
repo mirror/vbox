@@ -23,10 +23,12 @@
 # include <QHBoxLayout>
 # include <QPaintEvent>
 # include <QMetaEnum>
-# include <QCheckBox>
 # include <QMenuBar>
 # include <QPainter>
 # include <QMenu>
+# ifndef Q_WS_MAC
+#  include <QCheckBox>
+# endif /* !Q_WS_MAC */
 
 /* GUI includes: */
 # include "UIMenuBarEditorWindow.h"
@@ -54,7 +56,9 @@ UIMenuBarEditorWidget::UIMenuBarEditorWidget(QWidget *pParent,
     , m_pMainLayout(0)
     , m_pToolBar(0)
     , m_pButtonClose(0)
+#ifndef Q_WS_MAC
     , m_pCheckBoxEnable(0)
+#endif /* !Q_WS_MAC */
 {
     /* Prepare: */
     prepare();
@@ -82,13 +86,16 @@ void UIMenuBarEditorWidget::sltHandleConfigurationChange(const QString &strMachi
     if (machineID() != strMachineID)
         return;
 
+#ifndef Q_WS_MAC
     /* Update enable-checkbox: */
     updateEnableCheckbox();
+#endif /* !Q_WS_MAC */
 
     /* Update menus: */
     updateMenus();
 }
 
+#ifndef RT_OS_DARWIN
 void UIMenuBarEditorWidget::sltHandleMenuBarEnableToggle(bool fEnabled)
 {
     /* Toggle enable-checkbox if necessary: */
@@ -103,6 +110,7 @@ void UIMenuBarEditorWidget::sltHandleMenuBarEnableToggle(bool fEnabled)
         }
     }
 }
+#endif /* !RT_OS_DARWIN */
 
 void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
 {
@@ -265,9 +273,11 @@ void UIMenuBarEditorWidget::prepare()
         /* Top margin should be smaller for the common case: */
         if (iTop >= 5)
             iTop -= 5;
+#ifndef Q_WS_MAC
         /* Right margin should be bigger for the settings case: */
         if (m_fStartedFromVMSettings)
             iRight += 5;
+#endif /* !Q_WS_MAC */
         /* Apply margins/spacing finally: */
         m_pMainLayout->setContentsMargins(iLeft, iTop, iRight, iBottom);
         m_pMainLayout->setSpacing(0);
@@ -297,6 +307,7 @@ void UIMenuBarEditorWidget::prepare()
                 m_pMainLayout->addWidget(m_pButtonClose);
             }
         }
+#ifndef Q_WS_MAC
         /* Create enable-checkbox if necessary: */
         else
         {
@@ -312,6 +323,7 @@ void UIMenuBarEditorWidget::prepare()
                 updateEnableCheckbox();
             }
         }
+#endif /* !Q_WS_MAC */
     }
 
     /* Mark as prepared: */
@@ -637,6 +649,7 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
     }
 }
 
+#ifndef Q_WS_MAC
 void UIMenuBarEditorWidget::updateEnableCheckbox()
 {
     /* Update enable-checkbox if necessary: */
@@ -647,6 +660,7 @@ void UIMenuBarEditorWidget::updateEnableCheckbox()
         m_pCheckBoxEnable->blockSignals(false);
     }
 }
+#endif /* !Q_WS_MAC */
 
 void UIMenuBarEditorWidget::updateMenus()
 {
@@ -936,9 +950,11 @@ void UIMenuBarEditorWidget::retranslateUi()
     /* Translate close-button if necessary: */
     if (!m_fStartedFromVMSettings && m_pButtonClose)
         m_pButtonClose->setToolTip(tr("Close"));
+#ifndef Q_WS_MAC
     /* Translate enable-checkbox if necessary: */
     if (m_fStartedFromVMSettings && m_pCheckBoxEnable)
         m_pCheckBoxEnable->setToolTip(tr("Enable Menu Bar"));
+#endif /* !Q_WS_MAC */
 }
 
 void UIMenuBarEditorWidget::paintEvent(QPaintEvent*)
