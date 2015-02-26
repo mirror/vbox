@@ -1411,8 +1411,8 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioPlaybackCallback(void             
         cbRead += cbToRead;
         Assert(pBufData->mBuffers[0].mDataByteSize >= cbRead);
 
-        Assert(cbDataAvail >= cbRead);
-        cbDataAvail -= cbRead;
+        Assert(cbToRead <= cbDataAvail);
+        cbDataAvail -= cbToRead;
     }
 
     /* Write the bytes to the core audio buffer which where really written. */
