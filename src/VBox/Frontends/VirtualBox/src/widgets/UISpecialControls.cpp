@@ -125,7 +125,7 @@ UISearchField::UISearchField(QWidget *pParent /* = 0 */)
  * A mini cancel button for the other OS's.
  *
  ********************************************************************************/
-UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /*= 0*/)
+UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
   : QIWithRetranslateUI<QIToolButton>(pParent)
 {
     setAutoRaise(true);
@@ -145,7 +145,7 @@ static const int PushButtonTopOffset = 4;
 static const int PushButtonRightOffset = 12;
 static const int PushButtonBottomOffset = 4;
 
-UIHelpButton::UIHelpButton(QWidget *pParent /*= 0*/)
+UIHelpButton::UIHelpButton(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI<QPushButton>(pParent)
 {
 #ifdef Q_WS_MAC

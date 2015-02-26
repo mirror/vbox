@@ -331,7 +331,7 @@ void UICocoaButton::onClicked()
     emit clicked(false);
 }
 
-UICocoaSegmentedButton::UICocoaSegmentedButton(QWidget *pParent, int count, CocoaSegmentType type /*= RoundRectSegment*/)
+UICocoaSegmentedButton::UICocoaSegmentedButton(QWidget *pParent, int count, CocoaSegmentType type /* = RoundRectSegment */)
     : QMacCocoaViewContainer(0, pParent)
 {
     /* Prepare auto-release pool: */
