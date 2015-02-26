@@ -102,7 +102,7 @@ enum VBoxControlUsage
 static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 {
     RTPrintf("Usage:\n\n");
-    doUsage("print version number and exit", g_pszProgName, "[-v|--version]");
+    doUsage("print version number and exit", g_pszProgName, "[-V|--version]");
     doUsage("suppress the logo", g_pszProgName, "--nologo ...");
     RTPrintf("\n");
 
