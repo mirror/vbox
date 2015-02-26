@@ -188,6 +188,8 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardMode)(mode));
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         else if (!strcmp(a->argv[1], "draganddrop"))
@@ -216,6 +218,8 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
             {
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(DnDMode)(mode));
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         else if (!strcmp(a->argv[1], "poweroff"))
@@ -378,6 +382,8 @@ int handleControlVM(HandlerArg *a)
                     rc = E_FAIL;
                     break;
                 }
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         /* here the order in which strncmp is called is important
@@ -421,6 +427,8 @@ int handleControlVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
+                    if (SUCCEEDED(rc))
+                        fNeedsSaving = true;
                 }
                 else
                     RTMsgError("The NIC %d is currently disabled and thus its tracefile can't be changed", n);
@@ -466,6 +474,8 @@ int handleControlVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
+                    if (SUCCEEDED(rc))
+                        fNeedsSaving = true;
                 }
                 else
                     RTMsgError("The NIC %d is currently disabled and thus its trace flag can't be changed", n);
@@ -794,6 +804,8 @@ int handleControlVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
+                    if (SUCCEEDED(rc))
+                        fNeedsSaving = true;
                 }
                 else
                     RTMsgError("The NIC %d is currently disabled and thus its attachment type can't be changed", n);
@@ -830,6 +842,8 @@ int handleControlVM(HandlerArg *a)
                     rc = E_FAIL;
                     break;
                 }
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         else if (   !strcmp(a->argv[1], "vrdeport")
@@ -858,6 +872,8 @@ int handleControlVM(HandlerArg *a)
                     ports = a->argv[2];
 
                 CHECK_ERROR_BREAK(vrdeServer, SetVRDEProperty(Bstr("TCP/Ports").raw(), ports.raw()));
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         else if (   !strcmp(a->argv[1], "vrdevideochannelquality")
@@ -880,6 +896,8 @@ int handleControlVM(HandlerArg *a)
                 Bstr value = a->argv[2];
 
                 CHECK_ERROR(vrdeServer, SetVRDEProperty(Bstr("VideoChannel/Quality").raw(), value.raw()));
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
             }
         }
         else if (!strcmp(a->argv[1], "vrdeproperty"))
@@ -907,6 +925,8 @@ int handleControlVM(HandlerArg *a)
                         Bstr bstrName = pszProperty;
                         Bstr bstrValue = &pDelimiter[1];
                         CHECK_ERROR(vrdeServer, SetVRDEProperty(bstrName.raw(), bstrValue.raw()));
+                        if (SUCCEEDED(rc))
+                            fNeedsSaving = true;
                     }
                     else
                     {
