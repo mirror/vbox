@@ -31,6 +31,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/version.h>
 
+#include <VBox/com/array.h>
 #include <VBox/com/string.h>
 
 #include <iprt/cpp/xml.h>
@@ -999,12 +1000,168 @@ int NetworkManager::doReply(const Client& client, const std::vector<RawOption>& 
 }
 
 
+/*
+ * XXX: TODO: Share decoding code with DHCPServer::addOption.
+ */
+static int parseDhcpOptionText(const char *pszText,
+                               int *pOptCode, char **ppszOptText, int *pOptEncoding)
+{
+    uint8_t u8Code;
+    uint32_t u32Enc;
+    char *pszNext;
+    int rc;
+
+    rc = RTStrToUInt8Ex(pszText, &pszNext, 10, &u8Code);
+    if (!RT_SUCCESS(rc))
+        return VERR_PARSE_ERROR;
+
+    switch (*pszNext)
+    {
+        case ':':           /* support legacy format too */
+        {
+            u32Enc = 0;
+            break;
+        }
+
+        case '=':
+        {
+            u32Enc = 1;
+            break;
+        }
+
+        case '@':
+        {
+            rc = RTStrToUInt32Ex(pszNext + 1, &pszNext, 10, &u32Enc);
+            if (!RT_SUCCESS(rc))
+                return VERR_PARSE_ERROR;
+            if (*pszNext != '=')
+                return VERR_PARSE_ERROR;
+            break;
+        }
+
+        default:
+            return VERR_PARSE_ERROR;
+    }
+
+    *pOptCode = u8Code;
+    *ppszOptText = pszNext + 1;
+    *pOptEncoding = (int)u32Enc;
+
+    return VINF_SUCCESS;
+}
+
+
+/*
+ * XXX: Since encoding info is "smuggled" through the API and is not
+ * exposed properly we don't have a common definition we can use here.
+ *
+ * TODO: We can define the encodings enum in the IDL without breaking
+ * backward compatibility.  This will provide the authoritative
+ * definition.
+ */
+static int fillDhcpOption(RawOption &opt, const std::string &OptText, int OptEncoding)
+{
+    int rc;
+ 
+    if (OptEncoding == /* HEX */ 1)
+    {
+        if (OptText.empty())
+            return VERR_INVALID_PARAMETER;
+
+        size_t cbRawOpt = 0;
+        char *pszNext = const_cast<char *>(OptText.c_str());
+        while (*pszNext != '\0')
+        {
+            if (cbRawOpt == 256)
+                return VERR_INVALID_PARAMETER;
+
+            uint8_t u8Byte;
+            rc = RTStrToUInt8Ex(pszNext, &pszNext, 16, &u8Byte);
+            if (!RT_SUCCESS(rc))
+                return rc;
+
+            if (*pszNext == ':')
+                ++pszNext;
+            else if (*pszNext != '\0')
+                return VERR_PARSE_ERROR;
+
+            opt.au8RawOpt[cbRawOpt] = u8Byte;
+            ++cbRawOpt;
+        }
+        opt.cbRawOpt = (uint8_t)cbRawOpt;
+    }
+    else if (OptEncoding == /* LEGACY */ 0)
+    {
+        /*
+         * XXX: TODO: encode "known" option opt.u8OptId
+         */
+        return VERR_INVALID_PARAMETER;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 int NetworkManager::processParameterReqList(const Client& client, const uint8_t *pu8ReqList,
                                             int cReqList, std::vector<RawOption>& extra)
 {
+    int rc;
+
     const Lease l = client.lease();
 
     const NetworkConfigEntity *pNetCfg = l.getConfig();
+
+    /*
+     * XXX: Brute-force.  Unfortunately, there's no notification event
+     * for changes.  Should at least cache the options for a short
+     * time, enough to last discover/offer/request/ack cycle.
+     */
+    typedef std::map< int, std::pair<std::string, int> > DhcpOptionMap;
+    DhcpOptionMap OptMap;
+
+    if (!m->m_DhcpServer.isNull())
+    {
+        com::SafeArray<BSTR> strings;
+        com::Bstr str;
+        HRESULT hrc;
+        int OptCode, OptEncoding;
+        char *pszOptText;
+
+        strings.setNull();
+        hrc = m->m_DhcpServer->COMGETTER(GlobalOptions)(ComSafeArrayAsOutParam(strings));
+        AssertComRC(hrc);
+        for (size_t i = 0; i < strings.size(); ++i)
+        {
+            com::Utf8Str encoded(strings[i]);
+            rc = parseDhcpOptionText(encoded.c_str(),
+                                     &OptCode, &pszOptText, &OptEncoding);
+            if (!RT_SUCCESS(rc))
+                continue;
+
+            OptMap[OptCode] = std::make_pair(pszOptText, OptEncoding);
+        }
+
+        const RTMAC &mac = client.getMacAddress();
+        char strMac[6*2+1] = "";
+        RTStrPrintf(strMac, sizeof(strMac), "%02x%02x%02x%02x%02x%02x",
+                    mac.au8[0], mac.au8[1], mac.au8[2],
+                    mac.au8[3], mac.au8[4], mac.au8[5]);
+
+        strings.setNull();
+        hrc = m->m_DhcpServer->COMGETTER(MacOptions)(com::Bstr(strMac).raw(),
+                                                     ComSafeArrayAsOutParam(strings));
+        AssertComRC(hrc);
+        for (size_t i = 0; i < strings.size(); ++i)
+        {
+            com::Utf8Str text(strings[i]);
+            rc = parseDhcpOptionText(text.c_str(),
+                                     &OptCode, &pszOptText, &OptEncoding);
+            if (!RT_SUCCESS(rc))
+                continue;
+
+            OptMap[OptCode] = std::make_pair(pszOptText, OptEncoding);
+        }
+    }
 
     /* request parameter list */
     RawOption opt;
@@ -1060,8 +1217,26 @@ int NetworkManager::processParameterReqList(const Client& client, const uint8_t 
                 }
                 break;
             default:
-                Log(("opt: %d is ignored\n", u8Req));
-                fIgnore = true;
+                {
+                    DhcpOptionMap::const_iterator it = OptMap.find((int)u8Req);
+                    if (it == OptMap.cend())
+                    {
+                        Log(("opt: %d is ignored\n", u8Req));
+                        fIgnore = true;
+                    }
+                    else
+                    {
+                        std::string OptText((*it).second.first);
+                        int OptEncoding((*it).second.second);
+
+                        rc = fillDhcpOption(opt, OptText, OptEncoding);
+                        if (!RT_SUCCESS(rc))
+                        {
+                            fIgnore = true;
+                            break;
+                        }
+                    }
+                }
                 break;
         }
 
