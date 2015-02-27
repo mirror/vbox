@@ -450,7 +450,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
 {
     uint8_t     drive, num_sectors, track, sector, head;
     uint16_t    base_address, base_count, base_es;
-    uint8_t     page, mode_register, val8;
+    uint8_t     page, mode_register, val8, media_state;
     uint8_t     return_status[7];
     uint8_t     drive_type, num_floppies, ah;
     uint16_t    last_addr;
@@ -1110,17 +1110,193 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
 
     case 0x17: // set diskette type for format(old)
         BX_DEBUG_INT13_FL("floppy f17\n");
-        /* not used for 1.44M floppies */
-        SET_AH(0x01); // not supported
-        set_diskette_ret_status(1); /* not supported */
-        SET_CF();
+        // NOTE: 1.44M diskette not supported by this function, use INT14h/18h instead.
+        // Drive number (0 or 1) values allowed
+        drive = GET_ELDL();
+
+        // Format type (AL)
+        // 00 - NOT USED    
+        // 01 - DISKETTE 360K IN 360K DRIVE    
+        // 02 - DISKETTE 360K IN 1.2M DRIVE
+        // 03 - DISKETTE 1.2M IN 1.2M DRIVE
+        // 04 - DISKETTE 720K IN 720K DRIVE
+        val8 = GET_AL();
+
+        BX_DEBUG_INT13_FL("floppy f17 - drive: %d, format type: %d\n", drive, val8);
+
+        if (drive > 1) {
+            SET_AH(0x01); // invalid drive
+            set_diskette_ret_status(0x01); // bad parameter
+            SET_CF();
+            return;
+        }
+    
+        // see if drive exists
+        if (floppy_drive_exists(drive) == 0) {
+            SET_AH(0x80); // not responding/time out
+            set_diskette_ret_status(0x80);
+            SET_CF();
+            return;
+        }
+
+        // Get current drive state. Set 'base_address' to media status offset address
+        base_address = (drive) ? 0x0091 : 0x0090;
+        media_state = read_byte(0x0040, base_address);
+
+        // Mask out (clear) bits 4-7 (4:media type established, 5:double stepping, 6-7:data rate)
+        media_state &= 0x0f;
+
+        switch (val8) {
+        case 1:
+            // 360K media in 360K drive
+            media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+            break;
+        case 2:
+            // 360K media in 1.2M drive
+            media_state |= 0x70; // 0111 0000 (media type established, double stepping, 300 kbps)
+            break;
+        case 3:
+            // 1.2M media in 1.2M drive
+            media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
+            break;
+        case 4:
+            // 720K media in 720K drive
+            media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+            break;
+        default:
+            // bad parameter
+            SET_AH(0x01); // invalid format mode parameter
+            set_diskette_ret_status(0x01);
+            SET_CF();
+            return;
+        }
+
+        // Update media status
+        write_byte(0x0040, base_address, media_state);
+        BX_DEBUG_INT13_FL("floppy f17 - media status set to: %02x\n", media_state);
+
+        // return success!
+        SET_AH(0);
+        set_diskette_ret_status(0);
+        CLEAR_CF();
         return;
 
     case 0x18: // set diskette type for format(new)
         BX_DEBUG_INT13_FL("floppy f18\n");
-        SET_AH(0x01); // do later
-        set_diskette_ret_status(1);
-        SET_CF();
+        // Set Media Type for Format. Verifies that the device supports a specific geometry.
+        // Unlike INT13h/17h, this service supports higher capacity drives (1.44M and 2.88M).
+        // Drive number (0 or 1) values allowed
+        drive = GET_ELDL();
+
+        val8 = GET_CL();
+        num_sectors = val8 & 0x3f;             // max sector number per cylinder
+        track = ((val8 >> 6) << 8) + GET_CH(); // max cylinder number (max cylinders - 1)
+
+        BX_DEBUG_INT13_FL("floppy f18 - drive: %d, max cylinder/track number: %d, sectors-per-tracks: %d\n",
+           drive, track, num_sectors);
+
+        if (drive > 1) {
+            SET_AH(0x01); // invalid drive
+            set_diskette_ret_status(0x01);
+            SET_CF();
+            return;
+        }
+
+        // see if drive exists
+        if (floppy_drive_exists(drive) == 0) {
+            SET_AH(0x80); // not responding/time out
+            set_diskette_ret_status(0x80);
+            SET_CF();
+            return;
+        }
+
+        // see if media in drive, and media type is known
+        if (floppy_media_known(drive) == 0) {
+            if (floppy_media_sense(drive) == 0) {
+                SET_AH(0x0C); // drive/media type unknown
+                set_diskette_ret_status(0x0C);
+                SET_CF(); 
+                return;
+            }
+        }
+
+        // @todo: break out drive type determination
+        drive_type = inb_cmos(0x10);
+        if (drive == 0)
+            drive_type >>= 4;
+        else
+            drive_type &= 0x0f;
+     
+        // Get current drive state. Set 'base_address' to media status offset address
+        base_address = (drive) ? 0x0091 : 0x0090;
+        media_state = read_byte(0x0040, base_address);
+
+        // Mask out (clear) bits 4-7 (4:media type established, 5:double stepping, 6-7:data rate)
+        media_state &= 0x0f;
+
+        switch (drive_type) {
+        case 1: // 360KB, 5.25"
+            if (track == 39 && num_sectors == 9)
+                media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+
+            break;
+        case 2: // 1.2MB, 5.25"
+            if (track == 39 && num_sectors == 9) {          // 360K disk in 1.2M drive 
+                media_state |= 0x70; // 0111 0000 (media type established, double stepping, 300 kbps)
+            } else if (track == 79 && num_sectors == 15) {  // 1.2M disk in 1.2M drive
+                media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
+            }
+            break;
+        case 3: // 720KB, 3.5"
+            if (track == 79 && num_sectors == 9)
+                media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+
+			break;
+        case 4: // 1.44MB, 3.5"
+            if (track == 79) {
+                if (num_sectors == 9) {          // 720K disk in 1.44M drive
+                    media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+                } else if (num_sectors == 18) {  // 1.44M disk in 1.44M drive
+                    media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
+                }
+            } 
+            break;
+        case 5: // 2.88MB, 3.5"
+            if (track == 79) {
+                if (num_sectors == 9) {          // 720K disk in 2.88M drive
+                    media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
+                } else if (num_sectors == 18) {  // 1.44M disk in 2.88M drive
+                    media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
+                } else if (num_sectors == 36) {  // 2.88M disk in 2.88M drive
+                    media_state |= 0xD0; // 1101 0000 (media type established, 1 Mbps)
+                }
+            }
+            break;
+        default:
+            break;
+        }
+
+        // Error if bit 4 (media type established) has not just been set above.
+        if (((media_state >> 4) & 0x01) == 0) {
+            // Error - assume requested tracks/sectors-per-track not supported
+            // for current drive type - or drive type is unknown!
+            SET_AH(0x0C);
+            set_diskette_ret_status(0x0C);
+            SET_CF(); 
+            return;
+        }
+
+        // Update media status
+        write_byte(0x0040, base_address, media_state);
+
+        // set es & di to point to 11 byte diskette param table in ROM 
+        ES = 0xF000;    // @todo: any way to make this relocatable?
+        DI = get_floppy_dpt(drive_type);
+
+        // return success!
+        SET_AH(0);
+        set_diskette_ret_status(0);
+        CLEAR_CF();
         return;
 
     default:
