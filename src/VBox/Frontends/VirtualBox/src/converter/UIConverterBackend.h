@@ -27,6 +27,9 @@
 #include "UIDefs.h"
 #include "UIExtraDataDefs.h"
 
+/* Other VBox includes: */
+#include <iprt/assert.h>
+
 /* Determines if 'Object of type X' can be converted to object of other type.
  * This function always returns 'false' until re-determined for specific object type. */
 template<class X> bool canConvert() { return false; }

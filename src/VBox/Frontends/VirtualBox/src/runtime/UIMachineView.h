@@ -31,6 +31,9 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+/* Other VBox includes: */
+#include "VBox/com/ptr.h"
+
 /* Forward declarations: */
 class UISession;
 class UIActionPool;

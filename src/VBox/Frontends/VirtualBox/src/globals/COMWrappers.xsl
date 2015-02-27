@@ -177,7 +177,7 @@
     <xsl:text>#ifndef ___COMEnums_h___&#x0A;</xsl:text>
     <xsl:text>#define ___COMEnums_h___&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* GUI includes: */&#x0A;</xsl:text>
-    <xsl:text>#include "COMDefs.h"&#x0A;&#x0A;</xsl:text>
+    <xsl:text>#include "QMetaType"&#x0A;&#x0A;</xsl:text>
 
     <!-- Enumerate all enums: -->
     <xsl:for-each select="enum">
@@ -190,8 +190,8 @@
         <xsl:for-each select="const">
             <xsl:text>    </xsl:text>
             <xsl:value-of select="concat('K',../@name,'_',@name)"/>
-            <xsl:text> = ::</xsl:text>
-            <xsl:value-of select="concat(../@name,'_',@name)"/>
+            <xsl:text> = </xsl:text>
+            <xsl:value-of select="@value"/>
             <xsl:text>,&#x0A;</xsl:text>
         </xsl:for-each>
         <xsl:text>    </xsl:text>

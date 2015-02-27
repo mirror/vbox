@@ -23,8 +23,12 @@
 # include <QThread>
 
 /* GUI includes: */
+# include "COMDefs.h"
 # include "UIThreadPool.h"
 # include "UIDefs.h"
+
+/* Other VBox includes: */
+#include <iprt/assert.h>
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 

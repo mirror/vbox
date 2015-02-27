@@ -20,6 +20,9 @@
 /* COM includes: */
 #include "COMEnums.h"
 
+/* Other VBox includes: */
+#include <VBox/com/defs.h>
+
 /** UIMediumDefs namespace. */
 namespace UIMediumDefs
 {
