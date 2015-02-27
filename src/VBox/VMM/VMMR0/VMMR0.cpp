@@ -1089,8 +1089,6 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 else
                     rc = VINF_EM_RAW_INTERRUPT;
 
-                pVCpu->vmm.s.iLastGZRc = rc;
-
                 /*
                  * Invalidate the host CPU identifiers as we restore preemption.
                  */
@@ -1099,6 +1097,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                 if (!fPreemptRestored)
                     RTThreadPreemptRestore(&PreemptState);
+
+                pVCpu->vmm.s.iLastGZRc = rc;
 
                 /* Fire dtrace probe and collect statistics. */
                 VBOXVMM_R0_VMM_RETURN_TO_RING3_HM(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
@@ -1111,6 +1111,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
              */
             else
             {
+                pVCpu->iHostCpuSet = UINT32_MAX;
+                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
                 RTThreadPreemptRestore(&PreemptState);
                 if (iHostCpuSet < RTCPUSET_MAX_CPUS)
                 {
