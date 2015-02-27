@@ -191,10 +191,12 @@ void UIMachineLogic::prepare()
     prepareDock();
 #endif /* Q_WS_MAC */
 
+#if 0 /* To early! The debugger needs a VM handle to work. So, must be done after power on.  Moved to initializePostPowerUp. */
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Prepare debugger: */
     prepareDebugger();
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
 
     /* Load settings: */
     loadSettings();
@@ -235,6 +237,9 @@ void UIMachineLogic::cleanup()
 
 void UIMachineLogic::initializePostPowerUp()
 {
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    prepareDebugger();
+#endif
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
@@ -1182,9 +1187,6 @@ void UIMachineLogic::prepareDebugger()
             sltShowDebugStatistics();
         if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
             sltShowDebugCommandLine();
-
-        if (!vboxGlobal().isStartPausedEnabled())
-            sltPause(false);
     }
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
