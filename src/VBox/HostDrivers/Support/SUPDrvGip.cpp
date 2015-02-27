@@ -4355,7 +4355,6 @@ static void supdrvTscDeltaTerm(PSUPDRVDEVEXT pDevExt)
  * @retval  VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED if we were unable to get a
  *          measurment.
  * @retval  VERR_CPU_OFFLINE if the specified CPU is offline.
- * @retval  VERR_CPU_OFFLINE if the specified CPU is offline.
  *
  * @param   pSession        The caller's session.  GIP must've been mapped.
  * @param   iCpuSet         The CPU set index of the CPU to measure.
