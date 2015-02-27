@@ -20,6 +20,7 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
+#include <iprt/assert.h>
 #include <iprt/thread.h>
 
 #include <windows.h>
