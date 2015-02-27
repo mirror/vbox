@@ -1003,6 +1003,10 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
     if (maFramebuffers[uScreenId].fDisabled)
         return;
 
+    /* No updates for a blank guest screen. */
+    if (maFramebuffers[uScreenId].flags & VBVA_SCREEN_F_BLANK)
+        return;
+
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         i_checkCoordBounds (&x, &y, &w, &h, mpDrv->IConnector.cx, mpDrv->IConnector.cy);
     else
@@ -2718,9 +2722,17 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
         return E_FAIL;
     }
 
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    /* No source bitmap for a blank guest screen. */
+    if (pFBInfo->flags & VBVA_SCREEN_F_BLANK)
+    {
+        aDisplaySourceBitmap = NULL;
+        return E_FAIL;
+    }
+
     HRESULT hr = S_OK;
 
-    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
     if (pFBInfo->pSourceBitmap.isNull())
     {
         /* Create a new object. */
@@ -3885,6 +3897,11 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
         fResize = true;
         pFBInfo->fVBVAForceResize = false;
     }
+
+    /* If the screen if blanked, then do a resize request to make sure that the framebuffer
+     * switches to the default format.
+     */
+    fResize = fResize || RT_BOOL(pScreen->u16Flags & VBVA_SCREEN_F_BLANK);
 
     /* Check if this is a real resize or a notification about the screen origin.
      * The guest uses this VBVAResize call for both.
