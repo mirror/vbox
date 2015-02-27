@@ -851,18 +851,38 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
  */
 static bool tmR3HasFixedTSC(PVM pVM)
 {
+    /*
+     * ASSUME that if the GIP is in invariant TSC mode, it's because the CPU
+     * actually has invariant TSC.
+     */
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     if (pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC)
         return true;
 
+    /*
+     * Go by features and model info from the CPUID instruction.
+     */
     if (ASMHasCpuId())
     {
         uint32_t uEAX, uEBX, uECX, uEDX;
 
+        /*
+         * By feature. (Used to be AMD specific, intel seems to have picked it up.)
+         */
+        ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+        if (uEAX >= 0x80000007 && ASMIsValidExtRange(uEAX))
+        {
+            ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+            if (   (uEDX & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR) /* TscInvariant */
+                && pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)       /* No fixed tsc if the gip timer is in async mode. */
+                return true;
+        }
+
+        /*
+         * By model.
+         */
         if (CPUMGetHostCpuVendor(pVM) == CPUMCPUVENDOR_AMD)
         {
-            /** @todo This is redundant as it would get satisified in the invariant case
-             *        above. Remove later or keep around for sync mode override?  */
             /*
              * AuthenticAMD - Check for APM support and that TscInvariant is set.
              *
@@ -870,6 +890,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
              * older models, but this isn't relevant since the result is currently
              * only used for making a decision on AMD-V models.
              */
+#if 0 /* Promoted to generic */
             ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
             if (uEAX >= 0x80000007)
             {
@@ -879,6 +900,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
                         || pGip->u32Mode == SUPGIPMODE_INVARIANT_TSC))
                     return true;
             }
+#endif
         }
         else if (CPUMGetHostCpuVendor(pVM) == CPUMCPUVENDOR_INTEL)
         {
@@ -915,9 +937,7 @@ static bool tmR3HasFixedTSC(PVM pVM)
                 && uModel    == 0x0f
                 && uStepping >= 0x0c
                 && uStepping <= 0x0f)
-            {
                 return true;
-            }
         }
     }
     return false;
@@ -931,33 +951,26 @@ static bool tmR3HasFixedTSC(PVM pVM)
  */
 static uint64_t tmR3CalibrateTSC(PVM pVM)
 {
+    uint64_t u64Hz;
+
     /*
-     * Use GIP when available.
+     * Use GIP when available. Prefere the nominal one, no need to wait for it.
      */
-    uint64_t u64Hz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
-    if (g_pSUPGlobalInfoPage->u32Mode == SUPGIPMODE_INVARIANT_TSC)
+    PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
+    if (pGip)
     {
-        Assert(u64Hz != UINT64_MAX);
-        return u64Hz;
-    }
-
-    if (u64Hz != UINT64_MAX)
-    {
-        if (tmR3HasFixedTSC(pVM))
-            /* Sleep a bit to get a more reliable CpuHz value. */
-            RTThreadSleep(32);
-        else
-        {
-            /* Spin for 40ms to try push up the CPU frequency and get a more reliable CpuHz value. */
-            const uint64_t u64 = RTTimeMilliTS();
-            while ((RTTimeMilliTS() - u64) < 40 /* ms */)
-                /* nothing */;
-        }
-
-        u64Hz = SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage);
-        if (u64Hz != UINT64_MAX)
+        u64Hz = pGip->u64CpuHz;
+        if (u64Hz < _1T && u64Hz > _1M)
             return u64Hz;
+        AssertFailed(); /* This shouldn't happen. */
+
+        u64Hz = SUPGetCpuHzFromGip(pGip);
+        if (u64Hz < _1T && u64Hz > _1M)
+            return u64Hz;
+
+        AssertFailed(); /* This shouldn't happen. */
     }
+    /* else: This should only happen in fake SUPLib mode, which we don't really support any more... */
 
     /* Call this once first to make sure it's initialized. */
     RTTimeNanoTS();
