@@ -11,7 +11,7 @@ number in the value. This has technical reasons which may change in future
 VirtualBox releases.
 
 
-which corresponds to the following bit of ISC 'dhcpd.conf':
+It corresponds to the following bit of ISC 'dhcpd.conf':
 
 option sample1 code 224 = array of ip-address;
 option sample2 code 225 = array of integer 8;
