@@ -262,11 +262,21 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
         return VMSetError(pVM, VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG, RT_SRC_POS,
                           N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
                           pGip->u32UpdateIntervalNS, pGip->u32UpdateHz);
-    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u\n", pGip->u32Mode,
-            SUPGetGIPModeName(pGip), pGip->u32UpdateHz,
-            pGip->u32UpdateIntervalNS));
+
+    /* Log GIP info that may come in handy. */
+    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%d\n",
+            pGip->u32Mode, SUPGetGIPModeName(pGip), pGip->u32UpdateHz, pGip->u32UpdateIntervalNS,
+            pGip->enmUseTscDelta, pGip->fGetGipCpu, pGip->cCpus));
     LogRel(("TM: GIP - u64CpuHz=%'RU64 (%#RX64)  SUPGetCpuHzFromGip => %'RU64\n",
             pGip->u64CpuHz, pGip->u64CpuHz, SUPGetCpuHzFromGip(pGip)));
+    for (uint32_t iCpuSet = 0; iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); iCpuSet++)
+    {
+        uint16_t iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet];
+        if (iGipCpu != UINT16_MAX)
+            LogRel(("TM: GIP - CPU: iCpuSet=%#x idCpu=%#x idApic=%#x iGipCpu=%#x i64TSCDelta=%RI64 enmState=%d u64CpuHz=%RU64(*) cErrors=%u\n",
+                    iCpuSet, pGip->aCPUs[iGipCpu].idCpu, pGip->aCPUs[iGipCpu].idApic, iGipCpu, pGip->aCPUs[iGipCpu].i64TSCDelta,
+                    pGip->aCPUs[iGipCpu].enmState, pGip->aCPUs[iGipCpu].u64CpuHz, pGip->aCPUs[iGipCpu].cErrors));
+    }
 
     /*
      * Setup the VirtualGetRaw backend.
@@ -595,44 +605,6 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
             "TM: TSCTiedToExecution=%RTbool TSCNotTiedToHalt=%RTbool\n",
             pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.cTSCTicksPerSecond, pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM),
             pVM->tm.s.fTSCTiedToExecution, pVM->tm.s.fTSCNotTiedToHalt));
-
-    /*
-     * Dump the GIPCPU TSC-deltas, iterate using the Apic Id to get master at the beginning in most cases.
-     */
-    LogRel(("TM: GIP - enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%d\n",
-            pGip->enmUseTscDelta, pGip->fGetGipCpu, pGip->cCpus));
-    for (uint32_t i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
-    {
-        uint16_t iCpu = pGip->aiCpuFromApicId[i];
-#if 1
-        if (iCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU[%3d]: idApic=%d i64TSCDelta=%RI64\n", pGip->aCPUs[iCpu].idCpu,
-                    pGip->aCPUs[iCpu].idApic, pGip->aCPUs[iCpu].i64TSCDelta));
-#else
-        /* Dump 2 entries per line, saves vertical space in release log but more dumps bytes due to formatting. */
-        uint16_t iCpu2 = UINT16_MAX;
-        for (unsigned k = i + 1; k < cGipCpus; k++)
-        {
-            iCpu2 = pGip->aiCpuFromApicId[k];
-            if (iCpu2 != UINT16_MAX)
-            {
-                i = k + 1;
-                break;
-            }
-        }
-        if (   iCpu  != UINT16_MAX
-            && iCpu2 != UINT16_MAX)
-        {
-            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%-4lld CPU[%d]: idApic=%d i64TSCDelta=%lld\n",
-                    pGip->aCPUs[iCpu].idCpu, pGip->aCPUs[iCpu].idApic,
-                    pGip->aCPUs[iCpu].i64TSCDelta, pGip->aCPUs[iCpu2].idCpu,
-                    pGip->aCPUs[iCpu2].idApic, pGip->aCPUs[iCpu2].i64TSCDelta));
-        }
-        else if (iCpu != UINT16_MAX)
-            LogRel(("TM: GIP - CPU[%d]: idApic=%d i64TSCDelta=%lld\n", pGip->aCPUs[iCpu].idCpu,
-                    pGip->aCPUs[iCpu].idApic));
-#endif
-    }
 
     /*
      * Start the timer (guard against REM not yielding).
