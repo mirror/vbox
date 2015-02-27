@@ -1148,8 +1148,8 @@ int NetworkManager::processParameterReqList(const Client& client, const uint8_t 
                     mac.au8[3], mac.au8[4], mac.au8[5]);
 
         strings.setNull();
-        hrc = m->m_DhcpServer->/*XXX*/GetMacOptions(com::Bstr(strMac).raw(),
-                                                     ComSafeArrayAsOutParam(strings));
+        hrc = m->m_DhcpServer->GetMacOptions(com::Bstr(strMac).raw(),
+                                             ComSafeArrayAsOutParam(strings));
         AssertComRC(hrc);
         for (size_t i = 0; i < strings.size(); ++i)
         {
