@@ -2189,6 +2189,10 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             {
                 pConf32->u32Value = pVGAState->fHostCursorCapabilities;
             }
+            else if (pConf32->u32Index == VBOX_VBVA_CONF32_SCREEN_FLAGS)
+            {
+                pConf32->u32Value = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED | VBVA_SCREEN_F_BLANK;
+            }
             else
             {
                 Log(("Unsupported VBVA_QUERY_CONF32 index %d!!!\n",

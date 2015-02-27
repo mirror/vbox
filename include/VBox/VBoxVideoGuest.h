@@ -288,6 +288,7 @@ RTDECL(void) VBoxVBVASetupBufferContext(PVBVABUFFERCONTEXT pCtx,
 RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
 RTDECL(uint32_t) VBoxVideoGetVRAMSize(void);
 RTDECL(bool)     VBoxVideoAnyWidthAllowed(void);
+RTDECL(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx);
 
 struct VBVAINFOVIEW;
 /**
