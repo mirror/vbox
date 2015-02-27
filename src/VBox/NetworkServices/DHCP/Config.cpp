@@ -1219,7 +1219,7 @@ int NetworkManager::processParameterReqList(const Client& client, const uint8_t 
             default:
                 {
                     DhcpOptionMap::const_iterator it = OptMap.find((int)u8Req);
-                    if (it == OptMap.cend())
+                    if (it == OptMap.end())
                     {
                         Log(("opt: %d is ignored\n", u8Req));
                         fIgnore = true;
