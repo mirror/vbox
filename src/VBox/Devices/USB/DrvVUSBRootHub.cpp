@@ -649,6 +649,57 @@ static DECLCALLBACK(void) vusbRhCancelAllUrbs(PVUSBIROOTHUBCONNECTOR pInterface)
     RTCritSectLeave(&pRh->CritSectDevices);
 }
 
+/**
+ * Worker doing the actual cancelling of all outstanding per-EP URBs on the
+ * device I/O thread.
+ *
+ * @returns VBox status code.
+ * @param   pDev    USB device instance data.
+ * @param   EndPt   Endpoint number.
+ * @param   enmDir  Endpoint direction.
+ */
+static DECLCALLBACK(int) vusbRhAbortEpWorker(PVUSBDEV pDev, int EndPt, VUSBDIRECTION enmDir)
+{
+    /*
+     * Iterate the URBs, find ones corresponding to given EP, and cancel them.
+     */
+    PVUSBURB pUrb = pDev->pAsyncUrbHead;
+    while (pUrb)
+    {
+        PVUSBURB pNext = pUrb->VUsb.pNext;
+
+        Assert(pUrb->VUsb.pDev == pDev);
+
+        if (pUrb->EndPt == EndPt && pUrb->enmDir == enmDir)
+        {
+            LogFlow(("%s: vusbRhAbortEpWorker: CANCELING URB\n", pUrb->pszDesc));
+            int rc = vusbUrbCancelWorker(pUrb, CANCELMODE_UNDO);
+            AssertRC(rc);
+        }
+        pUrb = pNext;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/** @copydoc VUSBIROOTHUBCONNECTOR::pfnAbortEp */
+static DECLCALLBACK(int) vusbRhAbortEp(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, int EndPt, VUSBDIRECTION enmDir)
+{
+    PVUSBROOTHUB pRh = VUSBIROOTHUBCONNECTOR_2_VUSBROOTHUB(pInterface);
+    if (&pRh->Hub != ((PVUSBDEV)pDevice)->pHub)
+        AssertFailedReturn(VERR_INVALID_PARAMETER);
+
+    RTCritSectEnter(&pRh->CritSectDevices);
+    PVUSBDEV pDev = (PVUSBDEV)pDevice;
+    vusbDevIoThreadExecSync(pDev, (PFNRT)vusbRhAbortEpWorker, 3, pDev, EndPt, enmDir);
+    RTCritSectLeave(&pRh->CritSectDevices);
+
+    /* The reaper thread will take care of completing the URB. */
+
+    return VINF_SUCCESS;
+}
+
 
 /** @copydoc VUSBIROOTHUBCONNECTOR::pfnAttachDevice */
 static DECLCALLBACK(int) vusbRhAttachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice)
@@ -972,6 +1023,7 @@ static DECLCALLBACK(int) vusbRhConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->IRhConnector.pfnReapAsyncUrbs= vusbRhReapAsyncUrbs;
     pThis->IRhConnector.pfnCancelUrbsEp = vusbRhCancelUrbsEp;
     pThis->IRhConnector.pfnCancelAllUrbs= vusbRhCancelAllUrbs;
+    pThis->IRhConnector.pfnAbortEp      = vusbRhAbortEp;
     pThis->IRhConnector.pfnAttachDevice = vusbRhAttachDevice;
     pThis->IRhConnector.pfnDetachDevice = vusbRhDetachDevice;
     pThis->hSniffer                     = VUSBSNIFFER_NIL;

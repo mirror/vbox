@@ -507,6 +507,25 @@ typedef enum VUSBSPEED
     VUSB_SPEED_32BIT_HACK = 0x7fffffff
 } VUSBSPEED;
 
+/**
+ * VUSB transfer direction.
+ */
+typedef enum VUSBDIRECTION
+{
+    /** Setup */
+    VUSBDIRECTION_SETUP = 0,
+#define VUSB_DIRECTION_SETUP    VUSBDIRECTION_SETUP
+    /** In - Device to host. */
+    VUSBDIRECTION_IN = 1,
+#define VUSB_DIRECTION_IN       VUSBDIRECTION_IN
+    /** Out - Host to device. */
+    VUSBDIRECTION_OUT = 2,
+#define VUSB_DIRECTION_OUT  VUSBDIRECTION_OUT
+    /** Invalid direction */
+    VUSBDIRECTION_INVALID = 0x7f
+} VUSBDIRECTION;
+
+
 /** Pointer to a VBox USB device interface. */
 typedef struct VUSBIDEVICE      *PVUSBIDEVICE;
 
@@ -613,7 +632,6 @@ typedef struct VUSBIROOTHUBPORT
 /** VUSBIROOTHUBPORT interface ID. */
 #define VUSBIROOTHUBPORT_IID                    "e38e2978-7aa2-4860-94b6-9ef4a066d8a0"
 
-
 /** Pointer to a VUSB RootHub connector interface. */
 typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
 /**
@@ -686,6 +704,18 @@ typedef struct VUSBIROOTHUBCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnCancelAllUrbs,(PVUSBIROOTHUBCONNECTOR pInterface));
 
     /**
+     * Cancels and completes - with CRC failure - all URBs queued on an endpoint.
+     * This is done in response to a guest endpoint/pipe abort.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to this struct.
+     * @param   pDevice     Pointer to a USB device.
+     * @param   EndPt       Endpoint number.
+     * @param   enmDir      Endpoint direction.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAbortEp,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice, int EndPt, VUSBDIRECTION enmDir));
+
+    /**
      * Attach the device to the root hub.
      * The device must not be attached to any hub for this call to succeed.
      *
@@ -707,7 +737,7 @@ typedef struct VUSBIROOTHUBCONNECTOR
 
 } VUSBIROOTHUBCONNECTOR;
 /** VUSBIROOTHUBCONNECTOR interface ID. */
-#define VUSBIROOTHUBCONNECTOR_IID               "d9a90c59-e3ff-4dff-9754-844557c3f7a0"
+#define VUSBIROOTHUBCONNECTOR_IID               "d9a90c59-e3ff-4dff-9754-844557c3f7a1"
 
 
 #ifdef IN_RING3
@@ -1050,24 +1080,6 @@ typedef enum VUSBXFERTYPE
     VUSBXFERTYPE_INVALID = 0x7f
 } VUSBXFERTYPE;
 
-
-/**
- * VUSB transfer direction.
- */
-typedef enum VUSBDIRECTION
-{
-    /** Setup */
-    VUSBDIRECTION_SETUP = 0,
-#define VUSB_DIRECTION_SETUP    VUSBDIRECTION_SETUP
-    /** In - Device to host. */
-    VUSBDIRECTION_IN = 1,
-#define VUSB_DIRECTION_IN       VUSBDIRECTION_IN
-    /** Out - Host to device. */
-    VUSBDIRECTION_OUT = 2,
-#define VUSB_DIRECTION_OUT  VUSBDIRECTION_OUT
-    /** Invalid direction */
-    VUSBDIRECTION_INVALID = 0x7f
-} VUSBDIRECTION;
 
 /**
  * The URB states
