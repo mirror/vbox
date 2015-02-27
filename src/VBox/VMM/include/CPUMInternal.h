@@ -119,6 +119,30 @@ typedef uint64_t STAMCOUNTER;
 #endif
 
 
+/** @name CPUM Saved State Version.
+ * @{ */
+/** The current saved state version. */
+#define CPUM_SAVED_STATE_VERSION                14
+/** The current saved state version before using SSMR3PutStruct. */
+#define CPUM_SAVED_STATE_VERSION_MEM            13
+/** The saved state version before introducing the MSR size field. */
+#define CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE    12
+/** The saved state version of 3.2, 3.1 and 3.3 trunk before the hidden
+ * selector register change (CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID). */
+#define CPUM_SAVED_STATE_VERSION_VER3_2         11
+/** The saved state version of 3.0 and 3.1 trunk before the teleportation
+ * changes. */
+#define CPUM_SAVED_STATE_VERSION_VER3_0         10
+/** The saved state version for the 2.1 trunk before the MSR changes. */
+#define CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR   9
+/** The saved state version of 2.0, used for backwards compatibility. */
+#define CPUM_SAVED_STATE_VERSION_VER2_0         8
+/** The saved state version of 1.6, used for backwards compatibility. */
+#define CPUM_SAVED_STATE_VERSION_VER1_6         6
+/** @} */
+
+
+
 /**
  * CPU features and quirks.
  * This is mostly exploded CPUID info.
@@ -586,6 +610,10 @@ bool                cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t c
 int                 cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf);
 void                cpumR3CpuIdRemoveRange(PCPUMCPUIDLEAF paLeaves, uint32_t *pcLeaves, uint32_t uFirst, uint32_t uLast);
 int                 cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUMFEATURES pFeatures);
+int                 cpumR3CpuIdInit(PVM pVM);
+void                cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);
+int                 cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion);
+
 int                 cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo);
 int                 cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PCCPUMMSRRANGE pNewRange);
 int                 cpumR3MsrApplyFudge(PVM pVM);
