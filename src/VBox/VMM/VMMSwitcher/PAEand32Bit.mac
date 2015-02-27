@@ -224,7 +224,9 @@ BEGINPROC vmmR0ToRawModeAsm
     cmp     byte [edx + CPUMCPU.fX2Apic], 1
     je      htg_x2apic
 
-    ; Legacy xAPIC mode:
+    ; Legacy xAPIC mode. No write completion required when writing to the
+    ; LVT registers as we have mapped the APIC page non-cacheable and the
+    ; MMIO is CPU-local.
     mov     ebx, [edx + CPUMCPU.pvApicBase]
     or      ebx, ebx
     jz      htg_apic_done
@@ -238,7 +240,6 @@ BEGINPROC vmmR0ToRawModeAsm
     or      edi, 0x01
     or      eax, APIC_REG_LVT_MASKED
     mov     [ebx + APIC_REG_LVT_LINT0], eax
-    mov     eax, [ebx + APIC_REG_LVT_LINT0] ; write completion
 htg_nolint0:
     mov     eax, [ebx + APIC_REG_LVT_LINT1]
     mov     ecx, eax
@@ -248,7 +249,6 @@ htg_nolint0:
     or      edi, 0x02
     or      eax, APIC_REG_LVT_MASKED
     mov     [ebx + APIC_REG_LVT_LINT1], eax
-    mov     eax, [ebx + APIC_REG_LVT_LINT1] ; write completion
 htg_nolint1:
     mov     eax, [ebx + APIC_REG_LVT_PC]
     mov     ecx, eax
@@ -258,7 +258,6 @@ htg_nolint1:
     or      edi, 0x04
     or      eax, APIC_REG_LVT_MASKED
     mov     [ebx + APIC_REG_LVT_PC], eax
-    mov     eax, [ebx + APIC_REG_LVT_PC] ; write completion
 htg_nopc:
     mov     eax, [ebx + APIC_REG_VERSION]
     shr     eax, 16
@@ -273,7 +272,6 @@ htg_nopc:
     or      edi, 0x10
     or      eax, APIC_REG_LVT_MASKED
     mov     [ebx + APIC_REG_LVT_CMCI], eax
-    mov     eax, [ebx + APIC_REG_LVT_CMCI] ; write completion
 htg_nocmci:
     mov     eax, [ebx + APIC_REG_LVT_THMR]
     mov     ecx, eax
@@ -283,7 +281,6 @@ htg_nocmci:
     or      edi, 0x08
     or      eax, APIC_REG_LVT_MASKED
     mov     [ebx + APIC_REG_LVT_THMR], eax
-    mov     eax, [ebx + APIC_REG_LVT_THMR] ; write completion
 htg_notherm:
     mov     [edx + CPUMCPU.fApicDisVectors], edi
     jmp     htg_apic_done
