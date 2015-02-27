@@ -283,6 +283,8 @@ protected:
     CDisplaySourceBitmap m_sourceBitmap;
     /** Source bitmap from IDisplay (acquired but not yet applied). */
     CDisplaySourceBitmap m_pendingSourceBitmap;
+    /** There is a pending source bitmap which must be applied. */
+    bool m_fPendingSourceBitmap;
 
     /** Holds machine-view this frame-buffer is bounded to. */
     UIMachineView *m_pMachineView;

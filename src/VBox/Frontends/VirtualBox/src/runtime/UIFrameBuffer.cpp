@@ -56,6 +56,7 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
 
 UIFrameBuffer::UIFrameBuffer()
     : m_iWidth(0), m_iHeight(0)
+    , m_fPendingSourceBitmap(false)
     , m_pMachineView(NULL)
     , m_iWinId(0)
     , m_fUpdatesAllowed(true)
@@ -276,6 +277,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     {
        /* Acquire new pending bitmap: */
        m_pendingSourceBitmap = sourceBitmap;
+       m_fPendingSourceBitmap = true;
     }
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
@@ -586,7 +588,7 @@ void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
     lock();
 
     /* If there is NO pending source-bitmap: */
-    if (!vboxGlobal().isSeparateProcess() && m_pendingSourceBitmap.isNull())
+    if (!vboxGlobal().isSeparateProcess() && !m_fPendingSourceBitmap)
     {
         /* Do nothing, change-event already processed: */
         LogRel2(("UIFrameBuffer::handleNotifyChange: Already processed.\n"));
@@ -599,6 +601,7 @@ void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
     /* Release the current bitmap and keep the pending one: */
     m_sourceBitmap = m_pendingSourceBitmap;
     m_pendingSourceBitmap = 0;
+    m_fPendingSourceBitmap = false;
 
     /* Unlock access to frame-buffer: */
     unlock();
