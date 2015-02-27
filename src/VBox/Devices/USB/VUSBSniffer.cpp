@@ -46,6 +46,7 @@
 /** Block type for the interface descriptor block. */
 #define DUMPFILE_IDB_BLOCK_TYPE       UINT32_C(0x00000001)
 /** USB link type. */
+#define DUMPFILE_IDB_LINK_TYPE_USB_LINUX        UINT16_C(189)
 #define DUMPFILE_IDB_LINK_TYPE_USB_LINUX_MMAPED UINT16_C(220)
 
 /** Block type for an enhanced packet block. */
