@@ -652,9 +652,6 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
 {
     OSStatus err = noErr;
 
-    UInt32 cFrames; /* default frame count */
-    UInt32 cSamples; /* samples count */
-
     PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pHstStrmIn;
 
     ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_IN_INIT);
@@ -714,6 +711,7 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
         LogRel(("CoreAudio: Unable to determine input device name (%RI32)\n", err));
 
     /* Get the default frames buffer size, so that we can setup our internal buffers. */
+    UInt32 cFrames;
     uSize = sizeof(cFrames);
     propAdr.mSelector = kAudioDevicePropertyBufferFrameSize;
     propAdr.mScope    = kAudioDevicePropertyScopeInput;
@@ -934,58 +932,61 @@ static int drvHostCoreAudioInitInput(PPDMAUDIOHSTSTRMIN pHstStrmIn, uint32_t *pc
     pStreamIn->bufferList.mBuffers[0].mDataByteSize = 0;
     pStreamIn->bufferList.mBuffers[0].mData = NULL;
 
-    /* Make sure that the ring buffer is big enough to hold the recording
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Make sure that the ring buffer is big enough to hold the recording
      * data. Compare the maximum frames per slice value with the frames
      * necessary when using the converter where the sample rate could differ.
      * The result is always multiplied by the channels per frame to get the
-     * samples count. */
-    cSamples = RT_MAX(cFrames,
-                      (cFrames * pStreamIn->deviceFormat.mBytesPerFrame * pStreamIn->sampleRatio) / pStreamIn->streamFormat.mBytesPerFrame)
-               * pStreamIn->streamFormat.mChannelsPerFrame;
-
-    int rc = VINF_SUCCESS;
-#if 0
-    if (   pHstStrmIn->cSamples != 0
-        && pHstStrmIn->cSamples != (int32_t)cSamples)
-        LogRel(("CoreAudio: Warning! After recreation, the CoreAudio ring buffer doesn't has the same size as the device buffer (%RU32 vs. %RU32).\n", cSamples, (uint32_t)pHstStrmIn->cSamples));
-
-    /* Create the internal ring buffer. */
-    RTCircBufCreate(&pStreamIn->pBuf, cSamples << pHstStrmIn->Props.cShift);
-    if (RT_VALID_PTR(pStreamIn->pBuf))
-        rc = 0;
-    else
-        LogRel(("CoreAudio: Failed to create internal ring buffer\n"));
-#endif
-
-    if (RT_FAILURE(rc))
+     * samples count.
+     */
+    UInt32 cSamples = cFrames * pStreamIn->streamFormat.mChannelsPerFrame;
+    if (!cSamples)
     {
-        if (pStreamIn->pBuf)
-            RTCircBufDestroy(pStreamIn->pBuf);
-
-        AudioUnitUninitialize(pStreamIn->audioUnit);
-        return rc;
+        LogRel(("CoreAudio: Failed to determine samples buffer count input stream\n"));
+        rc = VERR_INVALID_PARAMETER;
     }
 
+    /* Create the internal ring buffer. */
+    if (RT_SUCCESS(rc))
+        rc = RTCircBufCreate(&pStreamIn->pBuf, cSamples << pHstStrmIn->Props.cShift);
+    if (RT_SUCCESS(rc))
+    {
 #ifdef DEBUG
-    propAdr.mSelector = kAudioDeviceProcessorOverload;
-    propAdr.mScope    = kAudioUnitScope_Global;
-    err = AudioObjectAddPropertyListener(pStreamIn->deviceID, &propAdr,
-                                         drvHostCoreAudioRecordingAudioDevicePropertyChanged, (void *)pStreamIn);
-    if (RT_UNLIKELY(err != noErr))
-        LogRel(("CoreAudio: Failed to add the processor overload listener for input stream (%RI32)\n", err));
+        propAdr.mSelector = kAudioDeviceProcessorOverload;
+        propAdr.mScope    = kAudioUnitScope_Global;
+        err = AudioObjectAddPropertyListener(pStreamIn->deviceID, &propAdr,
+                                             drvHostCoreAudioRecordingAudioDevicePropertyChanged, (void *)pStreamIn);
+        if (RT_UNLIKELY(err != noErr))
+            LogRel(("CoreAudio: Failed to add the processor overload listener for input stream (%RI32)\n", err));
 #endif /* DEBUG */
-    propAdr.mSelector = kAudioDevicePropertyNominalSampleRate;
-    propAdr.mScope    = kAudioUnitScope_Global;
-    err = AudioObjectAddPropertyListener(pStreamIn->deviceID, &propAdr,
-                                         drvHostCoreAudioRecordingAudioDevicePropertyChanged, (void *)pStreamIn);
-    /* Not fatal. */
-    if (RT_UNLIKELY(err != noErr))
-        LogRel(("CoreAudio: Failed to register sample rate changed listener for input stream (%RI32)\n", err));
+        propAdr.mSelector = kAudioDevicePropertyNominalSampleRate;
+        propAdr.mScope    = kAudioUnitScope_Global;
+        err = AudioObjectAddPropertyListener(pStreamIn->deviceID, &propAdr,
+                                             drvHostCoreAudioRecordingAudioDevicePropertyChanged, (void *)pStreamIn);
+        /* Not fatal. */
+        if (RT_UNLIKELY(err != noErr))
+            LogRel(("CoreAudio: Failed to register sample rate changed listener for input stream (%RI32)\n", err));
+    }
 
-    ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_INIT);
+    if (RT_SUCCESS(rc))
+    {
+        ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_INIT);
 
-    if (pcSamples)
-        *pcSamples = cSamples;
+        if (pcSamples)
+            *pcSamples = cSamples;
+    }
+    else
+    {
+        AudioUnitUninitialize(pStreamIn->audioUnit);
+
+        if (pStreamIn->pBuf)
+        {
+            RTCircBufDestroy(pStreamIn->pBuf);
+            pStreamIn->pBuf = NULL;
+        }
+    }
 
     LogFunc(("cSamples=%RU32, rc=%Rrc\n", cSamples, rc));
     return rc;
@@ -1212,10 +1213,17 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
      * The result is always multiplied by the channels per frame to get the
      * samples count.
      */
+    int rc = VINF_SUCCESS;
+
     UInt32 cSamples = cFrames * pStreamOut->streamFormat.mChannelsPerFrame;
+    if (!cSamples)
+    {
+        LogRel(("CoreAudio: Failed to determine samples buffer count output stream\n"));
+        rc = VERR_INVALID_PARAMETER;
+    }
 
     /* Create the internal ring buffer. */
-    int rc = RTCircBufCreate(&pStreamOut->pBuf, cSamples << pHstStrmOut->Props.cShift);
+    rc = RTCircBufCreate(&pStreamOut->pBuf, cSamples << pHstStrmOut->Props.cShift);
     if (RT_SUCCESS(rc))
     {
 #ifdef DEBUG
@@ -1250,7 +1258,15 @@ static int drvHostCoreAudioInitOutput(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t 
             *pcSamples = cSamples;
     }
     else
+    {
         AudioUnitUninitialize(pStreamOut->audioUnit);
+
+        if (pStreamOut->pBuf)
+        {
+            RTCircBufDestroy(pStreamOut->pBuf);
+            pStreamOut->pBuf = NULL;
+        }
+    }
 
     LogFunc(("cSamples=%RU32, rc=%Rrc\n", cSamples, rc));
     return rc;
