@@ -735,6 +735,9 @@ typedef struct VUSBIROOTHUBCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
+    /** Alignment dummy. */
+    RTR3PTR Alignment;
+
 } VUSBIROOTHUBCONNECTOR;
 /** VUSBIROOTHUBCONNECTOR interface ID. */
 #define VUSBIROOTHUBCONNECTOR_IID               "d9a90c59-e3ff-4dff-9754-844557c3f7a1"
