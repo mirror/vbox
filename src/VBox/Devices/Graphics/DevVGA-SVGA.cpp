@@ -2168,7 +2168,7 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
             memcpy(pbBounceBuf + cbAlreadyRead,
                    (uint8_t *)pFIFO + offCurrentCmd + cbAlreadyRead,
                    cbAfter - cbAlreadyRead);
-            cbAlreadyRead += cbAfter - cbAlreadyRead;
+            cbAlreadyRead = cbAfter;
         }
         memcpy(pbBounceBuf + cbAlreadyRead,
                (uint8_t *)pFIFO + offFifoMin + cbAlreadyRead - cbAfter,
