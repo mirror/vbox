@@ -1721,6 +1721,18 @@ int vmsvga3dTerminate(PVGASTATE pThis)
 #define VMSVGA3D_OPENGL
 #include "DevVGA-SVGA3d-shared.h"
 
+/**
+ * Worker for vmsvga3dQueryCaps that figures out supported operations for a
+ * given surface format capability.
+ *
+ * @returns Supported/indented operations (SVGA3DFORMAT_OP_XXX).
+ * @param   pState3D        The 3D state.
+ * @param   idx3dCaps       The SVGA3D_CAPS_XXX value of the surface format.
+ *
+ * @remarks See fromat_cap_table in svga_format.c (mesa/gallium) for a reference
+ *          of implicit guest expectations:
+ *              http://cgit.freedesktop.org/mesa/mesa/tree/src/gallium/drivers/svga/svga_format.c
+ */
 static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_t idx3dCaps)
 {
     uint32_t result = 0;
@@ -1845,8 +1857,15 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
 
     *pu32Val = 0;
 
+    /*
+     * The capabilities access by current (2015-03-01) linux sources (gallium,
+     * vmwgfx, xorg-video-vmware) are annotated, caps without xref annotations
+     * aren't access.
+     */
+
     switch (idx3dCaps)
     {
+    /* Linux: vmwgfx_fifo.c in kmod; only used with SVGA_CAP_GBOBJECTS. */
     case SVGA3D_DEVCAP_3D:
         *pu32Val = 1; /* boolean? */
         break;
@@ -1863,6 +1882,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val = pState->caps.maxClipDistances;
         break;
 
+    /* Linux: svga_screen.c in gallium; 3.0 or later required. */
     case SVGA3D_DEVCAP_VERTEX_SHADER_VERSION:
         *pu32Val = pState->caps.vertexShaderVersion;
         break;
@@ -1872,6 +1892,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val = (pState->caps.vertexShaderVersion != SVGA3DVSVERSION_NONE);
         break;
 
+    /* Linux: svga_screen.c in gallium; 3.0 or later required. */
     case SVGA3D_DEVCAP_FRAGMENT_SHADER_VERSION:
         *pu32Val = pState->caps.fragmentShaderVersion;
         break;
@@ -1908,6 +1929,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
     case SVGA3D_DEVCAP_TEXTURE_GRADIENT_SAMPLING:
         break;
 
+    /* Linux: svga_screen.c in gallium; capped at 80.0, default 1.0. */
     case SVGA3D_DEVCAP_MAX_POINT_SIZE:
         AssertCompile(sizeof(uint32_t) == sizeof(float));
         *(float *)pu32Val = pState->caps.flPointSize[1];
@@ -1918,11 +1940,13 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         rc = VERR_INVALID_PARAMETER;
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_CAP_MAX_TEXTURE_2D_LEVELS); have default if missing. */
     case SVGA3D_DEVCAP_MAX_TEXTURE_WIDTH:
     case SVGA3D_DEVCAP_MAX_TEXTURE_HEIGHT:
         *pu32Val = pState->caps.maxRectangleTextureSize;
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_CAP_MAX_TEXTURE_3D_LEVELS); have default if missing. */
     case SVGA3D_DEVCAP_MAX_VOLUME_EXTENT:
         //*pu32Val = pCaps->MaxVolumeExtent;
         break;
@@ -1935,6 +1959,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         //*pu32Val = pCaps->MaxTextureAspectRatio;
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_CAPF_MAX_TEXTURE_ANISOTROPY); defaults to 4.0. */
     case SVGA3D_DEVCAP_MAX_TEXTURE_ANISOTROPY:
         *pu32Val = pState->caps.maxTextureAnisotropy;
         break;
@@ -1944,6 +1969,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val =  0xFFFFF; /* hardcoded in Wine */
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_SHADER_VERTEX/PIPE_SHADER_CAP_MAX_INSTRUCTIONS); defaults to 512. */
     case SVGA3D_DEVCAP_MAX_VERTEX_SHADER_INSTRUCTIONS:
         *pu32Val = pState->caps.maxVertexShaderInstructions;
         break;
@@ -1952,10 +1978,12 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val = pState->caps.maxFragmentShaderInstructions;
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_SHADER_VERTEX/PIPE_SHADER_CAP_MAX_TEMPS); defaults to 32. */
     case SVGA3D_DEVCAP_MAX_VERTEX_SHADER_TEMPS:
         *pu32Val = pState->caps.maxVertexShaderTemps;
         break;
 
+    /* Linux: svga_screen.c in gallium (for PIPE_SHADER_FRAGMENT/PIPE_SHADER_CAP_MAX_TEMPS); defaults to 32. */
     case SVGA3D_DEVCAP_MAX_FRAGMENT_SHADER_TEMPS:
         *pu32Val = pState->caps.maxFragmentShaderTemps;
         break;
@@ -2003,7 +2031,25 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val = SVGA3D_MAX_SURFACE_IDS;
         break;
 
-    /* Supported surface formats. */
+#if 0 /* Appeared more recently, not yet implemented. */
+   /* Linux: svga_screen.c in gallium; defaults to FALSE. */
+   case SVGA3D_DEVCAP_LINE_AA:
+       break;
+   /* Linux: svga_screen.c in gallium; defaults to FALSE. */
+   case SVGA3D_DEVCAP_LINE_STIPPLE:
+       break;
+   /* Linux: svga_screen.c in gallium; defaults to 1.0. */
+   case SVGA3D_DEVCAP_MAX_LINE_WIDTH:
+       break;
+   /* Linux: svga_screen.c in gallium; defaults to 1.0. */
+   case SVGA3D_DEVCAP_MAX_AA_LINE_WIDTH:
+       break;
+#endif
+
+    /*
+     * Supported surface formats.
+     * Linux: svga_format.c in gallium, format_cap_table defines implicit expectations.
+     */
     case SVGA3D_DEVCAP_SURFACEFMT_X8R8G8B8:
     case SVGA3D_DEVCAP_SURFACEFMT_A8R8G8B8:
     case SVGA3D_DEVCAP_SURFACEFMT_A2R10G10B10:
@@ -2053,6 +2099,7 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
         *pu32Val = vmsvga3dGetSurfaceFormatSupport(pState, idx3dCaps);
         break;
 
+    /* Linux: Not referenced in current sources. */
     case SVGA3D_DEVCAP_SURFACEFMT_BC4_UNORM:
     case SVGA3D_DEVCAP_SURFACEFMT_BC5_UNORM:
         Log(("CAPS: Unknown CAP %s\n", vmsvga3dGetCapString(idx3dCaps)));
