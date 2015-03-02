@@ -2123,7 +2123,9 @@ int slirp_host_network_configuration_change_strategy_selector(const PNATState pD
         rcp_state.rcps_flags |= RCPSF_IGNORE_IPV6;
         rc = rcp_parse(&rcp_state, RESOLV_CONF_FILE);
         LogRelFunc(("NAT: rcp_parse:%Rrc old domain:%s new domain:%s\n",
-                    rc, LIST_FIRST(&pData->pDomainList)->dd_pszDomain,
+                    rc, LIST_EMPTY(&pData->pDomainList)
+                      ? "(null)"
+                      : LIST_FIRST(&pData->pDomainList)->dd_pszDomain,
                     rcp_state.rcps_domain));
         if (   RT_FAILURE(rc)
             || LIST_EMPTY(&pData->pDomainList))
