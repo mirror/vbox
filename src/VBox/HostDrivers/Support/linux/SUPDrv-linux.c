@@ -878,6 +878,12 @@ bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
+bool VBOXCALL supdrvOSAreCpusOfflinedOnSuspend(void)
+{
+    return true;
+}
+
+
 bool VBOXCALL supdrvOSAreTscDeltasInSync(void)
 {
     return false;

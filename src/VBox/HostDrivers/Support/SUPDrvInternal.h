@@ -804,6 +804,7 @@ void VBOXCALL   supdrvOSSessionHashTabRemoved(PSUPDRVDEVEXT pDevExt, PSUPDRVSESS
 void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession);
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
+bool VBOXCALL   supdrvOSAreCpusOfflinedOnSuspend(void);
 bool VBOXCALL   supdrvOSAreTscDeltasInSync(void);
 int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
 bool VBOXCALL   supdrvOSSuspendVTxOnCpu(void);

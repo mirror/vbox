@@ -875,7 +875,8 @@ static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEve
     {
         ASMAtomicWriteBool(&pDevExt->fInvTscRefinePowerEvent, true);
         if (   RT_LIKELY(pGip)
-            && pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED)
+            && pGip->enmUseTscDelta > SUPGIPUSETSCDELTA_ZERO_CLAIMED
+            && !supdrvOSAreCpusOfflinedOnSuspend())
         {
 #ifdef SUPDRV_USE_TSC_DELTA_THREAD
             supdrvTscDeltaThreadStartMeasurement(pDevExt, true /* fForceAll */);

@@ -1655,6 +1655,15 @@ bool VBOXCALL  supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 
 
 /**
+ * Whether the host takes CPUs offline during a suspend/resume operation.
+ */
+bool VBOXCALL  supdrvOSAreCpusOfflinedOnSuspend(void)
+{
+    return false;
+}
+
+
+/**
  * Whether the hardware TSC has been synchronized by the OS.
  */
 bool VBOXCALL  supdrvOSAreTscDeltasInSync(void)
