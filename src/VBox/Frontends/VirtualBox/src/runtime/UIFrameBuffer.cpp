@@ -113,16 +113,6 @@ UIFrameBuffer::~UIFrameBuffer()
     RTCritSectDelete(&m_critSect);
 }
 
-HRESULT UIFrameBuffer::FinalConstruct()
-{
-    return 0;
-}
-
-void UIFrameBuffer::FinalRelease()
-{
-    return;
-}
-
 void UIFrameBuffer::setView(UIMachineView *pMachineView)
 {
     /* Disconnect old handlers: */
@@ -135,14 +125,18 @@ void UIFrameBuffer::setView(UIMachineView *pMachineView)
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
 #ifdef Q_WS_X11
-    /* Sync Qt and X11 Server. Notify server about newly
-     * created winId (see xTracker #7547). */
+    /* Sync Qt and X11 Server (see xTracker #7547). */
     XSync(QX11Info::display(), false);
 #endif
 
     /* Connect new handlers: */
     if (m_pMachineView)
         prepareConnections();
+}
+
+UIVisualStateType UIFrameBuffer::visualState() const
+{
+    return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid;
 }
 
 void UIFrameBuffer::setMarkAsUnused(bool fUnused)
@@ -152,9 +146,14 @@ void UIFrameBuffer::setMarkAsUnused(bool fUnused)
     unlock();
 }
 
-UIVisualStateType UIFrameBuffer::visualState() const
+HRESULT UIFrameBuffer::FinalConstruct()
 {
-    return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid;
+    return 0;
+}
+
+void UIFrameBuffer::FinalRelease()
+{
+    return;
 }
 
 STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
@@ -221,9 +220,9 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities))
+STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, enmCapabilities))
 {
-    if (ComSafeArrayOutIsNull(aCapabilities))
+    if (ComSafeArrayOutIsNull(enmCapabilities))
         return E_POINTER;
 
     com::SafeArray<FramebufferCapabilities_T> caps;
@@ -239,7 +238,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
        caps[1] = FramebufferCapabilities_VisibleRegion;
     }
 
-    caps.detachTo(ComSafeArrayOutArg(aCapabilities));
+    caps.detachTo(ComSafeArrayOutArg(enmCapabilities));
     return S_OK;
 }
 
@@ -793,19 +792,9 @@ void UIFrameBuffer::performRescale()
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
-{
-    Q_UNUSED(pEvent);
-    /* should never be here */
-    AssertBreakpoint();
-    // TODO: Is this required? ^
-}
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-
 void UIFrameBuffer::prepareConnections()
 {
-    /* EMT connections: */
+    /* Attach EMT connections: */
     connect(this, SIGNAL(sigNotifyChange(int, int)),
             m_pMachineView, SLOT(sltHandleNotifyChange(int, int)),
             Qt::QueuedConnection);
@@ -822,7 +811,7 @@ void UIFrameBuffer::prepareConnections()
 
 void UIFrameBuffer::cleanupConnections()
 {
-    /* EMT connections: */
+    /* Detach EMT connections: */
     disconnect(this, SIGNAL(sigNotifyChange(int, int)),
                m_pMachineView, SLOT(sltHandleNotifyChange(int, int)));
     disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
@@ -941,9 +930,7 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 #if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS)
 # if defined(Q_WS_WIN) || defined(Q_WS_X11)
-    /* Replace translucent background with black one,
-     * that is necessary for window with Qt::WA_TranslucentBackground
-     * and no native backing store support like Mac OS X has: */
+    /* Replace translucent background with black one: */
     painter.setCompositionMode(QPainter::CompositionMode_Source);
     painter.fillRect(paintRect, QColor(Qt::black));
     painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
