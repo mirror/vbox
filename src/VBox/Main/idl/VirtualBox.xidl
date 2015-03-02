@@ -1649,6 +1649,13 @@
     <const name="Option_119" value="119"/>
   </enum>
 
+  <enum
+      name="DhcpOptEncoding"
+      uuid="88ea6d70-8648-4871-ba30-1f49c61cfaa2">
+    <const name="Legacy" value="0"/>
+    <const name="Hex" value="1"/>
+  </enum>
+
   <interface
     name="IDHCPServer" extends="$unknown"
     uuid="ff0774c5-1f62-4bc3-919c-7fc942bf1d25"

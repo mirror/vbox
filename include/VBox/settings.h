@@ -314,8 +314,8 @@ typedef std::list<MachineRegistryEntry> MachinesRegistry;
 struct DhcpOptValue
 {
     enum Encoding {
-	LEGACY,
-	HEX
+	LEGACY = DhcpOptEncoding_Legacy,
+	HEX = DhcpOptEncoding_Hex
     };
 
     com::Utf8Str text;
