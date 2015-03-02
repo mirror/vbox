@@ -2595,9 +2595,10 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
             pContext = &pState->paContext[cid];
             VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
         }
-        else
+        /* If there is a GL buffer or something associated with the surface, we
+           really need something here, so pick any active context. */
+        else if (pSurface->oglId.buffer != OPENGL_INVALID_ID)
         {
-            /* Pick any active context; we need something here */
             for (cid = 0; cid < pState->cContexts; cid++)
             {
                 if (pState->paContext[cid].id == cid)
@@ -2607,7 +2608,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
                     break;
                 }
             }
-            AssertReturn(pContext, VERR_INTERNAL_ERROR);    /* otherwise crashes/fails */
+            AssertReturn(pContext, VERR_INTERNAL_ERROR); /* otherwise crashes/fails; create temp context if this ever triggers! */
         }
 
         switch (pSurface->flags & (SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP))
@@ -2709,7 +2710,8 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
 }
 
 /* Create D3D texture object for the specified surface. */
-static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface)
+static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
+                                 PVMSVGA3DSURFACE pSurface)
 {
     GLint activeTexture = 0;
 
@@ -2876,7 +2878,8 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
     return VINF_SUCCESS;
 }
 
-int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host, SVGA3dTransferType transfer, uint32_t cCopyBoxes, SVGA3dCopyBox *pBoxes)
+int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host, SVGA3dTransferType transfer,
+                       uint32_t cCopyBoxes, SVGA3dCopyBox *pBoxes)
 {
     PVMSVGA3DSTATE          pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     PVMSVGA3DSURFACE        pSurface;
@@ -3142,6 +3145,15 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     uint8_t *pbData = (uint8_t *)pState->ext.glMapBuffer(GL_ARRAY_BUFFER, enmGlTransfer);
                     if (RT_LIKELY(pbData != NULL))
                     {
+#if defined(VBOX_STRICT) && defined(RT_OS_DARWIN)
+                        GLint cbStrictBufSize;
+                        glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &cbStrictBufSize);
+                        Assert(VMSVGA3D_GL_IS_SUCCESS(pContext));
+                        AssertMsg(cbStrictBufSize >= (int32_t)pMipLevel->cbSurface,
+                                  ("cbStrictBufSize=%#x cbSurface=%#x isAssociatedContext=%#x pContext->id=%#x\n",
+                                   (uint32_t)cbStrictBufSize, pMipLevel->cbSurface, pSurface->idAssociatedContext, pContext->id));
+#endif
+
                         unsigned offDst = pBoxes[i].x * pSurface->cbBlock + pBoxes[i].y * pMipLevel->cbSurfacePitch;
                         if (RT_LIKELY(   offDst + pBoxes[i].w * pSurface->cbBlock  + (pBoxes[i].h - 1) * pMipLevel->cbSurfacePitch
                                       <= pMipLevel->cbSurface))
@@ -3965,6 +3977,49 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
             int rc = ShaderContextDestroy(pContext->pShaderContext);
             AssertRC(rc);
         }
+
+#if 1 /* This is done on windows - prevents various assertions at runtime, as well as shutdown & reset assertions when destroying surfaces. */
+        /* Check for all surfaces that are associated with this context to remove all dependencies */
+        for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
+        {
+            PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
+            if (    pSurface->idAssociatedContext == cid
+                &&  pSurface->id == sid)
+            {
+                int rc;
+
+                Log(("vmsvga3dContextDestroy: remove all dependencies for surface %x\n", sid));
+
+                uint32_t            surfaceFlags = pSurface->flags;
+                SVGA3dSurfaceFormat format = pSurface->format;
+                SVGA3dSurfaceFace   face[SVGA3D_MAX_SURFACE_FACES];
+                uint32_t            multisampleCount = pSurface->multiSampleCount;
+                SVGA3dTextureFilter autogenFilter = pSurface->autogenFilter;
+                SVGA3dSize         *pMipLevelSize;
+                uint32_t            cFaces = pSurface->cFaces;
+
+                pMipLevelSize = (SVGA3dSize *)RTMemAllocZ(pSurface->faces[0].numMipLevels * pSurface->cFaces * sizeof(SVGA3dSize));
+                AssertReturn(pMipLevelSize, VERR_NO_MEMORY);
+
+                for (uint32_t iFace = 0; iFace < pSurface->cFaces; iFace++)
+                {
+                    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
+                    {
+                        uint32_t idx = i + iFace * pSurface->faces[0].numMipLevels;
+                        memcpy(&pMipLevelSize[idx], &pSurface->pMipmapLevels[idx].size, sizeof(SVGA3dSize));
+                    }
+                }
+                memcpy(face, pSurface->faces, sizeof(pSurface->faces));
+
+                /* Recreate the surface with the original settings; destroys the contents, but that seems fairly safe since the context is also destroyed. */
+                rc = vmsvga3dSurfaceDestroy(pThis, sid);
+                AssertRC(rc);
+
+                rc = vmsvga3dSurfaceDefine(pThis, sid, surfaceFlags, format, face, multisampleCount, autogenFilter, face[0].numMipLevels * cFaces, pMipLevelSize);
+                AssertRC(rc);
+            }
+        }
+#endif
 
         if (pContext->idFramebuffer != OPENGL_INVALID_ID)
         {
