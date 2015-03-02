@@ -3975,6 +3975,7 @@ static int supdrvMeasureInitialTscDeltas(PSUPDRVDEVEXT pDevExt)
     }
     AssertReturn(idxMaster < pGip->cCpus, VERR_INVALID_CPU_INDEX);
     pGipCpuMaster = &pGip->aCPUs[idxMaster];
+    Assert(pDevExt->idGipMaster == pGipCpuMaster->idCpu);
 
     /*
      * If there is only a single CPU online we have nothing to do.
