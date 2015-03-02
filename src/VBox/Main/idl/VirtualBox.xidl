@@ -15794,7 +15794,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="772FBD91-65B5-4CFB-814C-E40E61AC7070"
+    uuid="04AA5E91-3816-4990-8C52-59939307E5EF"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -16103,6 +16103,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="u32ScaleFactorWMultiplied" type="unsigned long" dir="in"/>
       <param name="u32ScaleFactorHMultiplied" type="unsigned long" dir="in"/>
+    </method>
+
+    <method name="notifyHiDPIOutputPolicyChange">
+      <desc>
+         Notify OpenGL HGCM host service about HiDPI monitor scaling policy change.
+      </desc>
+      <param name="fUnscaledHiDPI" type="boolean" dir="in"/>
     </method>
 
   </interface>

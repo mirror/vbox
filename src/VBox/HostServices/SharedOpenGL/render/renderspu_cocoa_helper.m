@@ -1428,8 +1428,10 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_fEverSized              = false;
     
     self = [super initWithFrame:frame];
-#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
-    [self performSelector:@selector(setWantsBestResolutionOpenGLSurface:) withObject: (id)YES];
+#if defined(VBOX_WITH_CONFIGURABLE_HIDPI_SCALING) && !defined(IN_VMSVGA3D)
+    crDebug("HiDPI: up-scaling is %s on NSView init.", render_spu.fUnscaledHiDPI ? "OFF" : "ON");
+    if (render_spu.fUnscaledHiDPI)
+        [self performSelector:@selector(setWantsBestResolutionOpenGLSurface:) withObject: (id)YES];
 #endif
 
     COCOA_LOG_FLOW(("%s: returns self=%p\n", __PRETTY_FUNCTION__, (void *)self));
@@ -2365,14 +2367,20 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     CrVrScrCompositorConstIterInit(pCompositor, &CIter);
 
     float backingStretchFactor = 1.;
-#ifdef VBOX_WITH_CONFIGURABLE_HIDPI_SCALING
+#if defined(VBOX_WITH_CONFIGURABLE_HIDPI_SCALING) && !defined(IN_VMSVGA3D)
     /* Adjust viewport according to current NSView's backing store parameters. */
-    NSRect regularBounds = [self bounds];
-    NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
-    glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
+    crDebug("HiDPI: vboxPresentToViewCS: up-scaling is %s.", render_spu.fUnscaledHiDPI ? "OFF" : "ON");
+    if (render_spu.fUnscaledHiDPI)
+    {
+        NSRect regularBounds = [self bounds];
+        NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
+        glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
 
-    /* Update strech factor in order to satisfy current NSView's backing store parameters. */
-    backingStretchFactor = [self safeGetBackingScaleFactor];
+        /* Update stretch factor in order to satisfy current NSView's backing store parameters. */
+        backingStretchFactor = [self safeGetBackingScaleFactor];
+    }
+    else
+        backingStretchFactor = 1.;
 #endif
 
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);

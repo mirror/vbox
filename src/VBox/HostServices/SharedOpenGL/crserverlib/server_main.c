@@ -2540,6 +2540,11 @@ void crServerWindowReparent(CRMuralInfo *pMural)
     renderspuReparentWindow(pMural->spuWindow);
 }
 
+DECLEXPORT(void) crServerSetUnscaledHiDPI(bool fEnable)
+{
+    renderspuSetUnscaledHiDPI(fEnable);
+}
+
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
 {
     CRMuralInfo *pMI = (CRMuralInfo*) data1;

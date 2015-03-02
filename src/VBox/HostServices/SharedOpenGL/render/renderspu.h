@@ -347,6 +347,9 @@ typedef struct {
     bool fInit;
 # endif
 #endif /* RT_OS_DARWIN */
+    /* If TRUE, render should tell window server to prevent artificial content
+     * up-scaling when displayed on HiDPI monitor. */
+    bool fUnscaledHiDPI;
 } RenderSPU;
 
 #ifdef RT_OS_WINDOWS
@@ -494,6 +497,7 @@ extern "C" {
 #endif
 DECLEXPORT(void) renderspuSetWindowId(uint64_t winId);
 DECLEXPORT(void) renderspuReparentWindow(GLint window);
+DECLEXPORT(void) renderspuSetUnscaledHiDPI(bool fEnable);
 #ifdef __cplusplus
 }
 #endif

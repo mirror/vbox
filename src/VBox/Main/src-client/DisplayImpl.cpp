@@ -3568,6 +3568,71 @@ HRESULT Display::notifyScaleFactorChange(ULONG aScreenId, ULONG aScaleFactorWMul
 #endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
 }
 
+HRESULT Display::notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI)
+{
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    HRESULT hr = E_UNEXPECTED;
+
+    /* 3D acceleration enabled in VM config. */
+    if (mfIsCr3DEnabled)
+    {
+        /* VBoxSharedCrOpenGL HGCM host service is running. */
+        if (mhCrOglSvc)
+        {
+            VMMDev *pVMMDev = mParent->i_getVMMDev();
+            if (pVMMDev)
+            {
+                VBOXCRCMDCTL_HGCM *pCtl;
+                pCtl = (VBOXCRCMDCTL_HGCM *)RTMemAlloc(sizeof(CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT) + sizeof(VBOXCRCMDCTL_HGCM));
+                if (pCtl)
+                {
+                    CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *pData = (CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *)(pCtl + 1);
+                    int rc;
+
+                    pData->fUnscaledHiDPI          = fUnscaledHiDPI;
+
+                    pCtl->Hdr.enmType              = VBOXCRCMDCTL_TYPE_HGCM;
+                    pCtl->Hdr.u32Function          = SHCRGL_HOST_FN_SET_UNSCALED_HIDPI;
+                    pCtl->aParms[0].type           = VBOX_HGCM_SVC_PARM_PTR;
+                    pCtl->aParms[0].u.pointer.addr = pData;
+                    pCtl->aParms[0].u.pointer.size = sizeof(*pData);
+
+                    rc = i_crCtlSubmitSync(&pCtl->Hdr, sizeof(*pCtl));
+                    if (RT_FAILURE(rc))
+                        AssertMsgFailed(("crCtlSubmitSync failed (rc=%Rrc)\n", rc));
+                    else
+                        hr = S_OK;
+
+                    RTMemFree(pCtl);
+                }
+                else
+                {
+                    LogRel(("Running out of memory on attempt to notify OpenGL about HiDPI output scaling policy change. Ignored.\n"));
+                    hr = E_OUTOFMEMORY;
+                }
+            }
+            else
+                LogRel(("Internal error occurred on attempt to notify OpenGL about HiDPI output scaling policy change. Ignored.\n"));
+        }
+        else
+            LogRel(("Attempt to notify OpenGL about HiDPI output scaling policy change while corresponding HGCM host service not yet runing. Ignored.\n"));
+    }
+    else
+    {
+        hr = S_OK;
+        /* Need an interface like this here (and the #ifdefs needs adjusting):
+        PPDMIDISPLAYPORT pUpPort = mpDrv ? mpDrv->pUpPort : NULL;
+        if (pUpPort && pUpPort->pfnSetScaleFactor)
+            pUpPort->pfnSetScaleFactor(pUpPort, aScreeId, aScaleFactorWMultiplied, aScaleFactorHMultiplied); */
+    }
+
+    return hr;
+#else
+    AssertMsgFailed(("Attempt to notify OpenGL about HiDPI output scaling policy change while corresponding functionality is disabled."));
+    return E_UNEXPECTED;
+#endif /* VBOX_WITH_HGCM && VBOX_WITH_CROGL */
+}
+
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
 DECLCALLBACK(void) Display::i_displayCrVRecScreenshotPerform(void *pvCtx, uint32_t uScreen,
                                                              uint32_t x, uint32_t y,

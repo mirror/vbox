@@ -1867,6 +1867,11 @@ DECLEXPORT(void) renderspuReparentWindow(GLint window)
     }
 }
 
+DECLEXPORT(void) renderspuSetUnscaledHiDPI(bool fEnable)
+{
+    render_spu.fUnscaledHiDPI = fEnable;
+}
+
 #define FILLIN( NAME, FUNC ) \
   table[i].name = crStrdup(NAME); \
   table[i].fn = (SPUGenericFunction) FUNC; \

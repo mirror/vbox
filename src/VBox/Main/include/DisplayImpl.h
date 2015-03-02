@@ -266,6 +266,7 @@ private:
     virtual HRESULT notifyScaleFactorChange(ULONG aScreenId,
                                             ULONG aScaleFactorWMultiplied,
                                             ULONG aScaleFactorHMultiplied);
+    virtual HRESULT notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI);
 
     // Wrapped IEventListener properties
 

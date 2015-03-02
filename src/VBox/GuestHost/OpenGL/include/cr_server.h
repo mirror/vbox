@@ -560,6 +560,7 @@ extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnC
 
 extern DECLEXPORT(void) crVBoxServerCalloutEnable(VBOXCRCMDCTL *pCtl);
 extern DECLEXPORT(void) crVBoxServerCalloutDisable();
+extern DECLEXPORT(void) crServerSetUnscaledHiDPI(bool fEnable);
 
 #ifdef VBOX_WITH_CRHGSMI
 /* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
