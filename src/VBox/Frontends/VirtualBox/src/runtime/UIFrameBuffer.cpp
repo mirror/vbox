@@ -55,7 +55,8 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
 #endif /* Q_WS_X11 */
 
 UIFrameBuffer::UIFrameBuffer()
-    : m_iWidth(0), m_iHeight(0)
+    : m_uScreenId(0)
+    , m_iWidth(0), m_iHeight(0)
     , m_fPendingSourceBitmap(false)
     , m_pMachineView(NULL)
     , m_iWinId(0)
@@ -77,6 +78,10 @@ HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
 
     /* Assign mahine-view: */
     m_pMachineView = pMachineView;
+
+    /* Assign index: */
+    m_uScreenId = m_pMachineView->screenId();
+
     /* Cache window ID: */
     m_iWinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 
@@ -732,8 +737,7 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
         LONG xOrigin = 0;
         LONG yOrigin = 0;
         KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        display().GetScreenResolution(m_pMachineView->screenId(),
-                                      ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
+        display().GetScreenResolution(m_uScreenId, ulWidth, ulHeight, ulGuestBitsPerPixel, xOrigin, yOrigin, monitorStatus);
 
         /* Remind user if necessary, ignore text and VGA modes: */
         /* This check (supports graphics) is not quite right due to past mistakes

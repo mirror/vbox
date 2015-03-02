@@ -269,6 +269,9 @@ protected:
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
 
+    /** Holds the screen-id. */
+    ulong m_uScreenId;
+
     /** Holds the QImage buffer. */
     QImage m_image;
     /** Holds frame-buffer width. */
