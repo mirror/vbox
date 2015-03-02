@@ -839,7 +839,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
                 /* Keep going. */
             }
 
-            if (!abinfo.bytes < 0)
+            if (abinfo.bytes < 0)
             {
                 LogFlowFunc(("Warning: Invalid available size, size=%d, bufsize=%d\n",
                              abinfo.bytes, cbBuf));
