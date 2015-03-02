@@ -746,6 +746,8 @@ typedef struct SUPDRVDEVEXT
     RTMSINTERVAL                    cMsTscDeltaTimeout;
     /** Whether the TSC-delta measurement was successful. */
     int32_t volatile                rcTscDelta;
+    /** Tell the thread we want TSC-deltas for all CPUs with retries. */
+    bool                            fTscThreadRecomputeAllDeltas;
     /** @} */
 #endif
 
