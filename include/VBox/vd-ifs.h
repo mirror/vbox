@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -794,6 +794,21 @@ DECLINLINE(bool) VDCFGAreKeysValid(PVDINTERFACECONFIG pCfgIf, const char *pszzVa
 }
 
 /**
+ * Checks whether a given key is existing.
+ *
+ * @return  true if the key exists.
+ * @return  false if the key does not exist.
+ * @param   pCfgIf      Pointer to configuration callback table.
+ * @param   pszName     Name of the key.
+ */
+DECLINLINE(bool) VDCFGIsKeyExisting(PVDINTERFACECONFIG pCfgIf, const char *pszName)
+{
+    size_t cb = 0;
+    int rc = pCfgIf->pfnQuerySize(pCfgIf->Core.pvUser, pszName, &cb);
+    return rc == VERR_CFGM_VALUE_NOT_FOUND ? false : true;
+}
+
+/**
  * Query configuration, unsigned 64-bit integer value with default.
  *
  * @return  VBox status code.
@@ -1430,13 +1445,24 @@ typedef struct VDINTERFACECRYPTO
     DECLR3CALLBACKMEMBER(int, pfnKeyRelease, (void *pvUser, const char *pszId));
 
     /**
-     * Gets the password to open a key store supplied through the onfig interface.
+     * Gets a reference to the password identified by the given ID to open a key store supplied through the config interface.
      *
      * @returns VBox status code.
      * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszId           The alias/id for the password to retain.
      * @param   ppszPassword    Where to store the password to unlock the key store on success.
      */
-    DECLR3CALLBACKMEMBER(int, pfnKeyStoreGetPassword, (void *pvUser, const char **ppszPassword));
+    DECLR3CALLBACKMEMBER(int, pfnKeyStorePasswordRetain, (void *pvUser, const char *pszId, const char **ppszPassword));
+
+    /**
+     * Releases a reference of the password previously acquired with VDINTERFACECRYPTO::pfnKeyStorePasswordRetain()
+     * identified by the given ID.
+     *
+     * @returns VBox status code.
+     * @param   pvUser          The opaque user data associated with this interface.
+     * @param   pszId           The alias/id for the password to release.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnKeyStorePasswordRelease, (void *pvUser, const char *pszId));
 
     /**
      * Saves a key store.
@@ -1509,11 +1535,19 @@ DECLINLINE(int) vdIfCryptoKeyRelease(PVDINTERFACECRYPTO pIfCrypto, const char *p
 }
 
 /**
- * @copydoc VDINTERFACECRYPTO::pfnKeyStoreGetPassword
+ * @copydoc VDINTERFACECRYPTO::pfnKeyStorePasswordRetain
  */
-DECLINLINE(int) vdIfCryptoKeyStoreGetPassword(PVDINTERFACECRYPTO pIfCrypto, const char **ppszPassword)
+DECLINLINE(int) vdIfCryptoKeyStorePasswordRetain(PVDINTERFACECRYPTO pIfCrypto, const char *pszId, const char **ppszPassword)
 {
-    return pIfCrypto->pfnKeyStoreGetPassword(pIfCrypto->Core.pvUser, ppszPassword);
+    return pIfCrypto->pfnKeyStorePasswordRetain(pIfCrypto->Core.pvUser, pszId, ppszPassword);
+}
+
+/**
+ * @copydoc VDINTERFACECRYPTO::pfnKeyStorePasswordRelease
+ */
+DECLINLINE(int) vdIfCryptoKeyStorePasswordRelease(PVDINTERFACECRYPTO pIfCrypto, const char *pszId)
+{
+    return pIfCrypto->pfnKeyStorePasswordRelease(pIfCrypto->Core.pvUser, pszId);
 }
 
 /**

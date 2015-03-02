@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2014 Oracle Corporation
+ * Copyright (C) 2005-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -473,6 +473,8 @@ HRESULT Console::FinalConstruct()
         return E_OUTOFMEMORY;
     pIfSecKey->pfnKeyRetain             = Console::i_pdmIfSecKey_KeyRetain;
     pIfSecKey->pfnKeyRelease            = Console::i_pdmIfSecKey_KeyRelease;
+    pIfSecKey->pfnPasswordRetain        = Console::i_pdmIfSecKey_PasswordRetain;
+    pIfSecKey->pfnPasswordRelease       = Console::i_pdmIfSecKey_PasswordRelease;
     pIfSecKey->pConsole                 = this;
     mpIfSecKey = pIfSecKey;
 
@@ -3356,6 +3358,85 @@ HRESULT Console::restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot, ComPtr<IPro
     return S_OK;
 }
 
+HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
+                                           BOOL aClearOnSuspend)
+{
+    if (   aId.isEmpty()
+        || aPassword.isEmpty())
+        return setError(E_FAIL, tr("The ID and password must be both valid"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Check that the ID is not existing already. */
+    SecretKeyMap::const_iterator it = m_mapSecretKeys.find(aId);
+    if (it != m_mapSecretKeys.end())
+        return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
+
+    HRESULT hrc = S_OK;
+    size_t cbKey = aPassword.length() + 1; /* Include terminator */
+    uint8_t *pbKey = NULL;
+    int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pbKey, aPassword.c_str(), cbKey);
+        SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
+        /* Add the key to the map */
+        m_mapSecretKeys.insert(std::make_pair(aId, pKey));
+        hrc = i_configureEncryptionForDisk(aId);
+        if (FAILED(hrc))
+            m_mapSecretKeys.erase(aId);
+    }
+    else
+        return setError(E_FAIL, tr("Failed to allocate secure memory for the password (%Rrc)"), rc);
+
+    return hrc;
+}
+
+HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
+{
+    if (aId.isEmpty())
+        return setError(E_FAIL, tr("The ID must be valid"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    SecretKeyMap::const_iterator it = m_mapSecretKeys.find(aId);
+    if (it == m_mapSecretKeys.end())
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("A password with the given ID does not exist"));
+
+    SecretKey *pKey = it->second;
+    if (pKey->m_cRefs)
+        return setError(VBOX_E_OBJECT_IN_USE, tr("The password is still in use by the VM"));
+
+    m_mapSecretKeys.erase(it);
+    delete pKey;
+
+    return S_OK;
+}
+
+HRESULT Console::clearAllDiskEncryptionPasswords()
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* First check whether a password is still in use. */
+    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+        it != m_mapSecretKeys.end();
+        it++)
+    {
+        SecretKey *pKey = it->second;
+        if (pKey->m_cRefs)
+            return setError(VBOX_E_OBJECT_IN_USE, tr("The password with ID \"%s\" is still in use by the VM"),
+                            it->first.c_str());
+    }
+
+    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+        it != m_mapSecretKeys.end();
+        it++)
+        delete it->second;
+    m_mapSecretKeys.clear();
+
+    return S_OK;
+}
+
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -4548,13 +4629,13 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
 }
 
 /**
- * Configures the encryption support for the disk identified by the gien UUID with
- * the given key.
+ * Configures the encryption support for the disk which have encryption conigured
+ * with the configured key.
  *
  * @returns COM status code.
- * @param   pszUuid   The UUID of the disk to configure encryption for.
+ * @param   aId    The ID of the password.
  */
-HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
+HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId)
 {
     HRESULT hrc = S_OK;
     SafeIfaceArray<IMediumAttachment> sfaAttachments;
@@ -4579,7 +4660,7 @@ HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
         const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
         ComPtr<IMedium> pMedium;
         ComPtr<IMedium> pBase;
-        Bstr uuid;
+        Bstr bstrKeyId;
 
         hrc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
         if (FAILED(hrc))
@@ -4594,11 +4675,13 @@ HRESULT Console::i_configureEncryptionForDisk(const char *pszUuid)
         if (FAILED(hrc))
             break;
 
-        hrc = pBase->COMGETTER(Id)(uuid.asOutParam());
-        if (FAILED(hrc))
+        hrc = pBase->GetProperty(Bstr("CRYPT/KeyId").raw(), bstrKeyId.asOutParam());
+        if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+            continue;
+        else if (FAILED(hrc))
             break;
 
-        if (!RTUuidCompare2Strs(Utf8Str(uuid).c_str(), pszUuid))
+        if (strId.equals(Utf8Str(bstrKeyId)))
         {
             /*
              * Found the matching medium, query storage controller, port and device
@@ -4736,10 +4819,10 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
                 rc = RTBase64Decode(pszKeyEnc, pbKey, cbKey, NULL, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    SecretKey *pKey = new SecretKey(pbKey, cbKey);
+                    SecretKey *pKey = new SecretKey(pbKey, cbKey, true /* fRemoveOnSuspend */);
                     /* Add the key to the map */
                     m_mapSecretKeys.insert(std::make_pair(Utf8Str(pszUuid), pKey));
-                    hrc = i_configureEncryptionForDisk(pszUuid);
+                    hrc = i_configureEncryptionForDisk(Utf8Str(pszUuid));
                     if (FAILED(hrc))
                     {
                         /* Delete the key from the map. */
@@ -10327,6 +10410,7 @@ Console::i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, cons
 {
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
 
+    AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
     SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
     if (it != pConsole->m_mapSecretKeys.end())
     {
@@ -10348,6 +10432,50 @@ Console::i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, cons
 Console::i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId)
 {
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
+
+    AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
+    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
+    if (it != pConsole->m_mapSecretKeys.end())
+    {
+        SecretKey *pKey = (*it).second;
+        ASMAtomicDecU32(&pKey->m_cRefs);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMISECKEY,pfnPasswordRetain}
+ */
+/*static*/ DECLCALLBACK(int)
+Console::i_pdmIfSecKey_PasswordRetain(PPDMISECKEY pInterface, const char *pszId, const char **ppszPassword)
+{
+    Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
+
+    AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
+    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
+    if (it != pConsole->m_mapSecretKeys.end())
+    {
+        SecretKey *pKey = (*it).second;
+
+        ASMAtomicIncU32(&pKey->m_cRefs);
+        *ppszPassword = (const char *)pKey->m_pbKey;
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMISECKEY,pfnPasswordRelease}
+ */
+/*static*/ DECLCALLBACK(int)
+Console::i_pdmIfSecKey_PasswordRelease(PPDMISECKEY pInterface, const char *pszId)
+{
+    Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
+
+    AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
     SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
     if (it != pConsole->m_mapSecretKeys.end())
     {

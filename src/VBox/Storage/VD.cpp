@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -8826,7 +8826,7 @@ VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk, uint32_t fFlags)
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        AssertMsgBreakStmt(!(fFlags & VD_FILTER_FLAGS_MASK),
+        AssertMsgBreakStmt(!(fFlags & ~VD_FILTER_FLAGS_MASK),
                            ("Invalid flags set (fFlags=%#x)\n", fFlags),
                            rc = VERR_INVALID_PARAMETER);
 

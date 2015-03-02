@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2014 Oracle Corporation
+ * Copyright (C) 2005-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -350,6 +350,10 @@ private:
                      const com::Utf8Str &aPassword,
                      ULONG aMaxDowntime,
                      ComPtr<IProgress> &aProgress);
+    HRESULT addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
+                                      BOOL aClearOnSuspend);
+    HRESULT removeDiskEncryptionPassword(const com::Utf8Str &aId);
+    HRESULT clearAllDiskEncryptionPasswords();
 
     void notifyNatDnsChange(PUVM pUVM, const char *pszDevice, ULONG ulInstanceMax);
 
@@ -584,10 +588,11 @@ public:
         public:
             SecretKey() { }
 
-            SecretKey(uint8_t *pbKey, size_t cbKey)
+            SecretKey(uint8_t *pbKey, size_t cbKey, bool fRemoveOnSuspend)
                : m_cRefs(0),
                  m_pbKey(pbKey),
-                 m_cbKey(cbKey)
+                 m_cbKey(cbKey),
+                 m_fRemoveOnSuspend(fRemoveOnSuspend)
             { }
 
             ~SecretKey()
@@ -596,6 +601,7 @@ public:
                 m_cRefs = 0;
                 m_pbKey = NULL;
                 m_cbKey = 0;
+                m_fRemoveOnSuspend = false;
             }
 
             /** Reference counter of the key. */
@@ -604,6 +610,8 @@ public:
             uint8_t *m_pbKey;
             /** Size of the key in bytes. */
             size_t   m_cbKey;
+            /** Flag whether to remove the key on suspend. */
+            bool     m_fRemoveOnSuspend;
     };
 
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
@@ -809,6 +817,8 @@ private:
     static DECLCALLBACK(int)    i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, const uint8_t **ppbKey,
                                                         size_t *pcbKey);
     static DECLCALLBACK(int)    i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId);
+    static DECLCALLBACK(int)    i_pdmIfSecKey_PasswordRetain(PPDMISECKEY pInterface, const char *pszId, const char **ppszPassword);
+    static DECLCALLBACK(int)    i_pdmIfSecKey_PasswordRelease(PPDMISECKEY pInterface, const char *pszId);
 
     static DECLCALLBACK(int)    i_pdmIfSecKeyHlp_KeyMissingNotify(PPDMISECKEYHLP pInterface);
 
@@ -851,7 +861,7 @@ private:
     /** @name Disk encryption support
      * @{ */
     HRESULT i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
-    HRESULT i_configureEncryptionForDisk(const char *pszUuid);
+    HRESULT i_configureEncryptionForDisk(const Utf8Str &aId);
     HRESULT i_clearDiskEncryptionKeysOnAllAttachments(void);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
                                char **ppszKey, char **ppszVal);

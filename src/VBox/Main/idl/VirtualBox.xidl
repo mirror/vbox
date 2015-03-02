@@ -7529,7 +7529,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="e51702d7-4f8f-4ebe-ac47-4b77defffd18"
+    uuid="a0059bfc-04e8-4ff0-93d9-2e4d5257d9ee"
     wsmap="managed"
     >
     <desc>
@@ -8353,6 +8353,45 @@
       </param>
     </method>
 
+    <method name="addDiskEncryptionPassword">
+      <desc>
+        Adds a password used for hard disk encryption/decryption.
+      </desc>
+      <param name="id" type="wstring" dir="in">
+        <desc>
+          The identifier used for the password. Must match the identifier
+          used when the encrypted medium was created.
+        </desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>The password.</desc>
+      </param>
+      <param name="clearOnSuspend" type="boolean" dir="in">
+        <desc>
+          Flag whether to clear the password on VM suspend (due to a suspending host
+          for example). The password must be supplied again before the VM can resume.
+        </desc>
+      </param>
+    </method>
+
+    <method name="removeDiskEncryptionPassword">
+      <desc>
+        Removes a password used for hard disk encryption/decryption from
+        the running VM. As soon as the medium requiring this password
+        is accessed the VM is paused with an error and the password must be
+        provided again.
+      </desc>
+      <param name="id" type="wstring" dir="in">
+        <desc>
+          The identifier used for the password. Must match the identifier
+          used when the encrypted medium was created.
+        </desc>
+      </param>
+    </method>
+
+    <method name="clearAllDiskEncryptionPasswords">
+      <desc>Clears all provided supplied disk encryption passwords.</desc>
+    </method>
   </interface>
 
   <!--
@@ -13423,7 +13462,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="e6aa3c67-6f51-4ba6-a012-cf4825069abb"
+    uuid="edf10636-fd4f-4e24-8d24-f38a41721a00"
     wsmap="managed"
     >
     <desc>
@@ -14702,6 +14741,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="cipher" type="wstring" dir="in">
         <desc>The cipher to use for encryption.</desc>
+      </param>
+      <param name="newPasswordId" type="wstring" dir="in">
+        <desc>The ID of the new password when unlocking the medium.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

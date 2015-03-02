@@ -1678,7 +1678,46 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
+        }
+        else if (!strcmp(a->argv[1], "addencpassword"))
+        {
+            if (   a->argc != 4
+                && a->argc != 6)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                break;
+            }
 
+            if (   strcmp(a->argv[4], "--removeonsuspend")
+                || (   strcmp(a->argv[5], "yes")
+                    && strcmp(a->argv[5], "no")))
+            {
+                errorSyntax(USAGE_CONTROLVM, "Invalid parameters");
+                break;
+            }
+
+            BOOL fRemoveOnSuspend = FALSE;
+            Bstr bstrPwId(a->argv[2]);
+            Bstr bstrPw(a->argv[3]);
+            if (   a->argc == 6
+                && !strcmp(a->argv[5], "yes"))
+                fRemoveOnSuspend = TRUE;
+
+            CHECK_ERROR_BREAK(console, AddDiskEncryptionPassword(bstrPwId.raw(), bstrPw.raw(), fRemoveOnSuspend));
+        }
+        else if (!strcmp(a->argv[1], "removeencpassword"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                break;
+            }
+            Bstr bstrPwId(a->argv[2]);
+            CHECK_ERROR_BREAK(console, RemoveDiskEncryptionPassword(bstrPwId.raw()));
+        }
+        else if (!strcmp(a->argv[1], "removeallencpasswords"))
+        {
+            CHECK_ERROR_BREAK(console, ClearAllDiskEncryptionPasswords());
         }
         else
         {

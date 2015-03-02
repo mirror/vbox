@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1395,9 +1395,35 @@ typedef struct PDMISECKEY
      *        difficult like scrambling the memory buffer for instance.
      */
     DECLR3CALLBACKMEMBER(int, pfnKeyRelease, (PPDMISECKEY pInterface, const char *pszId));
+
+    /**
+     * Retains a password identified by the ID. The caller will only hold a reference
+     * to the password and must not modify the buffer in any way.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   pszId           The alias/id for the password to retrieve.
+     * @param   ppszPassword    Where to store the pointer to the password on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPasswordRetain, (PPDMISECKEY pInterface, const char *pszId,
+                                                  const char **ppszPassword));
+
+    /**
+     * Releases one reference of the password identified by the given identifier.
+     * The caller must not access the password after calling this operation.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   pszId           The alias/id for the password to release.
+     *
+     * @note: It is advised to release the password whenever it is not used anymore so the entity
+     *        storing the password can do anything to make retrieving the password from memory more
+     *        difficult like scrambling the memory buffer for instance.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPasswordRelease, (PPDMISECKEY pInterface, const char *pszId));
 } PDMISECKEY;
 /** PDMISECKEY interface ID. */
-#define PDMISECKEY_IID                           "a7336c4a-2ca0-489d-ad2d-f740f215a1e6"
+#define PDMISECKEY_IID                           "3d698355-d995-453d-960f-31566a891df2"
 
 /** Pointer to a secret key helper interface. */
 typedef struct PDMISECKEYHLP *PPDMISECKEYHLP;

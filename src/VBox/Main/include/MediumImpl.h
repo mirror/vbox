@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2014 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -275,7 +275,7 @@ private:
                    ComPtr<IProgress> &aProgress);
     HRESULT reset(ComPtr<IProgress> &aProgress);
     HRESULT changeEncryption(const com::Utf8Str &aNewPassword, const com::Utf8Str &aOldPassword,
-                             const com::Utf8Str &aCipher, ComPtr<IProgress> &aProgress);
+                             const com::Utf8Str &aCipher, const com::Utf8Str &aNewPasswordId, ComPtr<IProgress> &aProgress);
 
     // Private internal nmethods
     HRESULT i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &autoCaller);
@@ -323,7 +323,8 @@ private:
     static DECLCALLBACK(int) i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
                                                  const uint8_t **ppbKey, size_t *pcbKey);
     static DECLCALLBACK(int) i_vdCryptoKeyRelease(void *pvUser, const char *pszId);
-    static DECLCALLBACK(int) i_vdCryptoKeyStoreGetPassword(void *pvUser, const char **ppszPassword);
+    static DECLCALLBACK(int) i_vdCryptoKeyStorePasswordRetain(void *pvUser, const char *pszId, const char **ppszPassword);
+    static DECLCALLBACK(int) i_vdCryptoKeyStorePasswordRelease(void *pvUser, const char *pszId);
     static DECLCALLBACK(int) i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKeyStore, size_t cbKeyStore);
     static DECLCALLBACK(int) i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
                                                                 const uint8_t *pbDek, size_t cbDek);

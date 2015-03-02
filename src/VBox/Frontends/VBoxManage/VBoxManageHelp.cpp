@@ -494,6 +494,11 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            unplugcpu <id> |\n"
                      "                            cpuexecutioncap <1-100>\n"
                      "                            webcam <attach [path [settings]]> | <detach [path]> | <list>\n"
+                     "                            addencpassword <id>\n"
+                     "                                           <password>\n"
+                     "                                           [--removeonsuspend <yes|no>]\n"
+                     "                            removeencpassword <id>\n"
+                     "                            removeallencpasswords\n"
                      "\n", SEP);
     }
 
@@ -636,6 +641,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--newpassword <new password>]\n"
                      "                            [--oldpassword <old password>]\n"
                      "                            [--cipher <cipher identifier>]\n"
+                     "                            [--newpasswordid <password identifier>]\n"
                      "\n", SEP);
 
     if (fCategory & USAGE_CONVERTFROMRAW)

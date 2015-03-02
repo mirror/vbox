@@ -1640,9 +1640,10 @@ int handleMediumProperty(HandlerArg *a)
 
 static const RTGETOPTDEF g_aEncryptMediumOptions[] =
 {
-    { "--newpassword",  'n', RTGETOPT_REQ_STRING },
-    { "--oldpassword",  'o', RTGETOPT_REQ_STRING },
-    { "--cipher",       'c', RTGETOPT_REQ_STRING }
+    { "--newpassword",   'n', RTGETOPT_REQ_STRING },
+    { "--oldpassword",   'o', RTGETOPT_REQ_STRING },
+    { "--cipher",        'c', RTGETOPT_REQ_STRING },
+    { "--newpasswordid", 'i', RTGETOPT_REQ_STRING }
 };
 
 int handleEncryptMedium(HandlerArg *a)
@@ -1654,6 +1655,7 @@ int handleEncryptMedium(HandlerArg *a)
     const char *pszPasswordOld = NULL;
     const char *pszCipher = NULL;
     const char *pszFilenameOrUuid = NULL;
+    const char *pszNewPasswordId = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -1675,6 +1677,10 @@ int handleEncryptMedium(HandlerArg *a)
 
             case 'c':   // --cipher
                 pszCipher = ValueUnion.psz;
+                break;
+
+            case 'i':   // --newpasswordid
+                pszNewPasswordId = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -1707,6 +1713,10 @@ int handleEncryptMedium(HandlerArg *a)
     if (!pszPasswordNew && !pszPasswordOld)
         return errorSyntax(USAGE_ENCRYPTMEDIUM, "No password specified");
 
+    if (   (pszPasswordNew && !pszNewPasswordId)
+        || (!pszPasswordNew && pszNewPasswordId))
+        return errorSyntax(USAGE_ENCRYPTMEDIUM, "A new password must always have a valid identifier set at the same time");
+
     /* Always open the medium if necessary, there is no other way. */
     rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
                     AccessMode_ReadWrite, hardDisk,
@@ -1721,7 +1731,8 @@ int handleEncryptMedium(HandlerArg *a)
 
     ComPtr<IProgress> progress;
     CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(pszPasswordNew).raw(), Bstr(pszPasswordOld).raw(),
-                                           Bstr(pszCipher).raw(), progress.asOutParam()));
+                                           Bstr(pszCipher).raw(), Bstr(pszNewPasswordId).raw(),
+                                           progress.asOutParam()));
     if (SUCCEEDED(rc))
         rc = showProgress(progress);
     if (FAILED(rc))

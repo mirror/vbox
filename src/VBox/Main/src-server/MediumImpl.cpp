@@ -677,12 +677,14 @@ public:
                 const com::Utf8Str &strNewPassword,
                 const com::Utf8Str &strOldPassword,
                 const com::Utf8Str &strCipher,
+                const com::Utf8Str &strNewPasswordId,
                 Progress *aProgress,
                 MediumLockList *aMediumLockList)
         : Medium::Task(aMedium, aProgress),
           mstrNewPassword(strNewPassword),
           mstrOldPassword(strOldPassword),
           mstrCipher(strCipher),
+          mstrNewPasswordId(strNewPasswordId),
           mpMediumLockList(aMediumLockList)
     {
         AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
@@ -706,6 +708,7 @@ public:
     Utf8Str mstrNewPassword;
     Utf8Str mstrOldPassword;
     Utf8Str mstrCipher;
+    Utf8Str mstrNewPasswordId;
     MediumLockList *mpMediumLockList;
     PVDINTERFACE    mVDImageIfaces;
 
@@ -3026,7 +3029,8 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
 }
 
 HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Utf8Str &aOldPassword,
-                                 const com::Utf8Str &aCipher, ComPtr<IProgress> &aProgress)
+                                 const com::Utf8Str &aCipher, const com::Utf8Str &aNewPasswordId,
+                                 ComPtr<IProgress> &aProgress)
 {
     HRESULT rc = S_OK;
     ComObjPtr<Progress> pProgress;
@@ -3099,7 +3103,7 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::EncryptTask(this, aNewPassword, aOldPassword,
-                                        aCipher, pProgress, pMediumLockList);
+                                        aCipher, aNewPasswordId, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
         if (FAILED(rc))
@@ -6801,8 +6805,14 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuerySize(void *pvUser, const char *ps
     size_t cbValue = 0;
     if (!strcmp(pszName, "Algorithm"))
         cbValue = strlen(pSettings->pszCipher) + 1;
+    else if (!strcmp(pszName, "KeyId"))
+        cbValue = sizeof("irrelevant");
     else if (!strcmp(pszName, "KeyStore"))
-        cbValue = RTBase64DecodedSize(pSettings->pszKeyStoreLoad, NULL) + 1;
+    {
+        if (!pSettings->pszKeyStoreLoad)
+            return VERR_CFGM_VALUE_NOT_FOUND;
+        cbValue = strlen(pSettings->pszKeyStoreLoad) + 1;
+    }
     else if (!strcmp(pszName, "CreateKeyStore"))
         cbValue = 2; /* Single digit + terminator. */
     else
@@ -6820,30 +6830,28 @@ DECLCALLBACK(int) Medium::i_vdCryptoConfigQuery(void *pvUser, const char *pszNam
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertReturn(VALID_PTR(pszValue), VERR_INVALID_POINTER);
 
-    if (!strcmp(pszName, "KeyStore"))
-        return RTBase64Decode(pSettings->pszKeyStoreLoad, pszValue, cchValue, NULL, NULL);
-    else
+    const char *psz = NULL;
+    if (!strcmp(pszName, "Algorithm"))
+        psz = pSettings->pszCipher;
+    else if (!strcmp(pszName, "KeyId"))
+        psz = "irrelevant";
+    else if (!strcmp(pszName, "KeyStore"))
+        psz = pSettings->pszKeyStoreLoad;
+    else if (!strcmp(pszName, "CreateKeyStore"))
     {
-        const char *psz = NULL;
-        if (!strcmp(pszName, "Algorithm"))
-            psz = pSettings->pszCipher;
-        else if (!strcmp(pszName, "CreateKeyStore"))
-        {
-            if (pSettings->fCreateKeyStore)
-                psz = "1";
-            else
-                psz = "0";
-        }
+        if (pSettings->fCreateKeyStore)
+            psz = "1";
         else
-            return VERR_CFGM_VALUE_NOT_FOUND;
-
-        size_t cch = strlen(psz);
-        if (cch >= cchValue)
-            return VERR_CFGM_NOT_ENOUGH_SPACE;
-
-        memcpy(pszValue, psz, cch + 1);
+            psz = "0";
     }
+    else
+        return VERR_CFGM_VALUE_NOT_FOUND;
 
+    size_t cch = strlen(psz);
+    if (cch >= cchValue)
+        return VERR_CFGM_NOT_ENOUGH_SPACE;
+
+    memcpy(pszValue, psz, cch + 1);
     return VINF_SUCCESS;
 }
 
@@ -6862,7 +6870,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyRelease(void *pvUser, const char *pszId)
     AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
 }
 
-DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreGetPassword(void *pvUser, const char **ppszPassword)
+DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRetain(void *pvUser, const char *pszId, const char **ppszPassword)
 {
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
@@ -6871,24 +6879,24 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreGetPassword(void *pvUser, const char
     return VINF_SUCCESS;
 }
 
+DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRelease(void *pvUser, const char *pszId)
+{
+    Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    return VINF_SUCCESS;
+}
+
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreSave(void *pvUser, const void *pvKeyStore, size_t cbKeyStore)
 {
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
-    size_t cbEnc = RTBase64EncodedLength(cbKeyStore);
-    pSettings->pszKeyStore = (char *)RTMemAllocZ(cbEnc + 1);
+    pSettings->pszKeyStore = (char *)RTMemAllocZ(cbKeyStore);
     if (!pSettings->pszKeyStore)
         return VERR_NO_MEMORY;
 
-    int rc = RTBase64Encode(pvKeyStore, cbKeyStore, pSettings->pszKeyStore, cbEnc + 1, NULL);
-    if (RT_FAILURE(rc))
-    {
-        RTMemFree(pSettings->pszKeyStore);
-        pSettings->pszKeyStore = NULL;
-    }
-
-    return rc;
+    memcpy(pSettings->pszKeyStore, pvKeyStore, cbKeyStore);
+    return VINF_SUCCESS;
 }
 
 DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const char *pszCipher,
@@ -8726,7 +8734,8 @@ void Medium::i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const c
 
     pSettings->vdIfCrypto.pfnKeyRetain                = i_vdCryptoKeyRetain;
     pSettings->vdIfCrypto.pfnKeyRelease               = i_vdCryptoKeyRelease;
-    pSettings->vdIfCrypto.pfnKeyStoreGetPassword      = i_vdCryptoKeyStoreGetPassword;
+    pSettings->vdIfCrypto.pfnKeyStorePasswordRetain   = i_vdCryptoKeyStorePasswordRetain;
+    pSettings->vdIfCrypto.pfnKeyStorePasswordRelease  = i_vdCryptoKeyStorePasswordRelease;
     pSettings->vdIfCrypto.pfnKeyStoreSave             = i_vdCryptoKeyStoreSave;
     pSettings->vdIfCrypto.pfnKeyStoreReturnParameters = i_vdCryptoKeyStoreReturnParameters;
 
@@ -8744,7 +8753,7 @@ void Medium::i_taskEncryptSettingsSetup(CryptoFilterSettings *pSettings, const c
 }
 
 /**
- * Implementation code for the "compact" task.
+ * Implementation code for the "encrypt" task.
  *
  * @param task
  * @return
@@ -8835,6 +8844,10 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                     throw setError(VBOX_E_OBJECT_NOT_FOUND,
                                    tr("No valid cipher identifier was given for encryption"));
 
+                if (task.mstrNewPasswordId.isEmpty())
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("A new password must always have a valid identifier"));
+
                 i_taskEncryptSettingsSetup(&CryptoSettingsWrite, task.mstrCipher.c_str(), NULL,
                                            task.mstrNewPassword.c_str(), true /* fCreateKeyStore */);
                 vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_WRITE, CryptoSettingsWrite.vdFilterIfaces);
@@ -8843,6 +8856,9 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                                    tr("Failed to load the encryption filter: %s"),
                                    i_vdError(vrc).c_str());
             }
+            else if (task.mstrNewPasswordId.isNotEmpty())
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("The password identifier must be empty if there is no new password set for encryption"));
 
             /* Open all media in the chain. */
             MediumLockList::Base::const_iterator mediumListBegin =
@@ -8930,8 +8946,15 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             if (it != m->mapProperties.end())
                 m->mapProperties.erase(it);
 
+            it = m->mapProperties.find("CRYPT/KeyId");
+            if (it != m->mapProperties.end())
+                m->mapProperties.erase(it);
+
             if (CryptoSettingsWrite.pszKeyStore)
+            {
                 m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
+                m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
+            }
 
             thisLock.release();
             i_markRegistriesModified();
