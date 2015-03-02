@@ -188,7 +188,7 @@ public:
     bool isAutoCaptureDisabled() const { return m_fIsAutoCaptureDisabled; }
 
     /* Guest additions state getters: */
-    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > AdditionsRunLevelType_None); }
+    bool isGuestAdditionsActive() const { return (m_ulGuestAdditionsRunLevel > KAdditionsRunLevelType_None); }
     bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
     /* The double check below is correct, even though it is an implementation
      * detail of the Additions which the GUI should not ideally have to know. */
