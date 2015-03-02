@@ -1418,7 +1418,7 @@ void UISession::cleanupFramebuffers()
             /* Mark framebuffer as unused: */
             pFrameBuffer->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
-            display().DetachFramebuffer(i);
+            pFrameBuffer->detach();
             /* Release framebuffer reference: */
             m_frameBufferVector[i].setNull();
         }

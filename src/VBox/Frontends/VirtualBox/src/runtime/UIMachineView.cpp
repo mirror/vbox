@@ -582,12 +582,9 @@ void UIMachineView::prepareFrameBuffer()
     /* Make sure frame-buffer was prepared: */
     AssertReturnVoid(m_pFrameBuffer);
 
-    /* Prepare display: */
-    CFramebuffer fb = display().QueryFramebuffer(m_uScreenId);
-    /* Always perform AttachFramebuffer to ensure 3D gets notified: */
-    if (!fb.isNull())
-        display().DetachFramebuffer(m_uScreenId);
-    display().AttachFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
+    /* Reattach to IDisplay: */
+    m_pFrameBuffer->detach();
+    m_pFrameBuffer->attach();
 
     /* Calculate frame-buffer size: */
     QSize size;
@@ -722,7 +719,7 @@ void UIMachineView::cleanupFrameBuffer()
      * Note: VBOX_WITH_CROGL additionally requires us to call DetachFramebuffer
      * to ensure 3D gets notified of view being destroyed... */
     if (console().isOk() && !display().isNull())
-        display().DetachFramebuffer(m_uScreenId);
+        m_pFrameBuffer->detach();
 
     /* Detach framebuffer from view: */
     m_pFrameBuffer->setView(NULL);

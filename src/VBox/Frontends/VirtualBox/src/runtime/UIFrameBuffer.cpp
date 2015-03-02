@@ -35,6 +35,7 @@
 /* COM includes: */
 # include "CConsole.h"
 # include "CDisplay.h"
+# include "CFramebuffer.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
@@ -137,6 +138,18 @@ void UIFrameBuffer::setView(UIMachineView *pMachineView)
     /* Connect new handlers: */
     if (m_pMachineView)
         prepareConnections();
+}
+
+void UIFrameBuffer::attach()
+{
+    display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
+}
+
+void UIFrameBuffer::detach()
+{
+    CFramebuffer frameBuffer = display().QueryFramebuffer(m_uScreenId);
+    if (!frameBuffer.isNull())
+        display().DetachFramebuffer(m_uScreenId);
 }
 
 UIVisualStateType UIFrameBuffer::visualState() const

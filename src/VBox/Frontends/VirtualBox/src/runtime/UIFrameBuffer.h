@@ -73,6 +73,10 @@ public:
 
     /** Returns the copy of the IDisplay wrapper. */
     CDisplay display() const { return m_display; }
+    /** Attach frame-buffer to the Display. */
+    void attach();
+    /** Detach frame-buffer from the Display. */
+    void detach();
 
     /** Returns frame-buffer data address. */
     uchar *address() { return m_image.bits(); }
