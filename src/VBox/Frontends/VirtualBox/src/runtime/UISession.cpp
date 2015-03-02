@@ -1419,8 +1419,8 @@ void UISession::cleanupFramebuffers()
             pFrameBuffer->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
             pFrameBuffer->detach();
-            /* Release framebuffer reference: */
-            m_frameBufferVector[i].setNull();
+            /* Delete framebuffer reference: */
+            delete pFrameBuffer;
         }
     }
     m_frameBufferVector.clear();

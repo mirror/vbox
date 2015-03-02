@@ -526,26 +526,12 @@ void UIMachineView::prepareFrameBuffer()
     else
     {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        /* If 2D video acceleration is activated: */
-        if (m_fAccelerate2DVideo)
-        {
-            /* Create new frame-buffer on the basis
-             * of VBoxOverlayFrameBuffer template: */
-            ComObjPtr<VBoxOverlayFrameBuffer> pOFB;
-            pOFB.createObject();
-            pOFB->init(this, &session(), (uint32_t)screenId());
-            m_pFrameBuffer = pOFB;
-        }
-        /* If 2D video acceleration is not activated: */
-        else
-        {
-            /* Create new default frame-buffer: */
-            m_pFrameBuffer.createObject();
-            m_pFrameBuffer->init(this);
-        }
+        /* Create new frame-buffer: */
+        m_pFrameBuffer = new UIFrameBuffer(m_fAccelerate2DVideo);
+        m_pFrameBuffer->init(this);
 #else /* VBOX_WITH_VIDEOHWACCEL */
-        /* Create new default frame-buffer: */
-        m_pFrameBuffer.createObject();
+        /* Create new frame-buffer: */
+        m_pFrameBuffer = new UIFrameBuffer;
         m_pFrameBuffer->init(this);
 #endif /* !VBOX_WITH_VIDEOHWACCEL */
 

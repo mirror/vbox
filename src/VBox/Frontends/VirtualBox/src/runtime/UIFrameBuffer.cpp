@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,10 @@
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 /* Qt includes: */
+# include <QImage>
+# include <QRegion>
 # include <QPainter>
+# include <QTransform>
 /* GUI includes: */
 # include "UIFrameBuffer.h"
 # include "UISession.h"
@@ -32,30 +35,476 @@
 # ifdef VBOX_WITH_MASKED_SEAMLESS
 #  include "UIMachineWindow.h"
 # endif /* VBOX_WITH_MASKED_SEAMLESS */
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#  include "VBoxFBOverlay.h"
+# endif /* VBOX_WITH_VIDEOHWACCEL */
 /* COM includes: */
 # include "CConsole.h"
 # include "CDisplay.h"
 # include "CFramebuffer.h"
+# include "CDisplaySourceBitmap.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Other VBox includes: */
+#include <iprt/critsect.h>
 #include <VBox/VBoxVideo3D.h>
+
+#ifdef Q_WS_X11
+/* X11 includes: */
+# include <QX11Info>
+# include <X11/Xlib.h>
+#endif /* Q_WS_X11 */
+
+
+/** IFramebuffer implementation used to maintain VM display video memory. */
+class ATL_NO_VTABLE UIFrameBufferPrivate : public QObject,
+                                           public CComObjectRootEx<CComMultiThreadModel>,
+                                           VBOX_SCRIPTABLE_IMPL(IFramebuffer)
+{
+    Q_OBJECT;
+
+signals:
+
+    /** Notifies listener about guest-screen resolution changes. */
+    void sigNotifyChange(int iWidth, int iHeight);
+    /** Notifies listener about guest-screen updates. */
+    void sigNotifyUpdate(int iX, int iY, int iWidth, int iHeight);
+    /** Notifies listener about guest-screen visible-region changes. */
+    void sigSetVisibleRegion(QRegion region);
+    /** Notifies listener about guest 3D capability changes. */
+    void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
+
+public:
+
+    /** Frame-buffer constructor. */
+    UIFrameBufferPrivate();
+    /** Frame-buffer destructor. */
+    ~UIFrameBufferPrivate();
+
+    /** Frame-buffer initialization.
+      * @param pMachineView defines machine-view this frame-buffer is bounded to. */
+    virtual HRESULT init(UIMachineView *pMachineView);
+
+    /** Assigns machine-view frame-buffer will be bounded to.
+      * @param pMachineView defines machine-view this frame-buffer is bounded to. */
+    virtual void setView(UIMachineView *pMachineView);
+
+    /** Returns the copy of the IDisplay wrapper. */
+    CDisplay display() const { return m_display; }
+    /** Attach frame-buffer to IDisplay. */
+    void attach();
+    /** Detach frame-buffer from IDisplay. */
+    void detach();
+
+    /** Returns frame-buffer data address. */
+    uchar *address() { return m_image.bits(); }
+    /** Returns frame-buffer width. */
+    ulong width() const { return m_iWidth; }
+    /** Returns frame-buffer height. */
+    ulong height() const { return m_iHeight; }
+    /** Returns frame-buffer bits-per-pixel value. */
+    ulong bitsPerPixel() const { return m_image.depth(); }
+    /** Returns frame-buffer bytes-per-line value. */
+    ulong bytesPerLine() const { return m_image.bytesPerLine(); }
+    /** Returns default frame-buffer pixel-format. */
+    ulong pixelFormat() const { return BitmapFormat_BGR; }
+    /** Returns the visual-state this frame-buffer is used for. */
+    UIVisualStateType visualState() const { return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid; }
+
+    /** Defines whether frame-buffer is <b>unused</b>.
+      * @note Refer to m_fUnused for more information.
+      * @note Calls to this and any other EMT callback are synchronized (from GUI side). */
+    void setMarkAsUnused(bool fUnused);
+
+    /** Returns whether frame-buffer is <b>auto-enabled</b>.
+      * @note Refer to m_fAutoEnabled for more information. */
+    bool isAutoEnabled() const { return m_fAutoEnabled; }
+    /** Defines whether frame-buffer is <b>auto-enabled</b>.
+      * @note Refer to m_fAutoEnabled for more information. */
+    void setAutoEnabled(bool fAutoEnabled) { m_fAutoEnabled = fAutoEnabled; }
+
+    /** Returns the frame-buffer's scaled-size. */
+    QSize scaledSize() const { return m_scaledSize; }
+    /** Defines host-to-guest scale ratio as @a size. */
+    void setScaledSize(const QSize &size = QSize()) { m_scaledSize = size; }
+    /** Returns x-origin of the host (scaled) content corresponding to x-origin of guest (actual) content. */
+    inline int convertGuestXTo(int x) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.width() / m_iWidth * x) : x; }
+    /** Returns y-origin of the host (scaled) content corresponding to y-origin of guest (actual) content. */
+    inline int convertGuestYTo(int y) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.height() / m_iHeight * y) : y; }
+    /** Returns x-origin of the guest (actual) content corresponding to x-origin of host (scaled) content. */
+    inline int convertHostXTo(int x) const  { return m_scaledSize.isValid() ? qRound((double)m_iWidth / m_scaledSize.width() * x) : x; }
+    /** Returns y-origin of the guest (actual) content corresponding to y-origin of host (scaled) content. */
+    inline int convertHostYTo(int y) const  { return m_scaledSize.isValid() ? qRound((double)m_iHeight / m_scaledSize.height() * y) : y; }
+
+    /** Returns the scale-factor used by the frame-buffer. */
+    double scaleFactor() const { return m_dScaleFactor; }
+    /** Define the scale-factor used by the frame-buffer. */
+    void setScaleFactor(double dScaleFactor) { m_dScaleFactor = dScaleFactor; }
+
+    /** Returns backing-scale-factor used by HiDPI frame-buffer. */
+    double backingScaleFactor() const { return m_dBackingScaleFactor; }
+    /** Defines backing-scale-factor used by HiDPI frame-buffer. */
+    void setBackingScaleFactor(double dBackingScaleFactor) { m_dBackingScaleFactor = dBackingScaleFactor; }
+
+    /** Returns whether frame-buffer should use unscaled HiDPI output. */
+    bool useUnscaledHiDPIOutput() const { return m_fUseUnscaledHiDPIOutput; }
+    /** Defines whether frame-buffer should use unscaled HiDPI output. */
+    void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput) { m_fUseUnscaledHiDPIOutput = fUseUnscaledHiDPIOutput; }
+
+    /** Return HiDPI frame-buffer optimization type. */
+    HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
+    /** Define HiDPI frame-buffer optimization type: */
+    void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType) { m_hiDPIOptimizationType = optimizationType; }
+
+    DECLARE_NOT_AGGREGATABLE(UIFrameBufferPrivate)
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    BEGIN_COM_MAP(UIFrameBufferPrivate)
+        COM_INTERFACE_ENTRY(IFramebuffer)
+        COM_INTERFACE_ENTRY2(IDispatch,IFramebuffer)
+        COM_INTERFACE_ENTRY_AGGREGATE(IID_IMarshal, m_pUnkMarshaler.p)
+    END_COM_MAP()
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    STDMETHOD(COMGETTER(Width))(ULONG *puWidth);
+    STDMETHOD(COMGETTER(Height))(ULONG *puHeight);
+    STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel);
+    STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine);
+    STDMETHOD(COMGETTER(PixelFormat))(ULONG *puPixelFormat);
+    STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
+    STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
+    STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
+    STDMETHOD(COMGETTER(Capabilities))(ComSafeArrayOut(FramebufferCapabilities_T, aCapabilities));
+
+    /** EMT callback: Notifies frame-buffer about guest-screen size change.
+      * @param        uScreenId Guest screen number.
+      * @param        uX        Horizontal origin of the update rectangle, in pixels.
+      * @param        uY        Vertical origin of the update rectangle, in pixels.
+      * @param        uWidth    Width of the guest display, in pixels.
+      * @param        uHeight   Height of the guest display, in pixels.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(NotifyChange)(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
+
+    /** EMT callback: Notifies frame-buffer about guest-screen update.
+      * @param        uX      Horizontal origin of the update rectangle, in pixels.
+      * @param        uY      Vertical origin of the update rectangle, in pixels.
+      * @param        uWidth  Width of the update rectangle, in pixels.
+      * @param        uHeight Height of the update rectangle, in pixels.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(NotifyUpdate)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight);
+
+    /** EMT callback: Notifies frame-buffer about guest-screen update.
+      * @param        uX      Horizontal origin of the update rectangle, in pixels.
+      * @param        uY      Vertical origin of the update rectangle, in pixels.
+      * @param        uWidth  Width of the update rectangle, in pixels.
+      * @param        uHeight Height of the update rectangle, in pixels.
+      * @param        image   Brings image container which can be used to copy data from.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(NotifyUpdateImage)(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight, ComSafeArrayIn(BYTE, image));
+
+    /** EMT callback: Returns whether the frame-buffer implementation is willing to support a given video-mode.
+      * @param        uWidth      Width of the guest display, in pixels.
+      * @param        uHeight     Height of the guest display, in pixels.
+      * @param        uBPP        Color depth, bits per pixel.
+      * @param        pfSupported Is frame-buffer able/willing to render the video mode or not.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(VideoModeSupported)(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pbSupported);
+
+    /** EMT callback which is not used in current implementation. */
+    STDMETHOD(GetVisibleRegion)(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied);
+    /** EMT callback: Suggests new visible-region to this frame-buffer.
+      * @param        pRectangles Pointer to the RTRECT array.
+      * @param        uCount      Number of RTRECT elements in the rectangles array.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(SetVisibleRegion)(BYTE *pRectangles, ULONG uCount);
+
+    /** EMT callback which is not used in current implementation. */
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+
+    /** EMT callback: Notifies frame-buffer about 3D backend event.
+      * @param        uType Event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.
+      * @param        aData Event-specific data, depends on the supplied event type.
+      * @note         Any EMT callback is subsequent. No any other EMT callback can be called until this one processed.
+      * @note         Calls to this and #setMarkAsUnused method are synchronized (from GUI side). */
+    STDMETHOD(Notify3DEvent)(ULONG uType, ComSafeArrayIn(BYTE, data));
+
+    /** Locks frame-buffer access. */
+    void lock() const { RTCritSectEnter(&m_critSect); }
+    /** Unlocks frame-buffer access. */
+    void unlock() const { RTCritSectLeave(&m_critSect); }
+
+    /** Handles frame-buffer notify-change-event. */
+    virtual void handleNotifyChange(int iWidth, int iHeight);
+    /** Handles frame-buffer paint-event. */
+    virtual void handlePaintEvent(QPaintEvent *pEvent);
+    /** Handles frame-buffer set-visible-region-event. */
+    virtual void handleSetVisibleRegion(const QRegion &region);
+
+    /** Performs frame-buffer resizing. */
+    virtual void performResize(int iWidth, int iHeight);
+    /** Performs frame-buffer rescaling. */
+    virtual void performRescale();
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /** Performs Video HW Acceleration command. */
+    virtual void doProcessVHWACommand(QEvent*) {}
+    /** Handles viewport resize-event. */
+    virtual void viewportResized(QResizeEvent*) {}
+    /** Handles viewport scroll-event. */
+    virtual void viewportScrolled(int, int) {}
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
+protected:
+
+    /** Prepare connections routine. */
+    void prepareConnections();
+    /** Cleanup connections routine. */
+    void cleanupConnections();
+
+    /** Updates coordinate-system: */
+    void updateCoordinateSystem();
+
+    /** Default paint routine. */
+    void paintDefault(QPaintEvent *pEvent);
+    /** Paint routine for seamless mode. */
+    void paintSeamless(QPaintEvent *pEvent);
+
+    /** Erases corresponding @a rect with @a painter. */
+    static void eraseImageRect(QPainter &painter, const QRect &rect,
+                               bool fUseUnscaledHiDPIOutput,
+                               HiDPIOptimizationType hiDPIOptimizationType,
+                               double dBackingScaleFactor);
+    /** Draws corresponding @a rect of passed @a image with @a painter. */
+    static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
+                              int iContentsShiftX, int iContentsShiftY,
+                              bool fUseUnscaledHiDPIOutput,
+                              HiDPIOptimizationType hiDPIOptimizationType,
+                              double dBackingScaleFactor);
+
+    /** Holds the screen-id. */
+    ulong m_uScreenId;
+
+    /** Holds the QImage buffer. */
+    QImage m_image;
+    /** Holds frame-buffer width. */
+    int m_iWidth;
+    /** Holds frame-buffer height. */
+    int m_iHeight;
+
+    /** Holds the copy of the IDisplay wrapper. */
+    CDisplay m_display;
+    /** Source bitmap from IDisplay. */
+    CDisplaySourceBitmap m_sourceBitmap;
+    /** Source bitmap from IDisplay (acquired but not yet applied). */
+    CDisplaySourceBitmap m_pendingSourceBitmap;
+    /** Holds whether there is a pending source bitmap which must be applied. */
+    bool m_fPendingSourceBitmap;
+
+    /** Holds machine-view this frame-buffer is bounded to. */
+    UIMachineView *m_pMachineView;
+    /** Holds window ID this frame-buffer referring to. */
+    int64_t m_iWinId;
+
+    /** Reflects whether screen-updates are allowed. */
+    bool m_fUpdatesAllowed;
+
+    /** Defines whether frame-buffer is <b>unused</b>.
+      * <b>Unused</b> status determines whether frame-buffer should ignore EMT events or not. */
+    bool m_fUnused;
+
+    /** Defines whether frame-buffer is <b>auto-enabled</b>.
+      * <b>Auto-enabled</b> status means that guest-screen corresponding to this frame-buffer
+      * was automatically enabled by the multi-screen layout (auto-mount guest-screen) functionality,
+      * so have potentially incorrect size-hint posted into guest event queue.
+      * Machine-view will try to automatically adjust guest-screen size as soon as possible. */
+    bool m_fAutoEnabled;
+
+    /** RTCRITSECT object to protect frame-buffer access. */
+    mutable RTCRITSECT m_critSect;
+
+    /** @name Scale-factor related variables.
+     * @{ */
+    /** Holds the scale-factor used by the scaled-size. */
+    double m_dScaleFactor;
+    /** Holds the coordinate-system for the scale-factor above. */
+    QTransform m_transform;
+    /** Holds the frame-buffer's scaled-size. */
+    QSize m_scaledSize;
+    /** @} */
+
+    /** @name Seamless mode related variables.
+     * @{ */
+    /* To avoid a seamless flicker which caused by the latency between
+     * the initial visible-region arriving from EMT thread
+     * and actual visible-region appliance on GUI thread
+     * it was decided to use two visible-region instances: */
+    /** Sync visible-region which being updated synchronously by locking EMT thread.
+      * Used for immediate manual clipping of the painting operations. */
+    QRegion m_syncVisibleRegion;
+    /** Async visible-region which being updated asynchronously by posting async-event from EMT to GUI thread,
+      * Used to update viewport parts for visible-region changes,
+      * because NotifyUpdate doesn't take into account these changes. */
+    QRegion m_asyncVisibleRegion;
+    /** When the frame-buffer is being resized, visible region is saved here.
+      * The saved region is applied when updates are enabled again. */
+    QRegion m_pendingSyncVisibleRegion;
+    /** @} */
+
+    /** @name HiDPI screens related variables.
+     * @{ */
+    /** Holds backing-scale-factor used by HiDPI frame-buffer. */
+    double m_dBackingScaleFactor;
+    /** Holds whether frame-buffer should use unscaled HiDPI output. */
+    bool m_fUseUnscaledHiDPIOutput;
+    /** Holds HiDPI frame-buffer optimization type. */
+    HiDPIOptimizationType m_hiDPIOptimizationType;
+    /** @} */
+
+private:
+
+#ifdef Q_OS_WIN
+     CComPtr <IUnknown> m_pUnkMarshaler;
+#endif /* Q_OS_WIN */
+};
+
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+/** UIFrameBufferPrivate reimplementation used to maintain VM display video memory
+  *                      for the case when 2D Video Acceleration is enabled. */
+class VBoxOverlayFrameBuffer : public UIFrameBufferPrivate
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxOverlayFrameBuffer()
+    {
+    }
+
+    virtual HRESULT init(UIMachineView *pView, CSession * aSession, uint32_t id)
+    {
+        mpView = pView;
+        UIFrameBufferPrivate::init(mpView);
+        mOverlay.init(mpView->viewport(), mpView, aSession, id),
+        /* sync with frame-buffer */
+        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
+        return S_OK;
+    }
+
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
+    {
+        int rc;
+        UIFrameBufferPrivate::lock();
+        /* Make sure frame-buffer is used: */
+        if (m_fUnused)
+        {
+            LogRel2(("ProcessVHWACommand: Postponed!\n"));
+            /* Unlock access to frame-buffer: */
+            UIFrameBufferPrivate::unlock();
+            /* tell client to pend ProcessVHWACommand */
+            return E_ACCESSDENIED;
+        }
+        rc = mOverlay.onVHWACommand ((struct VBOXVHWACMD*)pCommand);
+        UIFrameBufferPrivate::unlock();
+        if (rc == VINF_CALLBACK_RETURN)
+            return S_OK;
+        else if (RT_SUCCESS(rc))
+            return S_FALSE;
+        else if (rc == VERR_INVALID_STATE)
+            return E_ACCESSDENIED;
+        return E_FAIL;
+    }
+
+    void doProcessVHWACommand (QEvent * pEvent)
+    {
+        mOverlay.onVHWACommandEvent (pEvent);
+    }
+
+    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
+                             ULONG aW, ULONG aH)
+    {
+        HRESULT hr = S_OK;
+        UIFrameBufferPrivate::lock();
+        /* Make sure frame-buffer is used: */
+        if (m_fUnused)
+        {
+            LogRel2(("NotifyUpdate: Ignored!\n"));
+            mOverlay.onNotifyUpdateIgnore (aX, aY, aW, aH);
+            /* Unlock access to frame-buffer: */
+            UIFrameBufferPrivate::unlock();
+            /*can we actually ignore the notify update?*/
+            /* Ignore NotifyUpdate: */
+            return E_FAIL;
+        }
+
+        if (!mOverlay.onNotifyUpdate (aX, aY, aW, aH))
+            hr = UIFrameBufferPrivate::NotifyUpdate (aX, aY, aW, aH);
+        UIFrameBufferPrivate::unlock();
+        return hr;
+    }
+
+    void performResize(int iWidth, int iHeight)
+    {
+        UIFrameBufferPrivate::performResize(iWidth, iHeight);
+        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
+                QPoint(mpView->contentsX(), mpView->contentsY()));
+    }
+
+    void performRescale()
+    {
+        UIFrameBufferPrivate::performRescale();
+        mOverlay.onResizeEventPostprocess(VBoxFBSizeInfo(this),
+                QPoint(mpView->contentsX(), mpView->contentsY()));
+    }
+
+    void viewportResized (QResizeEvent * re)
+    {
+        mOverlay.onViewportResized (re);
+        UIFrameBufferPrivate::viewportResized (re);
+    }
+
+    void viewportScrolled (int dx, int dy)
+    {
+        mOverlay.onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
+        UIFrameBufferPrivate::viewportScrolled (dx, dy);
+    }
+
+    void setView(UIMachineView * pView)
+    {
+        /* lock to ensure we do not collide with the EMT thread passing commands to us */
+        UIFrameBufferPrivate::lock();
+        UIFrameBufferPrivate::setView(pView);
+        mpView = pView;
+        mOverlay.updateAttachment(pView ? pView->viewport() : NULL, pView);
+        UIFrameBufferPrivate::unlock();
+    }
+
+private:
+
+    VBoxQGLOverlay mOverlay;
+    UIMachineView *mpView;
+};
+#endif /* VBOX_WITH_VIDEOHWACCEL */
 
 
 /* COM stuff: */
 #ifdef Q_WS_WIN
 static CComModule _Module;
 #else /* !Q_WS_WIN */
-NS_DECL_CLASSINFO(UIFrameBuffer)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBuffer, IFramebuffer)
+NS_DECL_CLASSINFO(UIFrameBufferPrivate)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIFrameBufferPrivate, IFramebuffer)
 #endif /* !Q_WS_WIN */
 
-#ifdef Q_WS_X11
-# include <QX11Info>
-# include <X11/Xlib.h>
-#endif /* Q_WS_X11 */
 
-UIFrameBuffer::UIFrameBuffer()
+UIFrameBufferPrivate::UIFrameBufferPrivate()
     : m_uScreenId(0)
     , m_iWidth(0), m_iHeight(0)
     , m_fPendingSourceBitmap(false)
@@ -73,9 +522,9 @@ UIFrameBuffer::UIFrameBuffer()
     updateCoordinateSystem();
 }
 
-HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
+HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 {
-    LogRel2(("UIFrameBuffer::init %p\n", this));
+    LogRel2(("UIFrameBufferPrivate::init %p\n", this));
 
     /* Assign mahine-view: */
     m_pMachineView = pMachineView;
@@ -107,9 +556,9 @@ HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
     return S_OK;
 }
 
-UIFrameBuffer::~UIFrameBuffer()
+UIFrameBufferPrivate::~UIFrameBufferPrivate()
 {
-    LogRel2(("UIFrameBuffer::~UIFrameBuffer %p\n", this));
+    LogRel2(("UIFrameBufferPrivate::~UIFrameBufferPrivate %p\n", this));
 
     /* Disconnect handlers: */
     if (m_pMachineView)
@@ -119,7 +568,7 @@ UIFrameBuffer::~UIFrameBuffer()
     RTCritSectDelete(&m_critSect);
 }
 
-void UIFrameBuffer::setView(UIMachineView *pMachineView)
+void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
 {
     /* Disconnect old handlers: */
     if (m_pMachineView)
@@ -140,41 +589,36 @@ void UIFrameBuffer::setView(UIMachineView *pMachineView)
         prepareConnections();
 }
 
-void UIFrameBuffer::attach()
+void UIFrameBufferPrivate::attach()
 {
     display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
 }
 
-void UIFrameBuffer::detach()
+void UIFrameBufferPrivate::detach()
 {
     CFramebuffer frameBuffer = display().QueryFramebuffer(m_uScreenId);
     if (!frameBuffer.isNull())
         display().DetachFramebuffer(m_uScreenId);
 }
 
-UIVisualStateType UIFrameBuffer::visualState() const
-{
-    return m_pMachineView ? m_pMachineView->visualStateType() : UIVisualStateType_Invalid;
-}
-
-void UIFrameBuffer::setMarkAsUnused(bool fUnused)
+void UIFrameBufferPrivate::setMarkAsUnused(bool fUnused)
 {
     lock();
     m_fUnused = fUnused;
     unlock();
 }
 
-HRESULT UIFrameBuffer::FinalConstruct()
+HRESULT UIFrameBufferPrivate::FinalConstruct()
 {
     return 0;
 }
 
-void UIFrameBuffer::FinalRelease()
+void UIFrameBufferPrivate::FinalRelease()
 {
     return;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(Width)(ULONG *puWidth)
 {
     if (!puWidth)
         return E_POINTER;
@@ -182,7 +626,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Width)(ULONG *puWidth)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Height)(ULONG *puHeight)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(Height)(ULONG *puHeight)
 {
     if (!puHeight)
         return E_POINTER;
@@ -190,7 +634,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Height)(ULONG *puHeight)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(BitsPerPixel)(ULONG *puBitsPerPixel)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(BitsPerPixel)(ULONG *puBitsPerPixel)
 {
     if (!puBitsPerPixel)
         return E_POINTER;
@@ -198,7 +642,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(BitsPerPixel)(ULONG *puBitsPerPixel)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(BytesPerLine)(ULONG *puBytesPerLine)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(BytesPerLine)(ULONG *puBytesPerLine)
 {
     if (!puBytesPerLine)
         return E_POINTER;
@@ -206,7 +650,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(BytesPerLine)(ULONG *puBytesPerLine)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
 {
     if (!puPixelFormat)
         return E_POINTER;
@@ -214,7 +658,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction)(ULONG *puHeightReduction)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(HeightReduction)(ULONG *puHeightReduction)
 {
     if (!puHeightReduction)
         return E_POINTER;
@@ -222,7 +666,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(HeightReduction)(ULONG *puHeightReduction)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Overlay)(IFramebufferOverlay **ppOverlay)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(Overlay)(IFramebufferOverlay **ppOverlay)
 {
     if (!ppOverlay)
         return E_POINTER;
@@ -230,7 +674,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Overlay)(IFramebufferOverlay **ppOverlay)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(WinId)(LONG64 *pWinId)
 {
     if (!pWinId)
         return E_POINTER;
@@ -238,7 +682,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(WinId)(LONG64 *pWinId)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, enmCapabilities))
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferCapabilities_T, enmCapabilities))
 {
     if (ComSafeArrayOutIsNull(enmCapabilities))
         return E_POINTER;
@@ -260,7 +704,7 @@ STDMETHODIMP UIFrameBuffer::COMGETTER(Capabilities)(ComSafeArrayOut(FramebufferC
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
+STDMETHODIMP UIFrameBufferPrivate::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     CDisplaySourceBitmap sourceBitmap;
     if (!vboxGlobal().isSeparateProcess())
@@ -272,7 +716,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel(("UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                 (unsigned long)uScreenId,
                 (unsigned long)uX, (unsigned long)uY,
                 (unsigned long)uWidth, (unsigned long)uHeight));
@@ -299,7 +743,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRel(("UIFrameBuffer::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+    LogRel(("UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
             (unsigned long)uScreenId,
             (unsigned long)uX, (unsigned long)uY,
             (unsigned long)uWidth, (unsigned long)uHeight));
@@ -315,7 +759,7 @@ STDMETHODIMP UIFrameBuffer::NotifyChange(ULONG uScreenId, ULONG uX, ULONG uY, UL
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
+STDMETHODIMP UIFrameBufferPrivate::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG uHeight)
 {
     /* Lock access to frame-buffer: */
     lock();
@@ -323,7 +767,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
 
@@ -336,7 +780,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
 
     /* Widget update is NOT thread-safe and *seems* never will be,
      * We have to notify machine-view with the async-signal to perform update operation. */
-    LogRel2(("UIFrameBuffer::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+    LogRel2(("UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
              (unsigned long)uX, (unsigned long)uY,
              (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
@@ -348,9 +792,9 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth, ULONG
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
-                                              ULONG uWidth, ULONG uHeight,
-                                              ComSafeArrayIn(BYTE, image))
+STDMETHODIMP UIFrameBufferPrivate::NotifyUpdateImage(ULONG uX, ULONG uY,
+                                                     ULONG uWidth, ULONG uHeight,
+                                                     ComSafeArrayIn(BYTE, image))
 {
     /* Wrapping received data: */
     com::SafeArray<BYTE> imageData(ComSafeArrayInArg(image));
@@ -361,7 +805,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBuffer::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
 
@@ -388,7 +832,7 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
 
         /* Widget update is NOT thread-safe and *seems* never will be,
          * We have to notify machine-view with the async-signal to perform update operation. */
-        LogRel2(("UIFrameBuffer::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+        LogRel2(("UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
         emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
@@ -401,12 +845,12 @@ STDMETHODIMP UIFrameBuffer::NotifyUpdateImage(ULONG uX, ULONG uY,
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
+STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULONG uBPP, BOOL *pfSupported)
 {
     /* Make sure result pointer is valid: */
     if (!pfSupported)
     {
-        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
+        LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         return E_POINTER;
@@ -418,7 +862,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Unlock access to frame-buffer: */
@@ -439,7 +883,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
         && (uHeight > (ULONG)screenSize.height())
         && (uHeight > (ULONG)height()))
         *pfSupported = FALSE;
-    LogRel2(("UIFrameBuffer::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
+    LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
              (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight, *pfSupported ? "TRUE" : "FALSE"));
 
     /* Unlock access to frame-buffer: */
@@ -449,7 +893,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied)
+STDMETHODIMP UIFrameBufferPrivate::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, ULONG *puCountCopied)
 {
     PRTRECT rects = (PRTRECT)pRectangles;
 
@@ -462,12 +906,12 @@ STDMETHODIMP UIFrameBuffer::GetVisibleRegion(BYTE *pRectangles, ULONG uCount, UL
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
+STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
 {
     /* Make sure rectangles were passed: */
     if (!pRectangles)
     {
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Invalid pRectangles pointer!\n",
+        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Invalid pRectangles pointer!\n",
                  (unsigned long)uCount));
 
         return E_POINTER;
@@ -479,7 +923,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
+        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
                  (unsigned long)uCount));
 
         /* Unlock access to frame-buffer: */
@@ -514,7 +958,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
         /* We are directly updating synchronous visible-region: */
         m_syncVisibleRegion = region;
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler\n",
+        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)uCount));
         emit sigSetVisibleRegion(region);
     }
@@ -522,7 +966,7 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     {
         /* Save the region. */
         m_pendingSyncVisibleRegion = region;
-        LogRel2(("UIFrameBuffer::SetVisibleRegion: Rectangle count=%lu, Saved\n",
+        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Saved\n",
                  (unsigned long)uCount));
     }
 
@@ -533,13 +977,13 @@ STDMETHODIMP UIFrameBuffer::SetVisibleRegion(BYTE *pRectangles, ULONG uCount)
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
+STDMETHODIMP UIFrameBufferPrivate::ProcessVHWACommand(BYTE *pCommand)
 {
     Q_UNUSED(pCommand);
     return E_NOTIMPL;
 }
 
-STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data))
+STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data))
 {
     /* Lock access to frame-buffer: */
     lock();
@@ -547,7 +991,7 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBuffer::Notify3DEvent: Ignored!\n"));
+        LogRel2(("UIFrameBufferPrivate::Notify3DEvent: Ignored!\n"));
 
         /* Unlock access to frame-buffer: */
         unlock();
@@ -564,7 +1008,7 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data
             /* Notify machine-view with the async-signal
              * about 3D overlay visibility change: */
             BOOL fVisible = eventData[0];
-            LogRel2(("UIFrameBuffer::Notify3DEvent: Sending to async-handler: "
+            LogRel2(("UIFrameBufferPrivate::Notify3DEvent: Sending to async-handler: "
                      "(VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA = %s)\n",
                      fVisible ? "TRUE" : "FALSE"));
             emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
@@ -594,9 +1038,9 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYTE, data
     return E_INVALIDARG;
 }
 
-void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
+void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("UIFrameBuffer::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
+    LogRel(("UIFrameBufferPrivate::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -608,7 +1052,7 @@ void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
     if (!vboxGlobal().isSeparateProcess() && !m_fPendingSourceBitmap)
     {
         /* Do nothing, change-event already processed: */
-        LogRel2(("UIFrameBuffer::handleNotifyChange: Already processed.\n"));
+        LogRel2(("UIFrameBufferPrivate::handleNotifyChange: Already processed.\n"));
         /* Unlock access to frame-buffer: */
         unlock();
         /* Return immediately: */
@@ -627,9 +1071,9 @@ void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
     performResize(iWidth, iHeight);
 }
 
-void UIFrameBuffer::handlePaintEvent(QPaintEvent *pEvent)
+void UIFrameBufferPrivate::handlePaintEvent(QPaintEvent *pEvent)
 {
-    LogRel2(("UIFrameBuffer::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
+    LogRel2(("UIFrameBufferPrivate::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
              pEvent->rect().x(), pEvent->rect().y(),
              pEvent->rect().width(), pEvent->rect().height()));
 
@@ -666,7 +1110,7 @@ void UIFrameBuffer::handlePaintEvent(QPaintEvent *pEvent)
     unlock();
 }
 
-void UIFrameBuffer::handleSetVisibleRegion(const QRegion &region)
+void UIFrameBufferPrivate::handleSetVisibleRegion(const QRegion &region)
 {
     /* Make sure async visible-region has changed: */
     if (m_asyncVisibleRegion == region)
@@ -686,9 +1130,9 @@ void UIFrameBuffer::handleSetVisibleRegion(const QRegion &region)
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
 }
 
-void UIFrameBuffer::performResize(int iWidth, int iHeight)
+void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
 {
-    LogRel(("UIFrameBuffer::performResize: Size=%dx%d\n", iWidth, iHeight));
+    LogRel(("UIFrameBufferPrivate::performResize: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -706,7 +1150,7 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
     /* If source-bitmap invalid: */
     if (m_sourceBitmap.isNull())
     {
-        LogRel(("UIFrameBuffer::performResize: "
+        LogRel(("UIFrameBufferPrivate::performResize: "
                 "Using FALLBACK buffer due to source-bitmap is not provided..\n"));
 
         /* Remember new size came from hint: */
@@ -720,7 +1164,7 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
     /* If source-bitmap valid: */
     else
     {
-        LogRel(("UIFrameBuffer::performResize: "
+        LogRel(("UIFrameBufferPrivate::performResize: "
                 "Directly using source-bitmap content\n"));
 
         /* Acquire source-bitmap attributes: */
@@ -776,7 +1220,7 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
         m_pendingSyncVisibleRegion = QRegion();
 
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBuffer::performResize: Rectangle count=%lu, Sending to async-handler\n",
+        LogRel2(("UIFrameBufferPrivate::performResize: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)m_syncVisibleRegion.rectCount()));
         emit sigSetVisibleRegion(m_syncVisibleRegion);
     }
@@ -784,9 +1228,9 @@ void UIFrameBuffer::performResize(int iWidth, int iHeight)
     unlock();
 }
 
-void UIFrameBuffer::performRescale()
+void UIFrameBufferPrivate::performRescale()
 {
-//    printf("UIFrameBuffer::performRescale\n");
+//    printf("UIFrameBufferPrivate::performRescale\n");
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -805,11 +1249,11 @@ void UIFrameBuffer::performRescale()
     /* Update coordinate-system: */
     updateCoordinateSystem();
 
-//    printf("UIFrameBuffer::performRescale: Complete: Scale-factor=%f, Scaled-size=%dx%d\n",
+//    printf("UIFrameBufferPrivate::performRescale: Complete: Scale-factor=%f, Scaled-size=%dx%d\n",
 //           scaleFactor(), scaledSize().width(), scaledSize().height());
 }
 
-void UIFrameBuffer::prepareConnections()
+void UIFrameBufferPrivate::prepareConnections()
 {
     /* Attach EMT connections: */
     connect(this, SIGNAL(sigNotifyChange(int, int)),
@@ -826,7 +1270,7 @@ void UIFrameBuffer::prepareConnections()
             Qt::QueuedConnection);
 }
 
-void UIFrameBuffer::cleanupConnections()
+void UIFrameBufferPrivate::cleanupConnections()
 {
     /* Detach EMT connections: */
     disconnect(this, SIGNAL(sigNotifyChange(int, int)),
@@ -839,7 +1283,7 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
 }
 
-void UIFrameBuffer::updateCoordinateSystem()
+void UIFrameBufferPrivate::updateCoordinateSystem()
 {
     /* Reset to default: */
     m_transform = QTransform();
@@ -853,7 +1297,7 @@ void UIFrameBuffer::updateCoordinateSystem()
         m_transform = m_transform.scale(1.0 / backingScaleFactor(), 1.0 / backingScaleFactor());
 }
 
-void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
+void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
 {
     /* Scaled image is NULL by default: */
     QImage scaledImage;
@@ -893,7 +1337,7 @@ void UIFrameBuffer::paintDefault(QPaintEvent *pEvent)
                   useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 }
 
-void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
+void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
 {
     /* Scaled image is NULL by default: */
     QImage scaledImage;
@@ -960,10 +1404,10 @@ void UIFrameBuffer::paintSeamless(QPaintEvent *pEvent)
 }
 
 /* static */
-void UIFrameBuffer::eraseImageRect(QPainter &painter, const QRect &rect,
-                                   bool fUseUnscaledHiDPIOutput,
-                                   HiDPIOptimizationType hiDPIOptimizationType,
-                                   double dBackingScaleFactor)
+void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
+                                          bool fUseUnscaledHiDPIOutput,
+                                          HiDPIOptimizationType hiDPIOptimizationType,
+                                          double dBackingScaleFactor)
 {
     /* Prepare sub-pixmap: */
     QPixmap subPixmap = QPixmap(rect.width(), rect.height());
@@ -1006,11 +1450,11 @@ void UIFrameBuffer::eraseImageRect(QPainter &painter, const QRect &rect,
 }
 
 /* static */
-void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
-                                  int iContentsShiftX, int iContentsShiftY,
-                                  bool fUseUnscaledHiDPIOutput,
-                                  HiDPIOptimizationType hiDPIOptimizationType,
-                                  double dBackingScaleFactor)
+void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
+                                         int iContentsShiftX, int iContentsShiftY,
+                                         bool fUseUnscaledHiDPIOutput,
+                                         HiDPIOptimizationType hiDPIOptimizationType,
+                                         double dBackingScaleFactor)
 {
     /* Calculate offset: */
     size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
@@ -1064,4 +1508,200 @@ void UIFrameBuffer::drawImageRect(QPainter &painter, const QImage &image, const 
     /* Draw sub-pixmap: */
     painter.drawPixmap(paintPoint, subPixmap);
 }
+
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+UIFrameBuffer::UIFrameBuffer(bool m_fAccelerate2DVideo)
+{
+    if (m_fAccelerate2DVideo)
+    {
+        ComObjPtr<VBoxOverlayFrameBuffer> pFrameBuffer;
+        pFrameBuffer.createObject();
+        m_pFrameBuffer = pFrameBuffer;
+    }
+    else
+    {
+        m_pFrameBuffer.createObject();
+    }
+}
+#else /* !VBOX_WITH_VIDEOHWACCEL */
+UIFrameBuffer::UIFrameBuffer()
+{
+    m_pFrameBuffer.createObject();
+}
+#endif /* !VBOX_WITH_VIDEOHWACCEL */
+
+UIFrameBuffer::~UIFrameBuffer()
+{
+    m_pFrameBuffer.setNull();
+}
+
+HRESULT UIFrameBuffer::init(UIMachineView *pMachineView)
+{
+    return m_pFrameBuffer->init(pMachineView);
+}
+
+void UIFrameBuffer::attach()
+{
+    m_pFrameBuffer->attach();
+}
+
+void UIFrameBuffer::detach()
+{
+    m_pFrameBuffer->detach();
+}
+
+uchar* UIFrameBuffer::address()
+{
+    return m_pFrameBuffer->address();
+}
+
+ulong UIFrameBuffer::width() const
+{
+    return m_pFrameBuffer->width();
+}
+
+ulong UIFrameBuffer::height() const
+{
+    return m_pFrameBuffer->height();
+}
+
+ulong UIFrameBuffer::bitsPerPixel() const
+{
+    return m_pFrameBuffer->bitsPerPixel();
+}
+
+ulong UIFrameBuffer::bytesPerLine() const
+{
+    return m_pFrameBuffer->bytesPerLine();
+}
+
+UIVisualStateType UIFrameBuffer::visualState() const
+{
+    return m_pFrameBuffer->visualState();
+}
+
+void UIFrameBuffer::setView(UIMachineView *pMachineView)
+{
+    m_pFrameBuffer->setView(pMachineView);
+}
+
+void UIFrameBuffer::setMarkAsUnused(bool fUnused)
+{
+    m_pFrameBuffer->setMarkAsUnused(fUnused);
+}
+
+bool UIFrameBuffer::isAutoEnabled() const
+{
+    return m_pFrameBuffer->isAutoEnabled();
+}
+
+void UIFrameBuffer::setAutoEnabled(bool fAutoEnabled)
+{
+    m_pFrameBuffer->setAutoEnabled(fAutoEnabled);
+}
+
+QSize UIFrameBuffer::scaledSize() const
+{
+    return m_pFrameBuffer->scaledSize();
+}
+
+void UIFrameBuffer::setScaledSize(const QSize &size /* = QSize() */)
+{
+    m_pFrameBuffer->setScaledSize(size);
+}
+
+int UIFrameBuffer::convertHostXTo(int iX) const
+{
+    return m_pFrameBuffer->convertHostXTo(iX);
+}
+
+int UIFrameBuffer::convertHostYTo(int iY) const
+{
+    return m_pFrameBuffer->convertHostXTo(iY);
+}
+
+double UIFrameBuffer::scaleFactor() const
+{
+    return m_pFrameBuffer->scaleFactor();
+}
+
+void UIFrameBuffer::setScaleFactor(double dScaleFactor)
+{
+    m_pFrameBuffer->setScaleFactor(dScaleFactor);
+}
+
+double UIFrameBuffer::backingScaleFactor() const
+{
+    return m_pFrameBuffer->backingScaleFactor();
+}
+
+void UIFrameBuffer::setBackingScaleFactor(double dBackingScaleFactor)
+{
+    m_pFrameBuffer->setBackingScaleFactor(dBackingScaleFactor);
+}
+
+bool UIFrameBuffer::useUnscaledHiDPIOutput() const
+{
+    return m_pFrameBuffer->useUnscaledHiDPIOutput();
+}
+
+void UIFrameBuffer::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput)
+{
+    m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+}
+
+HiDPIOptimizationType UIFrameBuffer::hiDPIOptimizationType() const
+{
+    return m_pFrameBuffer->hiDPIOptimizationType();
+}
+
+void UIFrameBuffer::setHiDPIOptimizationType(HiDPIOptimizationType optimizationType)
+{
+    m_pFrameBuffer->setHiDPIOptimizationType(optimizationType);
+}
+
+void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)
+{
+    m_pFrameBuffer->handleNotifyChange(iWidth, iHeight);
+}
+
+void UIFrameBuffer::handlePaintEvent(QPaintEvent *pEvent)
+{
+    m_pFrameBuffer->handlePaintEvent(pEvent);
+}
+
+void UIFrameBuffer::handleSetVisibleRegion(const QRegion &region)
+{
+    m_pFrameBuffer->handleSetVisibleRegion(region);
+}
+
+void UIFrameBuffer::performResize(int iWidth, int iHeight)
+{
+    m_pFrameBuffer->performResize(iWidth, iHeight);
+}
+
+void UIFrameBuffer::performRescale()
+{
+    m_pFrameBuffer->performRescale();
+}
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
+{
+    m_pFrameBuffer->doProcessVHWACommand(pEvent);
+}
+
+void UIFrameBuffer::viewportResized(QResizeEvent *pEvent)
+{
+    m_pFrameBuffer->viewportResized(pEvent);
+}
+
+void UIFrameBuffer::viewportScrolled(int iX, int iY)
+{
+    m_pFrameBuffer->viewportScrolled(iX, iY);
+}
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
+#include "UIFrameBuffer.moc"
 

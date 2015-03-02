@@ -242,7 +242,7 @@ public:
      * Ignores (asserts) if screen-number attribute is out of bounds: */
     void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
     /** Returns existing frame-buffer vector. */
-    const QVector<ComObjPtr<UIFrameBuffer> >& frameBuffers() const { return m_frameBufferVector; }
+    const QVector<UIFrameBuffer*>& frameBuffers() const { return m_frameBufferVector; }
 
     /** Updates VRDE Server action state. */
     void updateStatusVRDE() { sltVRDEChange(); }
@@ -418,7 +418,7 @@ private:
     QVector<bool> m_monitorVisibilityVector;
 
     /* Frame-buffers vector: */
-    QVector<ComObjPtr<UIFrameBuffer> > m_frameBufferVector;
+    QVector<UIFrameBuffer*> m_frameBufferVector;
 
     /* Common variables: */
     KMachineState m_machineStatePrevious;

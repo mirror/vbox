@@ -269,7 +269,7 @@ protected:
     /* Protected members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
-    ComObjPtr<UIFrameBuffer> m_pFrameBuffer;
+    UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
     /** HACK: when switching out of fullscreen or seamless we wish to override
      * the default size hint to avoid short resizes back to fullscreen size.
@@ -306,6 +306,7 @@ protected:
     friend class UIMouseHandler;
     friend class UIMachineLogic;
     friend class UIFrameBuffer;
+    friend class UIFrameBufferPrivate;
     friend class VBoxOverlayFrameBuffer;
 };
 
