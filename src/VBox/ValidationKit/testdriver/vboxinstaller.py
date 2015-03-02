@@ -37,7 +37,7 @@ __version__ = "$Revision$"
 import os
 import sys
 import re
-import socket
+#import socket
 import tempfile
 import time
 
