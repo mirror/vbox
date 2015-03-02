@@ -199,3 +199,10 @@ VBGLR3DECL(int)     VbglR3GuestPropWait(uint32_t u32ClientId,
 }
 
 #endif
+
+VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cch)
+{
+    NOREF(pch); NOREF(cch);
+    return VINF_SUCCESS;
+}
+
