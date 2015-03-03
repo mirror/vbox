@@ -215,13 +215,13 @@ typedef struct VBOXGUESTDEVEXT
      *
      * Protected by VBOXGUESTDEVEXT::SessionSpinlock, but is unfortunately read
      * without holding the lock in a couple of places. */
-    uint32_t volatile           u32AcquireModeGuestCaps;
+    uint32_t volatile           fAcquireModeGuestCaps;
     /** Guest capabilities which have been set to "set" mode.  This just means
      * that they have been blocked from ever being set to "acquire" mode. */
-    uint32_t                    u32SetModeGuestCaps;
+    uint32_t                    fSetModeGuestCaps;
     /** Mask of all capabilities which are currently acquired by some session
      * and as such reported to the host. */
-    uint32_t                    u32GuestCapsAcquired;
+    uint32_t                    fAcquiredGuestCaps;
     /** Usage counters for guest capabilities in "set" mode. Indexed by
      *  capability bit number, one count per session using a capability. */
     VBOXGUESTBITUSAGETRACER     SetGuestCapsTracker;
@@ -282,7 +282,7 @@ typedef struct VBOXGUESTSESSION
     /** Guest capabilities held in "acquired" by this session.
      * Protected by VBOXGUESTDEVEXT::SessionSpinlock, but is unfortunately read
      * without holding the lock in a couple of places. */
-    uint32_t volatile           u32AquiredGuestCaps;
+    uint32_t volatile           fAcquiredGuestCaps;
     /** Guest capabilities in "set" mode for this session.
      * These accumulated for sessions via VBOXGUESTDEVEXT::acGuestCapsSet and
      * reported to the host.  Protected by VBOXGUESTDEVEXT::SessionSpinlock.  */

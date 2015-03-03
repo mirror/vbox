@@ -1005,9 +1005,9 @@ int VbgdCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     vbgdBitUsageTrackerClear(&pDevExt->MouseStatusTracker);
     pDevExt->fMouseStatusHost = UINT32_MAX;  /* forces a report */
 
-    pDevExt->u32AcquireModeGuestCaps = 0;
-    pDevExt->u32SetModeGuestCaps = 0;
-    pDevExt->u32GuestCapsAcquired = 0;
+    pDevExt->fAcquireModeGuestCaps = 0;
+    pDevExt->fSetModeGuestCaps = 0;
+    pDevExt->fAcquiredGuestCaps = 0;
     vbgdBitUsageTrackerClear(&pDevExt->SetGuestCapsTracker);
     pDevExt->fGuestCapsHost = UINT32_MAX; /* forces a report */
 
@@ -2531,41 +2531,39 @@ static void vbgdBitUsageTrackerCheckMask(PCVBOXGUESTBITUSAGETRACER pTracker, uin
 static bool vbgdBitUsageTrackerChange(PVBOXGUESTBITUSAGETRACER pTracker, uint32_t fChanged, uint32_t fPrevious,
                                      uint32_t cMax, const char *pszWhat)
 {
-    bool        fGlobalChange = false;
-    uint32_t    iBit;
+    bool fGlobalChange = false;
     AssertCompile(sizeof(pTracker->acPerBitUsage) == 32 * sizeof(uint32_t));
 
-    for (iBit = ASMBitFirstSetU32(fChanged) - 1; iBit < 32; iBit++)
+    while (fChanged)
     {
+        uint32_t const iBit     = ASMBitFirstSetU32(fChanged) - 1;
         uint32_t const fBitMask = RT_BIT_32(iBit);
-        if (fBitMask & fChanged)
+        Assert(iBit < 32); Assert(fBitMask & fChanged);
+
+        if (fBitMask & fPrevious)
         {
-            if (fChanged & fPrevious)
+            pTracker->acPerBitUsage[iBit] -= 1;
+            AssertMsg(pTracker->acPerBitUsage[iBit] <= cMax,
+                      ("%s: acPerBitUsage[%u]=%#x cMax=%#x\n", pszWhat, iBit, pTracker->acPerBitUsage[iBit], cMax));
+            if (pTracker->acPerBitUsage[iBit] == 0)
             {
-                pTracker->acPerBitUsage[iBit] -= 1;
-                AssertMsg(pTracker->acPerBitUsage[iBit] <= cMax,
-                          ("%s: acPerBitUsage[%u]=%#x cMax=%#x\n", pszWhat, iBit, pTracker->acPerBitUsage[iBit], cMax));
-                if (pTracker->acPerBitUsage[iBit] == 0)
-                {
-                    fGlobalChange = true;
-                    pTracker->fMask &= ~fBitMask;
-                }
+                fGlobalChange = true;
+                pTracker->fMask &= ~fBitMask;
             }
-            else
-            {
-                pTracker->acPerBitUsage[iBit] += 1;
-                AssertMsg(pTracker->acPerBitUsage[iBit] > 0 && pTracker->acPerBitUsage[iBit] <= cMax,
-                          ("pTracker->acPerBitUsage[%u]=%#x cMax=%#x\n", pszWhat, iBit, pTracker->acPerBitUsage[iBit], cMax));
-                if (pTracker->acPerBitUsage[iBit] == 1)
-                {
-                    fGlobalChange = true;
-                    pTracker->fMask |= fBitMask;
-                }
-            }
-            fChanged &= ~fBitMask;
-            if (!fChanged)
-                break;
         }
+        else
+        {
+            pTracker->acPerBitUsage[iBit] += 1;
+            AssertMsg(pTracker->acPerBitUsage[iBit] > 0 && pTracker->acPerBitUsage[iBit] <= cMax,
+                      ("pTracker->acPerBitUsage[%u]=%#x cMax=%#x\n", pszWhat, iBit, pTracker->acPerBitUsage[iBit], cMax));
+            if (pTracker->acPerBitUsage[iBit] == 1)
+            {
+                fGlobalChange = true;
+                pTracker->fMask |= fBitMask;
+            }
+        }
+
+        fChanged &= ~fBitMask;
     }
 
 #ifdef VBOX_STRICT
@@ -2898,13 +2896,13 @@ static uint32_t vbgdGetAllowedEventMaskForSession(PVBOXGUESTDEVEXT pDevExt, PVBO
     uint32_t fAllowedEvents;
 
     /*
-     * Note! Reads pSession->u32AquiredGuestCaps and pDevExt->u32AcquireModeGuestCaps
+     * Note! Reads pSession->fAcquiredGuestCaps and pDevExt->fAcquireModeGuestCaps
      *       WITHOUT holding VBOXGUESTDEVEXT::SessionSpinlock.
      */
-    fAcquireModeGuestCaps = ASMAtomicUoReadU32(&pDevExt->u32AcquireModeGuestCaps);
+    fAcquireModeGuestCaps = ASMAtomicUoReadU32(&pDevExt->fAcquireModeGuestCaps);
     if (fAcquireModeGuestCaps == 0)
         return VMMDEV_EVENT_VALID_EVENT_MASK;
-    fAcquiredGuestCaps = ASMAtomicUoReadU32(&pSession->u32AquiredGuestCaps);
+    fAcquiredGuestCaps = ASMAtomicUoReadU32(&pSession->fAcquiredGuestCaps);
 
     /*
      * Calculate which events to allow according to the cap config and caps
@@ -2961,7 +2959,7 @@ static int vbgdUpdateCapabilitiesOnHostWithReqAndLock(PVBOXGUESTDEVEXT pDevExt, 
     int rc;
     uint32_t iBit;
 
-    pReq->u32OrMask = pDevExt->u32GuestCapsAcquired | pDevExt->SetGuestCapsTracker.fMask;
+    pReq->u32OrMask = pDevExt->fAcquiredGuestCaps | pDevExt->SetGuestCapsTracker.fMask;
     if (pReq->u32OrMask == pDevExt->fGuestCapsHost)
         rc = VINF_SUCCESS;
     else
@@ -3066,8 +3064,8 @@ static int vbgdAcquireSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
      */
     RTSpinlockAcquire(pDevExt->EventSpinlock);
 
-    if (!(pDevExt->u32SetModeGuestCaps & fOrMask))
-        pDevExt->u32AcquireModeGuestCaps |= fOrMask;
+    if (!(pDevExt->fSetModeGuestCaps & fOrMask))
+        pDevExt->fAcquireModeGuestCaps |= fOrMask;
     else
     {
         RTSpinlockRelease(pDevExt->EventSpinlock);
@@ -3100,24 +3098,24 @@ static int vbgdAcquireSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
      * Note! The mode change of the capabilities above won't be reverted on
      *       failure, this is intentional.
      */
-    fCurrentOwnedCaps      = pSession->u32AquiredGuestCaps;
+    fCurrentOwnedCaps      = pSession->fAcquiredGuestCaps;
     fSessionRemovedCaps    = fCurrentOwnedCaps & fNotMask;
     fSessionAddedCaps      = fOrMask & ~fCurrentOwnedCaps;
-    fOtherConflictingCaps  = pDevExt->u32GuestCapsAcquired & ~fCurrentOwnedCaps;
+    fOtherConflictingCaps  = pDevExt->fAcquiredGuestCaps & ~fCurrentOwnedCaps;
     fOtherConflictingCaps &= fSessionAddedCaps;
 
     if (!fOtherConflictingCaps)
     {
         if (fSessionAddedCaps)
         {
-            pSession->u32AquiredGuestCaps |= fSessionAddedCaps;
-            pDevExt->u32GuestCapsAcquired |= fSessionAddedCaps;
+            pSession->fAcquiredGuestCaps |= fSessionAddedCaps;
+            pDevExt->fAcquiredGuestCaps  |= fSessionAddedCaps;
         }
 
         if (fSessionRemovedCaps)
         {
-            pSession->u32AquiredGuestCaps &= ~fSessionRemovedCaps;
-            pDevExt->u32GuestCapsAcquired &= ~fSessionRemovedCaps;
+            pSession->fAcquiredGuestCaps &= ~fSessionRemovedCaps;
+            pDevExt->fAcquiredGuestCaps  &= ~fSessionRemovedCaps;
         }
 
         /*
@@ -3134,13 +3132,13 @@ static int vbgdAcquireSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
                     /* Failed, roll back. */
                     if (fSessionAddedCaps)
                     {
-                        pSession->u32AquiredGuestCaps &= ~fSessionAddedCaps;
-                        pDevExt->u32GuestCapsAcquired &= ~fSessionAddedCaps;
+                        pSession->fAcquiredGuestCaps &= ~fSessionAddedCaps;
+                        pDevExt->fAcquiredGuestCaps  &= ~fSessionAddedCaps;
                     }
                     if (fSessionRemovedCaps)
                     {
-                        pSession->u32AquiredGuestCaps |= fSessionRemovedCaps;
-                        pDevExt->u32GuestCapsAcquired |= fSessionRemovedCaps;
+                        pSession->fAcquiredGuestCaps |= fSessionRemovedCaps;
+                        pDevExt->fAcquiredGuestCaps  |= fSessionRemovedCaps;
                     }
 
                     RTSpinlockRelease(pDevExt->EventSpinlock);
@@ -3259,7 +3257,7 @@ static int vbgdSetSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSIO
      * Capabilities in "acquire" mode cannot be set via this API.
      * (Acquire mode is only used on windows at the time of writing.)
      */
-    if (!(fOrMask & pDevExt->u32AcquireModeGuestCaps))
+    if (!(fOrMask & pDevExt->fAcquireModeGuestCaps))
 #endif
     {
         /*
