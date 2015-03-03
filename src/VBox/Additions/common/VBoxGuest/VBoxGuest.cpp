@@ -1072,7 +1072,8 @@ int VbgdCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Set the fixed event and make sure guest capabilities are cleared.
+                 * Set the fixed event and make sure the host doesn't have any lingering
+                 * the guest capabilities or mouse status bits set.
                  */
                 rc = vbgdResetEventFilterOnHost(pDevExt, pDevExt->fFixedEvents);
                 if (RT_SUCCESS(rc))
@@ -1080,37 +1081,44 @@ int VbgdCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                     rc = vbgdResetCapabilitiesOnHost(pDevExt);
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Initialize stuff which may fail without requiring the driver init to fail.
-                         */
-                        vbgdInitFixateGuestMappings(pDevExt);
-                        vbgdHeartbeatInit(pDevExt);
+                        rc = vbgdResetMouseStatusOnHost(pDevExt);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Initialize stuff which may fail without requiring the driver init to fail.
+                             */
+                            vbgdInitFixateGuestMappings(pDevExt);
+                            vbgdHeartbeatInit(pDevExt);
 
-                        /*
-                         * Done!
-                         */
-                        rc = vbgdReportDriverStatus(true /* Driver is active */);
-                        if (RT_FAILURE(rc))
-                            LogRel(("VbgdCommonInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
+                            /*
+                             * Done!
+                             */
+                            rc = vbgdReportDriverStatus(true /* Driver is active */);
+                            if (RT_FAILURE(rc))
+                                LogRel(("VbgdCommonInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
-                        LogFlowFunc(("VbgdCommonInitDevExt: returns success\n"));
-                        return VINF_SUCCESS;
+                            LogFlowFunc(("VbgdCommonInitDevExt: returns success\n"));
+                            return VINF_SUCCESS;
+                        }
+                        LogRel(("VbgdCommonInitDevExt: failed to clear mouse status: rc=%Rrc\n", rc));
                     }
+                    else
+                        LogRel(("VbgdCommonInitDevExt: failed to clear guest capabilities: rc=%Rrc\n", rc));
                 }
-
-                LogRel(("VbgdCommonInitDevExt: failed to set host flags, rc=%Rrc\n", rc));
+                else
+                    LogRel(("VbgdCommonInitDevExt: failed to set fixed event filter: rc=%Rrc\n", rc));
             }
             else
-                LogRel(("VbgdCommonInitDevExt: VBoxReportGuestInfo failed, rc=%Rrc\n", rc));
+                LogRel(("VbgdCommonInitDevExt: VBoxReportGuestInfo failed: rc=%Rrc\n", rc));
             VbglGRFree((VMMDevRequestHeader *)pDevExt->pIrqAckEvents);
         }
         else
-            LogRel(("VbgdCommonInitDevExt: VBoxGRAlloc failed, rc=%Rrc\n", rc));
+            LogRel(("VbgdCommonInitDevExt: VBoxGRAlloc failed: rc=%Rrc\n", rc));
 
         VbglTerminate();
     }
     else
-        LogRel(("VbgdCommonInitDevExt: VbglInit failed, rc=%Rrc\n", rc));
+        LogRel(("VbgdCommonInitDevExt: VbglInit failed: rc=%Rrc\n", rc));
 
     rc2 = RTSemFastMutexDestroy(pDevExt->MemBalloon.hMtx); AssertRC(rc2);
     rc2 = RTSpinlockDestroy(pDevExt->EventSpinlock); AssertRC(rc2);
@@ -2808,9 +2816,7 @@ static int vbgdSetSessionMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION
             Assert(pReq || fSessionTermination);
             if (pReq)
             {
-                /* Since VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR is inverted in the session
-                 * capabilities we invert it again here before sending it to the host. */
-                pReq->mouseFeatures = pDevExt->MouseStatusTracker.fMask ^ VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
+                pReq->mouseFeatures = pDevExt->MouseStatusTracker.fMask;
                 if (pReq->mouseFeatures == pDevExt->fMouseStatusHost)
                     rc = VINF_SUCCESS;
                 else
@@ -2862,10 +2868,6 @@ static int vbgdIoCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
 
     if (fFeatures & ~VMMDEV_MOUSE_GUEST_MASK)
         return VERR_INVALID_PARAMETER;
-
-    /* Since this is more of a negative feature we invert it to get the real
-     * feature (when the guest does not need the host cursor). */
-    fFeatures ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
 
     return vbgdSetSessionMouseStatus(pDevExt, pSession, fFeatures, ~fFeatures, false /*fSessionTermination*/);
 }
