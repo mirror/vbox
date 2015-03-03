@@ -86,8 +86,7 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
    VBoxGuest_SOURCES    = VBoxGuest-$(KBUILD_TARGET).c
   endif
   VBoxGuest_SOURCES     += \
-  	VBoxGuest.cpp \
-  	VBoxGuest2.cpp
+  	VBoxGuest.cpp
   ifeq ($(KBUILD_TARGET), win)
    VBoxGuest_SOURCES += \
   	VBoxGuest-$(KBUILD_TARGET)-pnp.cpp \
@@ -136,11 +135,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
   	$(PATH_ROOT)/src/VBox/Runtime/include # for the os2ddk
   VBoxGuestLibOs2Hack_SOURCES = \
   	VBoxGuest-os2.cpp \
-  	VBoxGuest.cpp \
-  	VBoxGuest2.cpp
+  	VBoxGuest.cpp
  endif # OS/2
 
- VBoxGuest2.cpp_DEFS    = VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxGuest.cpp_DEFS     = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
  ifeq ($(KBUILD_TARGET),win)
@@ -154,7 +151,6 @@ if1of ($(KBUILD_TARGET), darwin freebsd haiku $(if $(defined VBOX_WITH_ADDITION_
   VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
   VBoxGuestNT_SOURCES = \
   	VBoxGuest.cpp \
-  	VBoxGuest2.cpp \
   	VBoxGuest-$(KBUILD_TARGET).cpp \
   	VBoxGuest-$(KBUILD_TARGET)-legacy.cpp \
   	win/VBoxGuest.rc
