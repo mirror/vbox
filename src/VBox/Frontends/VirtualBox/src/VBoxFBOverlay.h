@@ -270,7 +270,7 @@ public:
             switch (mFormat)
             {
                 case GL_BGRA_EXT:
-                    return BitmapFormat_BGR;
+                    return KBitmapFormat_BGR;
             }
         }
         return BitmapFormat_Opaque;
