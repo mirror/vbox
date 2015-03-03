@@ -1774,7 +1774,7 @@ static RTEXITCODE handleWriteLog(int argc, char *argv[])
     {
         RTGETOPTUNION   ValueUnion;
         int             ch;
-        while ((ch == RTGetOpt(&GetOptState, &ValueUnion)) != 0)
+        while ((ch = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
         {
             switch (ch)
             {
