@@ -389,11 +389,11 @@ public:
     {
     }
 
-    virtual HRESULT init(UIMachineView *pView, CSession * aSession, uint32_t id)
+    virtual HRESULT init(UIMachineView *pView)
     {
         mpView = pView;
         UIFrameBufferPrivate::init(mpView);
-        mOverlay.init(mpView->viewport(), mpView, aSession, id),
+        mOverlay.init(mpView->viewport(), mpView, &(mpView->session()), mpView->screenId()),
         /* sync with frame-buffer */
         mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
         return S_OK;
