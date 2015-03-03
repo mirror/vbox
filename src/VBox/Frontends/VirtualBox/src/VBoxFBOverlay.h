@@ -273,7 +273,7 @@ public:
                     return KBitmapFormat_BGR;
             }
         }
-        return BitmapFormat_Opaque;
+        return KBitmapFormat_Opaque;
     }
 
 private:
