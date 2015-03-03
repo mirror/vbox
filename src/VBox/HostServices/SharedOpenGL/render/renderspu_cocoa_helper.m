@@ -219,11 +219,11 @@ static void checkGLError(char *pszFile, int iLine)
 #endif
 
 /* Whether we control NSView automatic content zooming on Retina/HiDPI displays. */
-//#define VBOX_WITH_CONFIGURABLE_HIDPI_SCALING    1
+#define VBOX_WITH_CONFIGURABLE_HIDPI_SCALING    1
 
 #ifdef IN_VMSVGA3D
 
-/* 
+/*
  * VMSVGA3D compatibility glue.
  */
 
@@ -1421,17 +1421,17 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_yInvRootOffset          = 0;
     m_pBlitter                = nil;
     m_pWinInfo                = pWinInfo;
-    m_fNeedViewportUpdate     = true;        
+    m_fNeedViewportUpdate     = true;
     m_fNeedCtxUpdate          = true;
     m_fDataVisible            = false;
     m_fCleanupNeeded          = false;
     m_fEverSized              = false;
-    
+
     self = [super initWithFrame:frame];
 #if defined(VBOX_WITH_CONFIGURABLE_HIDPI_SCALING) && !defined(IN_VMSVGA3D)
-    crDebug("HiDPI: up-scaling is %s on NSView init.", render_spu.fUnscaledHiDPI ? "OFF" : "ON");
-    if (render_spu.fUnscaledHiDPI)
-        [self performSelector:@selector(setWantsBestResolutionOpenGLSurface:) withObject: (id)YES];
+    /* Always allocate HiDPI-ready backing store for NSView, so we will be able change HiDPI scaling option in runtime. */
+    crDebug("HiDPI: Allocate big backing store for NSView. Up-scaling is currently %s.", render_spu.fUnscaledHiDPI ? "OFF" : "ON");
+    [self performSelector:@selector(setWantsBestResolutionOpenGLSurface:) withObject: (id)YES];
 #endif
 
     COCOA_LOG_FLOW(("%s: returns self=%p\n", __PRETTY_FUNCTION__, (void *)self));
