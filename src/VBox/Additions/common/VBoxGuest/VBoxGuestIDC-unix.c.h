@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,7 +68,7 @@ DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
     mutex_exit(&g_LdiMtx);
 #endif
 
-    rc = VBoxGuestCreateKernelSession(&g_DevExt, &pSession);
+    rc = VbgdCommonCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         *pu32Version = VMMDEV_VERSION;
@@ -88,7 +88,7 @@ DECLEXPORT(void *) VBOXCALL VBoxGuestIDCOpen(uint32_t *pu32Version)
     mutex_exit(&g_LdiMtx);
 #endif
 
-    LogRel(("VBoxGuestIDCOpen: VBoxGuestCreateKernelSession failed. rc=%d\n", rc));
+    LogRel(("VBoxGuestIDCOpen: VbgdCommonCreateKernelSession failed. rc=%d\n", rc));
     return NULL;
 }
 
@@ -105,7 +105,7 @@ DECLEXPORT(int) VBOXCALL VBoxGuestIDCClose(void *pvSession)
     LogFlow(("VBoxGuestIDCClose:\n"));
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
-    VBoxGuestCloseSession(&g_DevExt, pSession);
+    VbgdCommonCloseSession(&g_DevExt, pSession);
 
 #ifdef RT_OS_SOLARIS
     mutex_enter(&g_LdiMtx);
@@ -143,6 +143,6 @@ DECLEXPORT(int) VBOXCALL VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *
     AssertMsgReturn(pSession->pDevExt == &g_DevExt,
                     ("SC: %p != %p\n", pSession->pDevExt, &g_DevExt), VERR_INVALID_HANDLE);
 
-    return VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
+    return VbgdCommonIoCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
 }
 

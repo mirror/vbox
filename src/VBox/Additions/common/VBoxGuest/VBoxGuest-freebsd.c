@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -219,7 +219,7 @@ static int VBoxGuestFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd
     /*
      * Create a new session.
      */
-    rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
+    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         if (ASMAtomicCmpXchgPtr(&pDev->si_drv1, pSession, (void *)0x42))
@@ -229,7 +229,7 @@ static int VBoxGuestFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd
             return 0;
         }
 
-        VBoxGuestCloseSession(&g_DevExt, pSession);
+        VbgdCommonCloseSession(&g_DevExt, pSession);
     }
 
     LogRel((DEVICE_NAME ":VBoxGuestFreeBSDOpen: failed. rc=%d\n", rc));
@@ -250,7 +250,7 @@ static int VBoxGuestFreeBSDClose(struct cdev *pDev, int fFile, int DevType, stru
      */
     if (VALID_PTR(pSession))
     {
-        VBoxGuestCloseSession(&g_DevExt, pSession);
+        VbgdCommonCloseSession(&g_DevExt, pSession);
         if (!ASMAtomicCmpXchgPtr(&pDev->si_drv1, NULL, pSession))
             Log(("VBoxGuestFreeBSDClose: si_drv1=%p expected %p!\n", pDev->si_drv1, pSession));
         ASMAtomicDecU32(&cUsers);
@@ -331,7 +331,7 @@ static int VBoxGuestFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData
      * Process the IOCtl.
      */
     size_t cbDataReturned;
-    rc = VBoxGuestCommonIOCtl(ulCmd, &g_DevExt, pSession, pvBuf, ReqWrap->cbData, &cbDataReturned);
+    rc = VbgdCommonIoCtl(ulCmd, &g_DevExt, pSession, pvBuf, ReqWrap->cbData, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
         rc = 0;
@@ -352,7 +352,7 @@ static int VBoxGuestFreeBSDIOCtl(struct cdev *pDev, u_long ulCmd, caddr_t pvData
     }
     else
     {
-        Log((DEVICE_NAME ":VBoxGuestFreeBSDIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
+        Log((DEVICE_NAME ":VBoxGuestFreeBSDIOCtl: VbgdCommonIoCtl failed. rc=%d\n", rc));
         rc = EFAULT;
     }
     RTMemTmpFree(pvBuf);
@@ -419,7 +419,7 @@ static int VBoxGuestFreeBSDDetach(device_t pDevice)
     if (pState->pIOPortRes)
         bus_release_resource(pDevice, SYS_RES_IOPORT, pState->iIOPortResId, pState->pIOPortRes);
 
-    VBoxGuestDeleteDevExt(&g_DevExt);
+    VbgdCommonDeleteDevExt(&g_DevExt);
 
     RTR0Term();
 
@@ -436,12 +436,12 @@ static int VBoxGuestFreeBSDISR(void *pvState)
 {
     LogFlow((DEVICE_NAME ":VBoxGuestFreeBSDISR pvState=%p\n", pvState));
 
-    bool fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
+    bool fOurIRQ = VbgdCommonISR(&g_DevExt);
 
     return fOurIRQ ? 0 : 1;
 }
 
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     LogFlow((DEVICE_NAME "::NativeISRMousePollEvent:\n"));
 
@@ -545,14 +545,14 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
             /*
              * Call the common device extension initializer.
              */
-            rc = VBoxGuestInitDevExt(&g_DevExt, pState->uIOPortBase,
-                                     pState->pMMIOBase, pState->VMMDevMemSize,
+            rc = VbgdCommonInitDevExt(&g_DevExt, pState->uIOPortBase,
+                                      pState->pMMIOBase, pState->VMMDevMemSize,
 #if ARCH_BITS == 64
-                                     VBOXOSTYPE_FreeBSD_x64,
+                                      VBOXOSTYPE_FreeBSD_x64,
 #else
-                                     VBOXOSTYPE_FreeBSD,
+                                      VBOXOSTYPE_FreeBSD,
 #endif
-                                     VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
+                                      VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -577,8 +577,8 @@ static int VBoxGuestFreeBSDAttach(device_t pDevice)
                     VBoxGuestFreeBSDRemoveIRQ(pDevice, pState);
                 }
                 else
-                    printf((DEVICE_NAME ":VBoxGuestInitDevExt failed.\n"));
-                VBoxGuestDeleteDevExt(&g_DevExt);
+                    printf((DEVICE_NAME ":VbgdCommonInitDevExt failed.\n"));
+                VbgdCommonDeleteDevExt(&g_DevExt);
             }
             else
                 printf((DEVICE_NAME ":VBoxGuestFreeBSDAddIRQ failed.\n"));

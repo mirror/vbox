@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,7 +112,7 @@ static status_t VBoxGuestHaikuOpen(const char *name, uint32 flags, void **cookie
     /*
      * Create a new session.
      */
-    rc = VBoxGuestCreateUserSession(&g_DevExt, &pSession);
+    rc = VbgdCommonCreateUserSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         Log((DRIVER_NAME ":VBoxGuestHaikuOpen success: g_DevExt=%p pSession=%p rc=%d pid=%d\n",&g_DevExt, pSession, rc,(int)RTProcSelf()));
@@ -171,7 +171,7 @@ static status_t VBoxGuestHaikuFree(void *cookie)
      */
     if (VALID_PTR(pSession))
     {
-        VBoxGuestCloseSession(&g_DevExt, pSession);
+        VbgdCommonCloseSession(&g_DevExt, pSession);
         ASMAtomicDecU32(&cUsers);
     }
     else
@@ -254,7 +254,7 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
      * Process the IOCtl.
      */
     size_t cbDataReturned;
-    rc = VBoxGuestCommonIOCtl(op, &g_DevExt, pSession, pvBuf, len, &cbDataReturned);
+    rc = VbgdCommonIoCtl(op, &g_DevExt, pSession, pvBuf, len, &cbDataReturned);
     if (RT_SUCCESS(rc))
     {
         rc = 0;
@@ -275,7 +275,7 @@ static status_t VBoxGuestHaikuIOCtl(void *cookie, uint32 op, void *data, size_t 
     }
     else
     {
-        Log((DRIVER_NAME ":VBoxGuestHaikuIOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
+        Log((DRIVER_NAME ":VBoxGuestHaikuIOCtl: VbgdCommonIoCtl failed. rc=%d\n", rc));
         rc = EFAULT;
     }
     RTMemTmpFree(pvBuf);

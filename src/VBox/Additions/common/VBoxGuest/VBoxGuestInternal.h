@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -64,11 +64,11 @@ typedef struct VBOXGUESTWAIT
     /** The events we received. */
     uint32_t volatile           fResEvents;
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    /** Set by VBoxGuestWaitDoWakeUps before leaving the spinlock to call
+    /** Set by VbgdCommonWaitDoWakeUps before leaving the spinlock to call
      *  RTSemEventMultiSignal. */
     bool volatile               fPendingWakeUp;
     /** Set by the requestor thread if it got the spinlock before the
-     * signaller.  Deals with the race in VBoxGuestWaitDoWakeUps. */
+     * signaller.  Deals with the race in VbgdCommonWaitDoWakeUps. */
     bool volatile               fFreeMe;
 #endif
     /** The event semaphore. */
@@ -313,30 +313,22 @@ typedef struct VBOXGUESTSESSION
 
 RT_C_DECLS_BEGIN
 
-int  VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO, VBOXOSTYPE enmOSType, uint32_t fEvents);
-bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt);
-void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
-int  VBoxGuestReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
-int  VBoxGuestSetGuestCapabilities(uint32_t fOr, uint32_t fNot);
+int  VbgdCommonInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase, void *pvMMIOBase, uint32_t cbMMIO,
+                          VBOXOSTYPE enmOSType, uint32_t fEvents);
+bool VbgdCommonISR(PVBOXGUESTDEVEXT pDevExt);
+void VbgdCommonDeleteDevExt(PVBOXGUESTDEVEXT pDevExt);
+int  VbgdCommonReinitDevExtAfterHibernation(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType);
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-void VBoxGuestWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt);
+void VbgdCommonWaitDoWakeUps(PVBOXGUESTDEVEXT pDevExt);
 #endif
 
-int  VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
-int  VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
-void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
+int  VbgdCommonCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
+int  VbgdCommonCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession);
+void VbgdCommonCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 
-int  VBoxGuestCommonIOCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
-int  VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
-                          void *pvData, size_t cbData, size_t *pcbDataReturned);
-
-#if defined(RT_OS_SOLARIS) \
- || defined(RT_OS_FREEBSD) \
- || defined(RT_OS_LINUX)
-DECLVBGL(void *) VBoxGuestNativeServiceOpen(uint32_t *pu32Version);
-DECLVBGL(void)   VBoxGuestNativeServiceClose(void *pvOpaque);
-DECLVBGL(int)    VBoxGuestNativeServiceCall(void *pvOpaque, unsigned int iCmd, void *pvData, size_t cbSize, size_t *pcbReturn);
-#endif
+int  VbgdCommonIoCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
+int  VbgdCommonIoCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                     void *pvData, size_t cbData, size_t *pcbDataReturned);
 
 /**
  * ISR callback for notifying threads polling for mouse events.
@@ -346,7 +338,7 @@ DECLVBGL(int)    VBoxGuestNativeServiceCall(void *pvOpaque, unsigned int iCmd, v
  *
  * @param   pDevExt     The device extension.
  */
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
+void VbgdNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt);
 
 
 #ifdef VBOX_WITH_DPC_LATENCY_CHECKER

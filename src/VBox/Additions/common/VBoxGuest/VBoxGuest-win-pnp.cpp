@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -275,7 +275,7 @@ NTSTATUS vbgdNtPnP(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             Log(("VBoxGuest::vbgdNtGuestPnp: REMOVE_DEVICE: Removing device ...\n"));
 
             /* Destroy device extension and clean up everything else. */
-            VBoxGuestDeleteDevExt(&pDevExt->Core);
+            VbgdCommonDeleteDevExt(&pDevExt->Core);
 
             /* Remove DOS device + symbolic link. */
             UNICODE_STRING win32Name;
@@ -466,7 +466,7 @@ NTSTATUS vbgdNtPower(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                                     && pDevExt->LastSystemPowerAction == PowerActionHibernate)
                                 {
                                     Log(("VBoxGuest::vbgdNtGuestPower: Returning from hibernation!\n"));
-                                    int rc = VBoxGuestReinitDevExtAfterHibernation(&pDevExt->Core,
+                                    int rc = VbgdCommonReinitDevExtAfterHibernation(&pDevExt->Core,
                                                                                    vbgdNtVersionToOSType(g_enmVbgdNtVer));
                                     if (RT_FAILURE(rc))
                                         Log(("VBoxGuest::vbgdNtGuestPower: Cannot re-init VMMDev chain, rc = %d!\n", rc));

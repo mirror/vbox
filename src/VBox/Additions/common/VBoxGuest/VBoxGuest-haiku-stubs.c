@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,7 @@
  *
  * VirtualBox Guest Additions for Haiku.
  * Copyright (c) 2011 Mike Smith <mike@scgtrp.net>
- *                    François Revol <revol@free.fr>
+ *                    FranÃ§ois Revol <revol@free.fr>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -338,17 +338,17 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 {
     return g_VBoxGuest->_RTErrConvertToErrno(iErr);
 }
-int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, void *pvData, size_t cbData, size_t *pcbDataReturned)
+int VbgdCommonIoCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, void *pvData, size_t cbData, size_t *pcbDataReturned)
 {
-    return g_VBoxGuest->_VBoxGuestCommonIOCtl(iFunction, pDevExt, pSession, pvData, cbData, pcbDataReturned);
+    return g_VBoxGuest->_VbgdCommonIoCtl(iFunction, pDevExt, pSession, pvData, cbData, pcbDataReturned);
 }
-int VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession)
+int VbgdCommonCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession)
 {
-    return g_VBoxGuest->_VBoxGuestCreateUserSession(pDevExt, ppSession);
+    return g_VBoxGuest->_VbgdCommonCreateUserSession(pDevExt, ppSession);
 }
-void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+void VbgdCommonCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    g_VBoxGuest->_VBoxGuestCloseSession(pDevExt, pSession);
+    g_VBoxGuest->_VbgdCommonCloseSession(pDevExt, pSession);
 }
 void* VBoxGuestIDCOpen(uint32_t *pu32Version)
 {
