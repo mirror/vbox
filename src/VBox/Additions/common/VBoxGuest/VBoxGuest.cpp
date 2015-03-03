@@ -76,7 +76,6 @@
 enum
 {
     HostFlags_FilterMask   = 1,
-    HostFlags_Capabilities = 2,
     HostFlags_MouseStatus  = 4,
     HostFlags_All          = 7,
     HostFlags_SizeHack = (unsigned)-1
@@ -89,13 +88,14 @@ enum
 #ifdef VBOX_WITH_HGCM
 static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask,
-                                           uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags);
 static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
 static int      vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, unsigned fFlags);
-static uint32_t VBoxGuestCommonGetAndCleanPendingEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fReqEvents);
-static uint32_t VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
-static bool     VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint32_t fCaps, bool fAcquire, uint32_t *pu32OtherVal);
+static uint32_t vbgdGetAllowedEventMaskForSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession);
+static int      vbgdUpdateCapabilitiesOnHost(PVBOXGUESTDEVEXT pDevExt);
+static int      vbgdAcquireSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask,
+                                               uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags, bool fSessionTermination);
+static int      vbgdSetSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNoMask);
+static int      vbgdDispatchEventsLocked(PVBOXGUESTDEVEXT pDevExt, uint32_t fEvents);
 
 
 /*******************************************************************************
@@ -551,6 +551,65 @@ static DECLCALLBACK(void) VBoxGuestHeartbeatTimerHandler(PRTTIMER p1, void *pvUs
 
 
 /**
+ * Initializes the heartbeat timer.
+ *
+ * This feature may be disabled by the host.
+ *
+ * @returns VBox status (ignored).
+ * @param   pDevExt             The device extension.
+ */
+static int vbgdHeartbeatInit(PVBOXGUESTDEVEXT pDevExt)
+{
+    /*
+     * Make sure that heartbeat checking is disabled.
+     */
+    int rc = VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxGuestHeartbeatHostConfigure(pDevExt, true);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Preallocate the request to use it from the timer callback because:
+             *    1) on Windows VbglGRAlloc must be called at IRQL <= APC_LEVEL
+             *       and the timer callback runs at DISPATCH_LEVEL;
+             *    2) avoid repeated allocations.
+             */
+            rc = VbglGRAlloc(&pDevExt->pReqGuestHeartbeat, sizeof(*pDevExt->pReqGuestHeartbeat), VMMDevReq_GuestHeartbeat);
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("VBoxGuestInitDevExt: Setting up heartbeat to trigger every %RU64 sec\n",
+                        pDevExt->cNsHeartbeatInterval / RT_NS_1SEC));
+                rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval, 0 /*fFlags*/,
+                                     (PFNRTTIMER)VBoxGuestHeartbeatTimerHandler, pDevExt);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTTimerStart(pDevExt->pHeartbeatTimer, 0);
+                    if (RT_SUCCESS(rc))
+                        return VINF_SUCCESS;
+
+                    LogRel(("VBoxGuestInitDevExt: Heartbeat timer failed to start, rc=%Rrc\n", rc));
+                }
+                else
+                    LogRel(("VBoxGuestInitDevExt: Failed to create heartbeat timer: %Rrc\n", rc));
+
+                VbglGRFree(pDevExt->pReqGuestHeartbeat);
+                pDevExt->pReqGuestHeartbeat = NULL;
+            }
+            else
+                LogRel(("VBoxGuestInitDevExt: VbglGRAlloc(VMMDevReq_GuestHeartbeat): %Rrc\n", rc));
+
+            LogRel(("VBoxGuestInitDevExt: Failed to set up the timer, guest heartbeat is disabled\n"));
+            VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+        }
+        else
+            LogRel(("VBoxGuestInitDevExt: Failed to configure host for heartbeat checking: rc=%Rrc\n", rc));
+    }
+    return rc;
+}
+
+
+/**
  * Helper to reinit the VBoxVMM communication after hibernation.
  *
  * @returns VBox status code.
@@ -807,6 +866,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     RTListInit(&pDevExt->WokenUpList);
     RTListInit(&pDevExt->FreeList);
     RTListInit(&pDevExt->SessionList);
+    pDevExt->cSessions = 0;
     pDevExt->fLoggingEnabled = false;
     pDevExt->f32PendingEvents = 0;
     pDevExt->u32MousePosChangedSeq = 0;
@@ -843,7 +903,9 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 
     pDevExt->u32AcquireModeGuestCaps = 0;
     pDevExt->u32SetModeGuestCaps = 0;
-    pDevExt->u32GuestCaps = 0;
+    pDevExt->u32GuestCapsAcquired = 0;
+    RT_ZERO(pDevExt->acGuestCapsSet);
+    pDevExt->fGuestCapsHost = UINT32_MAX; /* forces a report */
 
     /*
      * Create the wait and session spinlocks as well as the ballooning mutex.
@@ -885,65 +947,27 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             rc = VBoxGuestReportGuestInfo(enmOSType);
             if (RT_SUCCESS(rc))
             {
-                /* Set the fixed event and disable the guest graphics capability
+                /*
+                 * Set the fixed event and disable the guest graphics capability
                  * by default. The guest specific graphics driver will re-enable
-                 * the graphics capability if and when appropriate. */
-                rc = vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_FilterMask | HostFlags_Capabilities);
+                 * the graphics capability if and when appropriate.
+                 */
+                rc = vboxGuestUpdateHostFlags(pDevExt, NULL, HostFlags_FilterMask);
                 if (RT_SUCCESS(rc))
                 {
-                    vboxGuestInitFixateGuestMappings(pDevExt);
-
-                    rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
-                    if (RT_FAILURE(rc))
-                        LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
-
-                    /** @todo Move heartbeat initialization into a separate function. */
-                    /* Make sure that heartbeat checking is disabled. */
-                    rc = VBoxGuestHeartbeatHostConfigure(pDevExt, false);
+                    rc = vbgdUpdateCapabilitiesOnHost(pDevExt);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = VBoxGuestHeartbeatHostConfigure(pDevExt, true);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /* Preallocate the request to use it from the timer callback because:
-                             *    1) on Windows VbglGRAlloc must be called at IRQL <= APC_LEVEL
-                             *       and the timer callback runs at DISPATCH_LEVEL;
-                             *    2) avoid repeated allocations.
-                             */
-                            rc = VbglGRAlloc(&pDevExt->pReqGuestHeartbeat, sizeof(*pDevExt->pReqGuestHeartbeat), VMMDevReq_GuestHeartbeat);
-                            if (RT_FAILURE(rc))
-                                LogRel(("VBoxGuestInitDevExt: VbglGRAlloc(VMMDevReq_GuestHeartbeat) %Rrc\n", rc));
+                        vboxGuestInitFixateGuestMappings(pDevExt);
+                        vbgdHeartbeatInit(pDevExt);
 
-                            if (RT_SUCCESS(rc))
-                            {
-                                LogRel(("VBoxGuestInitDevExt: Setting up heartbeat to trigger every %RU64 sec\n",
-                                        pDevExt->cNsHeartbeatInterval / 1000000000));
-                                rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval,
-                                                     0, (PFNRTTIMER)VBoxGuestHeartbeatTimerHandler, pDevExt);
-                            }
+                        rc = VBoxGuestReportDriverStatus(true /* Driver is active */);
+                        if (RT_FAILURE(rc))
+                            LogRel(("VBoxGuestInitDevExt: VBoxReportGuestDriverStatus failed, rc=%Rrc\n", rc));
 
-                            if (RT_SUCCESS(rc))
-                            {
-                                rc = RTTimerStart(pDevExt->pHeartbeatTimer, 0);
-                                if (RT_FAILURE(rc))
-                                    LogRel(("VBoxGuestInitDevExt: Heartbeat timer failed to start, rc=%Rrc\n", rc));
-                            }
-                            if (RT_FAILURE(rc))
-                            {
-                                LogRel(("VBoxGuestInitDevExt: Failed to set up the timer, guest heartbeat is disabled\n"));
-                                /* Disable host heartbeat check if we failed */
-                                VBoxGuestHeartbeatHostConfigure(pDevExt, false);
-
-                                VbglGRFree(pDevExt->pReqGuestHeartbeat);
-                                pDevExt->pReqGuestHeartbeat = NULL;
-                            }
-                        }
-                        else
-                            LogRel(("VBoxGuestInitDevExt: Failed to configure host for heartbeat checking, rc=%Rrc\n", rc));
+                        LogFlowFunc(("VBoxGuestInitDevExt: returns success\n"));
+                        return VINF_SUCCESS;
                     }
-
-                    LogFlowFunc(("VBoxGuestInitDevExt: returns success\n"));
-                    return VINF_SUCCESS;
                 }
 
                 LogRel(("VBoxGuestInitDevExt: failed to set host flags, rc=%Rrc\n", rc));
@@ -1089,6 +1113,7 @@ int VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSe
     pSession->pDevExt = pDevExt;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
+    pDevExt->cSessions++;
     RTSpinlockRelease(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
@@ -1122,6 +1147,7 @@ int VBoxGuestCreateKernelSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *pp
     pSession->pDevExt = pDevExt;
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListAppend(&pDevExt->SessionList, &pSession->ListNode);
+    pDevExt->cSessions++;
     RTSpinlockRelease(pDevExt->SessionSpinlock);
 
     *ppSession = pSession;
@@ -1147,8 +1173,11 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 
     RTSpinlockAcquire(pDevExt->SessionSpinlock);
     RTListNodeRemove(&pSession->ListNode);
+    pDevExt->cSessions--;
     RTSpinlockRelease(pDevExt->SessionSpinlock);
-    VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, 0, UINT32_MAX, VBOXGUESTCAPSACQUIRE_FLAGS_NONE);
+    vbgdAcquireSessionCapabilities(pDevExt, pSession, 0, UINT32_MAX, VBOXGUESTCAPSACQUIRE_FLAGS_NONE,
+                                   true /*fSessionTermination*/);
+    vbgdSetSessionCapabilities(pDevExt, pSession, 0 /*fOrMask*/, UINT32_MAX /*fNotMask*/);
 
     VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
 
@@ -1170,6 +1199,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     pSession->R0Process = NIL_RTR0PROCESS;
     vboxGuestCloseMemBalloon(pDevExt, pSession);
     RTMemFree(pSession);
+
     /* Update the host flags (mouse status etc) not to reflect this session. */
     vboxGuestUpdateHostFlags(pDevExt, NULL,
                                HostFlags_All
@@ -1435,9 +1465,12 @@ int VBoxGuestCommonIOCtl_SetMouseNotifyCallback(PVBOXGUESTDEVEXT pDevExt, VBoxGu
 DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, VBoxGuestWaitEventInfo *pInfo,
                                         int iEvent, const uint32_t fReqEvents)
 {
-    uint32_t fMatches = VBoxGuestCommonGetAndCleanPendingEventsLocked(pDevExt, pSession, fReqEvents);
+    uint32_t fMatches = pDevExt->f32PendingEvents & fReqEvents;
+    if (fMatches & VBOXGUEST_ACQUIRE_STYLE_EVENTS)
+        fMatches &= vbgdGetAllowedEventMaskForSession(pDevExt, pSession);
     if (fMatches || pSession->fPendingCancelWaitEvents)
     {
+        ASMAtomicAndU32(&pDevExt->f32PendingEvents, ~fMatches);
         RTSpinlockRelease(pDevExt->EventSpinlock);
 
         pInfo->u32EventFlagsOut = fMatches;
@@ -1658,6 +1691,7 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
         case VMMDevReq_HGCMCancel:
         case VMMDevReq_HGCMCancel2:
 #endif /* VBOX_WITH_HGCM */
+        case VMMDevReq_SetGuestCapabilities:
         default:
             enmRequired = kLevel_NoOne;
             break;
@@ -1696,27 +1730,6 @@ static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSES
             enmRequired = kLevel_TrustedUsers;
             break;
 
-        /*
-         * Anyone. But not for CapsAcquire mode
-         */
-        case VMMDevReq_SetGuestCapabilities:
-        {
-            VMMDevReqGuestCapabilities2 *pCaps = (VMMDevReqGuestCapabilities2*)pReqHdr;
-            uint32_t fAcquireCaps = 0;
-            if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, pCaps->u32OrMask, false, &fAcquireCaps))
-            {
-                AssertFailed();
-                LogRel(("VBoxDrv: calling caps set for acquired caps %d\n", pCaps->u32OrMask));
-                enmRequired = kLevel_NoOne;
-                break;
-            }
-            /* hack to adjust the notcaps.
-             * @todo: move to a better place
-             * user-mode apps are allowed to pass any mask to the notmask,
-             * the driver cleans up them accordingly */
-            pCaps->u32NotMask &= ~fAcquireCaps;
-            /* do not break, make it fall through to the below enmRequired setting */
-        }
         /*
          * Anyone.
          */
@@ -2408,124 +2421,6 @@ static int VBoxGuestCommonIOCtl_Log(PVBOXGUESTDEVEXT pDevExt, const char *pch, s
  * @{
  */
 
-static bool VBoxGuestCommonGuestCapsValidateValues(uint32_t fCaps)
-{
-    if (fCaps & ~(  VMMDEV_GUEST_SUPPORTS_SEAMLESS
-                  | VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING
-                  | VMMDEV_GUEST_SUPPORTS_GRAPHICS ))
-        return false;
-    return true;
-}
-
-
-/** Check whether any unreported VMM device events should be reported to any of
- * the currently listening sessions.  In addition, report any events in
- * @a fGenFakeEvents.
- *
- * @note This is called by GUEST_CAPS_ACQUIRE in case any pending events can now
- *       be dispatched to the session which acquired capabilities.  The fake
- *       events are a hack to wake up threads in that session which would not
- *       otherwise be woken.
- * @todo Why not just use CANCEL_ALL_WAITEVENTS to do the waking up rather than
- *       adding additional code to the driver?
- * @todo Why does acquiring capabilities block and unblock events?  Capabilities
- *       are supposed to control what is reported to the host, we already have
- *       separate requests for blocking and unblocking events.
- */
-static void VBoxGuestCommonCheckEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fGenFakeEvents)
-{
-    RTSpinlockAcquire(pDevExt->EventSpinlock);
-    uint32_t fEvents = fGenFakeEvents | pDevExt->f32PendingEvents;
-    PVBOXGUESTWAIT  pWait;
-    PVBOXGUESTWAIT  pSafe;
-
-    RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
-    {
-        uint32_t fHandledEvents = VBoxGuestCommonGetHandledEventsLocked(pDevExt, pWait->pSession);
-        if (    (pWait->fReqEvents & fEvents & fHandledEvents)
-                    &&  !pWait->fResEvents)
-        {
-            pWait->fResEvents = pWait->fReqEvents & fEvents & fHandledEvents;
-            Assert(!(fGenFakeEvents & pWait->fResEvents) || pSession == pWait->pSession);
-            fEvents &= ~pWait->fResEvents;
-            RTListNodeRemove(&pWait->ListNode);
-#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-            RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
-#else
-            RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
-            int rc = RTSemEventMultiSignal(pWait->Event);
-            AssertRC(rc);
-#endif
-            if (!fEvents)
-                break;
-        }
-    }
-    ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
-
-    RTSpinlockRelease(pDevExt->EventSpinlock);
-
-#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    VBoxGuestWaitDoWakeUps(pDevExt);
-#endif
-}
-
-
-/** Return the mask of VMM device events that this session is allowed to see,
- *  ergo, all events except those in "acquire" mode which have not been acquired
- *  by this session. */
-static uint32_t VBoxGuestCommonGetHandledEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
-{
-    if (!pDevExt->u32AcquireModeGuestCaps)
-        return VMMDEV_EVENT_VALID_EVENT_MASK;
-
-    /** @note VMMDEV_EVENT_VALID_EVENT_MASK should actually be the mask of valid
-     *        capabilities, but that doesn't affect this code. */
-    uint32_t u32AllowedGuestCaps = pSession->u32AquiredGuestCaps | (VMMDEV_EVENT_VALID_EVENT_MASK & ~pDevExt->u32AcquireModeGuestCaps);
-    uint32_t u32CleanupEvents = VBOXGUEST_ACQUIRE_STYLE_EVENTS;
-    if (u32AllowedGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
-        u32CleanupEvents &= ~VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-    if (u32AllowedGuestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
-        u32CleanupEvents &= ~VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-
-    return VMMDEV_EVENT_VALID_EVENT_MASK & ~u32CleanupEvents;
-}
-
-
-static uint32_t VBoxGuestCommonGetAndCleanPendingEventsLocked(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fReqEvents)
-{
-    uint32_t fMatches = pDevExt->f32PendingEvents & fReqEvents & VBoxGuestCommonGetHandledEventsLocked(pDevExt, pSession);
-    if (fMatches)
-        ASMAtomicAndU32(&pDevExt->f32PendingEvents, ~fMatches);
-    return fMatches;
-}
-
-
-/** Puts a capability in "acquire" or "set" mode and returns the mask of
- * capabilities currently in the other mode.  Once a capability has been put in
- * one of the two modes it can no longer be removed from that mode. */
-static bool VBoxGuestCommonGuestCapsModeSet(PVBOXGUESTDEVEXT pDevExt, uint32_t fCaps, bool fAcquire, uint32_t *pu32OtherVal)
-{
-    uint32_t *pVal = fAcquire ? &pDevExt->u32AcquireModeGuestCaps : &pDevExt->u32SetModeGuestCaps;
-    const uint32_t fNotVal = !fAcquire ? pDevExt->u32AcquireModeGuestCaps : pDevExt->u32SetModeGuestCaps;
-    bool fResult = true;
-    RTSpinlockAcquire(pDevExt->EventSpinlock);
-
-    if (!(fNotVal & fCaps))
-        *pVal |= fCaps;
-    else
-    {
-        AssertMsgFailed(("trying to change caps mode\n"));
-        fResult = false;
-    }
-
-    RTSpinlockRelease(pDevExt->EventSpinlock);
-
-    if (pu32OtherVal)
-        *pu32OtherVal = fNotVal;
-    return fResult;
-}
-
-
 /**
  * Sets the interrupt filter mask during initialization and termination.
  *
@@ -2544,28 +2439,6 @@ static int vboxGuestSetFilterMask(VMMDevCtlGuestFilterMask *pReq, uint32_t fMask
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
         LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Sets the guest capabilities to the host.
- *
- * This will ASSUME that we're the ones in charge of the mask, so
- * we'll simply clear all bits we don't set.
- *
- * @returns VBox status code.
- * @param   fMask       The new mask.
- */
-static int vboxGuestSetCapabilities(VMMDevReqGuestCapabilities2 *pReq, uint32_t fMask)
-{
-    int rc;
-
-    pReq->u32OrMask = fMask;
-    pReq->u32NotMask = ~fMask;
-    rc = VbglGRPerform(&pReq->header);
-    if (RT_FAILURE(rc))
-        LogRelFunc(("failed with rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -2594,10 +2467,11 @@ static int vboxGuestSetMouseStatus(VMMDevReqMouseStatus *pReq, uint32_t fMask)
 
 
 static int vboxGuestGetHostFlagsFromSessions(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
-                                             uint32_t *pfFilterMask, uint32_t *pfCapabilities, uint32_t *pfMouseStatus)
+                                             uint32_t *pfFilterMask, uint32_t *pfMouseStatus)
 {
     PVBOXGUESTSESSION pIterator;
-    uint32_t fFilterMask = 0, fCapabilities = 0, fMouseStatus = 0;
+    uint32_t fFilterMask = 0;
+    uint32_t fMouseStatus = 0;
     unsigned cSessions = 0;
     int rc = VINF_SUCCESS;
 
@@ -2606,25 +2480,21 @@ static int vboxGuestGetHostFlagsFromSessions(PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
     RTListForEach(&pDevExt->SessionList, pIterator, VBOXGUESTSESSION, ListNode)
     {
         fFilterMask   |= pIterator->fFilterMask;
-        fCapabilities |= pIterator->fCapabilities;
         fMouseStatus  |= pIterator->fMouseStatus;
         ++cSessions;
     }
     if (!cSessions)
-        if (fFilterMask | fCapabilities | fMouseStatus)
+        if (fFilterMask | fMouseStatus)
             rc = VERR_INTERNAL_ERROR;
     if (cSessions == 1 && pSession)
         if (   fFilterMask   != pSession->fFilterMask
-            || fCapabilities != pSession->fCapabilities
             || fMouseStatus  != pSession->fMouseStatus)
             rc = VERR_INTERNAL_ERROR;
     if (cSessions > 1 && pSession)
         if (   ~fFilterMask   & pSession->fFilterMask
-            || ~fCapabilities & pSession->fCapabilities
             || ~fMouseStatus  & pSession->fMouseStatus)
             rc = VERR_INTERNAL_ERROR;
     *pfFilterMask = fFilterMask;
-    *pfCapabilities = fCapabilities;
     *pfMouseStatus = fMouseStatus;
     return rc;
 }
@@ -2644,26 +2514,19 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
 {
     int rc;
     VMMDevCtlGuestFilterMask    *pFilterReq = NULL;
-    VMMDevReqGuestCapabilities2 *pCapabilitiesReq = NULL;
     VMMDevReqMouseStatus        *pStatusReq = NULL;
     uint32_t                     fFilterMask = 0;
-    uint32_t                     fCapabilities = 0;
     uint32_t                     fMouseStatus = 0;
 
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pFilterReq, sizeof(*pFilterReq),
                      VMMDevReq_CtlGuestFilterMask);
-    if (RT_SUCCESS(rc))
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pCapabilitiesReq,
-                         sizeof(*pCapabilitiesReq),
-                         VMMDevReq_SetGuestCapabilities);
     if (RT_SUCCESS(rc))
         rc = VbglGRAlloc((VMMDevRequestHeader **)&pStatusReq,
                          sizeof(*pStatusReq), VMMDevReq_SetMouseStatus);
     if (RT_SUCCESS(rc))
     {
         RTSpinlockAcquire(pDevExt->SessionSpinlock);
-        rc = vboxGuestGetHostFlagsFromSessions(pDevExt, pSession, &fFilterMask,
-                                               &fCapabilities, &fMouseStatus);
+        rc = vboxGuestGetHostFlagsFromSessions(pDevExt, pSession, &fFilterMask, &fMouseStatus);
         if (RT_SUCCESS(rc))
         {
             fFilterMask |= pDevExt->fFixedEvents;
@@ -2672,9 +2535,6 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
             fMouseStatus ^= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
             if (fFlags & HostFlags_FilterMask)
                 vboxGuestSetFilterMask(pFilterReq, fFilterMask);
-            fCapabilities |= pDevExt->u32GuestCaps;
-            if (fFlags & HostFlags_Capabilities)
-                vboxGuestSetCapabilities(pCapabilitiesReq, fCapabilities);
             if (fFlags & HostFlags_MouseStatus)
                 vboxGuestSetMouseStatus(pStatusReq, fMouseStatus);
         }
@@ -2682,25 +2542,171 @@ static int vboxGuestUpdateHostFlags(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION 
     }
     if (pFilterReq)
         VbglGRFree(&pFilterReq->header);
-    if (pCapabilitiesReq)
-        VbglGRFree(&pCapabilitiesReq->header);
     if (pStatusReq)
         VbglGRFree(&pStatusReq->header);
+
     return rc;
 }
 
-/** Switch the capabilities in @a fOrMask to "acquire" mode if they are not
- * already in "set" mode.  If @a enmFlags is not set to
- * VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE, also try to acquire those
- * capabilities for the current session and release those in @a fNotFlag. */
-static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
-                                           uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags)
-{
-    uint32_t fSetCaps = 0;
 
-    if (!VBoxGuestCommonGuestCapsValidateValues(fOrMask))
+/**
+ * Return the mask of VMM device events that this session is allowed to see.
+ *
+ * The events associated with guest capabilities in "acquire" mode will be
+ * restricted to sessions which has acquired the respective capabilities.
+ * If someone else tries to wait for acquired events, they won't be woken up
+ * when the event becomes pending.  Should some other thread in the session
+ * acquire the capability while the corresponding event is pending, the waiting
+ * thread will woken up.
+ *
+ * @returns Mask of events valid for the given session.
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The session.
+ *
+ * @remarks Needs only be called when dispatching events in the
+ *          VBOXGUEST_ACQUIRE_STYLE_EVENTS mask.
+ */
+static uint32_t vbgdGetAllowedEventMaskForSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+{
+    uint32_t fAcquireModeGuestCaps;
+    uint32_t fAcquiredGuestCaps;
+    uint32_t fAllowedEvents;
+
+    /*
+     * Note! Reads pSession->u32AquiredGuestCaps and pDevExt->u32AcquireModeGuestCaps
+     *       WITHOUT holding VBOXGUESTDEVEXT::SessionSpinlock.
+     */
+    fAcquireModeGuestCaps = ASMAtomicUoReadU32(&pDevExt->u32AcquireModeGuestCaps);
+    if (fAcquireModeGuestCaps == 0)
+        return VMMDEV_EVENT_VALID_EVENT_MASK;
+    fAcquiredGuestCaps = ASMAtomicUoReadU32(&pSession->u32AquiredGuestCaps);
+
+    /*
+     * Calculate which events to allow according to the cap config and caps
+     * acquired by the session.
+     */
+    fAllowedEvents = VMMDEV_EVENT_VALID_EVENT_MASK;
+    if (   !(fAcquiredGuestCaps   & VMMDEV_GUEST_SUPPORTS_GRAPHICS)
+        && (fAcquireModeGuestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS))
+        fAllowedEvents &= ~VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+
+    if (   !(fAcquiredGuestCaps   & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
+        && (fAcquireModeGuestCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS))
+        fAllowedEvents &= ~VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
+
+    return fAllowedEvents;
+}
+
+
+/**
+ * Sets the guest capabilities to the host while holding the lock.
+ *
+ * This will ASSUME that we're the ones in charge of the mask, so
+ * we'll simply clear all bits we don't set.
+ *
+ * @returns VBox status code.
+ * @param   fMask       The new mask.
+ */
+static int vbgdUpdateCapabilitiesOnHostWithReqAndLock(PVBOXGUESTDEVEXT pDevExt, VMMDevReqGuestCapabilities2 *pReq)
+{
+    int rc;
+    uint32_t iBit;
+
+    pReq->u32OrMask = pDevExt->u32GuestCapsAcquired;
+    for (iBit = 0; iBit < 32; iBit++)
+        if (pDevExt->acGuestCapsSet[iBit] > 0)
+            pReq->u32OrMask |= RT_BIT_32(iBit);
+
+    if (pReq->u32OrMask == pDevExt->fGuestCapsHost)
+        rc = VINF_SUCCESS;
+    else
     {
-        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- invalid fOrMask\n",
+        pDevExt->fGuestCapsHost = pReq->u32OrMask;
+        pReq->u32NotMask = ~pReq->u32OrMask;
+        rc = VbglGRPerform(&pReq->header);
+        if (RT_FAILURE(rc))
+            pDevExt->fGuestCapsHost = UINT32_MAX;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Sets the guest capabilities to the host.
+ *
+ * This will ASSUME that we're the ones in charge of the mask, so
+ * we'll simply clear all bits we don't set.
+ *
+ * @returns VBox status code.
+ * @param   fMask       The new mask.
+ */
+static int vbgdUpdateCapabilitiesOnHost(PVBOXGUESTDEVEXT pDevExt)
+{
+    VMMDevReqGuestCapabilities2 *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetGuestCapabilities);
+    if (RT_SUCCESS(rc))
+    {
+        RTSpinlockAcquire(pDevExt->SessionSpinlock);
+
+        rc = vbgdUpdateCapabilitiesOnHostWithReqAndLock(pDevExt, pReq);
+
+        RTSpinlockRelease(pDevExt->SessionSpinlock);
+
+        if (RT_FAILURE(rc))
+            LogRelFunc(("failed with rc=%Rrc\n", rc));
+        VbglGRFree(&pReq->header);
+    }
+    return rc;
+}
+
+
+/**
+ * Switch a set of capabilities into "acuquire" mode and (maybe) acquire them
+ * for the given session.
+ *
+ * This is called in response to VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE as well as
+ * to do session cleanup.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The session.
+ * @param   fOrMask             The capabilities to add .
+ * @param   fNotMask            The capabilities to remove.  Ignored in
+ *                              VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE.
+ * @param   enmFlags            Confusing operation modifier.
+ *                              VBOXGUESTCAPSACQUIRE_FLAGS_NONE means to both
+ *                              configure and acquire/release the capabilities.
+ *                              VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
+ *                              means only configure capabilities in the
+ *                              @a fOrMask capabilities for "acquire" mode.
+ * @param   fSessionTermination Set if we're called by the session cleanup code.
+ *                              This tweaks the error handling so we perform
+ *                              proper session cleanup even if the host
+ *                              misbehaves.
+ *
+ * @remarks Takes both the session and event spinlocks.
+ */
+static int vbgdAcquireSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                          uint32_t fOrMask, uint32_t fNotMask, VBOXGUESTCAPSACQUIRE_FLAGS enmFlags,
+                                          bool fSessionTermination)
+{
+    uint32_t fCurrentOwnedCaps;
+    uint32_t fSessionRemovedCaps;
+    uint32_t fSessionAddedCaps;
+    uint32_t fOtherConflictingCaps;
+    VMMDevReqGuestCapabilities2 *pReq = NULL;
+    int rc;
+
+
+    /*
+     * Validate and adjust input.
+     */
+    if (fOrMask & ~(  VMMDEV_GUEST_SUPPORTS_SEAMLESS
+                    | VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING
+                    | VMMDEV_GUEST_SUPPORTS_GRAPHICS ) )
+    {
+        LogRel(("vbgdAcquireSessionCapabilities: pSession=%p fOrMask=%#x fNotMask=%#x enmFlags=%#x -- invalid fOrMask\n",
                 pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_PARAMETER;
     }
@@ -2708,107 +2714,181 @@ static int VBoxGuestCommonGuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     if (   enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE
         && enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_NONE)
     {
-        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- invalid enmFlags %d\n",
+        LogRel(("vbgdAcquireSessionCapabilities: pSession=%p fOrMask=%#x fNotMask=%#x enmFlags=%#x: invalid enmFlags %d\n",
                 pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (!VBoxGuestCommonGuestCapsModeSet(pDevExt, fOrMask, true, &fSetCaps))
+    /* The fNotMask no need to have all values valid, invalid ones will simply be ignored. */
+    fNotMask &= ~fOrMask;
+
+    /*
+     * Preallocate a update request if we're about to do more than just configure
+     * the capability mode.
+     */
+    if (enmFlags != VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE)
     {
-        LogRel(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- calling caps acquire for set caps\n",
+        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_SetGuestCapabilities);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("vbgdAcquireSessionCapabilities: pSession=%p fOrMask=%#x fNotMask=%#x enmFlags=%#x: VbglGRAlloc failure: %Rrc\n",
+                    pSession, fOrMask, fNotMask, enmFlags, rc));
+            return rc;
+        }
+    }
+
+    /*
+     * Try switch the capabilities in the OR mask into "acquire" mode.
+     *
+     * Note! We currently ignore anyone which may already have "set" the capabilities
+     *       in fOrMask.  This is simple, but perhaps not the best idea?
+     */
+    RTSpinlockAcquire(pDevExt->EventSpinlock);
+
+    if (!(pDevExt->u32SetModeGuestCaps & fOrMask))
+        pDevExt->u32AcquireModeGuestCaps |= fOrMask;
+    else
+    {
+        RTSpinlockRelease(pDevExt->EventSpinlock);
+
+        if (pReq)
+            VbglGRFree(&pReq->header);
+        AssertMsgFailed(("Trying to change caps mode: %#x\n", fOrMask));
+        LogRel(("vbgdAcquireSessionCapabilities: pSession=%p fOrMask=%#x fNotMask=%#x enmFlags=%#x: calling caps acquire for set caps\n",
                 pSession, fOrMask, fNotMask, enmFlags));
         return VERR_INVALID_STATE;
     }
 
+    /*
+     * If we only wanted to switch the capabilities into "acquire" mode, we're done now.
+     */
     if (enmFlags & VBOXGUESTCAPSACQUIRE_FLAGS_CONFIG_ACQUIRE_MODE)
     {
-        Log(("VBoxGuestCommonGuestCapsAcquire: pSession(0x%p), OR(0x%x), NOT(0x%x), flags(0x%x) -- configured acquire caps: 0x%x\n",
+        RTSpinlockRelease(pDevExt->EventSpinlock);
+
+        Assert(!pReq);
+        Log(("vbgdAcquireSessionCapabilities: pSession=%p fOrMask=%#x fNotMask=%#x enmFlags=%#x: configured acquire caps: 0x%x\n",
              pSession, fOrMask, fNotMask, enmFlags));
         return VINF_SUCCESS;
     }
+    Assert(pReq);
 
-    /* the fNotMask no need to have all values valid,
-     * invalid ones will simply be ignored */
-    uint32_t fCurrentOwnedCaps;
-    uint32_t fSessionNotCaps;
-    uint32_t fSessionOrCaps;
-    uint32_t fOtherConflictingCaps;
-
-    fNotMask &= ~fOrMask;
-
-    RTSpinlockAcquire(pDevExt->EventSpinlock);
-
+    /*
+     * Caller wants to acquire/release the capabilities too.
+     *
+     * Note! The mode change of the capabilities above won't be reverted on
+     *       failure, this is intentional.
+     */
     fCurrentOwnedCaps      = pSession->u32AquiredGuestCaps;
-    fSessionNotCaps        = fCurrentOwnedCaps & fNotMask;
-    fSessionOrCaps         = fOrMask & ~fCurrentOwnedCaps;
-    fOtherConflictingCaps  = pDevExt->u32GuestCaps & ~fCurrentOwnedCaps;
-    fOtherConflictingCaps &= fSessionOrCaps;
+    fSessionRemovedCaps    = fCurrentOwnedCaps & fNotMask;
+    fSessionAddedCaps      = fOrMask & ~fCurrentOwnedCaps;
+    fOtherConflictingCaps  = pDevExt->u32GuestCapsAcquired & ~fCurrentOwnedCaps;
+    fOtherConflictingCaps &= fSessionAddedCaps;
 
     if (!fOtherConflictingCaps)
     {
-        if (fSessionOrCaps)
+        if (fSessionAddedCaps)
         {
-            pSession->u32AquiredGuestCaps |= fSessionOrCaps;
-            pDevExt->u32GuestCaps |= fSessionOrCaps;
+            pSession->u32AquiredGuestCaps |= fSessionAddedCaps;
+            pDevExt->u32GuestCapsAcquired |= fSessionAddedCaps;
         }
 
-        if (fSessionNotCaps)
+        if (fSessionRemovedCaps)
         {
-            pSession->u32AquiredGuestCaps &= ~fSessionNotCaps;
-            pDevExt->u32GuestCaps &= ~fSessionNotCaps;
+            pSession->u32AquiredGuestCaps &= ~fSessionRemovedCaps;
+            pDevExt->u32GuestCapsAcquired &= ~fSessionRemovedCaps;
         }
+
+        /*
+         * If something changes (which is very likely), tell the host.
+         */
+        if (fSessionAddedCaps || fSessionRemovedCaps)
+        {
+            rc = vbgdUpdateCapabilitiesOnHostWithReqAndLock(pDevExt, pReq);
+            if (RT_FAILURE(rc))
+            {
+                /*
+                 * Failed, roll back.  Except, don't roll back session cleanups.
+                 */
+                if (fSessionAddedCaps)
+                {
+                    pSession->u32AquiredGuestCaps &= ~fSessionAddedCaps;
+                    pDevExt->u32GuestCapsAcquired &= ~fSessionAddedCaps;
+                }
+                if (fSessionRemovedCaps && !fSessionTermination)
+                {
+                    pSession->u32AquiredGuestCaps |= fSessionRemovedCaps;
+                    pDevExt->u32GuestCapsAcquired |= fSessionRemovedCaps;
+                }
+
+                RTSpinlockRelease(pDevExt->EventSpinlock);
+                LogRel(("vbgdAcquireSessionCapabilities: VBoxGuestSetGuestCapabilities failed: rc=%Rrc\n", rc));
+                VbglGRFree(&pReq->header);
+                return rc;
+            }
+        }
+
     }
-
-    RTSpinlockRelease(pDevExt->EventSpinlock);
-
-    if (fOtherConflictingCaps)
+    else
     {
-        Log(("VBoxGuestCommonGuestCapsAcquire: Caps 0x%x were busy\n", fOtherConflictingCaps));
+        RTSpinlockRelease(pDevExt->EventSpinlock);
+
+        Log(("vbgdAcquireSessionCapabilities: Caps %#x were busy\n", fOtherConflictingCaps));
+        VbglGRFree(&pReq->header);
         return VERR_RESOURCE_BUSY;
     }
 
-    /* now do host notification outside the lock */
-    if (!fSessionOrCaps && !fSessionNotCaps)
+    RTSpinlockRelease(pDevExt->EventSpinlock);
+    VbglGRFree(&pReq->header);
+
+    /*
+     * If we added a capability, check if that means some other thread in our
+     * session should be unblocked because there are events pending.
+     *
+     * HACK ALERT! When the seamless support capability is added we generate a
+     *             seamless change event so that the ring-3 client can sync with
+     *             the seamless state. Although this introduces a spurious
+     *             wakeups of the ring-3 client, it solves the problem of client
+     *             state inconsistency in multiuser environment (on Windows).
+     */
+    if (fSessionAddedCaps)
     {
-        /* no changes, return */
-        return VINF_SUCCESS;
+        uint32_t fGenFakeEvents = 0;
+        if (fSessionAddedCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
+            fGenFakeEvents |= VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
+
+        RTSpinlockAcquire(pDevExt->EventSpinlock);
+        if (fGenFakeEvents || pDevExt->f32PendingEvents)
+            vbgdDispatchEventsLocked(pDevExt, fGenFakeEvents);
+        RTSpinlockRelease(pDevExt->EventSpinlock);
+
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+        VBoxGuestWaitDoWakeUps(pDevExt);
+#endif
     }
-
-    int rc = VBoxGuestSetGuestCapabilities(fSessionOrCaps, fSessionNotCaps);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("VBoxGuestCommonGuestCapsAcquire: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
-
-        /* Failure branch
-         * this is generally bad since e.g. failure to release the caps may result in other sessions not being able to use it
-         * so we are not trying to restore the caps back to their values before the VBoxGuestCommonGuestCapsAcquire call,
-         * but just pretend everithing is OK. */
-        /** @todo better failure handling mechanism? */
-    }
-
-    /* success! */
-    uint32_t fGenFakeEvents = 0;
-
-    if (fSessionOrCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS)
-    {
-        /* generate the seamless change event so that the r3 app could synch with the seamless state
-         * although this introduces a false alarming of r3 client, it still solve the problem of
-         * client state inconsistency in multiuser environment */
-        fGenFakeEvents |= VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
-    }
-
-    /* since the acquire filter mask has changed, we need to process events in any way to ensure they go from pending events field
-     * to the proper (un-filtered) entries */
-    VBoxGuestCommonCheckEvents(pDevExt, pSession, fGenFakeEvents);
 
     return VINF_SUCCESS;
 }
 
 
+/**
+ * Handle VBOXGUEST_IOCTL_GUEST_CAPS_ACQUIRE.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The session.
+ * @param   pAcquire            The request.
+ */
 static int VBoxGuestCommonIOCTL_GuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                                  VBoxGuestCapsAquire *pAcquire)
 {
-    int rc = VBoxGuestCommonGuestCapsAcquire(pDevExt, pSession, pAcquire->u32OrMask, pAcquire->u32NotMask, pAcquire->enmFlags);
+    int rc;
+    LogFlow(("VBoxGuestCommonIOCtl: GUEST_CAPS_ACQUIRE or=%#x not=%#x flags=%#x\n",
+             pAcquire->u32OrMask, pAcquire->u32NotMask, pAcquire->enmFlags));
+
+    rc = vbgdAcquireSessionCapabilities(pDevExt, pSession, pAcquire->u32OrMask, pAcquire->u32NotMask, pAcquire->enmFlags,
+                                        false /*fSessionTermination*/);
     if (RT_FAILURE(rc))
         LogRel(("VBoxGuestCommonIOCtl: GUEST_CAPS_ACQUIRE failed rc=%Rrc\n", rc));
     pAcquire->rc = rc;
@@ -2816,18 +2896,112 @@ static int VBoxGuestCommonIOCTL_GuestCapsAcquire(PVBOXGUESTDEVEXT pDevExt, PVBOX
 }
 
 
+/**
+ * Sets the guest capabilities for a session.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The session.
+ * @param   fOrMask             The capabilities to add.
+ * @param   fNotMask            The capabilities to remove.
+ *
+ * @remarks Takes the session spinlock.
+ */
+static int vbgdSetSessionCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession, uint32_t fOrMask, uint32_t fNotMask)
+{
+    int rc;
+    RTSpinlockAcquire(pDevExt->SessionSpinlock);
+
+#ifndef VBOXGUEST_DISREGARD_ACQUIRE_MODE_GUEST_CAPS
+    /*
+     * Capabilities in "acquire" mode cannot be set via this API.
+     * (Acquire mode is only used on windows at the time of writing.)
+     */
+    if (!(fOrMask & pDevExt->u32AcquireModeGuestCaps))
+#endif
+    {
+        /*
+         * Apply the changes to the session mask.
+         */
+        uint32_t fChanged;
+        uint32_t fPrevious = pSession->fCapabilities;
+        pSession->fCapabilities |= fOrMask;
+        pSession->fCapabilities &= ~fNotMask;
+
+        /*
+         * If anything actually changed, update the global usage counters.
+         */
+        fChanged = fPrevious ^ pSession->fCapabilities;
+        if (fChanged)
+        {
+            bool        fGlobalChange = false;
+            uint32_t    iBit;
+            for (iBit = ASMBitFirstSetU32(fChanged) - 1; iBit < 32; iBit++)
+                if (RT_BIT_32(iBit) & fChanged)
+                {
+                    if (fChanged & fPrevious)
+                    {
+                        pDevExt->acGuestCapsSet[iBit] -= 1;
+                        AssertMsg(pDevExt->acGuestCapsSet[iBit] <= pDevExt->cSessions,
+                                  ("pDevExt->acGuestCaps[%u]=%#x cSessions=%#x\n",
+                                   iBit, pDevExt->acGuestCapsSet[iBit], pDevExt->cSessions));
+                        fGlobalChange |= pDevExt->acGuestCapsSet[iBit] == 0;
+                    }
+                    else
+                    {
+                        pDevExt->acGuestCapsSet[iBit] += 1;
+                        AssertMsg(pDevExt->acGuestCapsSet[iBit] > 0 && pDevExt->acGuestCapsSet[iBit] <= pDevExt->cSessions,
+                                  ("pDevExt->acGuestCaps[%u]=%#x cSessions=%#x\n",
+                                   iBit, pDevExt->acGuestCapsSet[iBit], pDevExt->cSessions));
+                        fGlobalChange |= pDevExt->acGuestCapsSet[iBit] == 1;
+                    }
+                    fChanged &= ~RT_BIT_32(iBit);
+                    if (!fChanged)
+                        break;
+                }
+
+            /*
+             * If there were global changes, update the capabilities on the host.
+             */
+            if (fGlobalChange)
+            {
+                RTSpinlockRelease(pDevExt->SessionSpinlock);
+
+                return vbgdUpdateCapabilitiesOnHost(pDevExt);
+            }
+        }
+        rc = VINF_SUCCESS;
+    }
+#ifndef VBOXGUEST_DISREGARD_ACQUIRE_MODE_GUEST_CAPS
+    else
+        rc = VERR_RESOURCE_BUSY;
+#endif
+
+    RTSpinlockRelease(pDevExt->SessionSpinlock);
+    return rc;
+}
+
+
+/**
+ * Handle VBOXGUEST_IOCTL_SET_GUEST_CAPABILITIES.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pSession            The session.
+ * @param   pInfo               The request.
+ */
 static int VBoxGuestCommonIOCtl_SetCapabilities(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                                 VBoxGuestSetCapabilitiesInfo *pInfo)
 {
     int rc;
+    LogFlow(("VBoxGuestCommonIOCtl: SET_GUEST_CAPABILITIES or=%#x not=%#x\n", pInfo->u32OrMask, pInfo->u32NotMask));
 
-    if ((pInfo->u32OrMask | pInfo->u32NotMask) & ~VMMDEV_GUEST_CAPABILITIES_MASK)
-        return VERR_INVALID_PARAMETER;
-    RTSpinlockAcquire(pDevExt->SessionSpinlock);
-    pSession->fCapabilities |= pInfo->u32OrMask;
-    pSession->fCapabilities &= ~pInfo->u32NotMask;
-    RTSpinlockRelease(pDevExt->SessionSpinlock);
-    rc = vboxGuestUpdateHostFlags(pDevExt, pSession, HostFlags_Capabilities);
+    if (!((pInfo->u32OrMask | pInfo->u32NotMask) & ~VMMDEV_GUEST_CAPABILITIES_MASK))
+        rc = vbgdSetSessionCapabilities(pDevExt, pSession, pInfo->u32OrMask, pInfo->u32NotMask);
+    else
+        rc = VERR_INVALID_PARAMETER;
+
     return rc;
 }
 
@@ -3076,6 +3250,53 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 }
 
 
+/**
+ * Used by VBoxGuestCommonISR as well as the acquire guest capability code.
+ *
+ * @returns VINF_SUCCESS on success. On failure, ORed together
+ *          RTSemEventMultiSignal errors (completes processing despite errors).
+ * @param   pDevExt             The VBoxGuest device extension.
+ * @param   fEvents             The events to dispatch.
+ */
+static int vbgdDispatchEventsLocked(PVBOXGUESTDEVEXT pDevExt, uint32_t fEvents)
+{
+    PVBOXGUESTWAIT  pWait;
+    PVBOXGUESTWAIT  pSafe;
+    int             rc = VINF_SUCCESS;
+
+    fEvents |= pDevExt->f32PendingEvents;
+
+    RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
+    {
+        uint32_t fHandledEvents = pWait->fReqEvents & fEvents;
+        if (    fHandledEvents != 0
+            &&  !pWait->fResEvents)
+        {
+            /* Does this one wait on any of the events we're dispatching?  We do a quick
+               check first, then deal with VBOXGUEST_ACQUIRE_STYLE_EVENTS as applicable. */
+            if (fHandledEvents & VBOXGUEST_ACQUIRE_STYLE_EVENTS)
+                fHandledEvents &= vbgdGetAllowedEventMaskForSession(pDevExt, pWait->pSession);
+            if (fHandledEvents)
+            {
+                pWait->fResEvents = pWait->fReqEvents & fEvents & fHandledEvents;
+                fEvents &= ~pWait->fResEvents;
+                RTListNodeRemove(&pWait->ListNode);
+#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
+                RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
+#else
+                RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
+                rc |= RTSemEventMultiSignal(pWait->Event);
+#endif
+                if (!fEvents)
+                    break;
+            }
+        }
+    }
+
+    ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
+    return rc;
+}
+
 
 /**
  * Common interrupt service routine.
@@ -3162,27 +3383,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
             /*
              * Normal FIFO waiter evaluation.
              */
-            fEvents |= pDevExt->f32PendingEvents;
-            RTListForEachSafe(&pDevExt->WaitList, pWait, pSafe, VBOXGUESTWAIT, ListNode)
-            {
-                uint32_t fHandledEvents = VBoxGuestCommonGetHandledEventsLocked(pDevExt, pWait->pSession);
-                if (    (pWait->fReqEvents & fEvents & fHandledEvents)
-                    &&  !pWait->fResEvents)
-                {
-                    pWait->fResEvents = pWait->fReqEvents & fEvents & fHandledEvents;
-                    fEvents &= ~pWait->fResEvents;
-                    RTListNodeRemove(&pWait->ListNode);
-#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-                    RTListAppend(&pDevExt->WakeUpList, &pWait->ListNode);
-#else
-                    RTListAppend(&pDevExt->WokenUpList, &pWait->ListNode);
-                    rc |= RTSemEventMultiSignal(pWait->Event);
-#endif
-                    if (!fEvents)
-                        break;
-                }
-            }
-            ASMAtomicWriteU32(&pDevExt->f32PendingEvents, fEvents);
+            rc |= vbgdDispatchEventsLocked(pDevExt, fEvents);
         }
         else /* something is serious wrong... */
             Log(("VBoxGuestCommonISR: acknowledge events failed rc=%Rrc (events=%#x)!!\n",

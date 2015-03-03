@@ -162,6 +162,8 @@ typedef struct VBOXGUESTDEVEXT
      * but do not search it, so a list data type should be fine.  Use under the
      * #SessionSpinlock lock. */
     RTLISTANCHOR                SessionList;
+    /** Number of session. */
+    uint32_t                    cSessions;
     /** Flag indicating whether logging to the release log
      *  is enabled. */
     bool                        fLoggingEnabled;
@@ -169,16 +171,29 @@ typedef struct VBOXGUESTDEVEXT
     VBOXGUESTMEMBALLOON         MemBalloon;
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
+
+    /** @name Guest Capabilities.
+     * @{ */
     /** Guest capabilities which have been set to "acquire" mode.  This means
      * that only one session can use them at a time, and that they will be
-     * automatically cleaned up if that session exits without doing so. */
-    uint32_t                    u32AcquireModeGuestCaps;
+     * automatically cleaned up if that session exits without doing so.
+     *
+     * Protected by VBOXGUESTDEVEXT::SessionSpinlock, but is unfortunately read
+     * without holding the lock in a couple of places. */
+    uint32_t volatile           u32AcquireModeGuestCaps;
     /** Guest capabilities which have been set to "set" mode.  This just means
      * that they have been blocked from ever being set to "acquire" mode. */
     uint32_t                    u32SetModeGuestCaps;
     /** Mask of all capabilities which are currently acquired by some session
      * and as such reported to the host. */
-    uint32_t                    u32GuestCaps;
+    uint32_t                    u32GuestCapsAcquired;
+    /** Usage counters for guest capabilities in "set" mode. Indexed by
+     *  capability bit number, one count per session using a capability. */
+    uint32_t                    acGuestCapsSet[32];
+    /** The set guest capabilities reported to the host. */
+    uint32_t                    fGuestCapsHost;
+    /** @} */
+
     /** Heartbeat timer which fires with interval
       * cNsHearbeatInterval and its handler sends
       * VMMDevReq_GuestHeartbeat to VMMDev. */
@@ -229,9 +244,13 @@ typedef struct VBOXGUESTSESSION
      * will be added to the host filter.
      * Use under the VBOXGUESTDEVEXT#SessionSpinlock lock. */
     uint32_t                    fFilterMask;
-    /** Capabilities supported.  A capability enabled in any guest session will
-     * be enabled for the host.
-     * Use under the VBOXGUESTDEVEXT#SessionSpinlock lock. */
+    /** Guest capabilities held in "acquired" by this session.
+     * Protected by VBOXGUESTDEVEXT::SessionSpinlock, but is unfortunately read
+     * without holding the lock in a couple of places. */
+    uint32_t volatile           u32AquiredGuestCaps;
+    /** Guest capabilities in "set" mode for this session.
+     * These accumulated for sessions via VBOXGUESTDEVEXT::acGuestCapsSet and
+     * reported to the host.  Protected by VBOXGUESTDEVEXT::SessionSpinlock.  */
     uint32_t                    fCapabilities;
     /** Mouse features supported.  A feature enabled in any guest session will
      * be enabled for the host.
@@ -248,9 +267,6 @@ typedef struct VBOXGUESTSESSION
     /** Whether this session has been opened or not. */
     bool                        fOpened;
 #endif
-    /** Mask of guest capabilities acquired by this session.  These will all be
-     *  reported to the host. */
-    uint32_t                    u32AquiredGuestCaps;
     /** Whether a CANCEL_ALL_WAITEVENTS is pending.  This happens when
      * CANCEL_ALL_WAITEVENTS is called, but no call to WAITEVENT is in process
      * in the current session.  In that case the next call will be interrupted
