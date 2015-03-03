@@ -64,8 +64,8 @@ class InstallTestVm(vboxtestvms.TestVm):
     kfReqIoApicSmp          = 0x20;
     kfReqPae                = 0x40;
     kfIdeIrqDelay           = 0x80;
-    kfUbuntuNewAmdBug       = 0x80;
-    kfNoWin81Paravirt       = 0x100;
+    kfUbuntuNewAmdBug       = 0x100;
+    kfNoWin81Paravirt       = 0x200;
     ## @}
 
     ## IRQ delay extra data config for win2k VMs.
@@ -263,7 +263,8 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-ubuntu804-64', 'Ubuntu_64',        'ubuntu804-amd64-txs.iso',  InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-ubuntu904',    'Ubuntu',           'ubuntu904-txs.iso',        InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqPae),
             InstallTestVm(oSet, 'tst-ubuntu904-64', 'Ubuntu_64',        'ubuntu904-amd64-txs.iso',  InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
-            InstallTestVm(oSet, 'tst-ubuntu1404',   'Ubuntu',           'ubuntu1404-txs.iso',       InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqPae),
+            #InstallTestVm(oSet, 'tst-ubuntu1404',   'Ubuntu',           'ubuntu1404-txs.iso',       InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqPae), bird: Is 14.04 one of the 'older ones'?
+            InstallTestVm(oSet, 'tst-ubuntu1404',   'Ubuntu',           'ubuntu1404-txs.iso',       InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqPae),
             InstallTestVm(oSet, 'tst-ubuntu1404-64','Ubuntu_64',        'ubuntu1404-amd64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-debian7',      'Debian',           'debian-7.0.0-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-debian7-64',   'Debian_64',        'debian-7.0.0-x64-txs.iso', InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
