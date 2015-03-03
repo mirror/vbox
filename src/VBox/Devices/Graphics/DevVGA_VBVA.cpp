@@ -2720,7 +2720,7 @@ int VBVAInit (PVGASTATE pVGAState)
              VBVACONTEXT *pCtx = (VBVACONTEXT *)HGSMIContext (pVGAState->pHGSMI);
              pCtx->cViews = pVGAState->cMonitors;
              pCtx->fPaused = true;
-             memset(pCtx->aModeHints, ~0, sizeof(*pCtx->aModeHints));
+             memset(pCtx->aModeHints, ~0, sizeof(pCtx->aModeHints));
              pVGAState->fHostCursorCapabilities = 0;
          }
      }
