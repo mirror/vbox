@@ -147,9 +147,17 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
     /* Take unscaled HiDPI output mode into account: */
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+    /* Propagate unscaled-hidpi-output feature to 3D service if necessary: */
+    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    {
+        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+    }
 
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();
+
+    // TODO: How to make it work?
+    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 void UIMachineViewScale::maybeResendSizeHint()

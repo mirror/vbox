@@ -172,23 +172,25 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 
 void UIMachineView::applyMachineViewScaleFactor()
 {
-    /* Take the scale-factor into account: */
+    /* Take the scale-factor related attributes into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
+    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setScaleFactor(dScaleFactor);
-    /* Propagate scale-factor to 3D service if necessary: */
+    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+    /* Propagate the scale-factor related attributes to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
         display().NotifyScaleFactorChange(m_uScreenId,
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
                                           (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
     }
-
-    /* Take unscaled HiDPI output mode into account: */
-    const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
-    frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 
     /* Perform frame-buffer rescaling: */
     frameBuffer()->performRescale();
+
+    // TODO: How to make it work?
+    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 double UIMachineView::aspectRatio() const
@@ -366,7 +368,7 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     /* Take the scale-factor into account: */
     const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
     frameBuffer()->setScaleFactor(dScaleFactor);
-    /* Propagate scale-factor to 3D service if necessary: */
+    /* Propagate the scale-factor to 3D service if necessary: */
     if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
     {
         display().NotifyScaleFactorChange(m_uScreenId,
@@ -382,6 +384,9 @@ void UIMachineView::sltHandleScaleFactorChange(const QString &strMachineID)
     /* Update scaled pause pixmap, if necessary: */
     updateScaledPausePixmap();
     viewport()->update();
+
+    // TODO: How to make it work?
+    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID)
@@ -390,9 +395,14 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
     if (strMachineID != vboxGlobal().managedVMUuid())
         return;
 
-    /* Take unscaled HiDPI output mode into account: */
+    /* Take the unscaled HiDPI output mode into account: */
     const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
     frameBuffer()->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+    /* Propagate the unscaled HiDPI output mode to 3D service if necessary: */
+    if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+    {
+        display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+    }
 
     /* Handle scale attributes change: */
     handleScaleChange();
@@ -402,6 +412,9 @@ void UIMachineView::sltHandleUnscaledHiDPIOutputModeChange(const QString &strMac
     /* Update scaled pause pixmap, if necessary: */
     updateScaledPausePixmap();
     viewport()->update();
+
+    // TODO: How to make it work?
+    display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -538,25 +551,24 @@ void UIMachineView::prepareFrameBuffer()
         /* Take HiDPI optimization type into account: */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
 
-        /* Take scale-factor into account: */
-        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
-        m_pFrameBuffer->setScaleFactor(dScaleFactor);
-        /* Propagate scale-factor to 3D service if necessary: */
-        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
-        {
-            display().NotifyScaleFactorChange(m_uScreenId,
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
-                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
-        }
-
 #ifdef Q_WS_MAC
         /* Take backing scale-factor into account: */
         m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
 #endif /* Q_WS_MAC */
 
-        /* Take unscaled HiDPI output mode into account: */
+        /* Take the scale-factor related attributes into account: */
+        const double dScaleFactor = gEDataManager->scaleFactor(vboxGlobal().managedVMUuid());
         const bool fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(vboxGlobal().managedVMUuid());
+        m_pFrameBuffer->setScaleFactor(dScaleFactor);
         m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
+        /* Propagate the scale-factor related attributes to 3D service if necessary: */
+        if (machine().GetAccelerate3DEnabled() && vboxGlobal().is3DAvailable())
+        {
+            display().NotifyScaleFactorChange(m_uScreenId,
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER),
+                                              (uint32_t)(dScaleFactor * VBOX_OGL_SCALE_FACTOR_MULTIPLIER));
+            display().NotifyHiDPIOutputPolicyChange(fUseUnscaledHiDPIOutput);
+        }
 
         /* Perform frame-buffer rescaling: */
         m_pFrameBuffer->performRescale();
