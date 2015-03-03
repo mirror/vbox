@@ -108,6 +108,25 @@ typedef struct VBOXGUESTMEMBALLOON
 /** Pointer to a memory balloon. */
 typedef VBOXGUESTMEMBALLOON *PVBOXGUESTMEMBALLOON;
 
+
+/**
+ * Per bit usage tracker for a uint32_t mask.
+ *
+ * Used for optimal handling of guest properties, mouse status and event filter.
+ */
+typedef struct VBOXGUESTBITUSAGETRACER
+{
+    /** Per bit usage counters. */
+    uint32_t        acPerBitUsage[32];
+    /** The current mask according to acPerBitUsage. */
+    uint32_t        fMask;
+} VBOXGUESTBITUSAGETRACER;
+/** Pointer to a per bit usage tracker.  */
+typedef VBOXGUESTBITUSAGETRACER *PVBOXGUESTBITUSAGETRACER;
+/** Pointer to a const per bit usage tracker.  */
+typedef VBOXGUESTBITUSAGETRACER const *PCVBOXGUESTBITUSAGETRACER;
+
+
 /**
  * VBox guest device (data) extension.
  */
@@ -117,8 +136,6 @@ typedef struct VBOXGUESTDEVEXT
     RTIOPORT                    IOPortBase;
     /** Pointer to the mapping of the VMMDev adapter memory. */
     VMMDevMemory volatile      *pVMMDevMemory;
-    /** Events we won't permit anyone to filter out. */
-    uint32_t                    fFixedEvents;
     /** The memory object reserving space for the guest mappings. */
     RTR0MEMOBJ                  hGuestMappings;
     /** Spinlock protecting the signaling and resetting of the wait-for-event
@@ -172,7 +189,25 @@ typedef struct VBOXGUESTDEVEXT
     /** Callback and user data for a kernel mouse handler. */
     VBoxGuestMouseSetNotifyCallback MouseNotifyCallback;
 
-    /** @name Guest Capabilities.
+    /** @name Host Event Filtering
+     * @{ */
+    /** Events we won't permit anyone to filter out. */
+    uint32_t                    fFixedEvents;
+    /** Usage counters for the host events. (Fixed events are not included.) */
+    VBOXGUESTBITUSAGETRACER     EventFilterTracker;
+    /** The event filter last reported to the host (UINT32_MAX on failure). */
+    uint32_t                    fEventFilterHost;
+    /** @} */
+
+    /** @name Mouse Status
+     * @{ */
+    /** Usage counters for the mouse statuses (VMMDEV_MOUSE_XXX). */
+    VBOXGUESTBITUSAGETRACER     MouseStatusTracker;
+    /** The mouse status last reported to the host (UINT32_MAX on failure). */
+    uint32_t                    fMouseStatusHost;
+    /** @} */
+
+    /** @name Guest Capabilities
      * @{ */
     /** Guest capabilities which have been set to "acquire" mode.  This means
      * that only one session can use them at a time, and that they will be
@@ -189,8 +224,8 @@ typedef struct VBOXGUESTDEVEXT
     uint32_t                    u32GuestCapsAcquired;
     /** Usage counters for guest capabilities in "set" mode. Indexed by
      *  capability bit number, one count per session using a capability. */
-    uint32_t                    acGuestCapsSet[32];
-    /** The set guest capabilities reported to the host. */
+    VBOXGUESTBITUSAGETRACER     SetGuestCapsTracker;
+    /** The guest capabilities last reported to the host (UINT32_MAX on failure). */
     uint32_t                    fGuestCapsHost;
     /** @} */
 
@@ -240,10 +275,10 @@ typedef struct VBOXGUESTSESSION
     /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
      * Used to implement polling.  */
     uint32_t volatile           u32MousePosChangedSeq;
-    /** VMMDev events requested.  An event type requested in any guest session
-     * will be added to the host filter.
-     * Use under the VBOXGUESTDEVEXT#SessionSpinlock lock. */
-    uint32_t                    fFilterMask;
+    /** Host events requested by the session.
+     * An event type requested in any guest session will be added to the host
+     * filter.  Protected by VBOXGUESTDEVEXT::SessionSpinlock. */
+    uint32_t                    fEventFilter;
     /** Guest capabilities held in "acquired" by this session.
      * Protected by VBOXGUESTDEVEXT::SessionSpinlock, but is unfortunately read
      * without holding the lock in a couple of places. */

@@ -966,7 +966,6 @@ static int vboxguestLinuxParamLogGrpSet(const char *pszValue, struct kernel_para
     return 0;
 }
 
-
 /** log and dbg_log parameter getter. */
 static int vboxguestLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
 {
@@ -991,7 +990,6 @@ static int vboxguestLinuxParamLogFlagsSet(const char *pszValue, struct kernel_pa
         strlcpy(&g_szLogFlags[0], pszValue, sizeof(g_szLogFlags));
     return 0;
 }
-
 
 /** log and dbg_log_flags parameter getter. */
 static int vboxguestLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
@@ -1018,7 +1016,6 @@ static int vboxguestLinuxParamLogDstSet(const char *pszValue, struct kernel_para
     return 0;
 }
 
-
 /** log and dbg_log_dest parameter getter. */
 static int vboxguestLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
 {
@@ -1028,6 +1025,34 @@ static int vboxguestLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pPara
         RTLogGetDestinations(pLogger, pszBuf, _4K);
     return strlen(pszBuf);
 }
+
+
+/** r3_log_to_host parameter setter. */
+static int vboxguestLinuxParamR3LogToHostSet(const char *pszValue, struct kernel_param *pParam)
+{
+    if (    pszValue == NULL
+        || *pszValue == '\0'
+        || *pszValue == 'n'
+        || *pszValue == 'N'
+        || *pszValue == 'y'
+        || *pszValue == 'y'
+        || *pszValue == 'd'
+        || *pszValue == 'D'
+        || !strcmp(pszValue, "off")
+       )
+        g_DevExt.fLoggingEnabled = false;
+    else
+        g_DevExt.fLoggingEnabled = true;
+    return 0;
+}
+
+/** r3_log_to_host parameter getter. */
+static int vboxguestLinuxParamR3LogToHostGet(char *pszBuf, struct kernel_param *pParam)
+{
+    strcpy(pszBuf, g_DevExt.fLoggingEnabled ? "enabled" : "disabled");
+    return strlen(pszBuf);
+}
+
 
 /*
  * Define module parameters.
@@ -1040,6 +1065,7 @@ module_param_call(dbg_log,        vboxguestLinuxParamLogGrpSet,   vboxguestLinux
 module_param_call(dbg_log_flags,  vboxguestLinuxParamLogFlagsSet, vboxguestLinuxParamLogFlagsGet, NULL, 0664);
 module_param_call(dbg_log_dest,   vboxguestLinuxParamLogDstSet,   vboxguestLinuxParamLogDstGet,   NULL, 0664);
 # endif
+module_param_call(r3_log_to_host, vboxguestLinuxParamR3LogToHostSet, vboxguestLinuxParamR3LogToHostGet, NULL, 0664);
 
 #endif /* 2.6.0 and later */
 
