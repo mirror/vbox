@@ -249,7 +249,7 @@ class tdGuestOsInstTest1(vbox.TestDriver):
             InstallTestVm(oSet, 'tst-fedora4',      'Fedora',           'fedora4-txs.iso',          InstallTestVm.ksIdeController,   8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-fedora5',      'Fedora',           'fedora5-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqPae | InstallTestVm.kfReqIoApicSmp),
             InstallTestVm(oSet, 'tst-fedora6',      'Fedora',           'fedora6-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqIoApic),
-            InstallTestVm(oSet, 'tst-fedora7',      'Fedora',           'fedora7-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfReqIoApic),
+            InstallTestVm(oSet, 'tst-fedora7',      'Fedora',           'fedora7-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit | InstallTestVm.kfUbuntuNewAmdBug | InstallTestVm.kfReqIoApic),
             InstallTestVm(oSet, 'tst-fedora9',      'Fedora',           'fedora9-txs.iso',          InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
             InstallTestVm(oSet, 'tst-fedora18-64',  'Fedora_64',        'fedora18-x64-txs.iso',     InstallTestVm.ksSataController,  8, InstallTestVm.kf64Bit),
             InstallTestVm(oSet, 'tst-fedora18',     'Fedora',           'fedora18-txs.iso',         InstallTestVm.ksSataController,  8, InstallTestVm.kf32Bit),
