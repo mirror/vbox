@@ -1427,8 +1427,8 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
     /* Clear it while leaving HM context, hmPokeCpuForTlbFlush() relies on this. */
     pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
 
-    /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
-    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID); /** @todo r=bird: This is VMMR0.cpp's job, isn't it? */
+    /* Clear the VCPU <-> host CPU mapping as we've left HM context (for the preemption hook case). */
+    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
     return VINF_SUCCESS;
 }
