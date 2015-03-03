@@ -150,7 +150,7 @@ static RTEXITCODE usage(enum VBoxControlUsage eWhich = USAGE_ALL)
         doUsage("", g_pszProgName, "writecoredump");
 #endif
     if (eWhich == WRITE_LOG || eWhich == USAGE_ALL)
-        doUsage("", g_pszProgName, "writelog [--] <msg>");
+        doUsage("", g_pszProgName, "writelog [-n|--no-newline] [--] <msg>");
     if (eWhich == TAKE_SNAPSHOT || eWhich == USAGE_ALL)
         doUsage("", g_pszProgName, "takesnapshot");
     if (eWhich == SAVE_STATE || eWhich == USAGE_ALL)
@@ -1764,8 +1764,9 @@ static RTEXITCODE handleWriteLog(int argc, char *argv[])
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--dummy", 'D', RTGETOPT_REQ_NOTHING }
+        { "--no-newline", 'n', RTGETOPT_REQ_NOTHING },
     };
+    bool fNoNewline = false;
 
     RTGETOPTSTATE GetOptState;
     int rc = RTGetOptInit(&GetOptState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions),
@@ -1779,9 +1780,31 @@ static RTEXITCODE handleWriteLog(int argc, char *argv[])
             switch (ch)
             {
                 case VINF_GETOPT_NOT_OPTION:
-                    rc = VbglR3WriteLog(ValueUnion.psz, strlen(ValueUnion.psz));
+                {
+                    size_t cch = strlen(ValueUnion.psz);
+                    if (   fNoNewline
+                        || (cch > 0 && ValueUnion.psz[cch - 1] == '\n') )
+                        rc = VbglR3WriteLog(ValueUnion.psz, cch);
+                    else
+                    {
+                        char *pszDup = (char *)RTMemDupEx(ValueUnion.psz, cch, 2);
+                        if (RT_SUCCESS(rc))
+                        {
+                            pszDup[cch++] = '\n';
+                            pszDup[cch]   = '\0';
+                            rc = VbglR3WriteLog(pszDup, cch);
+                            RTMemFree(pszDup);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
                     if (RT_FAILURE(rc))
                         return VBoxControlError("VbglR3WriteLog: %Rrc", rc);
+                    break;
+                }
+
+                case 'n':
+                    fNoNewline = true;
                     break;
 
                 case 'h': return usage(WRITE_LOG);
