@@ -1252,7 +1252,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             for (int i = 0; i < capabilities.size(); ++i)
                 caps |= capabilities[i];
             /* Check capabilities for additional options: */
-            if (caps & MediumFormatCapabilities_File)
+            if (caps & KMediumFormatCapabilities_File)
             {
                 if (medium.state() == KMediumState_Inaccessible)
                     strMessage += tr("<p>As this hard disk is inaccessible its image file"

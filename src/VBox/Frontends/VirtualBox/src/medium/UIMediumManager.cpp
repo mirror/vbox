@@ -359,7 +359,7 @@ private:
         QVector<KMediumFormatCapabilities> capabilities = hardDisk.GetMediumFormat().GetCapabilities();
         foreach (KMediumFormatCapabilities capability, capabilities)
             uCapability |= capability;
-        if (state() != KMediumState_Inaccessible && uCapability & MediumFormatCapabilities_File)
+        if (state() != KMediumState_Inaccessible && uCapability & KMediumFormatCapabilities_File)
         {
             int rc = msgCenter().confirmDeleteHardDiskStorage(strLocation, treeWidget());
             if (rc == AlertButton_Cancel)
