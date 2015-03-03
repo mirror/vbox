@@ -36,13 +36,13 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
 
     if (!pReq || cbReq < sizeof (VMMDevRequestHeader))
     {
-        dprintf(("VbglGRVerify: Invalid parameter: pReq = %p, cbReq = %d\n", pReq, cbReq));
+        dprintf(("VbglGRVerify: Invalid parameter: pReq = %p, cbReq = %zu\n", pReq, cbReq));
         return VERR_INVALID_PARAMETER;
     }
 
     if (pReq->size > cbReq)
     {
-        dprintf(("VbglGRVerify: request size %d > buffer size %d\n", pReq->size, cbReq));
+        dprintf(("VbglGRVerify: request size %u > buffer size %zu\n", pReq->size, cbReq));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -51,7 +51,7 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
 
     if (cbReq < cbReqExpected)
     {
-        dprintf(("VbglGRVerify: buffer size %d < expected size %d\n", cbReq, cbReqExpected));
+        dprintf(("VbglGRVerify: buffer size %zu < expected size %zu\n", cbReq, cbReqExpected));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -62,7 +62,7 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
          */
         if (pReq->size != cbReqExpected)
         {
-            dprintf(("VbglGRVerify: request size %d != expected size %d\n", pReq->size, cbReqExpected));
+            dprintf(("VbglGRVerify: request size %u != expected size %zu\n", pReq->size, cbReqExpected));
             return VERR_INVALID_PARAMETER;
         }
 
@@ -90,13 +90,13 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
     {
         if (cbReq > VMMDEV_MAX_VMMDEVREQ_SIZE)
         {
-            dprintf(("VbglGRVerify: VMMDevReq_LogString: buffer size %d too big\n", cbReq));
+            dprintf(("VbglGRVerify: VMMDevReq_LogString: buffer size %zu too big\n", cbReq));
             return VERR_BUFFER_OVERFLOW; /* @todo is this error code ok? */
         }
     }
     else
     {
-        dprintf(("VbglGRVerify: request size %d > buffer size %d\n", pReq->size, cbReq));
+        dprintf(("VbglGRVerify: request size %u > buffer size %zu\n", pReq->size, cbReq));
         return VERR_IO_BAD_LENGTH; /* @todo is this error code ok? */
     }
 
