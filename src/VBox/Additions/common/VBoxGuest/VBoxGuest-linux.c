@@ -1034,11 +1034,10 @@ static int vboxguestLinuxParamR3LogToHostSet(const char *pszValue, struct kernel
         || *pszValue == '\0'
         || *pszValue == 'n'
         || *pszValue == 'N'
-        || *pszValue == 'y'
-        || *pszValue == 'y'
         || *pszValue == 'd'
         || *pszValue == 'D'
-        || !strcmp(pszValue, "off")
+        || (   (*pszValue == 'o' || *pszValue == 'O')
+            && (*pszValue == 'f' || *pszValue == 'F') )
        )
         g_DevExt.fLoggingEnabled = false;
     else
