@@ -526,10 +526,11 @@
         <para>Technically, a "multiattach" image behaves identically to an
         "immutable" image except the differencing image is not reset every
         time the machine starts.</para>
-        <para>This mode could be useful, for example, to share virtual disk with source code.
-          The every user changes only small number of files and all other files can be unchanged. 
-          The files modified by user stored in differencing images that reletively small. 
-          It saves a disk space.</para>
+        <para>This mode could be useful, for example, to share virtual disk 
+        with source code. The every user changes only small number of files 
+        and all other files can be unchanged. The files modified by user 
+        stored in differencing images that reletively small. It saves a 
+        disk space.</para>
       </listitem>
 
       <listitem>

@@ -1290,14 +1290,16 @@
           <para>
             Multiple groups e.g.:
             <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup,/TestGroup2"</screen>
-            It creates groups "TestGroup" and "TestGroup2" (if they are not exist) and attaches VM "Fred" to both of them
+            It creates groups "TestGroup" and "TestGroup2" (if they are not exist)
+            and attaches VM "Fred" to both of them
           </para>
         </listitem>
         <listitem>
           <para>
             Nested groups -- hierarchy of groups e.g.:
             <screen>VBoxManage modifyvm "Fred" --groups "/TestGroup/TestGroup2"</screen>
-            It attaches VM "Fred" to  subgroup "TestGroup2" of "TestGroup" group
+            It attaches VM "Fred" to  subgroup "TestGroup2" of "TestGroup"
+            group
           </para>
         </listitem>
         <listitem>
