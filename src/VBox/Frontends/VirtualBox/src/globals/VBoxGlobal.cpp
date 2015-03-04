@@ -171,12 +171,6 @@
 # include "VBoxX11Helper.h"
 #endif /* Q_WS_X11 */
 
-/* VirtualBox interface declarations: */
-#ifndef VBOX_WITH_XPCOM
-# include "VirtualBox.h"
-#else /* !VBOX_WITH_XPCOM */
-# include "VirtualBox_XPCOM.h"
-#endif /* VBOX_WITH_XPCOM */
 
 //#define VBOX_WITH_FULL_DETAILS_REPORT /* hidden for now */
 

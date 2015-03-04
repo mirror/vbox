@@ -68,7 +68,6 @@
 #undef ASSERT
 
 #include <VBox/com/com.h>
-#include <VBox/com/defs.h>
 #include <VBox/com/array.h>
 #include <VBox/com/assert.h>
 
@@ -96,6 +95,14 @@
 
 class XPCOMEventQSocketListener;
 
+#endif /* !defined(VBOX_WITH_XPCOM) */
+
+
+/* VirtualBox interfaces declarations */
+#if !defined(VBOX_WITH_XPCOM)
+    #include <VirtualBox.h>
+#else /* !defined(VBOX_WITH_XPCOM) */
+    #include <VirtualBox_XPCOM.h>
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
 /////////////////////////////////////////////////////////////////////////////
