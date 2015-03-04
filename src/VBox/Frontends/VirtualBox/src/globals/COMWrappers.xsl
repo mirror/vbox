@@ -238,6 +238,12 @@
     <xsl:text> * Source    : src/VBox/Main/idl/VirtualBox.xidl&#x0A;</xsl:text>
     <xsl:text> * Generator : src/VBox/Frontends/VirtualBox/include/COMWrappers.xsl&#x0A;</xsl:text>
     <xsl:text> */&#x0A;&#x0A;</xsl:text>
+    <xsl:text>/* VirtualBox interface declarations: */&#x0A;</xsl:text>
+    <xsl:text>#ifndef VBOX_WITH_XPCOM&#x0A;</xsl:text>
+    <xsl:text># include "VirtualBox.h"&#x0A;</xsl:text>
+    <xsl:text>#else /* !VBOX_WITH_XPCOM */&#x0A;</xsl:text>
+    <xsl:text># include "VirtualBox_XPCOM.h"&#x0A;</xsl:text>
+    <xsl:text>#endif /* VBOX_WITH_XPCOM */&#x0A;&#x0A;</xsl:text>
     <xsl:text>/* COM includes: */&#x0A;</xsl:text>
     <xsl:text>#include "COMEnums.h"&#x0A;</xsl:text>
 
@@ -294,8 +300,14 @@
     </xsl:for-each>
     <xsl:text>&#x0A;</xsl:text>
 
-    <!-- Interface declaration: -->
-    <xsl:text>/* Interface declaration: */&#x0A;</xsl:text>
+    <!-- Interface forward declaration: -->
+    <xsl:text>/* Interface forward declaration: */&#x0A;</xsl:text>
+    <xsl:text>class I</xsl:text>
+    <xsl:value-of select="substring(@name,2)"/>
+    <xsl:text>;&#x0A;&#x0A;</xsl:text>
+
+    <!-- Interface wrapper declaration: -->
+    <xsl:text>/* Interface wrapper declaration: */&#x0A;</xsl:text>
     <xsl:text>class C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text> : public CInterface&lt;</xsl:text>
@@ -329,7 +341,7 @@
     <xsl:text>/* Let QMetaType know about generated interface: */&#x0A;</xsl:text>
     <xsl:text>Q_DECLARE_METATYPE(</xsl:text>
     <xsl:value-of select="concat('C',substring(@name,2))"/>
-    <xsl:text>)&#x0A;&#x0A;</xsl:text>
+    <xsl:text>);&#x0A;&#x0A;</xsl:text>
 
     <!-- Declare safe-array -->
     <xsl:if test="
@@ -465,7 +477,11 @@
   <!-- default constructor -->
   <xsl:text>    C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text>() {}&#x0A;&#x0A;</xsl:text>
+  <xsl:text>();&#x0A;</xsl:text>
+  <!-- default destructor -->
+  <xsl:text>    ~C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>();&#x0A;&#x0A;</xsl:text>
   <!-- constructor taking CWhatever -->
   <xsl:text>    template&lt;class OI, class OB&gt; explicit C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
@@ -485,7 +501,7 @@
   <xsl:value-of select="substring(@name,2)"/>
   <xsl:text>(const C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-  <xsl:text> &amp; that) : Base(that) {}&#x0A;&#x0A;</xsl:text>
+  <xsl:text> &amp; that);&#x0A;&#x0A;</xsl:text>
   <!-- constructor taking a raw iface pointer -->
   <xsl:text>    template&lt;class OI&gt; explicit C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
@@ -495,7 +511,7 @@
   <xsl:value-of select="substring(@name,2)"/>
   <xsl:text>(</xsl:text>
   <xsl:value-of select="@name"/>
-  <xsl:text> * aIface) : Base(aIface) {}&#x0A;&#x0A;</xsl:text>
+  <xsl:text> * aIface);&#x0A;&#x0A;</xsl:text>
   <!-- assignment taking CWhatever -->
   <xsl:text>    template&lt;class OI, class OB&gt; C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
@@ -516,12 +532,7 @@
   <xsl:value-of select="substring(@name,2)"/>
   <xsl:text> &amp; operator=(const C</xsl:text>
   <xsl:value-of select="substring(@name,2)"/>
-<xsl:text> &amp; that)
-    {
-        Base::operator=(that);
-        return *this;
-    }
-</xsl:text>
+<xsl:text> &amp; that);&#x0A;</xsl:text>
   <xsl:text>&#x0A;</xsl:text>
   <!-- assignment taking a raw iface pointer -->
   <xsl:text>    template&lt;class OI&gt; C</xsl:text>
@@ -538,12 +549,7 @@
   <xsl:value-of select="substring(@name,2)"/>
   <xsl:text> &amp; operator=(</xsl:text>
   <xsl:value-of select="@name"/>
-<xsl:text> * aIface)
-    {
-        Base::operator=(aIface);
-        return *this;
-    }
-</xsl:text>
+<xsl:text> * aIface);&#x0A;</xsl:text>
   <xsl:text>&#x0A;</xsl:text>
 
   <xsl:text>    /* Attributes (properties): */&#x0A;</xsl:text>
@@ -651,6 +657,74 @@
   <xsl:if test="name()='interface'">
     <xsl:call-template name="defineMembers"/>
   </xsl:if>
+
+</xsl:template>
+
+<xsl:template name="defineConstructors">
+
+  <!-- default constructor -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>() {}&#x0A;&#x0A;</xsl:text>
+
+  <!-- default destructor -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::~C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>() {}&#x0A;&#x0A;</xsl:text>
+
+  <!-- copy constructor -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>(const C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text> &amp;that) : Base(that) {}&#x0A;&#x0A;</xsl:text>
+
+  <!-- copy constructor taking interface pointer -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>(</xsl:text>
+  <xsl:value-of select="@name"/>
+  <xsl:text> *pIface) : Base(pIface) {}&#x0A;&#x0A;</xsl:text>
+
+  <!-- operator= -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>&amp; </xsl:text>
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::operator=(const C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+<xsl:text> &amp;that)
+{
+    Base::operator=(that);
+    return *this;
+}
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
+
+  <!-- operator= taking interface pointer -->
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>&amp; </xsl:text>
+  <xsl:text>C</xsl:text>
+  <xsl:value-of select="substring(@name,2)"/>
+  <xsl:text>::operator=(</xsl:text>
+  <xsl:value-of select="@name"/>
+<xsl:text> *pIface)
+{
+    Base::operator=(pIface);
+    return *this;
+}
+</xsl:text>
+  <xsl:text>&#x0A;</xsl:text>
 
 </xsl:template>
 
@@ -893,6 +967,9 @@
 </xsl:template>
 
 <xsl:template name="defineMembers">
+  <xsl:call-template name="defineConstructors">
+    <xsl:with-param name="iface" select="."/>
+  </xsl:call-template>
   <xsl:call-template name="defineAttributes">
     <xsl:with-param name="iface" select="."/>
   </xsl:call-template>
