@@ -2769,6 +2769,7 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     pSurface->flags              |= SVGA3D_SURFACE_HINT_TEXTURE;
+    LogFlow(("vmsvga3dCreateTexture: sid=%#x idAssociatedContext %#x -> %#x\n", pSurface->id, pSurface->idAssociatedContext, idAssociatedContext));
     pSurface->idAssociatedContext = idAssociatedContext;
     return VINF_SUCCESS;
 }
@@ -2795,7 +2796,9 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
     AssertReturn(pSurfaceSrc->faces[0].numMipLevels > src.mipmap, VERR_INVALID_PARAMETER);
     AssertReturn(pSurfaceDest->faces[0].numMipLevels > dest.mipmap, VERR_INVALID_PARAMETER);
 
-    Log(("vmsvga3dSurfaceStretchBlt: src sid=%x (%d,%d)(%d,%d) dest sid=%x (%d,%d)(%d,%d) mode=%x\n", src.sid, srcBox.x, srcBox.y, srcBox.x + srcBox.w, srcBox.y + srcBox.h, dest.sid, destBox.x, destBox.y, destBox.x + destBox.w, destBox.y + destBox.h, mode));
+    Log(("vmsvga3dSurfaceStretchBlt: src sid=%x cid=%#x (%d,%d)(%d,%d) dest sid=%x cid=%#x (%d,%d)(%d,%d) mode=%x\n",
+         src.sid, pSurfaceSrc->idAssociatedContext, srcBox.x, srcBox.y, srcBox.x + srcBox.w, srcBox.y + srcBox.h,
+         dest.sid, pSurfaceDest->idAssociatedContext, destBox.x, destBox.y, destBox.x + destBox.w, destBox.y + destBox.h, mode));
 
     /* @todo stricter checks for associated context */
     cid = pSurfaceDest->idAssociatedContext;
@@ -5264,6 +5267,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                                               pRenderTarget->pMipmapLevels[0].size.height);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
+            LogFlow(("vmsvga3dSetRenderTarget: sid=%#x idAssociatedContext %#x -> %#x\n", pRenderTarget->id, pRenderTarget->idAssociatedContext, cid));
             pRenderTarget->idAssociatedContext = cid;
         }
         else
@@ -5277,7 +5281,9 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
         pRenderTarget->flags |= SVGA3D_SURFACE_HINT_DEPTHSTENCIL;
 
-        pState->ext.glFramebufferRenderbuffer(GL_FRAMEBUFFER, (type == SVGA3D_RT_DEPTH) ? GL_DEPTH_ATTACHMENT : GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
+        pState->ext.glFramebufferRenderbuffer(GL_FRAMEBUFFER,
+                                              (type == SVGA3D_RT_DEPTH) ? GL_DEPTH_ATTACHMENT : GL_STENCIL_ATTACHMENT,
+                                              GL_RENDERBUFFER, pRenderTarget->oglId.renderbuffer);
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         break;
 
@@ -6102,7 +6108,8 @@ static void vmsvgaColor2GLFloatArray(uint32_t color, GLfloat *pRed, GLfloat *pGr
     *pBlue  = (GLfloat)(color & 0xff) / 255.0;
 }
 
-int vmsvga3dCommandClear(PVGASTATE pThis, uint32_t cid, SVGA3dClearFlag clearFlag, uint32_t color, float depth, uint32_t stencil, uint32_t cRects, SVGA3dRect *pRect)
+int vmsvga3dCommandClear(PVGASTATE pThis, uint32_t cid, SVGA3dClearFlag clearFlag, uint32_t color, float depth, uint32_t stencil,
+                         uint32_t cRects, SVGA3dRect *pRect)
 {
     GLbitfield            mask = 0;
     PVMSVGA3DCONTEXT      pContext;
@@ -6347,6 +6354,7 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
     }
     pVertexSurface->idAssociatedContext = pContext->id;
+    LogFlow(("vmsvga3dDrawPrimitivesProcessVertexDecls: sid=%#x idAssociatedContext %#x -> %#x\n", pVertexSurface->id, pVertexSurface->idAssociatedContext, pContext->id));
 
     /* Setup the vertex declarations. */
     for (unsigned iVertex = 0; iVertex < numVertexDecls; iVertex++)
@@ -6648,6 +6656,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                 pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->oglId.buffer);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             }
+            LogFlow(("vmsvga3dDrawPrimitives: sid=%#x idAssociatedContext %#x -> %#x\n", pIndexSurface->id, pIndexSurface->idAssociatedContext, pContext->id));
             pIndexSurface->idAssociatedContext = pContext->id;
         }
 
