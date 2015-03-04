@@ -894,7 +894,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
  *
  * @return  VBox status
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
- * @return  VERR_NOT_SUPPORTED if this kind of image can be compacted, but
+ * @return  VERR_NOT_SUPPORTED if this kind of image can't be compacted.
  *
  * @param   pDisk           Pointer to the HDD container.
  * @param   cbSize          New size of the image.
@@ -906,6 +906,17 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
                            PCVDGEOMETRY pPCHSGeometry,
                            PCVDGEOMETRY pLCHSGeometry,
                            PVDINTERFACE pVDIfsOperation);
+
+/**
+ * Prepares the given disk for use by the added filters. This applies to all
+ * opened images in the chain which might be opened read/write temporary.
+ *
+ * @return  VBox status code.
+ *
+ * @param   pDisk           Pointer to the HDD container.
+ * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
+ */
+VBOXDDU_DECL(int) VDPrepareWithFilters(PVBOXHDD pDisk, PVDINTERFACE pVDIfsOperation);
 
 /**
  * Closes the last opened image file in HDD container.

@@ -8650,6 +8650,194 @@ VBOXDDU_DECL(int) VDResize(PVBOXHDD pDisk, uint64_t cbSize,
     return rc;
 }
 
+VBOXDDU_DECL(int) VDPrepareWithFilters(PVBOXHDD pDisk, PVDINTERFACE pVDIfsOperation)
+{
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false, fLockWrite = false;
+
+    LogFlowFunc(("pDisk=%#p pVDIfsOperation=%#p\n", pDisk, pVDIfsOperation));
+
+    PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
+
+    do {
+        /* Check arguments. */
+        AssertMsgBreakStmt(VALID_PTR(pDisk), ("pDisk=%#p\n", pDisk),
+                           rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE,
+                  ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
+        /* Must have at least one image in the chain. */
+        AssertMsgBreakStmt(pDisk->cImages >= 1, ("cImages=%u\n", pDisk->cImages),
+                           rc = VERR_VD_NOT_OPENED);
+
+        unsigned uOpenFlags = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pBackendData);
+        AssertMsgBreakStmt(!(uOpenFlags & VD_OPEN_FLAGS_READONLY),
+                           ("Last image should be read write"),
+                           rc = VERR_VD_IMAGE_READ_ONLY);
+
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        /*
+         * Open all images in the chain in read write mode first to avoid running
+         * into an error in the middle of the process.
+         */
+        PVDIMAGE pImage = pDisk->pBase;
+
+        while (pImage)
+        {
+            uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pBackendData);
+            if (uOpenFlags & VD_OPEN_FLAGS_READONLY)
+            {
+                /*
+                 * Clear skip consistency checks because the image is made writable now and
+                 * skipping consistency checks is only possible for readonly images.
+                 */
+                uOpenFlags &= ~(VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SKIP_CONSISTENCY_CHECKS);
+                rc = pImage->Backend->pfnSetOpenFlags(pImage->pBackendData, uOpenFlags);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            pImage = pImage->pNext;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            unsigned cImgCur = 0;
+            unsigned uPercentStart = 0;
+            unsigned uPercentSpan = 100 / pDisk->cImages - 1;
+
+            /* Allocate tmp buffer. */
+            void *pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
+            if (!pvBuf)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            pImage = pDisk->pBase;
+            pDisk->fLocked = true;
+
+            while (   pImage
+                   && RT_SUCCESS(rc))
+            {
+                /* Get size of image. */
+                uint64_t cbSize = pImage->Backend->pfnGetSize(pImage->pBackendData);
+                uint64_t uOffset = 0;
+                uint64_t cbRemaining = cbSize;
+
+                do
+                {
+                    size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
+                    RTSGSEG SegmentBuf;
+                    RTSGBUF SgBuf;
+                    VDIOCTX IoCtx;
+
+                    SegmentBuf.pvSeg = pvBuf;
+                    SegmentBuf.cbSeg = VD_MERGE_BUFFER_SIZE;
+                    RTSgBufInit(&SgBuf, &SegmentBuf, 1);
+                    vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_READ, 0, 0, NULL,
+                                &SgBuf, NULL, NULL, VDIOCTX_FLAGS_SYNC);
+
+                    rc = pImage->Backend->pfnRead(pImage->pBackendData, uOffset,
+                                                  cbThisRead, &IoCtx, &cbThisRead);
+                    if (rc != VERR_VD_BLOCK_FREE)
+                    {
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        /* Apply filter chains. */
+                        rc = vdFilterChainApplyRead(pDisk, uOffset, cbThisRead, &IoCtx);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        rc = vdFilterChainApplyWrite(pDisk, uOffset, cbThisRead, &IoCtx);
+                        if (RT_FAILURE(rc))
+                            break;
+
+                        RTSgBufReset(&SgBuf);
+                        size_t cbThisWrite = 0;
+                        size_t cbPreRead = 0;
+                        size_t cbPostRead = 0;
+                        rc = pImage->Backend->pfnWrite(pImage->pBackendData, uOffset,
+                                                       cbThisRead, &IoCtx, &cbThisWrite,
+                                                       &cbPreRead, &cbPostRead, VD_WRITE_NO_ALLOC);
+                        if (RT_FAILURE(rc))
+                            break;
+                        Assert(cbThisWrite == cbThisRead);
+                    }
+                    else
+                        rc = VINF_SUCCESS;
+
+                    uOffset += cbThisRead;
+                    cbRemaining -= cbThisRead;
+
+                    if (pIfProgress && pIfProgress->pfnProgress)
+                    {
+                        rc2 = pIfProgress->pfnProgress(pIfProgress->Core.pvUser,
+                                                       uPercentStart + uOffset * uPercentSpan / cbSize);
+                        AssertRC(rc2); /* Cancelling this operation without leaving an inconsistent state is not possible. */
+                    }
+                } while (uOffset < cbSize);
+
+                pImage = pImage->pNext;
+                cImgCur++;
+                uPercentStart += uPercentSpan;
+            }
+
+            pDisk->fLocked = false;
+            if (pvBuf)
+                RTMemTmpFree(pvBuf);
+        }
+
+        /* Change images except last one back to readonly. */
+        pImage = pDisk->pBase;
+        while (   pImage != pDisk->pLast
+               && pImage)
+        {
+            uOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pBackendData);
+            uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+            rc2 = pImage->Backend->pfnSetOpenFlags(pImage->pBackendData, uOpenFlags);
+            if (RT_FAILURE(rc2))
+            {
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                break;
+            }
+            pImage = pImage->pNext;
+        }
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pIfProgress
+        && pIfProgress->pfnProgress)
+        pIfProgress->pfnProgress(pIfProgress->Core.pvUser, 100);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 /**
  * Closes the last opened image file in HDD container.
  * If previous image file was opened in read-only mode (the normal case) and
@@ -8845,7 +9033,7 @@ VBOXDDU_DECL(int) VDFilterRemove(PVBOXHDD pDisk, uint32_t fFlags)
 
         if (fFlags & VD_FILTER_FLAGS_READ)
         {
-            AssertPtrBreakStmt(!RTListIsEmpty(&pDisk->ListFilterChainRead), rc = VERR_VD_NOT_OPENED);
+            AssertBreakStmt(!RTListIsEmpty(&pDisk->ListFilterChainRead), rc = VERR_VD_NOT_OPENED);
             pFilter = RTListGetLast(&pDisk->ListFilterChainRead, VDFILTER, ListNodeChainRead);
             AssertPtr(pFilter);
             RTListNodeRemove(&pFilter->ListNodeChainRead);
