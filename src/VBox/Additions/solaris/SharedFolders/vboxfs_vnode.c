@@ -998,6 +998,8 @@ sffs_read(
 		return (EINVAL);
 	if (uio->uio_loffset >= MAXOFFSET_T)
 	{
+		/** @todo r=ramshankar: this is busted, kthread_t->t_procp has different
+		 *  	  offsets between S10 and S11. Fix ASAP. */
 		proc_t *p = ttoproc(curthread);
 		mutex_enter(&p->p_lock);
 		(void) rctl_action(rctlproc_legacy[RLIMIT_FSIZE], p->p_rctls,
@@ -1095,6 +1097,8 @@ sffs_write(
 		limit = MAXOFFSET_T;
 
 	if (uiop->uio_loffset >= limit) {
+		/** @todo r=ramshankar: this is busted, kthread_t->t_procp has different
+		 *  	  offsets between S10 and S11. Fix ASAP. */
 		proc_t *p = ttoproc(curthread);
 		mutex_enter(&p->p_lock);
 		(void) rctl_action(rctlproc_legacy[RLIMIT_FSIZE], p->p_rctls,
