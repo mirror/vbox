@@ -216,7 +216,7 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
     // often set the same information as before, without any change to the
     // previous state. Here we have the previous state, so make sure we don't
     // ever tell our clients about unchanged info.
-    if (info.equals(m->info))
+    if (!info.equals(m->info))
     {
         m->info = info;
         m->fInfoModified = true;
@@ -293,7 +293,7 @@ HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServ
         updateInfo();
 
     LogRel(("HostDnsMonitorProxy::GetNameServers:\n"));
-    dumpHostDnsStrVector("Name Server", m->info->servers);
+    dumpHostDnsStrVector("name server", m->info->servers);
 
     detachVectorOfString(m->info->servers, aNameServers);
 
@@ -308,7 +308,8 @@ HRESULT HostDnsMonitorProxy::GetDomainName(com::Utf8Str *pDomainName)
     if (m->fModified)
         updateInfo();
 
-    LogRel(("HostDnsMonitorProxy::GetDomainName: %s\n", m->info->domain.c_str()));
+    LogRel(("HostDnsMonitorProxy::GetDomainName: %s\n",
+            m->info->domain.empty() ? "no domain set" : m->info->domain.c_str()));
 
     *pDomainName = m->info->domain.c_str();
 
@@ -324,7 +325,7 @@ HRESULT HostDnsMonitorProxy::GetSearchStrings(std::vector<com::Utf8Str> &aSearch
         updateInfo();
 
     LogRel(("HostDnsMonitorProxy::GetSearchStrings:\n"));
-    dumpHostDnsStrVector("Search String", m->info->searchList);
+    dumpHostDnsStrVector("search string", m->info->searchList);
 
     detachVectorOfString(m->info->searchList, aSearchStrings);
 
@@ -365,11 +366,13 @@ void HostDnsMonitorProxy::updateInfo()
 
 static void dumpHostDnsInformation(const HostDnsInformation& info)
 {
-    dumpHostDnsStrVector("DNS server", info.servers);
-    dumpHostDnsStrVector("SearchString", info.searchList);
+    dumpHostDnsStrVector("server", info.servers);
+    dumpHostDnsStrVector("search string", info.searchList);
 
     if (!info.domain.empty())
-        LogRel(("DNS domain: %s\n", info.domain.c_str()));
+        LogRel(("  domain: %s\n", info.domain.c_str()));
+    else
+        LogRel(("  no domain set\n"));
 }
 
 
@@ -379,5 +382,7 @@ static void dumpHostDnsStrVector(const std::string& prefix, const std::vector<st
     for (std::vector<std::string>::const_iterator it = v.begin();
          it != v.end();
          ++it, ++i)
-        LogRel(("%s %d: %s\n", prefix.c_str(), i, it->c_str()));
+        LogRel(("  %s %d: %s\n", prefix.c_str(), i, it->c_str()));
+    if (v.empty())
+        LogRel(("  no %s entries\n", prefix.c_str()));
 }
