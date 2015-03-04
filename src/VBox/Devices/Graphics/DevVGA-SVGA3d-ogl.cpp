@@ -151,12 +151,13 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
  * @parm    pContext    The new context.
  */
 #ifdef RT_OS_WINDOWS
-# define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext)                   \
-    if ((pState)->idActiveContext != pContext->id)                        \
-    {                                                                     \
+# define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
+    if ((pState)->idActiveContext != pContext->id) \
+    { \
         BOOL fMakeCurrentRc = wglMakeCurrent((pContext)->hdc, (pContext)->hglrc); \
-        Assert(fMakeCurrentRc == TRUE);                                   \
-        pState->idActiveContext = (pContext)->id;                         \
+        Assert(fMakeCurrentRc == TRUE); \
+        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
+        (pState)->idActiveContext = (pContext)->id; \
     } else do { } while (0)
 
 #elif defined(RT_OS_DARWIN)
@@ -164,17 +165,19 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
     if ((pState)->idActiveContext != (pContext)->id)                    \
     {                                                                   \
         vmsvga3dCocoaViewMakeCurrentContext((pContext)->cocoaView, (pContext)->cocoaContext); \
+        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
         (pState)->idActiveContext = (pContext)->id;                     \
     } else do { } while (0)
 #else
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if ((pState)->idActiveContext != (pContext)->id)                    \
-    {                                                                   \
-        Bool fMakeCurrentRc = glXMakeCurrent((pState)->display,         \
-                                             (pContext)->window,        \
-                                             (pContext)->glxContext);   \
-        Assert(fMakeCurrentRc == True);                                 \
-        (pState)->idActiveContext = (pContext)->id;                     \
+    if ((pState)->idActiveContext != (pContext)->id) \
+    { \
+        Bool fMakeCurrentRc = glXMakeCurrent((pState)->display, \
+                                             (pContext)->window, \
+                                             (pContext)->glxContext); \
+        Assert(fMakeCurrentRc == True); \
+        LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
+        (pState)->idActiveContext = (pContext)->id; \
     } else do { } while (0)
 #endif
 
@@ -2753,6 +2756,7 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
         pSurface->fDirty = false;
     }
     else
+    {
         /* Reserve texture memory. */
         glTexImage2D(GL_TEXTURE_2D,
                      0,
@@ -2763,18 +2767,22 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
                      pSurface->formatGL,
                      pSurface->typeGL,
                      NULL);
+        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+    }
 
     /* Restore the old active texture. */
     glBindTexture(GL_TEXTURE_2D, activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
+    LogFlow(("vmsvga3dCreateTexture: sid=%#x idAssociatedContext %#x -> %#x; oglId.texture=%#x\n",
+             pSurface->id, pSurface->idAssociatedContext, idAssociatedContext, pSurface->oglId.texture));
     pSurface->flags              |= SVGA3D_SURFACE_HINT_TEXTURE;
-    LogFlow(("vmsvga3dCreateTexture: sid=%#x idAssociatedContext %#x -> %#x\n", pSurface->id, pSurface->idAssociatedContext, idAssociatedContext));
     pSurface->idAssociatedContext = idAssociatedContext;
     return VINF_SUCCESS;
 }
 
-int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dBox destBox, SVGA3dSurfaceImageId src, SVGA3dBox srcBox, SVGA3dStretchBltMode mode)
+int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dBox destBox,
+                              SVGA3dSurfaceImageId src, SVGA3dBox srcBox, SVGA3dStretchBltMode mode)
 {
     PVMSVGA3DSTATE      pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     PVMSVGA3DSURFACE    pSurfaceSrc;
@@ -2837,9 +2845,11 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     /* Bind the source and destination objects to the right place. */
-    pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pSurfaceSrc->oglId.texture, src.mipmap);
+    pState->ext.glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                       pSurfaceSrc->oglId.texture, src.mipmap);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    pState->ext.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pSurfaceDest->oglId.texture, dest.mipmap);
+    pState->ext.glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+                                       pSurfaceDest->oglId.texture, dest.mipmap);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
     Log(("src conv. (%d,%d)(%d,%d); dest conv (%d,%d)(%d,%d)\n", srcBox.x, D3D_TO_OGL_Y_COORD(pSurfaceSrc, srcBox.y + srcBox.h),
