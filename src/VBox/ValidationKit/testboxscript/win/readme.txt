@@ -85,21 +85,21 @@ Preparations:
         for /L %i in (5000,1,5032) do netsh firewall add portopening TCP %i "NetPerf %i TCP"
         for /L %i in (5000,1,5032) do netsh firewall add portopening UDP %i "NetPerf %i UDP"
 
+20. Setup time server to "wei01-time.de.oracle.com" and update date/time.
+
+21. Activate windows. "https://linserv.de.oracle.com/vbox/wiki/MSDN Volume License Keys"
+
+22. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
+
 
 The install:
 
-20. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
+23. Unzip (/ copy) the content of the testboxscript-*.zip to C:\testboxscript.
 
-21. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
+24. Copy C:\testboxscript\testboxscript\win\autoexec-testbox.cmd to C:\.
 
-22. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
+25. Create a shortcut to C:\autoexec-testbox.cmd and drag it into
     "Start" -> "All Programs" -> "Startup".
-
-23. Setup time server to "wei01-time.de.oracle.com" and update date/time.
-
-24. Activate windows. "https://linserv.de.oracle.com/vbox/wiki/MSDN Volume License Keys"
-
-25. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
 
 That's currently it.
 
