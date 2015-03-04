@@ -1232,11 +1232,13 @@
           linkend="intro-installing" /> for more information.</para>
         </note></para>
 
-      <para>When USB support is enabled for a VM, you can determine in
-      detail which devices are exists on host. You can choose that devices 
-      can be available on guest sytem. To do that you should add "filters" for
-      chosen devices. In result these devices will disappear in host system and 
-      will appear in guest system.</para>
+      <para>When USB support is enabled for a VM, you can determine in detail
+      which devices will be automatically attached to the guest. For this, you
+      can create so-called "filters" by specifying certain properties of
+      the USB device. USB devices with a matching filter will be automatically
+      passed to the guest once they are attached to the host. USB devices
+      without a matching filter can be passed manually to the guest, for
+      example by using the Devices / USB devices menu.</para>
 
       <para>Clicking on the "+" button to the right of the "USB Device
       Filters" window creates a <emphasis role="bold">new filter.</emphasis>
