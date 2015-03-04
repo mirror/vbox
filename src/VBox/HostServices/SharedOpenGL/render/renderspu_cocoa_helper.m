@@ -2363,24 +2363,24 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
 #if 1 /* Set to 0 to see the docktile instead of the real output */
     VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR CIter;
     const VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry;
-        
+
     CrVrScrCompositorConstIterInit(pCompositor, &CIter);
 
     float backingStretchFactor = 1.;
 #if defined(VBOX_WITH_CONFIGURABLE_HIDPI_SCALING) && !defined(IN_VMSVGA3D)
     /* Adjust viewport according to current NSView's backing store parameters. */
-    crDebug("HiDPI: vboxPresentToViewCS: up-scaling is %s.", render_spu.fUnscaledHiDPI ? "OFF" : "ON");
     if (render_spu.fUnscaledHiDPI)
     {
-        NSRect regularBounds = [self bounds];
-        NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
-        glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
-
         /* Update stretch factor in order to satisfy current NSView's backing store parameters. */
         backingStretchFactor = [self safeGetBackingScaleFactor];
     }
-    else
-        backingStretchFactor = 1.;
+
+    NSRect regularBounds = [self bounds];
+    NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
+    glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
+
+    crDebug("HiDPI: vboxPresentToViewCS: up-scaling is %s (backingStretchFactor=%d).",
+        render_spu.fUnscaledHiDPI ? "OFF" : "ON", (int)backingStretchFactor);
 #endif
 
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
