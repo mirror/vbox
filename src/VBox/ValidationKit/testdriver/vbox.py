@@ -2577,7 +2577,10 @@ class TestDriver(base.TestDriver):                                              
 
         if fVBox is not None:
             if fEnv is not None:
-                assert fVBox == fEnv, 'Misconfigured TestBox: fVBox=%s (%s) vs. fEnv=%s (%s)' % (fVBox, sEnum, fEnv, sEnvVar);
+                if fEnv != fVBox and not fQuiet:
+                    reporter.log('TestBox configuration overwritten: fVBox=%s (%s) vs. fEnv=%s (%s)'
+                                 % (fVBox, sEnum, fEnv, sEnvVar));
+                return fEnv;
             return fVBox;
         if fEnv is not None:
             return fEnv;
