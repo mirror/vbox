@@ -4553,7 +4553,8 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     if (enmLaunchMode != LaunchMode_Separate)
     {
         /* Switch to machine window(s) if possible: */
-        if (machine.CanShowConsoleWindow())
+        if (   machine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
+            && machine.CanShowConsoleWindow())
             return VBoxGlobal::switchToMachine(machine);
 
         /* Make sure machine-state is one of required: */
