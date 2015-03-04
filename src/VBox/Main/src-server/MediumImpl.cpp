@@ -8904,41 +8904,11 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             /* unlock before the potentially lengthy operation */
             thisLock.release();
 
-            /** @todo: Move the copying to the VD library and think about how to handle an I/O error
-             * in the middle of the process. Implement progress interface. */
-            uint64_t uOffset = 0;
-            size_t cbBuf = 2*_1M;
-            uint64_t cbDisk = VDGetSize(pDisk, VD_LAST_IMAGE);
-
-            if (!cbDisk)
+            vrc = VDPrepareWithFilters(pDisk, task.mVDOperationIfaces);
+            if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
-                               tr("Could not query the size of the disk '%s'"),
-                               m->strLocationFull.c_str());
-
-            pvBuf = RTMemAllocZ(cbBuf);
-            if (!pvBuf)
-                throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                               tr("Could not allocate %zu bytes of memory for the encryption"),
-                               cbBuf);
-
-            while (uOffset < cbDisk)
-            {
-                size_t cbCopy = RT_MIN(cbBuf, cbDisk - uOffset);
-                vrc = VDRead(pDisk, uOffset, pvBuf, cbCopy);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Could not read the original data from the image at offset %llu: %Rrc"),
-                                   uOffset, vrc);
-
-                /* Write back, the filter will do the encryption if configured. */
-                vrc = VDWrite(pDisk, uOffset, pvBuf, cbCopy);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("Could not write the data to the image at offset %llu: %Rrc"),
-                                   uOffset, vrc);
-
-                uOffset += cbCopy;
-            }
+                               tr("Could not prepare disk images for encryption (%Rrc)"),
+                               i_vdError(vrc).c_str());
 
             thisLock.acquire();
             /* If everything went well set the new key store. */

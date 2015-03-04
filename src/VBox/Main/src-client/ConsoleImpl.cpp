@@ -3379,6 +3379,10 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
     if (RT_SUCCESS(rc))
     {
         memcpy(pbKey, aPassword.c_str(), cbKey);
+
+        /* Scramble content to make retrieving the key more difficult. */
+        rc = RTMemSaferScramble(pbKey, cbKey);
+        AssertRC(rc);
         SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
         /* Add the key to the map */
         m_mapSecretKeys.insert(std::make_pair(aId, pKey));
@@ -4545,10 +4549,11 @@ int Console::i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
 }
 
 /**
- * Removes the key interfaces from all disk attachments, useful when
- * changing the key store or dropping it.
+ * Initializes the secret key interface on all configured attachments.
+ *
+ * @returns COM status code.
  */
-HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
+HRESULT Console::i_initSecretKeyIfOnAllAttachments(void)
 {
     HRESULT hrc = S_OK;
     SafeIfaceArray<IMediumAttachment> sfaAttachments;
@@ -4570,7 +4575,6 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
     for (unsigned i = 0; i < sfaAttachments.size(); i++)
     {
         const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
-
         /*
          * Query storage controller, port and device
          * to identify the correct driver.
@@ -4629,11 +4633,127 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachments(void)
 }
 
 /**
+ * Removes the key interfaces from all disk attachments with the given key ID.
+ * Useful when changing the key store or dropping it.
+ *
+ * @returns COM status code.
+ * @param   aId    The ID to look for.
+ */
+HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8Str &strId)
+{
+    HRESULT hrc = S_OK;
+    SafeIfaceArray<IMediumAttachment> sfaAttachments;
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* Get the VM - must be done before the read-locking. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    hrc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(sfaAttachments));
+    AssertComRCReturnRC(hrc);
+
+    /* Find the correct attachment. */
+    for (unsigned i = 0; i < sfaAttachments.size(); i++)
+    {
+        const ComPtr<IMediumAttachment> &pAtt = sfaAttachments[i];
+        ComPtr<IMedium> pMedium;
+        ComPtr<IMedium> pBase;
+        Bstr bstrKeyId;
+
+        hrc = pAtt->COMGETTER(Medium)(pMedium.asOutParam());
+        if (FAILED(hrc))
+            break;
+
+        /* Skip non hard disk attachments. */
+        if (pMedium.isNull())
+            continue;
+
+        /* Get the UUID of the base medium and compare. */
+        hrc = pMedium->COMGETTER(Base)(pBase.asOutParam());
+        if (FAILED(hrc))
+            break;
+
+        hrc = pBase->GetProperty(Bstr("CRYPT/KeyId").raw(), bstrKeyId.asOutParam());
+        if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+        {
+            hrc = S_OK;
+            continue;
+        }
+        else if (FAILED(hrc))
+            break;
+
+        if (strId.equals(Utf8Str(bstrKeyId)))
+        {
+
+            /*
+             * Query storage controller, port and device
+             * to identify the correct driver.
+             */
+            ComPtr<IStorageController> pStorageCtrl;
+            Bstr storageCtrlName;
+            LONG lPort, lDev;
+            ULONG ulStorageCtrlInst;
+
+            hrc = pAtt->COMGETTER(Controller)(storageCtrlName.asOutParam());
+            AssertComRC(hrc);
+
+            hrc = pAtt->COMGETTER(Port)(&lPort);
+            AssertComRC(hrc);
+
+            hrc = pAtt->COMGETTER(Device)(&lDev);
+            AssertComRC(hrc);
+
+            hrc = mMachine->GetStorageControllerByName(storageCtrlName.raw(), pStorageCtrl.asOutParam());
+            AssertComRC(hrc);
+
+            hrc = pStorageCtrl->COMGETTER(Instance)(&ulStorageCtrlInst);
+            AssertComRC(hrc);
+
+            StorageControllerType_T enmCtrlType;
+            hrc = pStorageCtrl->COMGETTER(ControllerType)(&enmCtrlType);
+            AssertComRC(hrc);
+            const char *pcszDevice = i_convertControllerTypeToDev(enmCtrlType);
+
+            StorageBus_T enmBus;
+            hrc = pStorageCtrl->COMGETTER(Bus)(&enmBus);
+            AssertComRC(hrc);
+
+            unsigned uLUN;
+            hrc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
+            AssertComRC(hrc);
+
+            PPDMIBASE pIBase = NULL;
+            PPDMIMEDIA pIMedium = NULL;
+            int rc = PDMR3QueryDriverOnLun(ptrVM.rawUVM(), pcszDevice, ulStorageCtrlInst, uLUN, "VD", &pIBase);
+            if (RT_SUCCESS(rc))
+            {
+                if (pIBase)
+                {
+                    pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
+                    if (pIMedium)
+                    {
+                        rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL, mpIfSecKeyHlp);
+                        Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+                    }
+                }
+            }
+        }
+    }
+
+    return hrc;
+}
+
+/**
  * Configures the encryption support for the disk which have encryption conigured
  * with the configured key.
  *
  * @returns COM status code.
- * @param   aId    The ID of the password.
+ * @param   strId    The ID of the password.
  */
 HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId)
 {
@@ -4677,7 +4797,10 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId)
 
         hrc = pBase->GetProperty(Bstr("CRYPT/KeyId").raw(), bstrKeyId.asOutParam());
         if (hrc == VBOX_E_OBJECT_NOT_FOUND)
+        {
+            hrc = S_OK;
             continue;
+        }
         else if (FAILED(hrc))
             break;
 
@@ -6257,15 +6380,23 @@ HRESULT Console::i_pause(Reason_T aReason)
         hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
     else
     {
-        /* Unconfigure disk encryption from all attachments. */
-        i_clearDiskEncryptionKeysOnAllAttachments();
+        /* Remove keys which are supposed to be removed on a VM suspend. */
+        SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+        while (it != m_mapSecretKeys.end())
+        {
+            SecretKey *pKey = it->second;
+            if (pKey->m_fRemoveOnSuspend)
+            {
+                /* Unconfigure disk encryption from all attachments associated with this key. */
+                i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(it->first);
 
-        /* Clear any keys we have stored. */
-        for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-            it != m_mapSecretKeys.end();
-            it++)
-            delete it->second;
-        m_mapSecretKeys.clear();
+                AssertMsg(!pKey->m_cRefs, ("No one should access the stored key at this point anymore!\n"));
+                delete pKey;
+                m_mapSecretKeys.erase(it++);
+            }
+            else
+                it++;
+        }
     }
 
     LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
@@ -8425,7 +8556,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
              * We have to set the secret key helper interface for the VD drivers to
              * get notified about missing keys.
              */
-            that->i_clearDiskEncryptionKeysOnAllAttachments();
+            that->i_initSecretKeyIfOnAllAttachments();
             break;
         }
 
@@ -10459,7 +10590,12 @@ Console::i_pdmIfSecKey_PasswordRetain(PPDMISECKEY pInterface, const char *pszId,
     {
         SecretKey *pKey = (*it).second;
 
-        ASMAtomicIncU32(&pKey->m_cRefs);
+        uint32_t cRefs = ASMAtomicIncU32(&pKey->m_cRefs);
+        if (cRefs == 1)
+        {
+            int rc = RTMemSaferUnscramble(pKey->m_pbKey, pKey->m_cbKey);
+            AssertRC(rc);
+        }
         *ppszPassword = (const char *)pKey->m_pbKey;
         return VINF_SUCCESS;
     }
@@ -10480,7 +10616,12 @@ Console::i_pdmIfSecKey_PasswordRelease(PPDMISECKEY pInterface, const char *pszId
     if (it != pConsole->m_mapSecretKeys.end())
     {
         SecretKey *pKey = (*it).second;
-        ASMAtomicDecU32(&pKey->m_cRefs);
+        uint32_t cRefs = ASMAtomicDecU32(&pKey->m_cRefs);
+        if (!cRefs)
+        {
+            int rc = RTMemSaferScramble(pKey->m_pbKey, pKey->m_cbKey);
+            AssertRC(rc);
+        }
         return VINF_SUCCESS;
     }
 

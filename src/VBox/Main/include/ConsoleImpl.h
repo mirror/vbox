@@ -861,8 +861,9 @@ private:
     /** @name Disk encryption support
      * @{ */
     HRESULT i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
-    HRESULT i_configureEncryptionForDisk(const Utf8Str &aId);
-    HRESULT i_clearDiskEncryptionKeysOnAllAttachments(void);
+    HRESULT i_configureEncryptionForDisk(const Utf8Str &strId);
+    HRESULT i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8Str &strId);
+    HRESULT i_initSecretKeyIfOnAllAttachments(void);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
                                char **ppszKey, char **ppszVal);
     /** @} */
