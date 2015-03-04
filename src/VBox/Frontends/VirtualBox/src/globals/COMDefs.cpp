@@ -20,16 +20,25 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QObject>
+# include <QSocketNotifier>
+
+/* GUI includes: */
+# include "COMDefs.h"
 
 /* COM includes: */
-# include "COMDefs.h"
-# include "UIDefs.h"
 # include "CVirtualBoxErrorInfo.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <QSocketNotifier>
+/* VirtualBox interface declarations: */
+#ifndef VBOX_WITH_XPCOM
+# include "VirtualBox.h"
+#else /* !VBOX_WITH_XPCOM */
+# include "VirtualBox_XPCOM.h"
+#endif /* VBOX_WITH_XPCOM */
+
+/* Other VBox includes: */
+#include <iprt/log.h>
 
 #ifdef VBOX_WITH_XPCOM
 

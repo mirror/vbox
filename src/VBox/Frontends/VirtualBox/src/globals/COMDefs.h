@@ -97,14 +97,6 @@ class XPCOMEventQSocketListener;
 
 #endif /* !defined(VBOX_WITH_XPCOM) */
 
-
-/* VirtualBox interfaces declarations */
-#if !defined(VBOX_WITH_XPCOM)
-    #include <VirtualBox.h>
-#else /* !defined(VBOX_WITH_XPCOM) */
-    #include <VirtualBox_XPCOM.h>
-#endif /* !defined(VBOX_WITH_XPCOM) */
-
 /////////////////////////////////////////////////////////////////////////////
 
 class CVirtualBoxErrorInfo;
@@ -731,7 +723,7 @@ public:
 #ifdef DEBUG
        Assert(!mDead);
 #endif
-       this->release(ptr());
+       this->release((IUnknown*)ptr());
        setPtr(NULL);
     }
 
