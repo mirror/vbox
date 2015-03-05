@@ -8814,6 +8814,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
     /* Lock all in {parent,child} order. The lock is also used as a
      * signal from the task initiator (which releases it only after
      * RTThreadCreate()) that we can start the job. */
+    ComObjPtr<Medium> pBase = i_getBase();
     AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
     try
@@ -8851,8 +8852,6 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
 
         Medium::CryptoFilterSettings CryptoSettingsRead;
         Medium::CryptoFilterSettings CryptoSettingsWrite;
-
-        ComObjPtr<Medium> pBase = i_getBase();
 
         uint8_t *pbDek = NULL;
         size_t cbDek = 0;
