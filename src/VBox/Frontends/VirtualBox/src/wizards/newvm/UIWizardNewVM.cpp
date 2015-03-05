@@ -38,13 +38,6 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-/* VirtualBox interface declarations: */
-#ifndef VBOX_WITH_XPCOM
-# include "VirtualBox.h"
-#else /* !VBOX_WITH_XPCOM */
-# include "VirtualBox_XPCOM.h"
-#endif /* VBOX_WITH_XPCOM */
-
 /* Namespaces: */
 using namespace UIExtraDataDefs;
 
