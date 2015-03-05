@@ -734,6 +734,11 @@ void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLCo
 
     DEBUG_MSG(("cocoaViewMakeCurrentContext(%p, %p)\n", (void*)pView, (void*)pCtx));
 
+    /* Always flush before flush. glXMakeCurrent and wglMakeCurrent does this
+       implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
+    if ([NSOpenGLContext currentContext] != 0)
+        glFlush();
+
     if (pView)
     {
         [(VMSVGA3DOverlayView*)pView setGLCtx:pCtx];

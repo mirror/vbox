@@ -192,30 +192,21 @@
         glPopAttrib(); \
     } while (0)
 
-#ifdef DEBUG_poetzsch
-# define DEBUG_CHECK_GL_ERROR() do { checkGLError(__FILE__, __LINE__); } while (0);
-static void checkGLError(char *pszFile, int iLine)
-{
-    GLenum uGlErr = glGetError();
-    if (uGlErr != GL_NO_ERROR)
-    {
-        const char *errStr;
-        switch (uGlErr)
-        {
-            case GL_INVALID_ENUM:      errStr = "GL_INVALID_ENUM"; break;
-            case GL_INVALID_VALUE:     errStr = "GL_INVALID_VALUE"; break;
-            case GL_INVALID_OPERATION: errStr = "GL_INVALID_OPERATION"; break;
-            case GL_STACK_OVERFLOW:    errStr = "GL_STACK_OVERFLOW"; break;
-            case GL_STACK_UNDERFLOW:   errStr = "GL_STACK_UNDERFLOW"; break;
-            case GL_OUT_OF_MEMORY:     errStr = "GL_OUT_OF_MEMORY"; break;
-            case GL_TABLE_TOO_LARGE:   errStr = "GL_TABLE_TOO_LARGE"; break;
-            default:                   errStr = "UNKNOWN"; break;
-        }
-        DEBUG_MSG(("%s:%d: glError %d (%s)\n", pszFile, iLine, uGlErr, errStr));
-    }
-}
+#ifdef VBOX_STRICT
+# define DEBUG_CLEAR_GL_ERRORS() \
+    do { \
+        while (glGetError() != GL_NO_ERROR) \
+        { /* nothing */ } \
+    } while (0)
+# define DEBUG_CHECK_GL_ERROR(a_szOp) \
+    do { \
+        GLenum iGlCheckErr = glGetError(); \
+        if (RT_UNLIKELY(iGlCheckErr != GL_NO_ERROR)) \
+            AssertMsgFailed((a_szOp ": iGlCheckErr=%#x\n", iGlCheckErr)); \
+    } while (0) 
 #else
-# define DEBUG_CHECK_GL_ERROR() do {} while (0)
+# define DEBUG_CLEAR_GL_ERRORS()        do {} while (0)
+# define DEBUG_CHECK_GL_ERROR(a_szOp)   do {} while (0)
 #endif
 
 /* Whether we control NSView automatic content zooming on Retina/HiDPI displays. */
@@ -388,7 +379,9 @@ static void vboxCtxEnter(NSOpenGLContext *pNewCtx, PVBOX_CR_RENDER_CTX_INFO pCtx
         if (pOldCtx != nil)
             glFlush();
         
+        DEBUG_CLEAR_GL_ERRORS();
         [pNewCtx makeCurrentContext];
+        DEBUG_CHECK_GL_ERROR("makeCurrentContext");
         
         pCtxInfo->fIsValid = true;
         pCtxInfo->pCtx     = pOldCtx;
@@ -419,10 +412,14 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
              *        pOldView or fix the code. */
             if ([pOldCtx view] != pOldView) 
             {
+                DEBUG_CLEAR_GL_ERRORS();
                 [pOldCtx setView: pOldView];
+                DEBUG_CHECK_GL_ERROR("setView");
             }
         
+            DEBUG_CLEAR_GL_ERRORS();
             [pOldCtx makeCurrentContext];
+            DEBUG_CHECK_GL_ERROR("makeCurrentContext");
             
 #ifdef VBOX_STRICT
             {
@@ -1496,6 +1493,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
         /* Ensure the context drawable is cleared to avoid holding a reference to inexistent view. */
         if (m_pGLCtx)
         {
+#ifdef IN_VMSVGA3D
+            Assert(!pCtx);
+#endif
             [m_pGLCtx clearDrawable];
             [m_pGLCtx release];
             /*[m_pGLCtx performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];*/
@@ -1999,30 +1999,51 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
 - (void)makeCurrentFBO
 {
-    COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
+    COCOA_LOG_FLOW(("%s: self=%p - m_pGLCtx=%p m_fNeedCtxUpdate=%d\n", __PRETTY_FUNCTION__, (void *)self, 
+                    (void *)m_pGLCtx, m_fNeedCtxUpdate));
 
     if (m_pGLCtx)
     {
+        NSOpenGLContext *pPrevCtx = [NSOpenGLContext currentContext];
+
+#ifdef IN_VMSVGA3D
+        /* Always flush before flush. glXMakeCurrent and wglMakeCurrent does this
+           implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
+        if (pPrevCtx != nil)
+        {
+            DEBUG_CLEAR_GL_ERRORS();
+            glFlush();
+            DEBUG_CHECK_GL_ERROR("glFlush");
+        }
+#endif
+
         if ([m_pGLCtx view] != self)
         {
+#ifndef IN_VMSVGA3D
             /* We change the active view, so flush first */
-            if ([NSOpenGLContext currentContext] != 0)
+            if (pPrevCtx != nil)
                 glFlush();
+#endif
+            DEBUG_CLEAR_GL_ERRORS();
             [m_pGLCtx setView: self];
-            DEBUG_CHECK_GL_ERROR();
+            DEBUG_CHECK_GL_ERROR("setView");
         }
 
-        /*
-        if ([NSOpenGLContext currentContext] != m_pGLCtx)
-        */
+#if 0
+        if (pPrevCtx != m_pGLCtx)
+#endif
         {
+            DEBUG_CLEAR_GL_ERRORS();
             [m_pGLCtx makeCurrentContext];
-            DEBUG_CHECK_GL_ERROR();
-            if (m_fNeedCtxUpdate == true)
-            {
-                [m_pGLCtx update];
-                m_fNeedCtxUpdate = false;
-            }
+            DEBUG_CHECK_GL_ERROR("makeCurrentContext");
+            Assert([NSOpenGLContext currentContext] == m_pGLCtx);
+            Assert([m_pGLCtx view] == self);
+        }
+
+        if (m_fNeedCtxUpdate == true)
+        {
+            [m_pGLCtx update];
+            m_fNeedCtxUpdate = false;
         }
         
         if (!m_FBOId)
@@ -2850,7 +2871,7 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
     }
 
     [pPool release];
-    COCOA_LOG_FLOW(("cocoaGLCtxDestroy: returns *ppCtx=%p\n", (void *)*ppCtx));
+    COCOA_LOG_FLOW(("cocoaGLCtxCreate: returns *ppCtx=%p\n", (void *)*ppCtx));
 }
 
 void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx)
@@ -3130,6 +3151,16 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
     }
     else
     {
+#ifdef IN_VMSVGA3D
+        /* Always flush before flush. glXMakeCurrent and wglMakeCurrent does this
+           implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
+        if ([NSOpenGLContext currentContext] != nil)
+        {
+            DEBUG_CLEAR_GL_ERRORS();
+            glFlush();
+            DEBUG_CHECK_GL_ERROR("glFlush");
+        }
+#endif
     	[NSOpenGLContext clearCurrentContext];
     }
 
@@ -3206,6 +3237,7 @@ VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h
 
 VMSVGA3D_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
+    Assert(!pView || [(OverlayView *)pView glCtx] == pCtx || [(OverlayView *)pView glCtx] == nil);
     cocoaViewMakeCurrentContext(pView, pCtx);
 }
 
