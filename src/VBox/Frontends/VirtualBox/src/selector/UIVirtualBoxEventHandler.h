@@ -21,28 +21,29 @@
 #include "COMEnums.h"
 #include "CEventListener.h"
 
-/** Active event handler singleton for the CVirtualBox event-source. */
+/** Active event handler singleton for the CVirtualBoxClient and CVirtualBox event-sources. */
 class UIVirtualBoxEventHandler : public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies listeners about the VBoxSVC become @a fAvailable. */
+    /** Notifies about the VBoxSVC become @a fAvailable. */
     void sigVBoxSVCAvailabilityChange(bool fAvailable);
-    /** Notifies listeners about @a state change event for the machine with @a strId. */
+
+    /** Notifies about @a state change event for the machine with @a strId. */
     void sigMachineStateChange(QString strId, KMachineState state);
-    /** Notifies listeners about data change event for the machine with @a strId. */
+    /** Notifies about data change event for the machine with @a strId. */
     void sigMachineDataChange(QString strId);
-    /** Notifies listeners about machine with @a strId was @a fRegistered. */
+    /** Notifies about machine with @a strId was @a fRegistered. */
     void sigMachineRegistered(QString strId, bool fRegistered);
-    /** Notifies listeners about @a state change event for the session of the machine with @a strId. */
+    /** Notifies about @a state change event for the session of the machine with @a strId. */
     void sigSessionStateChange(QString strId, KSessionState state);
-    /** Notifies listeners about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
+    /** Notifies about snapshot with @a strSnapshotId was taken for the machine with @a strId. */
     void sigSnapshotTake(QString strId, QString strSnapshotId);
-    /** Notifies listeners about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
+    /** Notifies about snapshot with @a strSnapshotId was deleted for the machine with @a strId. */
     void sigSnapshotDelete(QString strId, QString strSnapshotId);
-    /** Notifies listeners about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
+    /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
     void sigSnapshotChange(QString strId, QString strSnapshotId);
 
 public:

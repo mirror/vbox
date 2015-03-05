@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2013 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,41 +24,35 @@
 
 /* COM includes: */
 # include "COMEnums.h"
+# include "CEvent.h"
+# include "CVBoxSVCAvailabilityChangedEvent.h"
 # include "CVirtualBoxErrorInfo.h"
+# include "CMachineStateChangedEvent.h"
+# include "CMachineDataChangedEvent.h"
+# include "CMachineRegisteredEvent.h"
+# include "CSessionStateChangedEvent.h"
+# include "CSnapshotTakenEvent.h"
+# include "CSnapshotDeletedEvent.h"
+# include "CSnapshotChangedEvent.h"
+# include "CExtraDataCanChangeEvent.h"
+# include "CExtraDataChangedEvent.h"
+# include "CMousePointerShapeChangedEvent.h"
+# include "CMouseCapabilityChangedEvent.h"
+# include "CKeyboardLedsChangedEvent.h"
+# include "CStateChangedEvent.h"
+# include "CNetworkAdapterChangedEvent.h"
+# include "CMediumChangedEvent.h"
 # include "CUSBDevice.h"
+# include "CUSBDeviceStateChangedEvent.h"
+# include "CGuestMonitorChangedEvent.h"
+# include "CRuntimeErrorEvent.h"
+# include "CCanShowWindowEvent.h"
+# include "CShowWindowEvent.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include "CEvent.h"
-#include "CMachineStateChangedEvent.h"
-#include "CMachineDataChangedEvent.h"
-#include "CExtraDataCanChangeEvent.h"
-#include "CExtraDataChangedEvent.h"
-#include "CMachineRegisteredEvent.h"
-#include "CSessionStateChangedEvent.h"
-#include "CSnapshotTakenEvent.h"
-#include "CSnapshotDeletedEvent.h"
-#include "CSnapshotChangedEvent.h"
-#include "CMousePointerShapeChangedEvent.h"
-#include "CMouseCapabilityChangedEvent.h"
-#include "CKeyboardLedsChangedEvent.h"
-#include "CStateChangedEvent.h"
-#include "CNetworkAdapterChangedEvent.h"
-#include "CMediumChangedEvent.h"
-#include "CUSBDeviceStateChangedEvent.h"
-#include "CRuntimeErrorEvent.h"
-#include "CCanShowWindowEvent.h"
-#include "CShowWindowEvent.h"
-#include "CVBoxSVCAvailabilityChangedEvent.h"
-#include "CGuestMonitorChangedEvent.h"
-
-
 UIMainEventListener::UIMainEventListener()
-  : QObject()
 {
-    /* For queued events we have to extra register our enums/interface classes
-     * (Q_DECLARE_METATYPE isn't sufficient).
-     * Todo: Try to move this to a global function, which is auto generated
-     * from xslt. */
+    /* Register meta-types for required enums. */
     qRegisterMetaType<KMachineState>("KMachineState");
     qRegisterMetaType<KSessionState>("KSessionState");
     qRegisterMetaType< QVector<uint8_t> >("QVector<uint8_t>");
@@ -69,28 +63,19 @@ UIMainEventListener::UIMainEventListener()
     qRegisterMetaType<KGuestMonitorChangedEventType>("KGuestMonitorChangedEventType");
 }
 
-HRESULT UIMainEventListener::init(QObject * /* pParent */)
-{
-    return S_OK;
-}
-
-void    UIMainEventListener::uninit()
-{
-}
-
-/**
- * @todo: instead of double wrapping of events into signals maybe it
- * make sense to use passive listeners, and peek up events in main thread.
- */
 STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent *pEvent)
 {
     CEvent event(pEvent);
     // printf("Event received: %d\n", event.GetType());
-    switch(event.GetType())
+    switch (event.GetType())
     {
-        /*
-         * All VirtualBox Events
-         */
+        case KVBoxEventType_OnVBoxSVCAvailabilityChanged:
+        {
+            CVBoxSVCAvailabilityChangedEvent es(pEvent);
+            emit sigVBoxSVCAvailabilityChange(es.GetAvailable());
+            break;
+        }
+
         case KVBoxEventType_OnMachineStateChanged:
         {
             CMachineStateChangedEvent es(pEvent);
@@ -103,26 +88,6 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigMachineDataChange(es.GetMachineId());
             break;
         }
-        case KVBoxEventType_OnExtraDataCanChange:
-        {
-            CExtraDataCanChangeEvent es(pEvent);
-            /* Has to be done in place to give an answer */
-            bool fVeto = false;
-            QString strReason;
-            emit sigExtraDataCanChange(es.GetMachineId(), es.GetKey(), es.GetValue(), fVeto, strReason);
-            if (fVeto)
-                es.AddVeto(strReason);
-            break;
-        }
-        case KVBoxEventType_OnExtraDataChanged:
-        {
-            CExtraDataChangedEvent es(pEvent);
-            emit sigExtraDataChange(es.GetMachineId(), es.GetKey(), es.GetValue());
-            break;
-        }
-        /* Not used:
-        case KVBoxEventType_OnMediumRegistered:
-         */
         case KVBoxEventType_OnMachineRegistered:
         {
             CMachineRegisteredEvent es(pEvent);
@@ -153,12 +118,27 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
-        /* Not used:
-        case KVBoxEventType_OnGuestPropertyChange:
-         */
-        /*
-         * All Console Events
-         */
+//        case KVBoxEventType_OnMediumRegistered:
+//        case KVBoxEventType_OnGuestPropertyChange:
+
+        case KVBoxEventType_OnExtraDataCanChange:
+        {
+            CExtraDataCanChangeEvent es(pEvent);
+            /* Has to be done in place to give an answer: */
+            bool fVeto = false;
+            QString strReason;
+            emit sigExtraDataCanChange(es.GetMachineId(), es.GetKey(), es.GetValue(), fVeto, strReason);
+            if (fVeto)
+                es.AddVeto(strReason);
+            break;
+        }
+        case KVBoxEventType_OnExtraDataChanged:
+        {
+            CExtraDataChangedEvent es(pEvent);
+            emit sigExtraDataChange(es.GetMachineId(), es.GetKey(), es.GetValue());
+            break;
+        }
+
         case KVBoxEventType_OnMousePointerShapeChanged:
         {
             CMousePointerShapeChangedEvent es(pEvent);
@@ -194,20 +174,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigNetworkAdapterChange(es.GetNetworkAdapter());
             break;
         }
-        /* Not used *
-        case KVBoxEventType_OnSerialPortChanged:
-        case KVBoxEventType_OnParallelPortChanged:
-        case KVBoxEventType_OnStorageControllerChanged:
-         */
         case KVBoxEventType_OnMediumChanged:
         {
             CMediumChangedEvent es(pEvent);
             emit sigMediumChange(es.GetMediumAttachment());
             break;
         }
-        /* Not used *
-        case KVBoxEventType_OnCPUChange:
-         */
         case KVBoxEventType_OnVRDEServerChanged:
         case KVBoxEventType_OnVRDEServerInfoChanged:
         {
@@ -235,6 +207,18 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigSharedFolderChange();
             break;
         }
+        case KVBoxEventType_OnCPUExecutionCapChanged:
+        {
+            emit sigCPUExecutionCapChange();
+            break;
+        }
+        case KVBoxEventType_OnGuestMonitorChanged:
+        {
+            CGuestMonitorChangedEvent es(pEvent);
+            emit sigGuestMonitorChange(es.GetChangeType(), es.GetScreenId(),
+                                       QRect(es.GetOriginX(), es.GetOriginY(), es.GetWidth(), es.GetHeight()));
+            break;
+        }
         case KVBoxEventType_OnRuntimeError:
         {
             CRuntimeErrorEvent es(pEvent);
@@ -244,7 +228,7 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         case KVBoxEventType_OnCanShowWindow:
         {
             CCanShowWindowEvent es(pEvent);
-            /* Has to be done in place to give an answer */
+            /* Has to be done in place to give an answer: */
             bool fVeto = false;
             QString strReason;
             emit sigCanShowWindow(fVeto, strReason);
@@ -255,30 +239,17 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         case KVBoxEventType_OnShowWindow:
         {
             CShowWindowEvent es(pEvent);
-            /* Has to be done in place to give an answer */
+            /* Has to be done in place to give an answer: */
             LONG64 winId;
             emit sigShowWindow(winId);
             es.SetWinId(winId);
             break;
         }
-        case KVBoxEventType_OnCPUExecutionCapChanged:
-        {
-            emit sigCPUExecutionCapChange();
-            break;
-        }
-        case KVBoxEventType_OnVBoxSVCAvailabilityChanged:
-        {
-            CVBoxSVCAvailabilityChangedEvent es(pEvent);
-            emit sigVBoxSVCAvailabilityChange(es.GetAvailable());
-            break;
-        }
-        case KVBoxEventType_OnGuestMonitorChanged:
-        {
-            CGuestMonitorChangedEvent es(pEvent);
-            emit sigGuestMonitorChange(es.GetChangeType(), es.GetScreenId(),
-                                       QRect(es.GetOriginX(), es.GetOriginY(), es.GetWidth(), es.GetHeight()));
-            break;
-        }
+//        case KVBoxEventType_OnSerialPortChanged:
+//        case KVBoxEventType_OnParallelPortChanged:
+//        case KVBoxEventType_OnStorageControllerChanged:
+//        case KVBoxEventType_OnCPUChange:
+
         default: break;
     }
     return S_OK;

@@ -28,26 +28,26 @@
 /* Forward declarations: */
 class UISession;
 
-/** Console event handler. */
+/** Active event handler singleton for the CConsole event-source. */
 class UIConsoleEventHandler: public QObject
 {
     Q_OBJECT;
 
 signals:
 
-    /** Notifies about mouse pointer shape change. */
+    /** Notifies about mouse pointer become @a fVisible and his shape changed to @a fAlpha, @a hotCorner, @a size and @a shape. */
     void sigMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
-    /** Notifies about mouse capability change. */
+    /** Notifies about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
     void sigMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
-    /** Notifies about keyboard LEDs change. */
+    /** Notifies about keyboard LEDs change for @a fNumLock, @a fCapsLock and @a fScrollLock. */
     void sigKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
-    /** Notifies about machine state change. */
+    /** Notifies about machine @a state change. */
     void sigStateChange(KMachineState state);
     /** Notifies about guest additions state change. */
     void sigAdditionsChange();
-    /** Notifies about network adapter state change. */
+    /** Notifies about network @a adapter state change. */
     void sigNetworkAdapterChange(CNetworkAdapter adapter);
-    /** Notifies about storage medium state change. */
+    /** Notifies about storage medium @a attachment state change. */
     void sigMediumChange(CMediumAttachment attachment);
     /** Notifies about VRDE device state change. */
     void sigVRDEChange();
@@ -55,16 +55,16 @@ signals:
     void sigVideoCaptureChange();
     /** Notifies about USB controller state change. */
     void sigUSBControllerChange();
-    /** Notifies about USB device state change. */
+    /** Notifies about USB @a device state change to @a fAttached, holding additional @a error information. */
     void sigUSBDeviceStateChange(CUSBDevice device, bool fAttached, CVirtualBoxErrorInfo error);
     /** Notifies about shared folder state change. */
     void sigSharedFolderChange();
     /** Notifies about CPU execution-cap change. */
     void sigCPUExecutionCapChange();
-    /** Notifies about guest-screen configuration change. */
-    void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    /** Notifies about Runtime error. */
-    void sigRuntimeError(bool fFatal, QString strId, QString strMessage);
+    /** Notifies about guest-screen configuration change of @a type for @a uScreenId with @a screenGeo. */
+    void sigGuestMonitorChange(KGuestMonitorChangedEventType type, ulong uScreenId, QRect screenGeo);
+    /** Notifies about Runtime error with @a strErrorId which is @a fFatal and have @a strMessage. */
+    void sigRuntimeError(bool fFatal, QString strErrorId, QString strMessage);
 #ifdef RT_OS_DARWIN
     /** Notifies about VM window should be shown. */
     void sigShowWindow();
