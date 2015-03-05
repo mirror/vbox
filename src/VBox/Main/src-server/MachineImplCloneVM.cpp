@@ -683,6 +683,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
         MediumLockList *pMediumLockList(new MediumLockList());
         rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
                                           true /* fMediumLockWrite */,
+                                          false /* fMediumLockWriteAll */,
                                           pParent,
                                           *pMediumLockList);
         if (FAILED(rc)) throw rc;

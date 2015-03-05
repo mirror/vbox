@@ -2557,9 +2557,10 @@ HRESULT Medium::createDiffStorage(const ComPtr<IMedium> &aTarget,
     MediumLockList *pMediumLockList(new MediumLockList());
     alock.release();
     HRESULT rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
-                                            true /* fMediumLockWrite */,
-                                            this,
-                                            *pMediumLockList);
+                                              true /* fMediumLockWrite */,
+                                              false /* fMediumLockWriteAll */,
+                                              this,
+                                              *pMediumLockList);
     alock.acquire();
     if (FAILED(rc))
     {
@@ -2697,6 +2698,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     false /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
         alock.acquire();
@@ -2711,6 +2713,7 @@ HRESULT Medium::cloneTo(const ComPtr<IMedium> &aTarget,
         alock.release();
         rc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
                                              true /* fMediumLockWrite */,
+                                             false /* fMediumLockWriteAll */,
                                              pParent,
                                              *pTargetMediumLockList);
         alock.acquire();
@@ -2825,6 +2828,7 @@ HRESULT Medium::compact(ComPtr<IProgress> &aProgress)
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
                                     true /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
         alock.acquire();
@@ -2894,6 +2898,7 @@ HRESULT Medium::resize(LONG64 aLogicalSize,
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
                                     true /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
         alock.acquire();
@@ -2976,6 +2981,7 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
         multilock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     true /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
         multilock.acquire();
@@ -3048,12 +3054,6 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
                             tr("Cannot encrypt DVD or Floppy medium '%s'"),
                             m->strLocationFull.c_str());
 
-        /* Cannot encrypt child media so far. */
-        if (m->pParent)
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot encrypt medium '%s' because it is a differencing medium"),
-                            m->strLocationFull.c_str());
-
         /* Cannot encrypt media which are attached to more than one virtual machine. */
         if (m->backRefs.size() > 1)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -3070,6 +3070,7 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */ ,
                                     true /* fMediumLockWrite */,
+                                    true /* fMediumLockAllWrite */,
                                     NULL,
                                     *pMediumLockList);
         alock.acquire();
@@ -3086,14 +3087,52 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
         {
             delete pMediumLockList;
             throw setError(rc,
-                           tr("Failed to lock media when compacting '%s'"),
+                           tr("Failed to lock media for encryption '%s'"),
                            i_getLocationFull().c_str());
+        }
+
+        /*
+         * Check all media in the chain to not contain any branches or references to
+         * other virtual machines, we support encrypting only a list of differencing media at the moment.
+         */
+        MediumLockList::Base::const_iterator mediumListBegin = pMediumLockList->GetBegin();
+        MediumLockList::Base::const_iterator mediumListEnd = pMediumLockList->GetEnd();
+        for (MediumLockList::Base::const_iterator it = mediumListBegin;
+             it != mediumListEnd;
+             ++it)
+        {
+            const MediumLock &mediumLock = *it;
+            const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
+            AutoReadLock mediumReadLock(pMedium COMMA_LOCKVAL_SRC_POS);
+
+            Assert(pMedium->m->state == MediumState_LockedWrite);
+
+            if (pMedium->m->backRefs.size() > 1)
+            {
+                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                              tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines"),
+                              pMedium->m->strLocationFull.c_str(), pMedium->m->backRefs.size());
+                break;
+            }
+            else if (pMedium->m->llChildren.size() > 1)
+            {
+                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                              tr("Cannot encrypt medium '%s' because it has %d children"),
+                              pMedium->m->strLocationFull.c_str(), pMedium->m->llChildren.size());
+                break;
+            }
+        }
+
+        if (FAILED(rc))
+        {
+            delete pMediumLockList;
+            throw rc;
         }
 
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Compacting medium '%s'"), m->strLocationFull.c_str()).raw(),
+                             BstrFmt(tr("Encrypting medium '%s'"), m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
@@ -3941,12 +3980,14 @@ HRESULT Medium::i_saveSettings(settings::Medium &data,
  * @param fFailIfInaccessible If true, this fails with an error if a medium is inaccessible. If false,
  *          inaccessible media are silently skipped and not locked (i.e. their state remains "Inaccessible");
  *          this is necessary for a VM's removable media VM startup for which we do not want to fail.
- * @param fMediumLockWrite  Whether to associate a write lock with this medium.
- * @param pToBeParent       Medium which will become the parent of this medium.
- * @param mediumLockList    Where to store the resulting list.
+ * @param fMediumLockWrite     Whether to associate a write lock with this medium.
+ * @param fMediumLockWriteAll  Whether to associate a write lock to all other media too.
+ * @param pToBeParent          Medium which will become the parent of this medium.
+ * @param mediumLockList       Where to store the resulting list.
  */
 HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
                                        bool fMediumLockWrite,
+                                       bool fMediumLockWriteAll,
                                        Medium *pToBeParent,
                                        MediumLockList &mediumLockList)
 {
@@ -4014,7 +4055,7 @@ HRESULT Medium::i_createMediumLockList(bool fFailIfInaccessible,
         if (pMedium == this)
             mediumLockList.Prepend(pMedium, fMediumLockWrite);
         else
-            mediumLockList.Prepend(pMedium, false);
+            mediumLockList.Prepend(pMedium, fMediumLockWriteAll);
 
         pMedium = pMedium->i_getParent();
         if (pMedium.isNull() && pToBeParent)
@@ -4379,6 +4420,7 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
         multilock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     true /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pMediumLockList);
         multilock.acquire();
@@ -4741,11 +4783,13 @@ HRESULT Medium::i_prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         if (fMergeForward)
             rc = pTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                  true /* fMediumLockWrite */,
+                                                 false /* fMediumLockWriteAll */,
                                                  NULL,
                                                  *aMediumLockList);
         else
             rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                         false /* fMediumLockWrite */,
+                                        false /* fMediumLockWriteAll */,
                                         NULL,
                                         *aMediumLockList);
         treeLock.acquire();
@@ -5186,6 +5230,7 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
     MediumLockList mediumLockList;
     HRESULT rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                         false /* fMediumLockWrite */,
+                                        false /* fMediumLockWriteAll */,
                                         this,
                                         mediumLockList);
     AssertComRCReturnRC(rc);
@@ -5299,6 +5344,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
         MediumLockList *pSourceMediumLockList(new MediumLockList());
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     false /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
         if (FAILED(rc))
@@ -5390,6 +5436,7 @@ HRESULT Medium::i_importFile(const char *aFilename,
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     true /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     aParent,
                                     *pTargetMediumLockList);
         alock.acquire();
@@ -5489,6 +5536,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         alock.release();
         rc = i_createMediumLockList(true /* fFailIfInaccessible */,
                                     false /* fMediumLockWrite */,
+                                    false /* fMediumLockWriteAll */,
                                     NULL,
                                     *pSourceMediumLockList);
         alock.acquire();
@@ -5503,6 +5551,7 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         alock.release();
         rc = aTarget->i_createMediumLockList(true /* fFailIfInaccessible */,
                                              true /* fMediumLockWrite */,
+                                             false /* fMediumLockWriteAll */,
                                              aParent,
                                              *pTargetMediumLockList);
         alock.acquire();
@@ -8803,6 +8852,8 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         Medium::CryptoFilterSettings CryptoSettingsRead;
         Medium::CryptoFilterSettings CryptoSettingsWrite;
 
+        ComObjPtr<Medium> pBase = i_getBase();
+
         uint8_t *pbDek = NULL;
         size_t cbDek = 0;
         char *pszCipherOld = NULL;
@@ -8817,15 +8868,15 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                  * Query whether the medium property indicating that encryption is
                  * configured is existing.
                  */
-                settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
-                if (it != m->mapProperties.end())
+                settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
+                if (it != pBase->m->mapProperties.end())
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("The password given for the encrypted image is incorrect"));
             }
             else
             {
-                settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
-                if (it == m->mapProperties.end())
+                settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
+                if (it == pBase->m->mapProperties.end())
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("The image is not configured for encryption"));
 
@@ -8876,11 +8927,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                 const ComObjPtr<Medium> &pMedium = mediumLock.GetMedium();
                 AutoReadLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-                /* sanity check */
-                if (it == mediumListLast)
-                    Assert(pMedium->m->state == MediumState_LockedWrite);
-                else
-                    Assert(pMedium->m->state == MediumState_LockedRead);
+                Assert(pMedium->m->state == MediumState_LockedWrite);
 
                 /* Open all media but last in read-only mode. Do not handle
                  * shareable media, as compaction and sharing are mutually
@@ -8912,22 +8959,22 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
 
             thisLock.acquire();
             /* If everything went well set the new key store. */
-            settings::StringsMap::iterator it = m->mapProperties.find("CRYPT/KeyStore");
-            if (it != m->mapProperties.end())
-                m->mapProperties.erase(it);
+            settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
+            if (it != pBase->m->mapProperties.end())
+                pBase->m->mapProperties.erase(it);
 
-            it = m->mapProperties.find("CRYPT/KeyId");
-            if (it != m->mapProperties.end())
-                m->mapProperties.erase(it);
+            it = pBase->m->mapProperties.find("CRYPT/KeyId");
+            if (it != pBase->m->mapProperties.end())
+                pBase->m->mapProperties.erase(it);
 
             if (CryptoSettingsWrite.pszKeyStore)
             {
-                m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
-                m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
+                pBase->m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
+                pBase->m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
             }
 
             thisLock.release();
-            i_markRegistriesModified();
+            pBase->i_markRegistriesModified();
             m->pVirtualBox->i_saveModifiedRegistries();
         }
         catch (HRESULT aRC) { rc = aRC; }

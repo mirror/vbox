@@ -3843,6 +3843,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
 
                         rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                             true /* fMediumLockWrite */,
+                                                            false /* fMediumLockWriteAll */,
                                                             NULL,
                                                             *pMediumLockList);
                         alock.acquire();
@@ -3940,6 +3941,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
 
                                 rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                                     true /* fMediumLockWrite */,
+                                                                    false /* fMediumLockWriteAll */,
                                                                     NULL,
                                                                     *pMediumLockList);
                                 alock.acquire();
@@ -4106,6 +4108,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         treeLock.release();
         rc = diff->i_createMediumLockList(true /* fFailIfInaccessible */,
                                           true /* fMediumLockWrite */,
+                                          false /* fMediumLockWriteAll */,
                                           medium,
                                           *pMediumLockList);
         treeLock.acquire();
@@ -4209,6 +4212,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
 
             rc = medium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                 true /* fMediumLockWrite */,
+                                                false /* fMediumLockWriteAll */,
                                                 NULL,
                                                 *pMediumLockList);
             alock.acquire();
@@ -10507,6 +10511,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
                     alock.release();
                     rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                          false /* fMediumLockWrite */,
+                                                         false /* fMediumLockWriteAll */,
                                                          NULL,
                                                          *pMediumLockList);
                     alock.acquire();
@@ -10758,6 +10763,7 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
                     alock.release();
                     rc = pMedium->i_createMediumLockList(true /* fFailIfInaccessible */,
                                                          false /* fMediumLockWrite */,
+                                                         false /* fMediumLockWriteAll */,
                                                          NULL,
                                                          *pMediumLockList);
                     alock.acquire();
@@ -14035,6 +14041,7 @@ HRESULT SessionMachine::i_lockMedia()
             alock.release();
             mrc = pMedium->i_createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
                                                   !fIsReadOnlyLock /* fMediumLockWrite */,
+                                                  false /* fMediumLockWriteAll */,
                                                   NULL,
                                                   *pMediumLockList);
             alock.acquire();

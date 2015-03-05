@@ -144,6 +144,7 @@ public:
 
     HRESULT i_createMediumLockList(bool fFailIfInaccessible,
                                    bool fMediumLockWrite,
+                                   bool fMediumLockWriteAll,
                                    Medium *pToBeParent,
                                    MediumLockList &mediumLockList);
 
