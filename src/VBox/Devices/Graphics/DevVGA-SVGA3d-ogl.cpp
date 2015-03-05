@@ -19,6 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifdef DEBUG_bird
+# define RTMEM_WRAP_TO_EF_APIS
+#endif
 #define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/version.h>
@@ -274,6 +277,8 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
  *
  * @param   a_pState    The 3D state structure.
  * @param   a_pContext  The context that holds the first error.
+ * @param   a_LogRelDetails Argument list for LogRel or similar that describes
+ *                          the operation in greater detail.
  *
  * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
  */
@@ -282,6 +287,71 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
         VMSVGA3D_GET_GL_ERROR(a_pContext); \
         VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails); \
     } while (0)
+
+/** @def VMSVGA3D_GL_ASSERT_SUCCESS
+ * Asserts that VMSVGA3D_GL_IS_SUCCESS is true, complains if not.
+ *
+ * Uses VMSVGA3D_GL_COMPLAIN for complaining, so check it out wrt to release
+ * logging in non-strict builds.
+ *
+ * @param   a_pState    The 3D state structure.
+ * @param   a_pContext  The context that holds the first error.
+ * @param   a_LogRelDetails Argument list for LogRel or similar that describes
+ *                          the operation in greater detail.
+ *
+ * @sa VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_GL_ASSERT_SUCCESS(a_pState, a_pContext, a_LogRelDetails) \
+    if (VMSVGA3D_GL_IS_SUCCESS(a_pContext)) \
+    { /* likely */ } \
+    else do { \
+        VMSVGA3D_GET_GL_ERROR(a_pContext); \
+        VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails); \
+    } while (0)
+
+/** @def VMSVGA3D_ASSERT_GL_CALL_EX
+ * Executes the specified OpenGL API call and asserts that it succeeded, variant
+ * with extra logging flexibility.
+ *
+ * ASSUMES no GL errors pending prior to invocation - caller should use
+ * VMSVGA3D_CLEAR_GL_ERRORS if uncertain.
+ *
+ * Uses VMSVGA3D_GL_COMPLAIN for complaining, so check it out wrt to release
+ * logging in non-strict builds.
+ *
+ * @param   a_GlCall    Expression making an OpenGL call.
+ * @param   a_pState    The 3D state structure.
+ * @param   a_pContext  The context that holds the first error.
+ * @param   a_LogRelDetails Argument list for LogRel or similar that describes
+ *                          the operation in greater detail.
+ *
+ * @sa VMSVGA3D_ASSERT_GL_CALL, VMSVGA3D_GL_ASSERT_SUCCESS,
+ *     VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_ASSERT_GL_CALL_EX(a_GlCall, a_pState, a_pContext, a_LogRelDetails) \
+    do { \
+        (a_GlCall); \
+        VMSVGA3D_GL_ASSERT_SUCCESS(a_pState, a_pContext, a_LogRelDetails); \
+    } while (0)
+
+/** @def VMSVGA3D_ASSERT_GL_CALL
+ * Executes the specified OpenGL API call and asserts that it succeeded.
+ *
+ * ASSUMES no GL errors pending prior to invocation - caller should use
+ * VMSVGA3D_CLEAR_GL_ERRORS if uncertain.
+ *
+ * Uses VMSVGA3D_GL_COMPLAIN for complaining, so check it out wrt to release
+ * logging in non-strict builds.
+ *
+ * @param   a_GlCall    Expression making an OpenGL call.
+ * @param   a_pState    The 3D state structure.
+ * @param   a_pContext  The context that holds the first error.
+ *
+ * @sa VMSVGA3D_ASSERT_GL_CALL_EX, VMSVGA3D_GL_ASSERT_SUCCESS,
+ *     VMSVGA3D_GET_GL_ERROR, VMSVGA3D_GL_IS_SUCCESS, VMSVGA3D_GL_COMPLAIN
+ */
+#define VMSVGA3D_ASSERT_GL_CALL(a_GlCall, a_pState, a_pContext) \
+    VMSVGA3D_ASSERT_GL_CALL_EX(a_GlCall, a_pState, a_pContext, ("%s\n", #a_GlCall))
 
 
 /** @def VMSVGA3D_CHECK_LAST_ERROR
@@ -788,6 +858,34 @@ static SSMFIELD const g_aVMSVGA3DSTATEFields[] =
 };
 
 
+/** Save and setup everything. */
+#define VMSVGA3D_PARANOID_TEXTURE_PACKING
+
+/**
+ * Saved texture packing parameters (shared by both pack and unpack).
+ */
+typedef struct VMSVGAPACKPARAMS
+{
+    GLint       iAlignment;
+    GLint       cxRow;
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    GLint       cyImage;
+    GLboolean   fSwapBytes;
+    GLboolean   fLsbFirst;
+    GLint       cSkipRows;
+    GLint       cSkipPixels;
+    GLint       cSkipImages;
+#endif
+} VMSVGAPACKPARAMS;
+/** Pointer to saved texture packing parameters. */
+typedef VMSVGAPACKPARAMS *PVMSVGAPACKPARAMS;
+/** Pointer to const saved texture packing parameters. */
+typedef VMSVGAPACKPARAMS const *PCVMSVGAPACKPARAMS;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /* Define the default light parameters as specified by MSDN. */
 /* @todo move out; fetched from Wine */
 const SVGA3dLightData vmsvga3d_default_light =
@@ -806,6 +904,10 @@ const SVGA3dLightData vmsvga3d_default_light =
     0.0f                            /* phi */
 };
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 RT_C_DECLS_BEGIN
 static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext, PVMSVGA3DSURFACE pSurface);
 static void vmsvgaColor2GLFloatArray(uint32_t color, GLfloat *pRed, GLfloat *pGreen, GLfloat *pBlue, GLfloat *pAlpha);
@@ -2122,130 +2224,158 @@ int vmsvga3dQueryCaps(PVGASTATE pThis, uint32_t idx3dCaps, uint32_t *pu32Val)
 
 /**
  * Convert SVGA format value to its OpenGL equivalent
+ *
+ * @remarks  Clues to be had in format_texture_info table (wined3d/utils.c) with
+ *           help from wined3dformat_from_d3dformat().
  */
 static void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFormat format)
 {
     switch (format)
     {
-    case SVGA3D_X8R8G8B8:
+    case SVGA3D_X8R8G8B8:               /* D3DFMT_X8R8G8B8 - WINED3DFMT_B8G8R8X8_UNORM */
         pSurface->internalFormatGL = GL_RGB8;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
         break;
-    case SVGA3D_A8R8G8B8:
+    case SVGA3D_A8R8G8B8:               /* D3DFMT_A8R8G8B8 - WINED3DFMT_B8G8R8A8_UNORM */
         pSurface->internalFormatGL = GL_RGBA8;
         pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_INT_8_8_8_8_REV;
         break;
-    case SVGA3D_R5G6B5:
-        pSurface->internalFormatGL = GL_RGB;
+    case SVGA3D_R5G6B5:                 /* D3DFMT_R5G6B5 - WINED3DFMT_B5G6R5_UNORM */
+        pSurface->internalFormatGL = GL_RGB5;
         pSurface->formatGL = GL_RGB;
         pSurface->typeGL = GL_UNSIGNED_SHORT_5_6_5;
+        AssertMsgFailed(("Test me - SVGA3D_R5G6B5\n"));
         break;
-    case SVGA3D_X1R5G5B5:
-        pSurface->internalFormatGL = GL_RGB;
-        pSurface->formatGL = GL_RGB;
+    case SVGA3D_X1R5G5B5:               /* D3DFMT_X1R5G5B5 - WINED3DFMT_B5G5R5X1_UNORM */
+        pSurface->internalFormatGL = GL_RGB5;
+        pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_SHORT_1_5_5_5_REV;
+        AssertMsgFailed(("Test me - SVGA3D_X1R5G5B5\n"));
         break;
-    case SVGA3D_A1R5G5B5:
-        pSurface->internalFormatGL = GL_RGBA;
-        pSurface->formatGL = GL_RGB;
+    case SVGA3D_A1R5G5B5:               /* D3DFMT_A1R5G5B5 - WINED3DFMT_B5G5R5A1_UNORM */
+        pSurface->internalFormatGL = GL_RGB5_A1;
+        pSurface->formatGL = GL_BGRA;
         pSurface->typeGL = GL_UNSIGNED_SHORT_1_5_5_5_REV;
+        AssertMsgFailed(("Test me - SVGA3D_A1R5G5B5\n"));
         break;
-    case SVGA3D_A4R4G4B4:
-        pSurface->internalFormatGL = GL_RGBA;
-        pSurface->formatGL = GL_RGBA;
-        pSurface->typeGL =  GL_UNSIGNED_SHORT_4_4_4_4;
+    case SVGA3D_A4R4G4B4:               /* D3DFMT_A4R4G4B4 - WINED3DFMT_B4G4R4A4_UNORM */
+        pSurface->internalFormatGL = GL_RGBA4;
+        pSurface->formatGL = GL_BGRA;
+        pSurface->typeGL = GL_UNSIGNED_SHORT_4_4_4_4_REV;
+        AssertMsgFailed(("Test me - SVGA3D_A4R4G4B4\n"));
         break;
 
-    case SVGA3D_Z_D32:
+    case SVGA3D_Z_D32:                  /* D3DFMT_D32 - WINED3DFMT_D32_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT32;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_INT;
         break;
-    case SVGA3D_Z_D16:
-        pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;
+    case SVGA3D_Z_D16:                  /* D3DFMT_D16 - WINED3DFMT_D16_UNORM */
+        pSurface->internalFormatGL = GL_DEPTH_COMPONENT16; /** @todo Wine suggests GL_DEPTH_COMPONENT24. */
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
+        AssertMsgFailed(("Test me - SVGA3D_Z_D16\n"));
         break;
-    case SVGA3D_Z_D24S8:
+    case SVGA3D_Z_D24S8:                /* D3DFMT_D24S8 - WINED3DFMT_D24_UNORM_S8_UINT */
         pSurface->internalFormatGL = GL_DEPTH24_STENCIL8;
         pSurface->formatGL = GL_DEPTH_STENCIL;
         pSurface->typeGL = GL_UNSIGNED_INT;
         break;
-    case SVGA3D_Z_D15S1:
+    case SVGA3D_Z_D15S1:                /* D3DFMT_D15S1 - WINED3DFMT_S1_UINT_D15_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;  /* @todo ??? */
         pSurface->formatGL = GL_DEPTH_STENCIL;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
+        /** @todo Wine sources hints at no hw support for this, so test this one! */
+        AssertMsgFailed(("Test me - SVGA3D_Z_D15S1\n"));
         break;
-    case SVGA3D_Z_D24X8:
+    case SVGA3D_Z_D24X8:                /* D3DFMT_D24X8 - WINED3DFMT_X8D24_UNORM */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT24;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_INT;
         break;
 
     /* Advanced D3D9 depth formats. */
-    case SVGA3D_Z_DF16:
+    case SVGA3D_Z_DF16:                 /* D3DFMT_DF16? - not supported */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_FLOAT;
         break;
 
-    case SVGA3D_Z_DF24:
+    case SVGA3D_Z_DF24:                 /* D3DFMT_DF24? - not supported */
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT24;
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_FLOAT;        /* ??? */
         break;
 
-    case SVGA3D_Z_D24S8_INT:
+    case SVGA3D_Z_D24S8_INT:            /* D3DFMT_??? - not supported */
         pSurface->internalFormatGL = GL_DEPTH24_STENCIL8;
         pSurface->formatGL = GL_DEPTH_STENCIL;
         pSurface->typeGL = GL_INT;        /* ??? */
         break;
 
-    case SVGA3D_DXT1:
+    case SVGA3D_DXT1:                   /* D3DFMT_DXT1 - WINED3DFMT_DXT1 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+#if 0
         pSurface->formatGL = GL_RGBA_S3TC;          /* ??? */
         pSurface->typeGL = GL_UNSIGNED_INT;         /* ??? */
+#else   /* wine suggests: */
+        pSurface->formatGL = GL_RGBA;
+        pSurface->typeGL = GL_UNSIGNED_BYTE;
+        AssertMsgFailed(("Test me - SVGA3D_DXT1\n"));
+#endif
         break;
 
-    case SVGA3D_DXT3:
+    case SVGA3D_DXT3:                   /* D3DFMT_DXT3 - WINED3DFMT_DXT3 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+#if 0 /** @todo this needs testing... */
         pSurface->formatGL = GL_RGBA_S3TC;          /* ??? */
         pSurface->typeGL = GL_UNSIGNED_INT;         /* ??? */
+#else   /* wine suggests: */
+        pSurface->formatGL = GL_RGBA;
+        pSurface->typeGL = GL_UNSIGNED_BYTE;
+        AssertMsgFailed(("Test me - SVGA3D_DXT3\n"));
+#endif
         break;
 
-    case SVGA3D_DXT5:
+    case SVGA3D_DXT5:                   /* D3DFMT_DXT5 - WINED3DFMT_DXT5 */
         pSurface->internalFormatGL = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+#if 0 /** @todo this needs testing... */
         pSurface->formatGL = GL_RGBA_S3TC;
         pSurface->typeGL = GL_UNSIGNED_INT;
+#else   /* wine suggests: */
+        pSurface->formatGL = GL_RGBA;
+        pSurface->typeGL = GL_UNSIGNED_BYTE;
+        AssertMsgFailed(("Test me - SVGA3D_DXT5\n"));
+#endif
         break;
 
-    case SVGA3D_LUMINANCE8:
+    case SVGA3D_LUMINANCE8:             /* D3DFMT_? - ? */
         pSurface->internalFormatGL = GL_LUMINANCE8_EXT;
         pSurface->formatGL = GL_LUMINANCE;
         pSurface->typeGL = GL_UNSIGNED_BYTE;
         break;
 
-    case SVGA3D_LUMINANCE16:
+    case SVGA3D_LUMINANCE16:            /* D3DFMT_? - ? */
         pSurface->internalFormatGL = GL_LUMINANCE16_EXT;
         pSurface->formatGL = GL_LUMINANCE;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
         break;
 
-    case SVGA3D_LUMINANCE4_ALPHA4:
+    case SVGA3D_LUMINANCE4_ALPHA4:     /* D3DFMT_? - ? */
         pSurface->internalFormatGL = GL_LUMINANCE4_ALPHA4_EXT;
         pSurface->formatGL = GL_LUMINANCE_ALPHA;
         pSurface->typeGL = GL_UNSIGNED_BYTE;
         break;
 
-    case SVGA3D_LUMINANCE8_ALPHA8:
+    case SVGA3D_LUMINANCE8_ALPHA8:     /* D3DFMT_? - ? */
         pSurface->internalFormatGL = GL_LUMINANCE8_ALPHA8_EXT;
         pSurface->formatGL = GL_LUMINANCE_ALPHA;
         pSurface->typeGL = GL_UNSIGNED_BYTE;    /* unsigned_short causes issues even though this type should be 16-bit */
         break;
 
-    case SVGA3D_ALPHA8:
+    case SVGA3D_ALPHA8:                /* D3DFMT_A8? - WINED3DFMT_A8_UNORM? */
         pSurface->internalFormatGL = GL_ALPHA8_EXT;
         pSurface->formatGL = GL_ALPHA;
         pSurface->typeGL = GL_UNSIGNED_BYTE;
@@ -2277,42 +2407,62 @@ static void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFo
         return D3DFMT_A2W10V10U10;
 #endif
 
-    case SVGA3D_ARGB_S10E5:   /* 16-bit floating-point ARGB */
+    case SVGA3D_ARGB_S10E5:   /* 16-bit floating-point ARGB */ /* D3DFMT_A16B16G16R16F - WINED3DFMT_R16G16B16A16_FLOAT */
         pSurface->internalFormatGL = GL_RGBA16F;
         pSurface->formatGL = GL_RGBA;
+#if 0 /* bird: wine uses half float, sounds correct to me... */
         pSurface->typeGL = GL_FLOAT;
+#else
+        pSurface->typeGL = GL_HALF_FLOAT;
+        AssertMsgFailed(("Test me - SVGA3D_ARGB_S10E5\n"));
+#endif
         break;
 
-    case SVGA3D_ARGB_S23E8:   /* 32-bit floating-point ARGB */
+    case SVGA3D_ARGB_S23E8:   /* 32-bit floating-point ARGB */ /* D3DFMT_A32B32G32R32F - WINED3DFMT_R32G32B32A32_FLOAT */
         pSurface->internalFormatGL = GL_RGBA32F;
         pSurface->formatGL = GL_RGBA;
-        pSurface->typeGL = GL_FLOAT;    /* ?? */
+        pSurface->typeGL = GL_FLOAT;    /* ?? - same as wine, so probably correct */
         break;
 
-    case SVGA3D_A2R10G10B10:
-        pSurface->internalFormatGL = GL_RGB10_A2; /* ?? */
+    case SVGA3D_A2R10G10B10:            /* D3DFMT_A2R10G10B10 - WINED3DFMT_B10G10R10A2_UNORM */
+        pSurface->internalFormatGL = GL_RGB10_A2; /* ?? - same as wine, so probably correct */
+#if 0 /* bird: Wine uses GL_BGRA instead of GL_RGBA. */
         pSurface->formatGL = GL_RGBA;
+#else
+        pSurface->formatGL = GL_BGRA;
+#endif
         pSurface->typeGL = GL_UNSIGNED_INT;
+        AssertMsgFailed(("Test me - SVGA3D_A2R10G10B10\n"));
         break;
 
 
     /* Single- and dual-component floating point formats */
-    case SVGA3D_R_S10E5:
+    case SVGA3D_R_S10E5:                /* D3DFMT_R16F - WINED3DFMT_R16_FLOAT */
         pSurface->internalFormatGL = GL_R16F;
         pSurface->formatGL = GL_RED;
+#if 0 /* bird: wine uses half float, sounds correct to me... */
         pSurface->typeGL = GL_FLOAT;
+#else
+        pSurface->typeGL = GL_HALF_FLOAT;
+        AssertMsgFailed(("Test me - SVGA3D_R_S10E5\n"));
+#endif
         break;
-    case SVGA3D_R_S23E8:
+    case SVGA3D_R_S23E8:                /* D3DFMT_R32F - WINED3DFMT_R32_FLOAT */
         pSurface->internalFormatGL = GL_R32F;
         pSurface->formatGL = GL_RG;
         pSurface->typeGL = GL_FLOAT;
         break;
-    case SVGA3D_RG_S10E5:
+    case SVGA3D_RG_S10E5:               /* D3DFMT_G16R16F - WINED3DFMT_R16G16_FLOAT */
         pSurface->internalFormatGL = GL_RG16F;
         pSurface->formatGL = GL_RG;
+#if 0 /* bird: wine uses half float, sounds correct to me... */
         pSurface->typeGL = GL_FLOAT;
+#else
+        pSurface->typeGL = GL_HALF_FLOAT;
+        AssertMsgFailed(("Test me - SVGA3D_RG_S10E5\n"));
+#endif
         break;
-    case SVGA3D_RG_S23E8:
+    case SVGA3D_RG_S23E8:               /* D3DFMT_G32R32F - WINED3DFMT_R32G32_FLOAT */
         pSurface->internalFormatGL = GL_RG32F;
         pSurface->formatGL = GL_RG;
         pSurface->typeGL = GL_FLOAT;
@@ -2336,16 +2486,26 @@ static void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFo
         return D3DFMT_V16U16;
 #endif
 
-    case SVGA3D_G16R16:
+    case SVGA3D_G16R16:                 /* D3DFMT_G16R16 - WINED3DFMT_R16G16_UNORM */
         pSurface->internalFormatGL = GL_RG16;
         pSurface->formatGL = GL_RG;
+#if 0 /* bird: Wine uses GL_UNSIGNED_SHORT here. */
         pSurface->typeGL = GL_UNSIGNED_INT;
+#else
+        pSurface->typeGL = GL_UNSIGNED_SHORT;
+        AssertMsgFailed(("test me - SVGA3D_G16R16\n"));
+#endif
         break;
 
-    case SVGA3D_A16B16G16R16:
+    case SVGA3D_A16B16G16R16:           /* D3DFMT_A16B16G16R16 - WINED3DFMT_R16G16B16A16_UNORM */
         pSurface->internalFormatGL = GL_RGBA16;
-        pSurface->formatGL = GL_RG;
+        pSurface->formatGL = GL_RGBA;
+#if 0 /* bird: Wine uses GL_UNSIGNED_SHORT here. */
         pSurface->typeGL = GL_UNSIGNED_INT;     /* ??? */
+#else
+        pSurface->typeGL = GL_UNSIGNED_SHORT;
+        AssertMsgFailed(("Test me - SVGA3D_A16B16G16R16\n"));
+#endif
         break;
 
 #if 0
@@ -2586,7 +2746,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
         &&  pState->paSurface[sid].id == sid)
     {
         PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
-        PVMSVGA3DCONTEXT pContext = NULL;
+        PVMSVGA3DCONTEXT pContext;
 
         Log(("vmsvga3dSurfaceDestroy id %x\n", sid));
 
@@ -2594,7 +2754,7 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
         /* Check all contexts if this surface is used as a render target or active texture. */
         for (uint32_t cid = 0; cid < pState->cContexts; cid++)
         {
-            PVMSVGA3DCONTEXT pContext = &pState->paContext[cid];
+            pContext = &pState->paContext[cid];
             if (pContext->id == cid)
             {
                 for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
@@ -2728,6 +2888,116 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Save texture unpacking parameters and loads those appropriate for the given
+ * surface.
+ *
+ * @param   pState              The VMSVGA3D state structure.
+ * @param   pContext            The active context.
+ * @param   pSurface            The surface.
+ * @param   pSave               Where to save stuff.
+ */
+static void vmsvga3dSetUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                    PVMSVGAPACKPARAMS pSave)
+{
+    /*
+     * Save (ignore errors, setting the defaults we want and avoids restore).
+     */
+    pSave->iAlignment = 1;
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ALIGNMENT, &pSave->iAlignment), pState, pContext);
+    pSave->cxRow = 0;
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ROW_LENGTH, &pSave->cxRow), pState, pContext);
+
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    pSave->cyImage = 0;
+    glGetIntegerv(GL_UNPACK_IMAGE_HEIGHT, &pSave->cyImage);
+    Assert(pSave->cyImage == 0);
+
+    pSave->fSwapBytes = GL_FALSE;
+    glGetBooleanv(GL_UNPACK_SWAP_BYTES, &pSave->fSwapBytes);
+    Assert(pSave->fSwapBytes == GL_FALSE);
+
+    pSave->fLsbFirst = GL_FALSE;
+    glGetBooleanv(GL_UNPACK_LSB_FIRST, &pSave->fLsbFirst);
+    Assert(pSave->fLsbFirst == GL_FALSE);
+
+    pSave->cSkipRows = 0;
+    glGetIntegerv(GL_UNPACK_SKIP_ROWS, &pSave->cSkipRows);
+    Assert(pSave->cSkipRows == 0);
+
+    pSave->cSkipPixels = 0;
+    glGetIntegerv(GL_UNPACK_SKIP_PIXELS, &pSave->cSkipPixels);
+    Assert(pSave->cSkipPixels == 0);
+
+    pSave->cSkipImages = 0;
+    glGetIntegerv(GL_UNPACK_SKIP_IMAGES, &pSave->cSkipImages);
+    Assert(pSave->cSkipImages == 0);
+
+    VMSVGA3D_CLEAR_GL_ERRORS();
+#endif
+
+    /*
+     * Setup unpack.
+     *
+     * Note! We use 1 as alignment here because we currently don't do any
+     *       aligning of line pitches anywhere.
+     */
+    NOREF(pSurface);
+    if (pSave->iAlignment != 1)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, 1), pState, pContext);
+    if (pSave->cxRow != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ROW_LENGTH, 0), pState, pContext);
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    if (pSave->cyImage != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, 0), pState, pContext);
+    if (pSave->fSwapBytes != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SWAP_BYTES, GL_FALSE), pState, pContext);
+    if (pSave->fLsbFirst != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_LSB_FIRST, GL_FALSE), pState, pContext);
+    if (pSave->cSkipRows != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_ROWS, 0), pState, pContext);
+    if (pSave->cSkipPixels != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0), pState, pContext);
+    if (pSave->cSkipImages != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_IMAGES, 0), pState, pContext);
+#endif
+}
+
+
+/**
+ * Restores texture unpacking parameters.
+ *
+ * @param   pState              The VMSVGA3D state structure.
+ * @param   pContext            The active context.
+ * @param   pSurface            The surface.
+ * @param   pSave               Where stuff was saved.
+ */
+static void vmsvga3dRestoreUnpackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                        PCVMSVGAPACKPARAMS pSave)
+{
+    NOREF(pSurface);
+    if (pSave->iAlignment != 1)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ALIGNMENT, pSave->iAlignment), pState, pContext);
+    if (pSave->cxRow != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_ROW_LENGTH, pSave->cxRow), pState, pContext);
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    if (pSave->cyImage != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_IMAGE_HEIGHT, pSave->cyImage), pState, pContext);
+    if (pSave->fSwapBytes != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SWAP_BYTES, pSave->fSwapBytes), pState, pContext);
+    if (pSave->fLsbFirst != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_LSB_FIRST, pSave->fLsbFirst), pState, pContext);
+    if (pSave->cSkipRows != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_ROWS, pSave->cSkipRows), pState, pContext);
+    if (pSave->cSkipPixels != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_PIXELS, pSave->cSkipPixels), pState, pContext);
+    if (pSave->cSkipImages != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_UNPACK_SKIP_IMAGES, pSave->cSkipImages), pState, pContext);
+#endif
+}
+
+
 /* Create D3D texture object for the specified surface. */
 static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, uint32_t idAssociatedContext,
                                  PVMSVGA3DSURFACE pSurface)
@@ -2747,6 +3017,10 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
 
     if (pSurface->fDirty)
     {
+        /* Set the unacpking parameters. */
+        VMSVGAPACKPARAMS SavedParams;
+        vmsvga3dSetUnpackParams(pState, pContext, pSurface, &SavedParams);
+
         Log(("vmsvga3dCreateTexture: sync dirty texture\n"));
         for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
         {
@@ -2770,6 +3044,9 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
             }
         }
         pSurface->fDirty = false;
+
+        /* Restore packing parameters. */
+        vmsvga3dRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
     }
     else
     {
@@ -2906,6 +3183,115 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
 
     return VINF_SUCCESS;
 }
+
+/**
+ * Save texture packing parameters and loads those appropriate for the given
+ * surface.
+ *
+ * @param   pState              The VMSVGA3D state structure.
+ * @param   pContext            The active context.
+ * @param   pSurface            The surface.
+ * @param   pSave               Where to save stuff.
+ */
+static void vmsvga3dSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                  PVMSVGAPACKPARAMS pSave)
+{
+    /*
+     * Save (ignore errors, setting the defaults we want and avoids restore).
+     */
+    pSave->iAlignment = 1;
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ALIGNMENT, &pSave->iAlignment), pState, pContext);
+    pSave->cxRow = 0;
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ROW_LENGTH, &pSave->cxRow), pState, pContext);
+
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    pSave->cyImage = 0;
+    glGetIntegerv(GL_PACK_IMAGE_HEIGHT, &pSave->cyImage);
+    Assert(pSave->cyImage == 0);
+
+    pSave->fSwapBytes = GL_FALSE;
+    glGetBooleanv(GL_PACK_SWAP_BYTES, &pSave->fSwapBytes);
+    Assert(pSave->fSwapBytes == GL_FALSE);
+
+    pSave->fLsbFirst = GL_FALSE;
+    glGetBooleanv(GL_PACK_LSB_FIRST, &pSave->fLsbFirst);
+    Assert(pSave->fLsbFirst == GL_FALSE);
+
+    pSave->cSkipRows = 0;
+    glGetIntegerv(GL_PACK_SKIP_ROWS, &pSave->cSkipRows);
+    Assert(pSave->cSkipRows == 0);
+
+    pSave->cSkipPixels = 0;
+    glGetIntegerv(GL_PACK_SKIP_PIXELS, &pSave->cSkipPixels);
+    Assert(pSave->cSkipPixels == 0);
+
+    pSave->cSkipImages = 0;
+    glGetIntegerv(GL_PACK_SKIP_IMAGES, &pSave->cSkipImages);
+    Assert(pSave->cSkipImages == 0);
+
+    VMSVGA3D_CLEAR_GL_ERRORS();
+#endif
+
+    /*
+     * Setup unpack.
+     *
+     * Note! We use 1 as alignment here because we currently don't do any
+     *       aligning of line pitches anywhere.
+     */
+    NOREF(pSurface);
+    if (pSave->iAlignment != 1)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_ALIGNMENT, 1), pState, pContext);
+    if (pSave->cxRow != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_ROW_LENGTH, 0), pState, pContext);
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    if (pSave->cyImage != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_IMAGE_HEIGHT, 0), pState, pContext);
+    if (pSave->fSwapBytes != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SWAP_BYTES, GL_FALSE), pState, pContext);
+    if (pSave->fLsbFirst != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_LSB_FIRST, GL_FALSE), pState, pContext);
+    if (pSave->cSkipRows != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_ROWS, 0), pState, pContext);
+    if (pSave->cSkipPixels != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_PIXELS, 0), pState, pContext);
+    if (pSave->cSkipImages != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_IMAGES, 0), pState, pContext);
+#endif
+}
+
+
+/**
+ * Restores texture packing parameters.
+ *
+ * @param   pState              The VMSVGA3D state structure.
+ * @param   pContext            The active context.
+ * @param   pSurface            The surface.
+ * @param   pSave               Where stuff was saved.
+ */
+static void vmsvga3dRestorePackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, PVMSVGA3DSURFACE pSurface,
+                                      PCVMSVGAPACKPARAMS pSave)
+{
+    NOREF(pSurface);
+    if (pSave->iAlignment != 1)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_ALIGNMENT, pSave->iAlignment), pState, pContext);
+    if (pSave->cxRow != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_ROW_LENGTH, pSave->cxRow), pState, pContext);
+#ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
+    if (pSave->cyImage != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_IMAGE_HEIGHT, pSave->cyImage), pState, pContext);
+    if (pSave->fSwapBytes != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SWAP_BYTES, pSave->fSwapBytes), pState, pContext);
+    if (pSave->fLsbFirst != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_LSB_FIRST, pSave->fLsbFirst), pState, pContext);
+    if (pSave->cSkipRows != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_ROWS, pSave->cSkipRows), pState, pContext);
+    if (pSave->cSkipPixels != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_PIXELS, pSave->cSkipPixels), pState, pContext);
+    if (pSave->cSkipImages != 0)
+        VMSVGA3D_ASSERT_GL_CALL(glPixelStorei(GL_PACK_SKIP_IMAGES, pSave->cSkipImages), pState, pContext);
+#endif
+}
+
 
 int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceImageId host, SVGA3dTransferType transfer,
                        uint32_t cCopyBoxes, SVGA3dCopyBox *pBoxes)
@@ -3050,11 +3436,16 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                 {
                     GLint activeTexture;
 
+                    /* Must bind texture to the current context in order to read it. */
                     glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
                     glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                    /* Set row length and alignment of the input data. */
+                    VMSVGAPACKPARAMS SavedParams;
+                    vmsvga3dSetPackParams(pState, pContext, pSurface, &SavedParams);
 
                     glGetTexImage(GL_TEXTURE_2D,
                                   host.mipmap,
@@ -3062,6 +3453,8 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                                   pSurface->typeGL,
                                   pDoubleBuffer);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                    vmsvga3dRestorePackParams(pState, pContext, pSurface, &SavedParams);
 
                     /* Restore the old active texture. */
                     glBindTexture(GL_TEXTURE_2D, activeTexture);
@@ -3113,7 +3506,6 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                 if (transfer == SVGA3D_WRITE_HOST_VRAM)
                 {
                     GLint activeTexture = 0;
-                    GLint alignment;
 
                     glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
@@ -3125,9 +3517,8 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     Log(("vmsvga3dSurfaceDMA: copy texture mipmap level %d (pitch %x)\n", host.mipmap, pMipLevel->cbSurfacePitch));
 
                     /* Set row length and alignment of the input data. */
-                    glGetIntegerv(GL_UNPACK_ALIGNMENT, &alignment);
-                    glPixelStorei(GL_UNPACK_ROW_LENGTH, pBoxes[i].w);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, pSurface->cbBlock);
+                    VMSVGAPACKPARAMS SavedParams;
+                    vmsvga3dSetUnpackParams(pState, pContext, pSurface, &SavedParams); /** @todo do we need to set ROW_LENGTH to w here? */
 
                     glTexSubImage2D(GL_TEXTURE_2D,
                                     host.mipmap,
@@ -3142,8 +3533,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
                     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
                     /* Restore old values. */
-                    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-                    glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+                    vmsvga3dRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
 
                     /* Restore the old active texture. */
                     glBindTexture(GL_TEXTURE_2D, activeTexture);
