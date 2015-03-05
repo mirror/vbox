@@ -1802,6 +1802,7 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(uint32_t) SUPR0GetKernelFeatures(void);
+SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
 SUPR0DECL(bool) SUPR0SuspendVTxOnCpu(void);
 SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended);

@@ -772,14 +772,13 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     RTCCUINTREG uEflags = ASMIntDisableFlags();
 
     /* Enable the VMX bit in CR4 if necessary. */
-    RTCCUINTREG uCr4 = ASMGetCR4();
-    if (!(uCr4 & X86_CR4_VMXE))
-        ASMSetCR4(uCr4 | X86_CR4_VMXE);
+    RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
 
     /* Enter VMX root mode. */
     int rc = VMXEnable(HCPhysCpuPage);
-    if (RT_FAILURE(rc))
-        ASMSetCR4(uCr4);
+    if (   RT_FAILURE(rc)
+        && !(uOldCr4 & X86_CR4_VMXE))
+        SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
 
     /* Restore interrupts. */
     ASMSetFlags(uEflags);
@@ -807,7 +806,7 @@ static int hmR0VmxLeaveRootMode(void)
     {
         /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
-        ASMSetCR4(uHostCR4 & ~X86_CR4_VMXE);
+        SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
         rc = VINF_SUCCESS;
     }
     else
@@ -5215,7 +5214,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     /* Leave VMX Root Mode. */
     VMXDisable();
 
-    ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+    SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
     CPUMSetHyperEIP(pVCpu, enmOp);
@@ -5230,13 +5229,13 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
     /** @todo replace with hmR0VmxEnterRootMode() and hmR0VmxLeaveRootMode(). */
     /* Make sure the VMX instructions don't cause #UD faults. */
-    ASMSetCR4(ASMGetCR4() | X86_CR4_VMXE);
+    SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
 
     /* Re-enter VMX Root Mode */
     rc2 = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc2))
     {
-        ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
         ASMSetFlags(uOldEflags);
         return rc2;
     }

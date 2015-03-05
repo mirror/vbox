@@ -140,6 +140,11 @@
 # include <linux/kthread.h>
 #endif
 
+/* for cr4_init_shadow() / cpu_tlbstate. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 20, 0)
+# include <asm/tlbflush.h>
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
 # ifndef page_to_pfn
 #  define page_to_pfn(page) ((page) - mem_map)

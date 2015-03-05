@@ -158,6 +158,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
     { "SUPR0ContAlloc",                         (void *)SUPR0ContAlloc },
     { "SUPR0ContFree",                          (void *)SUPR0ContFree },
+    { "SUPR0ChangeCR4",                         (void *)SUPR0ChangeCR4 },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPR0SuspendVTxOnCpu",                   (void *)SUPR0SuspendVTxOnCpu },
     { "SUPR0ResumeVTxOnCpu",                    (void *)SUPR0ResumeVTxOnCpu },
@@ -3663,6 +3664,34 @@ SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
         }
     }
     return enmMode;
+}
+
+
+/**
+ * Change CR4 and take care of the kernel CR4 shadow if applicable.
+ *
+ * CR4 shadow handling is required for Linux >= 4.0. Calling this function
+ * instead of ASMSetCR4() is only necessary for semi-permanent CR4 changes
+ * for code with interrupts enabled.
+ *
+ * @returns the old CR4 value.
+ *
+ * @param   fOrMask         bits to be set in CR4.
+ * @param   fAndMask        bits to be cleard in CR4.
+ *
+ * @remarks Must be called with preemption/interrupts disabled.
+ */
+SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
+{
+#ifdef RT_OS_LINUX
+    return supdrvOSChangeCR4(fOrMask, fAndMask);
+#else
+    RTCCUINTREG uOld = ASMReadCR4();
+    RTCCUINTREG uNew = (uOld & fAndMask) | fOrMask;
+    if (uNew != uOld)
+        ASMSetCR4(uNew);
+    return uOld;
+#endif
 }
 
 
