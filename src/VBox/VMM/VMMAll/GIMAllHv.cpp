@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,7 +41,7 @@
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Pointer to the guest-CPU context.
  */
-VMM_INT_DECL(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(int) gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (!MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVM->gim.s.u.Hv.u64HypercallMsr))
@@ -59,7 +59,7 @@ VMM_INT_DECL(int) GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns true if hypercalls are enabled, false otherwise.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMM_INT_DECL(bool) GIMHvAreHypercallsEnabled(PVMCPU pVCpu)
+VMM_INT_DECL(bool) gimHvAreHypercallsEnabled(PVMCPU pVCpu)
 {
     return MSR_GIM_HV_HYPERCALL_IS_ENABLED(pVCpu->CTX_SUFF(pVM)->gim.s.u.Hv.u64HypercallMsr);
 }
@@ -72,7 +72,7 @@ VMM_INT_DECL(bool) GIMHvAreHypercallsEnabled(PVMCPU pVCpu)
  * @returns true if paravirt. TSC is enabled, false otherwise.
  * @param   pVM     Pointer to the VM.
  */
-VMM_INT_DECL(bool) GIMHvIsParavirtTscEnabled(PVM pVM)
+VMM_INT_DECL(bool) gimHvIsParavirtTscEnabled(PVM pVM)
 {
     return MSR_GIM_HV_REF_TSC_IS_ENABLED(pVM->gim.s.u.Hv.u64TscPageMsr);
 }
@@ -90,7 +90,7 @@ VMM_INT_DECL(bool) GIMHvIsParavirtTscEnabled(PVM pVM)
  * @param   pRange      The range this MSR belongs to.
  * @param   puValue     Where to store the MSR value read.
  */
-VMM_INT_DECL(VBOXSTRICTRC) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -178,7 +178,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
  * @param   pRange      The range this MSR belongs to.
  * @param   uRawValue   The raw value with the ignored bits not masked.
  */
-VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
+VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue)
 {
     NOREF(pRange);
     PVM    pVM = pVCpu->CTX_SUFF(pVM);
@@ -206,7 +206,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             /* Disable the hypercall-page if 0 is written to this MSR. */
             if (!uRawValue)
             {
-                GIMR3HvDisableHypercallPage(pVM);
+                gimR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr &= ~MSR_GIM_HV_HYPERCALL_ENABLE_BIT;
             }
             pHv->u64GuestOsIdMsr = uRawValue;
@@ -240,14 +240,14 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             /* Is the guest disabling the hypercall-page? Allow it regardless of the Guest-OS Id Msr. */
             if (!fEnable)
             {
-                GIMR3HvDisableHypercallPage(pVM);
+                gimR3HvDisableHypercallPage(pVM);
                 pHv->u64HypercallMsr = uRawValue;
                 return VINF_SUCCESS;
             }
 
             /* Enable the hypercall-page. */
             RTGCPHYS GCPhysHypercallPage = MSR_GIM_HV_HYPERCALL_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = GIMR3HvEnableHypercallPage(pVM, GCPhysHypercallPage);
+            int rc = gimR3HvEnableHypercallPage(pVM, GCPhysHypercallPage);
             if (RT_SUCCESS(rc))
             {
                 pHv->u64HypercallMsr = uRawValue;
@@ -271,14 +271,14 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             bool fEnable = RT_BOOL(uRawValue & MSR_GIM_HV_REF_TSC_ENABLE_BIT);
             if (!fEnable)
             {
-                GIMR3HvDisableTscPage(pVM);
+                gimR3HvDisableTscPage(pVM);
                 pHv->u64TscPageMsr = uRawValue;
                 return VINF_SUCCESS;
             }
 
             /* Enable the TSC-page. */
             RTGCPHYS GCPhysTscPage = MSR_GIM_HV_REF_TSC_GUEST_PFN(uRawValue) << PAGE_SHIFT;
-            int rc = GIMR3HvEnableTscPage(pVM, GCPhysTscPage, false /* fUseThisTscSequence */, 0 /* uTscSequence */);
+            int rc = gimR3HvEnableTscPage(pVM, GCPhysTscPage, false /* fUseThisTscSequence */, 0 /* uTscSequence */);
             if (RT_SUCCESS(rc))
             {
                 pHv->u64TscPageMsr = uRawValue;

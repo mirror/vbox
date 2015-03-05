@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,7 +41,7 @@
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
+VMMR3_INT_DECL(int) gimR3MinimalInit(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_MINIMAL, VERR_INTERNAL_ERROR_5);
@@ -62,7 +62,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInit(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3_INT_DECL(int) GIMR3MinimalInitCompleted(PVM pVM)
+VMMR3_INT_DECL(int) gimR3MinimalInitCompleted(PVM pVM)
 {
     /*
      * Expose a generic hypervisor-agnostic leaf (originally defined VMware).
@@ -113,7 +113,7 @@ VMMR3_INT_DECL(int) GIMR3MinimalInitCompleted(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3_INT_DECL(void) GIMR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) gimR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
     NOREF(pVM); NOREF(offDelta);
 }

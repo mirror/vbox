@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -494,35 +494,33 @@ AssertCompileMemberAlignment(GIMHV, hSpinlockR0, sizeof(uintptr_t));
 
 RT_C_DECLS_BEGIN
 
-/** @todo r=bird: Internal header, internal prefix: s/GIM\(R.|\)Hv/gim\1Hv/g  */
-
 #ifdef IN_RING0
-VMMR0_INT_DECL(int)             GIMR0HvInitVM(PVM pVM);
-VMMR0_INT_DECL(int)             GIMR0HvTermVM(PVM pVM);
-VMMR0_INT_DECL(int)             GIMR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
+VMMR0_INT_DECL(int)             gimR0HvInitVM(PVM pVM);
+VMMR0_INT_DECL(int)             gimR0HvTermVM(PVM pVM);
+VMMR0_INT_DECL(int)             gimR0HvUpdateParavirtTsc(PVM pVM, uint64_t u64Offset);
 #endif /* IN_RING0 */
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(int)             GIMR3HvInit(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3HvInitCompleted(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3HvTerm(PVM pVM);
-VMMR3_INT_DECL(void)            GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3_INT_DECL(void)            GIMR3HvReset(PVM pVM);
-VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
-VMMR3_INT_DECL(int)             GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM);
-VMMR3_INT_DECL(int)             GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
+VMMR3_INT_DECL(int)             gimR3HvInit(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvInitCompleted(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvTerm(PVM pVM);
+VMMR3_INT_DECL(void)            gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(void)            gimR3HvReset(PVM pVM);
+VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions);
+VMMR3_INT_DECL(int)             gimR3HvSave(PVM pVM, PSSMHANDLE pSSM);
+VMMR3_INT_DECL(int)             gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 
-VMMR3_INT_DECL(int)             GIMR3HvDisableTscPage(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSequence, uint32_t uTscSequence);
-VMMR3_INT_DECL(int)             GIMR3HvDisableHypercallPage(PVM pVM);
-VMMR3_INT_DECL(int)             GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
+VMMR3_INT_DECL(int)             gimR3HvDisableTscPage(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq);
+VMMR3_INT_DECL(int)             gimR3HvDisableHypercallPage(PVM pVM);
+VMMR3_INT_DECL(int)             gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage);
 #endif /* IN_RING3 */
 
-VMM_INT_DECL(bool)              GIMHvIsParavirtTscEnabled(PVM pVM);
-VMM_INT_DECL(bool)              GIMHvAreHypercallsEnabled(PVMCPU pVCpu);
-VMM_INT_DECL(int)               GIMHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(VBOXSTRICTRC)      GIMHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
-VMM_INT_DECL(VBOXSTRICTRC)      GIMHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+VMM_INT_DECL(bool)              gimHvIsParavirtTscEnabled(PVM pVM);
+VMM_INT_DECL(bool)              gimHvAreHypercallsEnabled(PVMCPU pVCpu);
+VMM_INT_DECL(int)               gimHvHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(VBOXSTRICTRC)      gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
+VMM_INT_DECL(VBOXSTRICTRC)      gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 
 RT_C_DECLS_END
 

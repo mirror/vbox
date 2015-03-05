@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,9 +24,9 @@
 RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
-VMMR3_INT_DECL(int)         GIMR3MinimalInit(PVM pVM);
-VMMR3_INT_DECL(int)         GIMR3MinimalInitCompleted(PVM pVM);
-VMMR3_INT_DECL(void)        GIMR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)         gimR3MinimalInit(PVM pVM);
+VMMR3_INT_DECL(int)         gimR3MinimalInitCompleted(PVM pVM);
+VMMR3_INT_DECL(void)        gimR3MinimalRelocate(PVM pVM, RTGCINTPTR offDelta);
 #endif /* IN_RING3 */
 
 RT_C_DECLS_END

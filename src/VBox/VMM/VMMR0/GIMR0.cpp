@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@ VMMR0_INT_DECL(int) GIMR0InitVM(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR0HvInitVM(pVM);
+            return gimR0HvInitVM(pVM);
 
         default:
             break;
@@ -63,7 +63,7 @@ VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR0HvTermVM(pVM);
+            return gimR0HvTermVM(pVM);
 
         default:
             break;
@@ -92,7 +92,7 @@ VMMR0_INT_DECL(int) GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR0HvUpdateParavirtTsc(pVM, u64Offset);
+            return gimR0HvUpdateParavirtTsc(pVM, u64Offset);
 
         case GIMPROVIDERID_NONE:
             return VERR_GIM_NOT_ENABLED;

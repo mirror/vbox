@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -70,7 +70,7 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvAreHypercallsEnabled(pVCpu);
+            return gimHvAreHypercallsEnabled(pVCpu);
 
         default:
             return false;
@@ -96,7 +96,7 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvHypercall(pVCpu, pCtx);
+            return gimHvHypercall(pVCpu, pCtx);
 
         default:
             AssertMsgFailed(("GIMHypercall: for unknown provider %u\n", pVM->gim.s.enmProviderId));
@@ -120,7 +120,7 @@ VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvIsParavirtTscEnabled(pVM);
+            return gimHvIsParavirtTscEnabled(pVM);
 
         default:
             break;
@@ -151,7 +151,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRAN
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvReadMsr(pVCpu, idMsr, pRange, puValue);
+            return gimHvReadMsr(pVCpu, idMsr, pRange, puValue);
 
         default:
             AssertMsgFailed(("GIMReadMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));
@@ -185,7 +185,7 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRA
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMHvWriteMsr(pVCpu, idMsr, pRange, uRawValue);
+            return gimHvWriteMsr(pVCpu, idMsr, pRange, uRawValue);
 
         default:
             AssertMsgFailed(("GIMWriteMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));

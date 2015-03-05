@@ -128,12 +128,12 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
         if (!RTStrCmp(szProvider, "Minimal"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_MINIMAL;
-            rc = GIMR3MinimalInit(pVM);
+            rc = gimR3MinimalInit(pVM);
         }
         else if (!RTStrCmp(szProvider, "HyperV"))
         {
             pVM->gim.s.enmProviderId = GIMPROVIDERID_HYPERV;
-            rc = GIMR3HvInit(pVM);
+            rc = gimR3HvInit(pVM);
         }
         /** @todo KVM and others. */
         else
@@ -158,10 +158,10 @@ VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_MINIMAL:
-            return GIMR3MinimalInitCompleted(pVM);
+            return gimR3MinimalInitCompleted(pVM);
 
         case GIMPROVIDERID_HYPERV:
-            return GIMR3HvInitCompleted(pVM);
+            return gimR3HvInitCompleted(pVM);
 
         default:
             break;
@@ -193,13 +193,13 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         case GIMPROVIDERID_MINIMAL:
         {
-            GIMR3MinimalRelocate(pVM, offDelta);
+            gimR3MinimalRelocate(pVM, offDelta);
             break;
         }
 
         case GIMPROVIDERID_HYPERV:
         {
-            GIMR3HvRelocate(pVM, offDelta);
+            gimR3HvRelocate(pVM, offDelta);
             break;
         }
 
@@ -247,7 +247,7 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            rc = GIMR3HvSave(pVM, pSSM);
+            rc = gimR3HvSave(pVM, pSSM);
             AssertRCReturn(rc, rc);
             break;
 
@@ -310,7 +310,7 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            rc = GIMR3HvLoad(pVM, pSSM, uVersion);
+            rc = gimR3HvLoad(pVM, pSSM, uVersion);
             AssertRCReturn(rc, rc);
             break;
 
@@ -336,7 +336,7 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR3HvTerm(pVM);
+            return gimR3HvTerm(pVM);
 
         default:
             break;
@@ -359,7 +359,7 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR3HvReset(pVM);
+            return gimR3HvReset(pVM);
 
         default:
             break;
@@ -400,7 +400,7 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            return GIMR3HvGetMmio2Regions(pVM, pcRegions);
+            return gimR3HvGetMmio2Regions(pVM, pcRegions);
 
         case GIMPROVIDERID_KVM:            /** @todo KVM. */
         default:

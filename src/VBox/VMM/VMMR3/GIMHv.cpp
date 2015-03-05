@@ -85,7 +85,7 @@ static CPUMMSRRANGE const g_aMsrRanges_HyperV[] =
  * @param   pVM         Pointer to the VM.
  * @param   uVersion    The interface version this VM should use.
  */
-VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvInit(PVM pVM)
 {
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     AssertReturn(pVM->gim.s.enmProviderId == GIMPROVIDERID_HYPERV, VERR_INTERNAL_ERROR_5);
@@ -238,7 +238,7 @@ VMMR3_INT_DECL(int) GIMR3HvInit(PVM pVM)
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3_INT_DECL(int) GIMR3HvInitCompleted(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvInitCompleted(PVM pVM)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
 
@@ -267,7 +267,7 @@ VMMR3_INT_DECL(int) GIMR3HvInitCompleted(PVM pVM)
 
 
 #if 0
-VMMR3_INT_DECL(int) GIMR3HvInitFinalize(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvInitFinalize(PVM pVM)
 {
     pVM->gim.s.pfnHypercallR3 = &GIMHvHypercall;
     if (!HMIsEnabled(pVM))
@@ -287,9 +287,9 @@ VMMR3_INT_DECL(int) GIMR3HvInitFinalize(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR3_INT_DECL(int) GIMR3HvTerm(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvTerm(PVM pVM)
 {
-    GIMR3HvReset(pVM);
+    gimR3HvReset(pVM);
     return VINF_SUCCESS;
 }
 
@@ -303,7 +303,7 @@ VMMR3_INT_DECL(int) GIMR3HvTerm(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3_INT_DECL(void) GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
 {
 #if 0
     int rc = PDMR3LdrGetSymbolRC(pVM, NULL /* pszModule */, GIMHV_HYPERCALL, &pVM->gim.s.pfnHypercallRC);
@@ -320,7 +320,7 @@ VMMR3_INT_DECL(void) GIMR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * @param   pVM     Pointer to the VM.
  */
-VMMR3_INT_DECL(void) GIMR3HvReset(PVM pVM)
+VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
 {
     /*
      * Unmap MMIO2 pages that the guest may have setup.
@@ -349,7 +349,7 @@ VMMR3_INT_DECL(void) GIMR3HvReset(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   pcRegions   Where to store the number of regions in the array.
  */
-VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions)
+VMMR3_INT_DECL(PGIMMMIO2REGION) gimR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegions)
 {
     Assert(GIMIsEnabled(pVM));
     PGIMHV pHv = &pVM->gim.s.u.Hv;
@@ -367,7 +367,7 @@ VMMR3_INT_DECL(PGIMMMIO2REGION) GIMR3HvGetMmio2Regions(PVM pVM, uint32_t *pcRegi
  * @param   pVM     Pointer to the VM.
  * @param   pSSM    Pointer to the SSM handle.
  */
-VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
+VMMR3_INT_DECL(int) gimR3HvSave(PVM pVM, PSSMHANDLE pSSM)
 {
     PCGIMHV pcHv = &pVM->gim.s.u.Hv;
 
@@ -435,7 +435,7 @@ VMMR3_INT_DECL(int) GIMR3HvSave(PVM pVM, PSSMHANDLE pSSM)
  * @param   pSSM            Pointer to the SSM handle.
  * @param   uSSMVersion     The GIM saved-state version.
  */
-VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
+VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
 
@@ -485,7 +485,7 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
         if (RT_LIKELY(pRegion->fRegistered))
         {
-            rc = GIMR3HvEnableHypercallPage(pVM, pRegion->GCPhysPage);
+            rc = gimR3HvEnableHypercallPage(pVM, pRegion->GCPhysPage);
             if (RT_FAILURE(rc))
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to enable the hypercall page. GCPhys=%#RGp rc=%Rrc"),
                                         pRegion->GCPhysPage, rc);
@@ -511,7 +511,7 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         Assert(pRegion->GCPhysPage != NIL_RTGCPHYS);
         if (pRegion->fRegistered)
         {
-            rc = GIMR3HvEnableTscPage(pVM, pRegion->GCPhysPage, true /* fUseThisTscSeq */, uTscSequence);
+            rc = gimR3HvEnableTscPage(pVM, pRegion->GCPhysPage, true /* fUseThisTscSeq */, uTscSequence);
             if (RT_FAILURE(rc))
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Failed to enable the TSC page. GCPhys=%#RGp rc=%Rrc"),
                                         pRegion->GCPhysPage, rc);
@@ -528,14 +528,14 @@ VMMR3_INT_DECL(int) GIMR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * Enables the Hyper-V TSC page.
  *
  * @returns VBox status code.
- * @param   pVM                     Pointer to the VM.
- * @param   GCPhysTscPage           Where to map the TSC page.
- * @param   fUseThisTscSequence     Whether to set the TSC sequence number to
- *                                  the one specified in @a uTscSequence.
- * @param   uTscSequence            The TSC sequence value to use. Ignored if @a
- *                                  fUseThisTscSequence is false.
-                                                                    */
-VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSequence, uint32_t uTscSequence)
+ * @param   pVM                Pointer to the VM.
+ * @param   GCPhysTscPage      Where to map the TSC page.
+ * @param   fUseThisTscSeq     Whether to set the TSC sequence number to the one
+ *                             specified in @a uTscSeq.
+ * @param   uTscSeq            The TSC sequence value to use. Ignored if
+ *                             @a fUseThisTscSeq is false.
+ */
+VMMR3_INT_DECL(int) gimR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool fUseThisTscSeq, uint32_t uTscSeq)
 {
     PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
     PGIMMMIO2REGION pRegion = &pVM->gim.s.u.Hv.aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
@@ -553,7 +553,7 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
         /*
          * If it's mapped at a different address, unmap the previous address.
          */
-        rc = GIMR3HvDisableTscPage(pVM);
+        rc = gimR3HvDisableTscPage(pVM);
         AssertRC(rc);
     }
 
@@ -578,11 +578,9 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
 
         uint64_t const u64TscKHz = TMCpuTicksPerSecond(pVM) / UINT64_C(1000);
         uint32_t       u32TscSeq = 1;
-        if (   fUseThisTscSequence
-            && uTscSequence < UINT32_C(0xfffffffe))
-        {
-            u32TscSeq = uTscSequence + 1;
-        }
+        if (   fUseThisTscSeq
+            && uTscSeq < UINT32_C(0xfffffffe))
+            u32TscSeq = uTscSeq + 1;
         pRefTsc->u32TscSequence  = u32TscSeq;
         pRefTsc->u64TscScale     = ((INT64_C(10000) << 32) / u64TscKHz) << 32;
         pRefTsc->i64TscOffset    = 0;
@@ -606,7 +604,7 @@ VMMR3_INT_DECL(int) GIMR3HvEnableTscPage(PVM pVM, RTGCPHYS GCPhysTscPage, bool f
  * @returns VBox status code.
  * @param   pVM     Pointer to the VM.
  */
-VMMR3_INT_DECL(int) GIMR3HvDisableTscPage(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvDisableTscPage(PVM pVM)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_REF_TSC_PAGE_REGION_IDX];
@@ -628,7 +626,7 @@ VMMR3_INT_DECL(int) GIMR3HvDisableTscPage(PVM pVM)
  *
  * @returns VBox status code.
  */
-VMMR3_INT_DECL(int) GIMR3HvDisableHypercallPage(PVM pVM)
+VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
 {
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     PGIMMMIO2REGION pRegion = &pHv->aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
@@ -650,7 +648,7 @@ VMMR3_INT_DECL(int) GIMR3HvDisableHypercallPage(PVM pVM)
  * @param   pVM                     Pointer to the VM.
  * @param   GCPhysHypercallPage     Where to map the hypercall page.
  */
-VMMR3_INT_DECL(int) GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage)
+VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercallPage)
 {
     PPDMDEVINSR3    pDevIns = pVM->gim.s.pDevInsR3;
     PGIMMMIO2REGION pRegion = &pVM->gim.s.u.Hv.aMmio2Regions[GIM_HV_HYPERCALL_PAGE_REGION_IDX];
@@ -667,7 +665,7 @@ VMMR3_INT_DECL(int) GIMR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
         /*
          * If it's mapped at a different address, unmap the previous address.
          */
-        int rc2 = GIMR3HvDisableHypercallPage(pVM);
+        int rc2 = gimR3HvDisableHypercallPage(pVM);
         AssertRC(rc2);
     }
 
