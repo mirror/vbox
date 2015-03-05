@@ -3686,7 +3686,7 @@ SUPR0DECL(RTCCUINTREG) SUPR0ChangeCR4(RTCCUINTREG fOrMask, RTCCUINTREG fAndMask)
 #ifdef RT_OS_LINUX
     return supdrvOSChangeCR4(fOrMask, fAndMask);
 #else
-    RTCCUINTREG uOld = ASMReadCR4();
+    RTCCUINTREG uOld = ASMGetCR4();
     RTCCUINTREG uNew = (uOld & fAndMask) | fOrMask;
     if (uNew != uOld)
         ASMSetCR4(uNew);
