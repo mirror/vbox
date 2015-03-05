@@ -2590,6 +2590,22 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
 
         Log(("vmsvga3dSurfaceDestroy id %x\n", sid));
 
+#if 1 /* Windows is doing this, guess it makes sense here as well... */
+        /* Check all contexts if this surface is used as a render target or active texture. */
+        for (uint32_t cid = 0; cid < pState->cContexts; cid++)
+        {
+            PVMSVGA3DCONTEXT pContext = &pState->paContext[cid];
+            if (pContext->id == cid)
+            {
+                for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTexture); i++)
+                    if (pContext->aSidActiveTexture[i] == sid)
+                        pContext->aSidActiveTexture[i] = SVGA3D_INVALID_ID;
+                if (pContext->sidRenderTarget == sid)
+                    pContext->sidRenderTarget = SVGA3D_INVALID_ID;
+            }
+        }
+#endif
+
         /* @todo stricter checks for associated context */
         uint32_t cid = pSurface->idAssociatedContext;
         if (    cid <= pState->cContexts
@@ -5587,7 +5603,8 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         case SVGA3D_TS_BIND_TEXTURE:                /* SVGA3dSurfaceId */
             if (pTextureState[i].value == SVGA3D_INVALID_ID)
             {
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x\n", pTextureState[i].stage, pTextureState[i].value));
+                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x replacing=%x\n",
+                     pTextureState[i].stage, pTextureState[i].value, pContext->aSidActiveTexture[currentStage]));
 
                 pContext->aSidActiveTexture[currentStage] = SVGA3D_INVALID_ID;
                 /* Unselect the currently associated texture. */
@@ -5606,7 +5623,9 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
                 PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
 
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d)\n", pTextureState[i].stage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width, pSurface->pMipmapLevels[0].size.height));
+                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d) replacing=%x\n",
+                     pTextureState[i].stage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width,
+                     pSurface->pMipmapLevels[0].size.height, pContext->aSidActiveTexture[currentStage]));
 
                 if (pSurface->oglId.texture == OPENGL_INVALID_ID)
                 {
@@ -6734,11 +6753,16 @@ internal_error:
             GLint activeTextureUnit = 0;
 
             glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
             pState->ext.glActiveTexture(GL_TEXTURE0 + i);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
             glGetIntegerv(GL_TEXTURE_BINDING_2D, &activeTexture);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
             pState->ext.glActiveTexture(activeTextureUnit);
+            VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
+# if 0 /* Aren't we checking whether 'activeTexture' on texture unit 'i' matches what we expected?  This works if only one unit is active, but if both are it _will_ fail for one of them. */
             if (pContext->aSidActiveTexture[activeTextureUnit - GL_TEXTURE0] != SVGA3D_INVALID_ID)
             {
                 PVMSVGA3DSURFACE pTexture;
@@ -6746,6 +6770,13 @@ internal_error:
 
                 AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture, ("%x vs %x unit %d - %d\n", pTexture->oglId.texture, activeTexture, i, activeTextureUnit - GL_TEXTURE0));
             }
+# else
+            PVMSVGA3DSURFACE pTexture = &pState->paSurface[pContext->aSidActiveTexture[i]];
+            AssertMsg(pTexture->id == pContext->aSidActiveTexture[i], ("%x vs %x\n", pTexture->id == pContext->aSidActiveTexture[i]));
+            AssertMsg(pTexture->oglId.texture == (GLuint)activeTexture,
+                      ("%x vs %x unit %d (active unit %d) sid=%x\n", pTexture->oglId.texture, activeTexture, i,
+                       activeTextureUnit - GL_TEXTURE0, pContext->aSidActiveTexture[i]));
+# endif
         }
     }
 #endif

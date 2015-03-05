@@ -2098,7 +2098,6 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
                            offNextCmd, offFifoMin, offFifoMax));
-            /** @todo release counter.   */
             cbAfter = offFifoMax - offCurrentCmd;
         }
         cbBefore = 0;
@@ -2113,7 +2112,6 @@ static void *vmsvgaFIFOGetCmdPayload(uint32_t cbPayloadReq, uint32_t volatile *p
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoErrors);
             LogRelMax(16, ("vmsvgaFIFOGetCmdPayload: Invalid offNextCmd=%#x (offFifoMin=%#x offFifoMax=%#x)\n",
                            offNextCmd, offFifoMin, offFifoMax));
-            /** @todo release counter.   */
             cbBefore = 0;
         }
     }
