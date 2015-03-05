@@ -26,9 +26,13 @@
 # include <QPainter>
 # include <QTimer>
 # include <QDateTime>
+# include <QImageWriter>
 # ifdef Q_WS_MAC
 #  include <QMenuBar>
 # endif /* Q_WS_MAC */
+# ifdef Q_WS_X11
+#  include <QX11Info>
+# endif /* Q_WS_X11 */
 
 /* GUI includes: */
 # include "QIFileDialog.h"
@@ -65,13 +69,6 @@
 #  include "UIExtraDataManager.h"
 # endif /* Q_WS_MAC */
 
-/* VirtualBox interface declarations: */
-#ifndef VBOX_WITH_XPCOM
-# include "VirtualBox.h"
-#else /* !VBOX_WITH_XPCOM */
-# include "VirtualBox_XPCOM.h"
-#endif /* VBOX_WITH_XPCOM */
-
 /* COM includes: */
 # include "CVirtualBoxErrorInfo.h"
 # include "CMachineDebugger.h"
@@ -93,24 +90,27 @@
 /* Other VBox includes: */
 # include <iprt/path.h>
 # ifdef VBOX_WITH_DEBUGGER_GUI
+#  include <VBox/dbggui.h>
 #  include <iprt/ldr.h>
 # endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#include <QImageWriter>
+/* VirtualBox interface declarations: */
+#ifndef VBOX_WITH_XPCOM
+# include "VirtualBox.h"
+#else /* !VBOX_WITH_XPCOM */
+# include "VirtualBox_XPCOM.h"
+#endif /* VBOX_WITH_XPCOM */
 
 #ifdef Q_WS_MAC
 # include "DarwinKeyboard.h"
-#endif
+#endif /* Q_WS_MAC */
 #ifdef Q_WS_WIN
 # include "WinKeyboard.h"
-#endif
-
-/* External includes: */
+#endif /* Q_WS_WIN */
 #ifdef Q_WS_X11
 # include <XKeyboard.h>
-# include <QX11Info>
 #endif /* Q_WS_X11 */
 
 

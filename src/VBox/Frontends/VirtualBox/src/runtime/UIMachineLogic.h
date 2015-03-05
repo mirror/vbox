@@ -20,9 +20,6 @@
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 #include <QIWithRetranslateUI.h>
-#ifdef VBOX_WITH_DEBUGGER_GUI
-# include <VBox/dbggui.h>
-#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -48,6 +45,11 @@ class CMachineDebugger;
 class CSnapshot;
 class CUSBDevice;
 class CVirtualBoxErrorInfo;
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+typedef struct DBGGUIVT const *PCDBGGUIVT;
+typedef struct DBGGUI *PDBGGUI;
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 /* Machine logic interface: */
 class UIMachineLogic : public QIWithRetranslateUI3<QObject>

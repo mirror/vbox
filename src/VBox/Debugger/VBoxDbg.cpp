@@ -20,6 +20,11 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DBGG
 #define VBOX_COM_NO_ATL
+#ifdef RT_OS_WINDOWS
+# include <VirtualBox.h>
+#else /* !RT_OS_WINDOWS */
+# include <VirtualBox_XPCOM.h>
+#endif /* !RT_OS_WINDOWS */
 #include <VBox/dbggui.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
