@@ -2913,7 +2913,6 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(cid < SVGA3D_MAX_CONTEXT_IDS, VERR_INVALID_PARAMETER);
-    NOREF(fOtherProfile);
 
     Log(("vmsvga3dContextDefine id %x\n", cid));
 
