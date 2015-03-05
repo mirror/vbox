@@ -2929,7 +2929,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         SVGA3dCmdDefineContext *pCmd = (SVGA3dCmdDefineContext *)(pHdr + 1);
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
-                        rc = vmsvga3dContextDefine(pThis, pCmd->cid, false /*fOtherProfile*/);
+                        rc = vmsvga3dContextDefine(pThis, pCmd->cid);
                         break;
                     }
 

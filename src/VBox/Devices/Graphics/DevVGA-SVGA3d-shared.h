@@ -48,7 +48,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         {
             uint32_t cPixelShaderConst, cVertexShaderConst, cPixelShaders, cVertexShaders;
 
-            rc = vmsvga3dContextDefine(pThis, cid, false /*fOtherProfile*/);
+            rc = vmsvga3dContextDefine(pThis, cid);
             AssertRCReturn(rc, rc);
 
             pContext = &pState->paContext[i];
@@ -647,6 +647,10 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
 #elif defined(VMSVGA3D_OPENGL)
                         void *pData = NULL;
 
+# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
+                        PVMSVGA3DCONTEXT pContext = &pState->SharedCtx;
+                        VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+# else
                         /* @todo stricter checks for associated context */
                         uint32_t cid = pSurface->idAssociatedContext;
                         if (    cid >= pState->cContexts
@@ -657,6 +661,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                         }
                         PVMSVGA3DCONTEXT pContext = &pState->paContext[cid];
                         VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+# endif
 
                         Assert(pMipmapLevel->cbSurface);
 
