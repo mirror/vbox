@@ -450,7 +450,6 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
                                  N_("Unsupported Hyper-V saved state version %u (expected %u)."),
                                  uHvSavedStatVersion, GIM_HV_SAVED_STATE_VERSION);
 
-
     /** @todo Load per-VCPU data. */
 
     /*

@@ -71,6 +71,7 @@ VMMR0_INT_DECL(int) GIMR0TermVM(PVM pVM)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Updates the paravirtualized TSC supported by the GIM provider.
  *
