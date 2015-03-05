@@ -162,11 +162,11 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 
 #elif defined(RT_OS_DARWIN)
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
-    if ((pState)->idActiveContext != (pContext)->id)                    \
-    {                                                                   \
+    if ((pState)->idActiveContext != (pContext)->id) \
+    { \
         vmsvga3dCocoaViewMakeCurrentContext((pContext)->cocoaView, (pContext)->cocoaContext); \
         LogFlowFunc(("Changing context: %#x -> %#x\n", (pState)->idActiveContext, (pContext)->id)); \
-        (pState)->idActiveContext = (pContext)->id;                     \
+        (pState)->idActiveContext = (pContext)->id; \
     } else do { } while (0)
 #else
 # define VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext) \
@@ -181,7 +181,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
     } else do { } while (0)
 #endif
 
-/** @def VMSVGA3D_CLEAR_LAST_ERRORS
+/** @def VMSVGA3D_CLEAR_GL_ERRORS
  * Clears all pending OpenGL errors.
  *
  * If I understood this correctly, OpenGL maintains a bitmask internally and
@@ -250,7 +250,7 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
 # define VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails) \
     do { \
         AssertMsg((a_pState)->idActiveContext == (a_pContext)->id, \
-                  ("idActiveContext=%#x id=%#x\n", (a_pState)->idActiveContext, (a_pContext)->id)); \
+                  ("idActiveContext=%#x id=%x\n", (a_pState)->idActiveContext, (a_pContext)->id)); \
         RTAssertMsg2Weak a_LogRelDetails; \
         GLenum iNextError; \
         while ((iNextError = glGetError()) != GL_NO_ERROR) \
@@ -2774,7 +2774,7 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
     glBindTexture(GL_TEXTURE_2D, activeTexture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-    LogFlow(("vmsvga3dCreateTexture: sid=%#x idAssociatedContext %#x -> %#x; oglId.texture=%#x\n",
+    LogFlow(("vmsvga3dCreateTexture: sid=%x idAssociatedContext %#x -> %#x; oglId.texture=%#x\n",
              pSurface->id, pSurface->idAssociatedContext, idAssociatedContext, pSurface->oglId.texture));
     pSurface->flags              |= SVGA3D_SURFACE_HINT_TEXTURE;
     pSurface->idAssociatedContext = idAssociatedContext;
@@ -2804,7 +2804,7 @@ int vmsvga3dSurfaceStretchBlt(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3d
     AssertReturn(pSurfaceSrc->faces[0].numMipLevels > src.mipmap, VERR_INVALID_PARAMETER);
     AssertReturn(pSurfaceDest->faces[0].numMipLevels > dest.mipmap, VERR_INVALID_PARAMETER);
 
-    Log(("vmsvga3dSurfaceStretchBlt: src sid=%x cid=%#x (%d,%d)(%d,%d) dest sid=%x cid=%#x (%d,%d)(%d,%d) mode=%x\n",
+    Log(("vmsvga3dSurfaceStretchBlt: src sid=%x cid=%x (%d,%d)(%d,%d) dest sid=%x cid=%x (%d,%d)(%d,%d) mode=%x\n",
          src.sid, pSurfaceSrc->idAssociatedContext, srcBox.x, srcBox.y, srcBox.x + srcBox.w, srcBox.y + srcBox.h,
          dest.sid, pSurfaceDest->idAssociatedContext, destBox.x, destBox.y, destBox.x + destBox.w, destBox.y + destBox.h, mode));
 
@@ -5277,7 +5277,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                                               pRenderTarget->pMipmapLevels[0].size.height);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-            LogFlow(("vmsvga3dSetRenderTarget: sid=%#x idAssociatedContext %#x -> %#x\n", pRenderTarget->id, pRenderTarget->idAssociatedContext, cid));
+            LogFlow(("vmsvga3dSetRenderTarget: sid=%x idAssociatedContext %#x -> %#x\n", pRenderTarget->id, pRenderTarget->idAssociatedContext, cid));
             pRenderTarget->idAssociatedContext = cid;
         }
         else
@@ -6364,7 +6364,7 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
         VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
     }
     pVertexSurface->idAssociatedContext = pContext->id;
-    LogFlow(("vmsvga3dDrawPrimitivesProcessVertexDecls: sid=%#x idAssociatedContext %#x -> %#x\n", pVertexSurface->id, pVertexSurface->idAssociatedContext, pContext->id));
+    LogFlow(("vmsvga3dDrawPrimitivesProcessVertexDecls: sid=%x idAssociatedContext %#x -> %#x\n", pVertexSurface->id, pVertexSurface->idAssociatedContext, pContext->id));
 
     /* Setup the vertex declarations. */
     for (unsigned iVertex = 0; iVertex < numVertexDecls; iVertex++)
@@ -6666,7 +6666,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                 pState->ext.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pIndexSurface->oglId.buffer);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             }
-            LogFlow(("vmsvga3dDrawPrimitives: sid=%#x idAssociatedContext %#x -> %#x\n", pIndexSurface->id, pIndexSurface->idAssociatedContext, pContext->id));
+            LogFlow(("vmsvga3dDrawPrimitives: sid=%x idAssociatedContext %#x -> %#x\n", pIndexSurface->id, pIndexSurface->idAssociatedContext, pContext->id));
             pIndexSurface->idAssociatedContext = pContext->id;
         }
 
