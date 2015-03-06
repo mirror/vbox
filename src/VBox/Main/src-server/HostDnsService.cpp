@@ -86,13 +86,11 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 struct HostDnsMonitor::Data
 {
     Data(bool aThreaded) :
-        fInfoModified(false),
         fThreaded(aThreaded)
     {}
 
     std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
-    bool fInfoModified;
     const bool fThreaded;
     RTTHREAD hMonitoringThread;
     RTSEMEVENT hDnsInitEvent;
@@ -197,30 +195,18 @@ const HostDnsInformation &HostDnsMonitor::getInfo() const
     return m->info;
 }
 
-void HostDnsMonitor::notifyAll() const
-{
-    ALock l(this);
-    if (m->fInfoModified)
-    {
-        m->fInfoModified = false;
-        std::vector<PCHostDnsMonitorProxy>::const_iterator it;
-        for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
-            (*it)->notify();
-    }
-}
-
 void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 {
     ALock l(this);
-    // Check for actual modifications, as the Windows specific code seems to
-    // often set the same information as before, without any change to the
-    // previous state. Here we have the previous state, so make sure we don't
-    // ever tell our clients about unchanged info.
-    if (!info.equals(m->info))
-    {
-        m->info = info;
-        m->fInfoModified = true;
-    }
+
+    if (info.equals(m->info))
+        return;
+
+    m->info = info;
+
+    std::vector<PCHostDnsMonitorProxy>::const_iterator it;
+    for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
+        (*it)->notify();
 }
 
 HRESULT HostDnsMonitor::init()

@@ -156,7 +156,6 @@ int HostDnsServiceWin::monitorWorker()
         if (dwReady == WAIT_OBJECT_0 + DATA_DNS_UPDATE_EVENT)
         {
             updateInfo();
-            notifyAll();
 
             ResetEvent(m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
             registerNotification(m->hKeyTcpipParameters,

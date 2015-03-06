@@ -152,8 +152,6 @@ int HostDnsServiceLinux::monitorWorker()
                 if (combo.e.mask & IN_CLOSE_WRITE)
                 {
                     readResolvConf();
-                    /* notifyAll() takes required locks */
-                    notifyAll();
                 }
                 else if (combo.e.mask & IN_DELETE_SELF)
                 {
@@ -213,8 +211,6 @@ int HostDnsServiceLinux::monitorWorker()
 
                         /* Notify our listeners */
                         readResolvConf();
-                        notifyAll();
-
                     }
                 }
             }

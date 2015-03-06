@@ -83,7 +83,6 @@ class HostDnsMonitor : public Lockee
     explicit HostDnsMonitor(bool fThreaded = false);
     virtual ~HostDnsMonitor();
 
-    void notifyAll() const;
     void setInfo(const HostDnsInformation &);
 
     /* this function used only if HostDnsMonitor::HostDnsMonitor(true) */

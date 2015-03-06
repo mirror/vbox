@@ -78,7 +78,6 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 
     ALock l(pThis);
     pThis->updateInfo();
-    pThis->notifyAll();
 }
 
 
