@@ -286,7 +286,7 @@ static int renderspuAtiQuirk_ApplyForModule(LPCSTR pszAtiDll)
     }
 
     crDebug("renderspuAtiQuirk_ApplyForModule SUCCEEDED!");
-    crInfo("ATI Fullscreen qwirk SUCCEEDED!");
+    crInfo("ATI Fullscreen quirk patch SUCCEEDED!");
 
     return VINF_SUCCESS;
 }
