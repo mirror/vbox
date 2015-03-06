@@ -1114,55 +1114,61 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
                             RtlCopyMemory(pHdr, pvInput, cbInput);
                             if (cbInput < cbBuf)
                                 RtlZeroMemory((uint8_t *)pHdr + cbInput, cbBuf - cbInput);
-                            rcNt = STATUS_SUCCESS;
+                            if (!memcmp(pHdr, &Hdr, sizeof(Hdr)))
+                                rcNt = STATUS_SUCCESS;
+                            else
+                                rcNt = STATUS_INVALID_PARAMETER;
                         }
                         __except(EXCEPTION_EXECUTE_HANDLER)
                         {
                             rcNt = GetExceptionCode();
                         }
+                        if (NT_SUCCESS(rcNt))
+                        {
+                            /*
+                             * Now call the common code to do the real work.
+                             */
+                            rc = supdrvIOCtl(uCmd, pDevExt, pSession, pHdr, cbBuf);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Copy back the result.
+                                 */
+                                cbOut = pHdr->cbOut;
+                                if (cbOut > cbOutput)
+                                {
+                                    cbOut = cbOutput;
+                                    OSDBGPRINT(("VBoxDrvNtFastIoDeviceControl: too much output! %#x > %#x; uCmd=%#x!\n",
+                                                pHdr->cbOut, cbOut, uCmd));
+                                }
+                                if (cbOut)
+                                {
+                                    __try
+                                    {
+                                        RtlCopyMemory(pvOutput, pHdr, cbOut);
+                                        rcNt = STATUS_SUCCESS;
+                                    }
+                                    __except(EXCEPTION_EXECUTE_HANDLER)
+                                    {
+                                        rcNt = GetExceptionCode();
+                                    }
+                                }
+                                else
+                                    rcNt = STATUS_SUCCESS;
+                            }
+                            else if (rc == VERR_INVALID_PARAMETER)
+                                rcNt = STATUS_INVALID_PARAMETER;
+                            else
+                                rcNt = STATUS_NOT_SUPPORTED;
+                            Log2(("VBoxDrvNtFastIoDeviceControl: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
+                        }
+                        else
+                            Log(("VBoxDrvNtFastIoDeviceControl: Error reading %u bytes of user memory at %p (uCmd=%#x)\n",
+                                 cbInput, pvInput, uCmd));
+                        ExFreePoolWithTag(pHdr, 'VBox');
                     }
                     else
                         rcNt = STATUS_NO_MEMORY;
-                    if (NT_SUCCESS(rcNt))
-                    {
-                        /*
-                         * Now call the common code to do the real work.
-                         */
-                        rc = supdrvIOCtl(uCmd, pDevExt, pSession, pHdr, cbBuf);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /*
-                             * Copy back the result.
-                             */
-                            cbOut = pHdr->cbOut;
-                            if (cbOut > cbOutput)
-                            {
-                                cbOut = cbOutput;
-                                OSDBGPRINT(("VBoxDrvNtFastIoDeviceControl: too much output! %#x > %#x; uCmd=%#x!\n",
-                                            pHdr->cbOut, cbOut, uCmd));
-                            }
-                            if (cbOut)
-                            {
-                                __try
-                                {
-                                    RtlCopyMemory(pvOutput, pHdr, cbOut);
-                                    rcNt = STATUS_SUCCESS;
-                                }
-                                __except(EXCEPTION_EXECUTE_HANDLER)
-                                {
-                                    rcNt = GetExceptionCode();
-                                }
-                            }
-                            else
-                                rcNt = STATUS_SUCCESS;
-                        }
-                        else if (rc == VERR_INVALID_PARAMETER)
-                            rcNt = STATUS_INVALID_PARAMETER;
-                        else
-                            rcNt = STATUS_NOT_SUPPORTED;
-                        Log2(("VBoxDrvNtFastIoDeviceControl: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
-                        ExFreePoolWithTag(pHdr, 'VBox');
-                    }
                 }
                 else
                 {
