@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-201 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1327,8 +1327,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
 {
     PVM             pVM          = pVCpu->CTX_SUFF(pVM);
     uint64_t const  uOldEfer     = pVCpu->cpum.s.Guest.msrEFER;
-    uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdExt[0].eax >= 0x80000001
-                                 ? pVM->cpum.s.aGuestCpuIdExt[1].edx
+    uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdPatmExt[0].eax >= 0x80000001
+                                 ? pVM->cpum.s.aGuestCpuIdPatmExt[1].edx
                                  : 0;
     uint64_t        fMask        = 0;
     uint64_t        fIgnoreMask  = MSR_K6_EFER_LMA;

@@ -1797,9 +1797,9 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
      */
     struct { PCPUMCPUID paCpuIds; uint32_t cCpuIds, uBase; } aOldRanges[] =
     {
-        { pCPUM->aGuestCpuIdStd,        RT_ELEMENTS(pCPUM->aGuestCpuIdStd),     0x00000000 },
-        { pCPUM->aGuestCpuIdExt,        RT_ELEMENTS(pCPUM->aGuestCpuIdExt),     0x80000000 },
-        { pCPUM->aGuestCpuIdCentaur,    RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur), 0xc0000000 },
+        { pCPUM->aGuestCpuIdPatmStd,        RT_ELEMENTS(pCPUM->aGuestCpuIdPatmStd),     0x00000000 },
+        { pCPUM->aGuestCpuIdPatmExt,        RT_ELEMENTS(pCPUM->aGuestCpuIdPatmExt),     0x80000000 },
+        { pCPUM->aGuestCpuIdPatmCentaur,    RT_ELEMENTS(pCPUM->aGuestCpuIdPatmCentaur), 0xc0000000 },
     };
     for (uint32_t i = 0; i < RT_ELEMENTS(aOldRanges); i++)
     {
@@ -1825,7 +1825,7 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
         }
     }
 
-    pCPUM->GuestCpuIdDef = pCPUM->GuestInfo.DefCpuId;
+    pCPUM->GuestCpuIdPatmDef = pCPUM->GuestInfo.DefCpuId;
 
     return VINF_SUCCESS;
 }
@@ -2585,16 +2585,16 @@ void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
      * Save all the CPU ID leaves here so we can check them for compatibility
      * upon loading.
      */
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmStd[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmStd));
 
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmExt[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmExt));
 
-    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
-    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmCentaur));
 
-    SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdPatmDef, sizeof(pVM->cpum.s.GuestCpuIdPatmDef));
 
     /*
      * Save a good portion of the raw CPU IDs as well as they may come in
@@ -2830,7 +2830,7 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     } while (0)
 #define CPUID_GST_FEATURE2_WRN(reg, ExtBit, StdBit) \
     do { \
-        if (    (aGuestCpuIdExt [1].reg    & (ExtBit)) \
+        if (    (aGuestCpuId[1].reg        & (ExtBit)) \
             && !(fHostAmd  \
                  ? aHostRawExt[1].reg      & (ExtBit) \
                  : aHostRawStd[1].reg      & (StdBit)) \
@@ -2860,8 +2860,8 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 
     /** @todo we'll be leaking paLeaves on error return... */
 
-    CPUMCPUID   GuestCpuIdDef;
-    rc = SSMR3GetMem(pSSM, &GuestCpuIdDef, sizeof(GuestCpuIdDef));
+    CPUMCPUID   GuestCpuIdPatmDef;
+    rc = SSMR3GetMem(pSSM, &GuestCpuIdPatmDef, sizeof(GuestCpuIdPatmDef));
     AssertRCReturn(rc, rc);
 
     CPUMCPUID   aRawStd[16];
@@ -2964,20 +2964,20 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);
         CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);
         CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(17) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_PCID);
         CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);
         CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(24) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TSCDEADL);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_F16C);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_RDRAND);
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);
 
         /* CPUID(1).edx */
@@ -3174,20 +3174,20 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);//-> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);    // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(17) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCID);
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);     // -> EMU?
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);  // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);  // -> EMU
     CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);   // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);  // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(24) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TSCDEADL);
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);     // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);   // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE); // -> EMU
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);     // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_F16C);
+    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_RDRAND);
     CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);     // Normally not set by host
 
     /* CPUID(1).edx */
@@ -3308,7 +3308,7 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     MMHyperFree(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
     pVM->cpum.s.GuestInfo.paCpuIdLeavesR0 = NIL_RTR0PTR;
     pVM->cpum.s.GuestInfo.paCpuIdLeavesRC = NIL_RTRCPTR;
-    pVM->cpum.s.GuestInfo.DefCpuId = GuestCpuIdDef;
+    pVM->cpum.s.GuestInfo.DefCpuId = GuestCpuIdPatmDef;
     rc = cpumR3CpuIdInstallAndExplodeLeaves(pVM, &pVM->cpum.s, paLeaves, cLeaves);
     RTMemFree(paLeaves);
     AssertLogRelRCReturn(rc, rc);
@@ -3337,4 +3337,111 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     return VINF_SUCCESS;
 }
 
+
+
+# if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
+/** @name Patchmanager CPUID legacy table APIs
+ * @{
+ */
+
+/**
+ * Gets a number of standard CPUID leafs (PATM only).
+ *
+ * @returns Number of leafs.
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM)
+{
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd);
+}
+
+
+/**
+ * Gets a number of extended CPUID leafs (PATM only).
+ *
+ * @returns Number of leafs.
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM)
+{
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt);
+}
+
+
+/**
+ * Gets a number of centaur CPUID leafs.
+ *
+ * @returns Number of leafs.
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM)
+{
+    return RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur);
+}
+
+
+/**
+ * Gets a pointer to the array of standard CPUID leaves.
+ *
+ * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
+ *
+ * @returns Pointer to the standard CPUID leaves (read-only).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM)
+{
+    return RCPTRTYPE(PCCPUMCPUID)VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdPatmStd[0]);
+}
+
+
+/**
+ * Gets a pointer to the array of extended CPUID leaves.
+ *
+ * CPUMGetGuestCpuIdExtMax() give the size of the array.
+ *
+ * @returns Pointer to the extended CPUID leaves (read-only).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdPatmExt[0]);
+}
+
+
+/**
+ * Gets a pointer to the array of centaur CPUID leaves.
+ *
+ * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
+ *
+ * @returns Pointer to the centaur CPUID leaves (read-only).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdPatmCentaur[0]);
+}
+
+
+/**
+ * Gets a pointer to the default CPUID leaf.
+ *
+ * @returns Pointer to the default CPUID leaf (read-only).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdPatmDef);
+}
+
+/** @} */
+# endif /* VBOX_WITH_RAW_MODE || DOXYGEN_RUNNING */
+
 #endif /* VBOX_IN_VMM */
+

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -157,12 +157,12 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
 
         uint32_t   uLeaf = g_aCpuidUnifyBits[i].uLeaf;
         PCPUMCPUID pLegacyLeaf;
-        if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
-            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdStd[uLeaf];
-        else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
-            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdExt[uLeaf - UINT32_C(0x80000000)];
-        else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
-            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdCentaur[uLeaf - UINT32_C(0xc0000000)];
+        if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmStd[uLeaf];
+        else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmExt[uLeaf - UINT32_C(0x80000000)];
+        else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur))
+            pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmCentaur[uLeaf - UINT32_C(0xc0000000)];
         else
             continue;
 
@@ -290,12 +290,12 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
             if (pLeaf)
             {
                 PCPUMCPUID pLegacyLeaf;
-                if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
-                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdStd[uLeaf];
-                else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
-                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdExt[uLeaf - UINT32_C(0x80000000)];
-                else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
-                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdCentaur[uLeaf - UINT32_C(0xc0000000)];
+                if (uLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmStd[uLeaf];
+                else if (uLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmExt[uLeaf - UINT32_C(0x80000000)];
+                else if (uLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur))
+                    pLegacyLeaf = &pVM->cpum.s.aGuestCpuIdPatmCentaur[uLeaf - UINT32_C(0xc0000000)];
                 else
                     continue;
 

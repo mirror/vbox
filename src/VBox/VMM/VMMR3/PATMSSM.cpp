@@ -565,17 +565,13 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
         /* Core.Key abused to store the fixup type. */
         if (*pFixup == pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPU_FF_ACTION;
-        else
-        if (*pFixup == CPUMR3GetGuestCpuIdDefRCPtr(pVM))
+        else if (*pFixup == CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_DEFAULT;
-        else
-        if (*pFixup == CPUMR3GetGuestCpuIdStdRCPtr(pVM))
+        else if (*pFixup == CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_STANDARD;
-        else
-        if (*pFixup == CPUMR3GetGuestCpuIdExtRCPtr(pVM))
+        else if (*pFixup == CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_EXTENDED;
-        else
-        if (*pFixup == CPUMR3GetGuestCpuIdCentaurRCPtr(pVM))
+        else if (*pFixup == CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_CENTAUR;
     }
 
@@ -1285,16 +1281,16 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             switch(cCpuidFixup & 3)
             {
             case 0:
-                *pFixup = CPUMR3GetGuestCpuIdDefRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                 break;
             case 1:
-                *pFixup = CPUMR3GetGuestCpuIdStdRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                 break;
             case 2:
-                *pFixup = CPUMR3GetGuestCpuIdExtRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
                 break;
             case 3:
-                *pFixup = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                 break;
             }
             LogFlow(("Changing cpuid fixup %d from %RRv to %RRv\n", cCpuidFixup, oldFixup, *pFixup));
@@ -1314,19 +1310,19 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
                 LogFlow(("Changing cpu ff action fixup from %x to %x\n", oldFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_DEFAULT:
-                *pFixup = CPUMR3GetGuestCpuIdDefRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                 LogFlow(("Changing cpuid def fixup from %x to %x\n", oldFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_STANDARD:
-                *pFixup = CPUMR3GetGuestCpuIdStdRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                 LogFlow(("Changing cpuid std fixup from %x to %x\n", oldFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_EXTENDED:
-                *pFixup = CPUMR3GetGuestCpuIdExtRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
                 LogFlow(("Changing cpuid ext fixup from %x to %x\n", oldFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_CENTAUR:
-                *pFixup = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
+                *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                 LogFlow(("Changing cpuid centaur fixup from %x to %x\n", oldFixup, *pFixup));
                 break;
             default:

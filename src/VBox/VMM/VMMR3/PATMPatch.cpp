@@ -224,34 +224,34 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PPATC
 
                 case PATM_CPUID_STD_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMR3GetGuestCpuIdStdRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_EXT_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMR3GetGuestCpuIdExtRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_DEF_PTR:
                     /* @todo dirty hack when correcting this fixup (state restore) */
-                    dest = CPUMR3GetGuestCpuIdDefRCPtr(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_STD_MAX:
-                    dest = CPUMGetGuestCpuIdStdMax(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmStdMax(pVM);
                     break;
 
                 case PATM_CPUID_EXT_MAX:
-                    dest = CPUMGetGuestCpuIdExtMax(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmExtMax(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_MAX:
-                    dest = CPUMGetGuestCpuIdCentaurMax(pVM);
+                    dest = CPUMR3GetGuestCpuIdPatmCentaurMax(pVM);
                     break;
 
                 case PATM_INTERRUPTFLAG:

@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,10 +36,10 @@
     GEN_CHECK_OFF(CPUM, u8PortableCpuIdLevel);
     GEN_CHECK_OFF(CPUM, fPendingRestore);
 #endif
-    GEN_CHECK_OFF(CPUM, aGuestCpuIdStd);
-    GEN_CHECK_OFF(CPUM, aGuestCpuIdExt);
-    GEN_CHECK_OFF(CPUM, aGuestCpuIdCentaur);
-    GEN_CHECK_OFF(CPUM, GuestCpuIdDef);
+    GEN_CHECK_OFF(CPUM, aGuestCpuIdPatmStd);
+    GEN_CHECK_OFF(CPUM, aGuestCpuIdPatmExt);
+    GEN_CHECK_OFF(CPUM, aGuestCpuIdPatmCentaur);
+    GEN_CHECK_OFF(CPUM, GuestCpuIdPatmDef);
 
     GEN_CHECK_SIZE(CPUMCPU); // has .mac
     GEN_CHECK_OFF(CPUMCPU, Hyper);

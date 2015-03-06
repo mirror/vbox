@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -486,13 +486,13 @@ typedef struct CPUM
     uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 6 : 2];
 
     /** The standard set of CpuId leaves. */
-    CPUMCPUID               aGuestCpuIdStd[6];
+    CPUMCPUID               aGuestCpuIdPatmStd[6];
     /** The extended set of CpuId leaves. */
-    CPUMCPUID               aGuestCpuIdExt[10];
+    CPUMCPUID               aGuestCpuIdPatmExt[10];
     /** The centaur set of CpuId leaves. */
-    CPUMCPUID               aGuestCpuIdCentaur[4];
+    CPUMCPUID               aGuestCpuIdPatmCentaur[4];
     /** The default set of CpuId leaves. */
-    CPUMCPUID               GuestCpuIdDef;
+    CPUMCPUID               GuestCpuIdPatmDef;
 
 #if HC_ARCH_BITS == 32
     uint8_t                 abPadding2[4];

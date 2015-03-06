@@ -717,7 +717,7 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
 {
     /*
-     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdDef:
+     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdPatmDef:
      * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
      * of processors from (cpuid(4).eax >> 26) + 1.
      *
@@ -726,9 +726,9 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
      */
     if (!fHWVirtExEnabled)
     {
-        Assert(   pVM->cpum.s.aGuestCpuIdStd[4].eax == 0
-               || pVM->cpum.s.aGuestCpuIdStd[0].eax < 0x4);
-        pVM->cpum.s.aGuestCpuIdStd[4].eax = 0;
+        Assert(   pVM->cpum.s.aGuestCpuIdPatmStd[4].eax == 0
+               || pVM->cpum.s.aGuestCpuIdPatmStd[0].eax < 0x4);
+        pVM->cpum.s.aGuestCpuIdPatmStd[4].eax = 0;
     }
 }
 
@@ -1165,21 +1165,21 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
      */
     uint32_t cElements;
     int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements > RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+    if (cElements > RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdStd[0]));
+    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdPatmStd[0]));
 
     rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
+    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
+    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmExt[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmExt));
 
     rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
+    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
+    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmCentaur));
 
-    SSMR3GetMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
+    SSMR3GetMem(pSSM, &pVM->cpum.s.GuestCpuIdPatmDef, sizeof(pVM->cpum.s.GuestCpuIdPatmDef));
 
     /*
      * Check that the basic cpuid id information is unchanged.
@@ -1231,7 +1231,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         /* Make sure we don't forget to update the masks when enabling
          * features in the future.
          */
-        AssertRelease(!(pVM->cpum.s.aGuestCpuIdStd[1].ecx &
+        AssertRelease(!(pVM->cpum.s.aGuestCpuIdPatmStd[1].ecx &
                               (   X86_CPUID_FEATURE_ECX_DTES64
                                |  X86_CPUID_FEATURE_ECX_VMX
                                |  X86_CPUID_FEATURE_ECX_SMX
@@ -1874,22 +1874,22 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
      */
     CPUMCPUID   Host;
     CPUMCPUID   Guest;
-    unsigned    cStdMax = pVM->cpum.s.aGuestCpuIdStd[0].eax;
+    unsigned    cStdMax = pVM->cpum.s.aGuestCpuIdPatmStd[0].eax;
 
     uint32_t    cStdHstMax;
     uint32_t    dummy;
     ASMCpuIdExSlow(0, 0, 0, 0, &cStdHstMax, &dummy, &dummy, &dummy);
 
-    unsigned    cStdLstMax = RT_MAX(RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd), cStdHstMax);
+    unsigned    cStdLstMax = RT_MAX(RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd), cStdHstMax);
 
     pHlp->pfnPrintf(pHlp,
                     "         RAW Standard CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
     for (unsigned i = 0; i <= cStdLstMax ; i++)
     {
-        if (i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
+        if (i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
         {
-            Guest = pVM->cpum.s.aGuestCpuIdStd[i];
+            Guest = pVM->cpum.s.aGuestCpuIdPatmStd[i];
             ASMCpuIdExSlow(i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
             pHlp->pfnPrintf(pHlp,
@@ -1914,7 +1914,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
      */
     if (iVerbosity)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdStd[0];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmStd[0];
         pHlp->pfnPrintf(pHlp,
                         "Name:                            %.04s%.04s%.04s\n"
                         "Supports:                        0-%x\n",
@@ -1924,14 +1924,14 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     /*
      * Get Features.
      */
-    bool const fIntel = ASMIsIntelCpuEx(pVM->cpum.s.aGuestCpuIdStd[0].ebx,
-                                        pVM->cpum.s.aGuestCpuIdStd[0].ecx,
-                                        pVM->cpum.s.aGuestCpuIdStd[0].edx);
+    bool const fIntel = ASMIsIntelCpuEx(pVM->cpum.s.aGuestCpuIdPatmStd[0].ebx,
+                                        pVM->cpum.s.aGuestCpuIdPatmStd[0].ecx,
+                                        pVM->cpum.s.aGuestCpuIdPatmStd[0].edx);
     if (cStdMax >= 1 && iVerbosity)
     {
         static const char * const s_apszTypes[4] = { "primary", "overdrive", "MP", "reserved" };
 
-        Guest = pVM->cpum.s.aGuestCpuIdStd[1];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmStd[1];
         uint32_t uEAX = Guest.eax;
 
         pHlp->pfnPrintf(pHlp,
@@ -2111,16 +2111,16 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
      * Extended.
      * Implemented after AMD specs.
      */
-    unsigned    cExtMax = pVM->cpum.s.aGuestCpuIdExt[0].eax & 0xffff;
+    unsigned    cExtMax = pVM->cpum.s.aGuestCpuIdPatmExt[0].eax & 0xffff;
 
     pHlp->pfnPrintf(pHlp,
                     "\n"
                     "         RAW Extended CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
     bool fSupportsInvariantTsc = false;
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt); i++)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdExt[i];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[i];
         ASMCpuIdExSlow(0x80000000 | i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         if (   i == 7
@@ -2141,7 +2141,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
      */
     if (iVerbosity)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdExt[0];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[0];
         pHlp->pfnPrintf(pHlp,
                         "Ext Name:                        %.4s%.4s%.4s\n"
                         "Ext Supports:                    0x80000000-%#010x\n",
@@ -2150,7 +2150,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (iVerbosity && cExtMax >= 1)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdExt[1];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[1];
         uint32_t uEAX = Guest.eax;
         pHlp->pfnPrintf(pHlp,
                         "Family:                          %d  \tExtended: %d \tEffective: %d\n"
@@ -2285,33 +2285,33 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     {
         char szString[4*4*3+1] = {0};
         uint32_t *pu32 = (uint32_t *)szString;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdExt[2].eax;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdExt[2].ebx;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdExt[2].ecx;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdExt[2].edx;
+        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].eax;
+        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].ebx;
+        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].ecx;
+        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].edx;
         if (cExtMax >= 3)
         {
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[3].eax;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[3].ebx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[3].ecx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[3].edx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].eax;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].ebx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].ecx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].edx;
         }
         if (cExtMax >= 4)
         {
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[4].eax;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[4].ebx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[4].ecx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdExt[4].edx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].eax;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].ebx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].ecx;
+            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].edx;
         }
         pHlp->pfnPrintf(pHlp, "Full Name:                       %s\n", szString);
     }
 
     if (iVerbosity && cExtMax >= 5)
     {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdExt[5].eax;
-        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdExt[5].ebx;
-        uint32_t uECX = pVM->cpum.s.aGuestCpuIdExt[5].ecx;
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdExt[5].edx;
+        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[5].eax;
+        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdPatmExt[5].ebx;
+        uint32_t uECX = pVM->cpum.s.aGuestCpuIdPatmExt[5].ecx;
+        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[5].edx;
         char sz1[32];
         char sz2[32];
 
@@ -2346,9 +2346,9 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (iVerbosity && cExtMax >= 6)
     {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdExt[6].eax;
-        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdExt[6].ebx;
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdExt[6].edx;
+        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[6].eax;
+        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdPatmExt[6].ebx;
+        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[6].edx;
 
         pHlp->pfnPrintf(pHlp,
                         "L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
@@ -2373,7 +2373,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (iVerbosity && cExtMax >= 7)
     {
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdExt[7].edx;
+        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[7].edx;
 
         pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n", fSupportsInvariantTsc);
         pHlp->pfnPrintf(pHlp, "APM Features:                   ");
@@ -2395,8 +2395,8 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (iVerbosity && cExtMax >= 8)
     {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdExt[8].eax;
-        uint32_t uECX = pVM->cpum.s.aGuestCpuIdExt[8].ecx;
+        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[8].eax;
+        uint32_t uECX = pVM->cpum.s.aGuestCpuIdPatmExt[8].ecx;
 
         pHlp->pfnPrintf(pHlp,
                         "Physical Address Width:          %d bits\n"
@@ -2424,7 +2424,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     bool fGuestHvp = false;
     if (cStdMax >= 1)
     {
-        Guest     = pVM->cpum.s.aGuestCpuIdStd[1];
+        Guest     = pVM->cpum.s.aGuestCpuIdPatmStd[1];
         fGuestHvp = RT_BOOL(Guest.ecx & X86_CPUID_FEATURE_ECX_HVP);
     }
 
@@ -2480,15 +2480,15 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     /*
      * Centaur.
      */
-    unsigned cCentaurMax = pVM->cpum.s.aGuestCpuIdCentaur[0].eax & 0xffff;
+    unsigned cCentaurMax = pVM->cpum.s.aGuestCpuIdPatmCentaur[0].eax & 0xffff;
 
     pHlp->pfnPrintf(pHlp,
                     "\n"
                     "         RAW Centaur CPUIDs\n"
                     "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur); i++)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdCentaur[i];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmCentaur[i];
         ASMCpuIdExSlow(0xc0000000 | i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         pHlp->pfnPrintf(pHlp,
@@ -2504,7 +2504,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
      */
     if (iVerbosity)
     {
-        Guest = pVM->cpum.s.aGuestCpuIdCentaur[0];
+        Guest = pVM->cpum.s.aGuestCpuIdPatmCentaur[0];
         pHlp->pfnPrintf(pHlp,
                         "Centaur Supports:                0xc0000000-%#010x\n",
                         Guest.eax);
@@ -2513,7 +2513,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     if (iVerbosity && cCentaurMax >= 1)
     {
         ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
-        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdCentaur[1].edx;
+        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdPatmCentaur[1].edx;
         uint32_t uEdxHst = Host.edx;
 
         if (iVerbosity == 1)
@@ -2801,64 +2801,6 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
     pVM->cpum.s.CR4.OrMask |= fOr;
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * Gets a pointer to the array of standard CPUID leaves.
- *
- * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
- *
- * @returns Pointer to the standard CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
- */
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM)
-{
-    return RCPTRTYPE(PCCPUMCPUID)VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdStd[0]);
-}
-
-
-/**
- * Gets a pointer to the array of extended CPUID leaves.
- *
- * CPUMGetGuestCpuIdExtMax() give the size of the array.
- *
- * @returns Pointer to the extended CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
- */
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdExt[0]);
-}
-
-
-/**
- * Gets a pointer to the array of centaur CPUID leaves.
- *
- * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
- *
- * @returns Pointer to the centaur CPUID leaves (read-only).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
- */
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdCentaur[0]);
-}
-
-
-/**
- * Gets a pointer to the default CPUID leaf.
- *
- * @returns Pointer to the default CPUID leaf (read-only).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
- */
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdDef);
 }
 
 

@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -80,10 +80,10 @@ struc CPUM
 %endif
 
     ; CPUID leafs
-    .aGuestCpuIdStd       resb    16*6
-    .aGuestCpuIdExt       resb    16*10
-    .aGuestCpuIdCentaur   resb    16*4
-    .GuestCpuIdDef        resb    16
+    .aGuestCpuIdPatmStd         resb    16*6
+    .aGuestCpuIdPatmExt         resb    16*10
+    .aGuestCpuIdPatmCentaur     resb    16*4
+    .GuestCpuIdPatmDef          resb    16
 
 %if HC_ARCH_BITS == 32
     .abPadding2           resb    4
