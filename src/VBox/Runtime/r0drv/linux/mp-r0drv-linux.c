@@ -376,9 +376,9 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
          */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
         cpumask_t   DstCpuMask;
+#endif
         RTCPUID     idCpuSelf = RTMpCpuId();
         bool const  fCallSelf = idCpuSelf == idCpu1 || idCpuSelf == idCpu2;
-#endif
         RTMPARGS    Args;
         Args.pfnWorker = pfnWorker;
         Args.pvUser1 = pvUser1;
@@ -405,12 +405,10 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
         rc = smp_call_function_mask(DstCpuMask, rtmpLinuxWrapperPostInc, &Args, !fCallSelf /* wait */);
 #else /* older kernels */
-        rc = smp_call_function(rtMpLinuxOnPairWrapper, &Args, 0 /* retry */, 0 /* wait */);
+        rc = smp_call_function(rtMpLinuxOnPairWrapper, &Args, 0 /* retry */, !fCallSelf /* wait */);
 #endif /* older kernels */
         Assert(rc == 0);
 
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
         /* Call ourselves if necessary and wait for the other party to be done. */
         if (fCallSelf)
         {
@@ -424,7 +422,6 @@ RTDECL(int) RTMpOnPair(RTCPUID idCpu1, RTCPUID idCpu2, uint32_t fFlags, PFNRTMPW
                 ASMNopPause();
             }
         }
-#endif
 
         Assert(Args.cHits <= 2);
         if (Args.cHits == 2)
