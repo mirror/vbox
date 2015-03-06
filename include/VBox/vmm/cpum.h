@@ -918,9 +918,6 @@ VMMDECL(uint64_t)   CPUMGetGuestDR6(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestDR7(PVMCPU pVCpu);
 VMMDECL(int)        CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue);
 VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
-VMMDECL(uint32_t)   CPUMGetGuestCpuIdStdMax(PVM pVM);
-VMMDECL(uint32_t)   CPUMGetGuestCpuIdExtMax(PVM pVM);
-VMMDECL(uint32_t)   CPUMGetGuestCpuIdCentaurMax(PVM pVM);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
@@ -1258,10 +1255,6 @@ VMMR3DECL(void)         CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu);
 VMMDECL(bool)           CPUMR3IsStateRestorePending(PVM pVM);
 VMMR3DECL(void)         CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled);
 VMMR3DECL(int)          CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd);
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM);
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM);
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdCentaurRCPtr(PVM pVM);
-VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdDefRCPtr(PVM pVM);
 
 VMMR3DECL(int)              CPUMR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF pNewLeaf);
 VMMR3DECL(int)              CPUMR3CpuIdGetLeaf(PVM pVM, PCPUMCPUIDLEAF pLeaf, uint32_t uLeaf, uint32_t uSubLeaf);
@@ -1275,6 +1268,19 @@ VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uE
 VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
 
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
+
+# if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
+/** @name APIs for Patch Manager CPUID legacy tables
+ * @{ */
+VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
+VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);
+VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
+/** @} */
+# endif
 
 /** @} */
 #endif /* IN_RING3 */
