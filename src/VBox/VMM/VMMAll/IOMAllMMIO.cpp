@@ -312,7 +312,7 @@ static int iomMMIODoWrite(PVM pVM, PVMCPU pVCpu, PIOMMMIORANGE pRange, RTGCPHYS 
 /**
  * Deals with complicated MMIO reads.
  *
- * Complicatd means unaligned or non-dword/qword align accesses depending on
+ * Complicated means unaligned or non-dword/qword sized accesses depending on
  * the MMIO region's access mode flags.
  *
  * @returns Strict VBox status code. Any EM scheduling status code,
