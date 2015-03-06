@@ -1161,8 +1161,8 @@ static BOOLEAN _stdcall VBoxDrvNtFastIoDeviceControl(PFILE_OBJECT pFileObj, BOOL
                         else
                             rcNt = STATUS_NOT_SUPPORTED;
                         Log2(("VBoxDrvNtFastIoDeviceControl: returns %#x cbOut=%d rc=%#x\n", rcNt, cbOut, rc));
+                        ExFreePoolWithTag(pHdr, 'VBox');
                     }
-                    ExFreePoolWithTag(pHdr, 'VBox');
                 }
                 else
                 {
