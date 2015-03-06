@@ -518,6 +518,7 @@ int VBoxNetDhcp::initWithMain()
 
     ComEventTypeArray aVBoxEvents;
     aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+    aVBoxEvents.push_back(VBoxEventType_OnNATNetworkStartStop);
     rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
     AssertRCReturn(rc, rc);
 
@@ -595,6 +596,16 @@ HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
         case VBoxEventType_OnHostNameResolutionConfigurationChange:
             fetchAndUpdateDnsInfo();
             break;
+
+        case VBoxEventType_OnNATNetworkStartStop:
+        {
+            ComPtr <INATNetworkStartStopEvent> pStartStopEvent = pEvent;
+            BOOL fStart = TRUE;
+            HRESULT hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
+            if (!fStart)
+                shutdown();
+            break;
+        }
     }
 
     return S_OK;

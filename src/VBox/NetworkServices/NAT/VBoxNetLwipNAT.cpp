@@ -388,6 +388,16 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             }
             break;
         }
+
+        case VBoxEventType_OnNATNetworkStartStop:
+        {
+            ComPtr <INATNetworkStartStopEvent> pStartStopEvent = pEvent;
+            BOOL fStart = TRUE;
+            hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
+            if (!fStart)
+                shutdown();
+            break;
+        }
     }
     return hrc;
 }
@@ -783,6 +793,7 @@ int VBoxNetLwipNAT::init()
 
     ComEventTypeArray aVBoxEvents;
     aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+    aVBoxEvents.push_back(VBoxEventType_OnNATNetworkStartStop);
     rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
     AssertRCReturn(rc, rc);
 
