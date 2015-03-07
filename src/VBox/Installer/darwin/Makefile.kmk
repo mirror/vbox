@@ -684,8 +684,6 @@ ifdef VBOX_WITH_DTRACE
 endif
 
 	@# Signed the binaries and the application bundle.
-	@# Note #1 - We cannot sign the application binary here, since we switch to match the kernel bitness.
-	@# Note #2 - Must sign -amd64/-x86 suffixed binaries without the suffix, or verification fails. (Too lazy to do this for *.gc.)
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
