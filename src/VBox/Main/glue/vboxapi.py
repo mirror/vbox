@@ -93,18 +93,23 @@ else:
 #
 # Globals, environment and sys.path changes.
 #
+import platform;
 VBoxBinDir = os.environ.get("VBOX_PROGRAM_PATH", None)
 VBoxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 
 if VBoxBinDir is None:
-    # Will be set by the installer
-    VBoxBinDir = "%VBOX_INSTALL_PATH%"
+    if platform.system() == 'Darwin':
+        VBoxBinDir = '/Applications/VirtualBox.app/Contents/MacOS'
+    else: # Will be set by the installer
+        VBoxBinDir = "%VBOX_INSTALL_PATH%"
 else:
     VBoxBinDir = os.path.abspath(VBoxBinDir)
 
 if VBoxSdkDir is None:
-    # Will be set by the installer
-    VBoxSdkDir = "%VBOX_SDK_PATH%"
+    if platform.system() == 'Darwin':
+        VBoxSdkDir = '/Applications/VirtualBox.app/Contents/MacOS/sdk'
+    else: # Will be set by the installer
+        VBoxSdkDir = "%VBOX_SDK_PATH%"
 else:
     VBoxSdkDir = os.path.abspath(VBoxSdkDir)
 
