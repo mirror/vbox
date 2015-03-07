@@ -745,7 +745,6 @@ ifdef VBOX_WITH_HARDENING
 		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
 endif
-	exit 1
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
