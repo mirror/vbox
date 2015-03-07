@@ -768,6 +768,7 @@ endif
 		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 		--install-location /Applications/ \
 		--ownership preserve \
+		$(if-expr defined(VBOX_NOT_OSX_105),--preserve-xattr,) \
 		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
 		$@
 	@# Cleanup
