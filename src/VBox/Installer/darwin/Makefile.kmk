@@ -497,13 +497,19 @@ endif
 VBOX_DI_VBAPP_MISC_FILES += \
 	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
 	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/info.nib \
-	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib
+	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/keyedobjects.nib \
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist)
 
 VBOX_DI_VBAPP_SYMLINKS = \
 	Resources/VirtualBoxVM.app/Contents/MacOS=>../../../MacOS/ \
 	Resources/vmstarter.app/Contents/MacOS=>../../../MacOS/ \
-	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod)) \
-	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Resources=>Versions/4/Resources/
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	,Frameworks/$(qtmod).framework/Versions/Current=>4 )
+ifndef VBOX_NOT_OSX_105
+VBOX_DI_VBAPP_SYMLINKS += $(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+	,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
+	 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources/ )
+endif
 
 ifdef VBOX_WITH_PYTHON
  # Python XPCOM glue
@@ -694,6 +700,8 @@ endif
 ifdef VBOX_SIGNING_MODE
 	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
+	$(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
+		,$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Frameworks/$(qtmod).framework/Versions/4,org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
@@ -720,16 +728,14 @@ ifdef VBOX_SIGNING_MODE
 			$(addprefix MacOS/nls/,$(VBOX_INSTALL_LANG_FILES)) \
 		, $(NLTAB)$(call VBOX_SIGN_FILE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(file),org.virtualbox.app.$(tolower $(subst $(SP),,$(subst /,.,$(file))))) )
 
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,,)
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,,)
+	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),,--deep)
  else
 	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
 	$(foreach bin, $(VBOX_DI_VBAPP_PROGS) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
- endif
- ifdef VBOX_NOT_OSX_105 # requires codesign+framworks from Lion or later. Snow Leopard codesign says object file format invalid or unsuitable.
-	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/VirtualBoxVM.app,)
-	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP)/Contents/Resources/vmstarter.app,)
-	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_VBOX_APP_TMP),)
  endif
 endif
 	@# Set the correct owner and set the set-user-ID-on-execution bit on the relevant executables.
@@ -739,6 +745,7 @@ ifdef VBOX_WITH_HARDENING
 		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_VBOX_APP_TMP)/Contents/MacOS/$(bin))
 endif
+	exit 1
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
 		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \

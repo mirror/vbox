@@ -2759,6 +2759,7 @@ ifdef VBOX_SIGNING_MODE
 	--verbose=9 \
 	--force \
 	--file-list - \
+       $(3) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
 	$(1) $(if $(2),--identifier "$(2)",)
 
@@ -2838,7 +2839,7 @@ ifdef VBOX_SIGNING_MODE
 	$(RM) -Rf -- "$$($1.kext_0_OUTDIR)/Contents/_CodeSignature/" "$$($1.kext_0_OUTDIR)/Contents/MacOS/"
 	$(MKDIR) -p -- "$$($1.kext_0_OUTDIR)/Contents/MacOS/"
 	$(INSTALL) -m 644 $$($1_1_TARGET) $$($1.kext_0_OUTDIR)/Contents/MacOS/$1
-	$(call VBOX_SIGN_BUNDLE_FN,$$($1.kext_0_OUTDIR),org.virtualbox.app.kext.$1)
+	$(call VBOX_SIGN_BUNDLE_FN,$$($1.kext_0_OUTDIR),org.virtualbox.app.kext.$1,)
    endef
   else
    VBOX_TEST_SIGN_KEXT =

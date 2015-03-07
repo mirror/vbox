@@ -142,13 +142,18 @@ endif
 #
 # Install our Qt DLLs / Shared Objects / Frameworks.
 # Note: The installer fixes the darwin .dylibs when hardening is enabled.
+# Note: Contents/Info.plist is where it's in 4.7.x, not sure if the location is kosher... According to
+#       https://developer.apple.com/library/mac/documentation/MacOSX/Conceptual/BPFrameworks/Concepts/FrameworkAnatomy.html
+#       the Info.plist file goes into Resources.
 #
 ifeq ($(KBUILD_TARGET),darwin)
  INSTALLS += qt4-bin
  qt4-bin_MODE = 755
  qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
  qt4-bin_SOURCES = $(foreach qtmod,$(VBOX_QT4_MOD_NAMES) \
-  	,$(PATH_SDK_QT4_LIB)/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod))
+  	,$(PATH_SDK_QT4_LIB)/$(qtmod).framework/Versions/4/$(qtmod)=>Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
+  	 $(PATH_SDK_QT4_LIB)/$(qtmod).framework/Contents/Info.plist=>Frameworks/$(qtmod).framework/Versions/4/Resources/Info.plist \
+	)
  ifdef VBOX_WITH_COCOA_QT
   qt4-bin_SOURCES += \
   	$(PATH_SDK_QT4_LIB)/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib=>Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Versions/4/Resources/qt_menu.nib/classes.nib \
@@ -160,11 +165,9 @@ ifeq ($(KBUILD_TARGET),darwin)
   	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
  endif
  qt4-bin_SYMLINKS = $(foreach qtmod, $(VBOX_QT4_MOD_NAMES) \
- 		,Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod))
- ifdef VBOX_WITH_COCOA_QT
-  qt4-bin_SYMLINKS += \
-  	Frameworks/QtGui$(VBOX_QT4_INFIX).framework/Resources=>Versions/4/Resources/
- endif
+ 		,Frameworks/$(qtmod).framework/Versions/Current=>4 \
+		 Frameworks/$(qtmod).framework/$(qtmod)=>Versions/4/$(qtmod) \
+		 Frameworks/$(qtmod).framework/Resources=>Versions/4/Resources \)
 else
  if defined(VBOX_WITH_QT4_SUN) || defined(VBOX_WITH_QT4_PAYLOAD)
   ifeq ($(KBUILD_TARGET),win)
