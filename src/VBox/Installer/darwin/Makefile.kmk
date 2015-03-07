@@ -26,31 +26,15 @@ VBOX_PATH_DI_SRC := $(PATH_SUB_CURRENT)
 VBOX_DI_OUT_DIR  := $(PATH_TARGET)/Installer/darwin
 BLDDIRS += $(VBOX_DI_OUT_DIR)
 
-ifdef VBOX_WITH_COMBINED_PACKAGE
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VBOX_PATH_DIST_32 = $(VBOX_PATH_DIST)
-  VBOX_PATH_DIST_64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/dist
-  VBOX_PATH_DIST_OTHER = $(VBOX_PATH_DIST_64)
- else
-  VBOX_PATH_DIST_64 = $(VBOX_PATH_DIST)
-  VBOX_PATH_DIST_32 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/dist
-  VBOX_PATH_DIST_OTHER = $(VBOX_PATH_DIST_32)
- endif
- VBOX_DI_FN_DEP_BOTH = $(VBOX_PATH_DIST_32)/$1 $(VBOX_PATH_DIST_64)/$2
- VBOX_DI_FN_DEP_32   = $(VBOX_PATH_DIST_32)/$1
- VBOX_DI_FN_DEP_64   = $(VBOX_PATH_DIST_64)/$1
- VBOX_DI_LIPO = lipo
+VBOX_DI_FN_DEP_BOTH = $(VBOX_PATH_DIST)/$1
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+ VBOX_DI_FN_DEP_32  = $(VBOX_PATH_DIST)/$1
+ VBOX_DI_FN_DEP_64  =
 else
- VBOX_DI_FN_DEP_BOTH = $(VBOX_PATH_DIST)/$1
- ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VBOX_DI_FN_DEP_32  = $(VBOX_PATH_DIST)/$1
-  VBOX_DI_FN_DEP_64  =
- else
-  VBOX_DI_FN_DEP_64  = $(VBOX_PATH_DIST)/$1
-  VBOX_DI_FN_DEP_32  =
- endif
- VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
+ VBOX_DI_FN_DEP_64  = $(VBOX_PATH_DIST)/$1
+ VBOX_DI_FN_DEP_32  =
 endif
+VBOX_PATH_DIST_OTHER = $(error VBOX_PATH_DIST_OTHER used in a non-combined package deal)
 
 # Unset this to speed up things during makefile hacking.
 VBOX_DARWIN_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
@@ -285,16 +269,8 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/)
 	@# Copy the binaries and invoking lipo.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), \
-		$(NLTAB)$(VBOX_DI_LIPO) -create \
-			$(VBOX_PATH_DIST_32)/$(kext).kext/Contents/MacOS/$(kext) \
-			$(VBOX_PATH_DIST_64)/$(kext).kext/Contents/MacOS/$(kext) \
-			-output $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/$(kext))
-else
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/)
-endif
 	@# Signed the kext bundles.
 ifdef VBOX_SIGNING_MODE
 	$(foreach kext,$(VBOX_DI_KEXTS) \
@@ -617,9 +593,14 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg: \
                 $(if-expr defined(VBOX_WITH_JXPCOM), \
                         $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/sdk/bindings/xpcom/java,) \
 		$(addprefix $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/,$(dir \
-			$(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) $(VBOX_DI_VBAPP_OTHER_BINS) $(VBOX_DI_VBAPP_PROGS) $(VBOX_DI_VBAPP_MISC_FILES) \
-			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "amd64",$(VBOX_DI_VBAPP_DYLIBS.amd64) $(VBOX_DI_VBAPP_MISC_FILES.amd64),) \
-			$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) || "$(KBUILD_TARGET_ARCH)" == "x86",  $(VBOX_DI_VBAPP_DYLIBS.x86)   $(VBOX_DI_VBAPP_MISC_FILES.x86),) \
+			$(VBOX_DI_VBAPP_DYLIBS) \
+			$(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+			$(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
+			$(VBOX_DI_VBAPP_OTHER_BINS) \
+			$(VBOX_DI_VBAPP_PROGS) \
+			$(VBOX_DI_VBAPP_MISC_FILES) \
+			$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
+			$(VBOX_DI_VBAPP_MISC_FILES.$(KBUILD_TARGET_ARCH)) \
 			))\
 		)
 	@# Create the .lproj language directories
@@ -646,76 +627,28 @@ endif
 	@# Copy misc files.
 	$(foreach f,$(VBOX_DI_VBAPP_MISC_FILES) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(f)              $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach f,$(VBOX_DI_VBAPP_MISC_FILES.x86) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(f)           $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
-	$(foreach f,$(VBOX_DI_VBAPP_MISC_FILES.amd64) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(f)           $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(f)$(NLTAB) )
-endif
 	$(INSTALL) -m 644 $(VBOX_BRAND_LICENSE_TXT)                                             $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/LICENSE
 ifdef VBOX_WITH_DOCS_PACKING
 	$(foreach f,$(VBOX_ADD_MANUALS) \
 		,$(INSTALL) -m 0644 $(f) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(NLTAB))
 endif
 	@# Create symlinks.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach symlink,$(VBOX_DI_VBAPP_SYMLINKS) $(VBOX_DI_VBAPP_SYMLINKS.amd64) $(VBOX_DI_VBAPP_SYMLINKS.x86) \
-		,$(LN) -s $(word 2,$(subst =>, ,$(symlink)))                                    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(word 1,$(subst =>, ,$(symlink)))$(NLTAB))
-else
 	$(foreach symlink,$(VBOX_DI_VBAPP_SYMLINKS) $(VBOX_DI_VBAPP_SYMLINKS.$(KBUILD_TARGET_ARCH)) \
 		,$(LN) -s $(word 2,$(subst =>, ,$(symlink)))                                    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(word 1,$(subst =>, ,$(symlink)))$(NLTAB))
-endif
 	@# Copy the dylibs.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS) \
-		,$(VBOX_DI_LIPO) -create \
-			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(dylib) \
-			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(dylib) \
-			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)$(NLTAB))
-	$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS.x86) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(dylib)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)$(NLTAB))
-	$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS.amd64) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(dylib)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)$(NLTAB))
-else
 	$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(dylib)          $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)$(NLTAB))
-endif
 	@# Copy the other binaries.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
-		,$(VBOX_DI_LIPO) -create \
-			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
-			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
-			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS), \
-		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-x86 \
-		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin)    $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-amd64 )
-else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
-endif
 	@# Create/copy the universal executable binaries.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
-		,$(VBOX_DI_LIPO) -create \
-			$(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(otherbin) \
-			$(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(otherbin) \
-			-output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-else
 	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-endif
 	@# Copy the binaries.
-ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) \
-		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST_32)/VirtualBox.app/Contents/$(prog)        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(prog)-x86$(NLTAB) \
-		 $(INSTALL) -m 0755 $(VBOX_PATH_DIST_64)/VirtualBox.app/Contents/$(prog)        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(prog)-amd64$(NLTAB))
-else
 	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(prog)-$(KBUILD_TARGET_ARCH)$(NLTAB))
-endif
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
@@ -724,14 +657,8 @@ if 1
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod)$(NLTAB) )
 	$(foreach f, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
-		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), \
-			$(VBOX_DI_VBAPP_DYLIBS.x86) \
-			$(VBOX_DI_VBAPP_DYLIBS.amd64) \
-			$(addsuffix -x86, $(VBOX_DI_VBAPP_PROGS)) \
-			$(addsuffix -amd64, $(VBOX_DI_VBAPP_PROGS)) \
-			,$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
-			$(addsuffix -$(KBUILD_TARGET_ARCH), $(VBOX_DI_VBAPP_PROGS)) \
-			) \
+		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
+		$(addsuffix -$(KBUILD_TARGET_ARCH), $(VBOX_DI_VBAPP_PROGS)) \
 		,install_name_tool \
 			$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), \
 				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
@@ -756,15 +683,6 @@ ifdef VBOX_WITH_DTRACE
        		$(addprefix scripts/,$(VBOXINST_DTRACE_SCRIPTS_FILES)) \
 		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB))
- ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(MKDIR) -p -m 0755 -- \
-		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/lib/$(VBOX_CP_OTHER_ARCH)/ \
-		$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/testcase/$(VBOX_CP_OTHER_ARCH)/
-	$(foreach file, $(addprefix lib/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_LIB_ARCH_FILES)) \
-			$(addprefix testcase/$(VBOX_CP_OTHER_ARCH)/,$(VBOXINST_DTRACE_TESTCASE_ARCH_FILES)) \
-		,$(INSTALL) -m 0655 $(VBOX_PATH_DIST_OTHER)/VirtualBox.app/Contents/MacOS/dtrace/$(file) \
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/dtrace/$(file)$(NLTAB))
- endif
 endif
 
 	@# Signed the binaries and the application bundle.
@@ -775,30 +693,29 @@ ifdef VBOX_SIGNING_MODE
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Frameworks/$(qtmod).framework/Versions/4/$(qtmod),org.virtualbox.app.frameworks.$(qtmod)) )
 	$(foreach dylib, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
-		$(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), \
-			$(VBOX_DI_VBAPP_DYLIBS.x86) \
-			$(VBOX_DI_VBAPP_DYLIBS.amd64) \
-			,$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) ) \
+		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib),org.virtualbox.app.macos.$(notdir $(dylib))) )
 	$(foreach bin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
  ifdef VBOX_NOT_OSX_105 # Still being hacked on, everything needs to be signed that lives in Contents/MacOS, guess we have to MOVE files out.
 	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach arch, $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), amd64 x86, $(KBUILD_TARGET_ARCH)) \
+	$(foreach arch, $(KBUILD_TARGET_ARCH) \
 		, $(foreach other, $(VBOX_DI_VBAPP_OTHER_BINS) \
 			, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other)-$(arch),org.virtualbox.app.macos.$(notdir $(other))-$(arch)) ) )
 	$(foreach other, $(filter MacOS/%,$(VBOX_DI_VBAPP_MISC_FILES)) \
+			$(if $(VBOX_WITH_PYTHON),MacOS/vboxshell.py,) \
+			MacOS/VBoxAutostartDarwin.sh \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
  else
 	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach arch, $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), amd64 x86, $(KBUILD_TARGET_ARCH)) \
+	$(foreach arch, $(KBUILD_TARGET_ARCH) \
 		, $(foreach other, $(VBOX_DI_VBAPP_OTHER_BINS) \
 			, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other)-$(arch),org.virtualbox.app.macos.$(notdir $(other))-$(arch)) ) )
  endif
-	$(foreach arch, $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE), amd64 x86, $(KBUILD_TARGET_ARCH)) \
-		, $(foreach bin, $(VBOX_DI_VBAPP_PROGS) \
+	$(foreach arch, $(KBUILD_TARGET_ARCH) \
+		, $(foreach bin, $(if-expr defined(VBOX_NOT_OSX_105),$(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS)),$(VBOX_DI_VBAPP_PROGS)) \
 		, \
                $(NLTAB)$(MV) -- $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin)-$(arch) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin) \
 		$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) \
@@ -813,16 +730,9 @@ endif
 	@# Set the correct owner and set the set-user-ID-on-execution bit on the relevant executables.
 	sudo chown -R root:admin $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root
 ifdef VBOX_WITH_HARDENING
- ifdef VBOX_WITH_COMBINED_PACKAGE
-	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-x86 \
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-amd64)
- else
 	sudo chmod u+s \
 		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-$(KBUILD_TARGET_ARCH))
- endif
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
