@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2007-2013 Oracle Corporation
+# Copyright (C) 2007-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -70,30 +70,6 @@ StartService()
     VBOX_RC=0
     VBOXDRV="VBoxDrv"
     VBOXUSB="VBoxUSB"
-
-    #
-    # Switch the binaries to the right architecture.
-    #
-    VBOX_ARCH=`uname -m`
-    if test "$VBOX_ARCH" = "x86_64"; then
-        VBOX_ARCH="amd64"
-    else
-        VBOX_ARCH="x86"
-    fi
-    for VBOX_TRG in `ls /Applications/VirtualBox.app/Contents/MacOS/*-${VBOX_ARCH}`;
-    do
-        VBOX_LINKNAME=`echo "$VBOX_TRG" | sed -e 's|-'"${VBOX_ARCH}"'$||' `
-        if test "$VBOX_LINKNAME" != "$VBOX_TRG"; then
-            rm -f "$VBOX_LINKNAME"
-            if ! /bin/ln -vh "$VBOX_TRG" "$VBOX_LINKNAME"; then
-                ConsoleMessage "Error: /bin/ln -vh $VBOX_TRG $VBOX_LINKNAME failed"
-                VBOX_RC=1
-            fi
-        else
-            ConsoleMessage "Error: Script error VBOX_TRG=$VBOX_TRG"
-            VBOX_RC=1
-        fi
-    done
 
     #
     # Check that all the directories exist first.

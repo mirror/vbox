@@ -639,16 +639,14 @@ endif
 	$(foreach dylib, $(VBOX_DI_VBAPP_DYLIBS) $(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(dylib)          $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(dylib)$(NLTAB))
 	@# Copy the other binaries.
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) \
 		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
-	$(foreach otherbin, $(VBOX_DI_VBAPP_OTHER_BINS) \
-		,$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)-$(KBUILD_TARGET_ARCH)$(NLTAB))
 	@# Create/copy the universal executable binaries.
 	$(foreach otherbin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(otherbin)       $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(otherbin)$(NLTAB))
 	@# Copy the binaries.
 	$(foreach prog, $(VBOX_DI_VBAPP_PROGS) \
-		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(prog)-$(KBUILD_TARGET_ARCH)$(NLTAB))
+		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/VirtualBox.app/Contents/$(prog)       	$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(prog)$(NLTAB))
 #ifdef VBOX_WITH_HARDENING - disabled temporarily
 if 1
 	@# We cannot use @executable_path together with setuid binaries, dyld gets upset about it. So, fix Qt libs and users.
@@ -658,7 +656,7 @@ if 1
 	$(foreach f, \
 		$(VBOX_DI_VBAPP_DYLIBS) \
 		$(VBOX_DI_VBAPP_DYLIBS.$(KBUILD_TARGET_ARCH)) \
-		$(addsuffix -$(KBUILD_TARGET_ARCH), $(VBOX_DI_VBAPP_PROGS)) \
+		$(VBOX_DI_VBAPP_PROGS) \
 		,install_name_tool \
 			$(foreach qtmod, $(VBOX_QT4_MOD_NAMES), \
 				-change           @executable_path/../Frameworks/$(qtmod).framework/Versions/4/$(qtmod) \
@@ -698,29 +696,18 @@ ifdef VBOX_SIGNING_MODE
 	$(foreach bin, $(VBOX_DI_VBAPP_UNIVERSAL_PROGS) \
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
  ifdef VBOX_NOT_OSX_105 # Still being hacked on, everything needs to be signed that lives in Contents/MacOS, guess we have to MOVE files out.
-	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS)\
 		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach arch, $(KBUILD_TARGET_ARCH) \
-		, $(foreach other, $(VBOX_DI_VBAPP_OTHER_BINS) \
-			, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other)-$(arch),org.virtualbox.app.macos.$(notdir $(other))-$(arch)) ) )
 	$(foreach other, $(filter MacOS/%,$(VBOX_DI_VBAPP_MISC_FILES)) \
 			$(if $(VBOX_WITH_PYTHON),MacOS/vboxshell.py,) \
 			MacOS/VBoxAutostartDarwin.sh \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
  else
-	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) \
+	$(foreach other, $(VBOX_DI_VBAPP_OTHER_UNIVERSAL_BINS) $(VBOX_DI_VBAPP_OTHER_BINS) \
 		, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other),org.virtualbox.app.macos.$(notdir $(other))) )
-	$(foreach arch, $(KBUILD_TARGET_ARCH) \
-		, $(foreach other, $(VBOX_DI_VBAPP_OTHER_BINS) \
-			, $(NLTAB)$(call VBOX_SIGN_VMM_MOD_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(other)-$(arch),org.virtualbox.app.macos.$(notdir $(other))-$(arch)) ) )
  endif
-	$(foreach arch, $(KBUILD_TARGET_ARCH) \
-		, $(foreach bin, $(if-expr defined(VBOX_NOT_OSX_105),$(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS)),$(VBOX_DI_VBAPP_PROGS)) \
-		, \
-               $(NLTAB)$(MV) -- $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin)-$(arch) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin) \
-		$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) \
-               $(NLTAB)$(MV) -- $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin) $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin)-$(arch) \
-		))
+	$(foreach bin, $(if-expr defined(VBOX_NOT_OSX_105),$(filter-out MacOS/VirtualBox,$(VBOX_DI_VBAPP_PROGS)),$(VBOX_DI_VBAPP_PROGS)) \
+		, $(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/$(bin),org.virtualbox.app.macos.$(notdir $(bin))) )
  ifdef VBOX_NOT_OSX_105 # requires codesign+framworks from Lion or later. Snow Leopard codesign says object file format invalid or unsuitable.
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/VirtualBoxVM.app,)
 	$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/Resources/vmstarter.app,)
@@ -732,7 +719,7 @@ endif
 ifdef VBOX_WITH_HARDENING
 	sudo chmod u+s \
 		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
-			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-$(KBUILD_TARGET_ARCH))
+			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin))
 endif
 	@# Do keyword replacement in the package info and description files.
 	$(SED) \
