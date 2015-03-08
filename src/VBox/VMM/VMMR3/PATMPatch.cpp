@@ -44,7 +44,14 @@
 #include "PATMA.h"
 #include "PATMPatch.h"
 
-/* internal structure for passing more information about call fixups to patmPatchGenCode */
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Internal structure for passing more information about call fixups to
+ * patmPatchGenCode.
+ */
 typedef struct
 {
     RTRCPTR   pTargetGC;
@@ -53,7 +60,36 @@ typedef struct
     RTRCPTR   pReturnGC;
 } PATMCALLINFO, *PPATMCALLINFO;
 
-int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType, RTRCPTR pSource, RTRCPTR pDest)
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#define PATCHGEN_PROLOG_NODEF(pVM, pPatch) \
+    do { \
+        pPB = PATCHCODE_PTR_HC(pPatch) + pPatch->uCurPatchOffset; \
+        if (pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem) \
+        { \
+            pVM->patm.s.fOutOfMemory = true; \
+            Assert(pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem); \
+            return VERR_NO_MEMORY; \
+        } \
+    } while (0)
+
+#define PATCHGEN_PROLOG(pVM, pPatch) \
+    uint8_t *pPB; \
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch)
+
+#define PATCHGEN_EPILOG(pPatch, size) \
+    do { \
+        Assert(size <= 640); \
+        pPatch->uCurPatchOffset += size; \
+    } while (0)
+
+
+
+
+int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t uType,
+                        RTRCPTR pSource /*= 0*/, RTRCPTR pDest /*= 0*/)
 {
     PRELOCREC pRec;
 
@@ -95,26 +131,6 @@ int patmPatchAddJump(PVM pVM, PPATCHINFO pPatch, uint8_t *pJumpHC, uint32_t offs
 
     return VINF_SUCCESS;
 }
-
-#define PATCHGEN_PROLOG_NODEF(pVM, pPatch)                                      \
-    pPB = PATCHCODE_PTR_HC(pPatch) + pPatch->uCurPatchOffset;            \
-                                                                               \
-    if (pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem)          \
-    {                                                                          \
-        pVM->patm.s.fOutOfMemory = true; \
-        Assert(pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem); \
-        return VERR_NO_MEMORY; \
-    }
-
-#define PATCHGEN_PROLOG(pVM, pPatch)                                      \
-    uint8_t *pPB;                                                         \
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
-
-
-#define PATCHGEN_EPILOG(pPatch, size) \
-    Assert(size <= 640);              \
-    pPatch->uCurPatchOffset += size;
-
 
 static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPATCHASMRECORD pAsmRecord,
                                  RCPTRTYPE(uint8_t *) pReturnAddrGC, bool fGenJump,
@@ -225,22 +241,18 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                     break;
 
                 case PATM_CPUID_STD_PTR:
-                    /** @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_EXT_PTR:
-                    /** @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_CENTAUR_PTR:
-                    /** @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                     break;
 
                 case PATM_CPUID_DEF_PTR:
-                    /** @todo dirty hack when correcting this fixup (state restore) */
                     dest = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                     break;
 
@@ -376,8 +388,8 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
 
         *(uint32_t *)&pPB[pAsmRecord->offJump] = displ;
         patmPatchAddReloc32(pVM, pPatch, &pPB[pAsmRecord->offJump], FIXUP_REL_JMPTOGUEST,
-                        PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset + pAsmRecord->offJump - 1 + SIZEOF_NEARJUMP32,
-                        pReturnAddrGC);
+                            PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset + pAsmRecord->offJump - 1 + SIZEOF_NEARJUMP32,
+                            pReturnAddrGC);
     }
 
     // Calculate the right size of this patch block

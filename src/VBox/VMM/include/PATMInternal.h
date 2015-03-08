@@ -152,9 +152,6 @@ typedef struct
     RTRCPTR                     pDest;
 } RELOCREC, *PRELOCREC;
 
-/* forward decl */
-struct _PATCHINFO;
-
 /* Cache record for guest to host pointer conversions. */
 typedef struct
 {
@@ -257,7 +254,7 @@ typedef struct TRAMPREC *PTRAMPREC;
 /**
  * Patch information.
  */
-typedef struct _PATCHINFO
+typedef struct PATCHINFO
 {
     /** Current patch state (enabled, disabled, etc.). */
     uint32_t                    uState;

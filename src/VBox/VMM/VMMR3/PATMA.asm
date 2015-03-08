@@ -3,7 +3,7 @@
 ; PATM Assembly Routines.
 ;
 
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -34,109 +34,135 @@
 %include "VBox/vmm/vm.mac"
 %include "PATMA.mac"
 
+;*******************************************************************************
+;*  Defined Constants And Macros                                               *
+;*******************************************************************************
 %ifdef DEBUG
 ; Noisy, but useful for debugging certain problems
 ;;;%define PATM_LOG_PATCHINSTR
 ;;%define PATM_LOG_PATCHIRET
 %endif
 
-BEGINCONST
+;;
+; Simple PATCHASMRECORD initializer
+; @param %1     The patch function name.
+; @param %2     The number of fixups.
+;
+%macro PATCHASMRECORD_INIT 2
+istruc PATCHASMRECORD
+    at PATCHASMRECORD.pbFunction,     RTCCPTR_DEF NAME(%1)
+    at PATCHASMRECORD.offJump,        DD          0
+    at PATCHASMRECORD.offRelJump,     DD          0
+    at PATCHASMRECORD.offSizeOverride,DD          0
+    at PATCHASMRECORD.cbFunction,     DD          NAME(%1 %+ _EndProc) - NAME(%1)
+    at PATCHASMRECORD.cRelocs,        DD          %2
+iend                                                         
+%endmacro
 
+;;
+; Simple PATCHASMRECORD initializer
+; @param %1     The patch function name.
+; @param %2     Jump lable.
+; @param %3     The number of fixups.
+;
+%macro PATCHASMRECORD_INIT_JUMP 3
+istruc PATCHASMRECORD
+    at PATCHASMRECORD.pbFunction,     RTCCPTR_DEF NAME(%1)
+    at PATCHASMRECORD.offJump,        DD          %2 - NAME(%1)
+    at PATCHASMRECORD.offRelJump,     DD          0
+    at PATCHASMRECORD.offSizeOverride,DD          0
+    at PATCHASMRECORD.cbFunction,     DD          NAME(%1 %+ _EndProc) - NAME(%1)
+    at PATCHASMRECORD.cRelocs,        DD          %3
+iend                                                         
+%endmacro
+
+;;
+; Switches to the code section and aligns the function.
+%macro BEGIN_PATCH_CODE_SECTION 0
+BEGINCODE
+align 32
+%endmacro
+
+;;
+; Switches to the data section for the read-only patch descriptor data and 
+; aligns it appropriately.
+%macro BEGIN_PATCH_RODATA_SECTION 0   
+BEGINDATA
+align 16
+%endmacro
+
+
+;
+; Switch to 32-bit mode (x86).
+;
 %ifdef RT_ARCH_AMD64
- BITS 32 ; switch to 32-bit mode (x86).
+ BITS 32 
 %endif
+
 
 %ifdef VBOX_WITH_STATISTICS
 ;
 ; Patch call statistics
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMStats
-PATMStats_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
     inc     dword [ss:PATM_ALLPATCHCALLS]
     inc     dword [ss:PATM_PERPATCHCALLS]
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-PATMStats_End:
 ENDPROC     PATMStats
-
 
 ; Patch record for statistics
 GLOBALNAME g_patmStatsRecord
-    RTCCPTR_DEF PATMStats_Start
-    DD      0
-    DD      0
-    DD      0
-    DD      PATMStats_End - PATMStats_Start
-    DD      4
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      PATM_ALLPATCHCALLS
-    DD      0
-    DD      PATM_PERPATCHCALLS
-    DD      0
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-%endif
+    PATCHASMRECORD_INIT PATMStats, 4
+    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ALLPATCHCALLS, 0
+    DD      PATM_PERPATCHCALLS, 0
+    DD      PATM_INTERRUPTFLAG, 0
+    DD      0ffffffffh, 0ffffffffh
+%endif ; VBOX_WITH_STATISTICS
+
 
 ;
 ; Set PATM_INTERRUPTFLAG
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMSetPIF
-PATMSetPIF_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-PATMSetPIF_End:
 ENDPROC     PATMSetPIF
 
-
-SECTION .data
 ; Patch record for setting PATM_INTERRUPTFLAG
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmSetPIFRecord
-    RTCCPTR_DEF PATMSetPIF_Start
-    DD      0
-    DD      0
-    DD      0
-    DD      PATMSetPIF_End - PATMSetPIF_Start
-    DD      1
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-SECTION .text
+    PATCHASMRECORD_INIT PATMSetPIF, 1
+    DD      PATM_INTERRUPTFLAG, 0
+    DD      0ffffffffh, 0ffffffffh
 
 ;
 ; Clear PATM_INTERRUPTFLAG
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearPIF
-PATMClearPIF_Start:
     ; probe stack here as we can't recover from page faults later on
     not     dword [esp-64]
     not     dword [esp-64]
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
-PATMClearPIF_End:
 ENDPROC     PATMClearPIF
 
-
-SECTION .data
 ; Patch record for clearing PATM_INTERRUPTFLAG
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearPIFRecord
-    RTCCPTR_DEF PATMClearPIF_Start
-    DD      0
-    DD      0
-    DD      0
-    DD      PATMClearPIF_End - PATMClearPIF_Start
-    DD      1
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-SECTION .text
+    PATCHASMRECORD_INIT PATMClearPIF, 1
+    DD      PATM_INTERRUPTFLAG, 0
+    DD      0ffffffffh, 0ffffffffh
 
 ;
 ; Clear PATM_INHIBITIRQADDR and fault if IF=0
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearInhibitIRQFaultIF0
-PATMClearInhibitIRQFaultIF0_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     mov     dword [ss:PATM_INHIBITIRQADDR], 0
     pushf
@@ -169,51 +195,32 @@ PATMClearInhibitIRQFaultIF0_Fault:
 PATMClearInhibitIRQFaultIF0_Continue:
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-PATMClearInhibitIRQFaultIF0_End:
 ENDPROC     PATMClearInhibitIRQFaultIF0
 
-
-SECTION .data
 ; Patch record for clearing PATM_INHIBITIRQADDR
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearInhibitIRQFaultIF0Record
-    RTCCPTR_DEF PATMClearInhibitIRQFaultIF0_Start
-    DD      0
-    DD      0
-    DD      0
-    DD      PATMClearInhibitIRQFaultIF0_End - PATMClearInhibitIRQFaultIF0_Start
-    DD      12
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      PATM_INHIBITIRQADDR
-    DD      0
-    DD      PATM_VMFLAGS
-    DD      0
-    DD      PATM_VM_FORCEDACTIONS
-    DD      0
-    DD      PATM_TEMP_EAX
-    DD      0
-    DD      PATM_TEMP_ECX
-    DD      0
-    DD      PATM_TEMP_EDI
-    DD      0
-    DD      PATM_TEMP_RESTORE_FLAGS
-    DD      0
-    DD      PATM_PENDINGACTION
-    DD      0
-    DD      PATM_NEXTINSTRADDR
-    DD      0
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-SECTION .text
+    PATCHASMRECORD_INIT PATMClearInhibitIRQFaultIF0, 12
+    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_INHIBITIRQADDR,     0
+    DD      PATM_VMFLAGS,            0
+    DD      PATM_VM_FORCEDACTIONS,   0
+    DD      PATM_TEMP_EAX,           0
+    DD      PATM_TEMP_ECX,           0
+    DD      PATM_TEMP_EDI,           0
+    DD      PATM_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_PENDINGACTION,      0
+    DD      PATM_NEXTINSTRADDR,      0
+    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_INTERRUPTFLAG,      0
+    DD      0ffffffffh, 0ffffffffh
+
 
 ;
 ; Clear PATM_INHIBITIRQADDR and continue if IF=0 (duplicated function only; never jump back to guest code afterwards!!)
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearInhibitIRQContIF0
-PATMClearInhibitIRQContIF0_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     mov     dword [ss:PATM_INHIBITIRQADDR], 0
     pushf
@@ -241,47 +248,31 @@ PATMClearInhibitIRQContIF0_Start:
 PATMClearInhibitIRQContIF0_Continue:
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-PATMClearInhibitIRQContIF0_End:
 ENDPROC     PATMClearInhibitIRQContIF0
 
-
-SECTION .data
 ; Patch record for clearing PATM_INHIBITIRQADDR
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearInhibitIRQContIF0Record
-    RTCCPTR_DEF PATMClearInhibitIRQContIF0_Start
-    DD      0
-    DD      0
-    DD      0
-    DD      PATMClearInhibitIRQContIF0_End - PATMClearInhibitIRQContIF0_Start
-    DD      11
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      PATM_INHIBITIRQADDR
-    DD      0
-    DD      PATM_VMFLAGS
-    DD      0
-    DD      PATM_VM_FORCEDACTIONS
-    DD      0
-    DD      PATM_TEMP_EAX
-    DD      0
-    DD      PATM_TEMP_ECX
-    DD      0
-    DD      PATM_TEMP_EDI
-    DD      0
-    DD      PATM_TEMP_RESTORE_FLAGS
-    DD      0
-    DD      PATM_PENDINGACTION
-    DD      0
-    DD      PATM_NEXTINSTRADDR
-    DD      0
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-SECTION .text
+    PATCHASMRECORD_INIT PATMClearInhibitIRQContIF0, 11
+    DD      PATM_INTERRUPTFLAG,      0   
+    DD      PATM_INHIBITIRQADDR,     0
+    DD      PATM_VMFLAGS,            0
+    DD      PATM_VM_FORCEDACTIONS,   0
+    DD      PATM_TEMP_EAX,           0
+    DD      PATM_TEMP_ECX,           0
+    DD      PATM_TEMP_EDI,           0
+    DD      PATM_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_PENDINGACTION,      0
+    DD      PATM_NEXTINSTRADDR,      0
+    DD      PATM_INTERRUPTFLAG,      0
+    DD      0ffffffffh, 0ffffffffh
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMCliReplacement
-PATMCliStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
     pushf
 %ifdef PATM_LOG_PATCHINSTR
@@ -302,37 +293,29 @@ PATMCliStart:
     DB      0xE9
 PATMCliJump:
     DD      PATM_JUMPDELTA
-PATMCliEnd:
 ENDPROC     PATMCliReplacement
 
-
-SECTION .data
 ; Patch record for 'cli'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCliRecord
-    RTCCPTR_DEF PATMCliStart
-    DD      PATMCliJump - PATMCliStart
-    DD      0
-    DD      0
-    DD      PATMCliEnd - PATMCliStart
 %ifdef PATM_LOG_PATCHINSTR
-    DD      4
+    PATCHASMRECORD_INIT_JUMP PATMCliReplacement, PATMCliJump, 4
 %else
-    DD      3
+    PATCHASMRECORD_INIT_JUMP PATMCliReplacement, PATMCliJump, 3
 %endif
-    DD      PATM_INTERRUPTFLAG
-    DD      0
+    DD      PATM_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION
-    DD      0
+    DD      PATM_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS
-    DD      0
-    DD      PATM_INTERRUPTFLAG
-    DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      PATM_VMFLAGS,       0
+    DD      PATM_INTERRUPTFLAG, 0
+    DD      0ffffffffh, 0ffffffffh
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMStiReplacement
 PATMStiStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -354,8 +337,8 @@ PATMStiStart:
 PATMStiEnd:
 ENDPROC     PATMStiReplacement
 
-SECTION .data
 ; Patch record for 'sti'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmStiRecord
     RTCCPTR_DEF PATMStiStart
     DD      0
@@ -382,7 +365,7 @@ GLOBALNAME g_patmStiRecord
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;
 ; Trampoline code for trap entry (without error code on the stack)
@@ -397,6 +380,7 @@ SECTION .text
 ; esp + 4  - CS
 ; esp      - EIP
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMTrapEntry
 PATMTrapEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -443,9 +427,8 @@ PATMTrapEntryJump:
 PATMTrapEntryEnd:
 ENDPROC     PATMTrapEntry
 
-
-SECTION .data
 ; Patch record for trap gate entrypoint
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmTrapEntryRecord
     RTCCPTR_DEF PATMTrapEntryStart
     DD      PATMTrapEntryJump - PATMTrapEntryStart
@@ -468,7 +451,7 @@ GLOBALNAME g_patmTrapEntryRecord
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;
 ; Trampoline code for trap entry (with error code on the stack)
@@ -484,6 +467,7 @@ SECTION .text
 ; esp + 4  - EIP
 ; esp      - error code
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMTrapEntryErrorCode
 PATMTrapErrorCodeEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -530,9 +514,8 @@ PATMTrapErrorCodeEntryJump:
 PATMTrapErrorCodeEntryEnd:
 ENDPROC     PATMTrapEntryErrorCode
 
-
-SECTION .data
 ; Patch record for trap gate entrypoint
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmTrapEntryRecordErrorCode
     RTCCPTR_DEF PATMTrapErrorCodeEntryStart
     DD      PATMTrapErrorCodeEntryJump - PATMTrapErrorCodeEntryStart
@@ -555,7 +538,6 @@ GLOBALNAME g_patmTrapEntryRecordErrorCode
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
 ;
@@ -571,6 +553,7 @@ SECTION .text
 ; esp + 4  - CS
 ; esp      - EIP
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIntEntry
 PATMIntEntryStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -614,9 +597,8 @@ PATMIntNoRing1:
 PATMIntEntryEnd:
 ENDPROC     PATMIntEntry
 
-
-SECTION .data
 ; Patch record for interrupt gate entrypoint
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIntEntryRecord
     RTCCPTR_DEF PATMIntEntryStart
     DD      0
@@ -639,7 +621,7 @@ GLOBALNAME g_patmIntEntryRecord
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;
 ; Trampoline code for interrupt gate entry (*with* error code on the stack)
@@ -655,6 +637,7 @@ SECTION .text
 ; esp + 4  - EIP
 ; esp      - error code
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIntEntryErrorCode
 PATMIntEntryErrorCodeStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -698,9 +681,8 @@ PATMIntNoRing1_ErrorCode:
 PATMIntEntryErrorCodeEnd:
 ENDPROC     PATMIntEntryErrorCode
 
-
-SECTION .data
 ; Patch record for interrupt gate entrypoint
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIntEntryRecordErrorCode
     RTCCPTR_DEF PATMIntEntryErrorCodeStart
     DD      0
@@ -723,11 +705,12 @@ GLOBALNAME g_patmIntEntryRecordErrorCode
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;
 ; 32 bits Popf replacement that faults when IF remains 0
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf32Replacement
 PATMPopf32Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -785,9 +768,8 @@ PATMPopf32Jump:
 PATMPopf32End:
 ENDPROC     PATMPopf32Replacement
 
-
-SECTION .data
 ; Patch record for 'popfd'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf32Record
     RTCCPTR_DEF PATMPopf32Start
     DD      PATMPopf32Jump - PATMPopf32Start
@@ -826,9 +808,12 @@ GLOBALNAME g_patmPopf32Record
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
+
+;
 ; no need to check the IF flag when popf isn't an exit point of a patch (e.g. function duplication)
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf32Replacement_NoExit
 PATMPopf32_NoExitStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -879,9 +864,8 @@ PATMPopf32_NoExit_Continue:
 PATMPopf32_NoExitEnd:
 ENDPROC     PATMPopf32Replacement_NoExit
 
-
-SECTION .data
 ; Patch record for 'popfd'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf32Record_NoExit
     RTCCPTR_DEF PATMPopf32_NoExitStart
     DD      0
@@ -924,12 +908,12 @@ GLOBALNAME g_patmPopf32Record_NoExit
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
 ;
 ; 16 bits Popf replacement that faults when IF remains 0
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf16Replacement
 PATMPopf16Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -963,9 +947,8 @@ PATMPopf16Jump:
 PATMPopf16End:
 ENDPROC     PATMPopf16Replacement
 
-
-SECTION .data
 ; Patch record for 'popf'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf16Record
     RTCCPTR_DEF PATMPopf16Start
     DD      PATMPopf16Jump - PATMPopf16Start
@@ -992,11 +975,13 @@ GLOBALNAME g_patmPopf16Record
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;
 ; 16 bits Popf replacement that faults when IF remains 0
 ; @todo not necessary to fault in that case (see 32 bits version)
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf16Replacement_NoExit
 PATMPopf16Start_NoExit:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1026,9 +1011,8 @@ PATMPopf16_Continue_NoExit:
 PATMPopf16End_NoExit:
 ENDPROC     PATMPopf16Replacement_NoExit
 
-
-SECTION .data
 ; Patch record for 'popf'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf16Record_NoExit
     RTCCPTR_DEF PATMPopf16Start_NoExit
     DD      0
@@ -1055,9 +1039,12 @@ GLOBALNAME g_patmPopf16Record_NoExit
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushf32Replacement
 PATMPushf32Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1085,9 +1072,8 @@ PATMPushf32Start:
 PATMPushf32End:
 ENDPROC     PATMPushf32Replacement
 
-
-SECTION .data
 ; Patch record for 'pushfd'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPushf32Record
     RTCCPTR_DEF PATMPushf32Start
     DD      0
@@ -1110,9 +1096,12 @@ GLOBALNAME g_patmPushf32Record
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushf16Replacement
 PATMPushf16Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1134,9 +1123,8 @@ PATMPushf16Start:
 PATMPushf16End:
 ENDPROC     PATMPushf16Replacement
 
-
-SECTION .data
 ; Patch record for 'pushf'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPushf16Record
     RTCCPTR_DEF PATMPushf16Start
     DD      0
@@ -1151,9 +1139,12 @@ GLOBALNAME g_patmPushf16Record
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushCSReplacement
 PATMPushCSStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1176,9 +1167,8 @@ PATMPushCSJump:
 PATMPushCSEnd:
 ENDPROC     PATMPushCSReplacement
 
-
-SECTION .data
 ; Patch record for 'push cs'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPushCSRecord
     RTCCPTR_DEF PATMPushCSStart
     DD      PATMPushCSJump - PATMPushCSStart
@@ -1191,7 +1181,7 @@ GLOBALNAME g_patmPushCSRecord
     DD      PATM_INTERRUPTFLAG
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;;****************************************************
 ;; Abstract:
@@ -1224,6 +1214,7 @@ SECTION .text
 ; esp + 4  - CS
 ; esp      - EIP
 ;;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIretReplacement
 PATMIretStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1391,8 +1382,8 @@ PATMIretTable:
 PATMIretEnd:
 ENDPROC     PATMIretReplacement
 
-SECTION .data
 ; Patch record for 'iretd'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIretRecord
     RTCCPTR_DEF PATMIretStart
     DD      0
@@ -1459,7 +1450,7 @@ GLOBALNAME g_patmIretRecord
     DD      PATM_PENDINGACTION
     DD      0
     DD      0ffffffffh
-SECTION .text
+
 
 ;;****************************************************
 ;; Abstract:
@@ -1492,6 +1483,7 @@ SECTION .text
 ; esp + 4  - CS
 ; esp      - EIP
 ;;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIretRing1Replacement
 PATMIretRing1Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1689,8 +1681,8 @@ PATMIretRing1Table:
 PATMIretRing1End:
 ENDPROC     PATMIretRing1Replacement
 
-SECTION .data
 ; Patch record for 'iretd'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIretRing1Record
     RTCCPTR_DEF PATMIretRing1Start
     DD      0
@@ -1757,7 +1749,6 @@ GLOBALNAME g_patmIretRing1Record
     DD      PATM_PENDINGACTION
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
 ;
@@ -1777,7 +1768,7 @@ SECTION .text
 ;          otherwise return address in eax
 ;
 ; @note NEVER change this without bumping the SSM version
-align 32
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIretFunction
 PATMIretFunction_Start:
     push    ecx
@@ -1841,7 +1832,7 @@ PATMIretFunction_Failure:
 PATMIretFunction_End:
 ENDPROC     PATMIretFunction
 
-SECTION .data
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIretFunctionRecord
     RTCCPTR_DEF PATMIretFunction_Start
     DD      0
@@ -1854,10 +1845,12 @@ GLOBALNAME g_patmIretFunctionRecord
     DD      PATM_PATCHBASE
     DD      0
     DD      0ffffffffh
-SECTION .text
 
 
-align 32 ; yasm / nasm diff - remove me!
+;
+; PATMCpuidReplacement
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMCpuidReplacement
 PATMCpuidStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1909,8 +1902,8 @@ cpuid_fetch:
 PATMCpuidEnd:
 ENDPROC PATMCpuidReplacement
 
-SECTION .data
 ; Patch record for 'cpuid'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCpuidRecord 
     istruc PATCHASMRECORD
     at PATCHASMRECORD.pbFunction,     RTCCPTR_DEF PATMCpuidStart
@@ -1930,9 +1923,12 @@ GLOBALNAME g_patmCpuidRecord
     DD      PATM_CPUID_CENTAUR_PTR, 0       ; 7
     DD      PATM_INTERRUPTFLAG,     0       ; 8
     DD      0ffffffffh, 0ffffffffh          ; 9 - for sanity checks
-SECTION .text
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMJEcxReplacement
 PATMJEcxStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1954,8 +1950,8 @@ PATMJEcxContinue:
 PATMJEcxEnd:
 ENDPROC PATMJEcxReplacement
 
-SECTION .data
 ; Patch record for 'JEcx'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmJEcxRecord
     RTCCPTR_DEF PATMJEcxStart
     DD      0
@@ -1969,10 +1965,13 @@ GLOBALNAME g_patmJEcxRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
-align 32; yasm / nasm diffing. remove me!
+
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopReplacement
 PATMLoopStart:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -1994,8 +1993,8 @@ PATMLoopContinue:
 PATMLoopEnd:
 ENDPROC PATMLoopReplacement
 
-SECTION .data
 ; Patch record for 'Loop'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopRecord
     RTCCPTR_DEF PATMLoopStart
     DD      0
@@ -2009,9 +2008,13 @@ GLOBALNAME g_patmLoopRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
+
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopZReplacement
 PATMLoopZStart:
     ; jump if ZF=1 AND (E)CX != 0
@@ -2036,8 +2039,8 @@ PATMLoopZContinue:
 PATMLoopZEnd:
 ENDPROC PATMLoopZReplacement
 
-SECTION .data
 ; Patch record for 'Loopz'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopZRecord
     RTCCPTR_DEF PATMLoopZStart
     DD      0
@@ -2051,10 +2054,13 @@ GLOBALNAME g_patmLoopZRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
+;
+;
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopNZReplacement
 PATMLoopNZStart:
     ; jump if ZF=0 AND (E)CX != 0
@@ -2079,8 +2085,8 @@ PATMLoopNZContinue:
 PATMLoopNZEnd:
 ENDPROC PATMLoopNZReplacement
 
-SECTION .data
 ; Patch record for 'LoopNZ'
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopNZRecord
     RTCCPTR_DEF PATMLoopNZStart
     DD      0
@@ -2094,10 +2100,10 @@ GLOBALNAME g_patmLoopNZRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
-align 32
+
+;
 ; Global patch function for indirect calls
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
 ;  + 20 push    [pTargetGC]
@@ -2108,6 +2114,7 @@ align 32
 ;( +  0 return address )
 ;
 ; @note NEVER change this without bumping the SSM version
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMLookupAndCall
 PATMLookupAndCallStart:
     push    eax
@@ -2214,8 +2221,8 @@ PATMLookupAndCallEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
 ENDPROC PATMLookupAndCall
 
-SECTION .data
 ; Patch record for indirect calls and jumps
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLookupAndCallRecord
     RTCCPTR_DEF PATMLookupAndCallStart
     DD      0
@@ -2249,11 +2256,10 @@ GLOBALNAME g_patmLookupAndCallRecord
     DD      0
     DD      PATM_CALL_PATCH_TARGET_ADDR
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
-align 32
+;
 ; Global patch function for indirect jumps
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
 ;  +  8 push    [pTargetGC]
@@ -2262,6 +2268,7 @@ align 32
 ; And saving eflags in PATM_TEMP_EFLAGS
 ;
 ; @note NEVER change this without bumping the SSM version
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMLookupAndJump
 PATMLookupAndJumpStart:
     push    eax
@@ -2333,8 +2340,8 @@ PATMLookupAndJump_SearchEnd:
 PATMLookupAndJumpEnd:
 ENDPROC PATMLookupAndJump
 
-SECTION .data
 ; Patch record for indirect calls and jumps
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLookupAndJumpRecord
     RTCCPTR_DEF PATMLookupAndJumpStart
     DD      0
@@ -2352,18 +2359,15 @@ GLOBALNAME g_patmLookupAndJumpRecord
     DD      0
     DD      PATM_TEMP_EAX
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
-
-
-align 32
 ; Patch function for static calls
 ; @note static calls have only one lookup slot!
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMCall
 PATMCallStart:
     pushfd
@@ -2394,8 +2398,8 @@ PATMCallEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
 ENDPROC PATMCall
 
-SECTION .data
 ; Patch record for direct calls
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCallRecord
     RTCCPTR_DEF PATMCallStart
     DD      0
@@ -2413,15 +2417,14 @@ GLOBALNAME g_patmCallRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
-align 32
 ; Patch function for indirect calls
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMCallIndirect
 PATMCallIndirectStart:
     pushfd
@@ -2452,8 +2455,8 @@ PATMCallIndirectEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
 ENDPROC PATMCallIndirect
 
-SECTION .data
 ; Patch record for indirect calls
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCallIndirectRecord
     RTCCPTR_DEF PATMCallIndirectStart
     DD      0
@@ -2471,15 +2474,15 @@ GLOBALNAME g_patmCallIndirectRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
-align 32
+;
 ; Patch function for indirect jumps
 ; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMJumpIndirect
 PATMJumpIndirectStart:
     ; save flags (just to be sure)
@@ -2515,8 +2518,8 @@ PATMJumpIndirectEnd:
 ; returning here -> do not add code here or after the jmp!!!!!
 ENDPROC PATMJumpIndirect
 
-SECTION .data
 ; Patch record for indirect jumps
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmJumpIndirectRecord
     RTCCPTR_DEF PATMJumpIndirectStart
     DD      0
@@ -2534,13 +2537,13 @@ GLOBALNAME g_patmJumpIndirectRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
+
 
 ;
 ; return from duplicated function
 ;
-align 32
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMRet
 PATMRet_Start:
     ; probe stack here as we can't recover from page faults later on
@@ -2582,7 +2585,7 @@ PATMRet_Success:
 PATMRet_End:
 ENDPROC     PATMRet
 
-SECTION .data
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmRetRecord
     RTCCPTR_DEF PATMRet_Start
     DD      0
@@ -2598,8 +2601,8 @@ GLOBALNAME g_patmRetRecord
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
+
 
 ;
 ; global function for implementing 'retn'
@@ -2618,7 +2621,7 @@ SECTION .text
 ;          otherwise return address in eax
 ;
 ; @note NEVER change this without bumping the SSM version
-align 32
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMRetFunction
 PATMRetFunction_Start:
     push    ecx
@@ -2749,7 +2752,7 @@ PATMRetFunction_Failure:
 PATMRetFunction_End:
 ENDPROC     PATMRetFunction
 
-SECTION .data
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmRetFunctionRecord
     RTCCPTR_DEF PATMRetFunction_Start
     DD      0
@@ -2783,13 +2786,13 @@ GLOBALNAME g_patmRetFunctionRecord
     DD      PATM_PENDINGACTION
     DD      0
 %endif
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
 ;
 ; Jump to original instruction if IF=1
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMCheckIF
 PATMCheckIF_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -2826,8 +2829,8 @@ PATMCheckIF_Jump:
 PATMCheckIF_End:
 ENDPROC     PATMCheckIF
 
-SECTION .data
 ; Patch record for call instructions
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCheckIFRecord
     RTCCPTR_DEF PATMCheckIF_Start
     DD      PATMCheckIF_Jump - PATMCheckIF_Start
@@ -2853,12 +2856,13 @@ GLOBALNAME g_patmCheckIFRecord
 %endif
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
+
 
 ;
 ; Jump back to guest if IF=1, else fault
 ;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMJumpToGuest_IF1
 PATMJumpToGuest_IF1_Start:
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
@@ -2882,8 +2886,8 @@ PATMJumpToGuest_IF1_Jump:
 PATMJumpToGuest_IF1_End:
 ENDPROC     PATMJumpToGuest_IF1
 
-SECTION .data
 ; Patch record for call instructions
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME PATMJumpToGuest_IF1Record
     RTCCPTR_DEF PATMJumpToGuest_IF1_Start
     DD      PATMJumpToGuest_IF1_Jump - PATMJumpToGuest_IF1_Start
@@ -2899,11 +2903,13 @@ GLOBALNAME PATMJumpToGuest_IF1Record
     DD      0
     DD      PATM_INTERRUPTFLAG
     DD      0
-    DD      0ffffffffh
-SECTION .text
+    DD      0ffffffffh, 0ffffffffh
 
 
-; check and correct RPL of pushed ss
+;
+; Check and correct RPL of pushed ss.
+;
+BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMMovFromSS
 PATMMovFromSS_Start:
     push    eax
@@ -2920,7 +2926,7 @@ PATMMovFromSS_Continue:
 PATMMovFromSS_Start_End:
 ENDPROC PATMMovFromSS
 
-SECTION .data
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmMovFromSSRecord
     RTCCPTR_DEF PATMMovFromSS_Start
     DD      0
@@ -2928,7 +2934,7 @@ GLOBALNAME g_patmMovFromSSRecord
     DD      0
     DD      PATMMovFromSS_Start_End - PATMMovFromSS_Start
     DD      0
-    DD      0ffffffffh
+    DD      0ffffffffh, 0ffffffffh
 
 
 
