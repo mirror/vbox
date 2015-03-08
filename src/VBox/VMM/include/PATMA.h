@@ -169,53 +169,53 @@ RT_C_DECLS_BEGIN
 
 /** @name Patch Descriptor Records (in PATMA.asm)
  * @{ */
-extern PATCHASMRECORD PATMCliRecord;
-extern PATCHASMRECORD PATMStiRecord;
-extern PATCHASMRECORD PATMPopf32Record;
-extern PATCHASMRECORD PATMPopf16Record;
-extern PATCHASMRECORD PATMPopf16Record_NoExit;
-extern PATCHASMRECORD PATMPopf32Record_NoExit;
-extern PATCHASMRECORD PATMPushf32Record;
-extern PATCHASMRECORD PATMPushf16Record;
-extern PATCHASMRECORD PATMIretRecord;
-extern PATCHASMRECORD PATMIretRing1Record;
-extern PATCHASMRECORD PATMCpuidRecord;
-extern PATCHASMRECORD PATMLoopRecord;
-extern PATCHASMRECORD PATMLoopZRecord;
-extern PATCHASMRECORD PATMLoopNZRecord;
-extern PATCHASMRECORD PATMJEcxRecord;
-extern PATCHASMRECORD PATMIntEntryRecord;
-extern PATCHASMRECORD PATMIntEntryRecordErrorCode;
-extern PATCHASMRECORD PATMTrapEntryRecord;
-extern PATCHASMRECORD PATMTrapEntryRecordErrorCode;
-extern PATCHASMRECORD PATMPushCSRecord;
+extern PATCHASMRECORD g_patmCliRecord;
+extern PATCHASMRECORD g_patmStiRecord;
+extern PATCHASMRECORD g_patmPopf32Record;
+extern PATCHASMRECORD g_patmPopf16Record;
+extern PATCHASMRECORD g_patmPopf16Record_NoExit;
+extern PATCHASMRECORD g_patmPopf32Record_NoExit;
+extern PATCHASMRECORD g_patmPushf32Record;
+extern PATCHASMRECORD g_patmPushf16Record;
+extern PATCHASMRECORD g_patmIretRecord;
+extern PATCHASMRECORD g_patmIretRing1Record;
+extern PATCHASMRECORD g_patmCpuidRecord;
+extern PATCHASMRECORD g_patmLoopRecord;
+extern PATCHASMRECORD g_patmLoopZRecord;
+extern PATCHASMRECORD g_patmLoopNZRecord;
+extern PATCHASMRECORD g_patmJEcxRecord;
+extern PATCHASMRECORD g_patmIntEntryRecord;
+extern PATCHASMRECORD g_patmIntEntryRecordErrorCode;
+extern PATCHASMRECORD g_patmTrapEntryRecord;
+extern PATCHASMRECORD g_patmTrapEntryRecordErrorCode;
+extern PATCHASMRECORD g_patmPushCSRecord;
 
-extern PATCHASMRECORD PATMCheckIFRecord;
+extern PATCHASMRECORD g_patmCheckIFRecord;
 extern PATCHASMRECORD PATMJumpToGuest_IF1Record;
 
-extern PATCHASMRECORD PATMCallRecord;
-extern PATCHASMRECORD PATMCallIndirectRecord;
-extern PATCHASMRECORD PATMRetRecord;
-extern PATCHASMRECORD PATMJumpIndirectRecord;
+extern PATCHASMRECORD g_patmCallRecord;
+extern PATCHASMRECORD g_patmCallIndirectRecord;
+extern PATCHASMRECORD g_patmRetRecord;
+extern PATCHASMRECORD g_patmJumpIndirectRecord;
 
-extern PATCHASMRECORD PATMLookupAndCallRecord;
-extern PATCHASMRECORD PATMRetFunctionRecord;
-extern PATCHASMRECORD PATMLookupAndJumpRecord;
-extern PATCHASMRECORD PATMIretFunctionRecord;
+extern PATCHASMRECORD g_patmLookupAndCallRecord;
+extern PATCHASMRECORD g_patmRetFunctionRecord;
+extern PATCHASMRECORD g_patmLookupAndJumpRecord;
+extern PATCHASMRECORD g_patmIretFunctionRecord;
 
-extern PATCHASMRECORD PATMStatsRecord;
+extern PATCHASMRECORD g_patmStatsRecord;
 
-extern PATCHASMRECORD PATMSetPIFRecord;
-extern PATCHASMRECORD PATMClearPIFRecord;
+extern PATCHASMRECORD g_patmSetPIFRecord;
+extern PATCHASMRECORD g_patmClearPIFRecord;
 
-extern PATCHASMRECORD PATMSetInhibitIRQRecord;
-extern PATCHASMRECORD PATMClearInhibitIRQFaultIF0Record;
-extern PATCHASMRECORD PATMClearInhibitIRQContIF0Record;
+extern PATCHASMRECORD g_patmSetInhibitIRQRecord;
+extern PATCHASMRECORD g_patmClearInhibitIRQFaultIF0Record;
+extern PATCHASMRECORD g_patmClearInhibitIRQContIF0Record;
 
-extern PATCHASMRECORD PATMMovFromSSRecord;
+extern PATCHASMRECORD g_patmMovFromSSRecord;
 /** @} */
 
-extern const uint32_t PATMInterruptFlag;
+extern const uint32_t g_fPatmInterruptFlag;
 
 RT_C_DECLS_END
 

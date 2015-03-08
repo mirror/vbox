@@ -159,8 +159,8 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     AssertCompile(VMCPU_FF_INTERRUPT_APIC == RT_BIT_32(0));
     AssertCompile(VMCPU_FF_INTERRUPT_PIC == RT_BIT_32(1));
 
-    AssertReleaseMsg(PATMInterruptFlag == (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST),
-                     ("Interrupt flags out of sync!! PATMInterruptFlag=%#x expected %#x. broken assembler?\n", PATMInterruptFlag, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST));
+    AssertReleaseMsg(g_fPatmInterruptFlag == (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST),
+                     ("Interrupt flags out of sync!! g_fPatmInterruptFlag=%#x expected %#x. broken assembler?\n", g_fPatmInterruptFlag, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST));
 
     /* Allocate patch memory and GC patch state memory. */
     pVM->patm.s.cbPatchMem = PATCH_MEMORY_SIZE;
@@ -307,14 +307,14 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->patm.s.StatCheckPendingIRQ,   STAMTYPE_COUNTER, "/PATM/GC/CheckIRQ" ,        STAMUNIT_OCCURENCES,     "Number of traps that ask to check for pending irqs.");
 #endif /* VBOX_WITH_STATISTICS */
 
-    Log(("PATMCallRecord.cbFunction           %u\n", PATMCallRecord.cbFunction));
-    Log(("PATMCallIndirectRecord.cbFunction   %u\n", PATMCallIndirectRecord.cbFunction));
-    Log(("PATMRetRecord.cbFunction            %u\n", PATMRetRecord.cbFunction));
-    Log(("PATMJumpIndirectRecord.cbFunction   %u\n", PATMJumpIndirectRecord.cbFunction));
-    Log(("PATMPopf32Record.cbFunction         %u\n", PATMPopf32Record.cbFunction));
-    Log(("PATMIretRecord.cbFunction           %u\n", PATMIretRecord.cbFunction));
-    Log(("PATMStiRecord.cbFunction            %u\n", PATMStiRecord.cbFunction));
-    Log(("PATMCheckIFRecord.cbFunction        %u\n", PATMCheckIFRecord.cbFunction));
+    Log(("g_patmCallRecord.cbFunction           %u\n", g_patmCallRecord.cbFunction));
+    Log(("g_patmCallIndirectRecord.cbFunction   %u\n", g_patmCallIndirectRecord.cbFunction));
+    Log(("g_patmRetRecord.cbFunction            %u\n", g_patmRetRecord.cbFunction));
+    Log(("g_patmJumpIndirectRecord.cbFunction   %u\n", g_patmJumpIndirectRecord.cbFunction));
+    Log(("g_patmPopf32Record.cbFunction         %u\n", g_patmPopf32Record.cbFunction));
+    Log(("g_patmIretRecord.cbFunction           %u\n", g_patmIretRecord.cbFunction));
+    Log(("g_patmStiRecord.cbFunction            %u\n", g_patmStiRecord.cbFunction));
+    Log(("g_patmCheckIFRecord.cbFunction        %u\n", g_patmCheckIFRecord.cbFunction));
 
     return rc;
 }
