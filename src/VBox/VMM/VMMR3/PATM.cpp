@@ -307,14 +307,14 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->patm.s.StatCheckPendingIRQ,   STAMTYPE_COUNTER, "/PATM/GC/CheckIRQ" ,        STAMUNIT_OCCURENCES,     "Number of traps that ask to check for pending irqs.");
 #endif /* VBOX_WITH_STATISTICS */
 
-    Log(("PATMCallRecord.size           %d\n", PATMCallRecord.size));
-    Log(("PATMCallIndirectRecord.size   %d\n", PATMCallIndirectRecord.size));
-    Log(("PATMRetRecord.size            %d\n", PATMRetRecord.size));
-    Log(("PATMJumpIndirectRecord.size   %d\n", PATMJumpIndirectRecord.size));
-    Log(("PATMPopf32Record.size         %d\n", PATMPopf32Record.size));
-    Log(("PATMIretRecord.size           %d\n", PATMIretRecord.size));
-    Log(("PATMStiRecord.size            %d\n", PATMStiRecord.size));
-    Log(("PATMCheckIFRecord.size        %d\n", PATMCheckIFRecord.size));
+    Log(("PATMCallRecord.cbFunction           %u\n", PATMCallRecord.cbFunction));
+    Log(("PATMCallIndirectRecord.cbFunction   %u\n", PATMCallIndirectRecord.cbFunction));
+    Log(("PATMRetRecord.cbFunction            %u\n", PATMRetRecord.cbFunction));
+    Log(("PATMJumpIndirectRecord.cbFunction   %u\n", PATMJumpIndirectRecord.cbFunction));
+    Log(("PATMPopf32Record.cbFunction         %u\n", PATMPopf32Record.cbFunction));
+    Log(("PATMIretRecord.cbFunction           %u\n", PATMIretRecord.cbFunction));
+    Log(("PATMStiRecord.cbFunction            %u\n", PATMStiRecord.cbFunction));
+    Log(("PATMCheckIFRecord.cbFunction        %u\n", PATMCheckIFRecord.cbFunction));
 
     return rc;
 }

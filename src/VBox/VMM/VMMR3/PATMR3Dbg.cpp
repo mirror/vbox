@@ -240,10 +240,10 @@ static void patmR3DbgAddPatches(PVM pVM, RTDBGMOD hDbgMod)
     /*
      * Global functions and a start marker.
      */
-    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperCallGC, PATMLookupAndCallRecord.size, "PATMLookupAndCall");
-    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperRetGC,  PATMRetFunctionRecord.size,   "PATMRetFunction");
-    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperJumpGC, PATMLookupAndJumpRecord.size, "PATMLookupAndJump");
-    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperIretGC, PATMIretFunctionRecord.size,  "PATMIretFunction");
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperCallGC, PATMLookupAndCallRecord.cbFunction, "PATMLookupAndCall");
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperRetGC,  PATMRetFunctionRecord.cbFunction,   "PATMRetFunction");
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperJumpGC, PATMLookupAndJumpRecord.cbFunction, "PATMLookupAndJump");
+    ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pfnHelperIretGC, PATMIretFunctionRecord.cbFunction,  "PATMIretFunction");
 
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pPatchMemGC, 0,  "PatchMemStart");
     ADD_FUNC(hDbgMod, pVM->patm.s.pPatchMemGC, pVM->patm.s.pGCStackGC, PATM_STACK_TOTAL_SIZE, "PATMStack");

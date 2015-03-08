@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; PATM macros & definitions (identical to PATMA.h!!)
+; PATM macros & definitions (identical to PATMA.h!).
 ;
 
 ;
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -18,65 +18,70 @@
 ; hardcoded dependency on single byte int 3
 %define PATM_INT3            int3
 
-%define PATM_VMFLAGS         0xF1ABCD00
+;; @name Patch Fixup Types
+; @{
+%define PATM_VMFLAGS                            0xF1ABCD00
 %ifdef VBOX_WITH_STATISTICS
-%define PATM_ALLPATCHCALLS   0xF1ABCD01
-%define PATM_PERPATCHCALLS   0xF1ABCD02
+ %define PATM_ALLPATCHCALLS                     0xF1ABCD01
+ %define PATM_PERPATCHCALLS                     0xF1ABCD02
 %endif
-%define PATM_JUMPDELTA       0xF1ABCD03
+%define PATM_JUMPDELTA                          0xF1ABCD03
 %ifdef VBOX_WITH_STATISTICS
-%define PATM_IRETEFLAGS      0xF1ABCD04
-%define PATM_IRETCS          0xF1ABCD05
-%define PATM_IRETEIP         0xF1ABCD06
+ %define PATM_IRETEFLAGS                        0xF1ABCD04
+ %define PATM_IRETCS                            0xF1ABCD05
+ %define PATM_IRETEIP                           0xF1ABCD06
 %endif
-%define PATM_FIXUP           0xF1ABCD07
-%define PATM_PENDINGACTION   0xF1ABCD08
-%define PATM_CPUID_STD_PTR   0xF1ABCD09
-%define PATM_CPUID_EXT_PTR   0xF1ABCD0a
-%define PATM_CPUID_DEF_PTR   0xF1ABCD0b
-%define PATM_STACKBASE       0xF1ABCD0c    ;/** Stack to store our private patch return addresses */
-%define PATM_STACKBASE_GUEST 0xF1ABCD0d    ;/** Stack to store guest return addresses */
-%define PATM_STACKPTR        0xF1ABCD0e
-%define PATM_PATCHBASE       0xF1ABCD0f
-%define PATM_INTERRUPTFLAG   0xF1ABCD10
-%define PATM_INHIBITIRQADDR  0xF1ABCD11
-%define PATM_VM_FORCEDACTIONS  0xF1ABCD12
-%define PATM_TEMP_EAX                           0xF1ABCD13      ;/** Location for original EAX register */
-%define PATM_TEMP_ECX                           0xF1ABCD14      ;/** Location for original ECX register */
-%define PATM_TEMP_EDI                           0xF1ABCD15      ;/** Location for original EDI register */
-%define PATM_TEMP_EFLAGS                        0xF1ABCD16      ;/** Location for original eflags */
-%define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17      ;/** Which registers to restore */
+%define PATM_FIXUP                              0xF1ABCD07
+%define PATM_PENDINGACTION                      0xF1ABCD08
+%define PATM_CPUID_STD_PTR                      0xF1ABCD09
+%define PATM_CPUID_EXT_PTR                      0xF1ABCD0a
+%define PATM_CPUID_DEF_PTR                      0xF1ABCD0b
+%define PATM_STACKBASE                          0xF1ABCD0c  ;;< Stack to store our private patch return addresses
+%define PATM_STACKBASE_GUEST                    0xF1ABCD0d  ;;< Stack to store guest return addresses 
+%define PATM_STACKPTR                           0xF1ABCD0e
+%define PATM_PATCHBASE                          0xF1ABCD0f
+%define PATM_INTERRUPTFLAG                      0xF1ABCD10
+%define PATM_INHIBITIRQADDR                     0xF1ABCD11
+%define PATM_VM_FORCEDACTIONS                   0xF1ABCD12
+%define PATM_TEMP_EAX                           0xF1ABCD13  ;;< Location for original EAX register
+%define PATM_TEMP_ECX                           0xF1ABCD14  ;;< Location for original ECX register
+%define PATM_TEMP_EDI                           0xF1ABCD15  ;;< Location for original EDI register
+%define PATM_TEMP_EFLAGS                        0xF1ABCD16  ;;< Location for original eflags
+%define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17  ;;< Which registers to restore
 %define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 %define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
-%define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1A
+%define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a
 
 ;/* Anything larger doesn't require a fixup */
-%define PATM_NO_FIXUP        0xF1ABCE00
-%define PATM_CPUID_STD_MAX   0xF1ABCE00
-%define PATM_CPUID_EXT_MAX   0xF1ABCE01
-%define PATM_RETURNADDR      0xF1ABCE02
-%define PATM_PATCHNEXTBLOCK  0xF1ABCE03
-%define PATM_CALLTARGET      0xF1ABCE04    ; /* relative */
-%define PATM_NEXTINSTRADDR   0xF1ABCE05    ; /* absolute guest address of the next instruction */
-%define PATM_CURINSTRADDR    0xF1ABCE06    ; /* absolute guest address of the current instruction */
-%define PATM_LOOKUP_AND_CALL_FUNCTION           0xF1ABCE07   ; /** Relative address of global PATM lookup and call function. */
-%define PATM_RETURN_FUNCTION                    0xF1ABCE08   ; /** Relative address of global PATM return function. */
-%define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09   ; /** Relative address of global PATM lookup and jump function. */
-%define PATM_IRET_FUNCTION                      0xF1ABCE0A   ; /** Relative address of global PATM iret function. */
+%define PATM_NO_FIXUP                           0xF1ABCE00
+%define PATM_CPUID_STD_MAX                      0xF1ABCE00
+%define PATM_CPUID_EXT_MAX                      0xF1ABCE01
+%define PATM_RETURNADDR                         0xF1ABCE02
+%define PATM_PATCHNEXTBLOCK                     0xF1ABCE03
+%define PATM_CALLTARGET                         0xF1ABCE04  ;;< relative call target 
+%define PATM_NEXTINSTRADDR                      0xF1ABCE05  ;;< absolute guest address of the next instruction 
+%define PATM_CURINSTRADDR                       0xF1ABCE06  ;;< absolute guest address of the current instruction 
+%define PATM_LOOKUP_AND_CALL_FUNCTION           0xF1ABCE07  ;;< Relative address of global PATM lookup and call function. 
+%define PATM_RETURN_FUNCTION                    0xF1ABCE08  ;;< Relative address of global PATM return function. 
+%define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09  ;;< Relative address of global PATM lookup and jump function. 
+%define PATM_IRET_FUNCTION                      0xF1ABCE0A  ;;< Relative address of global PATM iret function. 
 %define PATM_CPUID_CENTAUR_MAX                  0xF1ABCE0B
+;; @}
 
 
-; everything except IOPL, NT, IF, VM, VIF, VIP and RF
+;; Everything except IOPL, NT, IF, VM, VIF, VIP and RF 
 %define PATM_FLAGS_MASK      (X86_EFL_CF|X86_EFL_PF|X86_EFL_AF|X86_EFL_ZF|X86_EFL_SF|X86_EFL_TF|X86_EFL_DF|X86_EFL_OF|X86_EFL_AC|X86_EFL_ID)
 
 ; currently only IF & IOPL
 %define PATM_VIRTUAL_FLAGS_MASK (X86_EFL_IF|X86_EFL_IOPL)
 
-; PATM stack size (identical in PATMA.mac!!)
+; PATM stack size (identical in PATMA.h!!)
 %define PATM_STACK_SIZE                    (4096)
-%define PATM_STACK_TOTAL_SIZE              (2*PATM_STACK_SIZE)
+%define PATM_STACK_TOTAL_SIZE              (2 * PATM_STACK_SIZE)
+%define PATM_MAX_STACK                     (PATM_STACK_SIZE / RTRCPTR_CB)
 
-;/* Patch Manager pending actions (in GCSTATE). */
+;; @name Patch Manager pending actions (in GCSTATE).
+;; @{
 %define PATM_ACTION_LOOKUP_ADDRESS              1
 %define PATM_ACTION_DISPATCH_PENDING_IRQ        2
 %define PATM_ACTION_PENDING_IRQ_AFTER_IRET      3
@@ -91,14 +96,48 @@
 %define PATM_ACTION_LOG_RET                     12
 %define PATM_ACTION_LOG_CALL                    13
 %define PATM_ACTION_LOG_GATE_ENTRY              14
+;; @}
 
-;/* Magic dword found in ecx for patm pending actions. */
-%define PATM_ACTION_MAGIC          0xABCD4321
+;; Magic dword found in ecx for patm pending actions.
+%define PATM_ACTION_MAGIC                       0xABCD4321
 
+;; @name PATM_TEMP_RESTORE_FLAGS
+;; @{
 %define PATM_RESTORE_EAX                        RT_BIT(0)
 %define PATM_RESTORE_ECX                        RT_BIT(1)
 %define PATM_RESTORE_EDI                        RT_BIT(2)
+;; @}
 
+
+;;
+; Relocation entry for PATCHASMRECORD.
+;
+struc PATCHASMRELOC
+    ;; The relocation type.
+    .uType              resd 1
+    ;; Additional information specific to the relocation type.
+    .uCode              resd 1
+endstruc
+
+;;
+; Assembly patch descriptor record.
+;
+struc PATCHASMRECORD
+    ;; Pointer to the patch code.
+    .pbFunction         RTCCPTR_RES 1
+    ;; Offset of the jump table?
+    .offJump            resd 1
+    ;; Used only by loop/loopz/loopnz. 
+    .offRelJump         resd 1        
+    ;; Size override byte position.
+    .offSizeOverride    resd 1        
+    ;; The size of the patch function.
+    .cbFunction         resd 1
+    ;; The number of relocations in aRelocs.
+    .cRelocs            resd 1
+    ;; Variable sized relocation table. (put after the iend, so no included)
+    ;.aRelocs            resb PATCHASMRELOC_size
+endstruc
 
 ;/* For indirect calls/jump (identical in PATMA.h & PATMA.mac!) */
 %define PATM_MAX_JUMPTABLE_ENTRIES        16
