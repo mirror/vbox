@@ -34,6 +34,7 @@
 %include "VBox/vmm/vm.mac"
 %include "PATMA.mac"
 
+
 ;*******************************************************************************
 ;*  Defined Constants And Macros                                               *
 ;*******************************************************************************
@@ -109,17 +110,85 @@ iend
 
 ;;
 ; Switches to the code section and aligns the function.
+;
+; @remarks This section must be different from the patch readonly data section!
+;
 %macro BEGIN_PATCH_CODE_SECTION 0
 BEGINCODE
 align 32
+%endmacro
+%macro BEGIN_PATCH_CODE_SECTION_NO_ALIGN 0
+BEGINCODE
 %endmacro
 
 ;;
 ; Switches to the data section for the read-only patch descriptor data and 
 ; aligns it appropriately.
-%macro BEGIN_PATCH_RODATA_SECTION 0   
+;
+; @remarks This section must be different from the patch code section!
+;
+%macro BEGIN_PATCH_RODATA_SECTION 0
 BEGINDATA
 align 16
+%endmacro
+%macro BEGIN_PATCH_RODATA_SECTION_NO_ALIGN 0
+BEGINDATA
+%endmacro
+
+
+;;
+; Starts a patch.
+;
+; @param %1     The patch record name (externally visible).
+; @param %2     The patch function name (considered internal).
+;
+%macro BEGIN_PATCH 2
+; The patch record.
+BEGIN_PATCH_RODATA_SECTION
+GLOBALNAME %1
+PATCHASMRECORD_INIT PATMCpuidReplacement, (RT_CONCAT(%1,_FixupEnd) - RT_CONCAT(%1,_FixupStart)) / 8
+RT_CONCAT(%1,_FixupStart):
+
+; The patch code.
+BEGIN_PATCH_CODE_SECTION
+BEGINPROC %2
+%endmacro
+
+;;
+; Emit a fixup.
+; @param %1     The fixup type.
+%macro PATCH_FIXUP 1
+BEGIN_PATCH_RODATA_SECTION_NO_ALIGN
+    dd      %1, 0
+BEGIN_PATCH_CODE_SECTION_NO_ALIGN
+%endmacro
+
+;;
+; Emit a fixup with extra info.
+; @param %1     The fixup type.
+; @param %2     The extra fixup info.
+%macro PATCH_FIXUP_2 2
+BEGIN_PATCH_RODATA_SECTION_NO_ALIGN
+    dd      %1, %2
+BEGIN_PATCH_CODE_SECTION_NO_ALIGN
+%endmacro
+
+;;
+; Ends a patch.
+; 
+; This terminates the function and fixup array.
+;
+; @param %1     The patch record name (externally visible).
+; @param %2     The patch function name (considered internal).
+;
+%macro END_PATCH 2
+ENDPROC %2
+
+; Terminate the fixup array.
+BEGIN_PATCH_RODATA_SECTION_NO_ALIGN
+RT_CONCAT(%1,_FixupEnd):
+    dd      0ffffffffh, 0ffffffffh
+BEGIN_PATCH_CODE_SECTION_NO_ALIGN
 %endmacro
 
 
@@ -1651,39 +1720,45 @@ GLOBALNAME g_patmIretFunctionRecord
 ;
 ; PATMCpuidReplacement
 ;
-BEGIN_PATCH_CODE_SECTION
-BEGINPROC   PATMCpuidReplacement
+BEGIN_PATCH g_patmCpuidRecord, PATMCpuidReplacement
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
+PATCH_FIXUP PATM_INTERRUPTFLAG
     pushf
 
     cmp     eax, PATM_CPUID_STD_MAX
+PATCH_FIXUP PATM_CPUID_STD_MAX
     jb      cpuid_std
     cmp     eax, 0x80000000
     jb      cpuid_def
     cmp     eax, PATM_CPUID_EXT_MAX
+PATCH_FIXUP PATM_CPUID_EXT_MAX
     jb      cpuid_ext
     cmp     eax, 0xc0000000
     jb      cpuid_def
     cmp     eax, PATM_CPUID_CENTAUR_MAX
+PATCH_FIXUP PATM_CPUID_CENTAUR_MAX
     jb      cpuid_centaur
 
-    ; Dirty assumptions in patmCorrectFixup about the pointer fixup order!!!!
 cpuid_def:
     mov     eax, PATM_CPUID_DEF_PTR
+PATCH_FIXUP PATM_CPUID_DEF_PTR
     jmp     cpuid_fetch
 
 cpuid_std:
     mov     edx, PATM_CPUID_STD_PTR
+PATCH_FIXUP PATM_CPUID_STD_PTR
     jmp     cpuid_calc
 
 cpuid_ext:
-    and     eax, 0ffh                   ; strictly speaking not necessary.
+    and     eax, 0ffh                   
     mov     edx, PATM_CPUID_EXT_PTR
+PATCH_FIXUP PATM_CPUID_EXT_PTR
     jmp     cpuid_calc
 
 cpuid_centaur:
-    and     eax, 0ffh                   ; strictly speaking not necessary.
+    and     eax, 0ffh                   
     mov     edx, PATM_CPUID_CENTAUR_PTR
+PATCH_FIXUP PATM_CPUID_CENTAUR_PTR
 
 cpuid_calc:
     lea     eax, [ss:eax * 4]              ; 4 entries...
@@ -1698,22 +1773,8 @@ cpuid_fetch:
 
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
-ENDPROC PATMCpuidReplacement
-
-; Patch record for 'cpuid'
-BEGIN_PATCH_RODATA_SECTION
-GLOBALNAME g_patmCpuidRecord 
-    PATCHASMRECORD_INIT PATMCpuidReplacement, 9
-    DD      PATM_INTERRUPTFLAG,     0       ; 0
-    DD      PATM_CPUID_STD_MAX,     0       ; 1
-    DD      PATM_CPUID_EXT_MAX,     0       ; 2
-    DD      PATM_CPUID_CENTAUR_MAX, 0       ; 3
-    DD      PATM_CPUID_DEF_PTR,     0       ; 4
-    DD      PATM_CPUID_STD_PTR,     0       ; 5
-    DD      PATM_CPUID_EXT_PTR,     0       ; 6
-    DD      PATM_CPUID_CENTAUR_PTR, 0       ; 7
-    DD      PATM_INTERRUPTFLAG,     0       ; 8
-    DD      0ffffffffh, 0ffffffffh          ; 9 - for sanity checks
+PATCH_FIXUP PATM_INTERRUPTFLAG
+END_PATCH g_patmCpuidRecord, PATMCpuidReplacement
 
 
 ;
