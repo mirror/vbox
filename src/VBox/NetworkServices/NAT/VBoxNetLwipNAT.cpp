@@ -16,6 +16,8 @@
  */
 
 /* Must be included before winutils.h (lwip/def.h), otherwise Windows build breaks. */
+#define LOG_GROUP LOG_GROUP_NAT_SERVICE
+
 #include <iprt/cpp/mem.h>
 
 #include "winutils.h"
@@ -52,7 +54,6 @@
 #include <iprt/file.h>
 #include <iprt/semaphore.h>
 #include <iprt/cpp/utils.h>
-#define LOG_GROUP LOG_GROUP_NAT_SERVICE
 #include <VBox/log.h>
 
 #include <VBox/sup.h>
@@ -166,10 +167,11 @@ class VBoxNetLwipNAT: public VBoxNetBaseService, public NATNetworkEventAdapter
 
     /* Our NAT network descriptor in Main */
     ComPtr<INATNetwork> m_net;
-    ComNatListenerPtr m_listener;
-
     ComPtr<IHost> m_host;
-    ComNatListenerPtr m_vboxListener;
+
+    ComNatListenerPtr m_NatListener;
+    ComNatListenerPtr m_VBoxListener;
+    ComNatListenerPtr m_VBoxClientListener;
     static INTNETSEG aXmitSeg[64];
 
     HRESULT HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent);
@@ -396,6 +398,13 @@ HRESULT VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
             if (!fStart)
                 shutdown();
+            break;
+        }
+
+        case VBoxEventType_OnVBoxSVCAvailabilityChanged:
+        {
+            LogRel(("VBoxSVC became unavailable, exiting.\n"));
+            shutdown();
             break;
         }
     }
@@ -779,11 +788,13 @@ int VBoxNetLwipNAT::init()
     rc = findNatNetwork(virtualbox, networkName, m_net);
     AssertRCReturn(rc, rc);
 
-    ComEventTypeArray aNetEvents;
-    aNetEvents.push_back(VBoxEventType_OnNATNetworkPortForward);
-    aNetEvents.push_back(VBoxEventType_OnNATNetworkSetting);
-    rc = createNatListener(m_listener, virtualbox, this, aNetEvents);
-    AssertRCReturn(rc, rc);
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnNATNetworkPortForward);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkSetting);
+        rc = createNatListener(m_NatListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
 
 
     // resolver changes are reported on vbox but are retrieved from
@@ -791,11 +802,20 @@ int VBoxNetLwipNAT::init()
     HRESULT hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    ComEventTypeArray aVBoxEvents;
-    aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-    aVBoxEvents.push_back(VBoxEventType_OnNATNetworkStartStop);
-    rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
-    AssertRCReturn(rc, rc);
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
+        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
+        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
 
     BOOL fIPv6Enabled = FALSE;
     hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
@@ -1044,6 +1064,10 @@ int VBoxNetLwipNAT::run()
 
     m_vecPortForwardRule4.clear();
     m_vecPortForwardRule6.clear();
+
+    destroyNatListener(m_NatListener, virtualbox);
+    destroyNatListener(m_VBoxListener, virtualbox);
+    destroyClientListener(m_VBoxClientListener, virtualboxClient);
 
     return VINF_SUCCESS;
 }
@@ -1369,10 +1393,9 @@ static DWORD WINAPI MsgThreadProc(__in  LPVOID lpParameter)
      if (atomWindowClass != 0)
      {
          /* Create the window. */
-         hwnd = CreateWindowEx (WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
-                 g_WndClassName, g_WndClassName,
-                                                   WS_POPUPWINDOW,
-                                                  -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
+         hwnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
+                               g_WndClassName, g_WndClassName, WS_POPUPWINDOW,
+                               -200, -200, 100, 100, NULL, NULL, hInstance, NULL);
 
          if (hwnd)
          {

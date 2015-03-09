@@ -24,6 +24,7 @@
 #include "cpp/utils.h"
 
 typedef ComPtr<IVirtualBox> ComVirtualBoxPtr;
+typedef ComPtr<IVirtualBoxClient> ComVirtualBoxClientPtr;
 typedef ComPtr<IDHCPServer> ComDhcpServerPtr;
 typedef ComPtr<IHost> ComHostPtr;
 typedef ComPtr<INATNetwork> ComNatPtr;
@@ -130,4 +131,9 @@ typedef com::SafeArray<VBoxEventType_T> ComEventTypeArray;
  isn't modify event type array */
 int createNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr,
                       NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events);
+int destroyNatListener(ComNatListenerPtr& listener, const ComVirtualBoxPtr& vboxptr);
+int createClientListener(ComNatListenerPtr& listener, const ComVirtualBoxClientPtr& vboxclientptr,
+                         NATNetworkEventAdapter *adapter, /* const */ ComEventTypeArray& events);
+int destroyClientListener(ComNatListenerPtr& listener, const ComVirtualBoxClientPtr& vboxclientptr);
+
 #endif

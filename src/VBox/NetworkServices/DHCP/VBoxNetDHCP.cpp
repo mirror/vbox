@@ -92,6 +92,7 @@ public:
     virtual ~VBoxNetDhcp();
 
     int                 init();
+    void                done();
     void                usage(void) { /* XXX: document options */ };
     int                 parseOpt(int rc, const RTGETOPTUNION& getOptVal);
     int                 processFrame(void *, size_t) {return VERR_IGNORED; };
@@ -128,7 +129,8 @@ protected:
     ComPtr<INATNetwork> m_NATNetwork;
 
     /** Listener for Host DNS changes */
-    ComPtr<NATNetworkListenerImpl> m_vboxListener;
+    ComNatListenerPtr m_VBoxListener;
+    ComNatListenerPtr m_VBoxClientListener;
 
     NetworkManager *m_NetworkManager;
 
@@ -302,6 +304,11 @@ int VBoxNetDhcp::init()
     return VINF_SUCCESS;
 }
 
+void VBoxNetDhcp::done()
+{
+    destroyNatListener(m_VBoxListener, virtualbox);
+    destroyClientListener(m_VBoxClientListener, virtualboxClient);
+}
 
 int  VBoxNetDhcp::processUDP(void *pv, size_t cbPv)
 {
@@ -516,11 +523,20 @@ int VBoxNetDhcp::initWithMain()
     rc = fetchAndUpdateDnsInfo();
     AssertMsgRCReturn(rc, ("Wasn't able to fetch Dns info"), rc);
 
-    ComEventTypeArray aVBoxEvents;
-    aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
-    aVBoxEvents.push_back(VBoxEventType_OnNATNetworkStartStop);
-    rc = createNatListener(m_vboxListener, virtualbox, this, aVBoxEvents);
-    AssertRCReturn(rc, rc);
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+        eventTypes.push_back(VBoxEventType_OnNATNetworkStartStop);
+        rc = createNatListener(m_VBoxListener, virtualbox, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
+
+    {
+        ComEventTypeArray eventTypes;
+        eventTypes.push_back(VBoxEventType_OnVBoxSVCAvailabilityChanged);
+        rc = createClientListener(m_VBoxClientListener, virtualboxClient, this, eventTypes);
+        AssertRCReturn(rc, rc);
+    }
 
     RTNETADDRIPV4 LowerAddress;
     rc = configGetBoundryAddress(m_DhcpServer, false, LowerAddress);
@@ -588,7 +604,6 @@ int VBoxNetDhcp::fetchAndUpdateDnsInfo()
     return VINF_SUCCESS;
 }
 
-
 HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
 {
     switch(aEventType)
@@ -604,6 +619,12 @@ HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
             HRESULT hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
             if (!fStart)
                 shutdown();
+            break;
+        }
+
+        case VBoxEventType_OnVBoxSVCAvailabilityChanged:
+        {
+            shutdown();
             break;
         }
     }
@@ -647,6 +668,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
      */
     g_pDhcp = pDhcp;
     rc = pDhcp->run();
+    pDhcp->done();
+
     g_pDhcp = NULL;
     delete pDhcp;
 

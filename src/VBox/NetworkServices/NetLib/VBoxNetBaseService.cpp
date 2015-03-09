@@ -207,7 +207,10 @@ int VBoxNetBaseService::init()
         HRESULT hrc = com::Initialize();
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-        hrc = virtualbox.createLocalObject(CLSID_VirtualBox);
+        hrc = virtualboxClient.createInprocObject(CLSID_VirtualBoxClient);
+        AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+        hrc = virtualboxClient->COMGETTER(VirtualBox)(virtualbox.asOutParam());
         AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
     }
 
