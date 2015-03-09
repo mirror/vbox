@@ -319,9 +319,12 @@ VMMR3_INT_DECL(void) gimR3HvRelocate(PVM pVM, RTGCINTPTR offDelta)
  * This is called when the VM is being reset.
  *
  * @param   pVM     Pointer to the VM.
+ * @thread EMT(0).
  */
 VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
 {
+    VM_ASSERT_EMT0(pVM);
+
     /*
      * Unmap MMIO2 pages that the guest may have setup.
      */

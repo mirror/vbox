@@ -81,7 +81,7 @@ VMM_INT_DECL(bool) gimHvIsParavirtTscEnabled(PVM pVM)
 /**
  * MSR read handler for Hyper-V.
  *
- * @returns Strict VBox status code like CPUMQueryGuestMsr.
+ * @returns Strict VBox status code like CPUMQueryGuestMsr().
  * @retval  VINF_CPUM_R3_MSR_READ
  * @retval  VERR_CPUM_RAISE_GP_0
  *
@@ -169,7 +169,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 /**
  * MSR write handler for Hyper-V.
  *
- * @returns Strict VBox status code like CPUMSetGuestMsr.
+ * @returns Strict VBox status code like CPUMSetGuestMsr().
  * @retval  VINF_CPUM_R3_MSR_WRITE
  * @retval  VERR_CPUM_RAISE_GP_0
  *
