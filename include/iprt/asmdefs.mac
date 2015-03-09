@@ -75,6 +75,16 @@
 ; Makes a 32-bit unsigned (not type safe, but whatever) out of four byte values.
 %define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) ( (b3 << 24) | (b2 << 16) | (b1 << 8) | b0 )
 
+;; Preprocessor concatenation macro.
+%define RT_CONCAT(a_1,a_2)              a_1 %+ a_2
+
+;; Preprocessor concatenation macro, three arguments.
+%define RT_CONCAT3(a_1,a_2,a_3)         a_1 %+ a_2 %+ a_3
+
+;; Preprocessor concatenation macro, four arguments.
+%define RT_CONCAT4(a_1,a_2,a_3,a_4)     a_1 %+ a_2 %+ a_3 %+ a_4
+
+
 ;; Define ASM_FORMAT_PE64 if applicable.
 %ifdef ASM_FORMAT_PE
  %ifdef RT_ARCH_AMD64
