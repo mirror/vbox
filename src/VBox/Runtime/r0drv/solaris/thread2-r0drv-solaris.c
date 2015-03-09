@@ -96,12 +96,7 @@ DECLHIDDEN(int) rtThreadNativeAdopt(PRTTHREADINT pThread)
 
 DECLHIDDEN(void) rtThreadNativeWaitKludge(PRTTHREADINT pThread)
 {
-    /* Temporarily disable thread_join(), see @bugref{7726} */
-#if 0
     thread_join(pThread->tid);
-#else
-    RTThreadSleep(1); NOREF(pThread);
-#endif
 }
 
 
