@@ -706,26 +706,29 @@ static int vboxserviceVMInfoWriteUsers(void)
                                     setpwent();
                                     struct passwd *ppwEntry = getpwuid(uid);
                                     if (   ppwEntry
-                                        && ppwEntry->pw_uid >= uid_min /* Only respect users, not daemons etc. */
                                         && ppwEntry->pw_name)
                                     {
-                                        VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
-                                                           *ppszCurSession, ppwEntry->pw_name, uid);
-
-                                        bool fFound = false;
-                                        for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
-                                            fFound = strcmp(papszUsers[i], ppwEntry->pw_name) == 0;
-
-                                        if (!fFound)
+                                        if (ppwEntry->pw_uid >= uid_min /* Only respect users, not daemons etc. */)
                                         {
-                                            VBoxServiceVerbose(4, "ConsoleKit: adding user \"%s\" to list\n",
-                                                               ppwEntry->pw_name);
+                                            VBoxServiceVerbose(4, "ConsoleKit: session '%s' -> %s (uid: %RU32)\n",
+                                                               *ppszCurSession, ppwEntry->pw_name, uid);
 
-                                            rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ppwEntry->pw_name);
-                                            if (RT_FAILURE(rc))
-                                                break;
-                                            cUsersInList++;
+                                            bool fFound = false;
+                                            for (uint32_t i = 0; i < cUsersInList && !fFound; i++)
+                                                fFound = strcmp(papszUsers[i], ppwEntry->pw_name) == 0;
+
+                                            if (!fFound)
+                                            {
+                                                VBoxServiceVerbose(4, "ConsoleKit: adding user \"%s\" to list\n",
+                                                                   ppwEntry->pw_name);
+
+                                                rc = RTStrDupEx(&papszUsers[cUsersInList], (const char *)ppwEntry->pw_name);
+                                                if (RT_FAILURE(rc))
+                                                    break;
+                                                cUsersInList++;
+                                            }
                                         }
+                                        /* else silently ignore the user */
                                     }
                                     else
                                         VBoxServiceError("ConsoleKit: unable to lookup user name for uid=%RU32\n", uid);
