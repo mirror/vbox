@@ -39,7 +39,7 @@ inline bool isDhcpRequired(const ComNatPtr& nat)
     if (FAILED(nat->COMGETTER(NeedDhcpServer)(&fNeedDhcpServer)))
         return false;
 
-    return fNeedDhcpServer;
+    return RT_BOOL(fNeedDhcpServer);
 }
 
 

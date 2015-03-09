@@ -218,7 +218,6 @@ int ConfigurationManager::loadFromFile(const com::Utf8Str& leaseStorageFileName)
     /* XXX: version check */
     xml::NodesLoop leases(*root);
 
-    bool valueExists;
     const xml::ElementNode *lease;
     while ((lease = leases.forAllNodes()))
     {
@@ -1405,28 +1404,38 @@ Lease::Lease(ClientData *pd):m(SharedPtr<ClientData>(pd)){}
 
 bool Lease::toXML(xml::ElementNode *node) const
 {
-    bool valueAddition = node->setAttribute(tagXMLLeaseAttributeMac.c_str(), com::Utf8StrFmt("%RTmac", &m->m_mac));
-    if (!valueAddition) return false;
+    xml::AttributeNode *pAttribNode = node->setAttribute(tagXMLLeaseAttributeMac.c_str(),
+                                                         com::Utf8StrFmt("%RTmac", &m->m_mac));
+    if (!pAttribNode)
+        return false;
 
-    valueAddition = node->setAttribute(tagXMLLeaseAttributeNetwork.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_network));
-    if (!valueAddition) return false;
+    pAttribNode = node->setAttribute(tagXMLLeaseAttributeNetwork.c_str(),
+                                     com::Utf8StrFmt("%RTnaipv4", m->m_network));
+    if (!pAttribNode)
+        return false;
 
-    xml::ElementNode *address = node->createChild(tagXMLLeaseAddress.c_str());
-    if (!address) return false;
+    xml::ElementNode *pLeaseAddress = node->createChild(tagXMLLeaseAddress.c_str());
+    if (!pLeaseAddress)
+        return false;
 
-    valueAddition = address->setAttribute(tagXMLAddressAttributeValue.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_address));
-    if (!valueAddition) return false;
+    pAttribNode = pLeaseAddress->setAttribute(tagXMLAddressAttributeValue.c_str(),
+                                              com::Utf8StrFmt("%RTnaipv4", m->m_address));
+    if (!pAttribNode)
+        return false;
 
-    xml::ElementNode *time = node->createChild(tagXMLLeaseTime.c_str());
-    if (!time) return false;
+    xml::ElementNode *pLeaseTime = node->createChild(tagXMLLeaseTime.c_str());
+    if (!pLeaseTime)
+        return false;
 
-    valueAddition = time->setAttribute(tagXMLTimeAttributeIssued.c_str(),
-                                       m->u64TimestampLeasingStarted);
-    if (!valueAddition) return false;
+    pAttribNode = pLeaseTime->setAttribute(tagXMLTimeAttributeIssued.c_str(),
+                                           m->u64TimestampLeasingStarted);
+    if (!pAttribNode)
+        return false;
 
-    valueAddition = time->setAttribute(tagXMLTimeAttributeExpiration.c_str(),
-                                       m->u32LeaseExpirationPeriod);
-    if (!valueAddition) return false;
+    pAttribNode = pLeaseTime->setAttribute(tagXMLTimeAttributeExpiration.c_str(),
+                                           m->u32LeaseExpirationPeriod);
+    if (!pAttribNode)
+        return false;
 
     return true;
 }
