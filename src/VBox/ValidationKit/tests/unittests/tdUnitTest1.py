@@ -218,7 +218,8 @@ class tdUnitTest1(vbox.TestDriver):
     # @note Stripped extensions!
     kasHardened = [
         "testcase/tstIntNet-1",
-        "testcase/tstRTR0ThreadPreemptionDriver",
+        "testcase/tstR0ThreadPreemptionDriver", # VBox 4.3
+        "testcase/tstRTR0ThreadPreemptionDriver", 
         "testcase/tstRTR0MemUserKernelDriver",
         "testcase/tstRTR0SemMutexDriver",
         "testcase/tstRTR0TimerDriver",
