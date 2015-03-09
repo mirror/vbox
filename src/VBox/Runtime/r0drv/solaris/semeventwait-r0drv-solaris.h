@@ -465,9 +465,14 @@ DECLINLINE(void) rtR0SemSolWaitEnterMutexWithUnpinningHack(kmutex_t *pMtx)
          *       check whether preemption was disabled via RTThreadPreemptDisable()
          *       or not and only call swtch if RTThreadPreemptDisable() wasn't called.
          */
+#if 0   /* Temporarily disabled, for @bugref{7726}. */
         kthread_t **ppIntrThread = SOL_THREAD_TINTR_PTR;
         if (   *ppIntrThread
             && getpil() < DISP_LEVEL)
+#else
+        if (   curthread->t_intr
+            && getpil() < DISP_LEVEL)
+#endif
         {
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);
