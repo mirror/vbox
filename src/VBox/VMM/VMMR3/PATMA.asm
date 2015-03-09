@@ -215,6 +215,7 @@ BEGINPROC   PATMStats
 ENDPROC     PATMStats
 
 ; Patch record for statistics
+BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmStatsRecord
     PATCHASMRECORD_INIT PATMStats, 4
     DD      PATM_INTERRUPTFLAG, 0
