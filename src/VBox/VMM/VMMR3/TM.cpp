@@ -3199,9 +3199,8 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtDisable(PVM pVM)
 }
 
 
-#if 0
 /**
- * Check whether the host TSC is fixed rate & monotonic.
+ * Check whether the guest can be presented a fixed rate & monotonic TSC.
  *
  * @returns true if TSC is stable, false otherwise.
  * @param   pVM                     Pointer to the VM.
@@ -3212,9 +3211,11 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtDisable(PVM pVM)
  */
 VMMR3_INT_DECL(bool) TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParavirtEnabled)
 {
-    /** @todo */
+    /** @todo figure out what exactly we want here later. */
+    NOREF(fWithParavirtEnabled);
+    return (   tmR3HasFixedTSC(pVM)                                        /* Host has fixed-rate TSC. */
+            && g_pSUPGlobalInfoPage->u32Mode != SUPGIPMODE_ASYNC_TSC);     /* GIP thinks it's monotonic. */
 }
-#endif
 
 
 /**

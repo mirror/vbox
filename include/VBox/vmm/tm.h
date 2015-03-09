@@ -271,6 +271,7 @@ VMMR3_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime);
 
 VMMR3_INT_DECL(int)     TMR3CpuTickParavirtEnable(PVM pVM);
 VMMR3_INT_DECL(int)     TMR3CpuTickParavirtDisable(PVM pVM);
+VMMR3_INT_DECL(bool)    TMR3CpuTickIsFixedRateMonotonic(PVM pVM, bool fWithParavirtEnabled);
 /** @} */
 #endif /* IN_RING3 */
 
