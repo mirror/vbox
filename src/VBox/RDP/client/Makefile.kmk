@@ -350,6 +350,7 @@ rdesktop-src_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Runtime/common/string/utf-8-case.cpp=>Runtime/common/string/utf-8-case.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/time/timesysalias.cpp=>Runtime/common/time/timesysalias.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/generic/pathhost-generic.cpp=>Runtime/generic/pathhost-generic.cpp \
+	$(PATH_ROOT)/src/VBox/Runtime/generic/RTPathAbs-generic.cpp=>Runtime/generic/RTPathAbs-generic.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/include/internal/alignmentchecks.h=>include/internal/alignmentchecks.h \
 	$(PATH_ROOT)/src/VBox/Runtime/include/internal/dir.h=>include/internal/dir.h \
 	$(PATH_ROOT)/src/VBox/Runtime/include/internal/file.h=>include/internal/file.h \
