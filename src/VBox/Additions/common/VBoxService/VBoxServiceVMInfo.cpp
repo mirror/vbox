@@ -740,7 +740,7 @@ static int vboxserviceVMInfoWriteUsers(void)
                             if (pReplyUnixUser)
                                 dbus_message_unref(pReplyUnixUser);
                         }
-                        else
+                        else if (fActive) /* don't bitch about inactive users */
                         {
                             static int s_iBitchedAboutConsoleKit = 0;
                             if (s_iBitchedAboutConsoleKit < 1)
