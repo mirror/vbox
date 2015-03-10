@@ -36,10 +36,9 @@ public:
 
     int setOption(const std::string& key, const std::string& val);
 
-    int start();
-    int stop();
+    int  start(bool aKillProcOnStop);
+    int  stop();
     bool isRunning();
-
     void detachFromServer();
 
     static const std::string kNsrKeyName;

@@ -796,7 +796,7 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
         }
     }
 
-    if (RT_SUCCESS(m->NATRunner.start()))
+    if (RT_SUCCESS(m->NATRunner.start(false /* KillProcOnStop */)))
     {
         mVirtualBox->i_onNATNetworkStartStop(Bstr(mName).raw(), TRUE);
         return S_OK;
@@ -812,14 +812,14 @@ HRESULT  NATNetwork::start(const com::Utf8Str &aTrunkType)
 HRESULT NATNetwork::stop()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
+    mVirtualBox->i_onNATNetworkStartStop(Bstr(mName).raw(), FALSE);
+
     if (!m->dhcpServer.isNull())
         m->dhcpServer->Stop();
 
     if (RT_SUCCESS(m->NATRunner.stop()))
-    {
-        mVirtualBox->i_onNATNetworkStartStop(Bstr(mName).raw(), FALSE);
         return S_OK;
-    }
+
     /** @todo missing setError()! */
     return E_FAIL;
 #else

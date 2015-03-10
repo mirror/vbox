@@ -39,13 +39,17 @@ const std::string DHCPServerRunner::kDsrKeyUpperIp = "--upper-ip";
 
 struct DHCPServer::Data
 {
-    Data() : enabled(FALSE) {}
+    Data()
+        : enabled(FALSE)
+        , router(false)
+    {}
 
     Bstr IPAddress;
     Bstr lowerIP;
     Bstr upperIP;
 
     BOOL enabled;
+    bool router;
     DHCPServerRunner dhcp;
 
     DhcpOptionMap GlobalDhcpOptions;
@@ -54,7 +58,8 @@ struct DHCPServer::Data
 
 
 DHCPServer::DHCPServer()
-  : m(NULL), mVirtualBox(NULL)
+  : m(NULL)
+  , mVirtualBox(NULL)
 {
     m = new DHCPServer::Data();
 }
@@ -390,7 +395,10 @@ HRESULT DHCPServer::addGlobalOption(DhcpOpt_T aOption, const com::Utf8Str &aValu
 
     /* Indirect way to understand that we're on NAT network */
     if (aOption == DhcpOpt_Router)
+    {
         m->dhcp.setOption(NetworkServiceRunner::kNsrKeyNeedMain, "on");
+        m->router = true;
+    }
 
     alock.release();
 
@@ -565,7 +573,7 @@ HRESULT DHCPServer::start(const com::Utf8Str &aNetworkName,
     m->dhcp.setOption(DHCPServerRunner::kDsrKeyUpperIp, Utf8Str(m->upperIP).c_str());
 
     /* XXX: This parameters Dhcp Server will fetch via API */
-    return RT_FAILURE(m->dhcp.start()) ? E_FAIL : S_OK;
+    return RT_FAILURE(m->dhcp.start(!m->router /* KillProcOnExit */)) ? E_FAIL : S_OK;
     //m->dhcp.detachFromServer(); /* need to do this to avoid server shutdown on runner destruction */
 }
 
