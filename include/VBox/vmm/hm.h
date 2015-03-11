@@ -178,7 +178,7 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR
                                                            unsigned uPort, unsigned uAndVal, unsigned cbSize);
 VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
                                                           unsigned uPort, unsigned uAndVal, unsigned cbSize);
-/** Disables preemption if required. */
+#ifdef VBOX_STRICT
 # define HM_DISABLE_PREEMPT_IF_NEEDED() \
     RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
     bool fPreemptDisabledInternal = false; \
@@ -189,13 +189,19 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR 
         fPreemptDisabledInternal = true; \
     } else do { } while (0)
 
-/** Restores preemption if previously disabled by HM_DISABLE_PREEMPT(). */
 # define HM_RESTORE_PREEMPT_IF_NEEDED() \
     do \
     { \
         if (fPreemptDisabledInternal) \
             RTThreadPreemptRestore(&PreemptStateInternal); \
     } while (0)
+#else
+# define HM_DISABLE_PREEMPT_IF_NEEDED() \
+    RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+    RTThreadPreemptDisable(&PreemptStateInternal);
+
+# define HM_RESTORE_PREEMPT_IF_NEEDED() do { RTThreadPreemptRestore(&PreemptStateInternal); } while(0)
+#endif /* VBOX_STRICT */
 
 VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);

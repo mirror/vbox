@@ -7107,10 +7107,9 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
-    /** @todo This is bad. Deregistering here means we need to VMCLEAR always
+    /** @todo Deregistering here means we need to VMCLEAR always
      *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
-    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-        VMMR0ThreadCtxHooksDeregister(pVCpu);
+    VMMR0ThreadCtxHooksDeregister(pVCpu);
 
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
@@ -7277,8 +7276,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
         }
 
-        if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-            VMMR0ThreadCtxHooksDeregister(pVCpu);
+        VMMR0ThreadCtxHooksDeregister(pVCpu);
 
         HMR0LeaveCpu(pVCpu);
         HM_RESTORE_PREEMPT_IF_NEEDED();
