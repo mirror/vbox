@@ -1789,6 +1789,10 @@ VBoxManage setextradata "VM name"
         with VirtualBox 4.1 and requires Solaris 11 build 159 or above.</para>
       </footnote> A VirtualBox VNIC template is a VNIC whose name starts with
     "vboxvnic_template" (case-sensitive).</para>
+ 
+    <para>On Solaris 11 hosts (i.e. when the default Crossbow based bridged
+    networking is used), using a VNIC template is the only means of specifying
+    a VLAN ID to use while bridging over a link.</para>
 
     <para>Here is an example of how to use a VNIC template to configure a VLAN
     for VMs. Create a VirtualBox VNIC template, by executing as root:</para>
@@ -1810,16 +1814,20 @@ $ dladm show-vnic
 LINK         OVER         SPEED  MACADDRESS        MACADDRTYPE         VID
 vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</screen></para>
 
-    <para>Once the VNIC template is created, all VMs that need to be part of
-    VLAN 23 over the physical interface "nge0" can use the same VNIC template.
-    This makes managing VMs on VLANs simpler and efficient, as the VLAN
-    details are not stored as part of every VM's configuration but rather
-    picked from the VNIC template which can be modified anytime using
-    <computeroutput>dladm</computeroutput>. Apart from the VLAN ID, VNIC
-    templates can be created with additional properties such as bandwidth
-    limits, CPU fanout etc. Refer to your Solaris network documentation on how
-    to accomplish this. These additional properties, if any, are also applied
-    to VMs which use the VNIC template.</para>
+    <para>In the example above, once the VNIC template is created, any VM
+    that need to be part of VLAN 23 over the physical interface "nge0" can use
+    the same VNIC template.
+
+    <para>VNIC templates makes managing VMs on VLANs simpler and efficient, as
+    the VLAN details are not stored as part of every VM's configuration but
+    rather inherited from the VNIC template which can be modified anytime
+    using <computeroutput>dladm</computeroutput>.</para>
+
+    <para>Apart from the VLAN ID, VNIC templates can be created with
+    additional properties such as bandwidth limits, CPU fanout etc. Refer to
+    your Solaris network documentation on how to accomplish this.
+    These additional properties, if any, are also applied to VMs which use
+    the VNIC template.</para>
   </sect1>
 
   <sect1 id="addhostonlysolaris">
