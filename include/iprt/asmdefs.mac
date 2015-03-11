@@ -72,6 +72,10 @@
 %define RT_BIT(bit)        (1 << bit)
 
 ;;
+; Make the mask for the given bit.
+%define RT_BIT_32(bit)     (1 << bit)
+
+;;
 ; Makes a 32-bit unsigned (not type safe, but whatever) out of four byte values.
 %define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) ( (b3 << 24) | (b2 << 16) | (b1 << 8) | b0 )
 
