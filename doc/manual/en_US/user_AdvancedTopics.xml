@@ -1816,7 +1816,7 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
 
     <para>In the example above, once the VNIC template is created, any VM
     that need to be part of VLAN 23 over the physical interface "nge0" can use
-    the same VNIC template.
+    the same VNIC template.</para>
 
     <para>VNIC templates makes managing VMs on VLANs simpler and efficient, as
     the VLAN details are not stored as part of every VM's configuration but
