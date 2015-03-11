@@ -2628,7 +2628,7 @@ static int vbgdSetSessionEventFilter(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION
      */
     fPrevious = pSession->fEventFilter;
     pSession->fEventFilter |= fOrMask;
-    pSession->fEventFilter &= fNotMask;
+    pSession->fEventFilter &= ~fNotMask;
 
     /*
      * If anything actually changed, update the global usage counters.
@@ -2777,7 +2777,7 @@ static int vbgdSetSessionMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION
      */
     fPrevious = pSession->fMouseStatus;
     pSession->fMouseStatus |= fOrMask;
-    pSession->fMouseStatus &= fNotMask;
+    pSession->fMouseStatus &= ~fNotMask;
 
     /*
      * If anything actually changed, update the global usage counters.
