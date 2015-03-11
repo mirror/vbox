@@ -453,7 +453,7 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
  *
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pVCpu->vmm.s.hR0ThreadCtx == NIL_RTTHREADCTX);
@@ -477,7 +477,7 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the VMCPU.
  * @remarks Can be called from any thread.
  */
-VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
 {
     RTThreadCtxHooksRelease(pVCpu->vmm.s.hR0ThreadCtx);
 }
@@ -492,7 +492,7 @@ VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
  *
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnThreadHook)
+VMMR0_INT_DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnThreadHook)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     return RTThreadCtxHooksRegister(pVCpu->vmm.s.hR0ThreadCtx, pfnThreadHook, pVCpu);
@@ -506,7 +506,7 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnT
  *
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
 {
     /* Clear the VCPU <-> host CPU mapping as we've left HM context. See @bugref{7726} comment #19. */
     ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
@@ -527,7 +527,7 @@ VMMR0DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
  * @returns true if the hooks are created, false otherwise.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
 {
     return pVCpu->vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX;
 }
@@ -539,7 +539,7 @@ VMMR0DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
  * @returns true if registered, false otherwise.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
 {
     return RTThreadCtxHooksAreRegistered(pVCpu->vmm.s.hR0ThreadCtx);
 }
