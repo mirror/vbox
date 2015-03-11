@@ -181,27 +181,15 @@ VMMR0_INT_DECL(void)            HMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR 
 #ifdef VBOX_STRICT
 # define HM_DISABLE_PREEMPT_IF_NEEDED() \
     RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
-    bool fPreemptDisabledInternal = false; \
-    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD)) \
-    { \
-        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
-        RTThreadPreemptDisable(&PreemptStateInternal); \
-        fPreemptDisabledInternal = true; \
-    } else do { } while (0)
-
-# define HM_RESTORE_PREEMPT_IF_NEEDED() \
-    do \
-    { \
-        if (fPreemptDisabledInternal) \
-            RTThreadPreemptRestore(&PreemptStateInternal); \
-    } while (0)
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD) || VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
+    RTThreadPreemptDisable(&PreemptStateInternal);
 #else
 # define HM_DISABLE_PREEMPT_IF_NEEDED() \
     RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
     RTThreadPreemptDisable(&PreemptStateInternal);
-
-# define HM_RESTORE_PREEMPT_IF_NEEDED() do { RTThreadPreemptRestore(&PreemptStateInternal); } while(0)
 #endif /* VBOX_STRICT */
+# define HM_RESTORE_PREEMPT_IF_NEEDED() do { RTThreadPreemptRestore(&PreemptStateInternal); } while(0)
+
 
 VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);

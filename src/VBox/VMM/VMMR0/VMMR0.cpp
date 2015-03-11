@@ -502,12 +502,11 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnT
 /**
  * Deregisters the thread-context hook for this VCPU.
  *
- * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  *
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(int) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
+VMMR0DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
 {
     /* Clear the VCPU <-> host CPU mapping as we've left HM context. See @bugref{7726} comment #19. */
     ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
@@ -516,9 +515,8 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
     {
         Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
         int rc = RTThreadCtxHooksDeregister(pVCpu->vmm.s.hR0ThreadCtx);
-        AssertRCReturn(rc, rc);
+        AssertRC(rc);
     }
-    return VINF_SUCCESS;
 }
 
 

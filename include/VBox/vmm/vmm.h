@@ -512,7 +512,7 @@ VMMR0DECL(int)       VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu);
 VMMR0DECL(void)      VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu);
 VMMR0DECL(bool)      VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu);
 VMMR0DECL(int)       VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnHook);
-VMMR0DECL(int)       VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu);
+VMMR0DECL(void)      VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu);
 VMMR0DECL(bool)      VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu);
 
 # ifdef LOG_ENABLED
