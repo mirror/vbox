@@ -135,7 +135,7 @@ DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pN
                             rtThreadNativeMain,              /* Thread function */
                             pThreadInt,                      /* Function data */
                             0,                               /* Data size */
-                            (proc_t *)RTR0ProcHandleSelf(),  /* Process handle */
+                            &p0,                             /* Process 0 handle */
                             TS_RUN,                          /* Ready to run */
                             minclsyspri                      /* Priority */
                             );
