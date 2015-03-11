@@ -51,6 +51,33 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
     RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
 
+static int getPassword(const char *pszPrompt, Utf8Str *pPassword)
+{
+    char aszPwdInput[_1K] = { 0 };
+
+    int vrc = RTStrmPutStr(g_pStdOut, pszPrompt);
+    if (RT_SUCCESS(vrc))
+    {
+        bool fEchoOld = false;
+        vrc = RTStrmInputGetEchoChars(g_pStdIn, &fEchoOld);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTStrmInputSetEchoChars(g_pStdIn, false);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTStrmGetLine(g_pStdIn, &aszPwdInput[0], sizeof(aszPwdInput));
+                if (RT_SUCCESS(vrc))
+                    *pPassword = aszPwdInput;
+
+                int vrc2 = RTStrmInputSetEchoChars(g_pStdIn, fEchoOld);
+                AssertRC(vrc2);
+            }
+        }
+        RTStrmPutStr(g_pStdOut, "\n");
+    }
+
+    return vrc;
+}
 
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
 {
@@ -1656,6 +1683,8 @@ int handleEncryptMedium(HandlerArg *a)
     const char *pszCipher = NULL;
     const char *pszFilenameOrUuid = NULL;
     const char *pszNewPasswordId = NULL;
+    Utf8Str strPasswordNew;
+    Utf8Str strPasswordOld;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -1717,6 +1746,52 @@ int handleEncryptMedium(HandlerArg *a)
         || (!pszPasswordNew && pszNewPasswordId))
         return errorSyntax(USAGE_ENCRYPTMEDIUM, "A new password must always have a valid identifier set at the same time");
 
+    if (pszPasswordNew)
+    {
+        if (!RTStrCmp(pszPasswordNew, "-"))
+        {
+            /* Get password from console. */
+            vrc = getPassword("Enter new password:", &strPasswordNew);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to read new password from standard input");
+                return 1;
+            }
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(pszPasswordNew, &strPasswordNew);
+            if (rcExit == RTEXITCODE_FAILURE)
+            {
+                RTMsgError("Failed to read new password from file");
+                return rcExit;
+            }
+        }
+    }
+
+    if (pszPasswordOld)
+    {
+        if (!RTStrCmp(pszPasswordOld, "-"))
+        {
+            /* Get password from console. */
+            vrc = getPassword("Enter old password:", &strPasswordOld);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to read old password from standard input");
+                return 1;
+            }
+        }
+        else
+        {
+            RTEXITCODE rcExit = readPasswordFile(pszPasswordOld, &strPasswordOld);
+            if (rcExit == RTEXITCODE_FAILURE)
+            {
+                RTMsgError("Failed to read old password from file");
+                return rcExit;
+            }
+        }
+    }
+
     /* Always open the medium if necessary, there is no other way. */
     rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
                     AccessMode_ReadWrite, hardDisk,
@@ -1730,7 +1805,7 @@ int handleEncryptMedium(HandlerArg *a)
     }
 
     ComPtr<IProgress> progress;
-    CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(pszPasswordNew).raw(), Bstr(pszPasswordOld).raw(),
+    CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordNew).raw(), Bstr(strPasswordOld).raw(),
                                            Bstr(pszCipher).raw(), Bstr(pszNewPasswordId).raw(),
                                            progress.asOutParam()));
     if (SUCCEEDED(rc))

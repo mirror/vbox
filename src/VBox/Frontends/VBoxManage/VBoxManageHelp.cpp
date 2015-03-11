@@ -638,8 +638,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     if (fCategory & USAGE_ENCRYPTMEDIUM)
         RTStrmPrintf(pStrm,
                            "%s encryptmedium %s   <uuid|filename>\n"
-                     "                            [--newpassword <new password>]\n"
-                     "                            [--oldpassword <old password>]\n"
+                     "                            [--newpassword <file>|-]\n"
+                     "                            [--oldpassword <file>|-]\n"
                      "                            [--cipher <cipher identifier>]\n"
                      "                            [--newpasswordid <password identifier>]\n"
                      "\n", SEP);
