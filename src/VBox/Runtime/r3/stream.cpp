@@ -59,6 +59,10 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 #endif
+#ifndef RT_OS_WINDOWS
+# include <termios.h>
+# include <unistd.h>
+#endif
 
 #ifdef RT_OS_OS2
 # define _O_TEXT   O_TEXT
@@ -461,6 +465,91 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
     rtStrmUnlock(pStream);
 
     return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTStrmInputGetEchoChars(PRTSTREAM pStream, bool *pfEchoChars)
+{
+    int rc;
+
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pfEchoChars, VERR_INVALID_POINTER);
+
+    int fh = fileno(pStream->pFile);
+    if (isatty(fh))
+    {
+#ifdef RT_OS_WINDOWS
+        DWORD dwMode;
+        HANDLE hCon = (HANDLE)_get_osfhandle(fh);
+        if (GetConsoleMode(hCon, &dwMode))
+            *pfEchoChars = RT_BOOL(dwMode & ENABLE_ECHO_INPUT);
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+#else
+        struct termios Termios;
+
+        int rcPosix = tcgetattr(fh, &Termios);
+        if (!rcPosix)
+            *pfEchoChars = RT_BOOL(Termios.c_lflag & ECHO);
+        else
+            rc = RTErrConvertFromErrno(errno);
+#endif
+    }
+    else
+        rc = VERR_INVALID_HANDLE;
+
+    return rc;
+}
+
+
+RTR3DECL(int) RTStrmInputSetEchoChars(PRTSTREAM pStream, bool fEchoChars)
+{
+    int rc;
+
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+
+    int fh = fileno(pStream->pFile);
+    if (isatty(fh))
+    {
+#ifdef RT_OS_WINDOWS
+        DWORD dwMode;
+        HANDLE hCon = (HANDLE)_get_osfhandle(fh);
+        if (GetConsoleMode(hCon, &dwMode))
+        {
+            if (fEchoChars)
+                dwMode |= ENABLE_ECHO_INPUT;
+            else
+                dwMode &= ~ENABLE_ECHO_INPUT;
+            if (!SetConsoleMode(hCon, dwMode))
+                rc = RTErrConvertFromWin32(GetLastError());
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+#else
+        struct termios Termios;
+
+        int rcPosix = tcgetattr(fh, &Termios);
+        if (!rcPosix)
+        {
+            if (fEchoChars)
+                Termios.c_lflag |= ECHO;
+            else
+                Termios.c_lflag &= ~ECHO;
+
+            rcPosix = tcsetattr(fh, TCSAFLUSH, &Termios);
+            if (rcPosix != 0)
+                rc = RTErrConvertFromErrno(errno);
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+#endif
+    }
+    else
+        rc = VERR_INVALID_HANDLE;
+
+    return rc;
 }
 
 

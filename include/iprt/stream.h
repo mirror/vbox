@@ -126,6 +126,26 @@ RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream);
 RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet);
 
 /**
+ * Returns the current echo mode.
+ * This works only for standard input streams.
+ *
+ * @returns iprt status code.
+ * @param   pStream         The stream.
+ * @param   pfEchoChars     Where to store the flag whether typed characters are echoed.
+ */
+RTR3DECL(int) RTStrmInputGetEchoChars(PRTSTREAM pStream, bool *pfEchoChars);
+
+/**
+ * Changes the behavior for echoing inpit characters on the command line.
+ * This works only for standard input streams.
+ *
+ * @returns iprt status code.
+ * @param   pStream         The stream.
+ * @param   fEchoChars      Flag whether echoing typed characters is wanted.
+ */
+RTR3DECL(int) RTStrmInputSetEchoChars(PRTSTREAM pStream, bool fEchoChars);
+
+/**
  * Rewinds the stream.
  *
  * Stream errors will be reset on success.
