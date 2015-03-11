@@ -462,7 +462,9 @@ void VBoxNetBaseService::shutdown(void)
     m->fShutdown = true;
     if (m->m_hThrRecv != NIL_RTTHREAD)
     {
-        int rc = m->m_EventQ->interruptEventQueueProcessing();
+        int rc = abortWait();
+        AssertRC(rc);
+        rc = m->m_EventQ->interruptEventQueueProcessing();
         if (RT_SUCCESS(rc))
         {
             rc = RTThreadWait(m->m_hThrRecv, 60000, NULL);
@@ -493,7 +495,6 @@ int VBoxNetBaseService::syncLeave()
 
 int VBoxNetBaseService::waitForIntNetEvent(int cMillis)
 {
-    int rc = VINF_SUCCESS;
     INTNETIFWAITREQ WaitReq;
     LogFlowFunc(("ENTER:cMillis: %d\n", cMillis));
     WaitReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
@@ -502,10 +503,27 @@ int VBoxNetBaseService::waitForIntNetEvent(int cMillis)
     WaitReq.hIf = m->m_hIf;
     WaitReq.cMillies = cMillis;
 
-    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
+    int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_WAIT, 0, &WaitReq.Hdr);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+
+int VBoxNetBaseService::abortWait()
+{
+    INTNETIFABORTWAITREQ AbortReq;
+    LogFlowFunc(("ENTER:\n"));
+    AbortReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    AbortReq.Hdr.cbReq = sizeof(AbortReq);
+    AbortReq.pSession = m->m_pSession;
+    AbortReq.hIf = m->m_hIf;
+    AbortReq.fNoMoreWaits = true;
+
+    int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_ABORT_WAIT, 0, &AbortReq.Hdr);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 
 /* S/G API */
 int VBoxNetBaseService::sendBufferOnWire(PCINTNETSEG pcSg, int cSg, size_t cbFrame)
@@ -537,13 +555,12 @@ int VBoxNetBaseService::sendBufferOnWire(PCINTNETSEG pcSg, int cSg, size_t cbFra
  */
 void VBoxNetBaseService::flushWire()
 {
-    int rc = VINF_SUCCESS;
     INTNETIFSENDREQ SendReq;
     SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     SendReq.Hdr.cbReq    = sizeof(SendReq);
     SendReq.pSession     = m->m_pSession;
     SendReq.hIf          = m->m_hIf;
-    rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
+    int rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
     AssertRCReturnVoid(rc);
     LogFlowFuncLeave();
 

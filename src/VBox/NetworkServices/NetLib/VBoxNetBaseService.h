@@ -68,6 +68,7 @@ public:
     int                 syncEnter();
     int                 syncLeave();
     int                 waitForIntNetEvent(int cMillis);
+    int                 abortWait();
     int                 sendBufferOnWire(PCINTNETSEG pSg, int cSg, size_t cbBuffer);
     void                flushWire();
 
