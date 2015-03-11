@@ -415,8 +415,7 @@ htg_nocmci:
 htg_notherm:
     pop     rax
     test    ah, ah
-;    jns     htg_noeilvt
-    jmp     htg_noeilvt
+    jns     htg_noeilvt
 
     ; AMD Extended LVT registers
     mov     esi, [rbx + 0x400]
