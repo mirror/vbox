@@ -19,6 +19,7 @@
 %define PATM_INT3            int3
 
 ;; @name Patch Fixup Types
+; @remarks These fixups types are part of the saved state.
 ; @{
 %define PATM_VMFLAGS                            0xF1ABCD00
 %ifdef VBOX_WITH_STATISTICS
@@ -51,6 +52,11 @@
 %define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 %define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
 %define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a
+%define PATM_CPUID_ARRAY_PTR                    0xF1ABCD1b
+%define PATM_CPUID_ARRAY_END_PTR                0xF1ABCD1c
+%define PATM_CPUID_ARRAY_ENTRY_SIZE             0xF1ABCD1d
+%define PATM_CPUID_UNKNOWN_METHOD               0xF1ABCD1e
+
 
 ;/* Anything larger doesn't require a fixup */
 %define PATM_NO_FIXUP                           0xF1ABCE00

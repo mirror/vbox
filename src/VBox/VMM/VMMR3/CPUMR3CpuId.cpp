@@ -540,10 +540,10 @@ bool cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_
     PCPUMCPUIDLEAF pLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, uLeaf, uSubLeaf);
     if (pLeaf)
     {
-        pLegacy->eax = pLeaf->uEax;
-        pLegacy->ebx = pLeaf->uEbx;
-        pLegacy->ecx = pLeaf->uEcx;
-        pLegacy->edx = pLeaf->uEdx;
+        pLegacy->uEax = pLeaf->uEax;
+        pLegacy->uEbx = pLeaf->uEbx;
+        pLegacy->uEcx = pLeaf->uEcx;
+        pLegacy->uEdx = pLeaf->uEdx;
         return true;
     }
     return false;
@@ -1194,10 +1194,10 @@ VMMR3DECL(int) CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUKNOWNCPUID penmUnknownMe
      * Simple method, all zeros.
      */
     *penmUnknownMethod = CPUMUKNOWNCPUID_DEFAULTS;
-    pDefUnknown->eax = 0;
-    pDefUnknown->ebx = 0;
-    pDefUnknown->ecx = 0;
-    pDefUnknown->edx = 0;
+    pDefUnknown->uEax = 0;
+    pDefUnknown->uEbx = 0;
+    pDefUnknown->uEcx = 0;
+    pDefUnknown->uEdx = 0;
 
     /*
      * Intel has been observed returning the last standard leaf.
@@ -1257,10 +1257,10 @@ VMMR3DECL(int) CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUKNOWNCPUID penmUnknownMe
             *penmUnknownMethod = CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX;
         else
             *penmUnknownMethod = CPUMUKNOWNCPUID_LAST_STD_LEAF;
-        pDefUnknown->eax = auLast[0];
-        pDefUnknown->ebx = auLast[1];
-        pDefUnknown->ecx = auLast[2];
-        pDefUnknown->edx = auLast[3];
+        pDefUnknown->uEax = auLast[0];
+        pDefUnknown->uEbx = auLast[1];
+        pDefUnknown->uEcx = auLast[2];
+        pDefUnknown->uEdx = auLast[3];
         return VINF_SUCCESS;
     }
 
@@ -1690,25 +1690,25 @@ static int cpumR3CpuIdFetchLeafOverride(PCPUMCPUID pLeaf, PCFGMNODE pCfgNode, ui
         uint32_t u32;
         int rc = CFGMR3QueryU32(pLeafNode, "eax", &u32);
         if (RT_SUCCESS(rc))
-            pLeaf->eax = u32;
+            pLeaf->uEax = u32;
         else
             AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
         rc = CFGMR3QueryU32(pLeafNode, "ebx", &u32);
         if (RT_SUCCESS(rc))
-            pLeaf->ebx = u32;
+            pLeaf->uEbx = u32;
         else
             AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
         rc = CFGMR3QueryU32(pLeafNode, "ecx", &u32);
         if (RT_SUCCESS(rc))
-            pLeaf->ecx = u32;
+            pLeaf->uEcx = u32;
         else
             AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
         rc = CFGMR3QueryU32(pLeafNode, "edx", &u32);
         if (RT_SUCCESS(rc))
-            pLeaf->edx = u32;
+            pLeaf->uEdx = u32;
         else
             AssertReturn(rc == VERR_CFGM_VALUE_NOT_FOUND, rc);
 
@@ -1752,7 +1752,7 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
 {
     /* Using the ECX variant for all of them can't hurt... */
     for (uint32_t i = 0; i < cLeaves; i++)
-        ASMCpuIdExSlow(uStart + i, 0, 0, 0, &paLeaves[i].eax, &paLeaves[i].ebx, &paLeaves[i].ecx, &paLeaves[i].edx);
+        ASMCpuIdExSlow(uStart + i, 0, 0, 0, &paLeaves[i].uEax, &paLeaves[i].uEbx, &paLeaves[i].uEcx, &paLeaves[i].uEdx);
 
     /* Load CPUID leaf override; we currently don't care if the user
        specifies features the host CPU doesn't support. */
@@ -1815,10 +1815,10 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCPUM, PCPUMCPUIDLE
                                                        0 /* uSubLeaf */);
             if (pLeaf)
             {
-                pLegacyLeaf->eax = pLeaf->uEax;
-                pLegacyLeaf->ebx = pLeaf->uEbx;
-                pLegacyLeaf->ecx = pLeaf->uEcx;
-                pLegacyLeaf->edx = pLeaf->uEdx;
+                pLegacyLeaf->uEax = pLeaf->uEax;
+                pLegacyLeaf->uEbx = pLeaf->uEbx;
+                pLegacyLeaf->uEcx = pLeaf->uEcx;
+                pLegacyLeaf->uEdx = pLeaf->uEdx;
             }
             else
                 *pLegacyLeaf = pCPUM->GuestInfo.DefCpuId;
@@ -2602,13 +2602,13 @@ void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
      */
     CPUMCPUID   aRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawStd); i++)
-        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].uEax, &aRawStd[i].uEbx, &aRawStd[i].uEcx, &aRawStd[i].uEdx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawStd));
     SSMR3PutMem(pSSM, &aRawStd[0], sizeof(aRawStd));
 
     CPUMCPUID   aRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawExt); i++)
-        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].uEax, &aRawExt[i].uEbx, &aRawExt[i].uEcx, &aRawExt[i].uEdx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawExt));
     SSMR3PutMem(pSSM, &aRawExt[0], sizeof(aRawExt));
 }
@@ -2633,10 +2633,10 @@ static int cpumR3LoadCpuIdOneGuestArray(PSSMHANDLE pSSM, uint32_t uBase, PCPUMCP
                 NewLeaf.uLeaf           = uBase + i;
                 NewLeaf.uSubLeaf        = 0;
                 NewLeaf.fSubLeafMask    = 0;
-                NewLeaf.uEax            = CpuId.eax;
-                NewLeaf.uEbx            = CpuId.ebx;
-                NewLeaf.uEcx            = CpuId.ecx;
-                NewLeaf.uEdx            = CpuId.edx;
+                NewLeaf.uEax            = CpuId.uEax;
+                NewLeaf.uEbx            = CpuId.uEbx;
+                NewLeaf.uEcx            = CpuId.uEcx;
+                NewLeaf.uEdx            = CpuId.uEdx;
                 NewLeaf.fFlags          = 0;
                 rc = cpumR3CpuIdInsert(NULL /* pVM */, ppaLeaves, pcLeaves, &NewLeaf);
             }
@@ -2872,7 +2872,7 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     rc = SSMR3GetMem(pSSM, &aRawStd[0], cRawStd * sizeof(aRawStd[0]));
     AssertRCReturn(rc, rc);
     for (uint32_t i = cRawStd; i < RT_ELEMENTS(aRawStd); i++)
-        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].uEax, &aRawStd[i].uEbx, &aRawStd[i].uEcx, &aRawStd[i].uEdx);
 
     CPUMCPUID   aRawExt[32];
     uint32_t    cRawExt;
@@ -2882,19 +2882,19 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     rc = SSMR3GetMem(pSSM, &aRawExt[0], cRawExt * sizeof(aRawExt[0]));
     AssertRCReturn(rc, rc);
     for (uint32_t i = cRawExt; i < RT_ELEMENTS(aRawExt); i++)
-        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].uEax, &aRawExt[i].uEbx, &aRawExt[i].uEcx, &aRawExt[i].uEdx);
 
     /*
      * Get the raw CPU IDs for the current host.
      */
     CPUMCPUID   aHostRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawStd); i++)
-        ASMCpuIdExSlow(i, 0, 0, 0, &aHostRawStd[i].eax, &aHostRawStd[i].ebx, &aHostRawStd[i].ecx, &aHostRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aHostRawStd[i].uEax, &aHostRawStd[i].uEbx, &aHostRawStd[i].uEcx, &aHostRawStd[i].uEdx);
 
     CPUMCPUID   aHostRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawExt); i++)
         ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0,
-                       &aHostRawExt[i].eax, &aHostRawExt[i].ebx, &aHostRawExt[i].ecx, &aHostRawExt[i].edx);
+                       &aHostRawExt[i].uEax, &aHostRawExt[i].uEbx, &aHostRawExt[i].uEcx, &aHostRawExt[i].uEdx);
 
     /*
      * Get the host and guest overrides so we don't reject the state because
@@ -2925,94 +2925,94 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     if (!HMIsEnabled(pVM))
     {
         /* CPUID(0) */
-        CPUID_CHECK_RET(   aHostRawStd[0].ebx == aRawStd[0].ebx
-                        && aHostRawStd[0].ecx == aRawStd[0].ecx
-                        && aHostRawStd[0].edx == aRawStd[0].edx,
+        CPUID_CHECK_RET(   aHostRawStd[0].uEbx == aRawStd[0].uEbx
+                        && aHostRawStd[0].uEcx == aRawStd[0].uEcx
+                        && aHostRawStd[0].uEdx == aRawStd[0].uEdx,
                         (N_("CPU vendor mismatch: host='%.4s%.4s%.4s' saved='%.4s%.4s%.4s'"),
-                         &aHostRawStd[0].ebx, &aHostRawStd[0].edx, &aHostRawStd[0].ecx,
-                         &aRawStd[0].ebx, &aRawStd[0].edx, &aRawStd[0].ecx));
-        CPUID_CHECK2_WRN("Std CPUID max leaf",   aHostRawStd[0].eax, aRawStd[0].eax);
-        CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].eax >> 14) & 3, (aRawExt[1].eax >> 14) & 3);
-        CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].eax >> 28,       aRawExt[1].eax >> 28);
+                         &aHostRawStd[0].uEbx, &aHostRawStd[0].uEdx, &aHostRawStd[0].uEcx,
+                         &aRawStd[0].uEbx, &aRawStd[0].uEdx, &aRawStd[0].uEcx));
+        CPUID_CHECK2_WRN("Std CPUID max leaf",   aHostRawStd[0].uEax, aRawStd[0].uEax);
+        CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].uEax >> 14) & 3, (aRawExt[1].uEax >> 14) & 3);
+        CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].uEax >> 28,       aRawExt[1].uEax >> 28);
 
-        bool const fIntel = ASMIsIntelCpuEx(aRawStd[0].ebx, aRawStd[0].ecx, aRawStd[0].edx);
+        bool const fIntel = ASMIsIntelCpuEx(aRawStd[0].uEbx, aRawStd[0].uEcx, aRawStd[0].uEdx);
 
         /* CPUID(1).eax */
-        CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawStd[1].eax),        ASMGetCpuFamily(aRawStd[1].eax));
-        CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawStd[1].eax, fIntel), ASMGetCpuModel(aRawStd[1].eax, fIntel));
-        CPUID_CHECK2_WRN("CPU type",            (aHostRawStd[1].eax >> 12) & 3,             (aRawStd[1].eax >> 12) & 3 );
+        CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawStd[1].uEax),        ASMGetCpuFamily(aRawStd[1].uEax));
+        CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawStd[1].uEax, fIntel), ASMGetCpuModel(aRawStd[1].uEax, fIntel));
+        CPUID_CHECK2_WRN("CPU type",            (aHostRawStd[1].uEax >> 12) & 3,             (aRawStd[1].uEax >> 12) & 3 );
 
         /* CPUID(1).ebx - completely ignore CPU count and APIC ID. */
-        CPUID_CHECK2_RET("CPU brand ID",         aHostRawStd[1].ebx & 0xff,                 aRawStd[1].ebx & 0xff);
-        CPUID_CHECK2_WRN("CLFLUSH chunk count", (aHostRawStd[1].ebx >> 8) & 0xff,           (aRawStd[1].ebx >> 8) & 0xff);
+        CPUID_CHECK2_RET("CPU brand ID",         aHostRawStd[1].uEbx & 0xff,                 aRawStd[1].uEbx & 0xff);
+        CPUID_CHECK2_WRN("CLFLUSH chunk count", (aHostRawStd[1].uEbx >> 8) & 0xff,           (aRawStd[1].uEbx >> 8) & 0xff);
 
         /* CPUID(1).ecx */
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE3);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCLMUL);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_DTES64);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MONITOR);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CPLDS);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_VMX);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_SMX);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_EST);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TM2);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSSE3);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_CNTXID);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(11) /*reserved*/ );
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_FMA);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CX16);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_PCID);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);
-        CPUID_RAW_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_TSCDEADL);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_F16C);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_RDRAND);
-        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE3);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_PCLMUL);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_DTES64);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_MONITOR);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_CPLDS);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_VMX);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_SMX);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_EST);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_TM2);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSSE3);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_CNTXID);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, RT_BIT_32(11) /*reserved*/ );
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_FMA);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_CX16);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_TPRUPDATE);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_PDCM);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, RT_BIT_32(16) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_PCID);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_DCA);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE4_1);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE4_2);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_X2APIC);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_MOVBE);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_POPCNT);
+        CPUID_RAW_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_TSCDEADL);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_AES);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_XSAVE);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_OSXSAVE);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_AVX);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_F16C);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_RDRAND);
+        CPUID_RAW_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_HVP);
 
         /* CPUID(1).edx */
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_VME);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DE);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TSC);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MSR);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAE);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCE);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CX8);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_APIC);
-        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(10) /*reserved*/);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SEP);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MTRR);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PGE);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCA);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CMOV);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAT);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE36);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSN);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CLFSH);
-        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(20) /*reserved*/);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_DS);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_ACPI);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MMX);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FXSR);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE);
-        CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE2);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SS);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_HTT);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_TM);
-        CPUID_RAW_FEATURE_RET(Std, edx, RT_BIT_32(30) /*JMPE/IA64*/);
-        CPUID_RAW_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PBE);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_FPU);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_VME);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_DE);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSE);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_TSC);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_MSR);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PAE);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MCE);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CX8);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_APIC);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, RT_BIT_32(10) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_SEP);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MTRR);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PGE);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MCA);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CMOV);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PAT);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSE36);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSN);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CLFSH);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, RT_BIT_32(20) /*reserved*/);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_DS);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_ACPI);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_MMX);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_FXSR);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_SSE);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_SSE2);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_SS);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_HTT);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_TM);
+        CPUID_RAW_FEATURE_RET(Std, uEdx, RT_BIT_32(30) /*JMPE/IA64*/);
+        CPUID_RAW_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PBE);
 
         /* CPUID(2) - config, mostly about caches. ignore. */
         /* CPUID(3) - processor serial number. ignore. */
@@ -3026,113 +3026,113 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         /* CPUID(b) - topology info - takes ECX as input. ignore. */
 
         /* CPUID(d) - XCR0 stuff - takes ECX as input. We only warn about the main level (ECX=0) for now. */
-        CPUID_CHECK_WRN(   aRawStd[0].eax     <  UINT32_C(0x0000000d)
-                        || aHostRawStd[0].eax >= UINT32_C(0x0000000d),
+        CPUID_CHECK_WRN(   aRawStd[0].uEax     <  UINT32_C(0x0000000d)
+                        || aHostRawStd[0].uEax >= UINT32_C(0x0000000d),
                         ("CPUM: Standard leaf D was present on saved state host, not present on current.\n"));
-        if (   aRawStd[0].eax     >= UINT32_C(0x0000000d)
-            && aHostRawStd[0].eax >= UINT32_C(0x0000000d))
+        if (   aRawStd[0].uEax     >= UINT32_C(0x0000000d)
+            && aHostRawStd[0].uEax >= UINT32_C(0x0000000d))
         {
-            CPUID_CHECK2_WRN("Valid low XCR0 bits",             aHostRawStd[0xd].eax, aRawStd[0xd].eax);
-            CPUID_CHECK2_WRN("Valid high XCR0 bits",            aHostRawStd[0xd].edx, aRawStd[0xd].edx);
-            CPUID_CHECK2_WRN("Current XSAVE/XRSTOR area size",  aHostRawStd[0xd].ebx, aRawStd[0xd].ebx);
-            CPUID_CHECK2_WRN("Max XSAVE/XRSTOR area size",      aHostRawStd[0xd].ecx, aRawStd[0xd].ecx);
+            CPUID_CHECK2_WRN("Valid low XCR0 bits",             aHostRawStd[0xd].uEax, aRawStd[0xd].uEax);
+            CPUID_CHECK2_WRN("Valid high XCR0 bits",            aHostRawStd[0xd].uEdx, aRawStd[0xd].uEdx);
+            CPUID_CHECK2_WRN("Current XSAVE/XRSTOR area size",  aHostRawStd[0xd].uEbx, aRawStd[0xd].uEbx);
+            CPUID_CHECK2_WRN("Max XSAVE/XRSTOR area size",      aHostRawStd[0xd].uEcx, aRawStd[0xd].uEcx);
         }
 
         /* CPUID(0x80000000) - same as CPUID(0) except for eax.
            Note! Intel have/is marking many of the fields here as reserved. We
                  will verify them as if it's an AMD CPU. */
-        CPUID_CHECK_RET(   (aHostRawExt[0].eax >= UINT32_C(0x80000001) && aHostRawExt[0].eax <= UINT32_C(0x8000007f))
-                        || !(aRawExt[0].eax    >= UINT32_C(0x80000001) && aRawExt[0].eax     <= UINT32_C(0x8000007f)),
+        CPUID_CHECK_RET(   (aHostRawExt[0].uEax >= UINT32_C(0x80000001) && aHostRawExt[0].uEax <= UINT32_C(0x8000007f))
+                        || !(aRawExt[0].uEax    >= UINT32_C(0x80000001) && aRawExt[0].uEax     <= UINT32_C(0x8000007f)),
                         (N_("Extended leaves was present on saved state host, but is missing on the current\n")));
-        if (aRawExt[0].eax >= UINT32_C(0x80000001) && aRawExt[0].eax     <= UINT32_C(0x8000007f))
+        if (aRawExt[0].uEax >= UINT32_C(0x80000001) && aRawExt[0].uEax     <= UINT32_C(0x8000007f))
         {
-            CPUID_CHECK_RET(   aHostRawExt[0].ebx == aRawExt[0].ebx
-                            && aHostRawExt[0].ecx == aRawExt[0].ecx
-                            && aHostRawExt[0].edx == aRawExt[0].edx,
+            CPUID_CHECK_RET(   aHostRawExt[0].uEbx == aRawExt[0].uEbx
+                            && aHostRawExt[0].uEcx == aRawExt[0].uEcx
+                            && aHostRawExt[0].uEdx == aRawExt[0].uEdx,
                             (N_("CPU vendor mismatch: host='%.4s%.4s%.4s' saved='%.4s%.4s%.4s'"),
-                             &aHostRawExt[0].ebx, &aHostRawExt[0].edx, &aHostRawExt[0].ecx,
-                             &aRawExt[0].ebx,     &aRawExt[0].edx,     &aRawExt[0].ecx));
-            CPUID_CHECK2_WRN("Ext CPUID max leaf",   aHostRawExt[0].eax, aRawExt[0].eax);
+                             &aHostRawExt[0].uEbx, &aHostRawExt[0].uEdx, &aHostRawExt[0].uEcx,
+                             &aRawExt[0].uEbx,     &aRawExt[0].uEdx,     &aRawExt[0].uEcx));
+            CPUID_CHECK2_WRN("Ext CPUID max leaf",   aHostRawExt[0].uEax, aRawExt[0].uEax);
 
             /* CPUID(0x80000001).eax - same as CPUID(0).eax. */
-            CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawExt[1].eax),        ASMGetCpuFamily(aRawExt[1].eax));
-            CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawExt[1].eax, fIntel), ASMGetCpuModel(aRawExt[1].eax, fIntel));
-            CPUID_CHECK2_WRN("CPU type",            (aHostRawExt[1].eax >> 12) & 3, (aRawExt[1].eax >> 12) & 3 );
-            CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].eax >> 14) & 3, (aRawExt[1].eax >> 14) & 3 );
-            CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].eax >> 28, aRawExt[1].eax >> 28);
+            CPUID_CHECK2_RET("CPU family",          ASMGetCpuFamily(aHostRawExt[1].uEax),        ASMGetCpuFamily(aRawExt[1].uEax));
+            CPUID_CHECK2_RET("CPU model",           ASMGetCpuModel(aHostRawExt[1].uEax, fIntel), ASMGetCpuModel(aRawExt[1].uEax, fIntel));
+            CPUID_CHECK2_WRN("CPU type",            (aHostRawExt[1].uEax >> 12) & 3, (aRawExt[1].uEax >> 12) & 3 );
+            CPUID_CHECK2_WRN("Reserved bits 15:14", (aHostRawExt[1].uEax >> 14) & 3, (aRawExt[1].uEax >> 14) & 3 );
+            CPUID_CHECK2_WRN("Reserved bits 31:28",  aHostRawExt[1].uEax >> 28, aRawExt[1].uEax >> 28);
 
             /* CPUID(0x80000001).ebx - Brand ID (maybe), just warn if things differs. */
-            CPUID_CHECK2_WRN("CPU BrandID",          aHostRawExt[1].ebx & 0xffff, aRawExt[1].ebx & 0xffff);
-            CPUID_CHECK2_WRN("Reserved bits 16:27", (aHostRawExt[1].ebx >> 16) & 0xfff, (aRawExt[1].ebx >> 16) & 0xfff);
-            CPUID_CHECK2_WRN("PkgType",             (aHostRawExt[1].ebx >> 28) &   0xf, (aRawExt[1].ebx >> 28) &   0xf);
+            CPUID_CHECK2_WRN("CPU BrandID",          aHostRawExt[1].uEbx & 0xffff, aRawExt[1].uEbx & 0xffff);
+            CPUID_CHECK2_WRN("Reserved bits 16:27", (aHostRawExt[1].uEbx >> 16) & 0xfff, (aRawExt[1].uEbx >> 16) & 0xfff);
+            CPUID_CHECK2_WRN("PkgType",             (aHostRawExt[1].uEbx >> 28) &   0xf, (aRawExt[1].uEbx >> 28) &   0xf);
 
             /* CPUID(0x80000001).ecx */
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CR8L);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_ABM);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_OSVW);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_IBS);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE5);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);
-            CPUID_RAW_FEATURE_IGN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_WDT);
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(14));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(15));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(16));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(17));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(18));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(19));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(20));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(21));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(22));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(23));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(24));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(25));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(26));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(27));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(28));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(29));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(30));
-            CPUID_RAW_FEATURE_WRN(Ext, ecx, RT_BIT_32(31));
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_CMPL);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SVM);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_CR8L);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_ABM);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_OSVW);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_IBS);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE5);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);
+            CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_WDT);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(14));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(15));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(16));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(17));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(18));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(19));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(20));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(21));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(22));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(23));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(24));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(25));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(26));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(27));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(28));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(29));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(30));
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(31));
 
             /* CPUID(0x80000001).edx */
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FPU);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_VME);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_DE);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PSE);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_TSC);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MSR);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAE);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MCE);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_CX8);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_APIC);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(10) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_SEP);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MTRR);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PGE);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MCA);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_CMOV);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PAT);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_PSE36);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(18) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(19) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_NX);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(21) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_MMX);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FXSR);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, RT_BIT_32(28) /*reserved*/);
-            CPUID_RAW_FEATURE_IGN(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
-            CPUID_RAW_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_FPU);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_VME);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_DE);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_PSE);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_TSC);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_MSR);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_PAE);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_MCE);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_CX8);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_APIC);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, RT_BIT_32(10) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_SEP);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_MTRR);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_PGE);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_MCA);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_CMOV);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_PAT);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_PSE36);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, RT_BIT_32(18) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, RT_BIT_32(19) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_NX);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, RT_BIT_32(21) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_MMX);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_FXSR);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, RT_BIT_32(28) /*reserved*/);
+            CPUID_RAW_FEATURE_IGN(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
+            CPUID_RAW_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
 
             /** @todo verify the rest as well. */
         }
@@ -3157,72 +3157,72 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     cpumR3CpuIdGetLeafLegacy(paLeaves, cLeaves, 1, 0, &aGuestCpuIdStd[1]);
 
     /* CPUID(1).ecx */
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE3);    // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCLMUL);  // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_DTES64);  // -> EMU?
-    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_MONITOR);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CPLDS);   // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_VMX);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SMX);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_EST);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TM2);     // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSSE3);   // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CNTXID);  // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(11) /*reserved*/ );
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_FMA);     // -> EMU? what's this?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_CX16);    // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TPRUPDATE);//-> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PDCM);    // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(16) /*reserved*/);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_PCID);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_DCA);     // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_1);  // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_SSE4_2);  // -> EMU
-    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_X2APIC);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_MOVBE);   // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_POPCNT);  // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_TSCDEADL);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AES);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_XSAVE);   // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_OSXSAVE); // -> EMU
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);     // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_F16C);
-    CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_RDRAND);
-    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);     // Normally not set by host
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE3);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_PCLMUL);  // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_DTES64);  // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_MONITOR);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_CPLDS);   // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_VMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_EST);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_TM2);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSSE3);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_CNTXID);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, RT_BIT_32(11) /*reserved*/ );
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_FMA);     // -> EMU? what's this?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_CX16);    // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_TPRUPDATE);//-> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_PDCM);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, RT_BIT_32(16) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_PCID);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_DCA);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE4_1);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_SSE4_2);  // -> EMU
+    CPUID_GST_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_X2APIC);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_MOVBE);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_POPCNT);  // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_TSCDEADL);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_AES);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_XSAVE);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_OSXSAVE); // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_AVX);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_F16C);
+    CPUID_GST_FEATURE_RET(Std, uEcx, X86_CPUID_FEATURE_ECX_RDRAND);
+    CPUID_GST_FEATURE_IGN(Std, uEcx, X86_CPUID_FEATURE_ECX_HVP);     // Normally not set by host
 
     /* CPUID(1).edx */
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_VME);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DE);      // -> EMU?
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_PAE);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCE);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_APIC);
-    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(10) /*reserved*/);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_SEP);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MTRR);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PGE);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_MCA);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PAT);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSE36);
-    CPUID_GST_FEATURE_IGN(Std, edx, X86_CPUID_FEATURE_EDX_PSN);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_CLFSH);   // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(20) /*reserved*/);
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_DS);      // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_ACPI);    // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE);     // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SSE2);    // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_SS);      // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_HTT);     // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_TM);      // -> EMU?
-    CPUID_GST_FEATURE_RET(Std, edx, RT_BIT_32(30) /*JMPE/IA64*/);   // -> EMU
-    CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_PBE);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_FPU);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_VME);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_DE);      // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSE);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_PAE);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MCE);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_APIC);
+    CPUID_GST_FEATURE_RET(Std, uEdx, RT_BIT_32(10) /*reserved*/);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_SEP);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MTRR);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PGE);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_MCA);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PAT);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSE36);
+    CPUID_GST_FEATURE_IGN(Std, uEdx, X86_CPUID_FEATURE_EDX_PSN);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_CLFSH);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, RT_BIT_32(20) /*reserved*/);
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_DS);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_ACPI);    // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_SSE);     // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_SSE2);    // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_SS);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_HTT);     // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_TM);      // -> EMU?
+    CPUID_GST_FEATURE_RET(Std, uEdx, RT_BIT_32(30) /*JMPE/IA64*/);   // -> EMU
+    CPUID_GST_FEATURE_RET(Std, uEdx, X86_CPUID_FEATURE_EDX_PBE);     // -> EMU?
 
     /* CPUID(0x80000000). */
     CPUMCPUID aGuestCpuIdExt[2];
@@ -3230,76 +3230,76 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     if (cpumR3CpuIdGetLeafLegacy(paLeaves, cLeaves, UINT32_C(0x80000001), 0, &aGuestCpuIdExt[1]))
     {
         /** @todo deal with no 0x80000001 on the host. */
-        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].ebx, aHostRawStd[0].ecx, aHostRawStd[0].edx);
-        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].ebx, aGuestCpuIdExt[0].ecx, aGuestCpuIdExt[0].edx);
+        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
+        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
 
         /* CPUID(0x80000001).ecx */
-        CPUID_GST_FEATURE_WRN(Ext, ecx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CMPL);    // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SVM);     // -> EMU
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);// ???
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_CR8L);    // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_ABM);     // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);   // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);//-> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);// -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_OSVW);    // -> EMU?
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_IBS);     // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SSE5);    // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);  // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, ecx, X86_CPUID_AMD_FEATURE_ECX_WDT);     // -> EMU
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(14));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(15));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(16));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(17));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(18));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(19));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(20));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(21));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(22));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(23));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(24));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(25));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(26));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(27));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(28));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(29));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(30));
-        CPUID_GST_AMD_FEATURE_WRN(Ext, ecx, RT_BIT_32(31));
+        CPUID_GST_FEATURE_WRN(Ext, uEcx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_CMPL);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SVM);     // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_EXT_APIC);// ???
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_CR8L);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_ABM);     // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE4A);   // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_MISALNSSE);//-> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);// -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_OSVW);    // -> EMU?
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_IBS);     // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE5);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);  // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_WDT);     // -> EMU
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(14));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(15));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(16));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(17));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(18));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(19));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(20));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(21));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(22));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(23));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(24));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(25));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(26));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(27));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(28));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(29));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(30));
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(31));
 
         /* CPUID(0x80000001).edx */
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_FPU,   X86_CPUID_FEATURE_EDX_FPU);     // -> EMU
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_VME,   X86_CPUID_FEATURE_EDX_VME);     // -> EMU
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_DE,    X86_CPUID_FEATURE_EDX_DE);      // -> EMU
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PSE,   X86_CPUID_FEATURE_EDX_PSE);
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_TSC,   X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_MSR,   X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_PAE,   X86_CPUID_FEATURE_EDX_PAE);
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MCE,   X86_CPUID_FEATURE_EDX_MCE);
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_CX8,   X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_APIC,  X86_CPUID_FEATURE_EDX_APIC);
-        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(10) /*reserved*/);
-        CPUID_GST_FEATURE_IGN(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_SYSCALL);                              // On Intel: long mode only.
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MTRR,  X86_CPUID_FEATURE_EDX_MTRR);
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PGE,   X86_CPUID_FEATURE_EDX_PGE);
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_MCA,   X86_CPUID_FEATURE_EDX_MCA);
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_CMOV,  X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PAT,   X86_CPUID_FEATURE_EDX_PAT);
-        CPUID_GST_FEATURE2_IGN(        edx, X86_CPUID_AMD_FEATURE_EDX_PSE36, X86_CPUID_FEATURE_EDX_PSE36);
-        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(18) /*reserved*/);
-        CPUID_GST_AMD_FEATURE_WRN(Ext, edx, RT_BIT_32(19) /*reserved*/);
-        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_NX);
-        CPUID_GST_FEATURE_WRN(    Ext, edx, RT_BIT_32(21) /*reserved*/);
-        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_MMX,   X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
-        CPUID_GST_FEATURE2_RET(        edx, X86_CPUID_AMD_FEATURE_EDX_FXSR,  X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
-        CPUID_GST_FEATURE_IGN(    Ext, edx, RT_BIT_32(28) /*reserved*/);
-        CPUID_GST_FEATURE_RET(    Ext, edx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
-        CPUID_GST_AMD_FEATURE_RET(Ext, edx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_FPU,   X86_CPUID_FEATURE_EDX_FPU);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_VME,   X86_CPUID_FEATURE_EDX_VME);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_DE,    X86_CPUID_FEATURE_EDX_DE);      // -> EMU
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_PSE,   X86_CPUID_FEATURE_EDX_PSE);
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_TSC,   X86_CPUID_FEATURE_EDX_TSC);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_MSR,   X86_CPUID_FEATURE_EDX_MSR);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_PAE,   X86_CPUID_FEATURE_EDX_PAE);
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_MCE,   X86_CPUID_FEATURE_EDX_MCE);
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_CX8,   X86_CPUID_FEATURE_EDX_CX8);     // -> EMU?
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_APIC,  X86_CPUID_FEATURE_EDX_APIC);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEdx, RT_BIT_32(10) /*reserved*/);
+        CPUID_GST_FEATURE_IGN(    Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_SYSCALL);                              // On Intel: long mode only.
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_MTRR,  X86_CPUID_FEATURE_EDX_MTRR);
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_PGE,   X86_CPUID_FEATURE_EDX_PGE);
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_MCA,   X86_CPUID_FEATURE_EDX_MCA);
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_CMOV,  X86_CPUID_FEATURE_EDX_CMOV);    // -> EMU
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_PAT,   X86_CPUID_FEATURE_EDX_PAT);
+        CPUID_GST_FEATURE2_IGN(        uEdx, X86_CPUID_AMD_FEATURE_EDX_PSE36, X86_CPUID_FEATURE_EDX_PSE36);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEdx, RT_BIT_32(18) /*reserved*/);
+        CPUID_GST_AMD_FEATURE_WRN(Ext, uEdx, RT_BIT_32(19) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_NX);
+        CPUID_GST_FEATURE_WRN(    Ext, uEdx, RT_BIT_32(21) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_AXMMX);
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_MMX,   X86_CPUID_FEATURE_EDX_MMX);     // -> EMU
+        CPUID_GST_FEATURE2_RET(        uEdx, X86_CPUID_AMD_FEATURE_EDX_FXSR,  X86_CPUID_FEATURE_EDX_FXSR);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_PAGE1GB);
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
+        CPUID_GST_FEATURE_IGN(    Ext, uEdx, RT_BIT_32(28) /*reserved*/);
+        CPUID_GST_FEATURE_RET(    Ext, uEdx, X86_CPUID_EXT_FEATURE_EDX_LONG_MODE);
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEdx, X86_CPUID_AMD_FEATURE_EDX_3DNOW);
     }
 
     /*
@@ -3345,11 +3345,67 @@ int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  */
 
 /**
+ * Gets a pointer to the default CPUID leaf.
+ *
+ * @returns Raw-mode pointer to the default CPUID leaf (read-only).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM only.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
+{
+    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdPatmDef);
+}
+
+
+/**
+ * Gets a pointer to the CPUID leaf array.
+ *
+ * @returns Raw-mode pointer to the CPUID leaf array.
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM only.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayRCPtr(PVM pVM)
+{
+    Assert(MMHyperRCToR3(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesRC) == pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
+    return pVM->cpum.s.GuestInfo.paCpuIdLeavesRC;
+}
+
+
+/**
+ * Gets a pointer to the CPUID leaf array.
+ *
+ * @returns Raw-mode pointer to the end of CPUID leaf array (exclusive).
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM only.
+ */
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(PVM pVM)
+{
+    Assert(MMHyperRCToR3(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesRC) == pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
+    return pVM->cpum.s.GuestInfo.paCpuIdLeavesRC
+         + pVM->cpum.s.GuestInfo.cCpuIdLeaves * sizeof(CPUMCPUIDLEAF);
+}
+
+
+/**
+ * Gets the unknown CPUID leaf method.
+ *
+ * @returns Unknown CPUID leaf method.
+ * @param   pVM         Pointer to the VM.
+ * @remark  Intended for PATM only.
+ */
+VMMR3_INT_DECL(CPUMUKNOWNCPUID) CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM)
+{
+    return pVM->cpum.s.GuestInfo.enmUnknownCpuIdMethod;
+}
+
+
+
+/**
  * Gets a number of standard CPUID leafs (PATM only).
  *
  * @returns Number of leafs.
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM)
 {
@@ -3362,7 +3418,7 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM)
  *
  * @returns Number of leafs.
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM)
 {
@@ -3375,7 +3431,7 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM)
  *
  * @returns Number of leafs.
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM)
 {
@@ -3388,9 +3444,9 @@ VMMR3_INT_DECL(uint32_t) CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM)
  *
  * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
  *
- * @returns Pointer to the standard CPUID leaves (read-only).
+ * @returns Raw-mode pointer to the standard CPUID leaves (read-only).
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM)
 {
@@ -3403,9 +3459,9 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM)
  *
  * CPUMGetGuestCpuIdExtMax() give the size of the array.
  *
- * @returns Pointer to the extended CPUID leaves (read-only).
+ * @returns Raw-mode pointer to the extended CPUID leaves (read-only).
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM)
 {
@@ -3418,26 +3474,13 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM)
  *
  * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
  *
- * @returns Pointer to the centaur CPUID leaves (read-only).
+ * @returns Raw-mode pointer to the centaur CPUID leaves (read-only).
  * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
+ * @remark  Intended for PATM - legacy, don't use in new code.
  */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM)
 {
     return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.aGuestCpuIdPatmCentaur[0]);
-}
-
-
-/**
- * Gets a pointer to the default CPUID leaf.
- *
- * @returns Pointer to the default CPUID leaf (read-only).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM.
- */
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
-{
-    return (RCPTRTYPE(PCCPUMCPUID))VM_RC_ADDR(pVM, &pVM->cpum.s.GuestCpuIdPatmDef);
 }
 
 /** @} */

@@ -1178,8 +1178,8 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf)
                        uSubLeaf if we don't find an exact match. */
                     if (uSubLeaf < paLeaves[i].uSubLeaf)
                         while (   i > 0
-                               && uLeaf    == paLeaves[i].uLeaf
-                               && uSubLeaf  < paLeaves[i].uSubLeaf)
+                               && uLeaf    == paLeaves[i - 1].uLeaf
+                               && uSubLeaf <= paLeaves[i - 1].uSubLeaf)
                             i--;
                     else
                         while (   i + 1 < pVM->cpum.s.GuestInfo.cCpuIdLeaves
@@ -1216,7 +1216,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
     else if (iLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
         pCpuId = &pVM->cpum.s.aGuestCpuIdPatmExt[iLeaf - UINT32_C(0x80000000)];
     else if (   iLeaf - UINT32_C(0x40000000) < 0x100   /** @todo Fix this later: Hyper-V says 0x400000FF is the last valid leaf. */
-             && (pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdPatmStd[1].ecx & X86_CPUID_FEATURE_ECX_HVP)) /* Only report if HVP bit set. */
+             && (pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdPatmStd[1].uEcx & X86_CPUID_FEATURE_ECX_HVP)) /* Only report if HVP bit set. */
     {
         PCPUMCPUIDLEAF pHyperLeaf = cpumCpuIdGetLeaf(pVM, iLeaf, 0 /* uSubLeaf */);
         if (RT_LIKELY(pHyperLeaf))
@@ -1239,10 +1239,10 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
 
     uint32_t cCurrentCacheIndex = *pEcx;
 
-    *pEax = pCpuId->eax;
-    *pEbx = pCpuId->ebx;
-    *pEcx = pCpuId->ecx;
-    *pEdx = pCpuId->edx;
+    *pEax = pCpuId->uEax;
+    *pEbx = pCpuId->uEbx;
+    *pEcx = pCpuId->uEcx;
+    *pEdx = pCpuId->uEdx;
 
     if (    iLeaf == 1)
     {
@@ -1327,12 +1327,12 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_APIC:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_APIC;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_APIC;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_APIC;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_APIC;
 
             pVM->cpum.s.GuestFeatures.fApic = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled APIC\n"));
@@ -1344,7 +1344,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_X2APIC:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].ecx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_X2APIC;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_X2APIC;
             pVM->cpum.s.GuestFeatures.fX2Apic = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled x2APIC\n"));
             break;
@@ -1362,7 +1362,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_SEP;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_SEP;
             pVM->cpum.s.GuestFeatures.fSysEnter = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled SYSENTER/EXIT\n"));
             break;
@@ -1389,7 +1389,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD CPUs, although only in 64 bits mode for Intel. */
-            pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_SYSCALL;
+            pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_SYSCALL;
             pVM->cpum.s.GuestFeatures.fSysCall = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled SYSCALL/RET\n"));
             break;
@@ -1407,12 +1407,12 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAE;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAE;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (    pLeaf
                 &&  pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAE;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAE;
 
             pVM->cpum.s.GuestFeatures.fPae = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled PAE\n"));
@@ -1432,7 +1432,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
+            pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
             pVM->cpum.s.GuestFeatures.fLongMode = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled LONG MODE\n"));
             break;
@@ -1451,7 +1451,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_NX;
+            pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_NX;
             pVM->cpum.s.GuestFeatures.fNoExecute = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled NX\n"));
             break;
@@ -1471,7 +1471,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmExt[1].ecx = pLeaf->uEcx |= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
+            pVM->cpum.s.aGuestCpuIdPatmExt[1].uEcx = pLeaf->uEcx |= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             pVM->cpum.s.GuestFeatures.fLahfSahf = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled LAHF/SAHF\n"));
             break;
@@ -1484,12 +1484,12 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_PAT:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAT;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAT;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
 
             pVM->cpum.s.GuestFeatures.fPat = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled PAT\n"));
@@ -1511,7 +1511,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
+            pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
             pVM->cpum.s.HostFeatures.fRdTscP = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled RDTSCP.\n"));
             break;
@@ -1522,7 +1522,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_HVP:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].ecx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_HVP;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Hypervisor Present bit\n"));
             break;
@@ -1541,7 +1541,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             }
 
             /* Valid for both Intel and AMD. */
-            pVM->cpum.s.aGuestCpuIdPatmStd[5].ecx = pLeaf->uEcx |= X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
+            pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx |= X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
             pVM->cpum.s.GuestFeatures.fMWaitExtensions = 1;
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled MWAIT Extensions.\n"));
             break;
@@ -1606,12 +1606,12 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_APIC:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_APIC;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_APIC;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
 
             pVM->cpum.s.GuestFeatures.fApic = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled APIC\n"));
@@ -1620,7 +1620,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_X2APIC:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].ecx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_X2APIC;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_X2APIC;
             pVM->cpum.s.GuestFeatures.fX2Apic = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled x2APIC\n"));
             break;
@@ -1628,12 +1628,12 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_PAE:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAE;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAE;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
 
             pVM->cpum.s.GuestFeatures.fPae = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled PAE!\n"));
@@ -1642,12 +1642,12 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_PAT:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].edx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAT;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAT;
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
 
             pVM->cpum.s.GuestFeatures.fPat = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled PAT!\n"));
@@ -1656,21 +1656,21 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_LONG_MODE:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
             pVM->cpum.s.GuestFeatures.fLongMode = 0;
             break;
 
         case CPUMCPUIDFEATURE_LAHF:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].ecx = pLeaf->uEcx &= ~X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             pVM->cpum.s.GuestFeatures.fLahfSahf = 0;
             break;
 
         case CPUMCPUIDFEATURE_RDTSCP:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmExt[1].edx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
+                pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
             pVM->cpum.s.GuestFeatures.fRdTscP = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled RDTSCP!\n"));
             break;
@@ -1678,14 +1678,14 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_HVP:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[1].ecx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_HVP;
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 0;
             break;
 
         case CPUMCPUIDFEATURE_MWAIT_EXTS:
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005), 0);
             if (pLeaf)
-                pVM->cpum.s.aGuestCpuIdPatmStd[5].ecx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
+                pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
             pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled MWAIT Extensions!\n"));
             break;

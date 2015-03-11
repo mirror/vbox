@@ -747,22 +747,26 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
     delta = (RTRCINTPTR)pVM->patm.s.deltaReloc;
 
     /*
-     * Apply fixups
+     * Apply fixups.
      */
-    PRELOCREC pRec = 0;
-    AVLPVKEY  key  = 0;
-
-    while (true)
+    AVLPVKEY key = NULL;
+    for (;;)
     {
-        /* Get the record that's closest from above */
-        pRec = (PRELOCREC)RTAvlPVGetBestFit(&pPatch->patch.FixupTree, key, true);
-        if (pRec == 0)
+        /* Get the record that's closest from above (after or equal to key). */
+        PRELOCREC pRec = (PRELOCREC)RTAvlPVGetBestFit(&pPatch->patch.FixupTree, key, true);
+        if (!pRec)
             break;
 
-        key = (AVLPVKEY)(pRec->pRelocPos + 1);   /* search for the next record during the next round. */
+        key = (uint8_t *)pRec->Core.Key + 1;   /* search for the next record during the next round. */
 
         switch (pRec->uType)
         {
+        case FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL:
+            Assert(pRec->pDest == pRec->pSource);
+            Log(("Absolute patch template fixup type %#x at %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
+            *(RTRCUINTPTR *)pRec->pRelocPos += delta;
+            break;
+
         case FIXUP_ABSOLUTE:
             Log(("Absolute fixup at %RRv %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
             if (    !pRec->pSource
@@ -2647,7 +2651,8 @@ static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, PPATMP2GLOOKUPREC pCac
             // jmp [PatchCode]
             if (fAddFixup)
             {
-                if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + pPatch->cbPatchJump, pPatch->pPatchJumpDestGC) != VINF_SUCCESS)
+                if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + pPatch->cbPatchJump,
+                                        pPatch->pPatchJumpDestGC) != VINF_SUCCESS)
                 {
                     Log(("Relocation failed for the jump in the guest code!!\n"));
                     return VERR_PATCHING_REFUSED;
@@ -2663,7 +2668,8 @@ static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, PPATMP2GLOOKUPREC pCac
             // jmp [PatchCode]
             if (fAddFixup)
             {
-                if (patmPatchAddReloc32(pVM, pPatch, &pPB[2], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + pPatch->cbPatchJump, pPatch->pPatchJumpDestGC) != VINF_SUCCESS)
+                if (patmPatchAddReloc32(pVM, pPatch, &pPB[2], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + pPatch->cbPatchJump,
+                                        pPatch->pPatchJumpDestGC) != VINF_SUCCESS)
                 {
                     Log(("Relocation failed for the jump in the guest code!!\n"));
                     return VERR_PATCHING_REFUSED;
@@ -2688,7 +2694,8 @@ static int patmGenJumpToPatch(PVM pVM, PPATCHINFO pPatch, PPATMP2GLOOKUPREC pCac
         // jmp [PatchCode]
         if (fAddFixup)
         {
-            if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32, PATCHCODE_PTR_GC(pPatch)) != VINF_SUCCESS)
+            if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32,
+                                    PATCHCODE_PTR_GC(pPatch)) != VINF_SUCCESS)
             {
                 Log(("Relocation failed for the jump in the guest code!!\n"));
                 return VERR_PATCHING_REFUSED;
@@ -2782,7 +2789,8 @@ static int patmGenCallToPatch(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTargetGC, PPA
     // jmp [PatchCode]
     if (fAddFixup)
     {
-        if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH, pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32, pTargetGC) != VINF_SUCCESS)
+        if (patmPatchAddReloc32(pVM, pPatch, &pPB[1], FIXUP_REL_JMPTOPATCH,
+                                pPatch->pPrivInstrGC + SIZEOF_NEARJUMP32, pTargetGC) != VINF_SUCCESS)
         {
             Log(("Relocation failed for the jump in the guest code!!\n"));
             return VERR_PATCHING_REFUSED;

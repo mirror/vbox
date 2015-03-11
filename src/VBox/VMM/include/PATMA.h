@@ -19,6 +19,7 @@
 #define ___PATMA_H
 
 /** @name Patch Fixup Types
+ * @remarks These fixups types are part of the saved state.
  * @{ */
 #define PATM_VMFLAGS                            0xF1ABCD00
 #ifdef VBOX_WITH_STATISTICS
@@ -33,8 +34,8 @@
 #endif
 #define PATM_FIXUP                              0xF1ABCD07
 #define PATM_PENDINGACTION                      0xF1ABCD08
-#define PATM_CPUID_STD_PTR                      0xF1ABCD09
-#define PATM_CPUID_EXT_PTR                      0xF1ABCD0a
+#define PATM_CPUID_STD_PTR                      0xF1ABCD09  /**< Legacy, saved state only. */
+#define PATM_CPUID_EXT_PTR                      0xF1ABCD0a  /**< Legacy, saved state only. */
 #define PATM_CPUID_DEF_PTR                      0xF1ABCD0b
 #define PATM_STACKBASE                          0xF1ABCD0c  /**< Stack to store our private patch return addresses */
 #define PATM_STACKBASE_GUEST                    0xF1ABCD0d  /**< Stack to store guest return addresses */
@@ -50,7 +51,11 @@
 #define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17  /**< Which registers to restore */
 #define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 #define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
-#define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a
+#define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a  /**< Legacy, saved state only. */
+#define PATM_CPUID_ARRAY_PTR                    0xF1ABCD1b
+#define PATM_CPUID_ARRAY_END_PTR                0xF1ABCD1c
+#define PATM_CPUID_ARRAY_ENTRY_SIZE             0xF1ABCD1d
+#define PATM_CPUID_UNKNOWN_METHOD               0xF1ABCD1e
 
 /* Anything larger doesn't require a fixup */
 #define PATM_NO_FIXUP                           0xF1ABCE00
@@ -66,6 +71,10 @@
 #define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09  /**< Relative address of global PATM lookup and jump function. */
 #define PATM_IRET_FUNCTION                      0xF1ABCE0A  /**< Relative address of global PATM iret function. */
 #define PATM_CPUID_CENTAUR_MAX                  0xF1ABCE0B
+
+/** Identifies an patch fixup type value (with reasonable accuracy). */
+#define PATM_IS_FIXUP_TYPE(a_uValue) \
+    ( ((a_uValue) & UINT32_C(0xfffffC00)) == UINT32_C(0xF1ABCC00) && ((a_uValue) & UINT32_C(0xff)) < UINT32_C(0x30) )
 /** @} */
 
 

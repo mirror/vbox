@@ -79,8 +79,8 @@ static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
 static struct
 {
     uint32_t uLeaf;  /**< Leaf to check. */
-    uint32_t ecx;    /**< which bits in ecx to unify between CPUs. */
-    uint32_t edx;    /**< which bits in edx to unify between CPUs. */
+    uint32_t uEcx;   /**< which bits in ecx to unify between CPUs. */
+    uint32_t uEdx;   /**< which bits in edx to unify between CPUs. */
 }
 const g_aCpuidUnifyBits[] =
 {
@@ -169,8 +169,8 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
         uint32_t eax, ebx, ecx, edx;
         ASMCpuIdExSlow(uLeaf, 0, 0, 0, &eax, &ebx, &ecx, &edx);
 
-        ASMAtomicAndU32(&pLegacyLeaf->ecx, ecx | ~g_aCpuidUnifyBits[i].ecx);
-        ASMAtomicAndU32(&pLegacyLeaf->edx, edx | ~g_aCpuidUnifyBits[i].edx);
+        ASMAtomicAndU32(&pLegacyLeaf->uEcx, ecx | ~g_aCpuidUnifyBits[i].uEcx);
+        ASMAtomicAndU32(&pLegacyLeaf->uEdx, edx | ~g_aCpuidUnifyBits[i].uEdx);
     }
 }
 
@@ -299,8 +299,8 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
                 else
                     continue;
 
-                pLeaf->uEcx = pLegacyLeaf->ecx;
-                pLeaf->uEdx = pLegacyLeaf->edx;
+                pLeaf->uEcx = pLegacyLeaf->uEcx;
+                pLeaf->uEdx = pLegacyLeaf->uEdx;
             }
         }
 

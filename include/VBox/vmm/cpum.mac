@@ -3,7 +3,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,44 @@
 
 %ifndef ___VBox_vmm_cpum_mac__
 %define ___VBox_vmm_cpum_mac__
+
+%include "iprt/asmdefs.mac"
+
+;;
+; CPUID leaf.
+; @remarks This structure is used by the patch manager and can only be extended
+;          by adding to the end of it.
+struc CPUMCPUIDLEAF
+    .uLeaf              resd    1
+    .uSubLeaf           resd    1
+    .fSubLeafMask       resd    1
+    .uEax               resd    1
+    .uEbx               resd    1
+    .uEcx               resd    1
+    .uEdx               resd    1
+    .fFlags             resd    1
+endstruc
+%define CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED RT_BIT_32(0)
+
+;;
+; For the default CPUID leaf value.
+; @remarks This is used by the patch manager and cannot be modified in any way.
+struc CPUMCPUID
+    .uEax               resd    1
+    .uEbx               resd    1
+    .uEcx               resd    1
+    .uEdx               resd    1
+endstruc
+
+
+;; @name Method used to deal with unknown CPUID leafs.
+;; @{
+%define CPUMUKNOWNCPUID_DEFAULTS                1
+%define CPUMUKNOWNCPUID_LAST_STD_LEAF           2
+%define CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX  3
+%define CPUMUKNOWNCPUID_PASSTHRU                4
+;; @}
+
 
 ;;
 ; Registers frame.

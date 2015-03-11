@@ -1327,8 +1327,8 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Amd64Efer(PVMCPU pVCpu, uint32_t idM
 {
     PVM             pVM          = pVCpu->CTX_SUFF(pVM);
     uint64_t const  uOldEfer     = pVCpu->cpum.s.Guest.msrEFER;
-    uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdPatmExt[0].eax >= 0x80000001
-                                 ? pVM->cpum.s.aGuestCpuIdPatmExt[1].edx
+    uint32_t const  fExtFeatures = pVM->cpum.s.aGuestCpuIdPatmExt[0].uEax >= 0x80000001
+                                 ? pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx
                                  : 0;
     uint64_t        fMask        = 0;
     uint64_t        fIgnoreMask  = MSR_K6_EFER_LMA;

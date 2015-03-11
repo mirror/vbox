@@ -93,7 +93,9 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
 {
     PRELOCREC pRec;
 
-    Assert(uType == FIXUP_ABSOLUTE || ((uType == FIXUP_REL_JMPTOPATCH || uType == FIXUP_REL_JMPTOGUEST) && pSource && pDest));
+    Assert(   uType == FIXUP_ABSOLUTE
+           || (uType == FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL && pSource == pDest && PATM_IS_FIXUP_TYPE(pSource))
+           || ((uType == FIXUP_REL_JMPTOPATCH || uType == FIXUP_REL_JMPTOGUEST) && pSource && pDest));
 
     LogFlow(("patmPatchAddReloc32 type=%d pRelocGC=%RRv source=%RRv dest=%RRv\n", uType, pRelocHC - pVM->patm.s.pPatchMemGC + pVM->patm.s.pPatchMemGC , pSource, pDest));
 
@@ -161,214 +163,228 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                     Assert(pAsmRecord->aRelocs[i].uInfo == 0);
 #endif
 
-                /**
-                 * BE VERY CAREFUL WITH THESE FIXUPS. TAKE INTO ACCOUNT THAT PROBLEMS MAY ARISE WHEN RESTORING A SAVED STATE WITH
-                 * A DIFFERENT HYPERVISOR LAYOUT.
+                /*
+                 * BE VERY CAREFUL WITH THESE FIXUPS. TAKE INTO ACCOUNT THAT PROBLEMS MAY ARISE WHEN RESTORING
+                 * A SAVED STATE WITH A DIFFERENT HYPERVISOR LAYOUT.
                  */
                 switch (pAsmRecord->aRelocs[i].uType)
                 {
-                case PATM_VMFLAGS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uVMFlags);
-                    break;
-
-                case PATM_PENDINGACTION:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uPendingAction);
-                    break;
-
-                case PATM_FIXUP:
-                    /* Offset in aRelocs[i].uInfo is from the base of the function. */
-                    dest = (RTGCUINTPTR32)pVM->patm.s.pPatchMemGC + pAsmRecord->aRelocs[i].uInfo
-                         + (RTGCUINTPTR32)(pPB - pVM->patm.s.pPatchMemHC);
-                    break;
+                    /*
+                     * PATMGCSTATE member fixups.
+                     */
+                    case PATM_VMFLAGS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uVMFlags);
+                        break;
+                    case PATM_PENDINGACTION:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uPendingAction);
+                        break;
+                    case PATM_STACKPTR:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Psp);
+                        break;
+                    case PATM_INTERRUPTFLAG:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, fPIF);
+                        break;
+                    case PATM_INHIBITIRQADDR:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCPtrInhibitInterrupts);
+                        break;
+                    case PATM_TEMP_EAX:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uEAX);
+                        break;
+                    case PATM_TEMP_ECX:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uECX);
+                        break;
+                    case PATM_TEMP_EDI:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uEDI);
+                        break;
+                    case PATM_TEMP_EFLAGS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.eFlags);
+                        break;
+                    case PATM_TEMP_RESTORE_FLAGS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uFlags);
+                        break;
+                    case PATM_CALL_PATCH_TARGET_ADDR:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallPatchTargetAddr);
+                        break;
+                    case PATM_CALL_RETURN_ADDR:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallReturnAddr);
+                        break;
 #ifdef VBOX_WITH_STATISTICS
-                case PATM_ALLPATCHCALLS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uPatchCalls);
-                    break;
-
-                case PATM_IRETEFLAGS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretEFlags);
-                    break;
-
-                case PATM_IRETCS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretCS);
-                    break;
-
-                case PATM_IRETEIP:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretEIP);
-                    break;
-
-                case PATM_PERPATCHCALLS:
-                    dest = patmPatchQueryStatAddress(pVM, pPatch);
-                    break;
+                    case PATM_ALLPATCHCALLS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uPatchCalls);
+                        break;
+                    case PATM_IRETEFLAGS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretEFlags);
+                        break;
+                    case PATM_IRETCS:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretCS);
+                        break;
+                    case PATM_IRETEIP:
+                        dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, uIretEIP);
+                        break;
 #endif
-                case PATM_STACKPTR:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Psp);
-                    break;
 
-                /* The first part of our PATM stack is used to store offsets of patch return addresses; the 2nd
-                 * part to store the original return addresses.
-                 */
-                case PATM_STACKBASE:
-                    dest = pVM->patm.s.pGCStackGC;
-                    break;
 
-                case PATM_STACKBASE_GUEST:
-                    dest = pVM->patm.s.pGCStackGC + PATM_STACK_SIZE;
-                    break;
+                    case PATM_FIXUP:
+                        /* Offset in aRelocs[i].uInfo is from the base of the function. */
+                        dest = (RTGCUINTPTR32)pVM->patm.s.pPatchMemGC + pAsmRecord->aRelocs[i].uInfo
+                             + (RTGCUINTPTR32)(pPB - pVM->patm.s.pPatchMemHC);
+                        break;
 
-                case PATM_RETURNADDR:   /* absolute guest address; no fixup required */
-                    Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
-                    dest = pCallInfo->pReturnGC;
-                    break;
+#ifdef VBOX_WITH_STATISTICS
+                    case PATM_PERPATCHCALLS:
+                        dest = patmPatchQueryStatAddress(pVM, pPatch);
+                        break;
+#endif
 
-                case PATM_PATCHNEXTBLOCK:  /* relative address of instruction following this block */
-                    Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
+                    /* The first part of our PATM stack is used to store offsets of patch return addresses; the 2nd
+                     * part to store the original return addresses.
+                     */
+                    case PATM_STACKBASE:
+                        dest = pVM->patm.s.pGCStackGC;
+                        break;
 
-                    /** @note hardcoded assumption that we must return to the instruction following this block */
-                    dest = (uintptr_t)pPB - (uintptr_t)pVM->patm.s.pPatchMemHC + pAsmRecord->cbFunction;
-                    break;
+                    case PATM_STACKBASE_GUEST:
+                        dest = pVM->patm.s.pGCStackGC + PATM_STACK_SIZE;
+                        break;
 
-                case PATM_CALLTARGET:   /* relative to patch address; no fixup required */
-                    Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
+                    case PATM_RETURNADDR:   /* absolute guest address; no fixup required */
+                        Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
+                        dest = pCallInfo->pReturnGC;
+                        break;
 
-                    /* Address must be filled in later. (see patmr3SetBranchTargets)  */
-                    patmPatchAddJump(pVM, pPatch, &pPB[j-1], 1, pCallInfo->pTargetGC, OP_CALL);
-                    dest = PATM_ILLEGAL_DESTINATION;
-                    break;
+                    case PATM_PATCHNEXTBLOCK:  /* relative address of instruction following this block */
+                        Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
 
-                case PATM_PATCHBASE:    /* Patch GC base address */
-                    dest = pVM->patm.s.pPatchMemGC;
-                    break;
+                        /** @note hardcoded assumption that we must return to the instruction following this block */
+                        dest = (uintptr_t)pPB - (uintptr_t)pVM->patm.s.pPatchMemHC + pAsmRecord->cbFunction;
+                        break;
 
-                case PATM_CPUID_STD_PTR:
-                    dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
-                    break;
+                    case PATM_CALLTARGET:   /* relative to patch address; no fixup required */
+                        Assert(pCallInfo && pAsmRecord->aRelocs[i].uType >= PATM_NO_FIXUP);
 
-                case PATM_CPUID_EXT_PTR:
-                    dest = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
-                    break;
+                        /* Address must be filled in later. (see patmr3SetBranchTargets)  */
+                        patmPatchAddJump(pVM, pPatch, &pPB[j-1], 1, pCallInfo->pTargetGC, OP_CALL);
+                        dest = PATM_ILLEGAL_DESTINATION;
+                        break;
 
-                case PATM_CPUID_CENTAUR_PTR:
-                    dest = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
-                    break;
+                    case PATM_PATCHBASE:    /* Patch GC base address */
+                        dest = pVM->patm.s.pPatchMemGC;
+                        break;
 
-                case PATM_CPUID_DEF_PTR:
-                    dest = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
-                    break;
+                    case PATM_NEXTINSTRADDR:
+                        Assert(pCallInfo);
+                        /* pNextInstrGC can be 0 if several instructions, that inhibit irqs, follow each other */
+                        dest = pCallInfo->pNextInstrGC;
+                        break;
 
-                case PATM_CPUID_STD_MAX:
-                    dest = CPUMR3GetGuestCpuIdPatmStdMax(pVM);
-                    break;
+                    case PATM_CURINSTRADDR:
+                        Assert(pCallInfo);
+                        dest = pCallInfo->pCurInstrGC;
+                        break;
 
-                case PATM_CPUID_EXT_MAX:
-                    dest = CPUMR3GetGuestCpuIdPatmExtMax(pVM);
-                    break;
+                    /* Relative address of global patm lookup and call function. */
+                    case PATM_LOOKUP_AND_CALL_FUNCTION:
+                    {
+                        RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC
+                                                + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
+                        Assert(pVM->patm.s.pfnHelperCallGC);
+                        Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
-                case PATM_CPUID_CENTAUR_MAX:
-                    dest = CPUMR3GetGuestCpuIdPatmCentaurMax(pVM);
-                    break;
+                        /* Relative value is target minus address of instruction after the actual call instruction. */
+                        dest = pVM->patm.s.pfnHelperCallGC - pInstrAfterCall;
+                        break;
+                    }
 
-                case PATM_INTERRUPTFLAG:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, fPIF);
-                    break;
+                    case PATM_RETURN_FUNCTION:
+                    {
+                        RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC
+                                                + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
+                        Assert(pVM->patm.s.pfnHelperRetGC);
+                        Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
-                case PATM_INHIBITIRQADDR:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCPtrInhibitInterrupts);
-                    break;
+                        /* Relative value is target minus address of instruction after the actual call instruction. */
+                        dest = pVM->patm.s.pfnHelperRetGC - pInstrAfterCall;
+                        break;
+                    }
 
-                case PATM_NEXTINSTRADDR:
-                    Assert(pCallInfo);
-                    /* pNextInstrGC can be 0 if several instructions, that inhibit irqs, follow each other */
-                    dest = pCallInfo->pNextInstrGC;
-                    break;
+                    case PATM_IRET_FUNCTION:
+                    {
+                        RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC
+                                                + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
+                        Assert(pVM->patm.s.pfnHelperIretGC);
+                        Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
-                case PATM_CURINSTRADDR:
-                    Assert(pCallInfo);
-                    dest = pCallInfo->pCurInstrGC;
-                    break;
+                        /* Relative value is target minus address of instruction after the actual call instruction. */
+                        dest = pVM->patm.s.pfnHelperIretGC - pInstrAfterCall;
+                        break;
+                    }
 
-                case PATM_VM_FORCEDACTIONS:
-                    /* @todo dirty assumptions when correcting this fixup during saved state loading. */
-                    dest = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
-                    break;
+                    case PATM_LOOKUP_AND_JUMP_FUNCTION:
+                    {
+                        RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC
+                                                + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
+                        Assert(pVM->patm.s.pfnHelperJumpGC);
+                        Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
 
-                case PATM_TEMP_EAX:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uEAX);
-                    break;
-                case PATM_TEMP_ECX:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uECX);
-                    break;
-                case PATM_TEMP_EDI:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uEDI);
-                    break;
-                case PATM_TEMP_EFLAGS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.eFlags);
-                    break;
-                case PATM_TEMP_RESTORE_FLAGS:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, Restore.uFlags);
-                    break;
-                case PATM_CALL_PATCH_TARGET_ADDR:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallPatchTargetAddr);
-                    break;
-                case PATM_CALL_RETURN_ADDR:
-                    dest = pVM->patm.s.pGCStateGC + RT_OFFSETOF(PATMGCSTATE, GCCallReturnAddr);
-                    break;
+                        /* Relative value is target minus address of instruction after the actual call instruction. */
+                        dest = pVM->patm.s.pfnHelperJumpGC - pInstrAfterCall;
+                        break;
+                    }
 
-                /* Relative address of global patm lookup and call function. */
-                case PATM_LOOKUP_AND_CALL_FUNCTION:
-                {
-                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
-                    Assert(pVM->patm.s.pfnHelperCallGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
+                    case PATM_CPUID_STD_MAX: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmStdMax(pVM);
+                        break;
+                    case PATM_CPUID_EXT_MAX: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmExtMax(pVM);
+                        break;
+                    case PATM_CPUID_CENTAUR_MAX: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmCentaurMax(pVM);
+                        break;
 
-                    /* Relative value is target minus address of instruction after the actual call instruction. */
-                    dest = pVM->patm.s.pfnHelperCallGC - pInstrAfterCall;
-                    break;
-                }
+                    /*
+                     * The following fixups needs to be recalculated when loading saved state
+                     * Note! Earlier saved state versions had different hacks for detecting these.
+                     */
+                    case PATM_VM_FORCEDACTIONS:
+                        dest = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
+                        break;
+                    case PATM_CPUID_DEF_PTR:
+                        dest = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
+                        break;
+                    case PATM_CPUID_ARRAY_PTR:
+                        dest = CPUMR3GetGuestCpuIdPatmArrayRCPtr(pVM);
+                        break;
+                    case PATM_CPUID_ARRAY_END_PTR:
+                        dest = CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(pVM);
+                        break;
+                    case PATM_CPUID_ARRAY_ENTRY_SIZE:
+                        dest = sizeof(CPUMCPUIDLEAF);
+                        break;
+                    case PATM_CPUID_UNKNOWN_METHOD:
+                        dest = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
+                        break;
 
-                case PATM_RETURN_FUNCTION:
-                {
-                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
-                    Assert(pVM->patm.s.pfnHelperRetGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
+                    case PATM_CPUID_STD_PTR: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
+                        break;
+                    case PATM_CPUID_EXT_PTR: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
+                        break;
+                    case PATM_CPUID_CENTAUR_PTR: /* saved state only */
+                        dest = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
+                        break;
 
-                    /* Relative value is target minus address of instruction after the actual call instruction. */
-                    dest = pVM->patm.s.pfnHelperRetGC - pInstrAfterCall;
-                    break;
-                }
-
-                case PATM_IRET_FUNCTION:
-                {
-                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
-                    Assert(pVM->patm.s.pfnHelperIretGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
-
-                    /* Relative value is target minus address of instruction after the actual call instruction. */
-                    dest = pVM->patm.s.pfnHelperIretGC - pInstrAfterCall;
-                    break;
-                }
-
-                case PATM_LOOKUP_AND_JUMP_FUNCTION:
-                {
-                    RTRCPTR pInstrAfterCall = pVM->patm.s.pPatchMemGC + (RTGCUINTPTR32)(&pPB[j] + sizeof(RTRCPTR) - pVM->patm.s.pPatchMemHC);
-                    Assert(pVM->patm.s.pfnHelperJumpGC);
-                    Assert(sizeof(uint32_t) == sizeof(RTRCPTR));
-
-                    /* Relative value is target minus address of instruction after the actual call instruction. */
-                    dest = pVM->patm.s.pfnHelperJumpGC - pInstrAfterCall;
-                    break;
-                }
-
-                default:
-                    dest = PATM_ILLEGAL_DESTINATION;
-                    AssertRelease(0);
-                    break;
+                    default:
+                        dest = PATM_ILLEGAL_DESTINATION;
+                        AssertReleaseFailed();
+                        break;
                 }
 
                 *(RTRCPTR *)&pPB[j] = dest;
                 if (pAsmRecord->aRelocs[i].uType < PATM_NO_FIXUP)
                 {
-                    patmPatchAddReloc32(pVM, pPatch, &pPB[j], FIXUP_ABSOLUTE);
+                    patmPatchAddReloc32(pVM, pPatch, &pPB[j], FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL,
+                                        pAsmRecord->aRelocs[i].uType /*pSources*/, pAsmRecord->aRelocs[i].uType /*pDest*/);
                 }
                 break;
             }

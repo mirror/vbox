@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -467,10 +467,10 @@ typedef const CPUMCTXMSRS *PCCPUMCTXMSRS;
  */
 typedef struct CPUMCPUID
 {
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
+    uint32_t uEax;
+    uint32_t uEbx;
+    uint32_t uEcx;
+    uint32_t uEdx;
 } CPUMCPUID;
 /** Pointer to a CPUID leaf. */
 typedef CPUMCPUID *PCPUMCPUID;

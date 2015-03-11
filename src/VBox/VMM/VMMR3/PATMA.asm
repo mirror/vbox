@@ -31,6 +31,7 @@
 %include "VBox/asmdefs.mac"
 %include "VBox/err.mac"
 %include "iprt/x86.mac"
+%include "VBox/vmm/cpum.mac"
 %include "VBox/vmm/vm.mac"
 %include "PATMA.mac"
 
@@ -1722,56 +1723,116 @@ GLOBALNAME g_patmIretFunctionRecord
 ; PATMCpuidReplacement
 ;
 BEGIN_PATCH g_patmCpuidRecord, PATMCpuidReplacement
+    not     dword [esp-16]              ; probe stack before starting, just in case.
+    not     dword [esp-16]
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
 PATCH_FIXUP PATM_INTERRUPTFLAG
     pushf
 
-    cmp     eax, PATM_CPUID_STD_MAX
-PATCH_FIXUP PATM_CPUID_STD_MAX
-    jb      cpuid_std
-    cmp     eax, 0x80000000
-    jb      cpuid_def
-    cmp     eax, PATM_CPUID_EXT_MAX
-PATCH_FIXUP PATM_CPUID_EXT_MAX
-    jb      cpuid_ext
-    cmp     eax, 0xc0000000
-    jb      cpuid_def
-    cmp     eax, PATM_CPUID_CENTAUR_MAX
-PATCH_FIXUP PATM_CPUID_CENTAUR_MAX
-    jb      cpuid_centaur
+;; @todo We could put all this stuff in a CPUM assembly function can simply call it.
 
-cpuid_def:
-    mov     eax, PATM_CPUID_DEF_PTR
+    ; Save the registers we use for passthru and sub-leaf matching (eax is not used).
+    push    edx
+    push    ecx
+    push    ebx
+
+    ;
+    ; Perform a linear search of the strictly sorted CPUID leaf array. 
+    ;
+    ; (Was going to do a binary search, but that ended up being complicated if 
+    ; we want a flexible leaf size. Linear search is probably good enough.)
+    ;
+    mov     ebx, PATM_CPUID_ARRAY_PTR
+PATCH_FIXUP PATM_CPUID_ARRAY_PTR
+    mov     edx, PATM_CPUID_ARRAY_END_PTR
+PATCH_FIXUP PATM_CPUID_ARRAY_END_PTR
+    cmp     ebx, edx
+    jae     cpuid_unknown
+
+cpuid_lookup_leaf:
+    cmp     eax, [ss:ebx + CPUMCPUIDLEAF.uLeaf]
+    jbe     cpuid_maybe_match_eax
+    add     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
+PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
+    cmp     ebx, edx
+    jb      cpuid_lookup_leaf
+    jmp     cpuid_unknown
+
+cpuid_maybe_match_eax:    
+    jne     cpuid_unknown
+
+    ; Sub-leaf match too?
+    mov     ecx, [esp + 4]
+    and     ecx, [ss:ebx + CPUMCPUIDLEAF.fSubLeafMask]
+    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]
+    je      cpuid_fetch
+
+    ; Search forward until we've got a matching sub-leaf (or not). 
+cpuid_subleaf_lookup:
+    add     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
+PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
+    cmp     ebx, edx
+    jae     cpuid_subleaf_not_found_sub_ebx
+    cmp     eax, [ss:ebx + CPUMCPUIDLEAF.uLeaf]    
+    jne     cpuid_subleaf_not_found_sub_ebx
+    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]    
+    ja      cpuid_subleaf_lookup
+    je      cpuid_fetch
+cpuid_subleaf_not_found_sub_ebx:
+    sub     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
+PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
+    
+    ;
+    ; Out of range sub-leafs aren't quite as easy and pretty as we emulate them
+    ; here, but we do an adequate job.
+    ;    
+cpuid_subleaf_not_found:
+    mov     ecx, [esp + 4]
+    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED
+    jnz     cpuid_load_zeros_except_ecx
+cpuid_load_zeros:
+    xor     ecx, ecx
+cpuid_load_zeros_except_ecx:
+    xor     edx, edx
+    xor     eax, eax
+    xor     ebx, ebx
+    jmp     cpuid_done
+
+    ;
+    ; Different CPUs have different ways of dealing with unknown CPUID leaves.
+    ;
+cpuid_unknown:
+    mov     edx, PATM_CPUID_UNKNOWN_METHOD
+PATCH_FIXUP PATM_CPUID_UNKNOWN_METHOD
+    cmp     edx, CPUMUKNOWNCPUID_PASSTHRU
+    je      cpuid_unknown_passthru
+    ; Load the default cpuid leaf.
+cpuid_unknown_def_leaf:
+    mov     ebx, PATM_CPUID_DEF_PTR
 PATCH_FIXUP PATM_CPUID_DEF_PTR
-    jmp     cpuid_fetch
+    mov     edx, [ss:ebx + CPUMCPUID.uEdx]
+    mov     ecx, [ss:ebx + CPUMCPUID.uEcx]
+    mov     eax, [ss:ebx + CPUMCPUID.uEax]
+    mov     ebx, [ss:ebx + CPUMCPUID.uEbx]
+    jmp     cpuid_done
+    ; Pass thru the input values unmodified (eax is still virgin).
+cpuid_unknown_passthru:
+    mov     edx, [esp + 8]
+    mov     ecx, [esp + 4]
+    mov     ebx, [esp]
+    jmp     cpuid_done
 
-cpuid_std:
-    mov     edx, PATM_CPUID_STD_PTR
-PATCH_FIXUP PATM_CPUID_STD_PTR
-    jmp     cpuid_calc
-
-cpuid_ext:
-    and     eax, 0ffh                   
-    mov     edx, PATM_CPUID_EXT_PTR
-PATCH_FIXUP PATM_CPUID_EXT_PTR
-    jmp     cpuid_calc
-
-cpuid_centaur:
-    and     eax, 0ffh                   
-    mov     edx, PATM_CPUID_CENTAUR_PTR
-PATCH_FIXUP PATM_CPUID_CENTAUR_PTR
-
-cpuid_calc:
-    lea     eax, [ss:eax * 4]              ; 4 entries...
-    lea     eax, [ss:eax * 4]              ; 4 bytes each
-    add     eax, edx
-
+    ;
+    ; Normal return.
+    ;
 cpuid_fetch:
-    mov     edx, [ss:eax + 12]             ; CPUMCPUID layout assumptions!
-    mov     ecx, [ss:eax + 8]
-    mov     ebx, [ss:eax + 4]
-    mov     eax, [ss:eax]
-
+    mov     edx, [ss:ebx + CPUMCPUIDLEAF.uEdx]
+    mov     ecx, [ss:ebx + CPUMCPUIDLEAF.uEcx]
+    mov     eax, [ss:ebx + CPUMCPUIDLEAF.uEax]
+    mov     ebx, [ss:ebx + CPUMCPUIDLEAF.uEbx]
+             
+cpuid_done:
+    add     esp, 12
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
 PATCH_FIXUP PATM_INTERRUPTFLAG

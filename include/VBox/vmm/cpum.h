@@ -271,6 +271,9 @@ typedef enum CPUMMICROARCH
 
 /**
  * CPUID leaf.
+ *
+ * @remarks This structure is used by the patch manager and is therefore
+ *          more or less set in stone.
  */
 typedef struct CPUMCPUIDLEAF
 {
@@ -293,6 +296,7 @@ typedef struct CPUMCPUIDLEAF
     /** Flags. */
     uint32_t    fFlags;
 } CPUMCPUIDLEAF;
+AssertCompileSize(CPUMCPUIDLEAF, 32);
 /** Pointer to a CPUID leaf. */
 typedef CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
 /** Pointer to a const CPUID leaf. */
@@ -308,6 +312,7 @@ typedef CPUMCPUIDLEAF const *PCCPUMCPUIDLEAF;
 
 /**
  * Method used to deal with unknown CPUID leafs.
+ * @remarks Used in patch code.
  */
 typedef enum CPUMUKNOWNCPUID
 {
@@ -1270,15 +1275,19 @@ VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
 # if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
-/** @name APIs for Patch Manager CPUID legacy tables
+/** @name APIs for the CPUID raw-mode patch.
  * @{ */
-VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
-VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);
-VMMR3_INT_DECL(uint32_t)                CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))  CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(PVM pVM);
+VMMR3_INT_DECL(CPUMUKNOWNCPUID)            CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM);
+/* Legacy: */
+VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
+VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);
+VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmStdRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmExtRCPtr(PVM pVM);
+VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmCentaurRCPtr(PVM pVM);
 /** @} */
 # endif
 

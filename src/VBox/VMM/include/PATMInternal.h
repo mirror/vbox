@@ -31,8 +31,10 @@
 
 /** @name Saved state version numbers.
  * @{ */
+/** New fixup type FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL. */
+#define PATM_SAVED_STATE_VERSION                    57
 /** Uses normal structure serialization with markers and everything. */
-#define PATM_SAVED_STATE_VERSION                    56
+#define PATM_SAVED_STATE_VERSION_NO_RAW_MEM         56
 /** Last version which saves structures as raw memory. */
 #define PATM_SAVED_STATE_VERSION_MEM                55
 #define PATM_SAVED_STATE_VERSION_FIXUP_HACK         54
@@ -97,9 +99,22 @@
 /* Maximum nr of invalid writes before a patch is disabled. */
 #define PATM_MAX_INVALID_WRITES            16384
 
+/** @name FIXUP_XXX - RELOCREC::uType values.
+ * @{ */
+/** Absolute fixup.  With one exception (MMIO cache), this does not take any
+ * source or destination.  @sa FIXUP_ABSOLUTE_ASM.  */
 #define FIXUP_ABSOLUTE                     0
 #define FIXUP_REL_JMPTOPATCH               1
 #define FIXUP_REL_JMPTOGUEST               2
+/** Absolute fixup in patch assembly code template.
+ *
+ * The source and desination addresses both set to the patch fixup type (see
+ * PATM_IS_FIXUP_TYPE and friends in PATMA.h).  This is recent addition (CPUID
+ * subleaf code), so when loading older saved states this is usally represented
+ * as FIXUP_ABSOLUTE. */
+#define FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL   3
+/** @} */
+
 
 #define PATM_ILLEGAL_DESTINATION           0xDEADBEEF
 
