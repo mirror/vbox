@@ -416,7 +416,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
  * @param   pGVM        Pointer to the global VM structure. Optional.
  * @thread  EMT or session clean up thread.
  */
-VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
+VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 {
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
     PciRawR0TermVM(pVM);
@@ -1903,7 +1903,7 @@ VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchB
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = true;
@@ -1915,7 +1915,7 @@ VMMR0DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu)
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
+VMMR0_INT_DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled = false;
@@ -1927,7 +1927,7 @@ VMMR0DECL(void) VMMR0LogFlushEnable(PVMCPU pVCpu)
  *
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
+VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu)
 {
     if (pVCpu->vmm.s.pR0LoggerR0)
         return pVCpu->vmm.s.pR0LoggerR0->fFlushingDisabled;
