@@ -693,12 +693,18 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
                             glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
                             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
 
+                            /* Set row length and alignment of the output data. */
+                            VMSVGAPACKPARAMS SavedParams;
+                            vmsvga3dSetPackParams(pState, pContext, pSurface, &SavedParams);
+
                             glGetTexImage(GL_TEXTURE_2D,
                                           i,
                                           pSurface->formatGL,
                                           pSurface->typeGL,
                                           pData);
                             VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+                            vmsvga3dRestorePackParams(pState, pContext, pSurface, &SavedParams);
 
                             /* Data follows */
                             rc = SSMR3PutBool(pSSM, true);
