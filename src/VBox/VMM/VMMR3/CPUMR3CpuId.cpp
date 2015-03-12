@@ -2062,8 +2062,7 @@ static void cpumR3CpuIdLimitLeaves(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     if (pCurLeaf)
     {
         uint32_t uLimit = pCurLeaf->uEax;
-        if (   uLimit >= UINT32_C(0x00000000)
-            && uLimit <= UINT32_C(0x000fffff))
+        if (uLimit <= UINT32_C(0x000fffff))
         {
             /** @todo raise the limits! */
             if (pCurLeaf->uEax > 5)
