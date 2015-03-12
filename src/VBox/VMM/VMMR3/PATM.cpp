@@ -6533,11 +6533,13 @@ VMMR3_INT_DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCP
         /* Very bad. We crashed in emitted code. Probably stack? */
         if (pPatch)
         {
-            AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
-                            ("Crash in patch code %RRv (%RRv) esp=%RX32\nPatch state=%x flags=%RX64 fDirty=%d\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVCpu), pPatch->patch.uState, pPatch->patch.flags, pPatchToGuestRec->fDirty, szBuf));
+            AssertLogRelMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
+                            ("Crash in patch code %RRv (%RRv) esp=%RX32\nPatch state=%x flags=%RX64 fDirty=%d\n%s\n",
+                             pEip, pNewEip, CPUMGetGuestESP(pVCpu), pPatch->patch.uState, pPatch->patch.flags,
+                             pPatchToGuestRec->fDirty, szBuf));
         }
         else
-            AssertReleaseMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
+            AssertLogRelMsg(pVM->patm.s.pGCStateHC->fPIF == 1,
                             ("Crash in patch code %RRv (%RRv) esp=%RX32\n%s\n", pEip, pNewEip, CPUMGetGuestESP(pVCpu), szBuf));
         EMR3FatalError(pVCpu, VERR_INTERNAL_ERROR);
     }
