@@ -582,6 +582,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_STEXT_FEATURE_EBX_AVX512CD          RT_BIT(28)
 /** EBX Bit 29 - SHA - Supports Secure Hash Algorithm extensions. */
 #define X86_CPUID_STEXT_FEATURE_EBX_SHA               RT_BIT(29)
+
+/** ECX Bit 0 - PREFETCHWT1 - Supports the PREFETCHWT1 instruction. */
+#define X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1       RT_BIT(0)
 /** @} */
 
 
@@ -653,7 +656,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 31 - 3DNOW - AMD 3DNow. */
 #define X86_CPUID_AMD_FEATURE_EDX_3DNOW     RT_BIT(31)
 
-/** Bit 1 - CMPL - Core multi-processing legacy mode. */
+/** Bit 1 - CmpLegacy - Core multi-processing legacy mode. */
 #define X86_CPUID_AMD_FEATURE_ECX_CMPL      RT_BIT(1)
 /** Bit 2 - SVM - AMD VM extensions. */
 #define X86_CPUID_AMD_FEATURE_ECX_SVM       RT_BIT(2)
@@ -679,7 +682,17 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_ECX_SKINIT    RT_BIT(12)
 /** Bit 13 - WDT - AMD Watchdog timer support. */
 #define X86_CPUID_AMD_FEATURE_ECX_WDT       RT_BIT(13)
-
+/** Bit 15 - LWP - Lightweight profiling support. */
+#define X86_CPUID_AMD_FEATURE_ECX_LWP       RT_BIT(15)
+/** Bit 16 - FMA4 - Four operand FMA instruction support. */
+#define X86_CPUID_AMD_FEATURE_ECX_FMA4      RT_BIT(16)
+/** Bit 19 - NodeId - Indicates support for
+ * MSR_C001_100C[NodeId,NodesPerProcessr]. */
+#define X86_CPUID_AMD_FEATURE_ECX_NODEID    RT_BIT(19)
+/** Bit 21 - TBM - Trailing bit manipulation instruction support. */
+#define X86_CPUID_AMD_FEATURE_ECX_TBM       RT_BIT(21)
+/** Bit 22 - TopologyExtensions - . */
+#define X86_CPUID_AMD_FEATURE_ECX_TOPOEXT   RT_BIT(22)
 /** @} */
 
 
@@ -705,6 +718,14 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE  RT_BIT(7)
 /** Bit 8 - TSCINVAR - TSC Invariant. */
 #define X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR  RT_BIT(8)
+/** Bit 9 - CPB - TSC Invariant. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_CPB       RT_BIT(9)
+/** Bit 10 - EffFreqRO - MPERF/APERF. */
+#define X86_CPUID_AMD_ADVPOWER_EDX_EFRO      RT_BIT(10)
+/** Bit 11 - PFI - Processor feedback interface (see EAX). */
+#define X86_CPUID_AMD_ADVPOWER_EDX_PFI       RT_BIT(11)
+/** Bit 12 - PA - Processor accumulator (MSR c001_007a). */
+#define X86_CPUID_AMD_ADVPOWER_EDX_PA        RT_BIT(12)
 /** @} */
 
 

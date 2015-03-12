@@ -304,37 +304,40 @@ typedef CPUMCPUIDLEAF const *PCCPUMCPUIDLEAF;
 
 /** @name CPUMCPUIDLEAF::fFlags
  * @{ */
-/** Indicates that ECX (the sub-leaf indicator) doesn't change when
- * requesting the final leaf and all undefined leaves that follows it.
- * Observed for 0x0000000b on Intel. */
-#define CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED RT_BIT_32(0)
+/** Indicates working intel leaf 0xb where the lower 8 ECX bits are not modified
+ * and EDX containing the extended APIC ID. */
+#define CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES    RT_BIT_32(0)
+/** The leaf contains an APIC ID that needs changing to that of the current CPU. */
+#define CPUMCPUIDLEAF_F_CONTAINS_APIC_ID            RT_BIT_32(1)
+/** Mask of the valid flags. */
+#define CPUMCPUIDLEAF_F_VALID_MASK                  UINT32_C(0x3)
 /** @} */
 
 /**
- * Method used to deal with unknown CPUID leafs.
+ * Method used to deal with unknown CPUID leaves.
  * @remarks Used in patch code.
  */
-typedef enum CPUMUKNOWNCPUID
+typedef enum CPUMUNKNOWNCPUID
 {
     /** Invalid zero value. */
-    CPUMUKNOWNCPUID_INVALID = 0,
+    CPUMUNKNOWNCPUID_INVALID = 0,
     /** Use given default values (DefCpuId). */
-    CPUMUKNOWNCPUID_DEFAULTS,
+    CPUMUNKNOWNCPUID_DEFAULTS,
     /** Return the last standard leaf.
      * Intel Sandy Bridge has been observed doing this. */
-    CPUMUKNOWNCPUID_LAST_STD_LEAF,
+    CPUMUNKNOWNCPUID_LAST_STD_LEAF,
     /** Return the last standard leaf, with ecx observed.
      * Intel Sandy Bridge has been observed doing this. */
-    CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,
+    CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,
     /** The register values are passed thru unmodified. */
-    CPUMUKNOWNCPUID_PASSTHRU,
+    CPUMUNKNOWNCPUID_PASSTHRU,
     /** End of valid value. */
-    CPUMUKNOWNCPUID_END,
+    CPUMUNKNOWNCPUID_END,
     /** Ensure 32-bit type. */
-    CPUMUKNOWNCPUID_32BIT_HACK = 0x7fffffff
-} CPUMUKNOWNCPUID;
+    CPUMUNKNOWNCPUID_32BIT_HACK = 0x7fffffff
+} CPUMUNKNOWNCPUID;
 /** Pointer to unknown CPUID leaf method. */
-typedef CPUMUKNOWNCPUID *PCPUMUKNOWNCPUID;
+typedef CPUMUNKNOWNCPUID *PCPUMUNKNOWNCPUID;
 
 
 /**
@@ -922,7 +925,8 @@ VMMDECL(uint64_t)   CPUMGetGuestDR3(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestDR6(PVMCPU pVCpu);
 VMMDECL(uint64_t)   CPUMGetGuestDR7(PVMCPU pVCpu);
 VMMDECL(int)        CPUMGetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t *pValue);
-VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
+VMMDECL(void)       CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t iSubLeaf,
+                                      uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx);
 VMMDECL(uint64_t)   CPUMGetGuestEFER(PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue);
 VMMDECL(VBOXSTRICTRC)   CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue);
@@ -1267,8 +1271,8 @@ VMMR3DECL(CPUMMICROARCH)    CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVen
                                                             uint8_t bModel, uint8_t bStepping);
 VMMR3DECL(const char *)     CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch);
 VMMR3DECL(int)              CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves);
-VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUKNOWNCPUID penmUnknownMethod, PCPUMCPUID pDefUnknown);
-VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUKNOWNCPUID enmUnknownMethod);
+VMMR3DECL(int)              CPUMR3CpuIdDetectUnknownLeafMethod(PCPUMUNKNOWNCPUID penmUnknownMethod, PCPUMCPUID pDefUnknown);
+VMMR3DECL(const char *)     CPUMR3CpuIdUnknownLeafMethodName(CPUMUNKNOWNCPUID enmUnknownMethod);
 VMMR3DECL(CPUMCPUVENDOR)    CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX, uint32_t uECX, uint32_t uEDX);
 VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
 
@@ -1280,7 +1284,7 @@ VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRa
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayRCPtr(PVM pVM);
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(PVM pVM);
-VMMR3_INT_DECL(CPUMUKNOWNCPUID)            CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM);
+VMMR3_INT_DECL(CPUMUNKNOWNCPUID)            CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM);
 /* Legacy: */
 VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
 VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);

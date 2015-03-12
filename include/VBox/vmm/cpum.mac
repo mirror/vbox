@@ -42,7 +42,7 @@ struc CPUMCPUIDLEAF
     .uEdx               resd    1
     .fFlags             resd    1
 endstruc
-%define CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED RT_BIT_32(0)
+%define CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES RT_BIT_32(0)
 
 ;;
 ; For the default CPUID leaf value.
@@ -55,12 +55,12 @@ struc CPUMCPUID
 endstruc
 
 
-;; @name Method used to deal with unknown CPUID leafs.
+;; @name Method used to deal with unknown CPUID leaves.
 ;; @{
-%define CPUMUKNOWNCPUID_DEFAULTS                1
-%define CPUMUKNOWNCPUID_LAST_STD_LEAF           2
-%define CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX  3
-%define CPUMUKNOWNCPUID_PASSTHRU                4
+%define CPUMUNKNOWNCPUID_DEFAULTS                1
+%define CPUMUNKNOWNCPUID_LAST_STD_LEAF           2
+%define CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX  3
+%define CPUMUNKNOWNCPUID_PASSTHRU                4
 ;; @}
 
 

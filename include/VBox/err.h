@@ -630,6 +630,8 @@
 #define VINF_CPUM_R3_MSR_READ                   (1758)
 /** Return to ring-3 to write the MSR there. */
 #define VINF_CPUM_R3_MSR_WRITE                  (1759)
+/** Too may CPUID leaves. */
+#define VERR_TOO_MANY_CPUID_LEAVES              (1760)
 /** @} */
 
 
