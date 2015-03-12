@@ -440,7 +440,7 @@ static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
 
 static void ps2mSetRate(PPS2M pThis, uint8_t rate)
 {
-    pThis->uThrottleDelay = 1000 / rate;
+    pThis->uThrottleDelay = rate ? 1000 / rate : 0;
     pThis->u8SampleRate = rate;
     LogFlowFunc(("Sampling rate %u, throttle delay %u ms\n", pThis->u8SampleRate, pThis->uThrottleDelay));
 }

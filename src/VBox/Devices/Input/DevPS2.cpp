@@ -1206,16 +1206,17 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
             SSMR3GetS32(pSSM, &i32Dummy);
             SSMR3GetS32(pSSM, &i32Dummy);
         }
-        SSMR3GetU8(pSSM, &u8Dummy);
+        rc = SSMR3GetU8(pSSM, &u8Dummy);
         if (version_id == 4)
         {
             SSMR3GetU32(pSSM, &u32Dummy);
-            SSMR3GetU32(pSSM, &u32Dummy);
+            rc = SSMR3GetU32(pSSM, &u32Dummy);
         }
         if (version_id > 3)
-            SSMR3GetU8(pSSM, &u8Dummy);
+            rc = SSMR3GetU8(pSSM, &u8Dummy);
         if (version_id == 4)
-            SSMR3GetU8(pSSM, &u8Dummy);
+            rc = SSMR3GetU8(pSSM, &u8Dummy);
+        AssertLogRelRCReturn(rc, rc);
 
         PS2MFixupState(&s->Aux, u8State, u8Rate, u8Proto);
     }
