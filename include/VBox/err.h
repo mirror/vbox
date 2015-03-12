@@ -371,6 +371,8 @@
 #define VINF_PATCH_CONTINUE                 (1430)
 /** The patch manager is not used because we're using HM and VT-x/AMD-V. */
 #define VERR_PATM_HM_IPE                    (-1431)
+/** Unexpected trap in patch code. */
+#define VERR_PATM_IPE_TRAP_IN_PATCH_CODE    (-1432)
 
 /** @} */
 
