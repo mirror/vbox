@@ -81,6 +81,435 @@
 #endif /* Q_WS_X11 */
 
 
+/* Qt includes: */
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QLineEdit>
+#include <QTableView>
+#include <QHeaderView>
+#include <QItemEditorFactory>
+#include <QAbstractTableModel>
+#include <QStandardItemEditorCreator>
+/* GUI includes: */
+#include "QILabel.h"
+#include "QIDialogButtonBox.h"
+#include "QIWithRetranslateUI.h"
+#include "QIStyledItemDelegate.h"
+
+/* Type definitions: */
+typedef QMap<QString, QString> EncryptionPasswordsMap;
+typedef QMultiMap<QString, QString> EncryptedMediumsMap;
+
+/** Encryption-data table field indexes.
+  * @todo To be moved into separate file.. */
+enum UIEncryptionTableSection
+{
+    UIEncryptionTableSection_Id,
+    UIEncryptionTableSection_Password,
+    UIEncryptionTableSection_Max
+};
+
+/** QLineEdit implementation allowing to enter
+  * disk encryption password for particular password id.
+  * @todo To be moved into separate file.. */
+class UILineEdit : public QLineEdit
+{
+    Q_OBJECT;
+    Q_PROPERTY(QString password READ password WRITE setPassword USER true);
+
+signals:
+
+    /** Notifies listener about data should be committed. */
+    void sigCommitData(QWidget *pThis);
+
+public:
+
+    /** Constructor.
+      * @param pParent being passed to the base-class. */
+    UILineEdit(QWidget *pParent)
+        : QLineEdit(pParent)
+    {
+        /* Prepare: */
+        prepare();
+    }
+
+public slots:
+
+    /** Handles @s strText changes. */
+    void sltTextChanged(const QString &strText)
+    {
+        Q_UNUSED(strText);
+        /* Commit data to the listener: */
+        emit sigCommitData(this);
+    }
+
+private:
+
+    /** Prepare routine. */
+    void prepare()
+    {
+        /* Set alignment: */
+        setAlignment(Qt::AlignCenter);
+        /* Set echo mode: */
+        setEchoMode(QLineEdit::Password);
+        /* Listen for the text changes: */
+        connect(this, SIGNAL(textChanged(const QString&)),
+                this, SLOT(sltTextChanged(const QString&)));
+    }
+
+    /** Returns the password from the editor. */
+    QString password() const { return QLineEdit::text(); }
+    /** Defines the @a strPassword to the editor. */
+    void setPassword(const QString &strPassword) { QLineEdit::setText(strPassword); }
+};
+
+/** QAbstractTableModel implementation reflecting
+  * disk encryption passwords for particular password ids.
+  * @todo To be moved into separate file.. */
+class UIEncryptionDataModel : public QAbstractTableModel
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor.
+      * @param pParent          being passed to the base-class,
+      * @param encryptedMediums contains the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    UIEncryptionDataModel(QObject *pParent, const EncryptedMediumsMap &encryptedMediums)
+        : QAbstractTableModel(pParent)
+        , m_encryptedMediums(encryptedMediums)
+    {
+        /* Prepare: */
+        prepare();
+    }
+
+    /** Returns encryption passwords. */
+    EncryptionPasswordsMap encryptionPasswords() const { return m_encryptionPasswords; }
+
+    /** Returns the @a index flags. */
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const
+    {
+        /* Check index validness: */
+        if (!index.isValid())
+            return Qt::NoItemFlags;
+        /* Depending on column index: */
+        switch (index.column())
+        {
+            case UIEncryptionTableSection_Id:       return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+            case UIEncryptionTableSection_Password: return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable;
+            default: break;
+        }
+        /* No flags by default: */
+        return Qt::NoItemFlags;
+    }
+
+    /** Returns the row count. Provide optional @a parent instead of root if necessary. */
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const
+    {
+        Q_UNUSED(parent);
+        return m_encryptionPasswords.size();
+    }
+
+    /** Returns the column count. Provide optional @a parent instead of root if necessary. */
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const
+    {
+        Q_UNUSED(parent);
+        return UIEncryptionTableSection_Max;
+    }
+
+    /** Returns header data for @a iSection, @a orientation and @a iRole. */
+    virtual QVariant headerData(int iSection, Qt::Orientation orientation, int iRole) const
+    {
+        /* Check argument validness: */
+        if (iRole != Qt::DisplayRole || orientation != Qt::Horizontal)
+            return QVariant();
+        /* Depending on column index: */
+        switch (iSection)
+        {
+            case UIEncryptionTableSection_Id:       return tr("Password ID");
+            case UIEncryptionTableSection_Password: return tr("Password");
+            default: break;
+        }
+        /* Null value by default: */
+        return QVariant();
+    }
+
+    /** Returns @a index data for @a iRole. */
+    virtual QVariant data(const QModelIndex &index, int iRole /* = Qt::DisplayRole */) const
+    {
+        /* Check index validness: */
+        if (!index.isValid())
+            return QVariant();
+        /* Depending on role: */
+        switch (iRole)
+        {
+            case Qt::DisplayRole:
+            {
+                /* Depending on column index: */
+                switch (index.column())
+                {
+                    case UIEncryptionTableSection_Id:
+                        return m_encryptionPasswords.keys().at(index.row());
+                    case UIEncryptionTableSection_Password:
+                        return QString().fill('*', m_encryptionPasswords.value(m_encryptionPasswords.keys().at(index.row())).size());
+                    default:
+                        return QVariant();
+                }
+                break;
+            }
+            case Qt::EditRole:
+            {
+                /* Depending on column index: */
+                switch (index.column())
+                {
+                    case UIEncryptionTableSection_Password:
+                        return m_encryptionPasswords.value(m_encryptionPasswords.keys().at(index.row()));
+                    default:
+                        return QVariant();
+                }
+                break;
+            }
+            case Qt::TextAlignmentRole:
+            {
+                /* Depending on column index: */
+                switch (index.column())
+                {
+                    case UIEncryptionTableSection_Password:
+                        return Qt::AlignCenter;
+                    default: return QVariant();
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        /* Null value by default: */
+        return QVariant();
+    }
+
+    /** Defines @a index data for @a iRole as @a value. */
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
+    {
+        /* Check index validness: */
+        if (!index.isValid())
+            return false;
+        /* Check argument validness: */
+        if (iRole != Qt::EditRole)
+            return false;
+        /* Depending on column index: */
+        switch (index.column())
+        {
+            case UIEncryptionTableSection_Password: m_encryptionPasswords[m_encryptionPasswords.keys().at(index.row())] = value.toString(); break;
+            default: break;
+        }
+        /* Nothing to set by default: */
+        return false;
+    }
+
+private:
+
+    /** Prepare routine. */
+    void prepare()
+    {
+        /* Populate the map of passwords. */
+        foreach (const QString &strPasswordId, m_encryptedMediums.keys())
+            m_encryptionPasswords.insert(strPasswordId, QString());
+    }
+
+    /** Holds the encrypted medium map reference. */
+    const EncryptedMediumsMap &m_encryptedMediums;
+
+    /** Holds the encrypted password id map. */
+    EncryptionPasswordsMap m_encryptionPasswords;
+};
+
+/** QTableView implementation allowing to enter
+  * disk encryption passwords for particular password ids.
+  * @todo To be moved into separate file.. */
+class UIEncryptionDataTable : public QTableView
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor.
+      * @param pParent being passed to the base-class. */
+    UIEncryptionDataTable(const EncryptedMediumsMap &encryptedMediums)
+        : m_encryptedMediums(encryptedMediums)
+        , m_pModelEncryptionData(0)
+    {
+        /* Prepare: */
+        prepare();
+    }
+
+    /** Returns encryption passwords. */
+    EncryptionPasswordsMap encryptionPasswords() const
+    {
+        AssertPtrReturn(m_pModelEncryptionData, EncryptionPasswordsMap());
+        return m_pModelEncryptionData->encryptionPasswords();
+    }
+
+private:
+
+    /** Prepare routine. */
+    void prepare()
+    {
+        /* Create encryption-data model: */
+        m_pModelEncryptionData = new UIEncryptionDataModel(this, m_encryptedMediums);
+        AssertPtrReturnVoid(m_pModelEncryptionData);
+        {
+            /* Assign configured model to table: */
+            setModel(m_pModelEncryptionData);
+        }
+
+        /* Create item delegate: */
+        QIStyledItemDelegate *pStyledItemDelegate = new QIStyledItemDelegate(this);
+        AssertPtrReturnVoid(pStyledItemDelegate);
+        {
+            /* Create item editor factory: */
+            QItemEditorFactory *pNewItemEditorFactory = new QItemEditorFactory;
+            AssertPtrReturnVoid(pNewItemEditorFactory);
+            {
+                /* Create item editor creator: */
+                QStandardItemEditorCreator<UILineEdit> *pQStringItemEditorCreator = new QStandardItemEditorCreator<UILineEdit>();
+                AssertPtrReturnVoid(pQStringItemEditorCreator);
+                {
+                    /* Register UILineEdit as the QString editor: */
+                    pNewItemEditorFactory->registerEditor(QVariant::String, pQStringItemEditorCreator);
+                }
+                /* Assign configured item editor factory to table delegate: */
+                pStyledItemDelegate->setItemEditorFactory(pNewItemEditorFactory);
+            }
+            /* Assign configured item delegate to table: */
+            delete itemDelegate();
+            setItemDelegate(pStyledItemDelegate);
+        }
+
+        /* Configure table: */
+        setTabKeyNavigation(false);
+        setContextMenuPolicy(Qt::CustomContextMenu);
+        setSelectionBehavior(QAbstractItemView::SelectRows);
+        setSelectionMode(QAbstractItemView::SingleSelection);
+        setEditTriggers(QAbstractItemView::CurrentChanged | QAbstractItemView::SelectedClicked);
+
+        /* Configure headers: */
+        verticalHeader()->hide();
+        verticalHeader()->setDefaultSectionSize((int)(verticalHeader()->minimumSectionSize() * 1.33));
+        horizontalHeader()->setStretchLastSection(false);
+        horizontalHeader()->setResizeMode(UIEncryptionTableSection_Id, QHeaderView::Interactive);
+        horizontalHeader()->setResizeMode(UIEncryptionTableSection_Password, QHeaderView::Stretch);
+    }
+
+    /** Holds the encrypted medium map reference. */
+    const EncryptedMediumsMap &m_encryptedMediums;
+
+    /** Holds the encryption-data model. */
+    UIEncryptionDataModel *m_pModelEncryptionData;
+};
+
+/** QDialog implementation allowing to enter
+  * disk encryption passwords for particular password ids.
+  * @todo To be moved into separate files.. */
+class UIAddDiskEncryptionPasswordDialog : public QIWithRetranslateUI<QDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor.
+      * @param pParent          being passed to the base-class,
+      * @param encryptedMediums contains the lists of medium ids (values) encrypted with passwords with ids (keys). */
+    UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumsMap &encryptedMediums)
+        : QIWithRetranslateUI<QDialog>(pParent)
+        , m_encryptedMediums(encryptedMediums)
+        , m_pLabelDescription(0)
+        , m_pTableEncryptionData(0)
+    {
+        /* Prepare: */
+        prepare();
+        /* Retranslate: */
+        retranslateUi();
+    }
+
+    /** Returns encryption passwords. */
+    EncryptionPasswordsMap encryptionPasswords() const
+    {
+        AssertPtrReturn(m_pTableEncryptionData, EncryptionPasswordsMap());
+        return m_pTableEncryptionData->encryptionPasswords();
+    }
+
+private:
+
+    /** Prepare routine. */
+    void prepare()
+    {
+        /* Create main-layout: */
+        QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+        AssertPtrReturnVoid(pMainLayout);
+        {
+            /* Create input-layout: */
+            QVBoxLayout *pInputLayout = new QVBoxLayout;
+            AssertPtrReturnVoid(pInputLayout);
+            {
+                /* Create description label: */
+                m_pLabelDescription = new QILabel;
+                m_pLabelDescription->useSizeHintForWidth(450);
+                m_pLabelDescription->updateGeometry();
+                AssertPtrReturnVoid(m_pLabelDescription);
+                {
+                    /* Configure description label: */
+                    m_pLabelDescription->setWordWrap(true);
+                    /* Add label into layout: */
+                    pInputLayout->addWidget(m_pLabelDescription);
+                }
+                /* Create encryption-data table: */
+                m_pTableEncryptionData = new UIEncryptionDataTable(m_encryptedMediums);
+                AssertPtrReturnVoid(m_pTableEncryptionData);
+                {
+                    /* Add label into layout: */
+                    pInputLayout->addWidget(m_pTableEncryptionData);
+                }
+                /* Add layout into parent: */
+                pMainLayout->addLayout(pInputLayout);
+            }
+            /* Create button-box: */
+            QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
+            AssertPtrReturnVoid(pButtonBox);
+            {
+                /* Configure button-box: */
+                pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+                connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
+                connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+                /* Add button-box into layout: */
+                pMainLayout->addWidget(pButtonBox);
+            }
+        }
+    }
+
+    /** Translation routine. */
+    void retranslateUi()
+    {
+        AssertPtrReturnVoid(m_pLabelDescription);
+        m_pLabelDescription->setText(tr("This virtual machine is password protected. "
+                                        "Please enter the %n encryption password(s) below.",
+                                        "This text is never used with n == 0. "
+                                        "Feel free to drop the %n where possible, "
+                                        "we only included it because of problems with Qt Linguist "
+                                        "(but the user can see how many passwords are in the list "
+                                        "and doesn't need to be told).",
+                                        m_encryptedMediums.size()));
+    }
+
+    /** Holds the encrypted medium map reference. */
+    const EncryptedMediumsMap &m_encryptedMediums;
+
+    /** Holds the description label. */
+    QILabel *m_pLabelDescription;
+    /** Holds the encryption-data table. */
+    UIEncryptionDataTable *m_pTableEncryptionData;
+};
+
+
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 static void signalHandlerSIGUSR1(int sig, siginfo_t *, void *);
 #endif
@@ -251,6 +680,31 @@ bool UISession::initialize()
 
 bool UISession::powerUp()
 {
+    /* Prepare map of the encrypted ids: */
+    EncryptedMediumsMap encryptedPasswordIds;
+    foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
+    {
+        /* Acquire hard-drives only: */
+        if (attachment.GetType() == KDeviceType_HardDisk)
+        {
+            /* Get attachment medium: */
+            const CMedium medium = attachment.GetMedium();
+            /* Append our map if this medium has encryption: */
+            const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
+            if (!strKeyId.isNull())
+                encryptedPasswordIds.insert(strKeyId, medium.GetId());
+        }
+    }
+    /* Ask for disk encryption passwords: */
+    EncryptionPasswordsMap encryptionPasswords;
+    QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+         new UIAddDiskEncryptionPasswordDialog(machineLogic()->activeMachineWindow(),
+                                               encryptedPasswordIds);
+    if (pDlg->exec() == QDialog::Accepted)
+        encryptionPasswords = pDlg->encryptionPasswords();
+    if (pDlg)
+        delete pDlg;
+
     /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI
     CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
@@ -287,6 +741,17 @@ bool UISession::powerUp()
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(progress, machineName());
         return false;
+    }
+
+    /* Add the disk encryption passwords: */
+    if (!encryptionPasswords.isEmpty())
+    {
+        foreach (const QString &strKey, encryptionPasswords.keys())
+        {
+            console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), true);
+            if (!console().isOk())
+                msgCenter().cannotAddDiskEncryptionPassword(console());
+        }
     }
 
     /* Allow further auto-closing: */
@@ -1942,4 +2407,6 @@ static void signalHandlerSIGUSR1(int sig, siginfo_t * /* pInfo */, void * /*pSec
             pMachine->uisession()->machineLogic()->keyboardHandler()->releaseAllPressedKeys();
 }
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
+
+#include "UISession.moc"
 

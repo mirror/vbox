@@ -2053,6 +2053,13 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) c
              .arg(strMachineName));
 }
 
+void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
+{
+    error(0, MessageType_Error,
+          tr("Unable to enter password!"),
+          formatErrorInfo(console));
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
 {

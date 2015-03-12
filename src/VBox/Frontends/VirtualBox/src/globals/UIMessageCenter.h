@@ -302,6 +302,7 @@ public:
     void cannotToggleNetworkAdapterCable(const CNetworkAdapter &adapter, const QString &strMachineName, bool fConnect);
     void remindAboutGuestAdditionsAreNotActive() const;
     void cannotMountGuestAdditions(const QString &strMachineName) const;
+    void cannotAddDiskEncryptionPassword(const CConsole &console);
 
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
     /* API: Network management warnings: */
