@@ -695,15 +695,18 @@ bool UISession::powerUp()
                 encryptedPasswordIds.insert(strKeyId, medium.GetId());
         }
     }
-    /* Ask for disk encryption passwords: */
+    /* Ask for disk encryption passwords if necessary: */
     EncryptionPasswordsMap encryptionPasswords;
-    QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-         new UIAddDiskEncryptionPasswordDialog(machineLogic()->activeMachineWindow(),
-                                               encryptedPasswordIds);
-    if (pDlg->exec() == QDialog::Accepted)
-        encryptionPasswords = pDlg->encryptionPasswords();
-    if (pDlg)
-        delete pDlg;
+    if (!encryptedPasswordIds.isEmpty())
+    {
+        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+             new UIAddDiskEncryptionPasswordDialog(machineLogic()->activeMachineWindow(),
+                                                   encryptedPasswordIds);
+        if (pDlg->exec() == QDialog::Accepted)
+            encryptionPasswords = pDlg->encryptionPasswords();
+        if (pDlg)
+            delete pDlg;
+    }
 
     /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI
