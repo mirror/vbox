@@ -1960,6 +1960,9 @@ typedef struct CPUMCPUIDCONFIG
     bool        fSse42;
     bool        fNt4LeafLimit;
     bool        fInvariantTsc;
+    uint32_t    uMaxStdLeaf;
+    uint32_t    uMaxExtLeaf;
+    uint32_t    uMaxCentaurLeaf;
     uint32_t    uMaxIntelFamilyModelStep;
     char        szCpuName[128];
 } CPUMCPUIDCONFIG;
@@ -2064,10 +2067,9 @@ static void cpumR3CpuIdLimitLeaves(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         uint32_t uLimit = pCurLeaf->uEax;
         if (uLimit <= UINT32_C(0x000fffff))
         {
-            /** @todo raise the limits! */
-            if (pCurLeaf->uEax > 5)
+            if (uLimit > pConfig->uMaxStdLeaf)
             {
-                pCurLeaf->uEax = uLimit = 5;
+                pCurLeaf->uEax = uLimit = pConfig->uMaxStdLeaf;
                 cpumR3CpuIdRemoveRange(pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves,
                                        uLimit + 1, UINT32_C(0x000fffff));
             }
@@ -2098,16 +2100,14 @@ static void cpumR3CpuIdLimitLeaves(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         if (   uLimit >= UINT32_C(0x80000000)
             && uLimit <= UINT32_C(0x800fffff))
         {
-            /** @todo raise the limits! */
-            if (pCurLeaf->uEax > UINT32_C(0x80000008))
+            if (uLimit > pConfig->uMaxExtLeaf)
             {
-                pCurLeaf->uEax = uLimit = UINT32_C(0x80000008);
+                pCurLeaf->uEax = uLimit = pConfig->uMaxExtLeaf;
                 cpumR3CpuIdRemoveRange(pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves,
                                        uLimit + 1, UINT32_C(0x800fffff));
+                while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000000), ++uSubLeaf)) != NULL)
+                    pCurLeaf->uEax = uLimit;
             }
-
-            while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000000), ++uSubLeaf)) != NULL)
-                pCurLeaf->uEax = uLimit;
         }
         else
         {
@@ -2128,12 +2128,14 @@ static void cpumR3CpuIdLimitLeaves(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         if (   uLimit >= UINT32_C(0xc0000000)
             && uLimit <= UINT32_C(0xc00fffff))
         {
-            pCurLeaf->uEax = RT_MIN(uLimit, UINT32_C(0xc0000004));
-            cpumR3CpuIdRemoveRange(pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves,
-                                   uLimit + 1, UINT32_C(0xcfffffff));
-
-            while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0xc0000000), ++uSubLeaf)) != NULL)
-                pCurLeaf->uEax = uLimit;
+            if (uLimit > pConfig->uMaxCentaurLeaf)
+            {
+                pCurLeaf->uEax = uLimit = pConfig->uMaxCentaurLeaf;
+                cpumR3CpuIdRemoveRange(pCpum->GuestInfo.paCpuIdLeavesR3, &pCpum->GuestInfo.cCpuIdLeaves,
+                                       uLimit + 1, UINT32_C(0xcfffffff));
+                while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0xc0000000), ++uSubLeaf)) != NULL)
+                    pCurLeaf->uEax = uLimit;
+            }
         }
         else
         {
@@ -3164,6 +3166,30 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
      * number and the 3rd byte value is the family, and the 4th value must be zero.
      */
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxIntelFamilyModelStep", &pConfig->uMaxIntelFamilyModelStep, UINT32_MAX);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/MaxStdLeaf, uint32_t, 0x00000005}
+     * The last standard leaf to keep.  The actual last value that is stored in EAX
+     * is RT_MAX(CPUID[0].EAX,/CPUM/MaxStdLeaf).  Leaves beyond the max leaf are
+     * removed.  (This works independently of and differently from NT4LeafLimit.)
+     */
+    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxStdLeaf", &pConfig->uMaxStdLeaf, UINT32_C(0x00000005));
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/MaxExtLeaf, uint32_t, 0x80000008}
+     * The last extended leaf to keep.  The actual last value that is stored in EAX
+     * is RT_MAX(CPUID[0x80000000].EAX,/CPUM/MaxStdLeaf).  Leaves beyond the max
+     * leaf are removed.
+     */
+    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxExtLeaf", &pConfig->uMaxExtLeaf, UINT32_C(0x80000008));
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/MaxCentaurLeaf, uint32_t, 0xc0000004}
+     * The last extended leaf to keep.  The actual last value that is stored in EAX
+     * is RT_MAX(CPUID[0xc0000000].EAX,/CPUM/MaxCentaurLeaf).  Leaves beyond the max
+     * leaf are removed.
+     */
+    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
