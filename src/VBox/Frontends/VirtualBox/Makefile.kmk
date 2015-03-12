@@ -298,6 +298,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
+	src/runtime/UIAddDiskEncryptionPasswordDialog.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIFrameBuffer.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -490,10 +491,10 @@ VirtualBox_QT_MOCSRCS = \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
+	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIStatusBarEditorWindow.cpp \
-    src/runtime/UISession.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
@@ -578,6 +579,7 @@ VirtualBox_SOURCES = \
 	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
+	src/runtime/UIAddDiskEncryptionPasswordDialog.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
