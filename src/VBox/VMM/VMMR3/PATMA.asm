@@ -1783,15 +1783,15 @@ cpuid_subleaf_not_found_sub_ebx:
 PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
     
     ;
-    ; Out of range sub-leafs aren't quite as easy and pretty as we emulate them
+    ; Out of range sub-leaves aren't quite as easy and pretty as we emulate them
     ; here, but we do an adequate job.
     ;    
 cpuid_subleaf_not_found:
-    mov     ecx, [esp + 4]
-    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED
-    jnz     cpuid_load_zeros_except_ecx
-cpuid_load_zeros:
     xor     ecx, ecx
+    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES
+    jz      cpuid_load_zeros_except_ecx
+    mov     ecx, [esp + 4]
+    and     ecx, 0ffh
 cpuid_load_zeros_except_ecx:
     xor     edx, edx
     xor     eax, eax
@@ -1804,7 +1804,7 @@ cpuid_load_zeros_except_ecx:
 cpuid_unknown:
     mov     edx, PATM_CPUID_UNKNOWN_METHOD
 PATCH_FIXUP PATM_CPUID_UNKNOWN_METHOD
-    cmp     edx, CPUMUKNOWNCPUID_PASSTHRU
+    cmp     edx, CPUMUNKNOWNCPUID_PASSTHRU
     je      cpuid_unknown_passthru
     ; Load the default cpuid leaf.
 cpuid_unknown_def_leaf:

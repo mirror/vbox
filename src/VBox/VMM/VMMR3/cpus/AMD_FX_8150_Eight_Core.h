@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,7 @@
 static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_FX_8150_Eight_Core[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000d, 0x68747541, 0x444d4163, 0x69746e65, 0 },
-    { 0x00000001, 0x00000000, 0x00000000, 0x00600f12, 0x02080800, 0x1e98220b, 0x178bfbff, 0 },
+    { 0x00000001, 0x00000000, 0x00000000, 0x00600f12, 0x02080800, 0x1e98220b, 0x178bfbff, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID },
     { 0x00000002, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x00000003, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x00000004, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
@@ -75,7 +75,7 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_AMD_FX_8150_Eight_Core[] =
     { 0x8000001d, 0x00000002, UINT32_MAX, 0x00004143, 0x03c0003f, 0x000007ff, 0x00000001, 0 },
     { 0x8000001d, 0x00000003, UINT32_MAX, 0x0001c163, 0x0fc0003f, 0x000007ff, 0x00000001, 0 },
     { 0x8000001d, 0x00000004, UINT32_MAX, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
-    { 0x8000001e, 0x00000000, 0x00000000, 0x00000012, 0x00000101, 0x00000000, 0x00000000, 0 },
+    { 0x8000001e, 0x00000000, 0x00000000, 0x00000012, 0x00000101, 0x00000000, 0x00000000, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID },
 };
 #endif /* !CPUM_DB_STANDALONE */
 
@@ -368,7 +368,7 @@ static CPUMDBENTRY const g_Entry_AMD_FX_8150_Eight_Core =
     /*.cMaxPhysAddrWidth= */ 48,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_AMD_FX_8150_Eight_Core),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_AMD_FX_8150_Eight_Core)),
-    /*.enmUnknownCpuId  = */ CPUMUKNOWNCPUID_DEFAULTS,
+    /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_DEFAULTS,
     /*.DefUnknownCpuId  = */ { 0x00000000, 0x00000000, 0x00000000, 0x00000000 },
     /*.fMsrMask         = */ UINT32_MAX,
     /*.cMsrRanges       = */ ZERO_ALONE(RT_ELEMENTS(g_aMsrRanges_AMD_FX_8150_Eight_Core)),

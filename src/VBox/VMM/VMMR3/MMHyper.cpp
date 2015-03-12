@@ -1442,22 +1442,20 @@ static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
- * @param   pvOld           The existing block of memory in the
- *                          hyper heap to re-allocate (can be
- *                          NULL).
+ * @param   pvOld           The existing block of memory in the hyper heap to
+ *                          re-allocate (can be NULL).
  * @param   cbOld           Size of the existing block.
- * @param   uAlignmentNew   Required memory alignment in bytes.
- *                          Values are 0,8,16,32 and PAGE_SIZE.
- *                          0 -> default alignment, i.e. 8 bytes.
+ * @param   uAlignmentNew   Required memory alignment in bytes. Values are
+ *                          0,8,16,32 and PAGE_SIZE. 0 -> default alignment,
+ *                          i.e. 8 bytes.
  * @param   enmTagNew       The statistics tag.
  * @param   cbNew           The required size of the new block.
- * @param   ppv             Where to store the address to the
- *                          re-allocated block.
+ * @param   ppv             Where to store the address to the re-allocated
+ *                          block.
  *
- * @remarks This does not work like normal realloc()
- *          on failure, the memory pointed to by @a pvOld is
- *          lost if there isn't sufficient space on the hyper
- *          heap for the re-allocation to succeed.
+ * @remarks This does not work like normal realloc() on failure, the memory
+ *          pointed to by @a pvOld is lost if there isn't sufficient space on
+ *          the hyper heap for the re-allocation to succeed.
 */
 VMMR3DECL(int) MMR3HyperRealloc(PVM pVM, void *pvOld, size_t cbOld, unsigned uAlignmentNew, MMTAG enmTagNew, size_t cbNew,
                                 void **ppv)

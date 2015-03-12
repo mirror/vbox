@@ -5142,7 +5142,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUI
 static bool iemRegIsIntelCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
 {
     uint32_t uEax, uEbx, uEcx, uEdx;
-    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x00000001, &uEax, &uEbx, &uEcx, &uEdx);
+    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x00000001, 0, &uEax, &uEbx, &uEcx, &uEdx);
     return (fEcx && (uEcx & fEcx))
         || (fEdx && (uEdx & fEdx));
 }
@@ -5162,7 +5162,7 @@ static bool iemRegIsIntelCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uin
 static bool iemRegIsAmdCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
 {
     uint32_t uEax, uEbx, uEcx, uEdx;
-    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x80000001, &uEax, &uEbx, &uEcx, &uEdx);
+    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x80000001, 0, &uEax, &uEbx, &uEcx, &uEdx);
     return (fEcx && (uEcx & fEcx))
         || (fEdx && (uEdx & fEdx));
 }

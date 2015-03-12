@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,7 +27,7 @@
 static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_2635QM[] =
 {
     { 0x00000000, 0x00000000, 0x00000000, 0x0000000d, 0x756e6547, 0x6c65746e, 0x49656e69, 0 },
-    { 0x00000001, 0x00000000, 0x00000000, 0x000206a7, 0x04100800, 0x1fbae3bf, 0xbfebfbff, 0 },
+    { 0x00000001, 0x00000000, 0x00000000, 0x000206a7, 0x04100800, 0x1fbae3bf, 0xbfebfbff, 0 | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID },
     { 0x00000002, 0x00000000, 0x00000000, 0x76035a01, 0x00f0b2ff, 0x00000000, 0x00ca0000, 0 },
     { 0x00000003, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x00000004, 0x00000000, UINT32_MAX, 0x1c004121, 0x01c0003f, 0x0000003f, 0x00000000, 0 },
@@ -41,6 +41,8 @@ static CPUMCPUIDLEAF const g_aCpuIdLeaves_Intel_Core_i7_2635QM[] =
     { 0x00000008, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x00000009, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x0000000a, 0x00000000, 0x00000000, 0x07300403, 0x00000000, 0x00000000, 0x00000603, 0 },
+    /** @todo the b entry here is WRONG!   */
+    { 0x0000000b, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 | CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID },
     { 0x0000000c, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0 },
     { 0x0000000d, 0x00000000, UINT32_MAX, 0x00000007, 0x00000340, 0x00000340, 0x00000000, 0 },
     { 0x0000000d, 0x00000001, UINT32_MAX, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0 },
@@ -315,7 +317,7 @@ static CPUMDBENTRY const g_Entry_Intel_Core_i7_2635QM =
     /*.cMaxPhysAddrWidth= */ 36,
     /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_Intel_Core_i7_2635QM),
     /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_Intel_Core_i7_2635QM)),
-    /*.enmUnknownCpuId  = */ CPUMUKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,
+    /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX,
     /*.DefUnknownCpuId  = */ { 0x00000007, 0x00000340, 0x00000340, 0x00000000 },
     /*.fMsrMask         = */ UINT32_MAX,
     /*.cMsrRanges       = */ ZERO_ALONE(RT_ELEMENTS(g_aMsrRanges_Intel_Core_i7_2635QM)),

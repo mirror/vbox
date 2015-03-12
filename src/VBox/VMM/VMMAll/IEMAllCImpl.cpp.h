@@ -5798,7 +5798,7 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
         }
         uint32_t fMWaitFeatures = 0;
         uint32_t uIgnore = 0;
-        CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 5, &uIgnore, &uIgnore, &fMWaitFeatures, &uIgnore);
+        CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 5, 0, &uIgnore, &uIgnore, &fMWaitFeatures, &uIgnore);
         if (    (fMWaitFeatures & (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
             !=                    (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
         {
@@ -5853,7 +5853,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), pCtx->eax, &pCtx->eax, &pCtx->ebx, &pCtx->ecx, &pCtx->edx);
+    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), pCtx->eax, pCtx->ecx, &pCtx->eax, &pCtx->ebx, &pCtx->ecx, &pCtx->edx);
     pCtx->rax &= UINT32_C(0xffffffff);
     pCtx->rbx &= UINT32_C(0xffffffff);
     pCtx->rcx &= UINT32_C(0xffffffff);

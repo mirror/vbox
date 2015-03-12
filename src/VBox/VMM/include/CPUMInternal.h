@@ -29,7 +29,7 @@
 
 /* Some fudging. */
 typedef uint32_t CPUMMICROARCH;
-typedef uint32_t CPUMUKNOWNCPUID;
+typedef uint32_t CPUMUNKNOWNCPUID;
 typedef struct CPUMCPUIDLEAF *PCPUMCPUIDLEAF;
 typedef struct CPUMMSRRANGE  *PCPUMMSRRANGE;
 typedef uint64_t STAMCOUNTER;
@@ -122,8 +122,10 @@ typedef uint64_t STAMCOUNTER;
 /** @name CPUM Saved State Version.
  * @{ */
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                14
-/** The current saved state version before using SSMR3PutStruct. */
+#define CPUM_SAVED_STATE_VERSION                15
+/** The saved state version before the CPUIDs changes. */
+#define CPUM_SAVED_STATE_VERSION_PUT_STRUCT     14
+/** The saved state version before using SSMR3PutStruct. */
 #define CPUM_SAVED_STATE_VERSION_MEM            13
 /** The saved state version before introducing the MSR size field. */
 #define CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE    12
@@ -243,8 +245,9 @@ typedef struct CPUMINFO
     /** Alignment padding. */
     uint32_t                    uPadding;
     /** How to handle unknown CPUID leaves. */
-    CPUMUKNOWNCPUID             enmUnknownCpuIdMethod;
-    /** For use with CPUMUKNOWNCPUID_DEFAULTS. */
+    CPUMUNKNOWNCPUID            enmUnknownCpuIdMethod;
+    /** For use with CPUMUNKNOWNCPUID_DEFAULTS (DB & VM),
+     * CPUMUNKNOWNCPUID_LAST_STD_LEAF (VM) and CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX (VM). */
     CPUMCPUID                   DefCpuId;
 
     /** Scalable bus frequency used for reporting other frequencies. */
@@ -491,8 +494,6 @@ typedef struct CPUM
     CPUMCPUID               aGuestCpuIdPatmExt[10];
     /** The centaur set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdPatmCentaur[4];
-    /** The default set of CpuId leaves. */
-    CPUMCPUID               GuestCpuIdPatmDef;
 
 #if HC_ARCH_BITS == 32
     uint8_t                 abPadding2[4];
@@ -600,19 +601,16 @@ typedef CPUMCPU *PCPUMCPU;
 #ifndef VBOX_FOR_DTRACE_LIB
 RT_C_DECLS_BEGIN
 
-PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf);
+PCPUMCPUIDLEAF      cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf);
+PCPUMCPUIDLEAF      cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit);
 
 #ifdef IN_RING3
 int                 cpumR3DbgInit(PVM pVM);
-PCPUMCPUIDLEAF      cpumR3CpuIdGetLeaf(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf);
-bool                cpumR3CpuIdGetLeafLegacy(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf,
-                                             PCPUMCPUID pLeagcy);
-int                 cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLeaves, PCPUMCPUIDLEAF pNewLeaf);
-void                cpumR3CpuIdRemoveRange(PCPUMCPUIDLEAF paLeaves, uint32_t *pcLeaves, uint32_t uFirst, uint32_t uLast);
 int                 cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUMFEATURES pFeatures);
-int                 cpumR3CpuIdInit(PVM pVM);
+int                 cpumR3InitCpuIdAndMsrs(PVM pVM);
 void                cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);
 int                 cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion);
+DECLCALLBACK(void)  cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 int                 cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo);
 int                 cpumR3MsrRangesInsert(PVM pVM, PCPUMMSRRANGE *ppaMsrRanges, uint32_t *pcMsrRanges, PCCPUMMSRRANGE pNewRange);

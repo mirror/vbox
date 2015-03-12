@@ -61,7 +61,7 @@ typedef struct CPUMDBENTRY
     /** The number of CPUID leaves in the array paCpuIdLeaves points to. */
     uint32_t        cCpuIdLeaves;
     /** The method used to deal with unknown CPUID leaves. */
-    CPUMUKNOWNCPUID enmUnknownCpuId;
+    CPUMUNKNOWNCPUID enmUnknownCpuId;
     /** The default unknown CPUID value. */
     CPUMCPUID       DefUnknownCpuId;
 

@@ -71,7 +71,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         if (idCpu == 0)
         {
             uint32_t uIgnored;
-            CPUMGetGuestCpuId(pVCpu, 1, &uIgnored, &uIgnored,
+            CPUMGetGuestCpuId(pVCpu, 1, 0, &uIgnored, &uIgnored,
                               &pVCpu->iem.s.fCpuIdStdFeaturesEcx, &pVCpu->iem.s.fCpuIdStdFeaturesEdx);
             pVCpu->iem.s.enmCpuVendor             = CPUMGetGuestCpuVendor(pVM);
 

@@ -285,8 +285,9 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
 
         for (uint32_t i = 0; i < RT_ELEMENTS(g_aCpuidUnifyBits); i++)
         {
+            bool            fIgnored;
             uint32_t        uLeaf = g_aCpuidUnifyBits[i].uLeaf;
-            PCPUMCPUIDLEAF  pLeaf = cpumCpuIdGetLeaf(pVM, uLeaf, 0);
+            PCPUMCPUIDLEAF  pLeaf = cpumCpuIdGetLeafEx(pVM, uLeaf, 0, &fIgnored);
             if (pLeaf)
             {
                 PCPUMCPUID pLegacyLeaf;

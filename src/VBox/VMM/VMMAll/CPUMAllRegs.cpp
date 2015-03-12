@@ -1137,6 +1137,60 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
 
 
 /**
+ * Looks up a CPUID leaf in the CPUID leaf array, no subleaf.
+ *
+ * @returns Pointer to the leaf if found, NULL if not.
+ *
+ * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   uLeaf               The leaf to get.
+ */
+PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf)
+{
+    unsigned            iEnd     = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
+    if (iEnd)
+    {
+        unsigned        iStart   = 0;
+        PCPUMCPUIDLEAF  paLeaves = pVM->cpum.s.GuestInfo.CTX_SUFF(paCpuIdLeaves);
+        for (;;)
+        {
+            unsigned i = iStart + (iEnd - iStart) / 2U;
+            if (uLeaf < paLeaves[i].uLeaf)
+            {
+                if (i <= iStart)
+                    return NULL;
+                iEnd = i;
+            }
+            else if (uLeaf > paLeaves[i].uLeaf)
+            {
+                i += 1;
+                if (i >= iEnd)
+                    return NULL;
+                iStart = i;
+            }
+            else
+            {
+                if (RT_LIKELY(paLeaves[i].fSubLeafMask == 0 && paLeaves[i].uSubLeaf == 0))
+                    return &paLeaves[i];
+
+                /* This shouldn't normally happen. But in case the it does due
+                   to user configuration overrids or something, just return the
+                   first sub-leaf. */
+                AssertMsgFailed(("uLeaf=%#x fSubLeafMask=%#x uSubLeaf=%#x\n",
+                                 uLeaf, paLeaves[i].fSubLeafMask, paLeaves[i].uSubLeaf));
+                while (   paLeaves[i].uSubLeaf != 0
+                       && i > 0
+                       && uLeaf == paLeaves[i - 1].uLeaf)
+                    i--;
+                return &paLeaves[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+
+/**
  * Looks up a CPUID leaf in the CPUID leaf array.
  *
  * @returns Pointer to the leaf if found, NULL if not.
@@ -1145,8 +1199,9 @@ VMMDECL(uint64_t) CPUMGetGuestEFER(PVMCPU pVCpu)
  * @param   uLeaf               The leaf to get.
  * @param   uSubLeaf            The subleaf, if applicable.  Just pass 0 if it
  *                              isn't.
+ * @param   pfExactSubLeafHit   Whether we've got an exact subleaf hit or not.
  */
-PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf)
+PCPUMCPUIDLEAF cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bool *pfExactSubLeafHit)
 {
     unsigned            iEnd     = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
     if (iEnd)
@@ -1172,7 +1227,9 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf)
             else
             {
                 uSubLeaf &= paLeaves[i].fSubLeafMask;
-                if (uSubLeaf != paLeaves[i].uSubLeaf)
+                if (uSubLeaf == paLeaves[i].uSubLeaf)
+                    *pfExactSubLeafHit = true;
+                else
                 {
                     /* Find the right subleaf.  We return the last one before
                        uSubLeaf if we don't find an exact match. */
@@ -1186,12 +1243,14 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf)
                                && uLeaf    == paLeaves[i + 1].uLeaf
                                && uSubLeaf >= paLeaves[i + 1].uSubLeaf)
                             i++;
+                    *pfExactSubLeafHit = uSubLeaf == paLeaves[i].uSubLeaf;
                 }
                 return &paLeaves[i];
             }
         }
     }
 
+    *pfExactSubLeafHit = false;
     return NULL;
 }
 
@@ -1199,113 +1258,97 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeaf(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf)
 /**
  * Gets a CPUID leaf.
  *
- * @param   pVCpu   Pointer to the VMCPU.
- * @param   iLeaf   The CPUID leaf to get.
- * @param   pEax    Where to store the EAX value.
- * @param   pEbx    Where to store the EBX value.
- * @param   pEcx    Where to store the ECX value.
- * @param   pEdx    Where to store the EDX value.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uLeaf       The CPUID leaf to get.
+ * @param   uSubLeaf    The CPUID sub-leaf to get, if applicable.
+ * @param   pEax        Where to store the EAX value.
+ * @param   pEbx        Where to store the EBX value.
+ * @param   pEcx        Where to store the ECX value.
+ * @param   pEdx        Where to store the EDX value.
  */
-VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
+VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
+                                uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
-    PCCPUMCPUID pCpuId;
-    if (iLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
-        pCpuId = &pVM->cpum.s.aGuestCpuIdPatmStd[iLeaf];
-    else if (iLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
-        pCpuId = &pVM->cpum.s.aGuestCpuIdPatmExt[iLeaf - UINT32_C(0x80000000)];
-    else if (   iLeaf - UINT32_C(0x40000000) < 0x100   /** @todo Fix this later: Hyper-V says 0x400000FF is the last valid leaf. */
-             && (pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdPatmStd[1].uEcx & X86_CPUID_FEATURE_ECX_HVP)) /* Only report if HVP bit set. */
+    bool           fExactSubLeafHit;
+    PVM            pVM   = pVCpu->CTX_SUFF(pVM);
+    PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafEx(pVM, uLeaf, uSubLeaf, &fExactSubLeafHit);
+    if (pLeaf)
     {
-        PCPUMCPUIDLEAF pHyperLeaf = cpumCpuIdGetLeaf(pVM, iLeaf, 0 /* uSubLeaf */);
-        if (RT_LIKELY(pHyperLeaf))
+        if (fExactSubLeafHit)
         {
-            *pEax = pHyperLeaf->uEax;
-            *pEbx = pHyperLeaf->uEbx;
-            *pEcx = pHyperLeaf->uEcx;
-            *pEdx = pHyperLeaf->uEdx;
+            *pEax = pLeaf->uEax;
+            *pEbx = pLeaf->uEbx;
+            *pEcx = pLeaf->uEcx;
+            *pEdx = pLeaf->uEdx;
+
+            /*
+             * Deal with CPU specific information (currently only APIC ID).
+             */
+            if (pLeaf->fFlags & CPUMCPUIDLEAF_F_CONTAINS_APIC_ID)
+            {
+                if (uLeaf == 1)
+                {
+                    /* Bits 31-24: Initial APIC ID */
+                    Assert(pVCpu->idCpu <= 255);
+                    Assert((*pEbx >> 24) == 0); /* raw-mode assumption */
+                    *pEbx = (*pEbx & UINT32_C(0x00ffffff)) | (pVCpu->idCpu << 24);
+                }
+                else if (uLeaf == 0xb)
+                {
+                    /* EDX: Initial extended APIC ID. */
+                    Assert(*pEdx == 0); /* raw-mode assumption */
+                    *pEdx = pVCpu->idCpu;
+                }
+                else if (uLeaf == UINT32_C(0x8000001e))
+                {
+                    /* EAX: Initial extended APIC ID. */
+                    Assert(*pEax == 0); /* raw-mode assumption */
+                    *pEax = pVCpu->idCpu;
+                }
+                else
+                    AssertMsgFailed(("uLeaf=%#x\n", uLeaf));
+            }
         }
+        /*
+         * Out of range sub-leaves aren't quite as easy and pretty as we emulate
+         * them here, but we do the best we can here...
+         */
         else
         {
             *pEax = *pEbx = *pEcx = *pEdx = 0;
+            if (pLeaf->fFlags & CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES)
+            {
+                *pEcx = uSubLeaf & 0xff;
+                *pEdx = pVCpu->idCpu;
+            }
         }
-        return;
     }
-    else if (iLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur))
-        pCpuId = &pVM->cpum.s.aGuestCpuIdPatmCentaur[iLeaf - UINT32_C(0xc0000000)];
     else
-        pCpuId = &pVM->cpum.s.GuestCpuIdPatmDef;
-
-    uint32_t cCurrentCacheIndex = *pEcx;
-
-    *pEax = pCpuId->uEax;
-    *pEbx = pCpuId->uEbx;
-    *pEcx = pCpuId->uEcx;
-    *pEdx = pCpuId->uEdx;
-
-    if (    iLeaf == 1)
     {
-        /* Bits 31-24: Initial APIC ID */
-        Assert(pVCpu->idCpu <= 255);
-        *pEbx |= (pVCpu->idCpu << 24);
-   }
-
-    if (    iLeaf == 4
-        &&  cCurrentCacheIndex < 3
-        &&  pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
-    {
-        uint32_t type, level, sharing, linesize,
-                 partitions, associativity, sets, cores;
-
-        /* For type: 1 - data cache, 2 - i-cache, 3 - unified */
-        partitions = 1;
-        /* Those are only to shut up compiler, as they will always
-           get overwritten, and compiler should be able to figure that out */
-        sets = associativity = sharing = level = 1;
-        cores = pVM->cCpus > 32 ? 32 : pVM->cCpus;
-        switch (cCurrentCacheIndex)
+        /*
+         * Different CPUs have different ways of dealing with unknown CPUID leaves.
+         */
+        switch (pVM->cpum.s.GuestInfo.enmUnknownCpuIdMethod)
         {
-            case 0:
-                type = 1;
-                level = 1;
-                sharing = 1;
-                linesize = 64;
-                associativity = 8;
-                sets = 64;
-                break;
-            case 1:
-                level = 1;
-                type = 2;
-                sharing = 1;
-                linesize = 64;
-                associativity = 8;
-                sets = 64;
-                break;
-            default:            /* shut up gcc.*/
+            default:
                 AssertFailed();
-            case 2:
-                level = 2;
-                type = 3;
-                sharing = cores; /* our L2 cache is modelled as shared between all cores */
-                linesize = 64;
-                associativity = 24;
-                sets = 4096;
+            case CPUMUNKNOWNCPUID_DEFAULTS:
+            case CPUMUNKNOWNCPUID_LAST_STD_LEAF: /* ASSUME this is executed */
+            case CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX: /** @todo Implement CPUMUNKNOWNCPUID_LAST_STD_LEAF_WITH_ECX */
+                *pEax = pVM->cpum.s.GuestInfo.DefCpuId.uEax;
+                *pEbx = pVM->cpum.s.GuestInfo.DefCpuId.uEbx;
+                *pEcx = pVM->cpum.s.GuestInfo.DefCpuId.uEcx;
+                *pEdx = pVM->cpum.s.GuestInfo.DefCpuId.uEdx;
+                break;
+            case CPUMUNKNOWNCPUID_PASSTHRU:
+                *pEax = uLeaf;
+                *pEbx = 0;
+                *pEcx = uSubLeaf;
+                *pEdx = 0;
                 break;
         }
-
-        NOREF(type);
-        *pEax |= ((cores - 1) << 26)        |
-                 ((sharing - 1) << 14)      |
-                 (level << 5)               |
-                 1;
-        *pEbx = (linesize - 1)               |
-                ((partitions - 1) << 12)     |
-                ((associativity - 1) << 22); /* -1 encoding */
-        *pEcx = sets - 1;
     }
-
-    Log2(("CPUMGetGuestCpuId: iLeaf=%#010x %RX32 %RX32 %RX32 %RX32\n", iLeaf, *pEax, *pEbx, *pEcx, *pEdx));
+    Log2(("CPUMGetGuestCpuId: uLeaf=%#010x/%#010x %RX32 %RX32 %RX32 %RX32\n", uLeaf, uSubLeaf, *pEax, *pEbx, *pEcx, *pEdx));
 }
 
 
@@ -1325,11 +1368,11 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Set the APIC bit in both feature masks.
          */
         case CPUMCPUIDFEATURE_APIC:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_APIC;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_APIC;
@@ -1342,7 +1385,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         * Set the x2APIC bit in the standard feature mask.
         */
         case CPUMCPUIDFEATURE_X2APIC:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_X2APIC;
             pVM->cpum.s.GuestFeatures.fX2Apic = 1;
@@ -1360,7 +1403,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 return;
             }
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_SEP;
             pVM->cpum.s.GuestFeatures.fSysEnter = 1;
@@ -1372,7 +1415,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_SYSCALL:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fSysCall)
             {
@@ -1405,11 +1448,11 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
                 return;
             }
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAE;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (    pLeaf
                 &&  pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAE;
@@ -1423,7 +1466,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_LONG_MODE:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fLongMode)
             {
@@ -1442,7 +1485,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Assumes the caller knows what it's doing! (host must support these)
          */
         case CPUMCPUIDFEATURE_NX:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fNoExecute)
             {
@@ -1462,7 +1505,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Assumes the caller knows what it's doing! (host must support this)
          */
         case CPUMCPUIDFEATURE_LAHF:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fLahfSahf)
             {
@@ -1482,11 +1525,11 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * virtualized, though it may when passing thru device memory.
          */
         case CPUMCPUIDFEATURE_PAT:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx |= X86_CPUID_FEATURE_EDX_PAT;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
@@ -1500,7 +1543,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * Assumes the caller knows what it's doing! (host must support this)
          */
         case CPUMCPUIDFEATURE_RDTSCP:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fRdTscP
                 || pVM->cpum.s.u8PortableCpuIdLevel > 0)
@@ -1520,7 +1563,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         * Set the Hypervisor Present bit in the standard feature mask.
         */
         case CPUMCPUIDFEATURE_HVP:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 1;
@@ -1532,7 +1575,7 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
          * This currently includes the Present bit and MWAITBREAK bit as well.
          */
         case CPUMCPUIDFEATURE_MWAIT_EXTS:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005));
             if (   !pLeaf
                 || !pVM->cpum.s.HostFeatures.fMWaitExtensions)
             {
@@ -1604,11 +1647,11 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
     switch (enmFeature)
     {
         case CPUMCPUIDFEATURE_APIC:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_APIC;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_APIC;
@@ -1618,7 +1661,7 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
 
         case CPUMCPUIDFEATURE_X2APIC:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_X2APIC;
             pVM->cpum.s.GuestFeatures.fX2Apic = 0;
@@ -1626,11 +1669,11 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
 
         case CPUMCPUIDFEATURE_PAE:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAE;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
@@ -1640,11 +1683,11 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
 
         case CPUMCPUIDFEATURE_PAT:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_FEATURE_EDX_PAT;
 
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
                 && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
@@ -1654,21 +1697,21 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
 
         case CPUMCPUIDFEATURE_LONG_MODE:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_LONG_MODE;
             pVM->cpum.s.GuestFeatures.fLongMode = 0;
             break;
 
         case CPUMCPUIDFEATURE_LAHF:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF;
             pVM->cpum.s.GuestFeatures.fLahfSahf = 0;
             break;
 
         case CPUMCPUIDFEATURE_RDTSCP:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_EXT_FEATURE_EDX_RDTSCP;
             pVM->cpum.s.GuestFeatures.fRdTscP = 0;
@@ -1676,14 +1719,14 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             break;
 
         case CPUMCPUIDFEATURE_HVP:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_HVP;
             pVM->cpum.s.GuestFeatures.fHypervisorPresent = 0;
             break;
 
         case CPUMCPUIDFEATURE_MWAIT_EXTS:
-            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005), 0);
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000005));
             if (pLeaf)
                 pVM->cpum.s.aGuestCpuIdPatmStd[5].uEcx = pLeaf->uEcx &= ~(X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0);
             pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;

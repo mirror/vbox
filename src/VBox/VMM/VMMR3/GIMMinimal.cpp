@@ -80,6 +80,22 @@ VMMR3_INT_DECL(int) gimR3MinimalInitCompleted(PVM pVM)
         AssertLogRelRCReturn(rc, rc);
 
         /*
+         * Insert missing zero leaves (you never know what missing leaves are
+         * going to return when read).
+         */
+        for (uint32_t uLeaf = UINT32_C(0x40000001); uLeaf < UINT32_C(0x40000010); uLeaf++)
+        {
+            rc = CPUMR3CpuIdGetLeaf(pVM, &HyperLeaf, uLeaf, 0 /* uSubLeaf */);
+            if (RT_FAILURE(rc))
+            {
+                RT_ZERO(HyperLeaf);
+                HyperLeaf.uLeaf = uLeaf;
+                rc = CPUMR3CpuIdInsert(pVM, &HyperLeaf);
+                AssertLogRelRCReturn(rc, rc);
+            }
+        }
+
+        /*
          * Add the timing information hypervisor leaf.
          * MacOS X uses this to determine the TSC, bus frequency. See @bugref{7270}.
          *

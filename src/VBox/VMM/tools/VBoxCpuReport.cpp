@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -4388,10 +4388,15 @@ static int produceCpuIdArray(const char *pszNameC, const char *pszCpuDesc)
         {
             vbCpuRepPrintf("0");
             uint32_t fFlags = paLeaves[i].fFlags;
-            if (paLeaves[i].fFlags & CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED)
+            if (paLeaves[i].fFlags & CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES)
             {
-                vbCpuRepPrintf(" | CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED");
-                fFlags &= ~CPUMCPUIDLEAF_F_SUBLEAVES_ECX_UNCHANGED;
+                vbCpuRepPrintf(" | CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES");
+                fFlags &= ~CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES;
+            }
+            if (paLeaves[i].fFlags & CPUMCPUIDLEAF_F_CONTAINS_APIC_ID)
+            {
+                vbCpuRepPrintf(" | CPUMCPUIDLEAF_F_CONTAINS_APIC_ID");
+                fFlags &= ~CPUMCPUIDLEAF_F_CONTAINS_APIC_ID;
             }
             if (fFlags)
             {
@@ -4588,7 +4593,7 @@ static int produceCpuReport(void)
                        " */\n"
                        "\n"
                        "/*\n"
-                       " * Copyright (C) 2013 Oracle Corporation\n"
+                       " * Copyright (C) 2013-2015 Oracle Corporation\n"
                        " *\n"
                        " * This file is part of VirtualBox Open Source Edition (OSE), as\n"
                        " * available from http://www.virtualbox.org. This file is free software;\n"
@@ -4614,7 +4619,7 @@ static int produceCpuReport(void)
     if (RT_FAILURE(rc))
         return rc;
 
-    CPUMUKNOWNCPUID enmUnknownMethod;
+    CPUMUNKNOWNCPUID enmUnknownMethod;
     CPUMCPUID       DefUnknown;
     rc = CPUMR3CpuIdDetectUnknownLeafMethod(&enmUnknownMethod, &DefUnknown);
     if (RT_FAILURE(rc))
@@ -4649,7 +4654,7 @@ static int produceCpuReport(void)
                    "    /*.cMaxPhysAddrWidth= */ %u,\n"
                    "    /*.paCpuIdLeaves    = */ NULL_ALONE(g_aCpuIdLeaves_%s),\n"
                    "    /*.cCpuIdLeaves     = */ ZERO_ALONE(RT_ELEMENTS(g_aCpuIdLeaves_%s)),\n"
-                   "    /*.enmUnknownCpuId  = */ CPUMUKNOWNCPUID_%s,\n"
+                   "    /*.enmUnknownCpuId  = */ CPUMUNKNOWNCPUID_%s,\n"
                    "    /*.DefUnknownCpuId  = */ { %#010x, %#010x, %#010x, %#010x },\n"
                    "    /*.fMsrMask         = */ %s,\n"
                    "    /*.cMsrRanges       = */ ZERO_ALONE(RT_ELEMENTS(g_aMsrRanges_%s)),\n"

@@ -710,8 +710,8 @@ VMMR3_INT_DECL(int) VMMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
             LogRel(("VMM: fUsePeriodicPreemptionTimers=%RTbool\n", pVM->vmm.s.fUsePeriodicPreemptionTimers));
 
             /*
-             * Last chance for GIM to update its CPUID leafs if it requires knowledge/information
-             * from HM initialization.
+             * Last chance for GIM to update its CPUID leaves if it requires
+             * knowledge/information from HM initialization.
              */
             rc = GIMR3InitCompleted(pVM);
             AssertRCReturn(rc, rc);

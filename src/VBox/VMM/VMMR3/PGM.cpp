@@ -2213,7 +2213,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
      * Update: More recent intel manuals specifies 40 bits just like AMD.
      */
     uint32_t u32Dummy, u32Features;
-    CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+    CPUMGetGuestCpuId(VMMGetCpu(pVM), 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
     if (u32Features & X86_CPUID_FEATURE_EDX_PSE36)
         pVM->pgm.s.GCPhys4MBPSEMask = RT_BIT_64(RT_MAX(36, cMaxPhysAddrWidth)) - 1;
     else
@@ -3577,7 +3577,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
         {
             uint32_t u32Dummy, u32Features;
 
-            CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+            CPUMGetGuestCpuId(pVCpu, 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
             if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
                 return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
                                          N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (System/Processor)"));

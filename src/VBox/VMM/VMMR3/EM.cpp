@@ -1406,7 +1406,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         uint32_t u32Dummy, u32Features;
 
-        CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
+        CPUMGetGuestCpuId(pVCpu, 1, 0, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
         if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
             return EMSTATE_REM;
     }

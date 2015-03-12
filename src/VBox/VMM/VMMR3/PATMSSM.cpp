@@ -1253,7 +1253,7 @@ static void patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHI
          *    at the first page of the same 4 MB chunk.
          * 2. That the forced actions were in the first 32 bytes of the VM
          *    structure.
-         * 3. That the CPUM leafs are less than 8KB into the structure.
+         * 3. That the CPUM leaves are less than 8KB into the structure.
          */
         else if (   uVersion <= PATM_SAVED_STATE_VERSION_FIXUP_HACK
                  && uFixup - (patmInfo.pCPUMCtxGC & UINT32_C(0xffc00000)) < UINT32_C(32))

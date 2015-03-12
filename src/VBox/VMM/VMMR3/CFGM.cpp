@@ -892,7 +892,7 @@ VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
     if (pNode)
     {
         /*
-         * Enumerate the leafs and check them against pszValidValues.
+         * Enumerate the leaves and check them against pszValidValues.
          */
         for (PCFGMLEAF pLeaf = pNode->pFirstLeaf; pLeaf; pLeaf = pLeaf->pNext)
         {
@@ -1469,7 +1469,7 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
 
     /*
      * Use CFGMR3InsertNode to create a new node and then
-     * re-attach the children and leafs of the subtree to it.
+     * re-attach the children and leaves of the subtree to it.
      */
     PCFGMNODE pNewChild;
     int rc = CFGMR3InsertNode(pNode, pszName, &pNewChild);
@@ -1939,7 +1939,7 @@ VMMR3DECL(void) CFGMR3RemoveNode(PCFGMNODE pNode)
             CFGMR3RemoveNode(pNode->pFirstChild);
 
         /*
-         * Free leafs.
+         * Free leaves.
          */
         while (pNode->pFirstLeaf)
             cfgmR3RemoveLeaf(pNode, pNode->pFirstLeaf);
