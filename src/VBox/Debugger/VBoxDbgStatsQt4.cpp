@@ -2166,11 +2166,13 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_RATIO_U32:
         case STAMTYPE_RATIO_U32_RESET:
         {
-            formatNumber(sz, pNode->Data.RatioU32.u32A);
-            char *psz = strchr(sz, '\0');
-            *psz++ = ':';
-            formatNumber(psz, pNode->Data.RatioU32.u32B);
-            return psz;
+            char szTmp[64];
+            char *psz  = formatNumber(szTmp, pNode->Data.RatioU32.u32A);
+            size_t off = strlen(psz);
+            memcpy(sz, psz, off);
+            sz[off++] = ':';
+            strcpy(&sz[off], formatNumber(szTmp, pNode->Data.RatioU32.u32B));
+            return sz;
         }
 
         case STAMTYPE_CALLBACK:
