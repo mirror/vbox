@@ -161,7 +161,7 @@ SOLARIS_ADD_STRIP_BINS = \
 	VBoxClient \
 	VBoxService \
 	VBoxControl \
-	vboxfsmount	\
+	vboxfsmount \
 	vboxfs \
 	vboxmslnk \
 	$(if ($VBOX_WITH_PAM),pam_vbox.so,) \
