@@ -262,7 +262,7 @@ bool UISession::powerUp()
             const CMedium medium = attachment.GetMedium();
             /* Append our map if this medium has encryption: */
             const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
-            if (!strKeyId.isNull())
+            if (!strKeyId.isEmpty())
                 encryptedPasswordIds.insert(strKeyId, medium.GetId());
         }
     }
