@@ -1269,11 +1269,12 @@ PCPUMCPUIDLEAF cpumCpuIdGetLeafEx(PVM pVM, uint32_t uLeaf, uint32_t uSubLeaf, bo
 VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
                                 uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
-    bool           fExactSubLeafHit;
-    PVM            pVM   = pVCpu->CTX_SUFF(pVM);
-    PCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafEx(pVM, uLeaf, uSubLeaf, &fExactSubLeafHit);
+    bool            fExactSubLeafHit;
+    PVM             pVM   = pVCpu->CTX_SUFF(pVM);
+    PCCPUMCPUIDLEAF pLeaf = cpumCpuIdGetLeafEx(pVM, uLeaf, uSubLeaf, &fExactSubLeafHit);
     if (pLeaf)
     {
+        AssertMsg(pLeaf->uLeaf == uLeaf, ("%#x\n", pLeaf->uLeaf, uLeaf));
         if (fExactSubLeafHit)
         {
             *pEax = pLeaf->uEax;
@@ -1290,19 +1291,19 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
                 {
                     /* Bits 31-24: Initial APIC ID */
                     Assert(pVCpu->idCpu <= 255);
-                    Assert((*pEbx >> 24) == 0); /* raw-mode assumption */
-                    *pEbx = (*pEbx & UINT32_C(0x00ffffff)) | (pVCpu->idCpu << 24);
+                    AssertMsg((pLeaf->uEbx >> 24) == 0, ("%#x\n", pLeaf->uEbx)); /* raw-mode assumption */
+                    *pEbx = (pLeaf->uEbx & UINT32_C(0x00ffffff)) | (pVCpu->idCpu << 24);
                 }
                 else if (uLeaf == 0xb)
                 {
                     /* EDX: Initial extended APIC ID. */
-                    Assert(*pEdx == 0); /* raw-mode assumption */
+                    AssertMsg(pLeaf->uEdx == 0, ("%#x\n", pLeaf->uEdx)); /* raw-mode assumption */
                     *pEdx = pVCpu->idCpu;
                 }
                 else if (uLeaf == UINT32_C(0x8000001e))
                 {
                     /* EAX: Initial extended APIC ID. */
-                    Assert(*pEax == 0); /* raw-mode assumption */
+                    AssertMsg(pLeaf->uEax == 0, ("%#x\n", pLeaf->uEax)); /* raw-mode assumption */
                     *pEax = pVCpu->idCpu;
                 }
                 else
