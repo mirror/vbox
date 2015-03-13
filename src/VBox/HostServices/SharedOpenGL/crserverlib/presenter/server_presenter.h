@@ -211,7 +211,7 @@ class CrFbWindow
         int Reparent(uint64_t parentId);
         int SetVisible(bool fVisible);
         int SetSize(uint32_t width, uint32_t height, bool fForced=false);
-        int SetPosition(int32_t x, int32_t y);
+        int SetPosition(int32_t x, int32_t y, bool fForced=false);
         int SetVisibleRegionsChanged();
         int SetCompositor(const struct VBOXVR_SCR_COMPOSITOR * pCompositor);
         bool SetScaleFactor(GLdouble scaleFactorW, GLdouble scaleFactorH);
