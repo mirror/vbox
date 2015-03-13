@@ -4006,7 +4006,7 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
                 PPDMIMEDIA pIMedium = (PPDMIMEDIA)pIBase->pfnQueryInterface(pIBase, PDMIMEDIA_IID);
                 if (pIMedium)
                 {
-                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, NULL, mpIfSecKeyHlp);
+                    rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey, mpIfSecKeyHlp);
                     Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
                 }
             }
