@@ -5666,7 +5666,7 @@ VBOXDDU_DECL(int) VDInit(void)
             rc = vdLoadDynamicBackends();
         }
     }
-    LogRel(("VDInit finished\n"));
+    LogRel(("VD: VDInit finished\n"));
     return rc;
 }
 
