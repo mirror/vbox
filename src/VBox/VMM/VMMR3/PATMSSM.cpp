@@ -141,7 +141,9 @@ typedef struct PATMPATCHRECSSM
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec, int32_t offset, RTRCPTR *pFixup);
+static int patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec,
+                            int32_t offset, RTRCPTR *pFixup);
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -980,7 +982,8 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                         pFixup        = (RTRCPTR *)rec.pRelocPos;
                     }
 
-                    patmCorrectFixup(pVM, uVersion, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
+                    rc = patmCorrectFixup(pVM, uVersion, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
+                    AssertRCReturn(rc, rc);
                 }
 
                 rc = patmPatchAddReloc32(pVM, &pPatchRec->patch, rec.pRelocPos, rec.uType, rec.pSource, rec.pDest);
@@ -1066,7 +1069,8 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         pFixup = (RTRCPTR *)pRec->pRelocPos;
 
         /* Correct fixups that refer to PATM structures in the hypervisor region (their addresses might have changed). */
-        patmCorrectFixup(pVM, uVersion, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
+        rc = patmCorrectFixup(pVM, uVersion, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
+        AssertRCReturn(rc, rc);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1094,8 +1098,8 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
  * @param   offset          Offset of referenced data/code
  * @param   pFixup          Fixup address
  */
-static void patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec,
-                             int32_t offset, RTRCPTR *pFixup)
+static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHINFO pPatch, PRELOCREC pRec,
+                            int32_t offset, RTRCPTR *pFixup)
 {
     int32_t delta = pVM->patm.s.pPatchMemGC - patmInfo.pPatchMemGC;
 
@@ -1362,12 +1366,6 @@ static void patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHI
                 case PATM_CPUID_ARRAY_END_PTR:
                     *pFixup = CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(pVM);
                     break;
-                case PATM_CPUID_ARRAY_ENTRY_SIZE:
-                    *pFixup = sizeof(CPUMCPUIDLEAF);
-                    break;
-                case PATM_CPUID_UNKNOWN_METHOD:
-                    *pFixup = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
-                    break;
                 case PATM_CPUID_STD_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                     break;
@@ -1377,6 +1375,26 @@ static void patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHI
                 case PATM_CPUID_CENTAUR_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                     break;
+            }
+        }
+        /*
+         * Constant that may change between VM version needs fixing up.
+         */
+        else if (pRec->uType == FIXUP_CONSTANT_IN_PATCH_ASM_TMPL)
+        {
+            AssertLogRelReturn(uVersion > PATM_SAVED_STATE_VERSION_NO_RAW_MEM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            switch (pRec->pSource)
+            {
+                case PATM_CPUID_ARRAY_ENTRY_SIZE:
+                    *pFixup = sizeof(CPUMCPUIDLEAF);
+                    break;
+                case PATM_CPUID_UNKNOWN_METHOD:
+                    *pFixup = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
+                    break;
+                default:
+                    AssertLogRelMsgFailed(("Unknown FIXUP_CONSTANT_IN_PATCH_ASM_TMPL fixup: %#x\n", pRec->pSource));
+                    return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
         }
 
@@ -1479,5 +1497,6 @@ static void patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHI
 
     }
 }
+    return VINF_SUCCESS;
 }
 

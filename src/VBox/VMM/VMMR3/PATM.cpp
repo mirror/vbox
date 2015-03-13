@@ -762,7 +762,7 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
         switch (pRec->uType)
         {
         case FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL:
-            Assert(pRec->pDest == pRec->pSource);
+            Assert(pRec->pDest == pRec->pSource); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
             Log(("Absolute patch template fixup type %#x at %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
             *(RTRCUINTPTR *)pRec->pRelocPos += delta;
             break;
@@ -915,6 +915,12 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
             pRec->pSource = pSource;
             break;
         }
+
+        case FIXUP_CONSTANT_IN_PATCH_ASM_TMPL:
+            /* Only applicable when loading state. */
+            Assert(pRec->pDest == pRec->pSource);
+            Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            break;
 
         default:
             AssertMsg(0, ("Invalid fixup type!!\n"));

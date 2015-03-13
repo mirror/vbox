@@ -176,6 +176,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                  * BE VERY CAREFUL WITH THESE FIXUPS. TAKE INTO ACCOUNT THAT PROBLEMS MAY ARISE WHEN RESTORING
                  * A SAVED STATE WITH A DIFFERENT HYPERVISOR LAYOUT.
                  */
+                uint32_t uRelocType = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 switch (pAsmRecord->aRelocs[i].uType)
                 {
                     /*
@@ -352,7 +353,7 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
 
                     /*
                      * The following fixups needs to be recalculated when loading saved state
-                     * Note! Earlier saved state versions had different hacks for detecting these.
+                     * Note! Earlier saved state versions had different hacks for detecting some of these.
                      */
                     case PATM_VM_FORCEDACTIONS:
                         dest = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
@@ -366,12 +367,6 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                     case PATM_CPUID_ARRAY_END_PTR:
                         dest = CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(pVM);
                         break;
-                    case PATM_CPUID_ARRAY_ENTRY_SIZE:
-                        dest = sizeof(CPUMCPUIDLEAF);
-                        break;
-                    case PATM_CPUID_UNKNOWN_METHOD:
-                        dest = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
-                        break;
 
                     case PATM_CPUID_STD_PTR: /* saved state only */
                         dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
@@ -383,16 +378,32 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                         dest = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                         break;
 
+                    /*
+                     * The following fixups are constants that needs to be corrected when
+                     * loading saved state as these may change between VBox versions.
+                     */
+                    case PATM_CPUID_ARRAY_ENTRY_SIZE:
+                        dest = sizeof(CPUMCPUIDLEAF);
+                        uRelocType = FIXUP_CONSTANT_IN_PATCH_ASM_TMPL;
+                        break;
+                    case PATM_CPUID_UNKNOWN_METHOD:
+                        dest = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
+                        uRelocType = FIXUP_CONSTANT_IN_PATCH_ASM_TMPL;
+                        break;
+
+                    /*
+                     * Unknown fixup.
+                     */
                     default:
+                        AssertReleaseMsgFailed(("Unknown fixup: %#x\n", pAsmRecord->aRelocs[i].uType));
                         dest = PATM_ILLEGAL_DESTINATION;
-                        AssertReleaseFailed();
                         break;
                 }
 
                 *(RTRCPTR *)&pPB[j] = dest;
                 if (pAsmRecord->aRelocs[i].uType < PATM_NO_FIXUP)
                 {
-                    patmPatchAddReloc32(pVM, pPatch, &pPB[j], FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL,
+                    patmPatchAddReloc32(pVM, pPatch, &pPB[j], uRelocType,
                                         pAsmRecord->aRelocs[i].uType /*pSources*/, pAsmRecord->aRelocs[i].uType /*pDest*/);
                 }
                 break;

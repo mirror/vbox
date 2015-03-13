@@ -113,6 +113,10 @@
  * subleaf code), so when loading older saved states this is usally represented
  * as FIXUP_ABSOLUTE. */
 #define FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL   3
+/** Constant value that only needs fixing up when loading state.  Structure
+ * size, member offset, or similar.  The source and destination address are set
+ * like for FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL.  */
+#define FIXUP_CONSTANT_IN_PATCH_ASM_TMPL   4
 /** @} */
 
 
