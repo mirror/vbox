@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -64,25 +64,34 @@ typedef struct
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define PATCHGEN_PROLOG_NODEF(pVM, pPatch) \
+/** Value to use when not sure about the patch size. */
+#define PATCHGEN_DEF_SIZE   256
+
+#define PATCHGEN_PROLOG_NODEF(pVM, pPatch, a_cbMaxEmit) \
     do { \
-        pPB = PATCHCODE_PTR_HC(pPatch) + pPatch->uCurPatchOffset; \
-        if (pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem) \
+        cbGivenPatchSize = (a_cbMaxEmit) + 16U /*jmp++*/; \
+        if (RT_LIKELY((pPatch)->pPatchBlockOffset + pPatch->uCurPatchOffset + cbGivenPatchSize < pVM->patm.s.cbPatchMem)) \
+            pPB = PATCHCODE_PTR_HC(pPatch) + pPatch->uCurPatchOffset; \
+        else \
         { \
             pVM->patm.s.fOutOfMemory = true; \
-            Assert(pPB + 256 >= pVM->patm.s.pPatchMemHC + pVM->patm.s.cbPatchMem); \
+            AssertMsgFailed(("offPatch=%#x + offEmit=%#x + a_cbMaxEmit=%#x + jmp -->  cbTotalWithFudge=%#x >= cbPatchMem=%#x", \
+                             (pPatch)->pPatchBlockOffset, pPatch->uCurPatchOffset, a_cbMaxEmit, \
+                             (pPatch)->pPatchBlockOffset + pPatch->uCurPatchOffset + cbGivenPatchSize, pVM->patm.s.cbPatchMem)); \
             return VERR_NO_MEMORY; \
         } \
     } while (0)
 
-#define PATCHGEN_PROLOG(pVM, pPatch) \
+#define PATCHGEN_PROLOG(pVM, pPatch, a_cbMaxEmit) \
     uint8_t *pPB; \
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch)
+    uint32_t cbGivenPatchSize; \
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, a_cbMaxEmit)
 
-#define PATCHGEN_EPILOG(pPatch, size) \
+#define PATCHGEN_EPILOG(pPatch, a_cbActual) \
     do { \
-        Assert(size <= 640); \
-        pPatch->uCurPatchOffset += size; \
+        AssertMsg((a_cbActual) <= cbGivenPatchSize, ("a_cbActual=%#x cbGivenPatchSize=%#x\n", a_cbActual, cbGivenPatchSize)); \
+        Assert((a_cbActual) <= 640); \
+        pPatch->uCurPatchOffset += (a_cbActual); \
     } while (0)
 
 
@@ -440,11 +449,10 @@ static int patmPatchReadBytes(PVM pVM, uint8_t *pDest, RTRCPTR pSrc, uint32_t cb
 
 int patmPatchGenDuplicate(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC)
 {
-    int rc = VINF_SUCCESS;
-    PATCHGEN_PROLOG(pVM, pPatch);
-
     uint32_t const cbInstrShutUpGcc = pCpu->cbInstr;
-    rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, cbInstrShutUpGcc);
+    PATCHGEN_PROLOG(pVM, pPatch, cbInstrShutUpGcc);
+
+    int rc = patmPatchReadBytes(pVM, pPB, pCurInstrGC, cbInstrShutUpGcc);
     AssertRC(rc);
     PATCHGEN_EPILOG(pPatch, cbInstrShutUpGcc);
     return rc;
@@ -454,16 +462,14 @@ int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSize
 {
     uint32_t size;
     PATMCALLINFO callInfo;
+    PCPATCHASMRECORD pPatchAsmRec = EMIsRawRing1Enabled(pVM) ? &g_patmIretRing1Record : &g_patmIretRecord;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
     AssertMsg(fSizeOverride == false, ("operand size override!!\n"));
     callInfo.pCurInstrGC = pCurInstrGC;
 
-    if (EMIsRawRing1Enabled(pVM))
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmIretRing1Record, 0, false, &callInfo);
-    else
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmIretRecord, 0, false, &callInfo);
+    size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false, &callInfo);
 
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
@@ -472,7 +478,7 @@ int patmPatchGenIret(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, bool fSize
 int patmPatchGenCli(PVM pVM, PPATCHINFO pPatch)
 {
     uint32_t size;
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmCliRecord.cbFunction);
 
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmCliRecord, 0, false);
 
@@ -489,7 +495,7 @@ int patmPatchGenSti(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RTRCPTR pNe
     uint32_t     size;
 
     Log(("patmPatchGenSti at %RRv; next %RRv\n", pCurInstrGC, pNextInstrGC));
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmStiRecord.cbFunction);
     callInfo.pNextInstrGC = pNextInstrGC;
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmStiRecord, 0, false, &callInfo);
     PATCHGEN_EPILOG(pPatch, size);
@@ -502,8 +508,13 @@ int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAdd
 {
     uint32_t        size;
     PATMCALLINFO    callInfo;
+    PCPATCHASMRECORD pPatchAsmRec;
+    if (fSizeOverride == true)
+        pPatchAsmRec = fGenJumpBack ? &g_patmPopf16Record : &g_patmPopf16Record_NoExit;
+    else
+        pPatchAsmRec = fGenJumpBack ? &g_patmPopf32Record : &g_patmPopf32Record_NoExit;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
     callInfo.pNextInstrGC = pReturnAddrGC;
 
@@ -511,14 +522,8 @@ int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAdd
 
     /* Note: keep IOPL in mind when changing any of this!! (see comments in PATMA.asm, PATMPopf32Replacement) */
     if (fSizeOverride == true)
-    {
         Log(("operand size override!!\n"));
-        size = patmPatchGenCode(pVM, pPatch, pPB, (fGenJumpBack) ? &g_patmPopf16Record : &g_patmPopf16Record_NoExit , pReturnAddrGC, fGenJumpBack, &callInfo);
-    }
-    else
-    {
-        size = patmPatchGenCode(pVM, pPatch, pPB, (fGenJumpBack) ? &g_patmPopf32Record : &g_patmPopf32Record_NoExit, pReturnAddrGC, fGenJumpBack, &callInfo);
-    }
+    size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, pReturnAddrGC, fGenJumpBack, &callInfo);
 
     PATCHGEN_EPILOG(pPatch, size);
     STAM_COUNTER_INC(&pVM->patm.s.StatGenPopf);
@@ -528,17 +533,10 @@ int patmPatchGenPopf(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pReturnAdd
 int patmPatchGenPushf(PVM pVM, PPATCHINFO pPatch, bool fSizeOverride)
 {
     uint32_t size;
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PCPATCHASMRECORD pPatchAsmRec = fSizeOverride == true ?  &g_patmPushf16Record : &g_patmPushf32Record;
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
-    if (fSizeOverride == true)
-    {
-        Log(("operand size override!!\n"));
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmPushf16Record, 0, false);
-    }
-    else
-    {
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmPushf32Record, 0, false);
-    }
+    size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false);
 
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
@@ -547,7 +545,7 @@ int patmPatchGenPushf(PVM pVM, PPATCHINFO pPatch, bool fSizeOverride)
 int patmPatchGenPushCS(PVM pVM, PPATCHINFO pPatch)
 {
     uint32_t size;
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmPushCSRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmPushCSRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
@@ -557,9 +555,6 @@ int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC,
 {
     uint32_t size = 0;
     PCPATCHASMRECORD pPatchAsmRec;
-
-    PATCHGEN_PROLOG(pVM, pPatch);
-
     switch (opcode)
     {
     case OP_LOOP:
@@ -580,6 +575,7 @@ int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC,
     }
     Assert(pPatchAsmRec->offSizeOverride && pPatchAsmRec->offRelJump);
 
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
     Log(("PatchGenLoop %d jump %d to %08x offrel=%d\n", opcode, pPatch->nrJumpRecs, pTargetGC, pPatchAsmRec->offRelJump));
 
     // Generate the patch code
@@ -601,7 +597,7 @@ int patmPatchGenLoop(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC,
 int patmPatchGenRelJump(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pTargetGC, uint32_t opcode, bool fSizeOverride)
 {
     uint32_t offset = 0;
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
 
     // internal relative jumps from patch code to patch code; no relocation record required
 
@@ -712,7 +708,7 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
         return rc;
     AssertRCReturn(rc, rc);
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
     /* 2: We must push the target address onto the stack before appending the indirect call code. */
 
     if (fIndirect)
@@ -772,10 +768,11 @@ int patmPatchGenCall(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     PATCHGEN_EPILOG(pPatch, offset);
 
     /* 3: Generate code to lookup address in our local cache; call hypervisor PATM code if it can't be located. */
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PCPATCHASMRECORD pPatchAsmRec = fIndirect ? &g_patmCallIndirectRecord : &g_patmCallRecord;
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, pPatchAsmRec->cbFunction);
     callInfo.pReturnGC      = pCurInstrGC + pCpu->cbInstr;
     callInfo.pTargetGC      = (fIndirect) ? 0xDEADBEEF : pTargetGC;
-    size = patmPatchGenCode(pVM, pPatch, pPB, (fIndirect) ? &g_patmCallIndirectRecord : &g_patmCallRecord, 0, false, &callInfo);
+    size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false, &callInfo);
     PATCHGEN_EPILOG(pPatch, size);
 
     /* Need to set PATM_INTERRUPTFLAG after the patched ret returns here. */
@@ -810,7 +807,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
         return rc;
     AssertRCReturn(rc, rc);
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
     /* 2: We must push the target address onto the stack before appending the indirect call code. */
 
     Log(("patmPatchGenIndirectJump\n"));
@@ -849,7 +846,7 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
     PATCHGEN_EPILOG(pPatch, offset);
 
     /* 3: Generate code to lookup address in our local cache; call hypervisor PATM code if it can't be located. */
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmJumpIndirectRecord.cbFunction);
     callInfo.pReturnGC      = pCurInstrGC + pCpu->cbInstr;
     callInfo.pTargetGC      = 0xDEADBEEF;
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmJumpIndirectRecord, 0, false, &callInfo);
@@ -871,7 +868,6 @@ int patmPatchGenJump(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
  */
 int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pCurInstrGC)
 {
-    int size = 0, rc;
     RTRCPTR pPatchRetInstrGC;
 
     /* Remember start of this patch for below. */
@@ -891,20 +887,20 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 
     /* Jump back to the original instruction if IF is set again. */
     Assert(!patmFindActivePatchByEntrypoint(pVM, pCurInstrGC));
-    rc = patmPatchGenCheckIF(pVM, pPatch, pCurInstrGC);
+    int rc = patmPatchGenCheckIF(pVM, pPatch, pCurInstrGC);
     AssertRCReturn(rc, rc);
 
     /* align this block properly to make sure the jump table will not be misaligned. */
-    PATCHGEN_PROLOG(pVM, pPatch);
-    size = (RTHCUINTPTR)pPB & 3;
+    PATCHGEN_PROLOG(pVM, pPatch, 4);
+    uint32_t size = (RTHCUINTPTR)pPB & 3;
     if (size)
         size = 4 - size;
 
-    for (int i=0;i<size;i++)
+    for (uint32_t i = 0; i < size; i++)
         pPB[i] = 0x90;   /* nop */
     PATCHGEN_EPILOG(pPatch, size);
 
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmRetRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmRetRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
@@ -930,18 +926,16 @@ int patmPatchGenRet(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RCPTRTYPE(uin
  */
 int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
 {
-    int size = 0;
-
     pVM->patm.s.pfnHelperCallGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
-    PATCHGEN_PROLOG(pVM, pPatch);
-    size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmLookupAndCallRecord, 0, false);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmLookupAndCallRecord.cbFunction);
+    uint32_t size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmLookupAndCallRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
     /* Round to next 8 byte boundary. */
     pPatch->uCurPatchOffset = RT_ALIGN_32(pPatch->uCurPatchOffset, 8);
 
     pVM->patm.s.pfnHelperRetGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmRetFunctionRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmRetFunctionRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
@@ -949,7 +943,7 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
     pPatch->uCurPatchOffset = RT_ALIGN_32(pPatch->uCurPatchOffset, 8);
 
     pVM->patm.s.pfnHelperJumpGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmLookupAndJumpRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmLookupAndJumpRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
@@ -957,7 +951,7 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
     pPatch->uCurPatchOffset = RT_ALIGN_32(pPatch->uCurPatchOffset, 8);
 
     pVM->patm.s.pfnHelperIretGC = PATCHCODE_PTR_GC(pPatch) + pPatch->uCurPatchOffset;
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmIretFunctionRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmIretFunctionRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
@@ -979,7 +973,7 @@ int patmPatchGenGlobalFunctions(PVM pVM, PPATCHINFO pPatch)
  */
 int patmPatchGenIllegalInstr(PVM pVM, PPATCHINFO pPatch)
 {
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, 1);
 
     pPB[0] = 0xCC;
 
@@ -1000,7 +994,7 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
 {
     uint32_t size;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmCheckIFRecord.cbFunction);
 
     /* Add lookup record for patch to guest address translation */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pCurInstrGC, PATM_LOOKUP_PATCH2GUEST);
@@ -1023,12 +1017,12 @@ int patmPatchGenCheckIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
  */
 int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmSetPIFRecord.cbFunction);
 
     /* Add lookup record for patch to guest address translation */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pInstrGC, PATM_LOOKUP_PATCH2GUEST);
 
-    int size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmSetPIFRecord, 0, false);
+    uint32_t size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmSetPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
 }
@@ -1044,12 +1038,12 @@ int patmPatchGenSetPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
  */
 int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmSetPIFRecord.cbFunction);
 
     /* Add lookup record for patch to guest address translation */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pInstrGC, PATM_LOOKUP_PATCH2GUEST);
 
-    int size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmClearPIFRecord, 0, false);
+    uint32_t size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmClearPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
 }
@@ -1065,10 +1059,10 @@ int patmPatchGenClearPIF(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
  */
 int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC)
 {
-    int          size;
     PATMCALLINFO callInfo;
-
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PCPATCHASMRECORD pPatchAsmRec = pPatch->flags & PATMFL_DUPLICATE_FUNCTION
+                                  ? &g_patmClearInhibitIRQContIF0Record : &g_patmClearInhibitIRQFaultIF0Record;
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
     Assert((pPatch->flags & (PATMFL_GENERATE_JUMPTOGUEST|PATMFL_DUPLICATE_FUNCTION)) != (PATMFL_GENERATE_JUMPTOGUEST|PATMFL_DUPLICATE_FUNCTION));
 
@@ -1077,10 +1071,7 @@ int patmPatchGenClearInhibitIRQ(PVM pVM, PPATCHINFO pPatch, RTRCPTR pNextInstrGC
 
     callInfo.pNextInstrGC = pNextInstrGC;
 
-    if (pPatch->flags & PATMFL_DUPLICATE_FUNCTION)
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmClearInhibitIRQContIF0Record, 0, false, &callInfo);
-    else
-        size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmClearInhibitIRQFaultIF0Record, 0, false, &callInfo);
+    uint32_t size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false, &callInfo);
 
     PATCHGEN_EPILOG(pPatch, size);
     return VINF_SUCCESS;
@@ -1105,15 +1096,15 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
                                          TRPMForwardTrap takes care of the details. */
     {
         uint32_t size;
-        PATCHGEN_PROLOG(pVM, pPatch);
+        PCPATCHASMRECORD pPatchAsmRec = pPatch->flags & PATMFL_INTHANDLER_WITH_ERRORCODE
+                                      ? &g_patmIntEntryRecordErrorCode : &g_patmIntEntryRecord;
+        PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
         /* Add lookup record for patch to guest address translation */
         patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pIntHandlerGC, PATM_LOOKUP_PATCH2GUEST);
 
         /* Generate entrypoint for the interrupt handler (correcting CS in the interrupt stack frame) */
-        size = patmPatchGenCode(pVM, pPatch, pPB,
-                                (pPatch->flags & PATMFL_INTHANDLER_WITH_ERRORCODE) ? &g_patmIntEntryRecordErrorCode : &g_patmIntEntryRecord,
-                                0, false);
+        size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, 0, false);
 
         PATCHGEN_EPILOG(pPatch, size);
     }
@@ -1136,18 +1127,18 @@ int patmPatchGenIntEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pIntHandlerGC)
 int patmPatchGenTrapEntry(PVM pVM, PPATCHINFO pPatch, RTRCPTR pTrapHandlerGC)
 {
     uint32_t size;
+    PCPATCHASMRECORD pPatchAsmRec = (pPatch->flags & PATMFL_TRAPHANDLER_WITH_ERRORCODE)
+                                  ? &g_patmTrapEntryRecordErrorCode : &g_patmTrapEntryRecord;
 
     Assert(!EMIsRawRing1Enabled(pVM));
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, pPatchAsmRec->cbFunction);
 
     /* Add lookup record for patch to guest address translation */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pTrapHandlerGC, PATM_LOOKUP_PATCH2GUEST);
 
     /* Generate entrypoint for the trap handler (correcting CS in the interrupt stack frame) */
-    size = patmPatchGenCode(pVM, pPatch, pPB,
-                            (pPatch->flags & PATMFL_TRAPHANDLER_WITH_ERRORCODE) ? &g_patmTrapEntryRecordErrorCode : &g_patmTrapEntryRecord,
-                            pTrapHandlerGC, true);
+    size = patmPatchGenCode(pVM, pPatch, pPB, pPatchAsmRec, pTrapHandlerGC, true);
     PATCHGEN_EPILOG(pPatch, size);
 
     return VINF_SUCCESS;
@@ -1158,7 +1149,7 @@ int patmPatchGenStats(PVM pVM, PPATCHINFO pPatch, RTRCPTR pInstrGC)
 {
     uint32_t size;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmStatsRecord.cbFunction);
 
     /* Add lookup record for stats code -> guest handler. */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pInstrGC, PATM_LOOKUP_PATCH2GUEST);
@@ -1185,7 +1176,7 @@ int patmPatchGenMovDebug(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     unsigned reg, mod, rm, dbgreg;
     uint32_t offset;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
 
     mod = 0;            //effective address (only)
     rm  = 5;            //disp32
@@ -1235,7 +1226,7 @@ int patmPatchGenMovControl(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu)
     int reg, mod, rm, ctrlreg;
     uint32_t offset;
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
 
     mod = 0;            //effective address (only)
     rm  = 5;            //disp32
@@ -1301,12 +1292,12 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
 
     Assert(pPatch->flags & PATMFL_CODE32);
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmClearPIFRecord.cbFunction + 2 + g_patmMovFromSSRecord.cbFunction + 2 + g_patmSetPIFRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmClearPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
     /* push ss */
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, 2);
     offset = 0;
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66;       /* size override -> 16 bits push */
@@ -1314,12 +1305,12 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     PATCHGEN_EPILOG(pPatch, offset);
 
     /* checks and corrects RPL of pushed ss*/
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmMovFromSSRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmMovFromSSRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
     /* pop general purpose register */
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, 2);
     offset = 0;
     if (pCpu->fPrefix & DISPREFIX_OPSIZE)
         pPB[offset++] = 0x66; /* size override -> 16 bits pop */
@@ -1327,7 +1318,7 @@ int patmPatchGenMovFromSS(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR
     PATCHGEN_EPILOG(pPatch, offset);
 
 
-    PATCHGEN_PROLOG_NODEF(pVM, pPatch);
+    PATCHGEN_PROLOG_NODEF(pVM, pPatch, g_patmSetPIFRecord.cbFunction);
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmSetPIFRecord, 0, false);
     PATCHGEN_EPILOG(pPatch, size);
 
@@ -1354,7 +1345,7 @@ int patmPatchGenSldtStr(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR p
     /** @todo segment prefix (untested) */
     Assert(pCpu->fPrefix == DISPREFIX_NONE || pCpu->fPrefix == DISPREFIX_OPSIZE);
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
 
     if (pCpu->Param1.fUse == DISUSE_REG_GEN32 || pCpu->Param1.fUse == DISUSE_REG_GEN16)
     {
@@ -1483,7 +1474,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
 //5A                   pop         edx
 //58                   pop         eax
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATCHGEN_DEF_SIZE);
     pPB[offset++] = 0x50;              // push      eax
     pPB[offset++] = 0x52;              // push      edx
 
@@ -1542,7 +1533,7 @@ int patmPatchGenSxDT(PVM pVM, PPATCHINFO pPatch, DISCPUSTATE *pCpu, RTRCPTR pCur
 int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
 {
     uint32_t size;
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, g_patmCpuidRecord.cbFunction);
 
     size = patmPatchGenCode(pVM, pPatch, pPB, &g_patmCpuidRecord, 0, false);
 
@@ -1573,7 +1564,7 @@ int patmPatchGenJumpToGuest(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pRe
         AssertRCReturn(rc, rc);
     }
 
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, PATMJumpToGuest_IF1Record.cbFunction);
 
     /* Add lookup record for patch to guest address translation */
     patmR3AddP2GLookupRecord(pVM, pPatch, pPB, pReturnAddrGC, PATM_LOOKUP_PATCH2GUEST);
@@ -1594,7 +1585,7 @@ int patmPatchGenPatchJump(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC, RCPTR
     int     rc = VINF_SUCCESS;
 
     Assert(PATMIsPatchGCAddr(pVM, pPatchAddrGC));
-    PATCHGEN_PROLOG(pVM, pPatch);
+    PATCHGEN_PROLOG(pVM, pPatch, SIZEOF_NEARJUMP32);
 
     if (fAddLookupRecord)
     {
