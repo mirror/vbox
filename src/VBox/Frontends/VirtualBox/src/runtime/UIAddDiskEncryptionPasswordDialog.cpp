@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 # include <QVBoxLayout>
+# include <QLabel>
 # include <QLineEdit>
 # include <QTableView>
 # include <QHeaderView>
@@ -29,7 +30,6 @@
 # include <QStandardItemEditorCreator>
 
 /* GUI includes: */
-# include "QILabel.h"
 # include "QIDialogButtonBox.h"
 # include "QIWithRetranslateUI.h"
 # include "QIStyledItemDelegate.h"
@@ -373,8 +373,11 @@ void UIEncryptionDataTable::prepare()
     horizontalHeader()->setResizeMode(UIEncryptionDataTableSection_Password, QHeaderView::Stretch);
 }
 
-UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumMap &encryptedMediums)
+UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent,
+                                                                     const QString &strMachineName,
+                                                                     const EncryptedMediumMap &encryptedMediums)
     : QIWithRetranslateUI<QDialog>(pParent)
+    , m_strMachineName(strMachineName)
     , m_encryptedMediums(encryptedMediums)
     , m_pLabelDescription(0)
     , m_pTableEncryptionData(0)
@@ -402,13 +405,9 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
         AssertPtrReturnVoid(pInputLayout);
         {
             /* Create description label: */
-            m_pLabelDescription = new QILabel;
-            m_pLabelDescription->useSizeHintForWidth(450);
-            m_pLabelDescription->updateGeometry();
+            m_pLabelDescription = new QLabel;
             AssertPtrReturnVoid(m_pLabelDescription);
             {
-                /* Configure description label: */
-                m_pLabelDescription->setWordWrap(true);
                 /* Add label into layout: */
                 pInputLayout->addWidget(m_pLabelDescription);
             }
@@ -438,6 +437,10 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
 
 void UIAddDiskEncryptionPasswordDialog::retranslateUi()
 {
+    /* Translate the dialog title: */
+    setWindowTitle(tr("%1 - Disk Encryption").arg(m_strMachineName));
+
+    /* Translate the description label: */
     AssertPtrReturnVoid(m_pLabelDescription);
     m_pLabelDescription->setText(tr("This virtual machine is password protected. "
                                     "Please enter the %n encryption password(s) below.",

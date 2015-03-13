@@ -2436,7 +2436,9 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
     {
         /* Create corresponding dialog: */
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-             new UIAddDiskEncryptionPasswordDialog(activeMachineWindow(), encryptedMediums);
+             new UIAddDiskEncryptionPasswordDialog(activeMachineWindow(),
+                                                   machineName(),
+                                                   encryptedMediums);
         /* Execute it and acquire the result: */
         if (pDlg->exec() == QDialog::Accepted)
             encryptionPasswords = pDlg->encryptionPasswords();
