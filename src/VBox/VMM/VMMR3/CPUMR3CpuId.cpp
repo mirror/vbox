@@ -2524,7 +2524,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     uSubLeaf = 0;
     while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 4, uSubLeaf)) != NULL)
     {
-        pCurLeaf->uEax &= UINT32_C(0xffffc000); /* Clear the #maxcores, #threads-sharing-cache (both are #-1).*/
+        pCurLeaf->uEax &= UINT32_C(0x00003fff); /* Clear the #maxcores, #threads-sharing-cache (both are #-1).*/
 #ifdef VBOX_WITH_MULTI_CORE
         if (   pVM->cCpus > 1
             && pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL)
@@ -3168,26 +3168,27 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxIntelFamilyModelStep", &pConfig->uMaxIntelFamilyModelStep, UINT32_MAX);
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/MaxStdLeaf, uint32_t, 0x00000005}
+    /** @cfgm{/CPUM/MaxStdLeaf, uint32_t, 0x00000016}
      * The last standard leaf to keep.  The actual last value that is stored in EAX
      * is RT_MAX(CPUID[0].EAX,/CPUM/MaxStdLeaf).  Leaves beyond the max leaf are
      * removed.  (This works independently of and differently from NT4LeafLimit.)
+     * The default is usually set to what we're able to reasonably sanitize.
      */
-    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxStdLeaf", &pConfig->uMaxStdLeaf, UINT32_C(0x00000005));
+    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxStdLeaf", &pConfig->uMaxStdLeaf, UINT32_C(0x00000016));
     AssertLogRelRCReturn(rc, rc);
 
-    /** @cfgm{/CPUM/MaxExtLeaf, uint32_t, 0x80000008}
+    /** @cfgm{/CPUM/MaxExtLeaf, uint32_t, 0x8000001e}
      * The last extended leaf to keep.  The actual last value that is stored in EAX
      * is RT_MAX(CPUID[0x80000000].EAX,/CPUM/MaxStdLeaf).  Leaves beyond the max
-     * leaf are removed.
+     * leaf are removed.  The default is set to what we're able to sanitize.
      */
-    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxExtLeaf", &pConfig->uMaxExtLeaf, UINT32_C(0x80000008));
+    rc = CFGMR3QueryU32Def(pCpumCfg, "MaxExtLeaf", &pConfig->uMaxExtLeaf, UINT32_C(0x8000001e));
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/MaxCentaurLeaf, uint32_t, 0xc0000004}
      * The last extended leaf to keep.  The actual last value that is stored in EAX
      * is RT_MAX(CPUID[0xc0000000].EAX,/CPUM/MaxCentaurLeaf).  Leaves beyond the max
-     * leaf are removed.
+     * leaf are removed.  The default is set to what we're able to sanitize.
      */
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
