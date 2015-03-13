@@ -4999,6 +4999,27 @@ HRESULT Console::i_setDiskEncryptionKeys(const Utf8Str &strCfg)
     return hrc;
 }
 
+void Console::i_removeSecretKeysOnSuspend()
+{
+    /* Remove keys which are supposed to be removed on a suspend. */
+    SecretKeyMap::iterator it = m_mapSecretKeys.begin();
+    while (it != m_mapSecretKeys.end())
+    {
+        SecretKey *pKey = it->second;
+        if (pKey->m_fRemoveOnSuspend)
+        {
+            /* Unconfigure disk encryption from all attachments associated with this key. */
+            i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(it->first);
+
+            AssertMsg(!pKey->m_cRefs, ("No one should access the stored key at this point anymore!\n"));
+            delete pKey;
+            m_mapSecretKeys.erase(it++);
+        }
+        else
+            it++;
+    }
+}
+
 /**
  * Process a network adaptor change.
  *
@@ -6349,6 +6370,12 @@ HRESULT Console::i_pause(Reason_T aReason)
         case MachineState_Paused:
         case MachineState_TeleportingPausedVM:
         case MachineState_Saving:
+
+        /* Remove any keys which are supposed to be removed on a suspend. */
+        if (   aReason == Reason_HostSuspend
+            || aReason == Reason_HostBatteryLow)
+            i_removeSecretKeysOnSuspend();
+
             return setError(VBOX_E_INVALID_VM_STATE, tr("Already paused"));
 
         default:
@@ -6378,26 +6405,9 @@ HRESULT Console::i_pause(Reason_T aReason)
     HRESULT hrc = S_OK;
     if (RT_FAILURE(vrc))
         hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
-    else
-    {
-        /* Remove keys which are supposed to be removed on a VM suspend. */
-        SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-        while (it != m_mapSecretKeys.end())
-        {
-            SecretKey *pKey = it->second;
-            if (pKey->m_fRemoveOnSuspend)
-            {
-                /* Unconfigure disk encryption from all attachments associated with this key. */
-                i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(it->first);
-
-                AssertMsg(!pKey->m_cRefs, ("No one should access the stored key at this point anymore!\n"));
-                delete pKey;
-                m_mapSecretKeys.erase(it++);
-            }
-            else
-                it++;
-        }
-    }
+    else if (   aReason == Reason_HostSuspend
+             || aReason == Reason_HostBatteryLow)
+        i_removeSecretKeysOnSuspend();
 
     LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
     LogFlowThisFuncLeave();
@@ -10179,18 +10189,13 @@ DECLCALLBACK(int) Console::i_fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser
                 if (FAILED(rc))
                     throw rc;
 
-                /*
-                 * don't release the lock since reconfigureMediumAttachment
-                 * isn't going to need the Console lock.
-                 */
-
-                /* TODO: do alock.release here as EMT might wait on it! See other places
-                 * where we do VMR3ReqCall requests. See @bugref{7648}. */
+                alock.release();
                 vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                                        (PFNRT)i_reconfigureMediumAttachment, 13,
                                        that, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
                                        fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
                                        0 /* uMergeTarget */, atts[i], that->mMachineState, &rc);
+                alock.acquire();
                 if (RT_FAILURE(vrc))
                     throw i_setErrorStatic(E_FAIL, Console::tr("%Rrc"), vrc);
                 if (FAILED(rc))

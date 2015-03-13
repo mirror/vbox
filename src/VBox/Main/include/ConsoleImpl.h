@@ -866,6 +866,7 @@ private:
     HRESULT i_initSecretKeyIfOnAllAttachments(void);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
                                char **ppszKey, char **ppszVal);
+    void i_removeSecretKeysOnSuspend();
     /** @} */
 
     /** @name Teleporter support
