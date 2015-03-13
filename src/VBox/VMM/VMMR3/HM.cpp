@@ -453,12 +453,12 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         if (RT_SUCCESS(rc))
         {
             if (fCaps & SUPVTCAPS_AMD_V)
-                LogRel(("HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
+                LogRel(("HM: HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
             else if (fCaps & SUPVTCAPS_VT_X)
             {
                 rc = SUPR3QueryVTxSupported();
                 if (RT_SUCCESS(rc))
-                    LogRel(("HMR3Init: VT-x%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
+                    LogRel(("HM: HMR3Init: VT-x%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
                 else
                 {
 #ifdef RT_OS_LINUX
@@ -470,7 +470,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                         return VMSetError(pVM, rc, RT_SRC_POS, "The host kernel does not support VT-x.%s\n", pszMinReq);
 
                     /* Fall back to raw-mode. */
-                    LogRel(("HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x.%s\n", pszMinReq));
+                    LogRel(("HM: HMR3Init: Falling back to raw-mode: The host kernel does not support VT-x.%s\n", pszMinReq));
                     pVM->fHMEnabled = false;
                 }
             }
@@ -528,7 +528,7 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 return VMSetError(pVM, rc, RT_SRC_POS, "SUPR3QueryVTCaps failed with %Rrc", rc);
 
             /* Fall back to raw-mode. */
-            LogRel(("HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
+            LogRel(("HM: HMR3Init: Falling back to raw-mode: %s\n", pszMsg));
             pVM->fHMEnabled = false;
         }
     }
@@ -934,7 +934,7 @@ static int hmR3InitFinalizeR0(PVM pVM)
     rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_ENABLE, 0, NULL);
     if (RT_FAILURE(rc))
     {
-        LogRel(("HMR3InitFinalize: SUPR3CallVMMR0Ex VMMR0_DO_HM_ENABLE failed with %Rrc\n", rc));
+        LogRel(("HM: HMR3InitFinalize: SUPR3CallVMMR0Ex VMMR0_DO_HM_ENABLE failed with %Rrc\n", rc));
         return rc;
     }
 
@@ -2951,8 +2951,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
     if (iStatusCode == VERR_VMX_UNABLE_TO_START_VM)
     {
-        LogRel(("VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed    %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1));
-        LogRel(("VERR_VMX_UNABLE_TO_START_VM: VM-entry disallowed %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry allowed    %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.allowed1));
+        LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM: VM-entry disallowed %#RX32\n", pVM->hm.s.vmx.Msrs.VmxEntry.n.disallowed0));
     }
 }
 
