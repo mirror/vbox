@@ -95,7 +95,7 @@ public:
     /** Constructor.
       * @param pParent          being passed to the base-class,
       * @param encryptedMediums contains the lists of medium ids (values) encrypted with passwords with ids (keys). */
-    UIEncryptionDataModel(QObject *pParent, const EncryptedMediumsMap &encryptedMediums);
+    UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums);
 
     /** Returns the shallow copy of the encryption password map instance. */
     EncryptionPasswordsMap encryptionPasswords() const { return m_encryptionPasswords; }
@@ -122,7 +122,7 @@ private:
     void prepare();
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumsMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMediums;
 
     /** Holds the encryption password map instance. */
     EncryptionPasswordsMap m_encryptionPasswords;
@@ -139,7 +139,7 @@ public:
 
     /** Constructor.
       * @param pParent being passed to the base-class. */
-    UIEncryptionDataTable(const EncryptedMediumsMap &encryptedMediums);
+    UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums);
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataModel instance. */
@@ -151,7 +151,7 @@ private:
     void prepare();
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumsMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMediums;
 
     /** Holds the encryption-data model instance. */
     UIEncryptionDataModel *m_pModelEncryptionData;
@@ -182,7 +182,7 @@ void UIPasswordEditor::prepare()
             this, SLOT(sltPasswordChanged(const QString&)));
 }
 
-UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumsMap &encryptedMediums)
+UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums)
     : QAbstractTableModel(pParent)
     , m_encryptedMediums(encryptedMediums)
 {
@@ -311,7 +311,7 @@ void UIEncryptionDataModel::prepare()
         m_encryptionPasswords.insert(strPasswordId, QString());
 }
 
-UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumsMap &encryptedMediums)
+UIEncryptionDataTable::UIEncryptionDataTable(const EncryptedMediumMap &encryptedMediums)
     : m_encryptedMediums(encryptedMediums)
     , m_pModelEncryptionData(0)
 {
@@ -373,7 +373,7 @@ void UIEncryptionDataTable::prepare()
     horizontalHeader()->setResizeMode(UIEncryptionDataTableSection_Password, QHeaderView::Stretch);
 }
 
-UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumsMap &encryptedMediums)
+UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumMap &encryptedMediums)
     : QIWithRetranslateUI<QDialog>(pParent)
     , m_encryptedMediums(encryptedMediums)
     , m_pLabelDescription(0)

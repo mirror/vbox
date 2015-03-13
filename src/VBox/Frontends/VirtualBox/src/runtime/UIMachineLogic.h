@@ -335,6 +335,9 @@ private:
     /** Show Global Preferences on the page defined by @a strCategory and tab defined by @a strControl. */
     void showGlobalPreferences(const QString &strCategory = QString(), const QString &strControl = QString());
 
+    /** Asks user for the disks encryption passwords. */
+    void askUserForTheDiskEncryptionPasswords();
+
     /* Helpers: */
     static int searchMaxSnapshotIndex(const CMachine &machine, const CSnapshot &snapshot, const QString &strNameTemplate);
     void takeScreenshot(const QString &strFile, const QString &strFormat /* = "png" */) const;

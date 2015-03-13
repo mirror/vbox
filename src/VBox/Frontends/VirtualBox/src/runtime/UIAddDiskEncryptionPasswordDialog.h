@@ -30,7 +30,7 @@ class UIEncryptionDataTable;
 class QILabel;
 
 /* Type definitions: */
-typedef QMultiMap<QString, QString> EncryptedMediumsMap;
+typedef QMultiMap<QString, QString> EncryptedMediumMap;
 typedef QMap<QString, QString> EncryptionPasswordsMap;
 
 /** QDialog reimplementation used to
@@ -44,7 +44,7 @@ public:
     /** Constructor.
       * @param pParent          being passed to the base-class,
       * @param encryptedMediums contains the lists of medium ids (values) encrypted with passwords with ids (keys). */
-    UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumsMap &encryptedMediums);
+    UIAddDiskEncryptionPasswordDialog(QWidget *pParent, const EncryptedMediumMap &encryptedMediums);
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataTable instance. */
@@ -59,7 +59,7 @@ private:
     void retranslateUi();
 
     /** Holds the encrypted medium map reference. */
-    const EncryptedMediumsMap &m_encryptedMediums;
+    const EncryptedMediumMap &m_encryptedMediums;
 
     /** Holds the description label instance. */
     QILabel *m_pLabelDescription;

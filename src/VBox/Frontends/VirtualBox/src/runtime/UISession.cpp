@@ -43,7 +43,6 @@
 # include "UIConsoleEventHandler.h"
 # include "UIFrameBuffer.h"
 # include "UISettingsDialogSpecific.h"
-# include "UIAddDiskEncryptionPasswordDialog.h"
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #  include "VBoxFBOverlay.h"
 # endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -251,34 +250,6 @@ bool UISession::initialize()
 
 bool UISession::powerUp()
 {
-    /* Prepare map of the encrypted ids: */
-    EncryptedMediumsMap encryptedPasswordIds;
-    foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
-    {
-        /* Acquire hard-drives only: */
-        if (attachment.GetType() == KDeviceType_HardDisk)
-        {
-            /* Get attachment medium: */
-            const CMedium medium = attachment.GetMedium();
-            /* Append our map if this medium has encryption: */
-            const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
-            if (!strKeyId.isEmpty())
-                encryptedPasswordIds.insert(strKeyId, medium.GetId());
-        }
-    }
-    /* Ask for disk encryption passwords if necessary: */
-    EncryptionPasswordsMap encryptionPasswords;
-    if (!encryptedPasswordIds.isEmpty())
-    {
-        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-             new UIAddDiskEncryptionPasswordDialog(machineLogic()->activeMachineWindow(),
-                                                   encryptedPasswordIds);
-        if (pDlg->exec() == QDialog::Accepted)
-            encryptionPasswords = pDlg->encryptionPasswords();
-        if (pDlg)
-            delete pDlg;
-    }
-
     /* Power UP machine: */
 #ifdef VBOX_WITH_DEBUGGER_GUI
     CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
@@ -315,17 +286,6 @@ bool UISession::powerUp()
         if (vboxGlobal().showStartVMErrors())
             msgCenter().cannotStartMachine(progress, machineName());
         return false;
-    }
-
-    /* Add the disk encryption passwords: */
-    if (!encryptionPasswords.isEmpty())
-    {
-        foreach (const QString &strKey, encryptionPasswords.keys())
-        {
-            console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), true);
-            if (!console().isOk())
-                msgCenter().cannotAddDiskEncryptionPassword(console());
-        }
     }
 
     /* Allow further auto-closing: */

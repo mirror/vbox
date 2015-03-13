@@ -64,6 +64,7 @@
 # include "UIModalWindowManager.h"
 # include "UIMedium.h"
 # include "UIExtraDataManager.h"
+# include "UIAddDiskEncryptionPasswordDialog.h"
 # ifdef Q_WS_MAC
 #  include "DockIconPreview.h"
 #  include "UIExtraDataManager.h"
@@ -652,6 +653,11 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
 
 void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage)
 {
+    /* Preprocess known runtime error types: */
+    if (strErrorId == "DrvVD_DEKMISSING")
+        return askUserForTheDiskEncryptionPasswords();
+
+    /* Show runtime error: */
     msgCenter().showRuntimeError(console(), fIsFatal, strErrorId, strMessage);
 }
 
@@ -2404,6 +2410,51 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndex_Simple_Preferences)->setData(false);
 #endif /* !RT_OS_DARWIN */
+}
+
+void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
+{
+    /* Prepare the map of the encrypted mediums: */
+    EncryptedMediumMap encryptedMediums;
+    foreach (const CMediumAttachment &attachment, machine().GetMediumAttachments())
+    {
+        /* Acquire hard-drive attachments only: */
+        if (attachment.GetType() == KDeviceType_HardDisk)
+        {
+            /* Get the attachment medium: */
+            const CMedium medium = attachment.GetMedium();
+            /* Update the map with this medium if necessary: */
+            const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
+            if (!strKeyId.isEmpty())
+                encryptedMediums.insert(strKeyId, medium.GetId());
+        }
+    }
+
+    /* Ask for the disk encryption passwords if necessary: */
+    EncryptionPasswordsMap encryptionPasswords;
+    if (!encryptedMediums.isEmpty())
+    {
+        /* Create corresponding dialog: */
+        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+             new UIAddDiskEncryptionPasswordDialog(activeMachineWindow(), encryptedMediums);
+        /* Execute it and acquire the result: */
+        if (pDlg->exec() == QDialog::Accepted)
+            encryptionPasswords = pDlg->encryptionPasswords();
+        /* Delete dialog if still valid: */
+        if (pDlg)
+            delete pDlg;
+    }
+
+    /* Add the disk encryption passwords if necessary: */
+    if (!encryptionPasswords.isEmpty())
+    {
+        foreach (const QString &strKey, encryptionPasswords.keys())
+        {
+            console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
+            if (!console().isOk())
+                msgCenter().cannotAddDiskEncryptionPassword(console());
+        }
+    }
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
