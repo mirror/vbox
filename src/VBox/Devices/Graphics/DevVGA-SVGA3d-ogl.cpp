@@ -19,6 +19,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+/* Enable to disassemble defined shaders. (Windows host only) */
+#if defined(RT_OS_WINDOWS) && defined(DEBUG)
+# define DUMP_SHADER_DISASSEMBLY
+#endif
 #ifdef DEBUG_bird
 # define RTMEM_WRAP_TO_EF_APIS
 #endif
@@ -80,6 +84,9 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
 # include <GL/glx.h>
 # include <GL/glext.h>
 # define VBOX_VMSVGA3D_GL_HACK_LEVEL 0x103
+#endif
+#ifdef DUMP_SHADER_DISASSEMBLY
+# include <d3dx9shader.h>
 #endif
 #include "vmsvga_glext/glext.h"
 
@@ -1485,7 +1492,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 #endif
 
 
-    if (vmsvga3dCheckGLExtension(pState, 3.0, " GL_ARB_framebuffer_object "))
+    if (vmsvga3dCheckGLExtension(pState, 3.0f, " GL_ARB_framebuffer_object "))
     {
         pState->ext.glIsRenderbuffer = (PFNGLISRENDERBUFFERPROC)OGLGETPROCADDRESS("glIsRenderbuffer");
         pState->ext.glBindRenderbuffer = (PFNGLBINDRENDERBUFFERPROC)OGLGETPROCADDRESS("glBindRenderbuffer");
@@ -1573,9 +1580,9 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     /* Extension support */
 #if defined(RT_OS_DARWIN)
     /** @todo OpenGL version history suggest this, verify...  */
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 2.0, " GL_EXT_stencil_two_side ");
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 2.0f, " GL_EXT_stencil_two_side ");
 #else
-    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0, " GL_EXT_stencil_two_side ");
+    pState->ext.fEXT_stencil_two_side = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_stencil_two_side ");
 #endif
 
     /*
@@ -1628,7 +1635,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
                                    pState->ext.glGetProgramivARB(GL_VERTEX_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_INSTRUCTIONS_ARB,
                                                                  &pState->caps.maxVertexShaderInstructions));
     }
-    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState, 0.0, " GL_EXT_texture_compression_s3tc ");
+    pState->caps.fS3TCSupported = vmsvga3dCheckGLExtension(pState, 0.0f, " GL_EXT_texture_compression_s3tc ");
 
     /* http://http://www.opengl.org/wiki/Detecting_the_Shader_Model
      * ARB Assembly Language
@@ -1640,16 +1647,16 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
      *
      */
     /** @todo: distinguish between vertex and pixel shaders??? */
-    if (   vmsvga3dCheckGLExtension(pState, 0.0, " GL_NV_gpu_program4 ")
+    if (   vmsvga3dCheckGLExtension(pState, 0.0f, " GL_NV_gpu_program4 ")
         || strstr(pState->pszOtherExtensions, " GL_NV_gpu_program4 "))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_40;
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_40;
     }
     else
-    if (   vmsvga3dCheckGLExtension(pState, 0.0, " GL_NV_vertex_program3 ")
+    if (   vmsvga3dCheckGLExtension(pState, 0.0f, " GL_NV_vertex_program3 ")
         || strstr(pState->pszOtherExtensions, " GL_NV_vertex_program3 ")
-        || vmsvga3dCheckGLExtension(pState, 0.0, " GL_ARB_shader_texture_lod ")  /* Wine claims this suggests SM 3.0 support */
+        || vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_shader_texture_lod ")  /* Wine claims this suggests SM 3.0 support */
         || strstr(pState->pszOtherExtensions, " GL_ARB_shader_texture_lod ")
         )
     {
@@ -1657,7 +1664,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
         pState->caps.fragmentShaderVersion = SVGA3DPSVERSION_30;
     }
     else
-    if (   vmsvga3dCheckGLExtension(pState, 0.0, " GL_ARB_fragment_program ")
+    if (   vmsvga3dCheckGLExtension(pState, 0.0f, " GL_ARB_fragment_program ")
         || strstr(pState->pszOtherExtensions, " GL_ARB_fragment_program "))
     {
         pState->caps.vertexShaderVersion   = SVGA3DVSVERSION_20;
@@ -3389,9 +3396,9 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     pMipLevel = &pSurface->pMipmapLevels[host.mipmap];
 
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
-        Log(("vmsvga3dSurfaceDMA TEXTURE guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%x cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, transfer, cCopyBoxes));
+        Log(("vmsvga3dSurfaceDMA TEXTURE guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
     else
-        Log(("vmsvga3dSurfaceDMA guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%x cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, transfer, cCopyBoxes));
+        Log(("vmsvga3dSurfaceDMA guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
 
     if (pSurface->oglId.texture == OPENGL_INVALID_ID)
     {
@@ -4594,7 +4601,7 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
             }
         }
 #ifdef RT_OS_WINDOWS
-        wglMakeCurrent(NULL, NULL);
+        wglMakeCurrent(pContext->hdc, NULL);
         wglDeleteContext(pContext->hglrc);
         ReleaseDC(pContext->hwnd, pContext->hdc);
 
@@ -4929,7 +4936,7 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
     for (unsigned i = 0; i < cRenderStates; i++)
     {
         GLenum enableCap = ~0U;
-        Log(("vmsvga3dSetRenderState: cid=%d state=%s (%d) val=%x\n", cid, vmsvga3dGetRenderStateName(pRenderState[i].state), pRenderState[i].state, pRenderState[i].uintValue));
+        Log(("vmsvga3dSetRenderState: cid=%x state=%s (%d) val=%x\n", cid, vmsvga3dGetRenderStateName(pRenderState[i].state), pRenderState[i].state, pRenderState[i].uintValue));
         /* Save the render state for vm state saving. */
         if (pRenderState[i].state < SVGA3D_RS_MAX)
             pContext->state.aRenderState[pRenderState[i].state] = pRenderState[i];
@@ -6220,20 +6227,40 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             break;
 
         case SVGA3D_TS_MIPFILTER:                   /* SVGA3dTextureFilter */
-            //AssertFailed(); /* @todo */
-            //samplerType = D3DSAMP_MIPFILTER;
-            val = vmsvga3dTextureFilter2OGL((SVGA3dTextureFilter)pTextureState[i].value);
+        case SVGA3D_TS_MINFILTER:                   /* SVGA3dTextureFilter */
+        {
+            uint32_t mipFilter = pContext->state.aTextureState[currentStage][SVGA3D_TS_MIPFILTER].value;
+            uint32_t minFilter = pContext->state.aTextureState[currentStage][SVGA3D_TS_MINFILTER].value;
+
+            /* If SVGA3D_TS_MIPFILTER is set to NONE, then use SVGA3D_TS_MIPFILTER, otherwise SVGA3D_TS_MIPFILTER enables mipmap minification. */
+            textureType = GL_TEXTURE_MIN_FILTER;
+            if (mipFilter != SVGA3D_TEX_FILTER_NONE)
+            {
+                if (minFilter == SVGA3D_TEX_FILTER_NEAREST)
+                {
+                    if (mipFilter == SVGA3D_TEX_FILTER_LINEAR)
+                        val = GL_NEAREST_MIPMAP_LINEAR;
+                    else
+                        val = GL_NEAREST_MIPMAP_NEAREST;
+                }
+                else
+                {
+                    if (mipFilter == SVGA3D_TEX_FILTER_LINEAR)
+                        val = GL_LINEAR_MIPMAP_LINEAR;
+                    else
+                        val = GL_LINEAR_MIPMAP_NEAREST;
+                }
+            }
+            else
+                val = vmsvga3dTextureFilter2OGL((SVGA3dTextureFilter)minFilter);
+
             break;
+        }
 
         case SVGA3D_TS_MAGFILTER:                   /* SVGA3dTextureFilter */
             textureType = GL_TEXTURE_MAG_FILTER;
             val = vmsvga3dTextureFilter2OGL((SVGA3dTextureFilter)pTextureState[i].value);
             Assert(val == GL_NEAREST || val == GL_LINEAR);
-            break;
-
-        case SVGA3D_TS_MINFILTER:                   /* SVGA3dTextureFilter */
-            textureType = GL_TEXTURE_MIN_FILTER;
-            val = vmsvga3dTextureFilter2OGL((SVGA3dTextureFilter)pTextureState[i].value);
             break;
 
         case SVGA3D_TS_BORDERCOLOR:                 /* SVGA3dColor */
@@ -6253,8 +6280,8 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             break;
 
         case SVGA3D_TS_TEXTURE_MIPMAP_LEVEL:        /* uint32_t */
-            textureType = GL_TEXTURE_MAX_LEVEL;
-            val = pTextureState[i].value;   /* Identical?? */
+            textureType = GL_TEXTURE_BASE_LEVEL;
+            val = pTextureState[i].value;
             break;
 
 #if 0
@@ -7438,6 +7465,17 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     AssertReturn(pShader->pShaderProgram, VERR_NO_MEMORY);
     memcpy(pShader->pShaderProgram, pShaderData, cbData);
 
+#ifdef DUMP_SHADER_DISASSEMBLY
+    LPD3DXBUFFER pDisassembly;
+
+    HRESULT hr = D3DXDisassembleShader((const DWORD *)pShaderData, FALSE, NULL, &pDisassembly);
+    if (hr == D3D_OK)
+    {
+        Log(("Shader disassembly:\n%s\n", pDisassembly->GetBufferPointer()));
+        pDisassembly->Release();
+    }
+#endif
+
     switch (type)
     {
     case SVGA3D_SHADERTYPE_VS:
@@ -7450,6 +7488,12 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
 
     default:
         AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+    if (rc != VINF_SUCCESS)
+    {
+        RTMemFree(pShader->pShaderProgram);
+        memset(pShader, 0, sizeof(*pShader));
+        pShader->id = SVGA3D_INVALID_ID;
     }
 
     return rc;

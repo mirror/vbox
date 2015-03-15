@@ -330,6 +330,9 @@ uint32_t vmsvga3dSurfaceFormatSize(SVGA3dSurfaceFormat format)
     case SVGA3D_BUFFER:
         return 1;
 
+    case SVGA3D_NV12:
+        return 1;
+
     case SVGA3D_V16U16:
         return 4;
 

@@ -47,7 +47,9 @@
 #include <d3d9.h>
 
 /* Enable to disassemble defined shaders. */
-//#define DUMP_SHADER_DISASSEMBLY
+#ifdef DEBUG
+#define DUMP_SHADER_DISASSEMBLY
+#endif
 
 #ifdef DUMP_SHADER_DISASSEMBLY
 #include <d3dx9shader.h>
@@ -2322,9 +2324,9 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     pMipLevel = &pSurface->pMipmapLevels[host.mipmap];
 
     if (pSurface->flags & SVGA3D_SURFACE_HINT_TEXTURE)
-        Log(("vmsvga3dSurfaceDMA TEXTURE guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%x cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, transfer, cCopyBoxes));
+        Log(("vmsvga3dSurfaceDMA TEXTURE guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
     else
-        Log(("vmsvga3dSurfaceDMA guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%x cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, transfer, cCopyBoxes));
+        Log(("vmsvga3dSurfaceDMA guestptr gmr=%x offset=%x pitch=%x host sid=%x face=%d mipmap=%d transfer=%s cCopyBoxes=%d\n", guest.ptr.gmrId, guest.ptr.offset, guest.pitch, host.sid, host.face, host.mipmap, (transfer == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", cCopyBoxes));
 
     if (!pSurface->u.pSurface)
     {
@@ -3576,7 +3578,7 @@ int vmsvga3dSetRenderState(PVGASTATE pThis, uint32_t cid, uint32_t cRenderStates
     PVMSVGA3DSTATE              pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
 
-    Log(("vmsvga3dSetRenderState %x cRenderStates=%d\n", cid, cRenderStates));
+    Log(("vmsvga3dSetRenderState cid=%x cRenderStates=%d\n", cid, cRenderStates));
 
     if (    cid >= pState->cContexts
         ||  pState->paContext[cid].id != cid)
@@ -4542,6 +4544,9 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         /* Changing the render target resets the viewport; restore it here. */
         if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
             vmsvga3dSetViewPort(pThis, cid, &pContext->state.RectViewPort);
+        /* Changing the render target also resets the scissor rectangle; restore it as well. */
+        if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_SCISSORRECT)
+            vmsvga3dSetScissorRect(pThis, cid, &pContext->state.RectScissor);
 
         break;
     }
@@ -5306,6 +5311,8 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVMSVGA3DSTATE pState, PVMSVGA3DCON
                                                        NULL);
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dDrawPrimitives: CreateVertexBuffer failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
+            pVertexSurface->idAssociatedContext = pContext->id;
+
             if (pVertexSurface->fDirty)
             {
                 void *pData;
@@ -5753,6 +5760,16 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     AssertReturn(pShader->pShaderProgram, VERR_NO_MEMORY);
     memcpy(pShader->pShaderProgram, pShaderData, cbData);
 
+#ifdef DUMP_SHADER_DISASSEMBLY
+    LPD3DXBUFFER pDisassembly;
+
+    hr = D3DXDisassembleShader((const DWORD *)pShaderData, FALSE, NULL, &pDisassembly);
+    if (hr == D3D_OK)
+    {
+        Log(("Shader disassembly:\n%s\n", pDisassembly->GetBufferPointer()));
+        pDisassembly->Release();
+    }
+#endif
     switch (type)
     {
     case SVGA3D_SHADERTYPE_VS:
@@ -5766,16 +5783,6 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     default:
         AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
-#ifdef DUMP_SHADER_DISASSEMBLY
-    LPD3DXBUFFER pDisassembly;
-
-    hr = D3DXDisassembleShader((const DWORD *)pShaderData, FALSE, NULL, &pDisassembly);
-    if (hr == D3D_OK)
-    {
-        Log(("Shader disassembly:\n%s\n", pDisassembly->GetBufferPointer()));
-        pDisassembly->Release();
-    }
-#endif
     if (hr != D3D_OK)
     {
         RTMemFree(pShader->pShaderProgram);
@@ -6291,6 +6298,7 @@ static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)
         LogRel((" - D3DTEXOPCAPS_MULTIPLYADD\n"));
     if (pCaps->TextureOpCaps & D3DTEXOPCAPS_LERP)
         LogRel((" - D3DTEXOPCAPS_LERP\n"));
+
 
     LogRel(("\n"));
     LogRel(("PixelShaderVersion:  %#x (%u.%u)\n", pCaps->PixelShaderVersion,

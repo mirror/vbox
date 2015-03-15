@@ -1317,6 +1317,9 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
     /* Temporary variables for matrix operations */
     shader_addline(buffer, "vec4 tmp0;\n");
     shader_addline(buffer, "vec4 tmp1;\n");
+#ifdef VBOX_WITH_VMSVGA
+    shader_addline(buffer, "bool p0[4];\n");
+#endif
 
     /* Local constants use a different name so they can be loaded once at shader link time
      * They can't be hardcoded into the shader text via LC = {x, y, z, w}; because the
@@ -1629,6 +1632,12 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
             }
             break;
 
+#ifdef VBOX_WITH_VMSVGA
+        case WINED3DSPR_PREDICATE:
+            sprintf(register_name, "p0");
+            break;
+#endif
+
         default:
             FIXME("Unhandled register name Type(%d)\n", reg->type);
             sprintf(register_name, "unrecognized_register");
@@ -1658,6 +1667,22 @@ static DWORD shader_glsl_get_write_mask(const struct wined3d_shader_dst_param *p
     }
     else
     {
+#ifdef VBOX_WITH_VMSVGA
+        if (param->reg.type == WINED3DSPR_PREDICATE)
+        {
+            *write_mask++ = '[';
+            if (mask & WINED3DSP_WRITEMASK_0) *write_mask++ = '0';
+            else
+            if (mask & WINED3DSP_WRITEMASK_1) *write_mask++ = '1';
+            else
+            if (mask & WINED3DSP_WRITEMASK_2) *write_mask++ = '2';
+            else
+            if (mask & WINED3DSP_WRITEMASK_3) *write_mask++ = '3';
+            *write_mask++ = ']';
+            *write_mask = '\0';
+        }
+        else
+#endif
         shader_glsl_write_mask_to_str(mask, write_mask);
     }
 
@@ -2160,13 +2185,52 @@ static void shader_glsl_arith(const struct wined3d_shader_instruction *ins)
     shader_addline(buffer, "%s %c %s);\n", src0_param.param_str, op, src1_param.param_str);
 }
 
+#ifdef VBOX_WITH_VMSVGA
+static void shader_glsl_mov_impl(const struct wined3d_shader_instruction *ins, int p0_idx);
+
 /* Process the WINED3DSIO_MOV opcode using GLSL (dst = src) */
 static void shader_glsl_mov(const struct wined3d_shader_instruction *ins)
+{
+    if (ins->predicate)
+    {
+        int i;
+        DWORD dst_mask = ins->dst[0].write_mask;
+        struct wined3d_shader_dst_param *dst = (struct wined3d_shader_dst_param *)&ins->dst[0];
+
+        for (i = 0; i < 4; i++)
+        {
+            if (dst_mask & RT_BIT(i))
+            {
+                dst->write_mask = RT_BIT(i);
+
+                shader_glsl_mov_impl(ins, i);
+            }
+        }
+        dst->write_mask = dst_mask;
+    }
+    else
+        shader_glsl_mov_impl(ins, 0);
+}
+
+/* Process the WINED3DSIO_MOV opcode using GLSL (dst = src) */
+static void shader_glsl_mov_impl(const struct wined3d_shader_instruction *ins, int p0_idx)
+
+#else
+/* Process the WINED3DSIO_MOV opcode using GLSL (dst = src) */
+static void shader_glsl_mov(const struct wined3d_shader_instruction *ins)
+#endif
 {
     const struct wined3d_gl_info *gl_info = ins->ctx->gl_info;
     struct wined3d_shader_buffer *buffer = ins->ctx->buffer;
     glsl_src_param_t src0_param;
     DWORD write_mask;
+
+#ifdef VBOX_WITH_VMSVGA
+    if (ins->predicate)
+    {
+        shader_addline(buffer, "if (p0[%d]) {\n", p0_idx);
+    }
+#endif
 
     write_mask = shader_glsl_append_dst(buffer, ins);
     shader_glsl_add_src_param(ins, &ins->src[0], write_mask, &src0_param);
@@ -2211,6 +2275,12 @@ static void shader_glsl_mov(const struct wined3d_shader_instruction *ins)
     {
         shader_addline(buffer, "%s);\n", src0_param.param_str);
     }
+#ifdef VBOX_WITH_VMSVGA
+    if (ins->predicate)
+    {
+        shader_addline(buffer, "}\n");
+    }
+#endif
 }
 
 /* Process the dot product operators DP3 and DP4 in GLSL (dst = dot(src0, src1)) */
@@ -2467,6 +2537,37 @@ static void shader_glsl_rsq(const struct wined3d_shader_instruction *ins)
                 src_param.param_str, src_param.param_str);
     }
 }
+
+#ifdef VBOX_WITH_VMSVGA
+static void shader_glsl_setp(const struct wined3d_shader_instruction *ins)
+{
+    struct wined3d_shader_buffer *buffer = ins->ctx->buffer;
+    glsl_src_param_t src_param1, src_param2;
+    DWORD write_mask;
+
+    int i;
+    DWORD dst_mask = ins->dst[0].write_mask;
+    struct wined3d_shader_dst_param dst = ins->dst[0];
+
+    /* Cycle through all source0 channels */
+    for (i=0; i<4; i++) {
+        if (dst_mask & RT_BIT(i))
+        {
+            write_mask = WINED3DSP_WRITEMASK_0 << i;
+            dst.write_mask = dst_mask & write_mask;
+
+            write_mask = shader_glsl_append_dst_ext(ins->ctx->buffer, ins, &dst);
+            Assert(write_mask);
+
+            shader_glsl_add_src_param(ins, &ins->src[0], write_mask, &src_param1);
+            shader_glsl_add_src_param(ins, &ins->src[1], write_mask, &src_param2);
+
+            shader_addline(buffer, "%s %s %s);\n",
+                    src_param1.param_str, shader_get_comp_op(ins->flags), src_param2.param_str);
+        }
+    }
+}
+#endif
 
 /** Process signed comparison opcodes in GLSL. */
 static void shader_glsl_compare(const struct wined3d_shader_instruction *ins)
@@ -5313,7 +5414,11 @@ static const SHADER_HANDLER shader_glsl_instruction_handler_table[WINED3DSIH_TAB
     /* WINED3DSIH_REP           */ shader_glsl_rep,
     /* WINED3DSIH_RET           */ shader_glsl_ret,
     /* WINED3DSIH_RSQ           */ shader_glsl_rsq,
+#ifdef VBOX_WITH_VMSVGA
+    /* WINED3DSIH_SETP          */ shader_glsl_setp,
+#else
     /* WINED3DSIH_SETP          */ NULL,
+#endif
     /* WINED3DSIH_SGE           */ shader_glsl_compare,
     /* WINED3DSIH_SGN           */ shader_glsl_sgn,
     /* WINED3DSIH_SINCOS        */ shader_glsl_sincos,

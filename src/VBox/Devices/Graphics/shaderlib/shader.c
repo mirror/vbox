@@ -1162,7 +1162,9 @@ void shader_generate_main(IWineD3DBaseShader *iface, struct wined3d_shader_buffe
         /* Predication token */
         if (ins.predicate)
         {
+#ifndef VBOX_WITH_VMSVGA
             FIXME("Predicates not implemented.\n");
+#endif
             ins.predicate = *ptr++;
         }
 

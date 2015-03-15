@@ -3196,8 +3196,14 @@ static inline BOOL shader_is_scalar(const struct wined3d_shader_register *reg)
         case WINED3DSPR_DEPTHOUT:   /* oDepth */
         case WINED3DSPR_CONSTBOOL:  /* b# */
         case WINED3DSPR_LOOP:       /* aL */
+#ifndef VBOX_WITH_VMSVGA
         case WINED3DSPR_PREDICATE:  /* p0 */
             return TRUE;
+#else
+            return TRUE;
+        case WINED3DSPR_PREDICATE:  /* p0 */
+            return FALSE;
+#endif
 
         case WINED3DSPR_MISCTYPE:
             switch(reg->idx)
