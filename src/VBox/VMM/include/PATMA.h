@@ -36,7 +36,7 @@
 #define PATM_PENDINGACTION                      0xF1ABCD08
 #define PATM_CPUID_STD_PTR                      0xF1ABCD09  /**< Legacy, saved state only. */
 #define PATM_CPUID_EXT_PTR                      0xF1ABCD0a  /**< Legacy, saved state only. */
-#define PATM_CPUID_DEF_PTR                      0xF1ABCD0b
+#define PATM_CPUID_DEF_PTR                      0xF1ABCD0b  /**< Legacy, saved state only. */
 #define PATM_STACKBASE                          0xF1ABCD0c  /**< Stack to store our private patch return addresses */
 #define PATM_STACKBASE_GUEST                    0xF1ABCD0d  /**< Stack to store guest return addresses */
 #define PATM_STACKPTR                           0xF1ABCD0e
@@ -52,10 +52,11 @@
 #define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 #define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
 #define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a  /**< Legacy, saved state only. */
-#define PATM_CPUID_ARRAY_PTR                    0xF1ABCD1b
-#define PATM_CPUID_ARRAY_END_PTR                0xF1ABCD1c
-#define PATM_CPUID_ARRAY_ENTRY_SIZE             0xF1ABCD1d
-#define PATM_CPUID_UNKNOWN_METHOD               0xF1ABCD1e
+#define PATM_ASMFIX_REUSE_LATER_0               0xF1ABCD1b
+#define PATM_ASMFIX_REUSE_LATER_1               0xF1ABCD1c
+#define PATM_ASMFIX_REUSE_LATER_2               0xF1ABCD1d
+#define PATM_ASMFIX_REUSE_LATER_3               0xF1ABCD1e
+#define PATM_ASMFIX_HELPER_CPUM_CPUID           0xF1ABCD1f
 
 /* Anything larger doesn't require a fixup */
 #define PATM_NO_FIXUP                           0xF1ABCE00

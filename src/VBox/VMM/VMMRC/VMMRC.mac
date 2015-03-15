@@ -25,11 +25,18 @@
 ; Set the output segment to one of the special VMMR0 segments.
 ; @param    %1      The segment name.
 ; @remark   Use BEGINCODE to switch back to the code segment.
+
+;; @def VMMR0_SEG_CODE
+; Set the output segment to one of the special VMMR0 code segments.
+; @param    %1      The segment name.
 %ifdef ASM_FORMAT_OMF
  %macro VMMR0_SEG 1
- segment VMMR0.%1 public CLASS=CONST align=1 use32
+ segment VMMR0.%1 public CLASS=CONST align=1 use32 flat
  %endmacro
- %define VMMR0_SEG_DEFINED
+
+ %macro VMMR0_CODE_SEG 1
+ segment VMMR0.%1 public CLASS=CODE align=16 use32 flat
+ %endmacro
 %endif
 
 %ifdef ASM_FORMAT_ELF
@@ -41,7 +48,15 @@
    [section .VMMR0.%1 ]
   %endif
  %endmacro
- %define VMMR0_SEG_DEFINED
+
+ %macro VMMR0_CODE_SEG 1
+  %ifndef DEFINED_VMMR0_CODE_SEG.%1
+   %define DEFINED_VMMR0_CODE_SEG.%1 1
+   [section .VMMR0.%1 progbits alloc exec nowrite align=16 ]
+  %else
+   [section .VMMR0.%1 ]
+  %endif
+ %endmacro
 %endif
 
 %ifdef ASM_FORMAT_MACHO
@@ -59,18 +74,38 @@
   [section VMMR0.%1 rdata align=1 ]
   %endmacro
  %endif
- %define VMMR0_SEG_DEFINED
+
+ %ifdef __YASM__
+  %macro VMMR0_CODE_SEG 1
+   %ifndef DEFINED_VMMR0_CODE_SEG.%1
+    %define DEFINED_VMMR0_CODE_SEG.%1 1
+    [section VMMR0 %1 exec align=16 ]
+   %else
+    [section VMMR0 %1 ]
+   %endif
+  %endmacro
+ %else
+  %macro VMMR0_CODE_SEG 1
+  [section VMMR0.%1 exec align=16 ]
+  %endmacro
+ %endif
 %endif
 
 %ifdef ASM_FORMAT_PE
  %macro VMMR0_SEG 1
  [section .rdata$VMMR0.%1 align=1 ]
  %endmacro
- %define VMMR0_SEG_DEFINED
+
+ %macro VMMR0_CODE_SEG 1
+ [section .text$VMMR0.%1 align=16 ]
+ %endmacro
 %endif
 
-%ifndef VMMR0_SEG_DEFINED
- %error "VMMR0_SEG / ASM_FORMAT_xxx"
+%ifnmacro VMMR0_SEG
+ %error "VMMR0_CODE_SEG / ASM_FORMAT_xxx"
+%endif
+%ifnmacro VMMR0_CODE_SEG
+ %error "VMMR0_CODE_SEG / ASM_FORMAT_xxx"
 %endif
 
 
@@ -136,5 +171,14 @@ TRPM_HANDLER Trap0b, 0, %1, %2
 TRPM_HANDLER Trap0d, 0, %1, %2
 %endmacro
 
+
+
+;; @def PATCH_HLP_SEG
+; Set the output segment a special code segment for patch helpers (runs in ring-1 or ring-2).
+; @param    %1      The segment name.
+; @remark   Use BEGINCODE to switch back to the code segment.
+%macro BEGIN_PATCH_HLP_SEG 0
+VMMR0_CODE_SEG PatchHlp
+%endmacro
 
 %endif

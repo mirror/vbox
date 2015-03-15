@@ -5056,49 +5056,6 @@ VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM)
 
 
 /**
- * Gets a pointer to the CPUID leaf array.
- *
- * @returns Raw-mode pointer to the CPUID leaf array.
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM only.
- */
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayRCPtr(PVM pVM)
-{
-    Assert(MMHyperRCToR3(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesRC) == pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
-    return pVM->cpum.s.GuestInfo.paCpuIdLeavesRC;
-}
-
-
-/**
- * Gets a pointer to the CPUID leaf array.
- *
- * @returns Raw-mode pointer to the end of CPUID leaf array (exclusive).
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM only.
- */
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(PVM pVM)
-{
-    Assert(MMHyperRCToR3(pVM, pVM->cpum.s.GuestInfo.paCpuIdLeavesRC) == pVM->cpum.s.GuestInfo.paCpuIdLeavesR3);
-    return pVM->cpum.s.GuestInfo.paCpuIdLeavesRC
-         + pVM->cpum.s.GuestInfo.cCpuIdLeaves * sizeof(CPUMCPUIDLEAF);
-}
-
-
-/**
- * Gets the unknown CPUID leaf method.
- *
- * @returns Unknown CPUID leaf method.
- * @param   pVM         Pointer to the VM.
- * @remark  Intended for PATM only.
- */
-VMMR3_INT_DECL(CPUMUNKNOWNCPUID) CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM)
-{
-    return pVM->cpum.s.GuestInfo.enmUnknownCpuIdMethod;
-}
-
-
-
-/**
  * Gets a number of standard CPUID leaves (PATM only).
  *
  * @returns Number of leaves.

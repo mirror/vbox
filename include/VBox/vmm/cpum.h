@@ -1279,13 +1279,9 @@ VMMR3DECL(const char *)     CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor);
 VMMR3DECL(int)              CPUMR3MsrRangesInsert(PVM pVM, PCCPUMMSRRANGE pNewRange);
 
 # if defined(VBOX_WITH_RAW_MODE) || defined(DOXYGEN_RUNNING)
-/** @name APIs for the CPUID raw-mode patch.
+/** @name APIs for the CPUID raw-mode patch (legacy).
  * @{ */
 VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUID))     CPUMR3GetGuestCpuIdPatmDefRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayRCPtr(PVM pVM);
-VMMR3_INT_DECL(RCPTRTYPE(PCCPUMCPUIDLEAF)) CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(PVM pVM);
-VMMR3_INT_DECL(CPUMUNKNOWNCPUID)            CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(PVM pVM);
-/* Legacy: */
 VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmStdMax(PVM pVM);
 VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmExtMax(PVM pVM);
 VMMR3_INT_DECL(uint32_t)                   CPUMR3GetGuestCpuIdPatmCentaurMax(PVM pVM);

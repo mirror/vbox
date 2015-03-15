@@ -17,6 +17,25 @@
 
 %include "VBox/asmdefs.mac"
 
+;;
+; CPU info
+struc CPUMINFO
+    .cMsrRanges             resd 1                  ; uint32_t
+    .fMsrMask               resd 1                  ; uint32_t
+    .cCpuIdLeaves           resd 1                  ; uint32_t
+    .iFirstExtCpuIdLeaf     resd 1                  ; uint32_t
+    .uPadding               resd 1                  ; uint32_t
+    .enmUnknownCpuIdMethod  resd 1                  ; CPUMUNKNOWNCPUID
+    .DefCpuId               resb CPUMCPUID_size     ; CPUMCPUID
+    .uScalableBusFreq       resq 1                  ; uint64_t
+    .paMsrRangesR0          RTR0PTR_RES 1           ; R0PTRTYPE(PCPUMMSRRANGE)
+    .paCpuIdLeavesR0        RTR0PTR_RES 1           ; R0PTRTYPE(PCPUMCPUIDLEAF)
+    .paMsrRangesR3          RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMMSRRANGE)
+    .paCpuIdLeavesR3        RTR3PTR_RES 1           ; R3PTRTYPE(PCPUMCPUIDLEAF)
+    .paMsrRangesRC          RTRCPTR_RES 1           ; RCPTRTYPE(PCPUMMSRRANGE)
+    .paCpuIdLeavesRC        RTRCPTR_RES 1           ; RCPTRTYPE(PCPUMCPUIDLEAF)
+endstruc
+
 
 %define CPUM_USED_FPU                   RT_BIT(0)
 %define CPUM_USED_FPU_SINCE_REM         RT_BIT(1)

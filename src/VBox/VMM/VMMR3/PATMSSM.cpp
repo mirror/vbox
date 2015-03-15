@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PATM
 #include <VBox/vmm/patm.h>
+#include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/cpumctx-v1_6.h>
 #include <VBox/vmm/mm.h>
@@ -1360,12 +1361,6 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
                 case PATM_CPUID_DEF_PTR:
                     *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                     break;
-                case PATM_CPUID_ARRAY_PTR:
-                    *pFixup = CPUMR3GetGuestCpuIdPatmArrayRCPtr(pVM);
-                    break;
-                case PATM_CPUID_ARRAY_END_PTR:
-                    *pFixup = CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(pVM);
-                    break;
                 case PATM_CPUID_STD_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                     break;
@@ -1374,6 +1369,11 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
                     break;
                 case PATM_CPUID_CENTAUR_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
+                    break;
+                case PATM_ASMFIX_REUSE_LATER_0: /* Was only used for a few days. Don't want to keep this legacy around.  */
+                case PATM_ASMFIX_REUSE_LATER_1:
+                    AssertLogRelMsgFailedReturn(("Unsupported PATM fixup. You have to discard this saved state or snapshot."),
+                                                VERR_INTERNAL_ERROR);
                     break;
             }
         }
@@ -1386,16 +1386,40 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
             Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
             switch (pRec->pSource)
             {
-                case PATM_CPUID_ARRAY_ENTRY_SIZE:
-                    *pFixup = sizeof(CPUMCPUIDLEAF);
-                    break;
-                case PATM_CPUID_UNKNOWN_METHOD:
-                    *pFixup = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
+                case PATM_ASMFIX_REUSE_LATER_2: /* Was only used for a few days. Don't want to keep this legacy around.  */
+                case PATM_ASMFIX_REUSE_LATER_3:
+                    AssertLogRelMsgFailedReturn(("Unsupported PATM fixup. You have to discard this saved state or snapshot."),
+                                                VERR_INTERNAL_ERROR);
                     break;
                 default:
                     AssertLogRelMsgFailed(("Unknown FIXUP_CONSTANT_IN_PATCH_ASM_TMPL fixup: %#x\n", pRec->pSource));
                     return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
+        }
+        /*
+         * Relative fixups for calling or jumping to helper functions inside VMMRC.
+         * (The distance between the helper function and the patch is subject to
+         * new code being added to VMMRC as well as VM configurations influencing
+         * heap allocations and so on and so forth.)
+         */
+        else if (pRec->uType == FIXUP_REL_HELPER_IN_PATCH_ASM_TMPL)
+        {
+            AssertLogRelReturn(uVersion > PATM_SAVED_STATE_VERSION_NO_RAW_MEM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            int     rc;
+            RTRCPTR uRCPtrDest;
+            switch (pRec->pSource)
+            {
+                case PATM_ASMFIX_HELPER_CPUM_CPUID:
+                    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "CPUMPatchHlpCpuId", &uRCPtrDest);
+                    AssertLogRelRCReturn(rc, rc);
+                    break;
+                default:
+                    AssertLogRelMsgFailed(("Unknown FIXUP_REL_HLP_CALL_IN_PATCH_ASM_TMPL fixup: %#x\n", pRec->pSource));
+                    return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            }
+            RTRCPTR uRCPtrAfter = pVM->patm.s.pPatchMemGC + ((uintptr_t)&pFixup[1] - (uintptr_t)pVM->patm.s.pPatchMemHC);
+            *pFixup = uRCPtrDest - uRCPtrAfter;
         }
 
 #ifdef RT_OS_WINDOWS

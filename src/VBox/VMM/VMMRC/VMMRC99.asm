@@ -1,9 +1,9 @@
 ; $Id$
 ;; @file
-; VMMGC99 - The last object module in the link.
+; VMMRC99 - The last object module in the link.
 ;
 
-; Copyright (C) 2006-2010 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -21,19 +21,26 @@
 ; End the Trap0b segment.
 VMMR0_SEG Trap0b
 GLOBALNAME g_aTrap0bHandlersEnd
-    dd 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    dd  0, 0, 0, 0,  0, 0, 0, 0,   0, 0, 0, 0,  0, 0, 0, 0
 
 
 ;;
 ; End the Trap0d segment.
 VMMR0_SEG Trap0d
 GLOBALNAME g_aTrap0dHandlersEnd
-    dd 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    dd  0, 0, 0, 0,  0, 0, 0, 0,   0, 0, 0, 0,  0, 0, 0, 0
 
 
 ;;
 ; End the Trap0e segment.
 VMMR0_SEG Trap0e
 GLOBALNAME g_aTrap0eHandlersEnd
-    dd 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    dd  0, 0, 0, 0,  0, 0, 0, 0,   0, 0, 0, 0,  0, 0, 0, 0
+
+
+;;
+; End the patch helper segment
+BEGIN_PATCH_HLP_SEG
+EXPORTEDNAME g_PatchHlpEnd
+    dd  0, 0, 0, 0,  0, 0, 0, 0,   0, 0, 0, 0,  0, 0, 0, 0
 

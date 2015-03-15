@@ -255,8 +255,9 @@ VMM_INT_DECL(void) PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl
  */
 VMM_INT_DECL(bool) PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC)
 {
-    return (    PATMIsEnabled(pVM)
-            && ((pAddrGC >= (RTRCPTR)pVM->patm.s.pPatchMemGC && pAddrGC < (RTRCPTR)((RTRCUINTPTR)pVM->patm.s.pPatchMemGC + pVM->patm.s.cbPatchMem)))) ? true : false;
+    return   PATMIsEnabled(pVM)
+          && (   (RTRCUINTPTR)pAddrGC - (RTRCUINTPTR)pVM->patm.s.pPatchMemGC      < pVM->patm.s.cbPatchMem
+              || (RTRCUINTPTR)pAddrGC - (RTRCUINTPTR)pVM->patm.s.pbPatchHelpersRC < pVM->patm.s.cbPatchHelpers);
 }
 
 /**
@@ -272,22 +273,37 @@ VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 }
 
 /**
- * Checks whether the GC address is part of our patch region
+ * Checks whether the GC address is part of our patch or helper regions.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pAddrGC     Guest context address
+ * @param   uGCAddr     Guest context address.
  * @internal
  */
-VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddrGC)
+VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR uGCAddr)
 {
-    return (PATMIsEnabled(pVM) && pAddrGC - (RTRCUINTPTR)pVM->patm.s.pPatchMemGC < pVM->patm.s.cbPatchMem) ? true : false;
+    return PATMIsEnabled(pVM)
+        && (   uGCAddr - (RTRCUINTPTR)pVM->patm.s.pPatchMemGC      < pVM->patm.s.cbPatchMem
+            || uGCAddr - (RTRCUINTPTR)pVM->patm.s.pbPatchHelpersRC < pVM->patm.s.cbPatchHelpers);
+}
+
+/**
+ * Checks whether the GC address is part of our patch region.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   uGCAddr     Guest context address.
+ * @internal
+ */
+VMMDECL(bool) PATMIsPatchGCAddrExclHelpers(PVM pVM, RTRCUINTPTR uGCAddr)
+{
+    return PATMIsEnabled(pVM)
+        && uGCAddr - (RTRCUINTPTR)pVM->patm.s.pPatchMemGC < pVM->patm.s.cbPatchMem;
 }
 
 /**
  * Reads patch code.
  *
- * @returns
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_PATCH_NOT_FOUND if the request is entirely outside the patch
  *          code.
@@ -306,19 +322,44 @@ VMM_INT_DECL(int) PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst
         return VERR_PATCH_NOT_FOUND;
     Assert(!HMIsEnabled(pVM));
 
-    RTGCPTR offPatchedInstr = GCPtrPatchCode - (RTGCPTR32)pVM->patm.s.pPatchMemGC;
-    if (offPatchedInstr >= pVM->patm.s.cbPatchMem)
-        return VERR_PATCH_NOT_FOUND;
+    /*
+     * Check patch code and patch helper code.  We assume the requested bytes
+     * are not in either.
+     */
+    RTGCPTR offPatchCode = GCPtrPatchCode - (RTGCPTR32)pVM->patm.s.pPatchMemGC;
+    if (offPatchCode >= pVM->patm.s.cbPatchMem)
+    {
+        offPatchCode = GCPtrPatchCode - (RTGCPTR32)pVM->patm.s.pbPatchHelpersRC;
+        if (offPatchCode >= pVM->patm.s.cbPatchHelpers)
+            return VERR_PATCH_NOT_FOUND;
 
-    uint32_t cbMaxRead = pVM->patm.s.cbPatchMem - (uint32_t)offPatchedInstr;
-    if (cbToRead > cbMaxRead)
-        cbToRead = cbMaxRead;
-
+        /*
+         * Patch helper memory.
+         */
+        uint32_t cbMaxRead = pVM->patm.s.cbPatchHelpers - (uint32_t)offPatchCode;
+        if (cbToRead > cbMaxRead)
+            cbToRead = cbMaxRead;
 #ifdef IN_RC
-    memcpy(pvDst, pVM->patm.s.pPatchMemGC + (uint32_t)offPatchedInstr, cbToRead);
+        memcpy(pvDst, pVM->patm.s.pbPatchHelpersRC + (uint32_t)offPatchCode, cbToRead);
 #else
-    memcpy(pvDst, pVM->patm.s.pPatchMemHC + (uint32_t)offPatchedInstr, cbToRead);
+        memcpy(pvDst, pVM->patm.s.pbPatchHelpersR3 + (uint32_t)offPatchCode, cbToRead);
 #endif
+    }
+    else
+    {
+        /*
+         * Patch memory.
+         */
+        uint32_t cbMaxRead = pVM->patm.s.cbPatchMem - (uint32_t)offPatchCode;
+        if (cbToRead > cbMaxRead)
+            cbToRead = cbMaxRead;
+#ifdef IN_RC
+        memcpy(pvDst, pVM->patm.s.pPatchMemGC + (uint32_t)offPatchCode, cbToRead);
+#else
+        memcpy(pvDst, pVM->patm.s.pPatchMemHC + (uint32_t)offPatchCode, cbToRead);
+#endif
+    }
+
     if (pcbRead)
         *pcbRead = cbToRead;
     return VINF_SUCCESS;

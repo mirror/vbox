@@ -438,6 +438,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/VMMRCDeps.cpp \
  	VMMRC/CPUMRC.cpp \
  	VMMRC/CPUMRCA.asm \
+ 	VMMRC/CPUMRCPatchHlp.asm \
  	VMMRC/EMRCA.asm \
  	VMMRC/IOMRC.cpp \
  	VMMRC/MMRamRC.cpp \

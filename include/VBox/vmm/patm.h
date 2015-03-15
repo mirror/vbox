@@ -140,7 +140,8 @@ typedef enum
  */
 #define PATMIsEnabled(a_pVM)    ((a_pVM)->fPATMEnabled)
 
-VMMDECL(bool)           PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddr);
+VMMDECL(bool)           PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR uGCAddr);
+VMMDECL(bool)           PATMIsPatchGCAddrExclHelpers(PVM pVM, RTRCUINTPTR uGCAddr);
 VMM_INT_DECL(int)       PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst, size_t cbToRead, size_t *pcbRead);
 
 VMM_INT_DECL(void)      PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
@@ -181,15 +182,12 @@ VMMR3DECL(bool)                 PATMR3IsEnabled(PUVM pUVM);
 
 VMMR3_INT_DECL(int)             PATMR3Init(PVM pVM);
 VMMR3_INT_DECL(int)             PATMR3InitFinalize(PVM pVM);
-VMMR3_INT_DECL(void)            PATMR3Relocate(PVM pVM);
+VMMR3_INT_DECL(void)            PATMR3Relocate(PVM pVM, RTRCINTPTR offDelta);
 VMMR3_INT_DECL(int)             PATMR3Term(PVM pVM);
 VMMR3_INT_DECL(int)             PATMR3Reset(PVM pVM);
 
-VMMR3_INT_DECL(void *)          PATMR3QueryPatchMemHC(PVM pVM, uint32_t *pcb);
-VMMR3_INT_DECL(RTRCPTR)         PATMR3QueryPatchMemGC(PVM pVM, uint32_t *pcb);
 VMMR3_INT_DECL(bool)            PATMR3IsInsidePatchJump(PVM pVM, RTRCPTR pAddr, PRTGCPTR32 pPatchAddr);
 VMMR3_INT_DECL(RTRCPTR)         PATMR3QueryPatchGCPtr(PVM pVM, RTRCPTR pAddrGC);
-VMMR3_INT_DECL(bool)            PATMR3IsPatchHCAddr(PVM pVM, void *pAddrHC);
 VMMR3_INT_DECL(void *)          PATMR3GCPtrToHCPtr(PVM pVM, RTRCPTR pAddrGC);
 VMMR3_INT_DECL(PPATMGCSTATE)    PATMR3QueryGCStateHC(PVM pVM);
 VMMR3_INT_DECL(int)             PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *ppNewEip);

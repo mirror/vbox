@@ -22,6 +22,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PATM
 #include <VBox/vmm/patm.h>
+#include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/mm.h>
@@ -103,7 +104,9 @@ int patmPatchAddReloc32(PVM pVM, PPATCHINFO pPatch, uint8_t *pRelocHC, uint32_t 
     PRELOCREC pRec;
 
     Assert(   uType == FIXUP_ABSOLUTE
-           || (   (uType == FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL || uType == FIXUP_CONSTANT_IN_PATCH_ASM_TMPL)
+           || (   (   uType == FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL
+                   || uType == FIXUP_CONSTANT_IN_PATCH_ASM_TMPL
+                   || uType == FIXUP_REL_HELPER_IN_PATCH_ASM_TMPL)
                && pSource == pDest
                && PATM_IS_FIXUP_TYPE(pSource))
            || ((uType == FIXUP_REL_JMPTOPATCH || uType == FIXUP_REL_JMPTOGUEST) && pSource && pDest));
@@ -360,16 +363,10 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                     case PATM_VM_FORCEDACTIONS:
                         dest = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
                         break;
-                    case PATM_CPUID_DEF_PTR:
+
+                    case PATM_CPUID_DEF_PTR: /* saved state only */
                         dest = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                         break;
-                    case PATM_CPUID_ARRAY_PTR:
-                        dest = CPUMR3GetGuestCpuIdPatmArrayRCPtr(pVM);
-                        break;
-                    case PATM_CPUID_ARRAY_END_PTR:
-                        dest = CPUMR3GetGuestCpuIdPatmArrayEndRCPtr(pVM);
-                        break;
-
                     case PATM_CPUID_STD_PTR: /* saved state only */
                         dest = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                         break;
@@ -381,28 +378,39 @@ static uint32_t patmPatchGenCode(PVM pVM, PPATCHINFO pPatch, uint8_t *pPB, PCPAT
                         break;
 
                     /*
-                     * The following fixups are constants that needs to be corrected when
-                     * loading saved state as these may change between VBox versions.
+                     * The following fixups are constants and helper code calls that only
+                     * needs to be corrected when loading saved state.
                      */
-                    case PATM_CPUID_ARRAY_ENTRY_SIZE:
-                        dest = sizeof(CPUMCPUIDLEAF);
-                        uRelocType = FIXUP_CONSTANT_IN_PATCH_ASM_TMPL;
+                    case PATM_ASMFIX_HELPER_CPUM_CPUID:
+                    {
+                        int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "CPUMPatchHlpCpuId", &dest);
+                        AssertReleaseRCBreakStmt(rc, dest = PATM_ILLEGAL_DESTINATION);
+                        uRelocType = FIXUP_REL_HELPER_IN_PATCH_ASM_TMPL;
                         break;
-                    case PATM_CPUID_UNKNOWN_METHOD:
-                        dest = CPUMR3GetGuestCpuIdPatmUnknownLeafMethod(pVM);
-                        uRelocType = FIXUP_CONSTANT_IN_PATCH_ASM_TMPL;
-                        break;
+                    }
 
                     /*
                      * Unknown fixup.
                      */
+                    case PATM_ASMFIX_REUSE_LATER_0:
+                    case PATM_ASMFIX_REUSE_LATER_1:
+                    case PATM_ASMFIX_REUSE_LATER_2:
+                    case PATM_ASMFIX_REUSE_LATER_3:
                     default:
                         AssertReleaseMsgFailed(("Unknown fixup: %#x\n", pAsmRecord->aRelocs[i].uType));
                         dest = PATM_ILLEGAL_DESTINATION;
                         break;
                 }
 
-                *(RTRCPTR *)&pPB[j] = dest;
+                if (uRelocType == FIXUP_REL_HELPER_IN_PATCH_ASM_TMPL)
+                {
+                    RTRCUINTPTR RCPtrAfter = pVM->patm.s.pPatchMemGC
+                                           + (RTRCUINTPTR)(&pPB[j + sizeof(RTRCPTR)] - pVM->patm.s.pPatchMemHC);
+                    dest -= RCPtrAfter;
+                }
+
+                *(PRTRCPTR)&pPB[j] = dest;
+
                 if (pAsmRecord->aRelocs[i].uType < PATM_NO_FIXUP)
                 {
                     patmPatchAddReloc32(pVM, pPatch, &pPB[j], uRelocType,

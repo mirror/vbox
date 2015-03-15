@@ -1722,117 +1722,23 @@ GLOBALNAME g_patmIretFunctionRecord
 ;
 ; PATMCpuidReplacement
 ;
+; Calls a helper function that does the job.
+;
+; This way we can change the CPUID structures and how we organize them without
+; breaking patches.  It also saves a bit of memory for patch code and fixups.
+;
 BEGIN_PATCH g_patmCpuidRecord, PATMCpuidReplacement
-    not     dword [esp-16]              ; probe stack before starting, just in case.
-    not     dword [esp-16]
+    not     dword [esp-32]              ; probe stack before starting
+    not     dword [esp-32]
+
     mov     dword [ss:PATM_INTERRUPTFLAG], 0
 PATCH_FIXUP PATM_INTERRUPTFLAG
     pushf
 
-;; @todo We could put all this stuff in a CPUM assembly function can simply call it.
+    db      0e8h                        ; call
+    dd      PATM_ASMFIX_PATCH_HLP_CPUM_CPUID
+PATCH_FIXUP PATM_ASMFIX_PATCH_HLP_CPUM_CPUID
 
-    ; Save the registers we use for passthru and sub-leaf matching (eax is not used).
-    push    edx
-    push    ecx
-    push    ebx
-
-    ;
-    ; Perform a linear search of the strictly sorted CPUID leaf array. 
-    ;
-    ; (Was going to do a binary search, but that ended up being complicated if 
-    ; we want a flexible leaf size. Linear search is probably good enough.)
-    ;
-    mov     ebx, PATM_CPUID_ARRAY_PTR
-PATCH_FIXUP PATM_CPUID_ARRAY_PTR
-    mov     edx, PATM_CPUID_ARRAY_END_PTR
-PATCH_FIXUP PATM_CPUID_ARRAY_END_PTR
-    cmp     ebx, edx
-    jae     cpuid_unknown
-
-cpuid_lookup_leaf:
-    cmp     eax, [ss:ebx + CPUMCPUIDLEAF.uLeaf]
-    jbe     cpuid_maybe_match_eax
-    add     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
-PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
-    cmp     ebx, edx
-    jb      cpuid_lookup_leaf
-    jmp     cpuid_unknown
-
-cpuid_maybe_match_eax:    
-    jne     cpuid_unknown
-
-    ; Sub-leaf match too?
-    mov     ecx, [esp + 4]
-    and     ecx, [ss:ebx + CPUMCPUIDLEAF.fSubLeafMask]
-    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]
-    je      cpuid_fetch
-
-    ; Search forward until we've got a matching sub-leaf (or not). 
-cpuid_subleaf_lookup:
-    add     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
-PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
-    cmp     ebx, edx
-    jae     cpuid_subleaf_not_found_sub_ebx
-    cmp     eax, [ss:ebx + CPUMCPUIDLEAF.uLeaf]    
-    jne     cpuid_subleaf_not_found_sub_ebx
-    cmp     ecx, [ss:ebx + CPUMCPUIDLEAF.uSubLeaf]    
-    ja      cpuid_subleaf_lookup
-    je      cpuid_fetch
-cpuid_subleaf_not_found_sub_ebx:
-    sub     ebx, PATM_CPUID_ARRAY_ENTRY_SIZE
-PATCH_FIXUP PATM_CPUID_ARRAY_ENTRY_SIZE
-    
-    ;
-    ; Out of range sub-leaves aren't quite as easy and pretty as we emulate them
-    ; here, but we do an adequate job.
-    ;    
-cpuid_subleaf_not_found:
-    xor     ecx, ecx
-    test    dword [ss:ebx + CPUMCPUIDLEAF.fFlags], CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES
-    jz      cpuid_load_zeros_except_ecx
-    mov     ecx, [esp + 4]
-    and     ecx, 0ffh
-cpuid_load_zeros_except_ecx:
-    xor     edx, edx
-    xor     eax, eax
-    xor     ebx, ebx
-    jmp     cpuid_done
-
-    ;
-    ; Different CPUs have different ways of dealing with unknown CPUID leaves.
-    ;
-cpuid_unknown:
-    mov     edx, PATM_CPUID_UNKNOWN_METHOD
-PATCH_FIXUP PATM_CPUID_UNKNOWN_METHOD
-    cmp     edx, CPUMUNKNOWNCPUID_PASSTHRU
-    je      cpuid_unknown_passthru
-    ; Load the default cpuid leaf.
-cpuid_unknown_def_leaf:
-    mov     ebx, PATM_CPUID_DEF_PTR
-PATCH_FIXUP PATM_CPUID_DEF_PTR
-    mov     edx, [ss:ebx + CPUMCPUID.uEdx]
-    mov     ecx, [ss:ebx + CPUMCPUID.uEcx]
-    mov     eax, [ss:ebx + CPUMCPUID.uEax]
-    mov     ebx, [ss:ebx + CPUMCPUID.uEbx]
-    jmp     cpuid_done
-    ; Pass thru the input values unmodified (eax is still virgin).
-cpuid_unknown_passthru:
-    mov     edx, [esp + 8]
-    mov     ecx, [esp + 4]
-    mov     ebx, [esp]
-    jmp     cpuid_done
-
-    ;
-    ; Normal return.
-    ;
-cpuid_fetch:
-    mov     edx, [ss:ebx + CPUMCPUIDLEAF.uEdx]
-    mov     ecx, [ss:ebx + CPUMCPUIDLEAF.uEcx]
-    mov     eax, [ss:ebx + CPUMCPUIDLEAF.uEax]
-    mov     ebx, [ss:ebx + CPUMCPUIDLEAF.uEbx]
-             
-cpuid_done:
-    add     esp, 12
     popf
     mov     dword [ss:PATM_INTERRUPTFLAG], 1
 PATCH_FIXUP PATM_INTERRUPTFLAG

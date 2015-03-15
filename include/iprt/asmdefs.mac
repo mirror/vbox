@@ -198,6 +198,18 @@
 %endif
 
 ;;
+; Gets the pointer to an imported object.
+%ifdef ASM_FORMAT_PE
+ %ifdef RT_ARCH_AMD64
+  %define IMP_SEG(SegOverride, name)  qword [SegOverride:IMPNAME(name) wrt rip]
+ %else
+  %define IMP_SEG(SegOverride, name)  dword [SegOverride:IMPNAME(name)]
+ %endif
+%else
+ %define IMP_SEG(SegOverride, name)   IMPNAME(name)
+%endif
+
+;;
 ; Declares an imported object for use with IMP2.
 ; @note May change the current section!
 %macro EXTERN_IMP2 1

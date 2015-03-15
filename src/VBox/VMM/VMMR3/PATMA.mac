@@ -52,11 +52,11 @@
 %define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
 %define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
 %define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a
-%define PATM_CPUID_ARRAY_PTR                    0xF1ABCD1b
-%define PATM_CPUID_ARRAY_END_PTR                0xF1ABCD1c
-%define PATM_CPUID_ARRAY_ENTRY_SIZE             0xF1ABCD1d
-%define PATM_CPUID_UNKNOWN_METHOD               0xF1ABCD1e
-
+%define PATM_ASMFIX_REUSE_LATER_0               0xF1ABCD1b
+%define PATM_ASMFIX_REUSE_LATER_1               0xF1ABCD1c
+%define PATM_ASMFIX_REUSE_LATER_2               0xF1ABCD1d
+%define PATM_ASMFIX_REUSE_LATER_3               0xF1ABCD1e
+%define PATM_ASMFIX_PATCH_HLP_CPUM_CPUID        0xF1ABCD1f
 
 ;/* Anything larger doesn't require a fixup */
 %define PATM_NO_FIXUP                           0xF1ABCE00
