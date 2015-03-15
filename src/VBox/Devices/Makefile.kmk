@@ -1504,7 +1504,6 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  else
  VBoxSVGA3DObjC_SOURCES.darwin += \
  	../HostServices/SharedOpenGL/render/renderspu_cocoa_helper.m \
- 	../GuestHost/OpenGL/util/blitter.cpp \
  	../HostServices/SharedOpenGL/OpenGLTest/OpenGLTestDarwin.cpp
  endif
 

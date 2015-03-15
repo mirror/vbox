@@ -792,8 +792,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     NSRect              m_RootRect;
     float               m_yInvRootOffset;
     
-    CR_BLITTER         *m_pBlitter;
 #ifndef IN_VMSVGA3D
+    CR_BLITTER         *m_pBlitter;
     WindowInfo         *m_pWinInfo;
 #endif
     bool                m_fNeedViewportUpdate;
@@ -850,7 +850,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 #endif
 - (void)vboxPresentToViewCS:(const VBOXVR_SCR_COMPOSITOR *)pCompositor;
 - (void)presentComposition:(const VBOXVR_SCR_COMPOSITOR_ENTRY *)pChangedEntry;
+#ifndef IN_VMSVGA3D
 - (void)vboxBlitterSyncWindow;
+#endif
 
 - (void)clearVisibleRegions;
 - (void)setVisibleRegions:(GLint)cRects paRects:(const GLint *)paRects;
@@ -1352,8 +1354,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     m_Size                    = NSMakeSize(1, 1);
     m_RootRect                = NSMakeRect(0, 0, m_Size.width, m_Size.height);
     m_yInvRootOffset          = 0;
-    m_pBlitter                = nil;
 #ifndef IN_VMSVGA3D
+    m_pBlitter                = nil;
     m_pWinInfo                = pWinInfo;
 #endif
     m_fNeedViewportUpdate     = true;
@@ -1389,9 +1391,12 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
         [m_pSharedGLCtx release];
         m_pSharedGLCtx = nil;
         
+
+#ifndef IN_VMSVGA3D
         CrBltTerm(m_pBlitter);
         RTMemFree(m_pBlitter);
         m_pBlitter = nil;
+#endif
     }
 
     [self clearVisibleRegions];
@@ -1631,7 +1636,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     /* Update the viewport for our OpenGL view. */
     [m_pSharedGLCtx update];
 
+#ifndef IN_VMSVGA3D
     [self vboxBlitterSyncWindow];
+#endif
         
     /* Clear background to transparent. */
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -2006,6 +2013,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
         return true;
     }
         
+#ifndef IN_VMSVGA3D            
     Assert(!m_pBlitter);
     m_pBlitter = RTMemAlloc(sizeof(*m_pBlitter));
     if (RT_UNLIKELY(!m_pBlitter))
@@ -2016,12 +2024,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     }
         
     int rc = CrBltInit(m_pBlitter, NULL, false /*fCreateNewCtx*/, false /*fForceDrawBlt*/, 
-#ifdef IN_VMSVGA3D
-                       NULL /** @todo */, NULL /** @todo */
-#else
-                       &render_spu.GlobalShaders, &render_spu.blitterDispatch
-#endif
-                       );
+                       &render_spu.GlobalShaders, &render_spu.blitterDispatch);
     if (RT_FAILURE(rc))
     {
         DEBUG_WARN(("CrBltInit failed, rc %d", rc));
@@ -2033,6 +2036,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     }        
 
     COCOA_LOG_FLOW(("%s: blitter (%p) created successfully for view 0x%p\n", (void *)m_pBlitter, (void *)self));
+#endif /* !IN_VMSVGA3D */
 
     /* Create a shared context out of the main context. Use the same pixel format. */
     NSOpenGLPixelFormat *pPixelFormat = [(OverlayOpenGLContext *)m_pGLCtx openGLPixelFormat];
@@ -2440,6 +2444,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     [self vboxTryDraw];
 }
 
+#ifndef IN_VMSVGA3D
 - (void)vboxBlitterSyncWindow
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
@@ -2463,6 +2468,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     CrBltMuralSetCurrentInfo(m_pBlitter, &WinInfo);
     CrBltCheckUpdateViewport(m_pBlitter);
 }
+#endif /* !IN_VMSVGA3D */
 
 #ifndef IN_VMSVGA3D
 # ifdef VBOX_WITH_CRDUMPER_THUMBNAIL
