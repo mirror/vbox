@@ -20,7 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 /* Enable to disassemble defined shaders. (Windows host only) */
-#if defined(RT_OS_WINDOWS) && defined(DEBUG)
+#if defined(RT_OS_WINDOWS) && defined(DEBUG) && 0 /* Disabled as we don't have the DirectX SDK avaible atm. */
 # define DUMP_SHADER_DISASSEMBLY
 #endif
 #ifdef DEBUG_bird
@@ -7467,7 +7467,6 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
 
 #ifdef DUMP_SHADER_DISASSEMBLY
     LPD3DXBUFFER pDisassembly;
-
     HRESULT hr = D3DXDisassembleShader((const DWORD *)pShaderData, FALSE, NULL, &pDisassembly);
     if (hr == D3D_OK)
     {

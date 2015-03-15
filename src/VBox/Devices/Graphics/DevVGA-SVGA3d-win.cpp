@@ -47,7 +47,7 @@
 #include <d3d9.h>
 
 /* Enable to disassemble defined shaders. */
-#ifdef DEBUG
+#if defined(DEBUG) && 0 /* Disabled as we don't have the DirectX SDK avaible atm. */
 #define DUMP_SHADER_DISASSEMBLY
 #endif
 
@@ -5762,7 +5762,6 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
 
 #ifdef DUMP_SHADER_DISASSEMBLY
     LPD3DXBUFFER pDisassembly;
-
     hr = D3DXDisassembleShader((const DWORD *)pShaderData, FALSE, NULL, &pDisassembly);
     if (hr == D3D_OK)
     {
@@ -5770,6 +5769,7 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
         pDisassembly->Release();
     }
 #endif
+
     switch (type)
     {
     case SVGA3D_SHADERTYPE_VS:
