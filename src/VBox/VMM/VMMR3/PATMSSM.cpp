@@ -1110,7 +1110,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
     case FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL:
     {
         Assert(   pRec->uType != PATM_SAVED_STATE_VERSION_NO_RAW_MEM
-               || (pRec->pSource == pRec->pDest && PATM_IS_FIXUP_TYPE(pRec->pSource)) );
+               || (pRec->pSource == pRec->pDest && PATM_IS_ASMFIX(pRec->pSource)) );
 
         /* bird: What is this for exactly?  Only the MMIO fixups used to have pSource set. */
         if (    pRec->pSource
@@ -1265,7 +1265,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
         {
             LogFlow(("Changing fLocalForcedActions fixup from %RRv to %RRv\n", uFixup, pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions)));
             *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
-            pRec->pSource = pRec->pDest = PATM_VM_FORCEDACTIONS;
+            pRec->pSource = pRec->pDest = PATM_ASMFIX_VM_FORCEDACTIONS;
             pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
         }
         else if (   uVersion <= PATM_SAVED_STATE_VERSION_FIXUP_HACK
@@ -1278,22 +1278,22 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
             {
             case 0:
                 *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_DEF_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_DEF_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 break;
             case 1:
                 *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_STD_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_STD_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 break;
             case 2:
                 *pFixup = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_EXT_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_EXT_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 break;
             case 3:
                 *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_CENTAUR_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_CENTAUR_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 break;
             }
@@ -1312,31 +1312,31 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
             {
             case PATM_FIXUP_CPU_FF_ACTION:
                 *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
-                pRec->pSource = pRec->pDest = PATM_VM_FORCEDACTIONS;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_VM_FORCEDACTIONS;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 LogFlow(("Changing cpu ff action fixup from %x to %x\n", uFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_DEFAULT:
                 *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_DEF_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_DEF_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 LogFlow(("Changing cpuid def fixup from %x to %x\n", uFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_STANDARD:
                 *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_STD_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_STD_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 LogFlow(("Changing cpuid std fixup from %x to %x\n", uFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_EXTENDED:
                 *pFixup = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_EXT_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_EXT_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 LogFlow(("Changing cpuid ext fixup from %x to %x\n", uFixup, *pFixup));
                 break;
             case PATM_FIXUP_CPUID_CENTAUR:
                 *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
-                pRec->pSource = pRec->pDest = PATM_CPUID_CENTAUR_PTR;
+                pRec->pSource = pRec->pDest = PATM_ASMFIX_CPUID_CENTAUR_PTR;
                 pRec->uType   = FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL;
                 LogFlow(("Changing cpuid centaur fixup from %x to %x\n", uFixup, *pFixup));
                 break;
@@ -1352,22 +1352,22 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
         else if (   uVersion > PATM_SAVED_STATE_VERSION_NO_RAW_MEM
                  && pRec->uType == FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL)
         {
-            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_ASMFIX(pRec->pSource));
             switch (pRec->pSource)
             {
-                case PATM_VM_FORCEDACTIONS:
+                case PATM_ASMFIX_VM_FORCEDACTIONS:
                     *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
                     break;
-                case PATM_CPUID_DEF_PTR:
+                case PATM_ASMFIX_CPUID_DEF_PTR:
                     *pFixup = CPUMR3GetGuestCpuIdPatmDefRCPtr(pVM);
                     break;
-                case PATM_CPUID_STD_PTR: /* Saved again patches only. */
+                case PATM_ASMFIX_CPUID_STD_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmStdRCPtr(pVM);
                     break;
-                case PATM_CPUID_EXT_PTR: /* Saved again patches only. */
+                case PATM_ASMFIX_CPUID_EXT_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmExtRCPtr(pVM);
                     break;
-                case PATM_CPUID_CENTAUR_PTR: /* Saved again patches only. */
+                case PATM_ASMFIX_CPUID_CENTAUR_PTR: /* Saved again patches only. */
                     *pFixup = CPUMR3GetGuestCpuIdPatmCentaurRCPtr(pVM);
                     break;
                 case PATM_ASMFIX_REUSE_LATER_0: /* Was only used for a few days. Don't want to keep this legacy around.  */
@@ -1383,7 +1383,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
         else if (pRec->uType == FIXUP_CONSTANT_IN_PATCH_ASM_TMPL)
         {
             AssertLogRelReturn(uVersion > PATM_SAVED_STATE_VERSION_NO_RAW_MEM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_ASMFIX(pRec->pSource));
             switch (pRec->pSource)
             {
                 case PATM_ASMFIX_REUSE_LATER_2: /* Was only used for a few days. Don't want to keep this legacy around.  */
@@ -1405,7 +1405,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
         else if (pRec->uType == FIXUP_REL_HELPER_IN_PATCH_ASM_TMPL)
         {
             AssertLogRelReturn(uVersion > PATM_SAVED_STATE_VERSION_NO_RAW_MEM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            Assert(pRec->pSource == pRec->pDest); Assert(PATM_IS_ASMFIX(pRec->pSource));
             int     rc;
             RTRCPTR uRCPtrDest;
             switch (pRec->pSource)

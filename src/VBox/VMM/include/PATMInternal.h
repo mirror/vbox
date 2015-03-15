@@ -69,7 +69,7 @@
 #define PATMFL_CODE_MONITORED               RT_BIT_64(24) /** code pages of guest monitored for self-modifying code. */
 #define PATMFL_CALLABLE_AS_FUNCTION         RT_BIT_64(25) /** cli and pushf blocks can be used as callable functions. */
 #define PATMFL_GLOBAL_FUNCTIONS             RT_BIT_64(26) /** fake patch for global patm functions. */
-#define PATMFL_TRAMPOLINE                   RT_BIT_64(27) /** trampoline patch that clears PATM_INTERRUPTFLAG and jumps to patch destination */
+#define PATMFL_TRAMPOLINE                   RT_BIT_64(27) /** trampoline patch that clears PATM_ASMFIX_INTERRUPTFLAG and jumps to patch destination */
 #define PATMFL_GENERATE_SETPIF              RT_BIT_64(28) /** generate set PIF for the next instruction */
 #define PATMFL_INSTR_HINT                   RT_BIT_64(29) /** Generate patch, but don't activate it. */
 #define PATMFL_PATCHED_GUEST_CODE           RT_BIT_64(30) /** Patched guest code. */
@@ -111,7 +111,7 @@
 /** Absolute fixup in patch assembly code template.
  *
  * The source and desination addresses both set to the patch fixup type (see
- * PATM_IS_FIXUP_TYPE and friends in PATMA.h).  This is recent addition (CPUID
+ * PATM_IS_ASMFIX and friends in PATMA.h).  This is recent addition (CPUID
  * subleaf code), so when loading older saved states this is usally represented
  * as FIXUP_ABSOLUTE. */
 #define FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL   3

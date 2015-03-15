@@ -21,37 +21,37 @@
 /** @name Patch Fixup Types
  * @remarks These fixups types are part of the saved state.
  * @{ */
-#define PATM_VMFLAGS                            0xF1ABCD00
+#define PATM_ASMFIX_VMFLAGS                     0xF1ABCD00
 #ifdef VBOX_WITH_STATISTICS
-# define PATM_ALLPATCHCALLS                     0xF1ABCD01
-# define PATM_PERPATCHCALLS                     0xF1ABCD02
+# define PATM_ASMFIX_ALLPATCHCALLS              0xF1ABCD01
+# define PATM_ASMFIX_PERPATCHCALLS              0xF1ABCD02
 #endif
-#define PATM_JUMPDELTA                          0xF1ABCD03
+#define PATM_ASMFIX_JUMPDELTA                   0xF1ABCD03
 #ifdef VBOX_WITH_STATISTICS
-# define PATM_IRETEFLAGS                        0xF1ABCD04
-# define PATM_IRETCS                            0xF1ABCD05
-# define PATM_IRETEIP                           0xF1ABCD06
+# define PATM_ASMFIX_IRETEFLAGS                 0xF1ABCD04
+# define PATM_ASMFIX_IRETCS                     0xF1ABCD05
+# define PATM_ASMFIX_IRETEIP                    0xF1ABCD06
 #endif
-#define PATM_FIXUP                              0xF1ABCD07
-#define PATM_PENDINGACTION                      0xF1ABCD08
-#define PATM_CPUID_STD_PTR                      0xF1ABCD09  /**< Legacy, saved state only. */
-#define PATM_CPUID_EXT_PTR                      0xF1ABCD0a  /**< Legacy, saved state only. */
-#define PATM_CPUID_DEF_PTR                      0xF1ABCD0b  /**< Legacy, saved state only. */
-#define PATM_STACKBASE                          0xF1ABCD0c  /**< Stack to store our private patch return addresses */
-#define PATM_STACKBASE_GUEST                    0xF1ABCD0d  /**< Stack to store guest return addresses */
-#define PATM_STACKPTR                           0xF1ABCD0e
-#define PATM_PATCHBASE                          0xF1ABCD0f
-#define PATM_INTERRUPTFLAG                      0xF1ABCD10
-#define PATM_INHIBITIRQADDR                     0xF1ABCD11
-#define PATM_VM_FORCEDACTIONS                   0xF1ABCD12
-#define PATM_TEMP_EAX                           0xF1ABCD13  /**< Location for original EAX register */
-#define PATM_TEMP_ECX                           0xF1ABCD14  /**< Location for original ECX register */
-#define PATM_TEMP_EDI                           0xF1ABCD15  /**< Location for original EDI register */
-#define PATM_TEMP_EFLAGS                        0xF1ABCD16  /**< Location for original eflags */
-#define PATM_TEMP_RESTORE_FLAGS                 0xF1ABCD17  /**< Which registers to restore */
-#define PATM_CALL_PATCH_TARGET_ADDR             0xF1ABCD18
-#define PATM_CALL_RETURN_ADDR                   0xF1ABCD19
-#define PATM_CPUID_CENTAUR_PTR                  0xF1ABCD1a  /**< Legacy, saved state only. */
+#define PATM_ASMFIX_FIXUP                       0xF1ABCD07
+#define PATM_ASMFIX_PENDINGACTION               0xF1ABCD08
+#define PATM_ASMFIX_CPUID_STD_PTR               0xF1ABCD09  /**< Legacy, saved state only. */
+#define PATM_ASMFIX_CPUID_EXT_PTR               0xF1ABCD0a  /**< Legacy, saved state only. */
+#define PATM_ASMFIX_CPUID_DEF_PTR               0xF1ABCD0b  /**< Legacy, saved state only. */
+#define PATM_ASMFIX_STACKBASE                   0xF1ABCD0c  /**< Stack to store our private patch return addresses */
+#define PATM_ASMFIX_STACKBASE_GUEST             0xF1ABCD0d  /**< Stack to store guest return addresses */
+#define PATM_ASMFIX_STACKPTR                    0xF1ABCD0e
+#define PATM_ASMFIX_PATCHBASE                   0xF1ABCD0f
+#define PATM_ASMFIX_INTERRUPTFLAG               0xF1ABCD10
+#define PATM_ASMFIX_INHIBITIRQADDR              0xF1ABCD11
+#define PATM_ASMFIX_VM_FORCEDACTIONS            0xF1ABCD12
+#define PATM_ASMFIX_TEMP_EAX                    0xF1ABCD13  /**< Location for original EAX register */
+#define PATM_ASMFIX_TEMP_ECX                    0xF1ABCD14  /**< Location for original ECX register */
+#define PATM_ASMFIX_TEMP_EDI                    0xF1ABCD15  /**< Location for original EDI register */
+#define PATM_ASMFIX_TEMP_EFLAGS                 0xF1ABCD16  /**< Location for original eflags */
+#define PATM_ASMFIX_TEMP_RESTORE_FLAGS          0xF1ABCD17  /**< Which registers to restore */
+#define PATM_ASMFIX_CALL_PATCH_TARGET_ADDR      0xF1ABCD18
+#define PATM_ASMFIX_CALL_RETURN_ADDR            0xF1ABCD19
+#define PATM_ASMFIX_CPUID_CENTAUR_PTR           0xF1ABCD1a  /**< Legacy, saved state only. */
 #define PATM_ASMFIX_REUSE_LATER_0               0xF1ABCD1b
 #define PATM_ASMFIX_REUSE_LATER_1               0xF1ABCD1c
 #define PATM_ASMFIX_REUSE_LATER_2               0xF1ABCD1d
@@ -59,22 +59,22 @@
 #define PATM_ASMFIX_HELPER_CPUM_CPUID           0xF1ABCD1f
 
 /* Anything larger doesn't require a fixup */
-#define PATM_NO_FIXUP                           0xF1ABCE00
-#define PATM_CPUID_STD_MAX                      0xF1ABCE00
-#define PATM_CPUID_EXT_MAX                      0xF1ABCE01
-#define PATM_RETURNADDR                         0xF1ABCE02
-#define PATM_PATCHNEXTBLOCK                     0xF1ABCE03
-#define PATM_CALLTARGET                         0xF1ABCE04  /**< relative call target */
-#define PATM_NEXTINSTRADDR                      0xF1ABCE05  /**< absolute guest address of the next instruction */
-#define PATM_CURINSTRADDR                       0xF1ABCE06  /**< absolute guest address of the current instruction */
-#define PATM_LOOKUP_AND_CALL_FUNCTION           0xF1ABCE07  /**< Relative address of global PATM lookup and call function. */
-#define PATM_RETURN_FUNCTION                    0xF1ABCE08  /**< Relative address of global PATM return function. */
-#define PATM_LOOKUP_AND_JUMP_FUNCTION           0xF1ABCE09  /**< Relative address of global PATM lookup and jump function. */
-#define PATM_IRET_FUNCTION                      0xF1ABCE0A  /**< Relative address of global PATM iret function. */
-#define PATM_CPUID_CENTAUR_MAX                  0xF1ABCE0B
+#define PATM_ASMFIX_NO_FIXUP                    0xF1ABCE00
+#define PATM_ASMFIX_CPUID_STD_MAX               0xF1ABCE00
+#define PATM_ASMFIX_CPUID_EXT_MAX               0xF1ABCE01
+#define PATM_ASMFIX_RETURNADDR                  0xF1ABCE02
+#define PATM_ASMFIX_PATCHNEXTBLOCK              0xF1ABCE03
+#define PATM_ASMFIX_CALLTARGET                  0xF1ABCE04  /**< relative call target */
+#define PATM_ASMFIX_NEXTINSTRADDR               0xF1ABCE05  /**< absolute guest address of the next instruction */
+#define PATM_ASMFIX_CURINSTRADDR                0xF1ABCE06  /**< absolute guest address of the current instruction */
+#define PATM_ASMFIX_LOOKUP_AND_CALL_FUNCTION    0xF1ABCE07  /**< Relative address of global PATM lookup and call function. */
+#define PATM_ASMFIX_RETURN_FUNCTION             0xF1ABCE08  /**< Relative address of global PATM return function. */
+#define PATM_ASMFIX_LOOKUP_AND_JUMP_FUNCTION    0xF1ABCE09  /**< Relative address of global PATM lookup and jump function. */
+#define PATM_ASMFIX_IRET_FUNCTION               0xF1ABCE0A  /**< Relative address of global PATM iret function. */
+#define PATM_ASMFIX_CPUID_CENTAUR_MAX           0xF1ABCE0B
 
 /** Identifies an patch fixup type value (with reasonable accuracy). */
-#define PATM_IS_FIXUP_TYPE(a_uValue) \
+#define PATM_IS_ASMFIX(a_uValue) \
     ( ((a_uValue) & UINT32_C(0xfffffC00)) == UINT32_C(0xF1ABCC00) && ((a_uValue) & UINT32_C(0xff)) < UINT32_C(0x30) )
 /** @} */
 
@@ -112,7 +112,7 @@
 /** Magic dword found in ecx for patm pending actions. */
 #define PATM_ACTION_MAGIC                       0xABCD4321
 
-/** @name PATM_TEMP_RESTORE_FLAGS
+/** @name PATM_ASMFIX_TEMP_RESTORE_FLAGS
  * @{ */
 #define PATM_RESTORE_EAX                        RT_BIT(0)
 #define PATM_RESTORE_ECX                        RT_BIT(1)

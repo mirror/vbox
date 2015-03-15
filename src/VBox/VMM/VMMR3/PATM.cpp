@@ -783,7 +783,7 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
         switch (pRec->uType)
         {
         case FIXUP_ABSOLUTE_IN_PATCH_ASM_TMPL:
-            Assert(pRec->pDest == pRec->pSource); Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            Assert(pRec->pDest == pRec->pSource); Assert(PATM_IS_ASMFIX(pRec->pSource));
             Log(("Absolute patch template fixup type %#x at %RHv -> %RHv at %RRv\n", pRec->pSource, *(RTRCUINTPTR *)pRec->pRelocPos, *(RTRCINTPTR*)pRec->pRelocPos + delta, pRec->pRelocPos));
             *(RTRCUINTPTR *)pRec->pRelocPos += delta;
             break;
@@ -941,7 +941,7 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
         case FIXUP_CONSTANT_IN_PATCH_ASM_TMPL:
             /* Only applicable when loading state. */
             Assert(pRec->pDest == pRec->pSource);
-            Assert(PATM_IS_FIXUP_TYPE(pRec->pSource));
+            Assert(PATM_IS_ASMFIX(pRec->pSource));
             break;
 
         default:
@@ -3605,7 +3605,7 @@ VMMR3_INT_DECL(int) PATMR3DuplicateFunctionRequest(PVM pVM, PCPUMCTX pCtx)
 
     if (pPatchTargetGC)
     {
-        /* Create a trampoline that also sets PATM_INTERRUPTFLAG. */
+        /* Create a trampoline that also sets PATM_ASMFIX_INTERRUPTFLAG. */
         rc = PATMR3InstallPatch(pVM, pBranchTarget, PATMFL_CODE32 | PATMFL_TRAMPOLINE);
     }
     else

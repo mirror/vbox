@@ -207,166 +207,166 @@ BEGIN_PATCH_CODE_SECTION_NO_ALIGN
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMStats
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
-    inc     dword [ss:PATM_ALLPATCHCALLS]
-    inc     dword [ss:PATM_PERPATCHCALLS]
+    inc     dword [ss:PATM_ASMFIX_ALLPATCHCALLS]
+    inc     dword [ss:PATM_ASMFIX_PERPATCHCALLS]
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMStats
 
 ; Patch record for statistics
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmStatsRecord
     PATCHASMRECORD_INIT PATMStats, 4
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_ALLPATCHCALLS, 0
-    DD      PATM_PERPATCHCALLS, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_ALLPATCHCALLS, 0
+    DD      PATM_ASMFIX_PERPATCHCALLS, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 %endif ; VBOX_WITH_STATISTICS
 
 
 ;
-; Set PATM_INTERRUPTFLAG
+; Set PATM_ASMFIX_INTERRUPTFLAG
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMSetPIF
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMSetPIF
 
-; Patch record for setting PATM_INTERRUPTFLAG
+; Patch record for setting PATM_ASMFIX_INTERRUPTFLAG
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmSetPIFRecord
     PATCHASMRECORD_INIT PATMSetPIF, 1
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 ;
-; Clear PATM_INTERRUPTFLAG
+; Clear PATM_ASMFIX_INTERRUPTFLAG
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearPIF
     ; probe stack here as we can't recover from page faults later on
     not     dword [esp-64]
     not     dword [esp-64]
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
 ENDPROC     PATMClearPIF
 
-; Patch record for clearing PATM_INTERRUPTFLAG
+; Patch record for clearing PATM_ASMFIX_INTERRUPTFLAG
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearPIFRecord
     PATCHASMRECORD_INIT PATMClearPIF, 1
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 ;
-; Clear PATM_INHIBITIRQADDR and fault if IF=0
+; Clear PATM_ASMFIX_INHIBITIRQADDR and fault if IF=0
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearInhibitIRQFaultIF0
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
-    mov     dword [ss:PATM_INHIBITIRQADDR], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INHIBITIRQADDR], 0
     pushf
 
-    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    test    dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
     jz      PATMClearInhibitIRQFaultIF0_Fault
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMClearInhibitIRQFaultIF0_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_DISPATCH_PENDING_IRQ
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_NEXTINSTRADDR
+    mov     edi, PATM_ASMFIX_NEXTINSTRADDR
     popfd                   ; restore flags we pushed above (the or instruction changes the flags as well)
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     ; does not return
 
 PATMClearInhibitIRQFaultIF0_Fault:
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMClearInhibitIRQFaultIF0_Continue:
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMClearInhibitIRQFaultIF0
 
-; Patch record for clearing PATM_INHIBITIRQADDR
+; Patch record for clearing PATM_ASMFIX_INHIBITIRQADDR
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearInhibitIRQFaultIF0Record
     PATCHASMRECORD_INIT PATMClearInhibitIRQFaultIF0, 12
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INHIBITIRQADDR,     0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_NEXTINSTRADDR,      0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INHIBITIRQADDR,     0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_NEXTINSTRADDR,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
     DD      0ffffffffh, 0ffffffffh
 
 
 ;
-; Clear PATM_INHIBITIRQADDR and continue if IF=0 (duplicated function only; never jump back to guest code afterwards!!)
+; Clear PATM_ASMFIX_INHIBITIRQADDR and continue if IF=0 (duplicated function only; never jump back to guest code afterwards!!)
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMClearInhibitIRQContIF0
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
-    mov     dword [ss:PATM_INHIBITIRQADDR], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INHIBITIRQADDR], 0
     pushf
 
-    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    test    dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
     jz      PATMClearInhibitIRQContIF0_Continue
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMClearInhibitIRQContIF0_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_DISPATCH_PENDING_IRQ
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_NEXTINSTRADDR
+    mov     edi, PATM_ASMFIX_NEXTINSTRADDR
     popfd                   ; restore flags we pushed above (the or instruction changes the flags as well)
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     ; does not return
 
 PATMClearInhibitIRQContIF0_Continue:
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMClearInhibitIRQContIF0
 
-; Patch record for clearing PATM_INHIBITIRQADDR
+; Patch record for clearing PATM_ASMFIX_INHIBITIRQADDR
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmClearInhibitIRQContIF0Record
     PATCHASMRECORD_INIT PATMClearInhibitIRQContIF0, 11
-    DD      PATM_INTERRUPTFLAG,      0   
-    DD      PATM_INHIBITIRQADDR,     0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_NEXTINSTRADDR,      0
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0   
+    DD      PATM_ASMFIX_INHIBITIRQADDR,     0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_NEXTINSTRADDR,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -375,26 +375,26 @@ GLOBALNAME g_patmClearInhibitIRQContIF0Record
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMCliReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_CLI
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     ecx
     pop     eax
 %endif
 
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IF
     popf
 
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMCliJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMCliReplacement
 
 ; Patch record for 'cli'
@@ -405,12 +405,12 @@ GLOBALNAME g_patmCliRecord
 %else
     PATCHASMRECORD_INIT_JUMP PATMCliReplacement, PATMCliJump, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -419,22 +419,22 @@ GLOBALNAME g_patmCliRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMStiReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
-    mov     dword [ss:PATM_INHIBITIRQADDR], PATM_NEXTINSTRADDR
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INHIBITIRQADDR], PATM_ASMFIX_NEXTINSTRADDR
     pushf
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_STI
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     ecx
     pop     eax
 %endif
-    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMStiReplacement
 
 ; Patch record for 'sti'
@@ -445,14 +445,14 @@ GLOBALNAME g_patmStiRecord
 %else
     PATCHASMRECORD_INIT PATMStiReplacement, 5
 %endif
-    DD      PATM_INTERRUPTFLAG,  0
-    DD      PATM_INHIBITIRQADDR, 0
-    DD      PATM_NEXTINSTRADDR,  0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,  0
+    DD      PATM_ASMFIX_INHIBITIRQADDR, 0
+    DD      PATM_ASMFIX_NEXTINSTRADDR,  0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION,  0
+    DD      PATM_ASMFIX_PENDINGACTION,  0
 %endif
-    DD      PATM_VMFLAGS,        0
-    DD      PATM_INTERRUPTFLAG,  0
+    DD      PATM_ASMFIX_VMFLAGS,        0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,  0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -471,7 +471,7 @@ GLOBALNAME g_patmStiRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMTrapEntry
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
 
 %ifdef PATM_LOG_PATCHIRET
@@ -480,7 +480,7 @@ BEGINPROC   PATMTrapEntry
     push    edx
     lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_GATE_ENTRY
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -501,17 +501,17 @@ PATMTrapNoRing1:
 
     ; correct EFLAGS on the stack to include the current IOPL
     push    eax
-    mov     eax, dword [ss:PATM_VMFLAGS]
+    mov     eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     and     eax, X86_EFL_IOPL
     and     dword [esp+16], ~X86_EFL_IOPL       ; esp+16 = eflags = esp+8+4(efl)+4(eax)
     or      dword [esp+16], eax
     pop     eax
 
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMTrapEntryJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMTrapEntry
 
 ; Patch record for trap gate entrypoint
@@ -522,12 +522,12 @@ GLOBALNAME g_patmTrapEntryRecord
 %else
     PATCHASMRECORD_INIT_JUMP PATMTrapEntry, PATMTrapEntryJump, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHIRET
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -548,7 +548,7 @@ GLOBALNAME g_patmTrapEntryRecord
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMTrapEntryErrorCode
 PATMTrapErrorCodeEntryStart:
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
 
 %ifdef PATM_LOG_PATCHIRET
@@ -557,7 +557,7 @@ PATMTrapErrorCodeEntryStart:
     push    edx
     lea     edx, dword [ss:esp+12+4+4]        ;3 dwords + pushed flags + error code -> iret eip
     mov     eax, PATM_ACTION_LOG_GATE_ENTRY
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -578,17 +578,17 @@ PATMTrapErrorCodeNoRing1:
 
     ; correct EFLAGS on the stack to include the current IOPL
     push    eax
-    mov     eax, dword [ss:PATM_VMFLAGS]
+    mov     eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     and     eax, X86_EFL_IOPL
     and     dword [esp+20], ~X86_EFL_IOPL       ; esp+20 = eflags = esp+8+4(efl)+4(error code)+4(eax)
     or      dword [esp+20], eax
     pop     eax
 
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMTrapErrorCodeEntryJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMTrapEntryErrorCode
 
 ; Patch record for trap gate entrypoint
@@ -599,12 +599,12 @@ GLOBALNAME g_patmTrapEntryRecordErrorCode
 %else
     PATCHASMRECORD_INIT_JUMP PATMTrapEntryErrorCode, PATMTrapErrorCodeEntryJump, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHIRET
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -623,7 +623,7 @@ GLOBALNAME g_patmTrapEntryRecordErrorCode
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIntEntry
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
 
 %ifdef PATM_LOG_PATCHIRET
@@ -632,7 +632,7 @@ BEGINPROC   PATMIntEntry
     push    edx
     lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_GATE_ENTRY
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -653,14 +653,14 @@ PATMIntNoRing1:
 
     ; correct EFLAGS on the stack to include the current IOPL
     push    eax
-    mov     eax, dword [ss:PATM_VMFLAGS]
+    mov     eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     and     eax, X86_EFL_IOPL
     and     dword [esp+16], ~X86_EFL_IOPL       ; esp+16 = eflags = esp+8+4(efl)+4(eax)
     or      dword [esp+16], eax
     pop     eax
 
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMIntEntry
 
 ; Patch record for interrupt gate entrypoint
@@ -671,12 +671,12 @@ GLOBALNAME g_patmIntEntryRecord
 %else
     PATCHASMRECORD_INIT PATMIntEntry, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHIRET
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -696,7 +696,7 @@ GLOBALNAME g_patmIntEntryRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIntEntryErrorCode
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
 
 %ifdef PATM_LOG_PATCHIRET
@@ -705,7 +705,7 @@ BEGINPROC   PATMIntEntryErrorCode
     push    edx
     lea     edx, dword [ss:esp+12+4+4]        ;3 dwords + pushed flags + error code -> iret eip
     mov     eax, PATM_ACTION_LOG_GATE_ENTRY
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -726,14 +726,14 @@ PATMIntNoRing1_ErrorCode:
 
     ; correct EFLAGS on the stack to include the current IOPL
     push    eax
-    mov     eax, dword [ss:PATM_VMFLAGS]
+    mov     eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     and     eax, X86_EFL_IOPL
     and     dword [esp+20], ~X86_EFL_IOPL       ; esp+20 = eflags = esp+8+4(efl)+4(eax)+4(error code)
     or      dword [esp+20], eax
     pop     eax
 
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMIntEntryErrorCode
 
 ; Patch record for interrupt gate entrypoint
@@ -744,12 +744,12 @@ GLOBALNAME g_patmIntEntryRecordErrorCode
 %else
     PATCHASMRECORD_INIT PATMIntEntryErrorCode, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHIRET
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -758,7 +758,7 @@ GLOBALNAME g_patmIntEntryRecordErrorCode
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf32Replacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
@@ -768,7 +768,7 @@ BEGINPROC   PATMPopf32Replacement
     mov     eax, PATM_ACTION_LOG_POPF_IF0
 
 PATMPopf32_Log:
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     ecx
@@ -777,28 +777,28 @@ PATMPopf32_Log:
 
     test    dword [esp], X86_EFL_IF
     jnz     PATMPopf32_Ok
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMPopf32_Ok:
     ; Note: we don't allow popf instructions to change the current IOPL; we simply ignore such changes (!!!)
     ; In this particular patch it's rather unlikely the pushf was included, so we have no way to check if the flags on the stack were correctly synced
     ; PATMPopf32Replacement_NoExit is different, because it's only used in IDT and function patches
-    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf32_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_DISPATCH_PENDING_IRQ
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_NEXTINSTRADDR
+    mov     edi, PATM_ASMFIX_NEXTINSTRADDR
 
     popfd                   ; restore flags we pushed above (the or instruction changes the flags as well)
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -806,10 +806,10 @@ PATMPopf32_Ok:
 
 PATMPopf32_Continue:
     popfd                   ; restore flags we pushed above
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMPopf32Jump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMPopf32Replacement
 
 ; Patch record for 'popfd'
@@ -820,20 +820,20 @@ GLOBALNAME g_patmPopf32Record
 %else
     PATCHASMRECORD_INIT_JUMP PATMPopf32Replacement, PATMPopf32Jump, 11
 %endif
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
 %endif
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_NEXTINSTRADDR,      0
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_NEXTINSTRADDR,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -842,7 +842,7 @@ GLOBALNAME g_patmPopf32Record
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf32Replacement_NoExit
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
@@ -852,7 +852,7 @@ BEGINPROC   PATMPopf32Replacement_NoExit
     mov     eax, PATM_ACTION_LOG_POPF_IF0
 
 PATMPopf32_NoExitLog:
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     ecx
@@ -862,31 +862,31 @@ PATMPopf32_NoExitLog:
     jz      PATMPopf32_NoExit_Continue
 
     ; if interrupts are pending, then we must go back to the host context to handle them!
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf32_NoExit_Continue
 
     ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_DISPATCH_PENDING_IRQ
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_NEXTINSTRADDR
+    mov     edi, PATM_ASMFIX_NEXTINSTRADDR
 
-    pop     dword [ss:PATM_VMFLAGS]     ; restore flags now (the or instruction changes the flags as well)
-    push    dword [ss:PATM_VMFLAGS]
+    pop     dword [ss:PATM_ASMFIX_VMFLAGS]     ; restore flags now (the or instruction changes the flags as well)
+    push    dword [ss:PATM_ASMFIX_VMFLAGS]
     popfd
 
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     ; does not return
 
 PATMPopf32_NoExit_Continue:
-    pop     dword [ss:PATM_VMFLAGS]
-    push    dword [ss:PATM_VMFLAGS]
+    pop     dword [ss:PATM_ASMFIX_VMFLAGS]
+    push    dword [ss:PATM_ASMFIX_VMFLAGS]
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMPopf32Replacement_NoExit
 
 ; Patch record for 'popfd'
@@ -897,22 +897,22 @@ GLOBALNAME g_patmPopf32Record_NoExit
 %else
     PATCHASMRECORD_INIT PATMPopf32Replacement_NoExit, 13
 %endif
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
 %endif
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_NEXTINSTRADDR,      0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_NEXTINSTRADDR,      0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -921,49 +921,49 @@ GLOBALNAME g_patmPopf32Record_NoExit
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf16Replacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     test    word [esp], X86_EFL_IF
     jnz     PATMPopf16_Ok
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMPopf16_Ok:
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @note we destroy the flags here, but that should really not matter (PATM_INT3 case)
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf16_Continue
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMPopf16_Continue:
 
-    pop     word [ss:PATM_VMFLAGS]
-    push    word [ss:PATM_VMFLAGS]
-    and     dword [ss:PATM_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
-    or      dword [ss:PATM_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
+    pop     word [ss:PATM_ASMFIX_VMFLAGS]
+    push    word [ss:PATM_ASMFIX_VMFLAGS]
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
 
     DB      0x66    ; size override
     popf    ;after the and and or operations!! (flags must be preserved)
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 
     DB      0xE9
 PATMPopf16Jump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMPopf16Replacement
 
 ; Patch record for 'popf'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf16Record
     PATCHASMRECORD_INIT_JUMP PATMPopf16Replacement, PATMPopf16Jump, 9
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_VM_FORCEDACTIONS, 0
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -973,45 +973,45 @@ GLOBALNAME g_patmPopf16Record
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPopf16Replacement_NoExit
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     test    word [esp], X86_EFL_IF
     jnz     PATMPopf16_Ok_NoExit
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMPopf16_Ok_NoExit:
     ; if interrupts are pending, then we must go back to the host context to handle them!
     ; @note we destroy the flags here, but that should really not matter (PATM_INT3 case)
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC | VMCPU_FF_TIMER | VMCPU_FF_REQUEST
     jz      PATMPopf16_Continue_NoExit
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMPopf16_Continue_NoExit:
 
-    pop     word [ss:PATM_VMFLAGS]
-    push    word [ss:PATM_VMFLAGS]
-    and     dword [ss:PATM_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
-    or      dword [ss:PATM_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
+    pop     word [ss:PATM_ASMFIX_VMFLAGS]
+    push    word [ss:PATM_ASMFIX_VMFLAGS]
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], PATM_VIRTUAL_FLAGS_MASK
 
     DB      0x66    ; size override
     popf    ;after the and and or operations!! (flags must be preserved)
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMPopf16Replacement_NoExit
 
 ; Patch record for 'popf'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPopf16Record_NoExit
     PATCHASMRECORD_INIT PATMPopf16Replacement_NoExit, 9
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_VM_FORCEDACTIONS, 0
-    DD      PATM_INTERRUPTFLAG,    0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_VMFLAGS,          0
-    DD      PATM_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_VMFLAGS,          0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,    0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1020,13 +1020,13 @@ GLOBALNAME g_patmPopf16Record_NoExit
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushf32Replacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
     mov     eax, PATM_ACTION_LOG_PUSHF
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     ecx
@@ -1037,11 +1037,11 @@ BEGINPROC   PATMPushf32Replacement
     push    eax
     mov     eax, dword [esp+8]
     and     eax, PATM_FLAGS_MASK
-    or      eax, dword [ss:PATM_VMFLAGS]
+    or      eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     mov     dword [esp+8], eax
     pop     eax
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMPushf32Replacement
 
 ; Patch record for 'pushfd'
@@ -1052,12 +1052,12 @@ GLOBALNAME g_patmPushf32Record
 %else
     PATCHASMRECORD_INIT PATMPushf32Replacement, 3
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
 %ifdef PATM_LOG_PATCHINSTR
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1066,7 +1066,7 @@ GLOBALNAME g_patmPushf32Record
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushf16Replacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     DB      0x66    ; size override
     pushf
     DB      0x66    ; size override
@@ -1075,22 +1075,22 @@ BEGINPROC   PATMPushf16Replacement
     xor     eax, eax
     mov     ax, word [esp+6]
     and     eax, PATM_FLAGS_MASK
-    or      eax, dword [ss:PATM_VMFLAGS]
+    or      eax, dword [ss:PATM_ASMFIX_VMFLAGS]
     mov     word [esp+6], ax
     pop     eax
 
     DB      0x66    ; size override
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC     PATMPushf16Replacement
 
 ; Patch record for 'pushf'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPushf16Record
     PATCHASMRECORD_INIT PATMPushf16Replacement, 3
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1099,7 +1099,7 @@ GLOBALNAME g_patmPushf16Record
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMPushCSReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     push    cs
     pushfd
 
@@ -1112,18 +1112,18 @@ BEGINPROC   PATMPushCSReplacement
 pushcs_notring1:
     popfd
 
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMPushCSJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMPushCSReplacement
 
 ; Patch record for 'push cs'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmPushCSRecord
     PATCHASMRECORD_INIT_JUMP PATMPushCSReplacement, PATMPushCSJump, 2
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1162,7 +1162,7 @@ GLOBALNAME g_patmPushCSRecord
 ;;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIretReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
 
 %ifdef PATM_LOG_PATCHIRET
@@ -1171,7 +1171,7 @@ BEGINPROC   PATMIretReplacement
     push    edx
     lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -1203,18 +1203,18 @@ iret_notring0:
 ; if interrupts are pending, then we must go back to the host context to handle them!
 ; Note: This is very important as pending pic interrupts can be overridden by apic interrupts if we don't check early enough (Fedora 5 boot)
 ; @@todo fix this properly, so we can dispatch pending interrupts in GC
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
     jz      iret_continue
 
 ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_PENDING_IRQ_AFTER_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_CURINSTRADDR
+    mov     edi, PATM_ASMFIX_CURINSTRADDR
 
     popfd
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -1228,40 +1228,40 @@ iret_continue :
     push    eax
     mov     eax, dword [esp+16]
     and     eax, X86_EFL_IOPL
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-    or      dword [ss:PATM_VMFLAGS], eax
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], eax
     pop     eax
     and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Set IF again; below we make sure this won't cause problems.
-    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
 
     ; make sure iret is executed fully (including the iret below; cli ... iret can otherwise be interrupted)
-    mov     dword [ss:PATM_INHIBITIRQADDR], PATM_CURINSTRADDR
+    mov     dword [ss:PATM_ASMFIX_INHIBITIRQADDR], PATM_ASMFIX_CURINSTRADDR
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     iretd
     PATM_INT3
 
 iret_fault:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 iret_fault1:
     nop
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 iret_clearIF:
     push    dword [esp+4]           ; eip to return to
     pushfd
     push    eax
-    push    PATM_FIXUP
+    push    PATM_ASMFIX_FIXUP
     DB      0E8h                    ; call
-    DD      PATM_IRET_FUNCTION
+    DD      PATM_ASMFIX_IRET_FUNCTION
     add     esp, 4                  ; pushed address of jump table
 
     cmp     eax, 0
@@ -1281,16 +1281,16 @@ iret_clearIF:
     push    eax
     mov     eax, dword [esp+16]
     and     eax, X86_EFL_IOPL
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-    or      dword [ss:PATM_VMFLAGS], eax
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], eax
     pop     eax
     and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Clear IF
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IF
     popfd
 
-                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+                                                ; the patched destination code will set PATM_ASMFIX_INTERRUPTFLAG after the return!
     iretd
 
 iret_return_to_v86:
@@ -1298,11 +1298,11 @@ iret_return_to_v86:
     jz      iret_fault
 
     ; Go to our hypervisor trap handler to perform the iret to v86 code
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
     mov     eax, PATM_ACTION_DO_V86_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
 
     popfd
@@ -1334,34 +1334,34 @@ GLOBALNAME g_patmIretRecord
 %else
     PATCHASMRECORD_INIT PATMIretReplacement, 25
 %endif
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
 %ifdef PATM_LOG_PATCHIRET
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
 %endif
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_CURINSTRADDR,       0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_INHIBITIRQADDR,     0
-    DD      PATM_CURINSTRADDR,       0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_FIXUP,              PATMIretTable - NAME(PATMIretReplacement)
-    DD      PATM_IRET_FUNCTION,      0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_CURINSTRADDR,       0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_INHIBITIRQADDR,     0
+    DD      PATM_ASMFIX_CURINSTRADDR,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_FIXUP,              PATMIretTable - NAME(PATMIretReplacement)
+    DD      PATM_ASMFIX_IRET_FUNCTION,      0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
     DD      0ffffffffh,              0ffffffffh
 
 
@@ -1400,7 +1400,7 @@ GLOBALNAME g_patmIretRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMIretRing1Replacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
 
 %ifdef PATM_LOG_PATCHIRET
@@ -1409,7 +1409,7 @@ BEGINPROC   PATMIretRing1Replacement
     push    edx
     lea     edx, dword [ss:esp+12+4]        ;3 dwords + pushed flags -> iret eip
     mov     eax, PATM_ACTION_LOG_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
     pop     edx
@@ -1439,18 +1439,18 @@ iretring1_checkpendingirq:
 ; if interrupts are pending, then we must go back to the host context to handle them!
 ; Note: This is very important as pending pic interrupts can be overridden by apic interrupts if we don't check early enough (Fedora 5 boot)
 ; @@todo fix this properly, so we can dispatch pending interrupts in GC
-    test    dword [ss:PATM_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
+    test    dword [ss:PATM_ASMFIX_VM_FORCEDACTIONS], VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
     jz      iretring1_continue
 
 ; Go to our hypervisor trap handler to dispatch the pending irq
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_EDI], edi
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EDI], edi
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX | PATM_RESTORE_EDI
     mov     eax, PATM_ACTION_PENDING_IRQ_AFTER_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
-    mov     edi, PATM_CURINSTRADDR
+    mov     edi, PATM_ASMFIX_CURINSTRADDR
 
     popfd
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -1484,40 +1484,40 @@ iretring1_notring01:
     push    eax
     mov     eax, dword [esp+16]
     and     eax, X86_EFL_IOPL
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-    or      dword [ss:PATM_VMFLAGS], eax
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], eax
     pop     eax
     and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Set IF again; below we make sure this won't cause problems.
-    or      dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
 
     ; make sure iret is executed fully (including the iret below; cli ... iret can otherwise be interrupted)
-    mov     dword [ss:PATM_INHIBITIRQADDR], PATM_CURINSTRADDR
+    mov     dword [ss:PATM_ASMFIX_INHIBITIRQADDR], PATM_ASMFIX_CURINSTRADDR
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     iretd
     PATM_INT3
 
 iretring1_fault:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 iretring1_fault1:
     nop
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 iretring1_clearIF:
     push    dword [esp+4]           ; eip to return to
     pushfd
     push    eax
-    push    PATM_FIXUP
+    push    PATM_ASMFIX_FIXUP
     DB      0E8h                    ; call
-    DD      PATM_IRET_FUNCTION
+    DD      PATM_ASMFIX_IRET_FUNCTION
     add     esp, 4                  ; pushed address of jump table
 
     cmp     eax, 0
@@ -1534,13 +1534,13 @@ iretring1_clearIF:
     push    eax
     mov     eax, dword [esp+16]
     and     eax, X86_EFL_IOPL
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IOPL
-    or      dword [ss:PATM_VMFLAGS], eax
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IOPL
+    or      dword [ss:PATM_ASMFIX_VMFLAGS], eax
     pop     eax
     and     dword [esp+12], ~X86_EFL_IOPL
 
     ; Clear IF
-    and     dword [ss:PATM_VMFLAGS], ~X86_EFL_IF
+    and     dword [ss:PATM_ASMFIX_VMFLAGS], ~X86_EFL_IF
     popfd
 
     test    dword [esp+8], 1
@@ -1552,13 +1552,13 @@ iretring1_clearIF:
 
     and     dword [esp+20], ~1      ; SS
     or      dword [esp+20], 2
-                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+                                                ; the patched destination code will set PATM_ASMFIX_INTERRUPTFLAG after the return!
     iretd
 
 iretring1_clearIF_ring0:
     ; force ring 1 CS RPL
     or      dword [esp+8], 1
-                                                ; the patched destination code will set PATM_INTERRUPTFLAG after the return!
+                                                ; the patched destination code will set PATM_ASMFIX_INTERRUPTFLAG after the return!
     iretd
 
 iretring1_return_to_v86:
@@ -1566,11 +1566,11 @@ iretring1_return_to_v86:
     jz      iretring1_fault
 
     ; Go to our hypervisor trap handler to perform the iret to v86 code
-    mov     dword [ss:PATM_TEMP_EAX], eax
-    mov     dword [ss:PATM_TEMP_ECX], ecx
-    mov     dword [ss:PATM_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], eax
+    mov     dword [ss:PATM_ASMFIX_TEMP_ECX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_RESTORE_FLAGS], PATM_RESTORE_EAX | PATM_RESTORE_ECX
     mov     eax, PATM_ACTION_DO_V86_IRET
-    lock    or dword [ss:PATM_PENDINGACTION], eax
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], eax
     mov     ecx, PATM_ACTION_MAGIC
 
     popfd
@@ -1602,34 +1602,34 @@ GLOBALNAME g_patmIretRing1Record
 %else
     PATCHASMRECORD_INIT PATMIretRing1Replacement, 25
 %endif
-    DD      PATM_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
 %ifdef PATM_LOG_PATCHIRET            
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
 %endif                               
-    DD      PATM_VM_FORCEDACTIONS,   0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_EDI,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
-    DD      PATM_CURINSTRADDR,       0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_INHIBITIRQADDR,     0
-    DD      PATM_CURINSTRADDR,       0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_INTERRUPTFLAG,      0
-    DD      PATM_FIXUP,              PATMIretRing1Table - NAME(PATMIretRing1Replacement)
-    DD      PATM_IRET_FUNCTION,      0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_VMFLAGS,            0
-    DD      PATM_TEMP_EAX,           0
-    DD      PATM_TEMP_ECX,           0
-    DD      PATM_TEMP_RESTORE_FLAGS, 0
-    DD      PATM_PENDINGACTION,      0
+    DD      PATM_ASMFIX_VM_FORCEDACTIONS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_EDI,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
+    DD      PATM_ASMFIX_CURINSTRADDR,       0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_INHIBITIRQADDR,     0
+    DD      PATM_ASMFIX_CURINSTRADDR,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,      0
+    DD      PATM_ASMFIX_FIXUP,              PATMIretRing1Table - NAME(PATMIretRing1Replacement)
+    DD      PATM_ASMFIX_IRET_FUNCTION,      0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_VMFLAGS,            0
+    DD      PATM_ASMFIX_TEMP_EAX,           0
+    DD      PATM_ASMFIX_TEMP_ECX,           0
+    DD      PATM_ASMFIX_TEMP_RESTORE_FLAGS, 0
+    DD      PATM_ASMFIX_PENDINGACTION,      0
     DD      0ffffffffh,              0ffffffffh
 
 
@@ -1643,7 +1643,7 @@ GLOBALNAME g_patmIretRing1Record
 ;  +  4 Jump table address
 ;( +  0 return address )
 ;
-; @note assumes PATM_INTERRUPTFLAG is zero
+; @note assumes PATM_ASMFIX_INTERRUPTFLAG is zero
 ; @note assumes it can trash eax and eflags
 ;
 ; @returns eax=0 on failure
@@ -1679,7 +1679,7 @@ PATMIretFunction_SearchStart:
 PATMIretFunction_AskHypervisor:
     ; 2) Query return patch address from the hypervisor
     ; @todo private ugly interface, since we have nothing generic at the moment
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
     mov     eax, PATM_ACTION_LOOKUP_ADDRESS
     mov     ecx, PATM_ACTION_MAGIC
     mov     edi, dword [esp+12+4]               ; jump table address
@@ -1695,7 +1695,7 @@ PATMIretFunction_SearchEnd:
     cmp     eax, 0
     jz      PATMIretFunction_Failure
 
-    add     eax, PATM_PATCHBASE
+    add     eax, PATM_ASMFIX_PATCHBASE
 
     pop     edi
     pop     edx
@@ -1714,8 +1714,8 @@ ENDPROC     PATMIretFunction
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmIretFunctionRecord
     PATCHASMRECORD_INIT PATMIretFunction, 2
-    DD      PATM_PENDINGACTION, 0
-    DD      PATM_PATCHBASE,     0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PATCHBASE,     0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1731,8 +1731,8 @@ BEGIN_PATCH g_patmCpuidRecord, PATMCpuidReplacement
     not     dword [esp-32]              ; probe stack before starting
     not     dword [esp-32]
 
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
-PATCH_FIXUP PATM_INTERRUPTFLAG
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
+PATCH_FIXUP PATM_ASMFIX_INTERRUPTFLAG
     pushf
 
     db      0e8h                        ; call
@@ -1740,8 +1740,8 @@ PATCH_FIXUP PATM_INTERRUPTFLAG
 PATCH_FIXUP PATM_ASMFIX_PATCH_HLP_CPUM_CPUID
 
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
-PATCH_FIXUP PATM_INTERRUPTFLAG
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
+PATCH_FIXUP PATM_ASMFIX_INTERRUPTFLAG
 END_PATCH g_patmCpuidRecord, PATMCpuidReplacement
 
 
@@ -1750,7 +1750,7 @@ END_PATCH g_patmCpuidRecord, PATMCpuidReplacement
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMJEcxReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
 PATMJEcxSizeOverride:
     DB      0x90             ; nop
@@ -1758,23 +1758,23 @@ PATMJEcxSizeOverride:
     jnz     PATMJEcxContinue
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMJEcxJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 
 PATMJEcxContinue:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC PATMJEcxReplacement
 
 ; Patch record for 'JEcx'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmJEcxRecord 
     PATCHASMRECORD_INIT_EX PATMJEcxReplacement, , PATMJEcxJump, PATMJEcxSizeOverride, 3
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1783,7 +1783,7 @@ GLOBALNAME g_patmJEcxRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
 PATMLoopSizeOverride:
     DB      0x90             ; nop
@@ -1791,23 +1791,23 @@ PATMLoopSizeOverride:
     jz      PATMLoopContinue
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMLoopJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 
 PATMLoopContinue:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC PATMLoopReplacement
 
 ; Patch record for 'Loop'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopRecord
     PATCHASMRECORD_INIT_EX PATMLoopReplacement, , PATMLoopJump, PATMLoopSizeOverride, 3
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1816,7 +1816,7 @@ GLOBALNAME g_patmLoopRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopZReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     jnz     NAME(PATMLoopZReplacement_EndProc)
     pushfd
 PATMLoopZSizeOverride:
@@ -1825,23 +1825,23 @@ PATMLoopZSizeOverride:
     jz      PATMLoopZContinue
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMLoopZJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 
 PATMLoopZContinue:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC PATMLoopZReplacement
 
 ; Patch record for 'Loopz'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopZRecord
     PATCHASMRECORD_INIT_EX PATMLoopZReplacement, , PATMLoopZJump, PATMLoopZSizeOverride, 3
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -1850,7 +1850,7 @@ GLOBALNAME g_patmLoopZRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMLoopNZReplacement
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     jz      NAME(PATMLoopNZReplacement_EndProc)
     pushfd
 PATMLoopNZSizeOverride:
@@ -1859,29 +1859,29 @@ PATMLoopNZSizeOverride:
     jz      PATMLoopNZContinue
 
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMLoopNZJump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 
 PATMLoopNZContinue:
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
 ENDPROC PATMLoopNZReplacement
 
 ; Patch record for 'LoopNZ'
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLoopNZRecord
     PATCHASMRECORD_INIT_EX PATMLoopNZReplacement, , PATMLoopNZJump, PATMLoopNZSizeOverride, 3
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
 ;
 ; Global patch function for indirect calls
-; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
+; Caller is responsible for clearing PATM_ASMFIX_INTERRUPTFLAG and doing:
 ;  + 20 push    [pTargetGC]
 ;  + 16 pushfd
 ;  + 12 push    [JumpTableAddress]
@@ -1899,7 +1899,7 @@ BEGINPROC PATMLookupAndCall
     push    ecx
 
     mov     eax, dword [esp+16+4]                   ; guest return address
-    mov     dword [ss:PATM_CALL_RETURN_ADDR], eax                               ; temporary storage
+    mov     dword [ss:PATM_ASMFIX_CALL_RETURN_ADDR], eax                               ; temporary storage
 
     mov     edx, dword [esp+16+20]  ; pushed target address
 
@@ -1919,7 +1919,7 @@ PATMLookupAndCall_SearchStart:
 PATMLookupAndCall_QueryPATM:
     ; nothing found -> let our trap handler try to find it
     ; @todo private ugly interface, since we have nothing generic at the moment
-    lock    or  dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
+    lock    or  dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
     mov     eax, PATM_ACTION_LOOKUP_ADDRESS
     mov     ecx, PATM_ACTION_MAGIC
     ; edx = GC address to find
@@ -1946,9 +1946,9 @@ PATMLookupAndCall_SearchEnd:
     je      near PATMLookupAndCall_Failure
 
     mov     ecx, eax                            ; ECX = target address (relative!)
-    add     ecx, PATM_PATCHBASE                 ; Make it absolute
+    add     ecx, PATM_ASMFIX_PATCHBASE                 ; Make it absolute
 
-    mov     edx, dword PATM_STACKPTR
+    mov     edx, dword PATM_ASMFIX_STACKPTR
     cmp     dword [ss:edx], PATM_STACK_SIZE
     ja      near PATMLookupAndCall_Failure                    ; should never happen actually!!!
     cmp     dword [ss:edx], 0
@@ -1956,18 +1956,18 @@ PATMLookupAndCall_SearchEnd:
 
     ; save the patch return address on our private stack
     sub     dword [ss:edx], 4                   ; sizeof(RTGCPTR)
-    mov     eax, dword PATM_STACKBASE
+    mov     eax, dword PATM_ASMFIX_STACKBASE
     add     eax, dword [ss:edx]                 ; stack base + stack position
     mov     edi, dword [esp+16+8]               ; PATM return address
     mov     dword [ss:eax], edi                 ; relative address of patch return (instruction following this block)
 
     ; save the original return address as well (checked by ret to make sure the guest hasn't messed around with the stack)
-    mov     edi, dword PATM_STACKBASE_GUEST
+    mov     edi, dword PATM_ASMFIX_STACKBASE_GUEST
     add     edi, dword [ss:edx]                 ; stack base (guest) + stack position
     mov     eax, dword [esp+16+4]               ; guest return address
     mov     dword [ss:edi], eax
 
-    mov     dword [ss:PATM_CALL_PATCH_TARGET_ADDR], ecx       ; temporarily store the target address
+    mov     dword [ss:PATM_ASMFIX_CALL_PATCH_TARGET_ADDR], ecx       ; temporarily store the target address
     pop     ecx
     pop     edi
     pop     edx
@@ -1979,7 +1979,7 @@ PATMLookupAndCall_SearchEnd:
     push    ecx
     push    edx
     lea     edx, [esp + 12 - 4]                 ; stack address to store return address
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_CALL
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOG_CALL
     mov     eax, PATM_ACTION_LOG_CALL
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -1988,10 +1988,10 @@ PATMLookupAndCall_SearchEnd:
     pop     eax
 %endif
 
-    push    dword [ss:PATM_CALL_RETURN_ADDR]   ; push original guest return address
+    push    dword [ss:PATM_ASMFIX_CALL_RETURN_ADDR]   ; push original guest return address
 
-    ; the called function will set PATM_INTERRUPTFLAG (!!)
-    jmp     dword [ss:PATM_CALL_PATCH_TARGET_ADDR]
+    ; the called function will set PATM_ASMFIX_INTERRUPTFLAG (!!)
+    jmp     dword [ss:PATM_ASMFIX_CALL_PATCH_TARGET_ADDR]
     ; returning here -> do not add code here or after the jmp!!!!!
 ENDPROC PATMLookupAndCall
 
@@ -2003,28 +2003,28 @@ GLOBALNAME g_patmLookupAndCallRecord
 %else
     PATCHASMRECORD_INIT PATMLookupAndCall, 9
 %endif
-    DD      PATM_CALL_RETURN_ADDR,       0
-    DD      PATM_PENDINGACTION,          0
-    DD      PATM_PATCHBASE,              0
-    DD      PATM_STACKPTR,               0
-    DD      PATM_STACKBASE,              0
-    DD      PATM_STACKBASE_GUEST,        0
-    DD      PATM_CALL_PATCH_TARGET_ADDR, 0
+    DD      PATM_ASMFIX_CALL_RETURN_ADDR,       0
+    DD      PATM_ASMFIX_PENDINGACTION,          0
+    DD      PATM_ASMFIX_PATCHBASE,              0
+    DD      PATM_ASMFIX_STACKPTR,               0
+    DD      PATM_ASMFIX_STACKBASE,              0
+    DD      PATM_ASMFIX_STACKBASE_GUEST,        0
+    DD      PATM_ASMFIX_CALL_PATCH_TARGET_ADDR, 0
 %ifdef PATM_LOG_PATCHINSTR               
-    DD      PATM_PENDINGACTION,          0
+    DD      PATM_ASMFIX_PENDINGACTION,          0
 %endif                                   
-    DD      PATM_CALL_RETURN_ADDR,       0
-    DD      PATM_CALL_PATCH_TARGET_ADDR, 0
+    DD      PATM_ASMFIX_CALL_RETURN_ADDR,       0
+    DD      PATM_ASMFIX_CALL_PATCH_TARGET_ADDR, 0
     DD      0ffffffffh, 0ffffffffh
 
 
 ;
 ; Global patch function for indirect jumps
-; Caller is responsible for clearing PATM_INTERRUPTFLAG and doing:
+; Caller is responsible for clearing PATM_ASMFIX_INTERRUPTFLAG and doing:
 ;  +  8 push    [pTargetGC]
 ;  +  4 push    [JumpTableAddress]
 ;( +  0 return address )
-; And saving eflags in PATM_TEMP_EFLAGS
+; And saving eflags in PATM_ASMFIX_TEMP_EFLAGS
 ;
 ; @note NEVER change this without bumping the SSM version
 ;
@@ -2053,7 +2053,7 @@ PATMLookupAndJump_SearchStart:
 PATMLookupAndJump_QueryPATM:
     ; nothing found -> let our trap handler try to find it
     ; @todo private ugly interface, since we have nothing generic at the moment
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
     mov     eax, PATM_ACTION_LOOKUP_ADDRESS
     mov     ecx, PATM_ACTION_MAGIC
     ; edx = GC address to find
@@ -2080,53 +2080,53 @@ PATMLookupAndJump_SearchEnd:
     je      near PATMLookupAndJump_Failure
 
     mov     ecx, eax                            ; ECX = target address (relative!)
-    add     ecx, PATM_PATCHBASE                 ; Make it absolute
+    add     ecx, PATM_ASMFIX_PATCHBASE                 ; Make it absolute
 
     ; save jump patch target
-    mov     dword [ss:PATM_TEMP_EAX], ecx
+    mov     dword [ss:PATM_ASMFIX_TEMP_EAX], ecx
     pop     ecx
     pop     edi
     pop     edx
     pop     eax
     add     esp, 12                             ; parameters + return address pushed by caller
     ; restore flags (just to be sure)
-    push    dword [ss:PATM_TEMP_EFLAGS]
+    push    dword [ss:PATM_ASMFIX_TEMP_EFLAGS]
     popfd
 
-    ; the jump destination will set PATM_INTERRUPTFLAG (!!)
-    jmp     dword [ss:PATM_TEMP_EAX]                      ; call duplicated patch destination address
+    ; the jump destination will set PATM_ASMFIX_INTERRUPTFLAG (!!)
+    jmp     dword [ss:PATM_ASMFIX_TEMP_EAX]                      ; call duplicated patch destination address
 ENDPROC PATMLookupAndJump
 
 ; Patch record for indirect calls and jumps
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmLookupAndJumpRecord
     PATCHASMRECORD_INIT PATMLookupAndJump, 5
-    DD      PATM_PENDINGACTION, 0
-    DD      PATM_PATCHBASE,     0
-    DD      PATM_TEMP_EAX,      0
-    DD      PATM_TEMP_EFLAGS,   0
-    DD      PATM_TEMP_EAX,      0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PATCHBASE,     0
+    DD      PATM_ASMFIX_TEMP_EAX,      0
+    DD      PATM_ASMFIX_TEMP_EFLAGS,   0
+    DD      PATM_ASMFIX_TEMP_EAX,      0
     DD      0ffffffffh, 0ffffffffh
 
 
 ; Patch function for static calls
 ; @note static calls have only one lookup slot!
-; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
+; Caller is responsible for clearing PATM_ASMFIX_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMCall
     pushfd
-    push    PATM_FIXUP              ; fixup for jump table below
-    push    PATM_PATCHNEXTBLOCK
-    push    PATM_RETURNADDR
+    push    PATM_ASMFIX_FIXUP              ; fixup for jump table below
+    push    PATM_ASMFIX_PATCHNEXTBLOCK
+    push    PATM_ASMFIX_RETURNADDR
     DB      0E8h                    ; call
-    DD      PATM_LOOKUP_AND_CALL_FUNCTION
+    DD      PATM_ASMFIX_LOOKUP_AND_CALL_FUNCTION
     ; we only return in case of a failure
     add     esp, 12                 ; pushed address of jump table
     popfd
     add     esp, 4                  ; pushed by caller (changes the flags, but that shouldn't matter (@todo))
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 %ifdef DEBUG
     ; for disassembly
@@ -2147,31 +2147,31 @@ ENDPROC PATMCall
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCallRecord
     PATCHASMRECORD_INIT PATMCall, 5
-    DD      PATM_FIXUP,                     PATMCallTable - NAME(PATMCall)
-    DD      PATM_PATCHNEXTBLOCK,            0
-    DD      PATM_RETURNADDR,                0
-    DD      PATM_LOOKUP_AND_CALL_FUNCTION,  0
-    DD      PATM_INTERRUPTFLAG,             0
+    DD      PATM_ASMFIX_FIXUP,                     PATMCallTable - NAME(PATMCall)
+    DD      PATM_ASMFIX_PATCHNEXTBLOCK,            0
+    DD      PATM_ASMFIX_RETURNADDR,                0
+    DD      PATM_ASMFIX_LOOKUP_AND_CALL_FUNCTION,  0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,             0
     DD      0ffffffffh, 0ffffffffh
 
 
 ; Patch function for indirect calls
-; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
+; Caller is responsible for clearing PATM_ASMFIX_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMCallIndirect
     pushfd
-    push    PATM_FIXUP              ; fixup for jump table below
-    push    PATM_PATCHNEXTBLOCK
-    push    PATM_RETURNADDR
+    push    PATM_ASMFIX_FIXUP              ; fixup for jump table below
+    push    PATM_ASMFIX_PATCHNEXTBLOCK
+    push    PATM_ASMFIX_RETURNADDR
     DB      0E8h                    ; call
-    DD      PATM_LOOKUP_AND_CALL_FUNCTION
+    DD      PATM_ASMFIX_LOOKUP_AND_CALL_FUNCTION
     ; we only return in case of a failure
     add     esp, 12                 ; pushed address of jump table
     popfd
     add     esp, 4                  ; pushed by caller (changes the flags, but that shouldn't matter (@todo))
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 %ifdef DEBUG
     ; for disassembly
@@ -2192,36 +2192,36 @@ ENDPROC PATMCallIndirect
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmCallIndirectRecord
     PATCHASMRECORD_INIT PATMCallIndirect, 5
-    DD      PATM_FIXUP,                     PATMCallIndirectTable - NAME(PATMCallIndirect)
-    DD      PATM_PATCHNEXTBLOCK,            0
-    DD      PATM_RETURNADDR,                0
-    DD      PATM_LOOKUP_AND_CALL_FUNCTION,  0
-    DD      PATM_INTERRUPTFLAG,             0
+    DD      PATM_ASMFIX_FIXUP,                     PATMCallIndirectTable - NAME(PATMCallIndirect)
+    DD      PATM_ASMFIX_PATCHNEXTBLOCK,            0
+    DD      PATM_ASMFIX_RETURNADDR,                0
+    DD      PATM_ASMFIX_LOOKUP_AND_CALL_FUNCTION,  0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,             0
     DD      0ffffffffh, 0ffffffffh
 
 
 ;
 ; Patch function for indirect jumps
-; Caller is responsible for clearing PATM_INTERRUPTFLAG and adding:
+; Caller is responsible for clearing PATM_ASMFIX_INTERRUPTFLAG and adding:
 ;   push    [pTargetGC]
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC PATMJumpIndirect
     ; save flags (just to be sure)
     pushfd
-    pop     dword [ss:PATM_TEMP_EFLAGS]
+    pop     dword [ss:PATM_ASMFIX_TEMP_EFLAGS]
 
-    push    PATM_FIXUP              ; fixup for jump table below
+    push    PATM_ASMFIX_FIXUP              ; fixup for jump table below
     DB      0E8h                    ; call
-    DD      PATM_LOOKUP_AND_JUMP_FUNCTION
+    DD      PATM_ASMFIX_LOOKUP_AND_JUMP_FUNCTION
     ; we only return in case of a failure
     add     esp, 8                  ; pushed address of jump table + pushed target address
 
     ; restore flags (just to be sure)
-    push    dword [ss:PATM_TEMP_EFLAGS]
+    push    dword [ss:PATM_ASMFIX_TEMP_EFLAGS]
     popfd
 
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 %ifdef DEBUG
@@ -2243,11 +2243,11 @@ ENDPROC PATMJumpIndirect
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmJumpIndirectRecord
     PATCHASMRECORD_INIT PATMJumpIndirect, 5
-    DD      PATM_TEMP_EFLAGS,               0
-    DD      PATM_FIXUP,                     PATMJumpIndirectTable - NAME(PATMJumpIndirect)
-    DD      PATM_LOOKUP_AND_JUMP_FUNCTION,  0
-    DD      PATM_TEMP_EFLAGS,               0
-    DD      PATM_INTERRUPTFLAG,             0
+    DD      PATM_ASMFIX_TEMP_EFLAGS,               0
+    DD      PATM_ASMFIX_FIXUP,                     PATMJumpIndirectTable - NAME(PATMJumpIndirect)
+    DD      PATM_ASMFIX_LOOKUP_AND_JUMP_FUNCTION,  0
+    DD      PATM_ASMFIX_TEMP_EFLAGS,               0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,             0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -2259,12 +2259,12 @@ BEGINPROC   PATMRet
     ; probe stack here as we can't recover from page faults later on
     not     dword [esp-32]
     not     dword [esp-32]
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushfd
     push    eax
-    push    PATM_FIXUP
+    push    PATM_ASMFIX_FIXUP
     DB      0E8h                    ; call
-    DD      PATM_RETURN_FUNCTION
+    DD      PATM_ASMFIX_RETURN_FUNCTION
     add     esp, 4                  ; pushed address of jump table
 
     cmp     eax, 0
@@ -2272,7 +2272,7 @@ BEGINPROC   PATMRet
 
     pop     eax
     popfd
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 %ifdef DEBUG
@@ -2291,16 +2291,16 @@ PATMRet_Success:
     pop     eax
     popf
                                                 ; caller will duplicate the ret or ret n instruction
-                                                ; the patched call will set PATM_INTERRUPTFLAG after the return!
+                                                ; the patched call will set PATM_ASMFIX_INTERRUPTFLAG after the return!
 ENDPROC     PATMRet
 
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME g_patmRetRecord
     PATCHASMRECORD_INIT PATMRet, 4
-    DD      PATM_INTERRUPTFLAG,   0
-    DD      PATM_FIXUP,           PATMRetTable - NAME(PATMRet)
-    DD      PATM_RETURN_FUNCTION, 0
-    DD      PATM_INTERRUPTFLAG,   0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,   0
+    DD      PATM_ASMFIX_FIXUP,           PATMRetTable - NAME(PATMRet)
+    DD      PATM_ASMFIX_RETURN_FUNCTION, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG,   0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -2314,7 +2314,7 @@ GLOBALNAME g_patmRetRecord
 ;  +  4 Jump table address
 ;( +  0 return address )
 ;
-; @note assumes PATM_INTERRUPTFLAG is zero
+; @note assumes PATM_ASMFIX_INTERRUPTFLAG is zero
 ; @note assumes it can trash eax and eflags
 ;
 ; @returns eax=0 on failure
@@ -2336,13 +2336,13 @@ BEGINPROC   PATMRetFunction
 
 
     ; 1) Check if the return patch address was pushed on the PATM stack
-    cmp     dword [ss:PATM_STACKPTR], PATM_STACK_SIZE
+    cmp     dword [ss:PATM_ASMFIX_STACKPTR], PATM_STACK_SIZE
     jae     near PATMRetFunction_FindReturnAddress
 
-    mov     edx, dword PATM_STACKPTR
+    mov     edx, dword PATM_ASMFIX_STACKPTR
 
     ; check if the return address is what we expect it to be
-    mov     eax, dword PATM_STACKBASE_GUEST
+    mov     eax, dword PATM_ASMFIX_STACKBASE_GUEST
     add     eax, dword [ss:edx]                 ; stack base + stack position
     mov     eax, dword [ss:eax]                 ; original return address
     cmp     eax, dword [esp+12+16]              ; pushed return address
@@ -2352,10 +2352,10 @@ BEGINPROC   PATMRetFunction
     jne     near PATMRetFunction_FindReturnAddress
 
     ; found it, convert relative to absolute patch address and return the result to the caller
-    mov     eax, dword PATM_STACKBASE
+    mov     eax, dword PATM_ASMFIX_STACKBASE
     add     eax, dword [ss:edx]                 ; stack base + stack position
     mov     eax, dword [ss:eax]                 ; relative patm return address
-    add     eax, PATM_PATCHBASE
+    add     eax, PATM_ASMFIX_PATCHBASE
 
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
@@ -2364,7 +2364,7 @@ BEGINPROC   PATMRetFunction
     push    edx
     mov     edx, eax                            ; return address
     lea     ebx, [esp+16+12+16]                 ; stack address containing the return address
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOG_RET
     mov     eax, PATM_ACTION_LOG_RET
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -2401,7 +2401,7 @@ PATMRetFunction_SearchStart:
 PATMRetFunction_AskHypervisor:
     ; 3) Query return patch address from the hypervisor
     ; @todo private ugly interface, since we have nothing generic at the moment
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOOKUP_ADDRESS
     mov     eax, PATM_ACTION_LOOKUP_ADDRESS
     mov     ecx, PATM_ACTION_MAGIC
     mov     edi, dword [esp+12+4]               ; jump table address
@@ -2417,7 +2417,7 @@ PATMRetFunction_SearchEnd:
     cmp     eax, 0
     jz      PATMRetFunction_Failure
 
-    add     eax, PATM_PATCHBASE
+    add     eax, PATM_ASMFIX_PATCHBASE
 
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
@@ -2426,7 +2426,7 @@ PATMRetFunction_SearchEnd:
     push    edx
     mov     edx, eax                            ; return address
     lea     ebx, [esp+16+12+16]                 ; stack address containing the return address
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_RET
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOG_RET
     mov     eax, PATM_ACTION_LOG_RET
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -2457,18 +2457,18 @@ GLOBALNAME g_patmRetFunctionRecord
 %else
     PATCHASMRECORD_INIT PATMRetFunction, 7
 %endif
-    DD      PATM_STACKPTR,        0
-    DD      PATM_STACKPTR,        0
-    DD      PATM_STACKBASE_GUEST, 0
-    DD      PATM_STACKBASE,       0
-    DD      PATM_PATCHBASE,       0
+    DD      PATM_ASMFIX_STACKPTR,        0
+    DD      PATM_ASMFIX_STACKPTR,        0
+    DD      PATM_ASMFIX_STACKBASE_GUEST, 0
+    DD      PATM_ASMFIX_STACKBASE,       0
+    DD      PATM_ASMFIX_PATCHBASE,       0
 %ifdef PATM_LOG_PATCHINSTR        
-    DD      PATM_PENDINGACTION,   0
+    DD      PATM_ASMFIX_PENDINGACTION,   0
 %endif                            
-    DD      PATM_PENDINGACTION,   0
-    DD      PATM_PATCHBASE,       0
+    DD      PATM_ASMFIX_PENDINGACTION,   0
+    DD      PATM_ASMFIX_PATCHBASE,       0
 %ifdef PATM_LOG_PATCHINSTR        
-    DD      PATM_PENDINGACTION,   0
+    DD      PATM_ASMFIX_PENDINGACTION,   0
 %endif
     DD      0ffffffffh, 0ffffffffh
 
@@ -2478,25 +2478,25 @@ GLOBALNAME g_patmRetFunctionRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMCheckIF
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
-    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    test    dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
     jnz     PATMCheckIF_Safe
     nop
 
     ; IF=0 -> unsafe, so we must call the duplicated function (which we don't do here)
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     jmp     NAME(PATMCheckIF_EndProc)
 
 PATMCheckIF_Safe:
     ; invalidate the PATM stack as we'll jump back to guest code
-    mov     dword [ss:PATM_STACKPTR], PATM_STACK_SIZE
+    mov     dword [ss:PATM_ASMFIX_STACKPTR], PATM_STACK_SIZE
 
 %ifdef PATM_LOG_PATCHINSTR
     push    eax
     push    ecx
-    lock    or dword [ss:PATM_PENDINGACTION], PATM_ACTION_LOG_IF1
+    lock    or dword [ss:PATM_ASMFIX_PENDINGACTION], PATM_ACTION_LOG_IF1
     mov     eax, PATM_ACTION_LOG_IF1
     mov     ecx, PATM_ACTION_MAGIC
     db      0fh, 0bh        ; illegal instr (hardcoded assumption in PATMHandleIllegalInstrTrap)
@@ -2504,11 +2504,11 @@ PATMCheckIF_Safe:
     pop     eax
 %endif
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     ; IF=1 -> we can safely jump back to the original instruction
     DB      0xE9
 PATMCheckIF_Jump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMCheckIF
 
 ; Patch record for call instructions
@@ -2519,14 +2519,14 @@ GLOBALNAME g_patmCheckIFRecord
 %else
     PATCHASMRECORD_INIT_JUMP PATMCheckIF, PATMCheckIF_Jump, 5
 %endif
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_STACKPTR,      0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_STACKPTR,      0
 %ifdef PATM_LOG_PATCHINSTR      
-    DD      PATM_PENDINGACTION, 0
+    DD      PATM_ASMFIX_PENDINGACTION, 0
 %endif                          
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
@@ -2535,34 +2535,34 @@ GLOBALNAME g_patmCheckIFRecord
 ;
 BEGIN_PATCH_CODE_SECTION
 BEGINPROC   PATMJumpToGuest_IF1
-    mov     dword [ss:PATM_INTERRUPTFLAG], 0
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 0
     pushf
-    test    dword [ss:PATM_VMFLAGS], X86_EFL_IF
+    test    dword [ss:PATM_ASMFIX_VMFLAGS], X86_EFL_IF
     jnz     PATMJumpToGuest_IF1_Safe
     nop
 
     ; IF=0 -> unsafe, so fault
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     PATM_INT3
 
 PATMJumpToGuest_IF1_Safe:
     ; IF=1 -> we can safely jump back to the original instruction
     popf
-    mov     dword [ss:PATM_INTERRUPTFLAG], 1
+    mov     dword [ss:PATM_ASMFIX_INTERRUPTFLAG], 1
     DB      0xE9
 PATMJumpToGuest_IF1_Jump:
-    DD      PATM_JUMPDELTA
+    DD      PATM_ASMFIX_JUMPDELTA
 ENDPROC     PATMJumpToGuest_IF1
 
 ; Patch record for call instructions
 BEGIN_PATCH_RODATA_SECTION
 GLOBALNAME PATMJumpToGuest_IF1Record
     PATCHASMRECORD_INIT_JUMP PATMJumpToGuest_IF1, PATMJumpToGuest_IF1_Jump, 4
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_VMFLAGS,       0
-    DD      PATM_INTERRUPTFLAG, 0
-    DD      PATM_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_VMFLAGS,       0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
+    DD      PATM_ASMFIX_INTERRUPTFLAG, 0
     DD      0ffffffffh, 0ffffffffh
 
 
