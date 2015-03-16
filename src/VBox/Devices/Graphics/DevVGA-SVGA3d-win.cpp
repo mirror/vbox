@@ -4704,13 +4704,23 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
     {
         D3DTEXTURESTAGESTATETYPE textureType = D3DTSS_FORCE_DWORD;
         D3DSAMPLERSTATETYPE      samplerType = D3DSAMP_FORCE_DWORD;
+        uint32_t                 currentStage = pTextureState[i].stage;
 
-        Log(("vmsvga3dSetTextureState: cid=%x stage=%d type=%s (%x) val=%x\n", cid, pTextureState[i].stage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
+        Log(("vmsvga3dSetTextureState: cid=%x stage=%d type=%s (%x) val=%x\n", cid, currentStage, vmsvga3dTextureStateToString(pTextureState[i].name), pTextureState[i].name, pTextureState[i].value));
+
+        /** @todo Is this the appropriate limit for all kinds of textures?  It is the
+         * size of aSidActiveTexture and for binding/unbinding we cannot exceed it. */
+        if (RT_UNLIKELY(currentStage >= SVGA3D_MAX_TEXTURE_STAGE))
+        {
+            AssertMsgFailed(("pTextureState[%d].stage=%#x name=%#x\n", i, pTextureState[i].stage, pTextureState[i].name));
+            continue;
+        }
+
         /* Record the texture state for vm state saving. */
-        if (    pTextureState[i].stage < SVGA3D_MAX_TEXTURE_STAGE
+        if (    currentStage < SVGA3D_MAX_TEXTURE_STAGE
             &&  pTextureState[i].name < SVGA3D_TS_MAX)
         {
-            pContext->state.aTextureState[pTextureState[i].stage][pTextureState[i].name] = pTextureState[i];
+            pContext->state.aTextureState[currentStage][pTextureState[i].name] = pTextureState[i];
         }
 
         switch (pTextureState[i].name)
@@ -4798,12 +4808,11 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         case SVGA3D_TS_BIND_TEXTURE:                /* SVGA3dSurfaceId */
             if (pTextureState[i].value == SVGA3D_INVALID_ID)
             {
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x\n", pTextureState[i].stage, pTextureState[i].value));
+                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x\n", currentStage, pTextureState[i].value));
 
-                pContext->aSidActiveTexture[pTextureState[i].stage] = SVGA3D_INVALID_ID;
+                pContext->aSidActiveTexture[currentStage] = SVGA3D_INVALID_ID;
                 /* Unselect the currently associated texture. */
-                hr = pContext->pDevice->SetTexture(pTextureState[i].stage,
-                                                   NULL);
+                hr = pContext->pDevice->SetTexture(currentStage, NULL);
                 AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetTextureState: SetTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
             }
             else
@@ -4816,7 +4825,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
                 PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
 
-                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d)\n", pTextureState[i].stage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width, pSurface->pMipmapLevels[0].size.height));
+                Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d)\n", currentStage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width, pSurface->pMipmapLevels[0].size.height));
 
                 if (!pSurface->u.pTexture)
                 {
@@ -4839,17 +4848,15 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                     PVMSVGA3DSHAREDSURFACE pSharedSurface = vmsvga3dSurfaceGetSharedCopy(pThis, pContext, pSurface);
                     AssertReturn(pSharedSurface, VERR_INTERNAL_ERROR);
 
-                    hr = pContext->pDevice->SetTexture(pTextureState[i].stage,
-                                                       pSharedSurface->u.pTexture);
+                    hr = pContext->pDevice->SetTexture(currentStage, pSharedSurface->u.pTexture);
                 }
                 else
 #endif
-                    hr = pContext->pDevice->SetTexture(pTextureState[i].stage,
-                                                       pSurface->u.pTexture);
+                    hr = pContext->pDevice->SetTexture(currentStage, pSurface->u.pTexture);
 
                 AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetTextureState: SetTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-                pContext->aSidActiveTexture[pTextureState[i].stage] = sid;
+                pContext->aSidActiveTexture[currentStage] = sid;
             }
             /* Finished; continue with the next one. */
             continue;
@@ -4930,12 +4937,12 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
 
         if (textureType != D3DTSS_FORCE_DWORD)
         {
-            hr = pContext->pDevice->SetTextureStageState(pTextureState[i].stage, textureType, val);
+            hr = pContext->pDevice->SetTextureStageState(currentStage, textureType, val);
         }
         else
         {
             Assert(samplerType != D3DSAMP_FORCE_DWORD);
-            hr = pContext->pDevice->SetSamplerState(pTextureState[i].stage, samplerType, val);
+            hr = pContext->pDevice->SetSamplerState(currentStage, samplerType, val);
         }
 
         AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetTextureState: SetTextureStageState failed with %x\n", hr), VERR_INTERNAL_ERROR);

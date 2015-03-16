@@ -6115,11 +6115,21 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
         }
 
         /* Active the right texture unit for subsequent texture state changes. */
-        if (pTextureState[i].stage != currentStage)
+        if (pTextureState[i].stage != currentStage || i == 0)
         {
-            pState->ext.glActiveTexture(GL_TEXTURE0 + pTextureState[i].stage);
-            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-            currentStage = pTextureState[i].stage;
+            /** @todo Is this the appropriate limit for all kinds of textures?  It is the
+             * size of aSidActiveTexture and for binding/unbinding we cannot exceed it. */
+            if (pTextureState[i].stage < SVGA3D_MAX_TEXTURE_STAGE)
+            {
+                pState->ext.glActiveTexture(GL_TEXTURE0 + pTextureState[i].stage);
+                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+                currentStage = pTextureState[i].stage;
+            }
+            else
+            {
+                AssertMsgFailed(("pTextureState[%d].stage=%#x name=%#x\n", i, pTextureState[i].stage, pTextureState[i].name));
+                continue;
+            }
         }
 
         switch (pTextureState[i].name)
@@ -6161,7 +6171,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             if (pTextureState[i].value == SVGA3D_INVALID_ID)
             {
                 Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x replacing=%x\n",
-                     pTextureState[i].stage, pTextureState[i].value, pContext->aSidActiveTexture[currentStage]));
+                     currentStage, pTextureState[i].value, pContext->aSidActiveTexture[currentStage]));
 
                 pContext->aSidActiveTexture[currentStage] = SVGA3D_INVALID_ID;
                 /* Unselect the currently associated texture. */
@@ -6181,7 +6191,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                 PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
 
                 Log(("SVGA3D_TS_BIND_TEXTURE: stage %d, texture surface id=%x (%d,%d) replacing=%x\n",
-                     pTextureState[i].stage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width,
+                     currentStage, pTextureState[i].value, pSurface->pMipmapLevels[0].size.width,
                      pSurface->pMipmapLevels[0].size.height, pContext->aSidActiveTexture[currentStage]));
 
                 if (pSurface->oglId.texture == OPENGL_INVALID_ID)
@@ -6263,7 +6273,6 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
             }
             else
                 val = vmsvga3dTextureFilter2OGL((SVGA3dTextureFilter)minFilter);
-
             break;
         }
 
