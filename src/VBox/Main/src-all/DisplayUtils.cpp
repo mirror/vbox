@@ -163,10 +163,9 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
         vrc = SSMR3Seek(pSSM, "DisplayData", 0 /*iInstance*/, &uVersion);
         if (RT_SUCCESS(vrc))
         {
-            if (   uVersion == sSSMDisplayVer2
-                || uVersion == sSSMDisplayVer3
-                || uVersion == sSSMDisplayVer4
-                || uVersion == sSSMDisplayVer5)
+            /* Starting from sSSMDisplayVer2 we have pu32Width and pu32Height.
+             * Starting from sSSMDisplayVer3 we have all the rest of parameters we need. */
+            if (uVersion >= sSSMDisplayVer2)
             {
                 uint32_t cMonitors;
                 SSMR3GetU32(pSSM, &cMonitors);
@@ -188,7 +187,6 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
                     }
                     else
                     {
-                        Assert(uVersion == sSSMDisplayVer3);
                         /* Skip all previous monitors, each 8 uint32_t, and the first 3 uint32_t entries. */
                         SSMR3Skip(pSSM, u32ScreenId * 8 * sizeof(uint32_t) + 3 * sizeof(uint32_t));
                         SSMR3GetU32(pSSM, pu32Width);
