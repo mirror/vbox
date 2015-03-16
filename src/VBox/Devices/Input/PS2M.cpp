@@ -562,7 +562,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
 bool ps2mIsRateSupported(uint8_t rate)
 {
     static uint8_t  aValidRates[] = { 10, 20, 40, 60, 80, 100, 200 };
-    int             i;
+    size_t          i;
     bool            fValid = false;
 
     for (i = 0; i < RT_ELEMENTS(aValidRates); ++i)
