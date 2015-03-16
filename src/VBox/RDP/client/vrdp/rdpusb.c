@@ -97,6 +97,9 @@ typedef struct _DevListEntry
 } DevListEntry;
 #pragma pack ()
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_open(PUSBPROXYDEV p, const char *pszAddress)
 {
      return g_USBProxyDeviceHost.pfnOpen (p, pszAddress, NULL);
@@ -107,31 +110,49 @@ static inline void op_usbproxy_back_close(PUSBPROXYDEV pDev)
      return g_USBProxyDeviceHost.pfnClose (pDev);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_reset(PUSBPROXYDEV pDev)
 {
     return g_USBProxyDeviceHost.pfnReset (pDev, false);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_set_config(PUSBPROXYDEV pDev, int cfg)
 {
     return g_USBProxyDeviceHost.pfnSetConfig (pDev, cfg);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_claim_interface(PUSBPROXYDEV pDev, int ifnum)
 {
     return g_USBProxyDeviceHost.pfnClaimInterface (pDev, ifnum);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_release_interface(PUSBPROXYDEV pDev, int ifnum)
 {
     return g_USBProxyDeviceHost.pfnReleaseInterface (pDev, ifnum);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_interface_setting(PUSBPROXYDEV pDev, int ifnum, int setting)
 {
     return g_USBProxyDeviceHost.pfnSetInterface (pDev, ifnum, setting);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_queue_urb(PUSBPROXYDEV pDev, PVUSBURB pUrb)
 {
     return g_USBProxyDeviceHost.pfnUrbQueue(pDev, pUrb);
@@ -142,11 +163,17 @@ static inline PVUSBURB op_usbproxy_back_reap_urb(PUSBPROXYDEV pDev, unsigned cMi
     return g_USBProxyDeviceHost.pfnUrbReap (pDev, cMillies);
 }
 
-static inline bool op_usbproxy_back_clear_halted_ep(PUSBPROXYDEV pDev, unsigned EndPoint)
+/**
+ * @returns VBox status code.
+ */
+static inline int op_usbproxy_back_clear_halted_ep(PUSBPROXYDEV pDev, unsigned EndPoint)
 {
     return g_USBProxyDeviceHost.pfnClearHaltedEndpoint (pDev, EndPoint);
 }
 
+/**
+ * @returns VBox status code.
+ */
 static inline int op_usbproxy_back_cancel_urb(PUSBPROXYDEV pDev, PVUSBURB pUrb)
 {
     return g_USBProxyDeviceHost.pfnUrbCancel (pDev, pUrb);
@@ -470,14 +497,14 @@ rdpusb_process(STREAM s)
 				return;
 			}
 
+			memset (proxy, 0, sizeof (USBPROXYDEV));
+
 			proxy->pvInstanceDataR3 = xmalloc(g_USBProxyDeviceHost.cbBackend);
 			if (!proxy->pvInstanceDataR3)
 			{
 				error("RDPUSB: Out of memory allocating proxy backend data\n");
 				return;
 			}
-
-			memset (proxy, 0, sizeof (USBPROXYDEV));
 
 			proxy->Dev.pszName = "Remote device";
 			proxy->devid = devid;
@@ -550,7 +577,6 @@ rdpusb_process(STREAM s)
 			}
 
 			rc = op_usbproxy_back_reset(proxy);
-
 			if (rc != VINF_SUCCESS)
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (!rc, &proxy->Dev), devid);
@@ -573,8 +599,7 @@ rdpusb_process(STREAM s)
 	        	in_uint8(s, cfg);
 
 			rc = op_usbproxy_back_set_config(proxy, cfg);
-
-			if (!rc)
+			if (RT_FAILURE(rc))
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (rc, &proxy->Dev), devid);
 			}
@@ -594,10 +619,10 @@ rdpusb_process(STREAM s)
 			}
 
 	        	in_uint8(s, ifnum);
+				in_uint8(s, ifnum);
 
 			rc = op_usbproxy_back_claim_interface(proxy, ifnum);
-
-			if (!rc)
+			if (RT_FAILURE(rc))
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (rc, &proxy->Dev), devid);
 			}
@@ -619,8 +644,7 @@ rdpusb_process(STREAM s)
 	        	in_uint8(s, ifnum);
 
 			rc = op_usbproxy_back_release_interface(proxy, ifnum);
-
-			if (!rc)
+			if (RT_FAILURE(rc))
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (rc, &proxy->Dev), devid);
 			}
@@ -644,8 +668,7 @@ rdpusb_process(STREAM s)
 	        	in_uint8(s, setting);
 
 			rc = op_usbproxy_back_interface_setting(proxy, ifnum, setting);
-
-			if (!rc)
+			if (RT_FAILURE(rc))
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (rc, &proxy->Dev), devid);
 			}
@@ -702,7 +725,7 @@ rdpusb_process(STREAM s)
 
 			/* No reply required. */
 
-			if (rc)
+			if (RT_SUCCESS(rc))
 			{
 				if (proxy->pUrbs)
 				{
@@ -739,8 +762,7 @@ rdpusb_process(STREAM s)
 	        	in_uint8(s, ep);
 
 			rc = op_usbproxy_back_clear_halted_ep(proxy, ep);
-
-			if (!rc)
+			if (RT_FAILURE(rc))
 			{
 				rdpusb_send_reply (code, vrdp_usb_status (rc, &proxy->Dev), devid);
 			}
