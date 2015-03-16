@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -803,6 +803,10 @@ int handleSetExtraData(HandlerArg *a)
                                                machine.asOutParam()));
         if (machine)
         {
+            /* open an existing session for the VM */
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+            /* get the session machine */
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
             /** @todo passing NULL is deprecated */
             if (a->argc < 3)
                 CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]).raw(),

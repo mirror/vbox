@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2014 Oracle Corporation
+ * Copyright (C) 2004-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1024,7 +1024,7 @@ HRESULT Machine::setDescription(const com::Utf8Str &aDescription)
     // this can be done in principle in any state as it doesn't affect the VM
     // significantly, but play safe by not messing around while complex
     // activities are going on
-    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -1064,8 +1064,7 @@ HRESULT Machine::setGroups(const std::vector<com::Utf8Str> &aGroups)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    // changing machine groups is possible while the VM is offline
-    rc = i_checkStateDependency(OfflineStateDep);
+    rc = i_checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -2618,7 +2617,7 @@ HRESULT Machine::getSettingsModified(BOOL *aSettingsModified)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     if (!mData->pMachineConfigFile->fileExists())
@@ -2825,7 +2824,7 @@ HRESULT Machine::setGuestPropertyNotificationPatterns(const com::Utf8Str &aGuest
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -2979,7 +2978,7 @@ HRESULT Machine::setFaultToleranceState(FaultToleranceState_T aFaultToleranceSta
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo deal with running state change. */
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -3691,7 +3690,7 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
     AutoMultiWriteLock2 alock(mParent->i_host(), this COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     /// @todo NEWMEDIA implicit machine registration
@@ -4255,7 +4254,7 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
@@ -4879,6 +4878,18 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
     // look up the old value first; if nothing has changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
+
+        // For snapshots don't even think about allowing changes, extradata
+        // is global for a machine, so there is nothing snapshot specific.
+        if (i_isSnapshotMachine())
+            return setError(VBOX_E_INVALID_VM_STATE,
+                            tr("Cannot set extradata for a snapshot"));
+
+        // check if the right IMachine instance is used
+        if (!i_isSessionMachine())
+            return setError(VBOX_E_INVALID_VM_STATE,
+                            tr("Cannot set extradata for an immutable machine"));
+
         settings::StringsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(aKey);
         if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
             strOldValue = it->second;
@@ -4909,12 +4920,6 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
 
         // data is changing and change not vetoed: then write it out under the lock
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        if (i_isSnapshotMachine())
-        {
-            HRESULT rc = i_checkStateDependency(MutableStateDep);
-            if (FAILED(rc)) return rc;
-        }
 
         if (aValue.isEmpty())
             mData->pMachineConfigFile->mapExtraDataItems.erase(aKey);
@@ -4955,9 +4960,7 @@ HRESULT Machine::saveSettings()
 {
     AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* when there was auto-conversion, we want to save the file even if
-     * the VM is saved */
-    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     /* the settings file path may never be null */
@@ -4983,7 +4986,7 @@ HRESULT Machine::discardSettings()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     /*
@@ -5636,7 +5639,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = S_OK;
 
-    rc = i_checkStateDependency(MutableStateDep);
+    rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     try
@@ -6839,7 +6842,7 @@ HRESULT Machine::setAutostartEnabled(BOOL aAutostartEnabled)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT hrc = i_checkStateDependency(MutableStateDep);
+    HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (   SUCCEEDED(hrc)
         && mHWData->mAutostart.fAutostartEnabled != !!aAutostartEnabled)
     {
@@ -6887,7 +6890,7 @@ HRESULT Machine::getAutostartDelay(ULONG *aAutostartDelay)
 HRESULT Machine::setAutostartDelay(ULONG aAutostartDelay)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT hrc = i_checkStateDependency(MutableStateDep);
+    HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
     if (SUCCEEDED(hrc))
     {
         hrc = mHWData.backupEx();
@@ -6912,7 +6915,7 @@ HRESULT Machine::getAutostopType(AutostopType_T *aAutostopType)
 HRESULT Machine::setAutostopType(AutostopType_T aAutostopType)
 {
    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-   HRESULT hrc = i_checkStateDependency(MutableStateDep);
+   HRESULT hrc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
    if (   SUCCEEDED(hrc)
        && mHWData->mAutostart.enmAutostopType != aAutostopType)
    {
@@ -7967,9 +7970,17 @@ Utf8Str Machine::i_getExtraData(const Utf8Str &strKey)
  *  returned. This is useful in setters which allow changing machine
  *  properties when it is in the saved state.
  *
- *  When @a aDepType is OfflineStateDep, this method returns S_OK if the
- *  state is one of the 4 offline states (PoweredOff, Saved, Teleported,
- *  Aborted).
+ *  When @a aDepType is MutableOrRunningStateDep, this method returns S_OK only
+ *  if the current state of this machine object allows to change runtime
+ *  changeable settings of the machine (i.e. the machine is not registered, or
+ *  registered but either running or not running and not saved). It is useful
+ *  to call this method from Machine setters before performing any changes to
+ *  runtime changeable settings.
+ *
+ *  When @a aDepType is MutableOrSavedOrRunningStateDep, this method behaves
+ *  the same as for MutableOrRunningStateDep except that if the machine is
+ *  saved, S_OK is also returned. This is useful in setters which allow
+ *  changing runtime and saved state changeable machine properties.
  *
  *  @param aDepType     Dependency type to check.
  *
@@ -7991,11 +8002,8 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
         case MutableStateDep:
         {
             if (   mData->mRegistered
-                && (   !i_isSessionMachine()  /** @todo This was just converted raw; Check if Running and
-                                                  Paused should actually be included here... (Live Migration) */
-                    || (   mData->mMachineState != MachineState_Paused
-                        && mData->mMachineState != MachineState_Running
-                        && mData->mMachineState != MachineState_Aborted
+                && (   !i_isSessionMachine()
+                    || (   mData->mMachineState != MachineState_Aborted
                         && mData->mMachineState != MachineState_Teleported
                         && mData->mMachineState != MachineState_PoweredOff
                        )
@@ -8009,11 +8017,8 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
         case MutableOrSavedStateDep:
         {
             if (   mData->mRegistered
-                && (   !i_isSessionMachine() /** @todo This was just converted raw; Check if Running and
-                                                 Paused should actually be included here... (Live Migration) */
-                    || (   mData->mMachineState != MachineState_Paused
-                        && mData->mMachineState != MachineState_Running
-                        && mData->mMachineState != MachineState_Aborted
+                && (   !i_isSessionMachine()
+                    || (   mData->mMachineState != MachineState_Aborted
                         && mData->mMachineState != MachineState_Teleported
                         && mData->mMachineState != MachineState_Saved
                         && mData->mMachineState != MachineState_PoweredOff
@@ -8025,19 +8030,36 @@ HRESULT Machine::i_checkStateDependency(StateDependency aDepType)
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
-        case OfflineStateDep:
+        case MutableOrRunningStateDep:
         {
             if (   mData->mRegistered
                 && (   !i_isSessionMachine()
-                    || (   mData->mMachineState != MachineState_PoweredOff
-                        && mData->mMachineState != MachineState_Saved
-                        && mData->mMachineState != MachineState_Aborted
+                    || (   mData->mMachineState != MachineState_Aborted
                         && mData->mMachineState != MachineState_Teleported
+                        && mData->mMachineState != MachineState_PoweredOff
+                        && !Global::IsOnline(mData->mMachineState)
                        )
                    )
                )
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not offline (state is %s)"),
+                                tr("The machine is not mutable (state is %s)"),
+                                Global::stringifyMachineState(mData->mMachineState));
+            break;
+        }
+        case MutableOrSavedOrRunningStateDep:
+        {
+            if (   mData->mRegistered
+                && (   !i_isSessionMachine()
+                    || (   mData->mMachineState != MachineState_Aborted
+                        && mData->mMachineState != MachineState_Teleported
+                        && mData->mMachineState != MachineState_Saved
+                        && mData->mMachineState != MachineState_PoweredOff
+                        && !Global::IsOnline(mData->mMachineState)
+                       )
+                   )
+               )
+                return setError(VBOX_E_INVALID_VM_STATE,
+                                tr("The machine is not mutable (state is %s)"),
                                 Global::stringifyMachineState(mData->mMachineState));
             break;
         }
