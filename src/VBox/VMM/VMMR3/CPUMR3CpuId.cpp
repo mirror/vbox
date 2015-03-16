@@ -719,10 +719,18 @@ static int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLea
     /*
      * Validate the new leaf a little.
      */
-    AssertReturn(!(pNewLeaf->fFlags & ~CPUMCPUIDLEAF_F_VALID_MASK), VERR_INVALID_FLAGS);
-    AssertReturn(pNewLeaf->fSubLeafMask != 0 || pNewLeaf->uSubLeaf == 0, VERR_INVALID_PARAMETER);
-    AssertReturn(RT_IS_POWER_OF_TWO(pNewLeaf->fSubLeafMask + 1), VERR_INVALID_PARAMETER);
-    AssertReturn((pNewLeaf->fSubLeafMask & pNewLeaf->uSubLeaf) == pNewLeaf->uSubLeaf, VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(!(pNewLeaf->fFlags & ~CPUMCPUIDLEAF_F_VALID_MASK),
+                          ("%#x/%#x: %#x", pNewLeaf->uLeaf, pNewLeaf->uSubLeaf, pNewLeaf->fFlags),
+                          VERR_INVALID_FLAGS);
+    AssertLogRelMsgReturn(pNewLeaf->fSubLeafMask != 0 || pNewLeaf->uSubLeaf == 0,
+                          ("%#x/%#x: %#x", pNewLeaf->uLeaf, pNewLeaf->uSubLeaf, pNewLeaf->fSubLeafMask),
+                          VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(RT_IS_POWER_OF_TWO(pNewLeaf->fSubLeafMask + 1),
+                          ("%#x/%#x: %#x", pNewLeaf->uLeaf, pNewLeaf->uSubLeaf, pNewLeaf->fSubLeafMask),
+                          VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn((pNewLeaf->fSubLeafMask & pNewLeaf->uSubLeaf) == pNewLeaf->uSubLeaf,
+                          ("%#x/%#x: %#x", pNewLeaf->uLeaf, pNewLeaf->uSubLeaf, pNewLeaf->fSubLeafMask),
+                          VERR_INVALID_PARAMETER);
 
     /*
      * Find insertion point.  The lazy bird uses the same excuse as in
