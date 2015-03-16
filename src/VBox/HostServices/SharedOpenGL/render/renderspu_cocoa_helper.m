@@ -742,7 +742,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
 @end
 
+#ifndef IN_VMSVGA3D
 @class DockOverlayView;
+#endif
 
 /** 
  * The custom view class. 
@@ -767,6 +769,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
                        
     GLuint              m_FBOId;
 
+#ifndef IN_VMSVGA3D
     /** The corresponding dock tile view of this OpenGL view & all helper
      * members. */
     DockOverlayView    *m_DockTileView;
@@ -774,6 +777,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     GLfloat             m_FBOThumbScaleX;
     GLfloat             m_FBOThumbScaleY;
     uint64_t            m_msDockUpdateTS;
+#endif
 
     /** @name For clipping
      * @remarks appears to be unused and a complete waste of time + heap.
@@ -831,8 +835,10 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)vboxReshapeOnResizePerform;
 - (void)vboxReshapeOnReparentPerform;
 
+#ifndef IN_VMSVGA3D
 - (void)createDockTile;
 - (void)deleteDockTile;
+#endif
 
 - (void)makeCurrentFBO;
 - (void)swapFBO;
@@ -858,8 +864,10 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 - (void)setVisibleRegions:(GLint)cRects paRects:(const GLint *)paRects;
 - (GLboolean)vboxNeedsEmptyPresent;
 
+#ifndef IN_VMSVGA3D
 - (NSView *)dockTileScreen;
 - (void)reshapeDockTile;
+#endif
 - (void)cleanupData;
 @end
 
@@ -903,6 +911,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 @end
 
 
+#ifndef IN_VMSVGA3D
 /**
  * Dock overlay view class.
  */
@@ -1058,6 +1067,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     return m_ThumbImage;
 }
 @end
+#endif /* !IN_VMSVGA3D */
 
 
 /********************************************************************************
@@ -1379,7 +1389,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
 
+#ifndef IN_VMSVGA3D
     [self deleteDockTile];
+#endif
 
     [self setGLCtx:nil];
     
@@ -1651,7 +1663,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
 
     [self vboxReshapePerform];
+#ifndef IN_VMSVGA3D
     [self createDockTile];
+#endif
 
     /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
     m_fNeedViewportUpdate = true;
@@ -1676,7 +1690,9 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
     [self vboxReshapePerform];
+#ifndef IN_VMSVGA3D
     [self createDockTile];
+#endif
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
 
@@ -1824,7 +1840,11 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
 - (void)vboxReshapePerform
 {
+#ifndef IN_VMSVGA3D
     COCOA_LOG_FLOW(("%s: self=%p - m_DockTileView=%p\n", __PRETTY_FUNCTION__, (void *)self, (void *)m_DockTileView));
+#else
+    COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
+#endif
 
     /* NOTE: Please consider the next naming convention for variables.
      *
@@ -1892,8 +1912,10 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     /* Set the new frame. */
     [[self window] setFrame:windowFrameSCS display:YES];
 
+#ifndef IN_VMSVGA3D
     /* Inform the dock tile view as well. */
     [self reshapeDockTile];
+#endif
 
     /* Make sure the context is updated accordingly. */
     /* [self updateViewport]; */
@@ -1909,6 +1931,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
+
+#ifndef IN_VMSVGA3D
 
 - (void)createDockTile
 {
@@ -1943,6 +1967,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
+
+#endif /* !IN_VMSVGA3D */
 
 - (void)makeCurrentFBO
 {
@@ -2661,6 +2687,8 @@ static int g_cVBoxTgaCtr = 0;
     COCOA_LOG_FLOW(("%s: returns\n", __PRETTY_FUNCTION__));
 }
 
+#ifndef IN_VMSVGA3D
+
 - (NSView *)dockTileScreen
 {
     COCOA_LOG_FLOW(("%s: self=%p\n", __PRETTY_FUNCTION__, (void *)self));
@@ -2711,6 +2739,8 @@ static int g_cVBoxTgaCtr = 0;
     COCOA_LOG_FLOW(("%s: returns - newFrame={%d,%d %d,%d} pView=%d\n", __PRETTY_FUNCTION__,  (int)newFrame.origin.x, 
                     (int)newFrame.origin.y, (int)newFrame.size.width, (int)newFrame.size.height, (void *)pView));
 }
+
+#endif /* !IN_VMSVGA3D */
 
 @end /* @implementation OverlayView */
 
