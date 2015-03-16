@@ -164,7 +164,9 @@ int readSavedGuestScreenInfo(const Utf8Str &strStateFilePath, uint32_t u32Screen
         if (RT_SUCCESS(vrc))
         {
             if (   uVersion == sSSMDisplayVer2
-                || uVersion == sSSMDisplayVer3)
+                || uVersion == sSSMDisplayVer3
+                || uVersion == sSSMDisplayVer4
+                || uVersion == sSSMDisplayVer5)
             {
                 uint32_t cMonitors;
                 SSMR3GetU32(pSSM, &cMonitors);
