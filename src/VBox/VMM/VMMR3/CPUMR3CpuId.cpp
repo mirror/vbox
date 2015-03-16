@@ -678,6 +678,36 @@ static int cpumR3CollectCpuIdInfoAddOne(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
 
 
 /**
+ * Checks that we've updated the CPUID leaves array correctly.
+ *
+ * This is a no-op in non-strict builds.
+ *
+ * @param   paLeaves            The leaves array.
+ * @param   cLeaves             The number of leaves.
+ */
+static void cpumR3CpuIdAssertOrder(PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves)
+{
+#ifdef VBOX_STRICT
+    for (uint32_t i = 1; i < cLeaves; i++)
+        if (paLeaves[i].uLeaf != paLeaves[i - 1].uLeaf)
+            AssertMsg(paLeaves[i].uLeaf > paLeaves[i - 1].uLeaf, ("%#x vs %#x\n", paLeaves[i].uLeaf, paLeaves[i - 1].uLeaf));
+        else
+        {
+            AssertMsg(paLeaves[i].uSubLeaf > paLeaves[i - 1].uSubLeaf,
+                      ("%#x: %#x vs %#x\n", paLeaves[i].uLeaf, paLeaves[i].uSubLeaf, paLeaves[i - 1].uSubLeaf));
+            AssertMsg(paLeaves[i].fSubLeafMask == paLeaves[i - 1].fSubLeafMask,
+                      ("%#x/%#x: %#x vs %#x\n", paLeaves[i].uLeaf, paLeaves[i].uSubLeaf, paLeaves[i].fSubLeafMask, paLeaves[i - 1].fSubLeafMask));
+            AssertMsg(paLeaves[i].fFlags == paLeaves[i - 1].fFlags,
+                      ("%#x/%#x: %#x vs %#x\n", paLeaves[i].uLeaf, paLeaves[i].uSubLeaf, paLeaves[i].fFlags, paLeaves[i - 1].fFlags));
+        }
+#else
+    NOREF(paLeaves);
+    NOREF(cLeaves);
+#endif
+}
+
+
+/**
  * Inserts a CPU ID leaf, replacing any existing ones.
  *
  * When inserting a simple leaf where we already got a series of subleaves with
@@ -781,21 +811,25 @@ static int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLea
             }
 
             paLeaves[i] = *pNewLeaf;
+            cpumR3CpuIdAssertOrder(*ppaLeaves, *pcLeaves);
             return VINF_SUCCESS;
         }
 
         /* Find sub-leaf insertion point. */
         while (   i < cLeaves
-               && paLeaves[i].uSubLeaf < pNewLeaf->uSubLeaf)
+               && paLeaves[i].uSubLeaf < pNewLeaf->uSubLeaf
+               && paLeaves[i].uLeaf == pNewLeaf->uLeaf)
             i++;
 
         /*
          * If we've got an exactly matching leaf, replace it.
          */
-        if (   paLeaves[i].uLeaf    == pNewLeaf->uLeaf
+        if (   i < cLeaves
+            && paLeaves[i].uLeaf    == pNewLeaf->uLeaf
             && paLeaves[i].uSubLeaf == pNewLeaf->uSubLeaf)
         {
             paLeaves[i] = *pNewLeaf;
+            cpumR3CpuIdAssertOrder(*ppaLeaves, *pcLeaves);
             return VINF_SUCCESS;
         }
     }
@@ -812,6 +846,8 @@ static int cpumR3CpuIdInsert(PVM pVM, PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcLea
         memmove(&paLeaves[i + 1], &paLeaves[i], (cLeaves - i) * sizeof(paLeaves[0]));
     *pcLeaves += 1;
     paLeaves[i] = *pNewLeaf;
+
+    cpumR3CpuIdAssertOrder(*ppaLeaves, *pcLeaves);
     return VINF_SUCCESS;
 }
 
@@ -857,6 +893,8 @@ static void cpumR3CpuIdRemoveRange(PCPUMCPUIDLEAF paLeaves, uint32_t *pcLeaves, 
             memmove(&paLeaves[iFirst], &paLeaves[iEnd], (cLeaves - iEnd) * sizeof(paLeaves[0]));
         *pcLeaves = cLeaves -= (iEnd - iFirst);
     }
+
+    cpumR3CpuIdAssertOrder(paLeaves, *pcLeaves);
 }
 
 
@@ -1190,6 +1228,7 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
         }
     }
 
+    cpumR3CpuIdAssertOrder(*ppaLeaves, *pcLeaves);
     return VINF_SUCCESS;
 }
 
@@ -1858,6 +1897,8 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
 
 static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves)
 {
+    cpumR3CpuIdAssertOrder(paLeaves, cLeaves);
+
     /*
      * Install the CPUID information.
      */
@@ -1865,8 +1906,7 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
                            MM_TAG_CPUM_CPUID, (void **)&pCpum->GuestInfo.paCpuIdLeavesR3);
 
     AssertLogRelRCReturn(rc, rc);
-
-
+    pCpum->GuestInfo.cCpuIdLeaves = cLeaves;
     pCpum->GuestInfo.paCpuIdLeavesR0 = MMHyperR3ToR0(pVM, pCpum->GuestInfo.paCpuIdLeavesR3);
     pCpum->GuestInfo.paCpuIdLeavesRC = MMHyperR3ToRC(pVM, pCpum->GuestInfo.paCpuIdLeavesR3);
     Assert(MMHyperR0ToR3(pVM, pCpum->GuestInfo.paCpuIdLeavesR0) == (void *)pCpum->GuestInfo.paCpuIdLeavesR3);
@@ -3470,13 +3510,30 @@ static int cpumR3LoadGuestCpuIdArray(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion
                 {
                     /*
                      * Load the leaves one by one.
+                     *
+                     * The uPrev stuff is a kludge for working around a week worth of bad saved
+                     * states during the CPUID revamp in March 2015.  We saved too many leaves
+                     * due to a bug in cpumR3CpuIdInstallAndExplodeLeaves, thus ending up with
+                     * garbage entires at the end of the array when restoring.  We also had
+                     * a subleaf insertion bug that triggered with the leaf 4 stuff below,
+                     * this kludge doesn't deal correctly with that, but who cares...
                      */
+                    uint32_t uPrev = 0;
                     for (uint32_t i = 0; i < cLeaves && RT_SUCCESS(rc); i++)
                     {
                         CPUMCPUIDLEAF Leaf;
                         rc = SSMR3GetMem(pSSM, &Leaf, sizeof(Leaf));
                         if (RT_SUCCESS(rc))
-                            rc = cpumR3CpuIdInsert(NULL /* pVM */, ppaLeaves, pcLeaves, &Leaf);
+                        {
+                            if (   uVersion != CPUM_SAVED_STATE_VERSION_BAD_CPUID_COUNT
+                                || Leaf.uLeaf >= uPrev)
+                            {
+                                rc = cpumR3CpuIdInsert(NULL /* pVM */, ppaLeaves, pcLeaves, &Leaf);
+                                uPrev = Leaf.uLeaf;
+                            }
+                            else
+                                uPrev = UINT32_MAX;
+                        }
                     }
                 }
                 else
