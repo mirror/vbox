@@ -3084,18 +3084,20 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
     glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
     VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
+    /* Set the unpacking parameters. */
+    VMSVGAPACKPARAMS SavedParams;
+    vmsvga3dSetUnpackParams(pState, pContext, pSurface, &SavedParams);
+
     if (pSurface->fDirty)
     {
-        /* Set the unacpking parameters. */
-        VMSVGAPACKPARAMS SavedParams;
-        vmsvga3dSetUnpackParams(pState, pContext, pSurface, &SavedParams);
-
         Log(("vmsvga3dCreateTexture: sync dirty texture\n"));
         for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
         {
-            if (pSurface->pMipmapLevels[i].fDirty)
+            /* Paranoia: Always do level 0 here to mirror the non-dirty case. */
+            if (pSurface->pMipmapLevels[i].fDirty || i == 0)
             {
-                Log(("vmsvga3dCreateTexture: sync dirty texture mipmap level %d (pitch %x)\n", i, pSurface->pMipmapLevels[i].cbSurfacePitch));
+                if (pSurface->pMipmapLevels[i].fDirty)
+                    Log(("vmsvga3dCreateTexture: sync dirty texture mipmap level %d (pitch %x)\n", i, pSurface->pMipmapLevels[i].cbSurfacePitch));
 
                 glTexImage2D(GL_TEXTURE_2D,
                              i,
@@ -3113,13 +3115,11 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
             }
         }
         pSurface->fDirty = false;
-
-        /* Restore packing parameters. */
-        vmsvga3dRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
     }
     else
     {
-        /* Reserve texture memory. */
+        /* Allocate and initialize texture memory.  (Passing the zero filled pSurfaceData solves
+           the fedora 21 corruption issues (launchpad, background, search field, login).) */
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      pSurface->internalFormatGL,
@@ -3128,9 +3128,12 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
                      0,
                      pSurface->formatGL,
                      pSurface->typeGL,
-                     NULL);
+                     pSurface->pMipmapLevels[0].pSurfaceData);
         VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
     }
+
+    /* Restore unpacking parameters. */
+    vmsvga3dRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
 
     /* Restore the old active texture. */
     glBindTexture(GL_TEXTURE_2D, activeTexture);
