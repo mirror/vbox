@@ -206,29 +206,33 @@ public:
 
         /* Age: [date time|%1d ago|%1h ago|%1min ago|%1sec ago] */
         SnapshotAgeFormat ageFormat;
-        if (mTimestamp.daysTo (QDateTime::currentDateTime()) > 30)
+        QDateTime now = QDateTime::currentDateTime();
+        QDateTime then = mTimestamp;
+        if (then > now)
+            then = now; /* can happen if the host time is wrong */
+        if (then.daysTo (now) > 30)
         {
-            age = VBoxSnapshotsWgt::tr (" (%1)").arg (mTimestamp.toString (Qt::LocalDate));
+            age = VBoxSnapshotsWgt::tr (" (%1)").arg (then.toString (Qt::LocalDate));
             ageFormat = AgeMax;
         }
-        else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60 * 24)
+        else if (then.secsTo (now) > 60 * 60 * 24)
         {
-            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::daysToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60 / 24));
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::daysToString(then.secsTo (now) / 60 / 60 / 24));
             ageFormat = AgeInDays;
         }
-        else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60 * 60)
+        else if (then.secsTo (now) > 60 * 60)
         {
-            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::hoursToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60 / 60));
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::hoursToString(then.secsTo (now) / 60 / 60));
             ageFormat = AgeInHours;
         }
-        else if (mTimestamp.secsTo (QDateTime::currentDateTime()) > 60)
+        else if (then.secsTo (now) > 60)
         {
-            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::minutesToString(mTimestamp.secsTo (QDateTime::currentDateTime()) / 60));
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::minutesToString(then.secsTo (now) / 60));
             ageFormat = AgeInMinutes;
         }
         else
         {
-            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::secondsToString(mTimestamp.secsTo (QDateTime::currentDateTime())));
+            age = VBoxSnapshotsWgt::tr (" (%1 ago)").arg(VBoxGlobal::secondsToString(then.secsTo (now)));
             ageFormat = AgeInSeconds;
         }
 
