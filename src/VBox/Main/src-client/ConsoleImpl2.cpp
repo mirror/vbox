@@ -4257,7 +4257,8 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
 
                 /* Pass all custom parameters. */
                 bool fHostIP = true;
-                hrc = i_configMediumProperties(pCfg, pMedium, &fHostIP); H();
+                bool fEncrypted = false;
+                hrc = i_configMediumProperties(pCfg, pMedium, &fHostIP, &fEncrypted); H();
 
                 /* Create an inverted list of parents. */
                 uImage--;
@@ -4285,7 +4286,7 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                     }
 
                     /* Configure medium properties. */
-                    hrc = i_configMediumProperties(pCur, pMedium, &fHostIP); H();
+                    hrc = i_configMediumProperties(pCur, pMedium, &fHostIP, &fEncrypted); H();
 
                     /* next */
                     pParent = pCur;
@@ -4296,6 +4297,9 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
                  * configuration node. Simplifies life of DrvVD a bit. */
                 if (!fHostIP)
                     InsertConfigInteger(pCfg, "HostIPStack", 0);
+
+                if (fEncrypted)
+                    m_cDisksEncrypted++;
             }
         }
 #undef H
@@ -4313,11 +4317,12 @@ int Console::i_configMedium(PCFGMNODE pLunL0,
  * Adds the medium properties to the CFGM tree.
  *
  * @returns VBox status code.
- * @param   pCur       The current CFGM node.
- * @param   pMedium    The medium object to configure.
- * @param   pfHostIP   Where to return the value of the \"HostIPStack\" property if found.
+ * @param   pCur        The current CFGM node.
+ * @param   pMedium     The medium object to configure.
+ * @param   pfHostIP    Where to return the value of the \"HostIPStack\" property if found.
+ * @param   pfEncrypted Where to return whether the medium is encrypted.
  */
-int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP)
+int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP, bool *pfEncrypted)
 {
     /* Pass all custom parameters. */
     SafeArray<BSTR> aNames;
@@ -4364,6 +4369,10 @@ int Console::i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pf
                         &&  value.compare("0") == 0)
                         *pfHostIP = false;
                 }
+
+                if (   name.compare("CRYPT/KeyId") == 0
+                    && pfEncrypted)
+                    *pfEncrypted = true;
             }
         }
     }

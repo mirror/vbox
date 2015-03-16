@@ -703,7 +703,7 @@ private:
                        IMedium *pMedium,
                        MachineState_T aMachineState,
                        HRESULT *phrc);
-    int i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP);
+    int i_configMediumProperties(PCFGMNODE pCur, IMedium *pMedium, bool *pfHostIP, bool *pfEncrypted);
     static DECLCALLBACK(int) i_reconfigureMediumAttachment(Console *pThis,
                                                            PUVM pUVM,
                                                            const char *pcszDevice,
@@ -992,6 +992,8 @@ private:
 
     /** Map of secret keys used for disk encryption. */
     SecretKeyMap         m_mapSecretKeys;
+    /** Number of disks configured for encryption. */
+    unsigned             m_cDisksEncrypted;
 
     /** Pointer to the key consumer -> provider (that's us) callbacks. */
     struct MYPDMISECKEY : public PDMISECKEY

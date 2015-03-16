@@ -3387,7 +3387,26 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
         /* Add the key to the map */
         m_mapSecretKeys.insert(std::make_pair(aId, pKey));
         hrc = i_configureEncryptionForDisk(aId);
-        if (FAILED(hrc))
+        if (SUCCEEDED(hrc))
+        {
+            if (   m_mapSecretKeys.size() == m_cDisksEncrypted
+                && mMachineState == MachineState_Paused)
+            {
+                /* get the VM handle. */
+                SafeVMPtr ptrVM(this);
+                if (!ptrVM.isOk())
+                    return ptrVM.rc();
+
+                alock.release();
+                int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
+
+                hrc = RT_SUCCESS(vrc) ? S_OK :
+                    setError(VBOX_E_VM_ERROR,
+                             tr("Could not resume the machine execution (%Rrc)"),
+                             vrc);
+            }
+        }
+        else
             m_mapSecretKeys.erase(aId);
     }
     else
