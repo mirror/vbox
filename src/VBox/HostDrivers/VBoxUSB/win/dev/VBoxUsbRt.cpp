@@ -600,7 +600,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
         AssertMsgFailed((__FUNCTION__": vboxUsbMemAllocZ for pIfLe failed\n"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-	
+
     for (i = 0; i < pCfgDr->bNumInterfaces; i++)
     {
         pIfLe[i].InterfaceDescriptor = USBD_ParseConfigurationDescriptorEx(pCfgDr, pCfgDr, i, 0, -1, -1, -1);
@@ -657,9 +657,9 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
                         {
                             pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo = NULL;
                         }
-                        
+
                         RtlCopyMemory(pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo, pIfLe[i].Interface, uTotalIfaceInfoLength);
-                       
+
                         for (ULONG j = 0; j < pIfLe[i].Interface->NumberOfPipes; j++)
                         {
                             pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo[j].EndpointAddress = pIfLe[i].Interface->Pipes[j].EndpointAddress;
