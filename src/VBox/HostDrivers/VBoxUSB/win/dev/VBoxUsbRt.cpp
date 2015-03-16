@@ -604,7 +604,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
     for (i = 0; i < pCfgDr->bNumInterfaces; i++)
     {
         pIfLe[i].InterfaceDescriptor = USBD_ParseConfigurationDescriptorEx(pCfgDr, pCfgDr, i, 0, -1, -1, -1);
-		pIfLe[i].Interface = NULL;
+        pIfLe[i].Interface = NULL;
         if (!pIfLe[i].InterfaceDescriptor)
         {
             AssertMsgFailed((__FUNCTION__": interface %d not found\n", i));
@@ -612,8 +612,8 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
             break;
         }
     }
-	pIfLe[pCfgDr->bNumInterfaces].InterfaceDescriptor = NULL;
-	
+    pIfLe[pCfgDr->bNumInterfaces].InterfaceDescriptor = NULL;
+
     if (NT_SUCCESS(Status))
     {
         pUrb = USBD_CreateConfigurationRequestEx(pCfgDr, pIfLe);
@@ -634,7 +634,7 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
                     Assert(NT_SUCCESS(Status));
                     for (i = 0; i < pDevExt->Rt.uNumInterfaces; i++)
                     {
-                        uint32_t uTotalIfaceInfoLength = sizeof (struct _URB_SELECT_INTERFACE) + ((pIfLe[i].Interface->NumberOfPipes > 0) ? (pIfLe[i].Interface->NumberOfPipes - 1) : 0) * sizeof(USBD_PIPE_INFORMATION);
+                        size_t uTotalIfaceInfoLength = RT_OFFSETOF(struct _USBD_INTERFACE_INFORMATION, Pipes[RT_MAX(pIfLe[i].Interface->NumberOfPipes, 1)]);
                         pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo = (PUSBD_INTERFACE_INFORMATION)vboxUsbMemAlloc(uTotalIfaceInfoLength);
                         if (!pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo)
                         {
@@ -657,24 +657,14 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
                         {
                             pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo = NULL;
                         }
-
-                        *pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo = *pIfLe[i].Interface;
-
-						// AM try/catch for handle citrix case with wrong data from device.
-						__try
-						{
-							for (ULONG j = 0; j < pIfLe[i].Interface->NumberOfPipes; j++)
-							{
-								pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo->Pipes[j] = pIfLe[i].Interface->Pipes[j];
-								pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo[j].EndpointAddress = pIfLe[i].Interface->Pipes[j].EndpointAddress;
-								pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo[j].NextScheduledFrame = 0;
-							}
-						}
-						__except (EXCEPTION_EXECUTE_HANDLER)
-						{
-							Status = GetExceptionCode();
-							break;
-						}
+                        
+                        RtlCopyMemory(pDevExt->Rt.pVBIfaceInfo[i].pInterfaceInfo, pIfLe[i].Interface, uTotalIfaceInfoLength);
+                       
+                        for (ULONG j = 0; j < pIfLe[i].Interface->NumberOfPipes; j++)
+                        {
+                            pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo[j].EndpointAddress = pIfLe[i].Interface->Pipes[j].EndpointAddress;
+                            pDevExt->Rt.pVBIfaceInfo[i].pPipeInfo[j].NextScheduledFrame = 0;
+                        }
                     }
 
 //                    if (NT_SUCCESS(Status))
