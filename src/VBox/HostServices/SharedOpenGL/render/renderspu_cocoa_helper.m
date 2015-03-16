@@ -2962,6 +2962,7 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
     COCOA_LOG_FLOW(("cocoaViewCreate: returns *ppView=%p\n", (void *)*ppView));
 }
 
+#ifndef IN_VMSVGA3D
 void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView)
 {
     COCOA_LOG_FLOW(("cocoaViewReparent: pView=%p pParentView=%p\n", (void *)pView, (void *)pParentView));
@@ -2974,6 +2975,7 @@ void cocoaViewReparent(NativeNSViewRef pView, NativeNSViewRef pParentView)
     [pPool release];
     COCOA_LOG_FLOW(("cocoaViewReparent: returns\n"));
 }
+#endif /* !IN_VMSVGA3D */
 
 void cocoaViewDestroy(NativeNSViewRef pView)
 {
@@ -2987,6 +2989,7 @@ void cocoaViewDestroy(NativeNSViewRef pView)
     COCOA_LOG_FLOW(("cocoaViewDestroy: returns\n"));
 }
 
+#ifndef IN_VMSVGA3D
 void cocoaViewShow(NativeNSViewRef pView, GLboolean fShowIt)
 {
     COCOA_LOG_FLOW(("cocoaViewShow: pView=%p fShowIt=%d\n", (void *)pView, fShowIt));
@@ -2997,6 +3000,7 @@ void cocoaViewShow(NativeNSViewRef pView, GLboolean fShowIt)
     [pPool release];
     COCOA_LOG_FLOW(("cocoaViewShow: returns\n"));
 }
+#endif /* IN_VMSVGA3D */
 
 void cocoaViewDisplay(NativeNSViewRef pView)
 {
@@ -3051,8 +3055,6 @@ static DECLCALLBACK(void) vboxRcdGetGeomerty(void *pvUser)
                     pGetGeometry->rect.size.width, pGetGeometry->rect.size.height));
 }
 
-#endif /* !IN_VMSVGA3D */
-
 void cocoaViewGetGeometry(NativeNSViewRef pView, int *px, int *py, int *pcx, int *pcy)
 {
     COCOA_LOG_FLOW(("cocoaViewGetGeometry: pView=%p px=%p py=%p pcx=%p pcy=%p\n", 
@@ -3094,14 +3096,15 @@ void cocoaViewPresentComposition(NativeNSViewRef pView, PCVBOXVR_SCR_COMPOSITOR_
     COCOA_LOG_FLOW(("cocoaViewPresentComposition: pView=%p pChangedEntry=%p\n", (void *)pView, (void *)pChangedEntry));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
     NSOpenGLContext *pCtx;
-    
-    /* view should not necesserily have a context set */
+
+# ifdef IN_VMSVGA3D
+    Assert([(OverlayView *)pView glCtx]);
+
+# else
+    /* The view may not necesserily have a GL context set. */
     pCtx = [(OverlayView *)pView glCtx];
     if (!pCtx)
     {
-#ifdef IN_VMSVGA3D /** @todo VMSVGA3 */
-        pCtx = NULL;
-#else
         ContextInfo *pCtxInfo = renderspuDefaultSharedContextAcquire();
         if (!pCtxInfo)
         {
@@ -3113,16 +3116,18 @@ void cocoaViewPresentComposition(NativeNSViewRef pView, PCVBOXVR_SCR_COMPOSITOR_
         }
         
         pCtx = pCtxInfo->context;
-#endif
         
         [(OverlayView *)pView setGLCtx:pCtx];
     }
+# endif
     
     [(OverlayView *)pView presentComposition:pChangedEntry];
 
     [pPool release];
     COCOA_LOG_FLOW(("cocoaViewPresentComposition: returns\n"));
 }
+
+#endif /* !IN_VMSVGA3D */
 
 void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
@@ -3153,6 +3158,8 @@ void cocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef
     COCOA_LOG_FLOW(("cocoaViewMakeCurrentContext: returns\n"));
 }
 
+#ifndef IN_VMSVGA3D
+
 GLboolean cocoaViewNeedsEmptyPresent(NativeNSViewRef pView)
 {
     COCOA_LOG_FLOW(("cocoaViewNeedsEmptyPresent: pView=%p\n", (void *)pView));
@@ -3176,6 +3183,7 @@ void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint 
     COCOA_LOG_FLOW(("cocoaViewSetVisibleRegion: returns\n"));
 }
 
+#endif /* IN_VMSVGA3D */
 
 #ifdef IN_VMSVGA3D
 /*
