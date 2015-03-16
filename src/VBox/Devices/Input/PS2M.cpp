@@ -182,10 +182,15 @@ typedef enum {
 
 /* Auxiliary device operational state. */
 typedef enum {
-    AUX_STATE_SCALING = RT_BIT(4),  /* 2:1 scaling in effect. */
-    AUX_STATE_ENABLED = RT_BIT(5),  /* Reporting enabled in stream mode. */
-    AUX_STATE_REMOTE  = RT_BIT(6)   /* Remote mode (reports on request). */
+    AUX_STATE_RATE_ERR  = RT_BIT(0),    /* Invalid rate received. */
+    AUX_STATE_RES_ERR   = RT_BIT(1),    /* Invalid resolution received. */
+    AUX_STATE_SCALING   = RT_BIT(4),    /* 2:1 scaling in effect. */
+    AUX_STATE_ENABLED   = RT_BIT(5),    /* Reporting enabled in stream mode. */
+    AUX_STATE_REMOTE    = RT_BIT(6)     /* Remote mode (reports on request). */
 } PS2M_STATE;
+
+/* Externally visible state bits. */
+#define AUX_STATE_EXTERNAL  (AUX_STATE_SCALING | AUX_STATE_ENABLED | AUX_STATE_REMOTE)
 
 /* Protocols supported by the PS/2 mouse. */
 typedef enum {
@@ -440,6 +445,7 @@ static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
 
 static void ps2mSetRate(PPS2M pThis, uint8_t rate)
 {
+    Assert(rate);
     pThis->uThrottleDelay = rate ? 1000 / rate : 0;
     pThis->u8SampleRate = rate;
     LogFlowFunc(("Sampling rate %u, throttle delay %u ms\n", pThis->u8SampleRate, pThis->uThrottleDelay));
@@ -552,6 +558,23 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
 }
 
 
+/* Determine whether a reporting rate is one of the valid ones. */
+bool ps2mIsRateSupported(uint8_t rate)
+{
+    static uint8_t  aValidRates[] = { 10, 20, 40, 60, 80, 100, 200 };
+    int             i;
+    bool            fValid = false;
+
+    for (i = 0; i < RT_ELEMENTS(aValidRates); ++i)
+        if (aValidRates[i] == rate)
+        {
+            fValid = true;
+            break;
+        }
+
+   return fValid;
+}
+
 /**
  * Receive and process a byte sent by the keyboard controller.
  *
@@ -605,7 +628,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             break;
         case ACMD_REQ_STATUS:
             /* Report current status, sample rate, and resolution. */
-            u8Val  = pThis->u8State | (pThis->fCurrB & PS2M_STD_BTN_MASK);
+            u8Val  = (pThis->u8State & AUX_STATE_EXTERNAL) | (pThis->fCurrB & PS2M_STD_BTN_MASK);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, u8Val);
             ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, pThis->u8Resolution);
@@ -695,17 +718,55 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
             switch (pThis->u8CurrCmd)
             {
                 case ACMD_SET_RES:
-                    //@todo reject unsupported resolutions
-                    pThis->u8Resolution = cmd;
-                    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
-                    pThis->u8CurrCmd = 0;
+                    if (cmd < 4)    /* Valid resolutions are 0-3. */
+                    {
+                        pThis->u8Resolution = cmd;
+                        pThis->u8State &= ~AUX_STATE_RES_ERR;
+                        ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+                        pThis->u8CurrCmd = 0;
+                    }
+                    else
+                    {
+                        /* Bad resolution. Reply with Resend or Error. */
+                        if (pThis->u8State & AUX_STATE_RES_ERR)
+                        {
+                            pThis->u8State &= ~AUX_STATE_RES_ERR;
+                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
+                            pThis->u8CurrCmd = 0;
+                        }
+                        else
+                        {
+                            pThis->u8State |= AUX_STATE_RES_ERR;
+                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
+                            /* NB: Current command remains unchanged. */
+                        }
+                    }
                     break;
                 case ACMD_SET_SAMP_RATE:
-                    //@todo reject unsupported rates
-                    ps2mSetRate(pThis, cmd);
-                    ps2mRateProtocolKnock(pThis, cmd);
-                    ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
-                    pThis->u8CurrCmd = 0;
+                    if (ps2mIsRateSupported(cmd))
+                    {
+                        pThis->u8State &= ~AUX_STATE_RATE_ERR;
+                        ps2mSetRate(pThis, cmd);
+                        ps2mRateProtocolKnock(pThis, cmd);
+                        ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);
+                        pThis->u8CurrCmd = 0;
+                    }
+                    else
+                    {
+                        /* Bad rate. Reply with Resend or Error. */
+                        if (pThis->u8State & AUX_STATE_RATE_ERR)
+                        {
+                            pThis->u8State &= ~AUX_STATE_RATE_ERR;
+                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ERROR);
+                            pThis->u8CurrCmd = 0;
+                        }
+                        else
+                        {
+                            pThis->u8State |= AUX_STATE_RATE_ERR;
+                            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_RESEND);
+                            /* NB: Current command remains unchanged. */
+                        }
+                    }
                     break;
                 default:
                     fHandled = false;
@@ -1081,7 +1142,7 @@ void PS2MFixupState(PPS2M pThis, uint8_t u8State, uint8_t u8Rate, uint8_t u8Prot
 
     /* Load the basic auxiliary device state. */
     pThis->u8State      = u8State;
-    pThis->u8SampleRate = u8Rate;
+    pThis->u8SampleRate = u8Rate ? u8Rate : 40; /* In case it wasn't saved right. */
     pThis->enmProtocol  = (PS2M_PROTO)u8Proto;
 
     /* Recalculate the throttling delay. */
