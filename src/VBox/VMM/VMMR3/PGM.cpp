@@ -1617,7 +1617,7 @@ static int pgmR3InitPaging(PVM pVM)
             if (ARCH_BITS != 64)
             {
                 AssertMsgFailed(("Host mode %d (64-bit) is not supported by non-64bit builds\n", pVM->pgm.s.enmHostMode));
-                LogRel(("Host mode %d (64-bit) is not supported by non-64bit builds\n", pVM->pgm.s.enmHostMode));
+                LogRel(("PGM: Host mode %d (64-bit) is not supported by non-64bit builds\n", pVM->pgm.s.enmHostMode));
                 return VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE;
             }
 #endif
@@ -1658,7 +1658,7 @@ static int pgmR3InitPaging(PVM pVM)
             case SUPPAGINGMODE_AMD64_GLOBAL_NX:     pszHostMode = "AMD64+PGE+NX"; break;
             default:                                pszHostMode = "???"; break;
         }
-        LogRel(("Host paging mode: %s\n", pszHostMode));
+        LogRel(("PGM: Host paging mode: %s\n", pszHostMode));
 
         return VINF_SUCCESS;
     }
@@ -2225,7 +2225,7 @@ VMMR3DECL(int) PGMR3InitFinalize(PVM pVM)
     if (pVM->pgm.s.fRamPreAlloc)
         rc = pgmR3PhysRamPreAllocate(pVM);
 
-    LogRel(("PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
+    LogRel(("PGM: PGMR3InitFinalize: 4 MB PSE mask %RGp\n", pVM->pgm.s.GCPhys4MBPSEMask));
     return rc;
 }
 
