@@ -37,7 +37,7 @@ int vmsvga3dSendThreadMessage(RTTHREAD pWindowThread, RTSEMEVENT WndRequestSem, 
 #endif
 
 /** Arbitrary limit */
-#define SVGA3D_MAX_SHADER_IDS                   0x100
+#define SVGA3D_MAX_SHADER_IDS                   0x800
 /** D3D allows up to 8 texture stages. */
 #define SVGA3D_MAX_TEXTURE_STAGE                8
 /** Arbitrary upper limit; seen 8 so far. */
