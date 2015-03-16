@@ -206,7 +206,7 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
                 RTMemFree(pMipmapLevel);
             }
 
-            PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
+            PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
             Assert(pSurface->id == sid);
 
             pSurface->fDirty = false;
@@ -435,7 +435,7 @@ int vmsvga3dSaveExec(PVGASTATE pThis, PSSMHANDLE pSSM)
     /* Save all active surfaces. */
     for (uint32_t sid = 0; sid < pState->cSurfaces; sid++)
     {
-        PVMSVGA3DSURFACE pSurface = &pState->paSurface[sid];
+        PVMSVGA3DSURFACE pSurface = pState->papSurfaces[sid];
 
         /* Save the id first. */
         rc = SSMR3PutU32(pSSM, pSurface->id);
