@@ -4,8 +4,8 @@
  * See the file LICENSE.txt for information on redistributing this software.
  */
 
-#ifndef CR_STATE_LINE_H
-#define SR_STATE_LINE_H
+#ifndef CR_STATE_POINT_H
+#define CR_STATE_POINT_H
 
 #include "state/cr_statetypes.h"
 
@@ -59,4 +59,4 @@ DECLEXPORT(void) crStatePointSwitch(CRPointBits *bb, CRbitvalue *bitID,
 }
 #endif
 
-#endif /* CR_STATE_LINE_H */
+#endif /* CR_STATE_POINT_H */

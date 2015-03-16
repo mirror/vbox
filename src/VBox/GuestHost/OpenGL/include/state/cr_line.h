@@ -5,7 +5,7 @@
  */
 
 #ifndef CR_STATE_LINE_H
-#define SR_STATE_LINE_H
+#define CR_STATE_LINE_H
 
 #include "state/cr_statetypes.h"
 
