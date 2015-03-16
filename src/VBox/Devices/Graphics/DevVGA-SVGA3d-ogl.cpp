@@ -3118,8 +3118,9 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
     }
     else
     {
-        /* Allocate and initialize texture memory.  (Passing the zero filled pSurfaceData solves
-           the fedora 21 corruption issues (launchpad, background, search field, login).) */
+        /* Allocate and initialize texture memory.  Passing the zero filled pSurfaceData avoids
+           exposing random host memory to the guest and helps a with the fedora 21 surface
+           corruption issues (launchpad, background, search field, login). */
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      pSurface->internalFormatGL,
