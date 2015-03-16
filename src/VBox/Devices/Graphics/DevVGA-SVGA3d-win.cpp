@@ -1397,8 +1397,9 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
     if (sid >= pState->cSurfaces)
     {
-        pState->paSurface = (PVMSVGA3DSURFACE )RTMemRealloc(pState->paSurface, sizeof(VMSVGA3DSURFACE) * (sid + 1));
-        AssertReturn(pState->paSurface, VERR_NO_MEMORY);
+        void *pvNew = RTMemRealloc(pState->paSurface, sizeof(VMSVGA3DSURFACE) * (sid + 1));
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pState->paSurface = (PVMSVGA3DSURFACE)pvNew;
         memset(&pState->paSurface[pState->cSurfaces], 0, sizeof(VMSVGA3DSURFACE) * (sid + 1 - pState->cSurfaces));
         for (uint32_t i = pState->cSurfaces; i < sid + 1; i++)
             pState->paSurface[i].id = SVGA3D_INVALID_ID;
@@ -1632,7 +1633,9 @@ int vmsvga3dSurfaceDestroy(PVGASTATE pThis, uint32_t sid)
         RTAvlU32Destroy(&pSurface->pSharedObjectTree, vmsvga3dSharedSurfaceDestroyTree, pSurface);
         Assert(pSurface->pSharedObjectTree == NULL);
 
-        switch (pSurface->flags & (SVGA3D_SURFACE_HINT_INDEXBUFFER | SVGA3D_SURFACE_HINT_VERTEXBUFFER | SVGA3D_SURFACE_HINT_TEXTURE | SVGA3D_SURFACE_HINT_RENDERTARGET | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP))
+        switch (pSurface->flags & (  SVGA3D_SURFACE_HINT_INDEXBUFFER  | SVGA3D_SURFACE_HINT_VERTEXBUFFER
+                                   | SVGA3D_SURFACE_HINT_TEXTURE      | SVGA3D_SURFACE_HINT_RENDERTARGET
+                                   | SVGA3D_SURFACE_HINT_DEPTHSTENCIL | SVGA3D_SURFACE_CUBEMAP))
         {
         case SVGA3D_SURFACE_CUBEMAP:
             AssertFailed(); /* @todo */
@@ -2920,8 +2923,9 @@ int vmsvga3dContextDefine(PVGASTATE pThis, uint32_t cid)
 
     if (cid >= pState->cContexts)
     {
-        pState->paContext = (PVMSVGA3DCONTEXT)RTMemRealloc(pState->paContext, sizeof(VMSVGA3DCONTEXT) * (cid + 1));
-        AssertReturn(pState->paContext, VERR_NO_MEMORY);
+        void *pvNew = RTMemRealloc(pState->paContext, sizeof(VMSVGA3DCONTEXT) * (cid + 1));
+        AssertReturn(pvNew, VERR_NO_MEMORY);
+        pState->paContext = (PVMSVGA3DCONTEXT)pvNew;
         memset(&pState->paContext[pState->cContexts], 0, sizeof(VMSVGA3DCONTEXT) * (cid + 1 - pState->cContexts));
         for (uint32_t i = pState->cContexts; i < cid + 1; i++)
             pState->paContext[i].id = SVGA3D_INVALID_ID;
@@ -5719,8 +5723,9 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     {
         if (shid >= pContext->cVertexShaders)
         {
-            pContext->paVertexShader = (PVMSVGA3DSHADER)RTMemRealloc(pContext->paVertexShader, sizeof(VMSVGA3DSHADER) * (shid + 1));
-            AssertReturn(pContext->paVertexShader, VERR_NO_MEMORY);
+            void *pvNew = RTMemRealloc(pContext->paVertexShader, sizeof(VMSVGA3DSHADER) * (shid + 1));
+            AssertReturn(pvNew, VERR_NO_MEMORY);
+            pContext->paVertexShader = (PVMSVGA3DSHADER)pvNew;
             memset(&pContext->paVertexShader[pContext->cVertexShaders], 0, sizeof(VMSVGA3DSHADER) * (shid + 1 - pContext->cVertexShaders));
             for (uint32_t i = pContext->cVertexShaders; i < shid + 1; i++)
                 pContext->paVertexShader[i].id = SVGA3D_INVALID_ID;
@@ -5737,8 +5742,9 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
         Assert(type == SVGA3D_SHADERTYPE_PS);
         if (shid >= pContext->cPixelShaders)
         {
-            pContext->paPixelShader = (PVMSVGA3DSHADER)RTMemRealloc(pContext->paPixelShader, sizeof(VMSVGA3DSHADER) * (shid + 1));
-            AssertReturn(pContext->paPixelShader, VERR_NO_MEMORY);
+            void *pvNew = RTMemRealloc(pContext->paPixelShader, sizeof(VMSVGA3DSHADER) * (shid + 1));
+            AssertReturn(pvNew, VERR_NO_MEMORY);
+            pContext->paPixelShader = (PVMSVGA3DSHADER)pvNew;
             memset(&pContext->paPixelShader[pContext->cPixelShaders], 0, sizeof(VMSVGA3DSHADER) * (shid + 1 - pContext->cPixelShaders));
             for (uint32_t i = pContext->cPixelShaders; i < shid + 1; i++)
                 pContext->paPixelShader[i].id = SVGA3D_INVALID_ID;
