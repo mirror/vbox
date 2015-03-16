@@ -45,9 +45,10 @@
 # include "VBoxGlobal.h"
 # include "UIActionPool.h"
 # include "UIConverter.h"
+# include "UISettingsDefs.h"
+# include "UIMessageCenter.h"
 # ifdef DEBUG
 #  include "VBoxUtils.h"
-#  include "UIMessageCenter.h"
 #  include "UIVirtualBoxEventHandler.h"
 #  include "UIIconPool.h"
 #  include "UIToolBar.h"
@@ -75,6 +76,7 @@
 
 /* Namespaces: */
 using namespace UIExtraDataDefs;
+using namespace UISettingsDefs;
 
 
 /** QObject extension
@@ -1912,16 +1914,34 @@ void UIExtraDataManager::setExtraDataString(const QString &strKey, const QString
         CVirtualBox vbox = vboxGlobal().virtualBox();
         /* Update global extra-data: */
         vbox.SetExtraData(strKey, strValue);
+        if (!vbox.isOk())
+            msgCenter().cannotSetExtraData(vbox, strKey, strValue);
     }
     /* Machine extra-data: */
     else
     {
         /* Search for corresponding machine: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine machine = vbox.FindMachine(strID);
+        const CMachine machine = vbox.FindMachine(strID);
         AssertReturnVoid(vbox.isOk() && !machine.isNull());
+        /* Check the configuration access-level: */
+        const KMachineState machineState = machine.GetState();
+        const KSessionState sessionState = machine.GetSessionState();
+        const ConfigurationAccessLevel cLevel = configurationAccessLevel(sessionState, machineState);
+        /* Prepare machine session: */
+        CSession session;
+        if (cLevel == ConfigurationAccessLevel_Full)
+            session = vboxGlobal().openSession(strID);
+        else
+            session = vboxGlobal().openExistingSession(strID);
+        AssertReturnVoid(!session.isNull());
+        /* Get machine from that session: */
+        CMachine sessionMachine = session.GetMachine();
         /* Update machine extra-data: */
-        machine.SetExtraData(strKey, strValue);
+        sessionMachine.SetExtraData(strKey, strValue);
+        if (!sessionMachine.isOk())
+            msgCenter().cannotSetExtraData(sessionMachine, strKey, strValue);
+        session.UnlockMachine();
     }
 }
 
@@ -1943,7 +1963,7 @@ QStringList UIExtraDataManager::extraDataStringList(const QString &strKey, const
     return data[strKey].split(QRegExp("[;,]"), QString::SkipEmptyParts);
 }
 
-void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID /* = GlobalID */)
+void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QStringList &value, const QString &strID /* = GlobalID */)
 {
     /* Make sure VBoxSVC is available: */
     if (!vboxGlobal().isVBoxSVCAvailable())
@@ -1957,7 +1977,7 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
     ExtraDataMap &data = m_data[strID];
 
     /* [Re]cache passed value: */
-    data[strKey] = strValue.join(",");
+    data[strKey] = value.join(",");
 
     /* Global extra-data: */
     if (strID == GlobalID)
@@ -1965,17 +1985,35 @@ void UIExtraDataManager::setExtraDataStringList(const QString &strKey, const QSt
         /* Get global object: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
         /* Update global extra-data: */
-        vbox.SetExtraDataStringList(strKey, strValue);
+        vbox.SetExtraDataStringList(strKey, value);
+        if (!vbox.isOk())
+            msgCenter().cannotSetExtraData(vbox, strKey, value.join(","));
     }
     /* Machine extra-data: */
     else
     {
         /* Search for corresponding machine: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine machine = vbox.FindMachine(strID);
+        const CMachine machine = vbox.FindMachine(strID);
         AssertReturnVoid(vbox.isOk() && !machine.isNull());
+        /* Check the configuration access-level: */
+        const KMachineState machineState = machine.GetState();
+        const KSessionState sessionState = machine.GetSessionState();
+        const ConfigurationAccessLevel cLevel = configurationAccessLevel(sessionState, machineState);
+        /* Prepare machine session: */
+        CSession session;
+        if (cLevel == ConfigurationAccessLevel_Full)
+            session = vboxGlobal().openSession(strID);
+        else
+            session = vboxGlobal().openExistingSession(strID);
+        AssertReturnVoid(!session.isNull());
+        /* Get machine from that session: */
+        CMachine sessionMachine = session.GetMachine();
         /* Update machine extra-data: */
-        machine.SetExtraDataStringList(strKey, strValue);
+        sessionMachine.SetExtraDataStringList(strKey, value);
+        if (!sessionMachine.isOk())
+            msgCenter().cannotSetExtraData(sessionMachine, strKey, value.join(","));
+        session.UnlockMachine();
     }
 }
 

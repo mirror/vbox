@@ -515,6 +515,22 @@ void UIMessageCenter::cannotOpenURL(const QString &strUrl) const
              .arg(strUrl));
 }
 
+void UIMessageCenter::cannotSetExtraData(const CVirtualBox &vbox, const QString &strKey, const QString &strValue)
+{
+    error(0, MessageType_Error,
+          tr("Failed to set the global VirtualBox extra data for key <i>%1</i> to value <i>{%2}</i>.")
+             .arg(strKey, strValue),
+          formatErrorInfo(vbox));
+}
+
+void UIMessageCenter::cannotSetExtraData(const CMachine &machine, const QString &strKey, const QString &strValue)
+{
+    error(0, MessageType_Error,
+          tr("Failed to set the extra data for key <i>%1</i> of machine <i>%2</i> to value <i>{%3}</i>.")
+             .arg(strKey, CMachine(machine).GetName(), strValue),
+          formatErrorInfo(machine));
+}
+
 void UIMessageCenter::cannotOpenMachine(const CVirtualBox &vbox, const QString &strMachinePath) const
 {
     error(0, MessageType_Error,

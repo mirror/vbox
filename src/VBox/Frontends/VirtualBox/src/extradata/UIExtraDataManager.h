@@ -123,9 +123,9 @@ public:
         /** Returns extra-data value corresponding to passed @a strKey as QStringList.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
         QStringList extraDataStringList(const QString &strKey, const QString &strID = GlobalID);
-        /** Defines extra-data value corresponding to passed @a strKey as strValue.
+        /** Defines extra-data value corresponding to passed @a strKey as value.
           * If valid @a strID is set => applies to machine extra-data, otherwise => to global one. */
-        void setExtraDataStringList(const QString &strKey, const QStringList &strValue, const QString &strID = GlobalID);
+        void setExtraDataStringList(const QString &strKey, const QStringList &value, const QString &strID = GlobalID);
     /** @} */
 
     /** @name Messaging
