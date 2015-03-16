@@ -2421,8 +2421,8 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
         /* Acquire hard-drive attachments only: */
         if (attachment.GetType() == KDeviceType_HardDisk)
         {
-            /* Get the attachment medium: */
-            const CMedium medium = attachment.GetMedium();
+            /* Get the attachment medium base: */
+            const CMedium medium = attachment.GetMedium().GetBase();
             /* Update the map with this medium if necessary: */
             const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
             if (!strKeyId.isEmpty())
