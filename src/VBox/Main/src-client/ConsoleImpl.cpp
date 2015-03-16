@@ -8560,7 +8560,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
             break;
         }
 
-        case VMSTATE_POWERING_ON:
+        case VMSTATE_CREATED:
         {
             /*
              * We have to set the secret key helper interface for the VD drivers to
