@@ -604,7 +604,6 @@ static NTSTATUS vboxUsbRtSetConfig(PVBOXUSBDEV_EXT pDevExt, uint8_t uConfigurati
     for (i = 0; i < pCfgDr->bNumInterfaces; i++)
     {
         pIfLe[i].InterfaceDescriptor = USBD_ParseConfigurationDescriptorEx(pCfgDr, pCfgDr, i, 0, -1, -1, -1);
-        pIfLe[i].Interface = NULL;
         if (!pIfLe[i].InterfaceDescriptor)
         {
             AssertMsgFailed((__FUNCTION__": interface %d not found\n", i));
