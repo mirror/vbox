@@ -4365,7 +4365,7 @@ const char *getL2CacheAss(unsigned u)
 static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves,
                                                PCCPUMCPUIDLEAF pCurLeaf, uint32_t uUpToLeaf, const char *pszTitle)
 {
-    if (   pCurLeaf - paLeaves < cLeaves
+    if (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
         && pCurLeaf->uLeaf <= uUpToLeaf)
     {
         pHlp->pfnPrintf(pHlp,
