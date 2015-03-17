@@ -4354,6 +4354,33 @@ const char *getL2CacheAss(unsigned u)
 }
 
 
+static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves,
+                                               PCCPUMCPUIDLEAF pCurLeaf, uint32_t uUpToLeaf, const char *pszTitle)
+{
+    if (   pCurLeaf - paLeaves < cLeaves
+        && pCurLeaf->uLeaf <= uUpToLeaf)
+    {
+        pHlp->pfnPrintf(pHlp,
+                        "         %s\n"
+                        "     Leaf/sub-leaf  eax      ebx      ecx      edx\n", pszTitle);
+        while (   pCurLeaf - paLeaves < cLeaves
+               && pCurLeaf->uLeaf <= uUpToLeaf)
+        {
+            CPUMCPUID Host;
+            ASMCpuIdExSlow(pCurLeaf->uLeaf, pCurLeaf->uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            pHlp->pfnPrintf(pHlp,
+                            "Gst: %08x/%04x  %08x %08x %08x %08x\n"
+                            "Hst:                %08x %08x %08x %08x\n",
+                            pCurLeaf->uLeaf, pCurLeaf->uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx,
+                            Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+            pCurLeaf++;
+        }
+    }
+
+    return pCurLeaf;
+}
+
+
 /**
  * Display the guest CpuId leaves.
  *
@@ -4376,57 +4403,74 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             iVerbosity++;
     }
 
+    uint32_t        uLeaf;
+    CPUMCPUID       Host;
+    uint32_t        dummy;
+    uint32_t        cLeaves  = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
+    PCPUMCPUIDLEAF  paLeaves = pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
+    PCCPUMCPUIDLEAF pCurLeaf;
+    PCCPUMCPUIDLEAF pNextLeaf;
+
     /*
-     * Start cracking.
+     * Standard leaves.  Custom raw dump here due to ECX sub-leaves host handling.
      */
-    CPUMCPUID   Host;
-    CPUMCPUID   Guest;
-    unsigned    cStdMax = pVM->cpum.s.aGuestCpuIdPatmStd[0].uEax;
-
-    uint32_t    cStdHstMax;
-    uint32_t    dummy;
-    ASMCpuIdExSlow(0, 0, 0, 0, &cStdHstMax, &dummy, &dummy, &dummy);
-
-    unsigned    cStdLstMax = RT_MAX(RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd), cStdHstMax);
-
+    uint32_t        cHstMax = ASMCpuId_EAX(0);
+    uint32_t        cGstMax = paLeaves[0].uLeaf == 0 ? paLeaves[0].uEax : 0;
+    uint32_t        cMax    = RT_MAX(cGstMax, cHstMax);
     pHlp->pfnPrintf(pHlp,
-                    "         RAW Standard CPUIDs\n"
-                    "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i <= cStdLstMax ; i++)
+                    "         Raw Standard CPUID Leaves\n"
+                    "     Leaf/sub-leaf  eax      ebx      ecx      edx\n");
+    for (uLeaf = 0, pCurLeaf = paLeaves; uLeaf <= cMax; uLeaf++)
     {
-        if (i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
-        {
-            Guest = pVM->cpum.s.aGuestCpuIdPatmStd[i];
-            ASMCpuIdExSlow(i, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+        uint32_t cMaxSubLeaves = 1;
+        if (uLeaf == 4 || uLeaf == 7 || uLeaf == 0xb)
+            cMaxSubLeaves = 16;
+        else if (uLeaf == 0xd)
+            cMaxSubLeaves = 128;
 
-            pHlp->pfnPrintf(pHlp,
-                            "Gst: %08x  %08x %08x %08x %08x%s\n"
-                            "Hst:           %08x %08x %08x %08x\n",
-                            i, Guest.uEax, Guest.uEbx, Guest.uEcx, Guest.uEdx,
-                            i <= cStdMax ? "" : "*",
-                            Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
-        }
-        else
+        for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
         {
-            ASMCpuIdExSlow(i, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            ASMCpuIdExSlow(uLeaf, uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            if (   pCurLeaf - paLeaves < cLeaves
+                && pCurLeaf->uLeaf    == uLeaf
+                && pCurLeaf->uSubLeaf == uSubLeaf)
+            {
+                pHlp->pfnPrintf(pHlp,
+                                "Gst: %08x/%04x  %08x %08x %08x %08x\n"
+                                "Hst:               %08x %08x %08x %08x\n",
+                                uLeaf, uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx,
+                                Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+                pCurLeaf++;
+            }
+            else if (   uLeaf != 0xd
+                     || uSubLeaf <= 1
+                     || Host.uEbx != 0 )
+                pHlp->pfnPrintf(pHlp,
+                                "Hst: %08x/%04x  %08x %08x %08x %08x\n",
+                                uLeaf, uSubLeaf, Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
 
-            pHlp->pfnPrintf(pHlp,
-                            "Hst: %08x  %08x %08x %08x %08x\n",
-                            i, Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+            /* Done? */
+            if (   (   pCurLeaf - paLeaves >= cLeaves
+                    || pCurLeaf->uLeaf != uLeaf)
+                && (   (uLeaf == 0x4 && ((Host.uEax & 0x000f) == 0 || (Host.uEax & 0x000f) >= 8))
+                    || (uLeaf == 0x7 && Host.uEax == 0)
+                    || (uLeaf == 0xb && ((Host.uEcx & 0xff00) == 0 || (Host.uEcx & 0xff00) >= 8))
+                    || (uLeaf == 0xb && (Host.uEcx & 0xff) != uSubLeaf)
+                    || (uLeaf == 0xd && uSubLeaf >= 128)
+                   )
+               )
+                break;
         }
     }
 
     /*
      * If verbose, decode it.
      */
-    if (iVerbosity)
-    {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmStd[0];
+    if (iVerbosity && paLeaves[0].uLeaf == 0)
         pHlp->pfnPrintf(pHlp,
                         "Name:                            %.04s%.04s%.04s\n"
                         "Supports:                        0-%x\n",
-                        &Guest.uEbx, &Guest.uEdx, &Guest.uEcx, Guest.uEax);
-    }
+                        &paLeaves[0].uEbx, &paLeaves[0].uEdx, &paLeaves[0].uEcx, paLeaves[0].uEax);
 
     /*
      * Get Features.
@@ -4434,12 +4478,13 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     bool const fIntel = ASMIsIntelCpuEx(pVM->cpum.s.aGuestCpuIdPatmStd[0].uEbx,
                                         pVM->cpum.s.aGuestCpuIdPatmStd[0].uEcx,
                                         pVM->cpum.s.aGuestCpuIdPatmStd[0].uEdx);
-    if (cStdMax >= 1 && iVerbosity)
+    if (cGstMax >= 1 && iVerbosity)
     {
         static const char * const s_apszTypes[4] = { "primary", "overdrive", "MP", "reserved" };
 
-        Guest = pVM->cpum.s.aGuestCpuIdPatmStd[1];
-        uint32_t uEAX = Guest.uEax;
+        PCPUMCPUIDLEAF pFeatures = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, 1, 0);
+        uint32_t uEAX = pFeatures ? pFeatures->uEax : 0;
+        uint32_t uEBX = pFeatures ? pFeatures->uEbx : 0;
 
         pHlp->pfnPrintf(pHlp,
                         "Family:                          %d  \tExtended: %d \tEffective: %d\n"
@@ -4454,13 +4499,13 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                         (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
                         ASMGetCpuStepping(uEAX),
                         (uEAX >> 12) & 3, s_apszTypes[(uEAX >> 12) & 3],
-                        (Guest.uEbx >> 24) & 0xff,
-                        (Guest.uEbx >> 16) & 0xff,
-                        (Guest.uEbx >>  8) & 0xff,
-                        (Guest.uEbx >>  0) & 0xff);
+                        (uEBX >> 24) & 0xff,
+                        (uEBX >> 16) & 0xff,
+                        (uEBX >>  8) & 0xff,
+                        (uEBX >>  0) & 0xff);
         if (iVerbosity == 1)
         {
-            uint32_t uEDX = Guest.uEdx;
+            uint32_t uEDX = pFeatures ? pFeatures->uEdx : 0;
             pHlp->pfnPrintf(pHlp, "Features EDX:                   ");
             if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " FPU");
             if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " VME");
@@ -4496,7 +4541,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             if (uEDX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " PBE");
             pHlp->pfnPrintf(pHlp, "\n");
 
-            uint32_t uECX = Guest.uEcx;
+            uint32_t uECX = pFeatures ? pFeatures->uEcx : 0;
             pHlp->pfnPrintf(pHlp, "Features ECX:                   ");
             if (uECX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " SSE3");
             if (uECX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " PCLMUL");
@@ -4538,8 +4583,18 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
             X86CPUIDFEATEDX EdxHost  = *(PX86CPUIDFEATEDX)&Host.uEdx;
             X86CPUIDFEATECX EcxHost  = *(PX86CPUIDFEATECX)&Host.uEcx;
-            X86CPUIDFEATEDX EdxGuest = *(PX86CPUIDFEATEDX)&Guest.uEdx;
-            X86CPUIDFEATECX EcxGuest = *(PX86CPUIDFEATECX)&Guest.uEcx;
+            X86CPUIDFEATEDX EdxGuest;
+            X86CPUIDFEATECX EcxGuest;
+            if (pFeatures)
+            {
+                EdxGuest = *(PX86CPUIDFEATEDX)&pFeatures->uEdx;
+                EcxGuest = *(PX86CPUIDFEATECX)&pFeatures->uEcx;
+            }
+            else
+            {
+                RT_ZERO(EdxGuest);
+                RT_ZERO(EcxGuest);
+            }
 
             pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
             pHlp->pfnPrintf(pHlp, "FPU - x87 FPU on Chip                  = %d (%d)\n",  EdxGuest.u1FPU,        EdxHost.u1FPU);
@@ -4609,317 +4664,10 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             pHlp->pfnPrintf(pHlp, "Hypervisor Present (we're a guest)     = %d (%d)\n",  EcxGuest.u1HVP,        EcxHost.u1HVP);
         }
     }
-    if (cStdMax >= 2 && iVerbosity)
+    if (cGstMax >= 2 && iVerbosity)
     {
         /** @todo */
     }
-
-    /*
-     * Extended.
-     * Implemented after AMD specs.
-     */
-    unsigned    cExtMax = pVM->cpum.s.aGuestCpuIdPatmExt[0].uEax & 0xffff;
-
-    pHlp->pfnPrintf(pHlp,
-                    "\n"
-                    "         RAW Extended CPUIDs\n"
-                    "     Function  eax      ebx      ecx      edx\n");
-    bool fSupportsInvariantTsc = false;
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt); i++)
-    {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[i];
-        ASMCpuIdExSlow(0x80000000 | i, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-
-        if (   i == 7
-            && (Host.uEdx & X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR))
-        {
-            fSupportsInvariantTsc = true;
-        }
-        pHlp->pfnPrintf(pHlp,
-                        "Gst: %08x  %08x %08x %08x %08x%s\n"
-                        "Hst:           %08x %08x %08x %08x\n",
-                        0x80000000 | i, Guest.uEax, Guest.uEbx, Guest.uEcx, Guest.uEdx,
-                        i <= cExtMax ? "" : "*",
-                        Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
-    }
-
-    /*
-     * Understandable output
-     */
-    if (iVerbosity)
-    {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[0];
-        pHlp->pfnPrintf(pHlp,
-                        "Ext Name:                        %.4s%.4s%.4s\n"
-                        "Ext Supports:                    0x80000000-%#010x\n",
-                        &Guest.uEbx, &Guest.uEdx, &Guest.uEcx, Guest.uEax);
-    }
-
-    if (iVerbosity && cExtMax >= 1)
-    {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmExt[1];
-        uint32_t uEAX = Guest.uEax;
-        pHlp->pfnPrintf(pHlp,
-                        "Family:                          %d  \tExtended: %d \tEffective: %d\n"
-                        "Model:                           %d  \tExtended: %d \tEffective: %d\n"
-                        "Stepping:                        %d\n"
-                        "Brand ID:                        %#05x\n",
-                        (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
-                        (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
-                        ASMGetCpuStepping(uEAX),
-                        Guest.uEbx & 0xfff);
-
-        if (iVerbosity == 1)
-        {
-            uint32_t uEDX = Guest.uEdx;
-            pHlp->pfnPrintf(pHlp, "Features EDX:                   ");
-            if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " FPU");
-            if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " VME");
-            if (uEDX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " DE");
-            if (uEDX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " PSE");
-            if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TSC");
-            if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " MSR");
-            if (uEDX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " PAE");
-            if (uEDX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " MCE");
-            if (uEDX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " CX8");
-            if (uEDX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " APIC");
-            if (uEDX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " 10");
-            if (uEDX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " SCR");
-            if (uEDX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " MTRR");
-            if (uEDX & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " PGE");
-            if (uEDX & RT_BIT(14))  pHlp->pfnPrintf(pHlp, " MCA");
-            if (uEDX & RT_BIT(15))  pHlp->pfnPrintf(pHlp, " CMOV");
-            if (uEDX & RT_BIT(16))  pHlp->pfnPrintf(pHlp, " PAT");
-            if (uEDX & RT_BIT(17))  pHlp->pfnPrintf(pHlp, " PSE36");
-            if (uEDX & RT_BIT(18))  pHlp->pfnPrintf(pHlp, " 18");
-            if (uEDX & RT_BIT(19))  pHlp->pfnPrintf(pHlp, " 19");
-            if (uEDX & RT_BIT(20))  pHlp->pfnPrintf(pHlp, " NX");
-            if (uEDX & RT_BIT(21))  pHlp->pfnPrintf(pHlp, " 21");
-            if (uEDX & RT_BIT(22))  pHlp->pfnPrintf(pHlp, " ExtMMX");
-            if (uEDX & RT_BIT(23))  pHlp->pfnPrintf(pHlp, " MMX");
-            if (uEDX & RT_BIT(24))  pHlp->pfnPrintf(pHlp, " FXSR");
-            if (uEDX & RT_BIT(25))  pHlp->pfnPrintf(pHlp, " FastFXSR");
-            if (uEDX & RT_BIT(26))  pHlp->pfnPrintf(pHlp, " Page1GB");
-            if (uEDX & RT_BIT(27))  pHlp->pfnPrintf(pHlp, " RDTSCP");
-            if (uEDX & RT_BIT(28))  pHlp->pfnPrintf(pHlp, " 28");
-            if (uEDX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " LongMode");
-            if (uEDX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " Ext3DNow");
-            if (uEDX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " 3DNow");
-            pHlp->pfnPrintf(pHlp, "\n");
-
-            uint32_t uECX = Guest.uEcx;
-            pHlp->pfnPrintf(pHlp, "Features ECX:                   ");
-            if (uECX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " LAHF/SAHF");
-            if (uECX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " CMPL");
-            if (uECX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " SVM");
-            if (uECX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " ExtAPIC");
-            if (uECX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " CR8L");
-            if (uECX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " ABM");
-            if (uECX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " SSE4A");
-            if (uECX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " MISALNSSE");
-            if (uECX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " 3DNOWPRF");
-            if (uECX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " OSVW");
-            if (uECX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " IBS");
-            if (uECX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " SSE5");
-            if (uECX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " SKINIT");
-            if (uECX & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " WDT");
-            for (unsigned iBit = 5; iBit < 32; iBit++)
-                if (uECX & RT_BIT(iBit))
-                    pHlp->pfnPrintf(pHlp, " %d", iBit);
-            pHlp->pfnPrintf(pHlp, "\n");
-        }
-        else
-        {
-            ASMCpuIdExSlow(0x80000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-
-            uint32_t uEdxGst = Guest.uEdx;
-            uint32_t uEdxHst = Host.uEdx;
-            pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
-            pHlp->pfnPrintf(pHlp, "FPU - x87 FPU on Chip                  = %d (%d)\n",  !!(uEdxGst & RT_BIT( 0)),  !!(uEdxHst & RT_BIT( 0)));
-            pHlp->pfnPrintf(pHlp, "VME - Virtual 8086 Mode Enhancements   = %d (%d)\n",  !!(uEdxGst & RT_BIT( 1)),  !!(uEdxHst & RT_BIT( 1)));
-            pHlp->pfnPrintf(pHlp, "DE - Debugging extensions              = %d (%d)\n",  !!(uEdxGst & RT_BIT( 2)),  !!(uEdxHst & RT_BIT( 2)));
-            pHlp->pfnPrintf(pHlp, "PSE - Page Size Extension              = %d (%d)\n",  !!(uEdxGst & RT_BIT( 3)),  !!(uEdxHst & RT_BIT( 3)));
-            pHlp->pfnPrintf(pHlp, "TSC - Time Stamp Counter               = %d (%d)\n",  !!(uEdxGst & RT_BIT( 4)),  !!(uEdxHst & RT_BIT( 4)));
-            pHlp->pfnPrintf(pHlp, "MSR - K86 Model Specific Registers     = %d (%d)\n",  !!(uEdxGst & RT_BIT( 5)),  !!(uEdxHst & RT_BIT( 5)));
-            pHlp->pfnPrintf(pHlp, "PAE - Physical Address Extension       = %d (%d)\n",  !!(uEdxGst & RT_BIT( 6)),  !!(uEdxHst & RT_BIT( 6)));
-            pHlp->pfnPrintf(pHlp, "MCE - Machine Check Exception          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 7)),  !!(uEdxHst & RT_BIT( 7)));
-            pHlp->pfnPrintf(pHlp, "CX8 - CMPXCHG8B instruction            = %d (%d)\n",  !!(uEdxGst & RT_BIT( 8)),  !!(uEdxHst & RT_BIT( 8)));
-            pHlp->pfnPrintf(pHlp, "APIC - APIC On-Chip                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 9)),  !!(uEdxHst & RT_BIT( 9)));
-            pHlp->pfnPrintf(pHlp, "10 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(10)),  !!(uEdxHst & RT_BIT(10)));
-            pHlp->pfnPrintf(pHlp, "SEP - SYSCALL and SYSRET               = %d (%d)\n",  !!(uEdxGst & RT_BIT(11)),  !!(uEdxHst & RT_BIT(11)));
-            pHlp->pfnPrintf(pHlp, "MTRR - Memory Type Range Registers     = %d (%d)\n",  !!(uEdxGst & RT_BIT(12)),  !!(uEdxHst & RT_BIT(12)));
-            pHlp->pfnPrintf(pHlp, "PGE - PTE Global Bit                   = %d (%d)\n",  !!(uEdxGst & RT_BIT(13)),  !!(uEdxHst & RT_BIT(13)));
-            pHlp->pfnPrintf(pHlp, "MCA - Machine Check Architecture       = %d (%d)\n",  !!(uEdxGst & RT_BIT(14)),  !!(uEdxHst & RT_BIT(14)));
-            pHlp->pfnPrintf(pHlp, "CMOV - Conditional Move Instructions   = %d (%d)\n",  !!(uEdxGst & RT_BIT(15)),  !!(uEdxHst & RT_BIT(15)));
-            pHlp->pfnPrintf(pHlp, "PAT - Page Attribute Table             = %d (%d)\n",  !!(uEdxGst & RT_BIT(16)),  !!(uEdxHst & RT_BIT(16)));
-            pHlp->pfnPrintf(pHlp, "PSE-36 - 36-bit Page Size Extention    = %d (%d)\n",  !!(uEdxGst & RT_BIT(17)),  !!(uEdxHst & RT_BIT(17)));
-            pHlp->pfnPrintf(pHlp, "18 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(18)),  !!(uEdxHst & RT_BIT(18)));
-            pHlp->pfnPrintf(pHlp, "19 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(19)),  !!(uEdxHst & RT_BIT(19)));
-            pHlp->pfnPrintf(pHlp, "NX - No-Execute Page Protection        = %d (%d)\n",  !!(uEdxGst & RT_BIT(20)),  !!(uEdxHst & RT_BIT(20)));
-            pHlp->pfnPrintf(pHlp, "DS - Debug Store                       = %d (%d)\n",  !!(uEdxGst & RT_BIT(21)),  !!(uEdxHst & RT_BIT(21)));
-            pHlp->pfnPrintf(pHlp, "AXMMX - AMD Extensions to MMX Instr.   = %d (%d)\n",  !!(uEdxGst & RT_BIT(22)),  !!(uEdxHst & RT_BIT(22)));
-            pHlp->pfnPrintf(pHlp, "MMX - Intel MMX Technology             = %d (%d)\n",  !!(uEdxGst & RT_BIT(23)),  !!(uEdxHst & RT_BIT(23)));
-            pHlp->pfnPrintf(pHlp, "FXSR - FXSAVE and FXRSTOR Instructions = %d (%d)\n",  !!(uEdxGst & RT_BIT(24)),  !!(uEdxHst & RT_BIT(24)));
-            pHlp->pfnPrintf(pHlp, "25 - AMD fast FXSAVE and FXRSTOR Instr.= %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
-            pHlp->pfnPrintf(pHlp, "26 - 1 GB large page support           = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
-            pHlp->pfnPrintf(pHlp, "27 - RDTSCP instruction                = %d (%d)\n",  !!(uEdxGst & RT_BIT(27)),  !!(uEdxHst & RT_BIT(27)));
-            pHlp->pfnPrintf(pHlp, "28 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(28)),  !!(uEdxHst & RT_BIT(28)));
-            pHlp->pfnPrintf(pHlp, "29 - AMD Long Mode                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(29)),  !!(uEdxHst & RT_BIT(29)));
-            pHlp->pfnPrintf(pHlp, "30 - AMD Extensions to 3DNow!          = %d (%d)\n",  !!(uEdxGst & RT_BIT(30)),  !!(uEdxHst & RT_BIT(30)));
-            pHlp->pfnPrintf(pHlp, "31 - AMD 3DNow!                        = %d (%d)\n",  !!(uEdxGst & RT_BIT(31)),  !!(uEdxHst & RT_BIT(31)));
-
-            uint32_t uEcxGst = Guest.uEcx;
-            uint32_t uEcxHst = Host.uEcx;
-            pHlp->pfnPrintf(pHlp, "LahfSahf - LAHF/SAHF in 64-bit mode    = %d (%d)\n",  !!(uEcxGst & RT_BIT( 0)),  !!(uEcxHst & RT_BIT( 0)));
-            pHlp->pfnPrintf(pHlp, "CmpLegacy - Core MP legacy mode (depr) = %d (%d)\n",  !!(uEcxGst & RT_BIT( 1)),  !!(uEcxHst & RT_BIT( 1)));
-            pHlp->pfnPrintf(pHlp, "SVM - AMD VM Extensions                = %d (%d)\n",  !!(uEcxGst & RT_BIT( 2)),  !!(uEcxHst & RT_BIT( 2)));
-            pHlp->pfnPrintf(pHlp, "APIC registers starting at 0x400       = %d (%d)\n",  !!(uEcxGst & RT_BIT( 3)),  !!(uEcxHst & RT_BIT( 3)));
-            pHlp->pfnPrintf(pHlp, "AltMovCR8 - LOCK MOV CR0 means MOV CR8 = %d (%d)\n",  !!(uEcxGst & RT_BIT( 4)),  !!(uEcxHst & RT_BIT( 4)));
-            pHlp->pfnPrintf(pHlp, "5  - Advanced bit manipulation         = %d (%d)\n",  !!(uEcxGst & RT_BIT( 5)),  !!(uEcxHst & RT_BIT( 5)));
-            pHlp->pfnPrintf(pHlp, "6  - SSE4A instruction support         = %d (%d)\n",  !!(uEcxGst & RT_BIT( 6)),  !!(uEcxHst & RT_BIT( 6)));
-            pHlp->pfnPrintf(pHlp, "7  - Misaligned SSE mode               = %d (%d)\n",  !!(uEcxGst & RT_BIT( 7)),  !!(uEcxHst & RT_BIT( 7)));
-            pHlp->pfnPrintf(pHlp, "8  - PREFETCH and PREFETCHW instruction= %d (%d)\n",  !!(uEcxGst & RT_BIT( 8)),  !!(uEcxHst & RT_BIT( 8)));
-            pHlp->pfnPrintf(pHlp, "9  - OS visible workaround             = %d (%d)\n",  !!(uEcxGst & RT_BIT( 9)),  !!(uEcxHst & RT_BIT( 9)));
-            pHlp->pfnPrintf(pHlp, "10 - Instruction based sampling        = %d (%d)\n",  !!(uEcxGst & RT_BIT(10)),  !!(uEcxHst & RT_BIT(10)));
-            pHlp->pfnPrintf(pHlp, "11 - SSE5 support                      = %d (%d)\n",  !!(uEcxGst & RT_BIT(11)),  !!(uEcxHst & RT_BIT(11)));
-            pHlp->pfnPrintf(pHlp, "12 - SKINIT, STGI, and DEV support     = %d (%d)\n",  !!(uEcxGst & RT_BIT(12)),  !!(uEcxHst & RT_BIT(12)));
-            pHlp->pfnPrintf(pHlp, "13 - Watchdog timer support.           = %d (%d)\n",  !!(uEcxGst & RT_BIT(13)),  !!(uEcxHst & RT_BIT(13)));
-            pHlp->pfnPrintf(pHlp, "31:14 - Reserved                       = %#x (%#x)\n",   uEcxGst >> 14,          uEcxHst >> 14);
-        }
-    }
-
-    if (iVerbosity && cExtMax >= 2)
-    {
-        char szString[4*4*3+1] = {0};
-        uint32_t *pu32 = (uint32_t *)szString;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].uEax;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].uEbx;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].uEcx;
-        *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[2].uEdx;
-        if (cExtMax >= 3)
-        {
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].uEax;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].uEbx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].uEcx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[3].uEdx;
-        }
-        if (cExtMax >= 4)
-        {
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].uEax;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].uEbx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].uEcx;
-            *pu32++ = pVM->cpum.s.aGuestCpuIdPatmExt[4].uEdx;
-        }
-        pHlp->pfnPrintf(pHlp, "Full Name:                       %s\n", szString);
-    }
-
-    if (iVerbosity && cExtMax >= 5)
-    {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[5].uEax;
-        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdPatmExt[5].uEbx;
-        uint32_t uECX = pVM->cpum.s.aGuestCpuIdPatmExt[5].uEcx;
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[5].uEdx;
-        char sz1[32];
-        char sz2[32];
-
-        pHlp->pfnPrintf(pHlp,
-                        "TLB 2/4M Instr/Uni:              %s %3d entries\n"
-                        "TLB 2/4M Data:                   %s %3d entries\n",
-                        getCacheAss((uEAX >>  8) & 0xff, sz1), (uEAX >>  0) & 0xff,
-                        getCacheAss((uEAX >> 24) & 0xff, sz2), (uEAX >> 16) & 0xff);
-        pHlp->pfnPrintf(pHlp,
-                        "TLB 4K Instr/Uni:                %s %3d entries\n"
-                        "TLB 4K Data:                     %s %3d entries\n",
-                        getCacheAss((uEBX >>  8) & 0xff, sz1), (uEBX >>  0) & 0xff,
-                        getCacheAss((uEBX >> 24) & 0xff, sz2), (uEBX >> 16) & 0xff);
-        pHlp->pfnPrintf(pHlp, "L1 Instr Cache Line Size:        %d bytes\n"
-                        "L1 Instr Cache Lines Per Tag:    %d\n"
-                        "L1 Instr Cache Associativity:    %s\n"
-                        "L1 Instr Cache Size:             %d KB\n",
-                        (uEDX >> 0) & 0xff,
-                        (uEDX >> 8) & 0xff,
-                        getCacheAss((uEDX >> 16) & 0xff, sz1),
-                        (uEDX >> 24) & 0xff);
-        pHlp->pfnPrintf(pHlp,
-                        "L1 Data Cache Line Size:         %d bytes\n"
-                        "L1 Data Cache Lines Per Tag:     %d\n"
-                        "L1 Data Cache Associativity:     %s\n"
-                        "L1 Data Cache Size:              %d KB\n",
-                        (uECX >> 0) & 0xff,
-                        (uECX >> 8) & 0xff,
-                        getCacheAss((uECX >> 16) & 0xff, sz1),
-                        (uECX >> 24) & 0xff);
-    }
-
-    if (iVerbosity && cExtMax >= 6)
-    {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[6].uEax;
-        uint32_t uEBX = pVM->cpum.s.aGuestCpuIdPatmExt[6].uEbx;
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[6].uEdx;
-
-        pHlp->pfnPrintf(pHlp,
-                        "L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
-                        "L2 TLB 2/4M Data:                %s %4d entries\n",
-                        getL2CacheAss((uEAX >> 12) & 0xf),  (uEAX >>  0) & 0xfff,
-                        getL2CacheAss((uEAX >> 28) & 0xf),  (uEAX >> 16) & 0xfff);
-        pHlp->pfnPrintf(pHlp,
-                        "L2 TLB 4K Instr/Uni:             %s %4d entries\n"
-                        "L2 TLB 4K Data:                  %s %4d entries\n",
-                        getL2CacheAss((uEBX >> 12) & 0xf),  (uEBX >>  0) & 0xfff,
-                        getL2CacheAss((uEBX >> 28) & 0xf),  (uEBX >> 16) & 0xfff);
-        pHlp->pfnPrintf(pHlp,
-                        "L2 Cache Line Size:              %d bytes\n"
-                        "L2 Cache Lines Per Tag:          %d\n"
-                        "L2 Cache Associativity:          %s\n"
-                        "L2 Cache Size:                   %d KB\n",
-                        (uEDX >> 0) & 0xff,
-                        (uEDX >> 8) & 0xf,
-                        getL2CacheAss((uEDX >> 12) & 0xf),
-                        (uEDX >> 16) & 0xffff);
-    }
-
-    if (iVerbosity && cExtMax >= 7)
-    {
-        uint32_t uEDX = pVM->cpum.s.aGuestCpuIdPatmExt[7].uEdx;
-
-        pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n", fSupportsInvariantTsc);
-        pHlp->pfnPrintf(pHlp, "APM Features:                   ");
-        if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " TS");
-        if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " FID");
-        if (uEDX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " VID");
-        if (uEDX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " TTP");
-        if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TM");
-        if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " STC");
-        if (uEDX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " MC");
-        if (uEDX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " HWPSTATE");
-        if (uEDX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " TscInvariant");
-        if (uEDX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " CPB");
-        if (uEDX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " EffFreqRO");
-        if (uEDX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PFI");
-        if (uEDX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PA");
-        for (unsigned iBit = 13; iBit < 32; iBit++)
-            if (uEDX & RT_BIT(iBit))
-                pHlp->pfnPrintf(pHlp, " %d", iBit);
-        pHlp->pfnPrintf(pHlp, "\n");
-    }
-
-    if (iVerbosity && cExtMax >= 8)
-    {
-        uint32_t uEAX = pVM->cpum.s.aGuestCpuIdPatmExt[8].uEax;
-        uint32_t uECX = pVM->cpum.s.aGuestCpuIdPatmExt[8].uEcx;
-
-        pHlp->pfnPrintf(pHlp,
-                        "Physical Address Width:          %d bits\n"
-                        "Virtual Address Width:           %d bits\n"
-                        "Guest Physical Address Width:    %d bits\n",
-                        (uEAX >> 0) & 0xff,
-                        (uEAX >> 8) & 0xff,
-                        (uEAX >> 16) & 0xff);
-        pHlp->pfnPrintf(pHlp,
-                        "Physical Core Count:             %d\n",
-                        (uECX >> 0) & 0xff);
-    }
-
 
     /*
      * Hypervisor leaves.
@@ -4927,165 +4675,459 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
      * Unlike most of the other leaves reported, the guest hypervisor leaves
      * aren't a subset of the host CPUID bits.
      */
-    RT_ZERO(Host);
-    if (cStdHstMax >= 1)
-        ASMCpuIdExSlow(1, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-    bool fHostHvp  = RT_BOOL(Host.uEcx & X86_CPUID_FEATURE_ECX_HVP);
-    bool fGuestHvp = false;
-    if (cStdMax >= 1)
+    pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0x3fffffff), "Unknown CPUID Leaves");
+
+    ASMCpuIdExSlow(UINT32_C(0x40000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+    cHstMax  = Host.uEax >= UINT32_C(0x40000001) && Host.uEax <= UINT32_C(0x40000fff) ? Host.uEax : 0;
+    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x40000000)
+             ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x40000fff)) : 0;
+    cMax     = RT_MAX(cHstMax, cGstMax);
+    if (cMax >= UINT32_C(0x40000000))
     {
-        Guest     = pVM->cpum.s.aGuestCpuIdPatmStd[1];
-        fGuestHvp = RT_BOOL(Guest.uEcx & X86_CPUID_FEATURE_ECX_HVP);
+        pNextLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, cMax, "Raw Hypervisor CPUID Leaves");
+
+        /** @todo dump these in more detail. */
+
+        pCurLeaf = pNextLeaf;
     }
 
-    if (   fHostHvp
-        || fGuestHvp)
+
+    /*
+     * Extended.  Custom raw dump here due to ECX sub-leaves host handling.
+     * Implemented after AMD specs.
+     */
+    pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0x7fffffff), "Unknown CPUID Leaves");
+
+    ASMCpuIdExSlow(UINT32_C(0x80000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+    cHstMax  = ASMIsValidExtRange(Host.uEax) ? RT_MIN(Host.uEax, UINT32_C(0x80000fff)) : 0;
+    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x80000000)
+             ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x80000fff)) : 0;
+    cMax     = RT_MAX(cHstMax, cGstMax);
+    if (cMax >= UINT32_C(0x80000000))
     {
-        uint32_t const uHyperLeaf = 0x40000000;
+
         pHlp->pfnPrintf(pHlp,
-                        "\n"
-                        "         Hypervisor CPUIDs\n"
-                        "     Function  eax      ebx      ecx      edx\n");
-
-        PCCPUMCPUIDLEAF pHyperLeafGst = NULL;
-        if (fGuestHvp)
+                        "         Raw Extended CPUID Leaves\n"
+                        "     Leaf/sub-leaf  eax      ebx      ecx      edx\n");
+        PCCPUMCPUIDLEAF pExtLeaf = pCurLeaf;
+        for (uLeaf = UINT32_C(0x80000000); uLeaf <= cMax; uLeaf++)
         {
-            pHyperLeafGst = cpumR3CpuIdGetLeaf(pVM->cpum.s.GuestInfo.paCpuIdLeavesR3, pVM->cpum.s.GuestInfo.cCpuIdLeaves,
-                                               uHyperLeaf, 0 /* uSubLeaf */);
-        }
+            uint32_t cMaxSubLeaves = 1;
+            if (uLeaf == UINT32_C(0x8000001d))
+                cMaxSubLeaves = 16;
 
-        RT_ZERO(Host);
-        if (fHostHvp)
-            ASMCpuIdExSlow(uHyperLeaf, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-
-        CPUMCPUIDLEAF  GuestLeaf;
-        uint32_t const cHyperGstMax = pHyperLeafGst ? pHyperLeafGst->uEax : 0;
-        uint32_t const cHyperHstMax = Host.uEax;
-        uint32_t const cHyperMax    = RT_MAX(cHyperHstMax, cHyperGstMax);
-        for (uint32_t i = uHyperLeaf; i <= cHyperMax; i++)
-        {
-            RT_ZERO(Host);
-            RT_ZERO(GuestLeaf);
-            if (i <= cHyperHstMax)
-                ASMCpuIdExSlow(i, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-            CPUMR3CpuIdGetLeaf(pVM, &GuestLeaf, i, 0 /* uSubLeaf */);
-            if (!fHostHvp)
+            for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
             {
-                pHlp->pfnPrintf(pHlp,
-                                "Gst: %08x  %08x %08x %08x %08x\n",
-                                i, GuestLeaf.uEax, GuestLeaf.uEbx, GuestLeaf.uEcx, GuestLeaf.uEdx);
+                ASMCpuIdExSlow(uLeaf, uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+                if (   pCurLeaf - paLeaves < cLeaves
+                    && pCurLeaf->uLeaf    == uLeaf
+                    && pCurLeaf->uSubLeaf == uSubLeaf)
+                {
+                    pHlp->pfnPrintf(pHlp,
+                                    "Gst: %08x/%04x  %08x %08x %08x %08x\n"
+                                    "Hst:                 %08x %08x %08x %08x\n",
+                                    uLeaf, uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx,
+                                    Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+                    pCurLeaf++;
+                }
+                else if (   uLeaf != 0xd
+                         || uSubLeaf <= 1
+                         || Host.uEbx != 0 )
+                    pHlp->pfnPrintf(pHlp,
+                                    "Hst: %08x/%04x  %08x %08x %08x %08x\n",
+                                    uLeaf, uSubLeaf, Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+
+                /* Done? */
+                if (   (   pCurLeaf - paLeaves >= cLeaves
+                        || pCurLeaf->uLeaf != uLeaf)
+                    && (uLeaf == UINT32_C(0x8000001d) && ((Host.uEax & 0x000f) == 0 || (Host.uEax & 0x000f) >= 8)) )
+                    break;
+            }
+        }
+        pNextLeaf = pCurLeaf;
+
+        /*
+         * Understandable output
+         */
+        if (iVerbosity)
+            pHlp->pfnPrintf(pHlp,
+                            "Ext Name:                        %.4s%.4s%.4s\n"
+                            "Ext Supports:                    0x80000000-%#010x\n",
+                            &pExtLeaf->uEbx, &pExtLeaf->uEdx, &pExtLeaf->uEcx, pExtLeaf->uEax);
+
+        pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000001), 0);
+        if (iVerbosity && pCurLeaf)
+        {
+            uint32_t uEAX = pCurLeaf->uEax;
+            pHlp->pfnPrintf(pHlp,
+                            "Family:                          %d  \tExtended: %d \tEffective: %d\n"
+                            "Model:                           %d  \tExtended: %d \tEffective: %d\n"
+                            "Stepping:                        %d\n"
+                            "Brand ID:                        %#05x\n",
+                            (uEAX >> 8) & 0xf, (uEAX >> 20) & 0x7f, ASMGetCpuFamily(uEAX),
+                            (uEAX >> 4) & 0xf, (uEAX >> 16) & 0x0f, ASMGetCpuModel(uEAX, fIntel),
+                            ASMGetCpuStepping(uEAX),
+                            pCurLeaf->uEbx & 0xfff);
+
+            if (iVerbosity == 1)
+            {
+                uint32_t uEDX = pCurLeaf->uEdx;
+                pHlp->pfnPrintf(pHlp, "Features EDX:                   ");
+                if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " FPU");
+                if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " VME");
+                if (uEDX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " DE");
+                if (uEDX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " PSE");
+                if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TSC");
+                if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " MSR");
+                if (uEDX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " PAE");
+                if (uEDX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " MCE");
+                if (uEDX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " CX8");
+                if (uEDX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " APIC");
+                if (uEDX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " 10");
+                if (uEDX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " SCR");
+                if (uEDX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " MTRR");
+                if (uEDX & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " PGE");
+                if (uEDX & RT_BIT(14))  pHlp->pfnPrintf(pHlp, " MCA");
+                if (uEDX & RT_BIT(15))  pHlp->pfnPrintf(pHlp, " CMOV");
+                if (uEDX & RT_BIT(16))  pHlp->pfnPrintf(pHlp, " PAT");
+                if (uEDX & RT_BIT(17))  pHlp->pfnPrintf(pHlp, " PSE36");
+                if (uEDX & RT_BIT(18))  pHlp->pfnPrintf(pHlp, " 18");
+                if (uEDX & RT_BIT(19))  pHlp->pfnPrintf(pHlp, " 19");
+                if (uEDX & RT_BIT(20))  pHlp->pfnPrintf(pHlp, " NX");
+                if (uEDX & RT_BIT(21))  pHlp->pfnPrintf(pHlp, " 21");
+                if (uEDX & RT_BIT(22))  pHlp->pfnPrintf(pHlp, " ExtMMX");
+                if (uEDX & RT_BIT(23))  pHlp->pfnPrintf(pHlp, " MMX");
+                if (uEDX & RT_BIT(24))  pHlp->pfnPrintf(pHlp, " FXSR");
+                if (uEDX & RT_BIT(25))  pHlp->pfnPrintf(pHlp, " FastFXSR");
+                if (uEDX & RT_BIT(26))  pHlp->pfnPrintf(pHlp, " Page1GB");
+                if (uEDX & RT_BIT(27))  pHlp->pfnPrintf(pHlp, " RDTSCP");
+                if (uEDX & RT_BIT(28))  pHlp->pfnPrintf(pHlp, " 28");
+                if (uEDX & RT_BIT(29))  pHlp->pfnPrintf(pHlp, " LongMode");
+                if (uEDX & RT_BIT(30))  pHlp->pfnPrintf(pHlp, " Ext3DNow");
+                if (uEDX & RT_BIT(31))  pHlp->pfnPrintf(pHlp, " 3DNow");
+                pHlp->pfnPrintf(pHlp, "\n");
+
+                uint32_t uECX = pCurLeaf->uEcx;
+                pHlp->pfnPrintf(pHlp, "Features ECX:                   ");
+                if (uECX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " LAHF/SAHF");
+                if (uECX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " CMPL");
+                if (uECX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " SVM");
+                if (uECX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " ExtAPIC");
+                if (uECX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " CR8L");
+                if (uECX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " ABM");
+                if (uECX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " SSE4A");
+                if (uECX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " MISALNSSE");
+                if (uECX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " 3DNOWPRF");
+                if (uECX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " OSVW");
+                if (uECX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " IBS");
+                if (uECX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " SSE5");
+                if (uECX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " SKINIT");
+                if (uECX & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " WDT");
+                for (unsigned iBit = 5; iBit < 32; iBit++)
+                    if (uECX & RT_BIT(iBit))
+                        pHlp->pfnPrintf(pHlp, " %d", iBit);
+                pHlp->pfnPrintf(pHlp, "\n");
             }
             else
             {
-                pHlp->pfnPrintf(pHlp,
-                                "Gst: %08x  %08x %08x %08x %08x%s\n"
-                                "Hst:           %08x %08x %08x %08x%s\n",
-                                i, GuestLeaf.uEax, GuestLeaf.uEbx, GuestLeaf.uEcx, GuestLeaf.uEdx,
-                                i <= cHyperGstMax ? "" : "*",
-                                Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx, i <= cHyperHstMax ? "" : "*");
+                ASMCpuIdExSlow(0x80000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+
+                uint32_t uEdxGst = pCurLeaf->uEdx;
+                uint32_t uEdxHst = Host.uEdx;
+                pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
+                pHlp->pfnPrintf(pHlp, "FPU - x87 FPU on Chip                  = %d (%d)\n",  !!(uEdxGst & RT_BIT( 0)),  !!(uEdxHst & RT_BIT( 0)));
+                pHlp->pfnPrintf(pHlp, "VME - Virtual 8086 Mode Enhancements   = %d (%d)\n",  !!(uEdxGst & RT_BIT( 1)),  !!(uEdxHst & RT_BIT( 1)));
+                pHlp->pfnPrintf(pHlp, "DE - Debugging extensions              = %d (%d)\n",  !!(uEdxGst & RT_BIT( 2)),  !!(uEdxHst & RT_BIT( 2)));
+                pHlp->pfnPrintf(pHlp, "PSE - Page Size Extension              = %d (%d)\n",  !!(uEdxGst & RT_BIT( 3)),  !!(uEdxHst & RT_BIT( 3)));
+                pHlp->pfnPrintf(pHlp, "TSC - Time Stamp Counter               = %d (%d)\n",  !!(uEdxGst & RT_BIT( 4)),  !!(uEdxHst & RT_BIT( 4)));
+                pHlp->pfnPrintf(pHlp, "MSR - K86 Model Specific Registers     = %d (%d)\n",  !!(uEdxGst & RT_BIT( 5)),  !!(uEdxHst & RT_BIT( 5)));
+                pHlp->pfnPrintf(pHlp, "PAE - Physical Address Extension       = %d (%d)\n",  !!(uEdxGst & RT_BIT( 6)),  !!(uEdxHst & RT_BIT( 6)));
+                pHlp->pfnPrintf(pHlp, "MCE - Machine Check Exception          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 7)),  !!(uEdxHst & RT_BIT( 7)));
+                pHlp->pfnPrintf(pHlp, "CX8 - CMPXCHG8B instruction            = %d (%d)\n",  !!(uEdxGst & RT_BIT( 8)),  !!(uEdxHst & RT_BIT( 8)));
+                pHlp->pfnPrintf(pHlp, "APIC - APIC On-Chip                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 9)),  !!(uEdxHst & RT_BIT( 9)));
+                pHlp->pfnPrintf(pHlp, "10 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(10)),  !!(uEdxHst & RT_BIT(10)));
+                pHlp->pfnPrintf(pHlp, "SEP - SYSCALL and SYSRET               = %d (%d)\n",  !!(uEdxGst & RT_BIT(11)),  !!(uEdxHst & RT_BIT(11)));
+                pHlp->pfnPrintf(pHlp, "MTRR - Memory Type Range Registers     = %d (%d)\n",  !!(uEdxGst & RT_BIT(12)),  !!(uEdxHst & RT_BIT(12)));
+                pHlp->pfnPrintf(pHlp, "PGE - PTE Global Bit                   = %d (%d)\n",  !!(uEdxGst & RT_BIT(13)),  !!(uEdxHst & RT_BIT(13)));
+                pHlp->pfnPrintf(pHlp, "MCA - Machine Check Architecture       = %d (%d)\n",  !!(uEdxGst & RT_BIT(14)),  !!(uEdxHst & RT_BIT(14)));
+                pHlp->pfnPrintf(pHlp, "CMOV - Conditional Move Instructions   = %d (%d)\n",  !!(uEdxGst & RT_BIT(15)),  !!(uEdxHst & RT_BIT(15)));
+                pHlp->pfnPrintf(pHlp, "PAT - Page Attribute Table             = %d (%d)\n",  !!(uEdxGst & RT_BIT(16)),  !!(uEdxHst & RT_BIT(16)));
+                pHlp->pfnPrintf(pHlp, "PSE-36 - 36-bit Page Size Extention    = %d (%d)\n",  !!(uEdxGst & RT_BIT(17)),  !!(uEdxHst & RT_BIT(17)));
+                pHlp->pfnPrintf(pHlp, "18 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(18)),  !!(uEdxHst & RT_BIT(18)));
+                pHlp->pfnPrintf(pHlp, "19 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(19)),  !!(uEdxHst & RT_BIT(19)));
+                pHlp->pfnPrintf(pHlp, "NX - No-Execute Page Protection        = %d (%d)\n",  !!(uEdxGst & RT_BIT(20)),  !!(uEdxHst & RT_BIT(20)));
+                pHlp->pfnPrintf(pHlp, "DS - Debug Store                       = %d (%d)\n",  !!(uEdxGst & RT_BIT(21)),  !!(uEdxHst & RT_BIT(21)));
+                pHlp->pfnPrintf(pHlp, "AXMMX - AMD Extensions to MMX Instr.   = %d (%d)\n",  !!(uEdxGst & RT_BIT(22)),  !!(uEdxHst & RT_BIT(22)));
+                pHlp->pfnPrintf(pHlp, "MMX - Intel MMX Technology             = %d (%d)\n",  !!(uEdxGst & RT_BIT(23)),  !!(uEdxHst & RT_BIT(23)));
+                pHlp->pfnPrintf(pHlp, "FXSR - FXSAVE and FXRSTOR Instructions = %d (%d)\n",  !!(uEdxGst & RT_BIT(24)),  !!(uEdxHst & RT_BIT(24)));
+                pHlp->pfnPrintf(pHlp, "25 - AMD fast FXSAVE and FXRSTOR Instr.= %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
+                pHlp->pfnPrintf(pHlp, "26 - 1 GB large page support           = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
+                pHlp->pfnPrintf(pHlp, "27 - RDTSCP instruction                = %d (%d)\n",  !!(uEdxGst & RT_BIT(27)),  !!(uEdxHst & RT_BIT(27)));
+                pHlp->pfnPrintf(pHlp, "28 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(28)),  !!(uEdxHst & RT_BIT(28)));
+                pHlp->pfnPrintf(pHlp, "29 - AMD Long Mode                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(29)),  !!(uEdxHst & RT_BIT(29)));
+                pHlp->pfnPrintf(pHlp, "30 - AMD Extensions to 3DNow!          = %d (%d)\n",  !!(uEdxGst & RT_BIT(30)),  !!(uEdxHst & RT_BIT(30)));
+                pHlp->pfnPrintf(pHlp, "31 - AMD 3DNow!                        = %d (%d)\n",  !!(uEdxGst & RT_BIT(31)),  !!(uEdxHst & RT_BIT(31)));
+
+                uint32_t uEcxGst = pCurLeaf->uEcx;
+                uint32_t uEcxHst = Host.uEcx;
+                pHlp->pfnPrintf(pHlp, "LahfSahf - LAHF/SAHF in 64-bit mode    = %d (%d)\n",  !!(uEcxGst & RT_BIT( 0)),  !!(uEcxHst & RT_BIT( 0)));
+                pHlp->pfnPrintf(pHlp, "CmpLegacy - Core MP legacy mode (depr) = %d (%d)\n",  !!(uEcxGst & RT_BIT( 1)),  !!(uEcxHst & RT_BIT( 1)));
+                pHlp->pfnPrintf(pHlp, "SVM - AMD VM Extensions                = %d (%d)\n",  !!(uEcxGst & RT_BIT( 2)),  !!(uEcxHst & RT_BIT( 2)));
+                pHlp->pfnPrintf(pHlp, "APIC registers starting at 0x400       = %d (%d)\n",  !!(uEcxGst & RT_BIT( 3)),  !!(uEcxHst & RT_BIT( 3)));
+                pHlp->pfnPrintf(pHlp, "AltMovCR8 - LOCK MOV CR0 means MOV CR8 = %d (%d)\n",  !!(uEcxGst & RT_BIT( 4)),  !!(uEcxHst & RT_BIT( 4)));
+                pHlp->pfnPrintf(pHlp, "5  - Advanced bit manipulation         = %d (%d)\n",  !!(uEcxGst & RT_BIT( 5)),  !!(uEcxHst & RT_BIT( 5)));
+                pHlp->pfnPrintf(pHlp, "6  - SSE4A instruction support         = %d (%d)\n",  !!(uEcxGst & RT_BIT( 6)),  !!(uEcxHst & RT_BIT( 6)));
+                pHlp->pfnPrintf(pHlp, "7  - Misaligned SSE mode               = %d (%d)\n",  !!(uEcxGst & RT_BIT( 7)),  !!(uEcxHst & RT_BIT( 7)));
+                pHlp->pfnPrintf(pHlp, "8  - PREFETCH and PREFETCHW instruction= %d (%d)\n",  !!(uEcxGst & RT_BIT( 8)),  !!(uEcxHst & RT_BIT( 8)));
+                pHlp->pfnPrintf(pHlp, "9  - OS visible workaround             = %d (%d)\n",  !!(uEcxGst & RT_BIT( 9)),  !!(uEcxHst & RT_BIT( 9)));
+                pHlp->pfnPrintf(pHlp, "10 - Instruction based sampling        = %d (%d)\n",  !!(uEcxGst & RT_BIT(10)),  !!(uEcxHst & RT_BIT(10)));
+                pHlp->pfnPrintf(pHlp, "11 - SSE5 support                      = %d (%d)\n",  !!(uEcxGst & RT_BIT(11)),  !!(uEcxHst & RT_BIT(11)));
+                pHlp->pfnPrintf(pHlp, "12 - SKINIT, STGI, and DEV support     = %d (%d)\n",  !!(uEcxGst & RT_BIT(12)),  !!(uEcxHst & RT_BIT(12)));
+                pHlp->pfnPrintf(pHlp, "13 - Watchdog timer support.           = %d (%d)\n",  !!(uEcxGst & RT_BIT(13)),  !!(uEcxHst & RT_BIT(13)));
+                pHlp->pfnPrintf(pHlp, "31:14 - Reserved                       = %#x (%#x)\n",   uEcxGst >> 14,          uEcxHst >> 14);
             }
         }
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000002), 0)) != NULL)
+        {
+            char szString[4*4*3+1] = {0};
+            uint32_t *pu32 = (uint32_t *)szString;
+            *pu32++ = pCurLeaf->uEax;
+            *pu32++ = pCurLeaf->uEbx;
+            *pu32++ = pCurLeaf->uEcx;
+            *pu32++ = pCurLeaf->uEdx;
+            pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000003), 0);
+            if (pCurLeaf)
+            {
+                *pu32++ = pCurLeaf->uEax;
+                *pu32++ = pCurLeaf->uEbx;
+                *pu32++ = pCurLeaf->uEcx;
+                *pu32++ = pCurLeaf->uEdx;
+            }
+            pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000004), 0);
+            if (pCurLeaf)
+            {
+                *pu32++ = pCurLeaf->uEax;
+                *pu32++ = pCurLeaf->uEbx;
+                *pu32++ = pCurLeaf->uEcx;
+                *pu32++ = pCurLeaf->uEdx;
+            }
+            pHlp->pfnPrintf(pHlp, "Full Name:                       %s\n", szString);
+        }
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000005), 0)) != NULL)
+        {
+            uint32_t uEAX = pCurLeaf->uEax;
+            uint32_t uEBX = pCurLeaf->uEbx;
+            uint32_t uECX = pCurLeaf->uEcx;
+            uint32_t uEDX = pCurLeaf->uEdx;
+            char sz1[32];
+            char sz2[32];
+
+            pHlp->pfnPrintf(pHlp,
+                            "TLB 2/4M Instr/Uni:              %s %3d entries\n"
+                            "TLB 2/4M Data:                   %s %3d entries\n",
+                            getCacheAss((uEAX >>  8) & 0xff, sz1), (uEAX >>  0) & 0xff,
+                            getCacheAss((uEAX >> 24) & 0xff, sz2), (uEAX >> 16) & 0xff);
+            pHlp->pfnPrintf(pHlp,
+                            "TLB 4K Instr/Uni:                %s %3d entries\n"
+                            "TLB 4K Data:                     %s %3d entries\n",
+                            getCacheAss((uEBX >>  8) & 0xff, sz1), (uEBX >>  0) & 0xff,
+                            getCacheAss((uEBX >> 24) & 0xff, sz2), (uEBX >> 16) & 0xff);
+            pHlp->pfnPrintf(pHlp, "L1 Instr Cache Line Size:        %d bytes\n"
+                            "L1 Instr Cache Lines Per Tag:    %d\n"
+                            "L1 Instr Cache Associativity:    %s\n"
+                            "L1 Instr Cache Size:             %d KB\n",
+                            (uEDX >> 0) & 0xff,
+                            (uEDX >> 8) & 0xff,
+                            getCacheAss((uEDX >> 16) & 0xff, sz1),
+                            (uEDX >> 24) & 0xff);
+            pHlp->pfnPrintf(pHlp,
+                            "L1 Data Cache Line Size:         %d bytes\n"
+                            "L1 Data Cache Lines Per Tag:     %d\n"
+                            "L1 Data Cache Associativity:     %s\n"
+                            "L1 Data Cache Size:              %d KB\n",
+                            (uECX >> 0) & 0xff,
+                            (uECX >> 8) & 0xff,
+                            getCacheAss((uECX >> 16) & 0xff, sz1),
+                            (uECX >> 24) & 0xff);
+        }
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000006), 0)) != NULL)
+        {
+            uint32_t uEAX = pCurLeaf->uEax;
+            uint32_t uEBX = pCurLeaf->uEbx;
+            uint32_t uEDX = pCurLeaf->uEdx;
+
+            pHlp->pfnPrintf(pHlp,
+                            "L2 TLB 2/4M Instr/Uni:           %s %4d entries\n"
+                            "L2 TLB 2/4M Data:                %s %4d entries\n",
+                            getL2CacheAss((uEAX >> 12) & 0xf),  (uEAX >>  0) & 0xfff,
+                            getL2CacheAss((uEAX >> 28) & 0xf),  (uEAX >> 16) & 0xfff);
+            pHlp->pfnPrintf(pHlp,
+                            "L2 TLB 4K Instr/Uni:             %s %4d entries\n"
+                            "L2 TLB 4K Data:                  %s %4d entries\n",
+                            getL2CacheAss((uEBX >> 12) & 0xf),  (uEBX >>  0) & 0xfff,
+                            getL2CacheAss((uEBX >> 28) & 0xf),  (uEBX >> 16) & 0xfff);
+            pHlp->pfnPrintf(pHlp,
+                            "L2 Cache Line Size:              %d bytes\n"
+                            "L2 Cache Lines Per Tag:          %d\n"
+                            "L2 Cache Associativity:          %s\n"
+                            "L2 Cache Size:                   %d KB\n",
+                            (uEDX >> 0) & 0xff,
+                            (uEDX >> 8) & 0xf,
+                            getL2CacheAss((uEDX >> 12) & 0xf),
+                            (uEDX >> 16) & 0xffff);
+        }
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000007), 0)) != NULL)
+        {
+            uint32_t uEDX = pCurLeaf->uEdx;
+
+            pHlp->pfnPrintf(pHlp, "APM Features:                   ");
+            if (uEDX & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " TS");
+            if (uEDX & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " FID");
+            if (uEDX & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " VID");
+            if (uEDX & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " TTP");
+            if (uEDX & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " TM");
+            if (uEDX & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " STC");
+            if (uEDX & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " MC");
+            if (uEDX & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " HWPSTATE");
+            if (uEDX & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " TscInvariant");
+            if (uEDX & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " CPB");
+            if (uEDX & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " EffFreqRO");
+            if (uEDX & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PFI");
+            if (uEDX & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PA");
+            for (unsigned iBit = 13; iBit < 32; iBit++)
+                if (uEDX & RT_BIT(iBit))
+                    pHlp->pfnPrintf(pHlp, " %d", iBit);
+            pHlp->pfnPrintf(pHlp, "\n");
+
+            ASMCpuIdExSlow(UINT32_C(0x80000007), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            pHlp->pfnPrintf(pHlp, "Host Invariant-TSC support:      %RTbool\n",
+                            cHstMax >= UINT32_C(0x80000007) && (Host.uEdx & RT_BIT(8)));
+
+        }
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x80000008), 0)) != NULL)
+        {
+            uint32_t uEAX = pCurLeaf->uEax;
+            uint32_t uECX = pCurLeaf->uEcx;
+
+            pHlp->pfnPrintf(pHlp,
+                            "Physical Address Width:          %d bits\n"
+                            "Virtual Address Width:           %d bits\n"
+                            "Guest Physical Address Width:    %d bits\n",
+                            (uEAX >> 0) & 0xff,
+                            (uEAX >> 8) & 0xff,
+                            (uEAX >> 16) & 0xff);
+            pHlp->pfnPrintf(pHlp,
+                            "Physical Core Count:             %d\n",
+                            (uECX >> 0) & 0xff);
+        }
+
+        pCurLeaf = pNextLeaf;
     }
+
+
 
     /*
      * Centaur.
      */
-    unsigned cCentaurMax = pVM->cpum.s.aGuestCpuIdPatmCentaur[0].uEax & 0xffff;
+    pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0xbfffffff), "Unknown CPUID Leaves");
 
-    pHlp->pfnPrintf(pHlp,
-                    "\n"
-                    "         RAW Centaur CPUIDs\n"
-                    "     Function  eax      ebx      ecx      edx\n");
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur); i++)
+    ASMCpuIdExSlow(UINT32_C(0xc0000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+    cHstMax  = Host.uEax >= UINT32_C(0xc0000001) && Host.uEax <= UINT32_C(0xc0000fff)
+             ? RT_MIN(Host.uEax,      UINT32_C(0xc0000fff)) : 0;
+    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0xc0000000)
+             ? RT_MIN(pCurLeaf->uEax, UINT32_C(0xc0000fff)) : 0;
+    cMax     = RT_MAX(cHstMax, cGstMax);
+    if (cMax >= UINT32_C(0xc0000000))
     {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmCentaur[i];
-        ASMCpuIdExSlow(0xc0000000 | i, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+        pNextLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, cMax, "Raw Centaur CPUID Leaves");
 
-        pHlp->pfnPrintf(pHlp,
-                        "Gst: %08x  %08x %08x %08x %08x%s\n"
-                        "Hst:           %08x %08x %08x %08x\n",
-                        0xc0000000 | i, Guest.uEax, Guest.uEbx, Guest.uEcx, Guest.uEdx,
-                        i <= cCentaurMax ? "" : "*",
-                        Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
+        /*
+         * Understandable output
+         */
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0xc0000000), 0)) != NULL)
+            pHlp->pfnPrintf(pHlp,
+                            "Centaur Supports:                0xc0000000-%#010x\n",
+                            pCurLeaf->uEax);
+
+        if (iVerbosity && (pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0xc0000001), 0)) != NULL)
+        {
+            ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            uint32_t uEdxGst = pCurLeaf->uEdx;
+            uint32_t uEdxHst = Host.uEdx;
+
+            if (iVerbosity == 1)
+            {
+                pHlp->pfnPrintf(pHlp, "Centaur Features EDX:           ");
+                if (uEdxGst & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " AIS");
+                if (uEdxGst & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " AIS-E");
+                if (uEdxGst & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " RNG");
+                if (uEdxGst & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " RNG-E");
+                if (uEdxGst & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " LH");
+                if (uEdxGst & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " FEMMS");
+                if (uEdxGst & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " ACE");
+                if (uEdxGst & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " ACE-E");
+                /* possibly indicating MM/HE and MM/HE-E on older chips... */
+                if (uEdxGst & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " ACE2");
+                if (uEdxGst & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " ACE2-E");
+                if (uEdxGst & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " PHE");
+                if (uEdxGst & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PHE-E");
+                if (uEdxGst & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PMM");
+                if (uEdxGst & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " PMM-E");
+                for (unsigned iBit = 14; iBit < 32; iBit++)
+                    if (uEdxGst & RT_BIT(iBit))
+                        pHlp->pfnPrintf(pHlp, " %d", iBit);
+                pHlp->pfnPrintf(pHlp, "\n");
+            }
+            else
+            {
+                pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
+                pHlp->pfnPrintf(pHlp, "AIS - Alternate Instruction Set        = %d (%d)\n",  !!(uEdxGst & RT_BIT( 0)),  !!(uEdxHst & RT_BIT( 0)));
+                pHlp->pfnPrintf(pHlp, "AIS-E - AIS enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 1)),  !!(uEdxHst & RT_BIT( 1)));
+                pHlp->pfnPrintf(pHlp, "RNG - Random Number Generator          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 2)),  !!(uEdxHst & RT_BIT( 2)));
+                pHlp->pfnPrintf(pHlp, "RNG-E - RNG enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 3)),  !!(uEdxHst & RT_BIT( 3)));
+                pHlp->pfnPrintf(pHlp, "LH - LongHaul MSR 0000_110Ah           = %d (%d)\n",  !!(uEdxGst & RT_BIT( 4)),  !!(uEdxHst & RT_BIT( 4)));
+                pHlp->pfnPrintf(pHlp, "FEMMS - FEMMS                          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 5)),  !!(uEdxHst & RT_BIT( 5)));
+                pHlp->pfnPrintf(pHlp, "ACE - Advanced Cryptography Engine     = %d (%d)\n",  !!(uEdxGst & RT_BIT( 6)),  !!(uEdxHst & RT_BIT( 6)));
+                pHlp->pfnPrintf(pHlp, "ACE-E - ACE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 7)),  !!(uEdxHst & RT_BIT( 7)));
+                /* possibly indicating MM/HE and MM/HE-E on older chips... */
+                pHlp->pfnPrintf(pHlp, "ACE2 - Advanced Cryptography Engine 2  = %d (%d)\n",  !!(uEdxGst & RT_BIT( 8)),  !!(uEdxHst & RT_BIT( 8)));
+                pHlp->pfnPrintf(pHlp, "ACE2-E - ACE enabled                   = %d (%d)\n",  !!(uEdxGst & RT_BIT( 9)),  !!(uEdxHst & RT_BIT( 9)));
+                pHlp->pfnPrintf(pHlp, "PHE - Padlock Hash Engine              = %d (%d)\n",  !!(uEdxGst & RT_BIT(10)),  !!(uEdxHst & RT_BIT(10)));
+                pHlp->pfnPrintf(pHlp, "PHE-E - PHE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(11)),  !!(uEdxHst & RT_BIT(11)));
+                pHlp->pfnPrintf(pHlp, "PMM - Montgomery Multiplier            = %d (%d)\n",  !!(uEdxGst & RT_BIT(12)),  !!(uEdxHst & RT_BIT(12)));
+                pHlp->pfnPrintf(pHlp, "PMM-E - PMM enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(13)),  !!(uEdxHst & RT_BIT(13)));
+                pHlp->pfnPrintf(pHlp, "14 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(14)),  !!(uEdxHst & RT_BIT(14)));
+                pHlp->pfnPrintf(pHlp, "15 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(15)),  !!(uEdxHst & RT_BIT(15)));
+                pHlp->pfnPrintf(pHlp, "Parallax                               = %d (%d)\n",  !!(uEdxGst & RT_BIT(16)),  !!(uEdxHst & RT_BIT(16)));
+                pHlp->pfnPrintf(pHlp, "Parallax enabled                       = %d (%d)\n",  !!(uEdxGst & RT_BIT(17)),  !!(uEdxHst & RT_BIT(17)));
+                pHlp->pfnPrintf(pHlp, "Overstress                             = %d (%d)\n",  !!(uEdxGst & RT_BIT(18)),  !!(uEdxHst & RT_BIT(18)));
+                pHlp->pfnPrintf(pHlp, "Overstress enabled                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(19)),  !!(uEdxHst & RT_BIT(19)));
+                pHlp->pfnPrintf(pHlp, "TM3 - Temperature Monitoring 3         = %d (%d)\n",  !!(uEdxGst & RT_BIT(20)),  !!(uEdxHst & RT_BIT(20)));
+                pHlp->pfnPrintf(pHlp, "TM3-E - TM3 enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(21)),  !!(uEdxHst & RT_BIT(21)));
+                pHlp->pfnPrintf(pHlp, "RNG2 - Random Number Generator 2       = %d (%d)\n",  !!(uEdxGst & RT_BIT(22)),  !!(uEdxHst & RT_BIT(22)));
+                pHlp->pfnPrintf(pHlp, "RNG2-E - RNG2 enabled                  = %d (%d)\n",  !!(uEdxGst & RT_BIT(23)),  !!(uEdxHst & RT_BIT(23)));
+                pHlp->pfnPrintf(pHlp, "24 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(24)),  !!(uEdxHst & RT_BIT(24)));
+                pHlp->pfnPrintf(pHlp, "PHE2 - Padlock Hash Engine 2           = %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
+                pHlp->pfnPrintf(pHlp, "PHE2-E - PHE2 enabled                  = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
+                for (unsigned iBit = 27; iBit < 32; iBit++)
+                    if ((uEdxGst | uEdxHst) & RT_BIT(iBit))
+                        pHlp->pfnPrintf(pHlp, "Bit %d                                 = %d (%d)\n", iBit, !!(uEdxGst & RT_BIT(iBit)), !!(uEdxHst & RT_BIT(iBit)));
+                pHlp->pfnPrintf(pHlp, "\n");
+            }
+        }
+
+        pCurLeaf = pNextLeaf;
     }
 
     /*
-     * Understandable output
+     * The remainder.
      */
-    if (iVerbosity)
-    {
-        Guest = pVM->cpum.s.aGuestCpuIdPatmCentaur[0];
-        pHlp->pfnPrintf(pHlp,
-                        "Centaur Supports:                0xc0000000-%#010x\n",
-                        Guest.uEax);
-    }
-
-    if (iVerbosity && cCentaurMax >= 1)
-    {
-        ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-        uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdPatmCentaur[1].uEdx;
-        uint32_t uEdxHst = Host.uEdx;
-
-        if (iVerbosity == 1)
-        {
-            pHlp->pfnPrintf(pHlp, "Centaur Features EDX:           ");
-            if (uEdxGst & RT_BIT(0))   pHlp->pfnPrintf(pHlp, " AIS");
-            if (uEdxGst & RT_BIT(1))   pHlp->pfnPrintf(pHlp, " AIS-E");
-            if (uEdxGst & RT_BIT(2))   pHlp->pfnPrintf(pHlp, " RNG");
-            if (uEdxGst & RT_BIT(3))   pHlp->pfnPrintf(pHlp, " RNG-E");
-            if (uEdxGst & RT_BIT(4))   pHlp->pfnPrintf(pHlp, " LH");
-            if (uEdxGst & RT_BIT(5))   pHlp->pfnPrintf(pHlp, " FEMMS");
-            if (uEdxGst & RT_BIT(6))   pHlp->pfnPrintf(pHlp, " ACE");
-            if (uEdxGst & RT_BIT(7))   pHlp->pfnPrintf(pHlp, " ACE-E");
-            /* possibly indicating MM/HE and MM/HE-E on older chips... */
-            if (uEdxGst & RT_BIT(8))   pHlp->pfnPrintf(pHlp, " ACE2");
-            if (uEdxGst & RT_BIT(9))   pHlp->pfnPrintf(pHlp, " ACE2-E");
-            if (uEdxGst & RT_BIT(10))  pHlp->pfnPrintf(pHlp, " PHE");
-            if (uEdxGst & RT_BIT(11))  pHlp->pfnPrintf(pHlp, " PHE-E");
-            if (uEdxGst & RT_BIT(12))  pHlp->pfnPrintf(pHlp, " PMM");
-            if (uEdxGst & RT_BIT(13))  pHlp->pfnPrintf(pHlp, " PMM-E");
-            for (unsigned iBit = 14; iBit < 32; iBit++)
-                if (uEdxGst & RT_BIT(iBit))
-                    pHlp->pfnPrintf(pHlp, " %d", iBit);
-            pHlp->pfnPrintf(pHlp, "\n");
-        }
-        else
-        {
-            pHlp->pfnPrintf(pHlp, "Mnemonic - Description                 = guest (host)\n");
-            pHlp->pfnPrintf(pHlp, "AIS - Alternate Instruction Set        = %d (%d)\n",  !!(uEdxGst & RT_BIT( 0)),  !!(uEdxHst & RT_BIT( 0)));
-            pHlp->pfnPrintf(pHlp, "AIS-E - AIS enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 1)),  !!(uEdxHst & RT_BIT( 1)));
-            pHlp->pfnPrintf(pHlp, "RNG - Random Number Generator          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 2)),  !!(uEdxHst & RT_BIT( 2)));
-            pHlp->pfnPrintf(pHlp, "RNG-E - RNG enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 3)),  !!(uEdxHst & RT_BIT( 3)));
-            pHlp->pfnPrintf(pHlp, "LH - LongHaul MSR 0000_110Ah           = %d (%d)\n",  !!(uEdxGst & RT_BIT( 4)),  !!(uEdxHst & RT_BIT( 4)));
-            pHlp->pfnPrintf(pHlp, "FEMMS - FEMMS                          = %d (%d)\n",  !!(uEdxGst & RT_BIT( 5)),  !!(uEdxHst & RT_BIT( 5)));
-            pHlp->pfnPrintf(pHlp, "ACE - Advanced Cryptography Engine     = %d (%d)\n",  !!(uEdxGst & RT_BIT( 6)),  !!(uEdxHst & RT_BIT( 6)));
-            pHlp->pfnPrintf(pHlp, "ACE-E - ACE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT( 7)),  !!(uEdxHst & RT_BIT( 7)));
-            /* possibly indicating MM/HE and MM/HE-E on older chips... */
-            pHlp->pfnPrintf(pHlp, "ACE2 - Advanced Cryptography Engine 2  = %d (%d)\n",  !!(uEdxGst & RT_BIT( 8)),  !!(uEdxHst & RT_BIT( 8)));
-            pHlp->pfnPrintf(pHlp, "ACE2-E - ACE enabled                   = %d (%d)\n",  !!(uEdxGst & RT_BIT( 9)),  !!(uEdxHst & RT_BIT( 9)));
-            pHlp->pfnPrintf(pHlp, "PHE - Padlock Hash Engine              = %d (%d)\n",  !!(uEdxGst & RT_BIT(10)),  !!(uEdxHst & RT_BIT(10)));
-            pHlp->pfnPrintf(pHlp, "PHE-E - PHE enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(11)),  !!(uEdxHst & RT_BIT(11)));
-            pHlp->pfnPrintf(pHlp, "PMM - Montgomery Multiplier            = %d (%d)\n",  !!(uEdxGst & RT_BIT(12)),  !!(uEdxHst & RT_BIT(12)));
-            pHlp->pfnPrintf(pHlp, "PMM-E - PMM enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(13)),  !!(uEdxHst & RT_BIT(13)));
-            pHlp->pfnPrintf(pHlp, "14 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(14)),  !!(uEdxHst & RT_BIT(14)));
-            pHlp->pfnPrintf(pHlp, "15 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(15)),  !!(uEdxHst & RT_BIT(15)));
-            pHlp->pfnPrintf(pHlp, "Parallax                               = %d (%d)\n",  !!(uEdxGst & RT_BIT(16)),  !!(uEdxHst & RT_BIT(16)));
-            pHlp->pfnPrintf(pHlp, "Parallax enabled                       = %d (%d)\n",  !!(uEdxGst & RT_BIT(17)),  !!(uEdxHst & RT_BIT(17)));
-            pHlp->pfnPrintf(pHlp, "Overstress                             = %d (%d)\n",  !!(uEdxGst & RT_BIT(18)),  !!(uEdxHst & RT_BIT(18)));
-            pHlp->pfnPrintf(pHlp, "Overstress enabled                     = %d (%d)\n",  !!(uEdxGst & RT_BIT(19)),  !!(uEdxHst & RT_BIT(19)));
-            pHlp->pfnPrintf(pHlp, "TM3 - Temperature Monitoring 3         = %d (%d)\n",  !!(uEdxGst & RT_BIT(20)),  !!(uEdxHst & RT_BIT(20)));
-            pHlp->pfnPrintf(pHlp, "TM3-E - TM3 enabled                    = %d (%d)\n",  !!(uEdxGst & RT_BIT(21)),  !!(uEdxHst & RT_BIT(21)));
-            pHlp->pfnPrintf(pHlp, "RNG2 - Random Number Generator 2       = %d (%d)\n",  !!(uEdxGst & RT_BIT(22)),  !!(uEdxHst & RT_BIT(22)));
-            pHlp->pfnPrintf(pHlp, "RNG2-E - RNG2 enabled                  = %d (%d)\n",  !!(uEdxGst & RT_BIT(23)),  !!(uEdxHst & RT_BIT(23)));
-            pHlp->pfnPrintf(pHlp, "24 - Reserved                          = %d (%d)\n",  !!(uEdxGst & RT_BIT(24)),  !!(uEdxHst & RT_BIT(24)));
-            pHlp->pfnPrintf(pHlp, "PHE2 - Padlock Hash Engine 2           = %d (%d)\n",  !!(uEdxGst & RT_BIT(25)),  !!(uEdxHst & RT_BIT(25)));
-            pHlp->pfnPrintf(pHlp, "PHE2-E - PHE2 enabled                  = %d (%d)\n",  !!(uEdxGst & RT_BIT(26)),  !!(uEdxHst & RT_BIT(26)));
-            for (unsigned iBit = 27; iBit < 32; iBit++)
-                if ((uEdxGst | uEdxHst) & RT_BIT(iBit))
-                    pHlp->pfnPrintf(pHlp, "Bit %d                                 = %d (%d)\n", iBit, !!(uEdxGst & RT_BIT(iBit)), !!(uEdxHst & RT_BIT(iBit)));
-            pHlp->pfnPrintf(pHlp, "\n");
-        }
-    }
+    pCurLeaf = cpumR3CpuIdInfoRawRange(pHlp, paLeaves, cLeaves, pCurLeaf, UINT32_C(0xffffffff), "Unknown CPUID Leaves");
 }
 
 
