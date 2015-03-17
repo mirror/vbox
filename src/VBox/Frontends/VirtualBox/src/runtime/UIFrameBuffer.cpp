@@ -413,7 +413,7 @@ public:
         /* Make sure frame-buffer is used: */
         if (m_fUnused)
         {
-            LogRel2(("ProcessVHWACommand: Postponed!\n"));
+            LogRel2(("GUI: ProcessVHWACommand: Postponed!\n"));
             /* Unlock access to frame-buffer: */
             UIFrameBufferPrivate::unlock();
             /* tell client to pend ProcessVHWACommand */
@@ -443,7 +443,7 @@ public:
         /* Make sure frame-buffer is used: */
         if (m_fUnused)
         {
-            LogRel2(("NotifyUpdate: Ignored!\n"));
+            LogRel2(("GUI: NotifyUpdate: Ignored!\n"));
             mOverlay.onNotifyUpdateIgnore (aX, aY, aW, aH);
             /* Unlock access to frame-buffer: */
             UIFrameBufferPrivate::unlock();
@@ -531,7 +531,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
 
 HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 {
-    LogRel2(("UIFrameBufferPrivate::init %p\n", this));
+    LogRel2(("GUI: UIFrameBufferPrivate::init %p\n", this));
 
     /* Assign mahine-view: */
     m_pMachineView = pMachineView;
@@ -565,7 +565,7 @@ HRESULT UIFrameBufferPrivate::init(UIMachineView *pMachineView)
 
 UIFrameBufferPrivate::~UIFrameBufferPrivate()
 {
-    LogRel2(("UIFrameBufferPrivate::~UIFrameBufferPrivate %p\n", this));
+    LogRel2(("GUI: UIFrameBufferPrivate::~UIFrameBufferPrivate %p\n", this));
 
     /* Disconnect handlers: */
     if (m_pMachineView)
@@ -723,7 +723,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyChange(ULONG uScreenId, ULONG uX, ULONG
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel(("UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel(("GUI: UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                 (unsigned long)uScreenId,
                 (unsigned long)uX, (unsigned long)uY,
                 (unsigned long)uWidth, (unsigned long)uHeight));
@@ -750,7 +750,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyChange(ULONG uScreenId, ULONG uX, ULONG
 
     /* Widget resize is NOT thread-safe and *probably* never will be,
      * We have to notify machine-view with the async-signal to perform resize operation. */
-    LogRel(("UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+    LogRel(("GUI: UIFrameBufferPrivate::NotifyChange: Screen=%lu, Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
             (unsigned long)uScreenId,
             (unsigned long)uX, (unsigned long)uY,
             (unsigned long)uWidth, (unsigned long)uHeight));
@@ -774,7 +774,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
 
@@ -787,7 +787,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth
 
     /* Widget update is NOT thread-safe and *seems* never will be,
      * We have to notify machine-view with the async-signal to perform update operation. */
-    LogRel2(("UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+    LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
              (unsigned long)uX, (unsigned long)uY,
              (unsigned long)uWidth, (unsigned long)uHeight));
     emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
@@ -812,7 +812,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdateImage(ULONG uX, ULONG uY,
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
 
@@ -839,7 +839,7 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdateImage(ULONG uX, ULONG uY,
 
         /* Widget update is NOT thread-safe and *seems* never will be,
          * We have to notify machine-view with the async-signal to perform update operation. */
-        LogRel2(("UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdateImage: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
         emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
@@ -857,7 +857,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
     /* Make sure result pointer is valid: */
     if (!pfSupported)
     {
-        LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Invalid pfSupported pointer!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         return E_POINTER;
@@ -869,7 +869,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight));
 
         /* Unlock access to frame-buffer: */
@@ -890,7 +890,7 @@ STDMETHODIMP UIFrameBufferPrivate::VideoModeSupported(ULONG uWidth, ULONG uHeigh
         && (uHeight > (ULONG)screenSize.height())
         && (uHeight > (ULONG)height()))
         *pfSupported = FALSE;
-    LogRel2(("UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
+    LogRel2(("GUI: UIFrameBufferPrivate::IsVideoModeSupported: Mode: BPP=%lu, Size=%lux%lu, Supported=%s\n",
              (unsigned long)uBPP, (unsigned long)uWidth, (unsigned long)uHeight, *pfSupported ? "TRUE" : "FALSE"));
 
     /* Unlock access to frame-buffer: */
@@ -918,7 +918,7 @@ STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCo
     /* Make sure rectangles were passed: */
     if (!pRectangles)
     {
-        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Invalid pRectangles pointer!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Invalid pRectangles pointer!\n",
                  (unsigned long)uCount));
 
         return E_POINTER;
@@ -930,7 +930,7 @@ STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCo
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Ignored!\n",
                  (unsigned long)uCount));
 
         /* Unlock access to frame-buffer: */
@@ -965,7 +965,7 @@ STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCo
         /* We are directly updating synchronous visible-region: */
         m_syncVisibleRegion = region;
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)uCount));
         emit sigSetVisibleRegion(region);
     }
@@ -973,7 +973,7 @@ STDMETHODIMP UIFrameBufferPrivate::SetVisibleRegion(BYTE *pRectangles, ULONG uCo
     {
         /* Save the region. */
         m_pendingSyncVisibleRegion = region;
-        LogRel2(("UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Saved\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::SetVisibleRegion: Rectangle count=%lu, Saved\n",
                  (unsigned long)uCount));
     }
 
@@ -998,7 +998,7 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
-        LogRel2(("UIFrameBufferPrivate::Notify3DEvent: Ignored!\n"));
+        LogRel2(("GUI: UIFrameBufferPrivate::Notify3DEvent: Ignored!\n"));
 
         /* Unlock access to frame-buffer: */
         unlock();
@@ -1015,7 +1015,7 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
             /* Notify machine-view with the async-signal
              * about 3D overlay visibility change: */
             BOOL fVisible = eventData[0];
-            LogRel2(("UIFrameBufferPrivate::Notify3DEvent: Sending to async-handler: "
+            LogRel2(("GUI: UIFrameBufferPrivate::Notify3DEvent: Sending to async-handler: "
                      "(VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA = %s)\n",
                      fVisible ? "TRUE" : "FALSE"));
             emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
@@ -1047,7 +1047,7 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
 
 void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("UIFrameBufferPrivate::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
+    LogRel(("GUI: UIFrameBufferPrivate::handleNotifyChange: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -1059,7 +1059,7 @@ void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
     if (!vboxGlobal().isSeparateProcess() && !m_fPendingSourceBitmap)
     {
         /* Do nothing, change-event already processed: */
-        LogRel2(("UIFrameBufferPrivate::handleNotifyChange: Already processed.\n"));
+        LogRel2(("GUI: UIFrameBufferPrivate::handleNotifyChange: Already processed.\n"));
         /* Unlock access to frame-buffer: */
         unlock();
         /* Return immediately: */
@@ -1080,7 +1080,7 @@ void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
 
 void UIFrameBufferPrivate::handlePaintEvent(QPaintEvent *pEvent)
 {
-    LogRel2(("UIFrameBufferPrivate::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
+    LogRel2(("GUI: UIFrameBufferPrivate::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
              pEvent->rect().x(), pEvent->rect().y(),
              pEvent->rect().width(), pEvent->rect().height()));
 
@@ -1139,7 +1139,7 @@ void UIFrameBufferPrivate::handleSetVisibleRegion(const QRegion &region)
 
 void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
 {
-    LogRel(("UIFrameBufferPrivate::performResize: Size=%dx%d\n", iWidth, iHeight));
+    LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d\n", iWidth, iHeight));
 
     /* Make sure machine-view is assigned: */
     AssertPtrReturnVoid(m_pMachineView);
@@ -1157,7 +1157,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap invalid: */
     if (m_sourceBitmap.isNull())
     {
-        LogRel(("UIFrameBufferPrivate::performResize: "
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: "
                 "Using FALLBACK buffer due to source-bitmap is not provided..\n"));
 
         /* Remember new size came from hint: */
@@ -1171,7 +1171,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap valid: */
     else
     {
-        LogRel(("UIFrameBufferPrivate::performResize: "
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: "
                 "Directly using source-bitmap content\n"));
 
         /* Acquire source-bitmap attributes: */
@@ -1227,7 +1227,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
         m_pendingSyncVisibleRegion = QRegion();
 
         /* And send async-signal to update asynchronous one: */
-        LogRel2(("UIFrameBufferPrivate::performResize: Rectangle count=%lu, Sending to async-handler\n",
+        LogRel2(("GUI: UIFrameBufferPrivate::performResize: Rectangle count=%lu, Sending to async-handler\n",
                  (unsigned long)m_syncVisibleRegion.rectCount()));
         emit sigSetVisibleRegion(m_syncVisibleRegion);
     }

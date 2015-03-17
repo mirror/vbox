@@ -64,7 +64,7 @@ bool UIMachineLogicNormal::checkAvailability()
 
 void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
 {
-    LogRel(("UIMachineLogicNormal::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
+    LogRel(("GUI: UIMachineLogicNormal::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
             uisession()->requestedVisualState(), uisession()->machineState()));
 
     /* Do not try to change visual-state type if machine was not started yet: */
@@ -80,13 +80,13 @@ void UIMachineLogicNormal::sltCheckForRequestedVisualStateType()
             /* And supported: */
             if (uisession()->isGuestSupportsSeamless())
             {
-                LogRel(("UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
+                LogRel(("GUI: UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
                         "Going 'seamless' as requested...\n"));
                 uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
                 uisession()->changeVisualState(UIVisualStateType_Seamless);
             }
             else
-                LogRel(("UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
+                LogRel(("GUI: UIMachineLogicNormal::sltCheckForRequestedVisualStateType: "
                         "Rejecting 'seamless' as is it not yet supported...\n"));
             break;
         }
