@@ -202,6 +202,11 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
     if (info.equals(m->info))
         return;
 
+    LogRel(("HostDnsMonitor: old information\n"));
+    dumpHostDnsInformation(m->info);
+    LogRel(("HostDnsMonitor: new information\n"));
+    dumpHostDnsInformation(info);
+
     m->info = info;
 
     std::vector<PCHostDnsMonitorProxy>::const_iterator it;
@@ -334,14 +339,14 @@ void HostDnsMonitorProxy::updateInfo()
     HostDnsInformation *info = new HostDnsInformation(m->monitor->getInfo());
     HostDnsInformation *old = m->info;
 
-    LogRel(("HostDnsMonitorProxy: Host's DNS information updated:\n"));
-    dumpHostDnsInformation(*info);
+    // LogRel(("HostDnsMonitorProxy: Host's DNS information updated:\n"));
+    // dumpHostDnsInformation(*info);
 
     m->info = info;
     if (old)
     {
-        LogRel(("HostDnsMonitorProxy: Old host information:\n"));
-        dumpHostDnsInformation(*old);
+        // LogRel(("HostDnsMonitorProxy: Old host information:\n"));
+        // dumpHostDnsInformation(*old);
 
         delete old;
     }
