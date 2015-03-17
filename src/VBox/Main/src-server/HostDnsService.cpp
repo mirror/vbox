@@ -339,15 +339,9 @@ void HostDnsMonitorProxy::updateInfo()
     HostDnsInformation *info = new HostDnsInformation(m->monitor->getInfo());
     HostDnsInformation *old = m->info;
 
-    // LogRel(("HostDnsMonitorProxy: Host's DNS information updated:\n"));
-    // dumpHostDnsInformation(*info);
-
     m->info = info;
     if (old)
     {
-        // LogRel(("HostDnsMonitorProxy: Old host information:\n"));
-        // dumpHostDnsInformation(*old);
-
         delete old;
     }
 
