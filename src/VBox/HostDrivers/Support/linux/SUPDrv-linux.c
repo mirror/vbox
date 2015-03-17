@@ -613,7 +613,9 @@ static int VBoxDrvSuspend(struct device *pDev)
 static int VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State)
 # endif
 {
+    stac();
     RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
+    clac();
     return 0;
 }
 
@@ -628,7 +630,9 @@ static int VBoxDrvResume(struct device *pDev)
 static int VBoxDrvResume(struct platform_device *pDev)
 # endif
 {
+    stac();
     RTPowerSignalEvent(RTPOWEREVENT_RESUME);
+    clac();
     return 0;
 }
 #endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
