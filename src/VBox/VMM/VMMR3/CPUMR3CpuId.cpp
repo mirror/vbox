@@ -4371,7 +4371,7 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLE
         pHlp->pfnPrintf(pHlp,
                         "         %s\n"
                         "     Leaf/sub-leaf  eax      ebx      ecx      edx\n", pszTitle);
-        while (   pCurLeaf - paLeaves < cLeaves
+        while (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                && pCurLeaf->uLeaf <= uUpToLeaf)
         {
             CPUMCPUID Host;
@@ -4438,7 +4438,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
         for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
         {
             ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-            if (   pCurLeaf - paLeaves < cLeaves
+            if (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                 && pCurLeaf->uLeaf    == uLeaf
                 && pCurLeaf->uSubLeaf == uSubLeaf)
             {
@@ -4457,7 +4457,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                                 uLeaf, uSubLeaf, Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
 
             /* Done? */
-            if (   (   pCurLeaf - paLeaves >= cLeaves
+            if (   (   (uintptr_t)(pCurLeaf - paLeaves) >= cLeaves
                     || pCurLeaf->uLeaf != uLeaf)
                 && (   (uLeaf == 0x4 && ((Host.uEax & 0x000f) == 0 || (Host.uEax & 0x000f) >= 8))
                     || (uLeaf == 0x7 && Host.uEax == 0)
@@ -4686,7 +4686,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
     ASMCpuIdExSlow(UINT32_C(0x40000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
     cHstMax  = Host.uEax >= UINT32_C(0x40000001) && Host.uEax <= UINT32_C(0x40000fff) ? Host.uEax : 0;
-    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x40000000)
+    cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x40000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x40000fff)) : 0;
     cMax     = RT_MAX(cHstMax, cGstMax);
     if (cMax >= UINT32_C(0x40000000))
@@ -4707,7 +4707,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
     ASMCpuIdExSlow(UINT32_C(0x80000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
     cHstMax  = ASMIsValidExtRange(Host.uEax) ? RT_MIN(Host.uEax, UINT32_C(0x80000fff)) : 0;
-    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x80000000)
+    cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0x80000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0x80000fff)) : 0;
     cMax     = RT_MAX(cHstMax, cGstMax);
     if (cMax >= UINT32_C(0x80000000))
@@ -4726,7 +4726,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
             for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
             {
                 ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
-                if (   pCurLeaf - paLeaves < cLeaves
+                if (   (uintptr_t)(pCurLeaf - paLeaves) < cLeaves
                     && pCurLeaf->uLeaf    == uLeaf
                     && pCurLeaf->uSubLeaf == uSubLeaf)
                 {
@@ -4745,7 +4745,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
                                     uLeaf, uSubLeaf, Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
 
                 /* Done? */
-                if (   (   pCurLeaf - paLeaves >= cLeaves
+                if (   (   (uintptr_t)(pCurLeaf - paLeaves) >= cLeaves
                         || pCurLeaf->uLeaf != uLeaf)
                     && (uLeaf == UINT32_C(0x8000001d) && ((Host.uEax & 0x000f) == 0 || (Host.uEax & 0x000f) >= 8)) )
                     break;
@@ -5046,7 +5046,7 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
     ASMCpuIdExSlow(UINT32_C(0xc0000000), 0, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
     cHstMax  = Host.uEax >= UINT32_C(0xc0000001) && Host.uEax <= UINT32_C(0xc0000fff)
              ? RT_MIN(Host.uEax,      UINT32_C(0xc0000fff)) : 0;
-    cGstMax  = pCurLeaf - paLeaves < cLeaves && pCurLeaf->uLeaf == UINT32_C(0xc0000000)
+    cGstMax  = (uintptr_t)(pCurLeaf - paLeaves) < cLeaves && pCurLeaf->uLeaf == UINT32_C(0xc0000000)
              ? RT_MIN(pCurLeaf->uEax, UINT32_C(0xc0000fff)) : 0;
     cMax     = RT_MAX(cHstMax, cGstMax);
     if (cMax >= UINT32_C(0xc0000000))
