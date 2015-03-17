@@ -220,7 +220,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     setMaxGuestSize(size);
 
     /* Send new size-hint to the guest: */
-    LogRel(("UIMachineView::sltPerformGuestResize: "
+    LogRel(("GUI: UIMachineView::sltPerformGuestResize: "
             "Sending guest size-hint to screen %d as %dx%d\n",
             (int)screenId(), size.width(), size.height()));
     display().SetVideoModeHint(screenId(),
@@ -233,7 +233,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
 {
-    LogRel(("UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d.\n",
+    LogRel(("GUI: UIMachineView::sltHandleNotifyChange: Screen=%d, Size=%dx%d.\n",
             (unsigned long)m_uScreenId, iWidth, iHeight));
 
     // TODO: Move to appropriate place!
@@ -298,7 +298,7 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
      * the viewport through IFramebuffer::NotifyUpdate): */
     display().InvalidateAndUpdateScreen(m_uScreenId);
 
-    LogRelFlow(("UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d.\n",
+    LogRelFlow(("GUI: UIMachineView::sltHandleNotifyChange: Complete for Screen=%d, Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iWidth, iHeight));
 }
 
@@ -537,7 +537,7 @@ void UIMachineView::prepareFrameBuffer()
         /* Assign it's view: */
         pFrameBuffer->setView(this);
         /* Mark frame-buffer as used again: */
-        LogRelFlow(("UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
+        LogRelFlow(("GUI: UIMachineView::prepareFrameBuffer: Start EMT callbacks accepting for screen: %d.\n", screenId()));
         pFrameBuffer->setMarkAsUnused(false);
         /* And remember our choice: */
         m_pFrameBuffer = pFrameBuffer;
@@ -708,7 +708,7 @@ void UIMachineView::cleanupFrameBuffer()
     AssertReturnVoid(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
 
     /* Mark framebuffer as unused: */
-    LogRelFlow(("UIMachineView::cleanupFrameBuffer: Stop EMT callbacks accepting for screen: %d.\n", screenId()));
+    LogRelFlow(("GUI: UIMachineView::cleanupFrameBuffer: Stop EMT callbacks accepting for screen: %d.\n", screenId()));
     m_pFrameBuffer->setMarkAsUnused(true);
 
     /* Process pending framebuffer events: */
@@ -870,7 +870,7 @@ QSize UIMachineView::guestSizeHint()
 
 void UIMachineView::handleScaleChange()
 {
-    LogRel(("UIMachineView::handleScaleChange: Screen=%d.\n",
+    LogRel(("GUI: UIMachineView::handleScaleChange: Screen=%d.\n",
             (unsigned long)m_uScreenId));
 
     /* If machine-window is visible: */
@@ -910,14 +910,14 @@ void UIMachineView::handleScaleChange()
         frameBuffer()->performRescale();
     }
 
-    LogRelFlow(("UIMachineView::handleScaleChange: Complete for Screen=%d.\n",
+    LogRelFlow(("GUI: UIMachineView::handleScaleChange: Complete for Screen=%d.\n",
                 (unsigned long)m_uScreenId));
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &size)
 {
     /* Save guest-screen size-hint: */
-    LogRel(("UIMachineView::storeGuestSizeHint: "
+    LogRel(("GUI: UIMachineView::storeGuestSizeHint: "
             "Storing guest size-hint for screen %d as %dx%d\n",
             (int)screenId(), size.width(), size.height()));
     gEDataManager->setLastGuestSizeHint(m_uScreenId, size, vboxGlobal().managedVMUuid());
