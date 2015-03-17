@@ -48,12 +48,6 @@
 # include <iprt/power.h>
 # define VBOX_WITH_SUSPEND_NOTIFICATION
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0)
-# include <asm/smap.h>
-#else
-static inline void clac(void) { }
-static inline void stac(void) { }
-#endif
 
 #include <linux/sched.h>
 #ifdef CONFIG_DEVFS_FS
