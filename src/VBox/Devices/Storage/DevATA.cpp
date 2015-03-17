@@ -5900,10 +5900,10 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     if (Port == pCtl->IOPortBase1)
     {
         /* Reads from the data register may be 16-bit or 32-bit. */
-        Assert(cb == 2 || cb == 4);
-        rc = ataDataRead(pCtl, Port, cb, (uint8_t *)pu32);
-        if (cb == 2)
-            *pu32 &= 0xffff;
+        Assert(cb == 1 || cb == 2 || cb == 4);
+        rc = ataDataRead(pCtl, Port, cb == 1 ? 2 : cb, (uint8_t *)pu32);
+        if (cb <= 2)
+            *pu32 &= 0xffff >> (16 - cb * 8);
     }
     else
     {
