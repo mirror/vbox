@@ -948,7 +948,10 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
             && auCur[1] == 0
             && (auCur[2] == 0 || auCur[2] == uSubLeaf)
             && (auCur[3] == 0 || uLeaf == 0xb /* edx is fixed */) )
+        {
+            cRepeats = 0;
             break;
+        }
 
         /* 2. Look for more than 4 repeating value sets. */
         if (   auCur[0] == auPrev[0]
@@ -967,9 +970,12 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
 
         /* 3. Leaf 0xb level type 0 check. */
         if (   uLeaf == 0xb
-            && (auCur[3]  & 0xff00) == 0
-            && (auPrev[3] & 0xff00) == 0)
+            && (auCur[2]  & 0xff00) == 0
+            && (auPrev[2] & 0xff00) == 0)
+        {
+            cRepeats = 0;
             break;
+        }
 
         /* 99. Give up. */
         if (uSubLeaf >= 128)
@@ -1003,6 +1009,8 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
     /* Standard exit. */
     *pfFinalEcxUnchanged = auCur[2] == uSubLeaf && uLeaf == 0xb;
     *pcSubLeaves = uSubLeaf + 1 - cRepeats;
+    if (*pcSubLeaves == 0)
+        *pcSubLeaves = 1;
     return true;
 }
 
@@ -1924,10 +1932,10 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
                changes that value without actually removing any leaves. */
             uint32_t i = 0;
             if (   pCpum->GuestInfo.cCpuIdLeaves > 0
-                && pCpum->GuestInfo.paCpuIdLeavesR3[0].uEax <= UINT32_C(0xff))
+                && pCpum->GuestInfo.paCpuIdLeavesR3[0].uLeaf <= UINT32_C(0xff))
             {
                 while (   i + 1 < pCpum->GuestInfo.cCpuIdLeaves
-                       && pCpum->GuestInfo.paCpuIdLeavesR3[i + 1].uEax <= UINT32_C(0xff))
+                       && pCpum->GuestInfo.paCpuIdLeavesR3[i + 1].uLeaf <= UINT32_C(0xff))
                     i++;
                 pCpum->GuestInfo.DefCpuId.uEax = pCpum->GuestInfo.paCpuIdLeavesR3[i].uEax;
                 pCpum->GuestInfo.DefCpuId.uEbx = pCpum->GuestInfo.paCpuIdLeavesR3[i].uEbx;
@@ -4367,7 +4375,7 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdInfoRawRange(PCDBGFINFOHLP pHlp, PCCPUMCPUIDLE
                && pCurLeaf->uLeaf <= uUpToLeaf)
         {
             CPUMCPUID Host;
-            ASMCpuIdExSlow(pCurLeaf->uLeaf, pCurLeaf->uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            ASMCpuIdExSlow(pCurLeaf->uLeaf, 0, pCurLeaf->uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
             pHlp->pfnPrintf(pHlp,
                             "Gst: %08x/%04x  %08x %08x %08x %08x\n"
                             "Hst:                %08x %08x %08x %08x\n",
@@ -4429,14 +4437,14 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
         for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
         {
-            ASMCpuIdExSlow(uLeaf, uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+            ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
             if (   pCurLeaf - paLeaves < cLeaves
                 && pCurLeaf->uLeaf    == uLeaf
                 && pCurLeaf->uSubLeaf == uSubLeaf)
             {
                 pHlp->pfnPrintf(pHlp,
                                 "Gst: %08x/%04x  %08x %08x %08x %08x\n"
-                                "Hst:               %08x %08x %08x %08x\n",
+                                "Hst:                %08x %08x %08x %08x\n",
                                 uLeaf, uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx,
                                 Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
                 pCurLeaf++;
@@ -4717,14 +4725,14 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
             for (uint32_t uSubLeaf = 0; uSubLeaf < cMaxSubLeaves; uSubLeaf++)
             {
-                ASMCpuIdExSlow(uLeaf, uSubLeaf, 0, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
+                ASMCpuIdExSlow(uLeaf, 0, uSubLeaf, 0, &Host.uEax, &Host.uEbx, &Host.uEcx, &Host.uEdx);
                 if (   pCurLeaf - paLeaves < cLeaves
                     && pCurLeaf->uLeaf    == uLeaf
                     && pCurLeaf->uSubLeaf == uSubLeaf)
                 {
                     pHlp->pfnPrintf(pHlp,
                                     "Gst: %08x/%04x  %08x %08x %08x %08x\n"
-                                    "Hst:                 %08x %08x %08x %08x\n",
+                                    "Hst:                %08x %08x %08x %08x\n",
                                     uLeaf, uSubLeaf, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx,
                                     Host.uEax, Host.uEbx, Host.uEcx, Host.uEdx);
                     pCurLeaf++;
