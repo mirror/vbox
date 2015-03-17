@@ -1540,6 +1540,8 @@
 #define VERR_VD_UNKNOWN_INTERFACE                   (-3213)
 /** The DEK for disk encryption is missing. */
 #define VERR_VD_DEK_MISSING                         (-3214)
+/** The provided password to decrypt the DEK was incorrect. */
+#define VERR_VD_PASSWORD_INCORRECT                  (-3215)
 /** Generic: Invalid image file header. Use this for plugins. */
 #define VERR_VD_GEN_INVALID_HEADER                  (-3220)
 /** VDI: Invalid image file header. */

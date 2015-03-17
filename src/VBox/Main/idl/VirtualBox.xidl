@@ -425,6 +425,12 @@
     </desc>
   </result>
 
+  <result name="VBOX_E_PASSWORD_INCORRECT" value="0x80BB000D">
+    <desc>
+      A provided password was incorrect.
+    </desc>
+  </result>
+
   <!--
     Note that src/VBox/Runtime/common/err/errmsgvboxcom.xsl will ignore
     everything in <result>/<desc> after (and including) the first dot, so express
@@ -8356,6 +8362,11 @@
     <method name="addDiskEncryptionPassword">
       <desc>
         Adds a password used for hard disk encryption/decryption.
+
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The password provided wasn't correct for at least one disk using the provided
+          ID.
+        </result>
       </desc>
       <param name="id" type="wstring" dir="in">
         <desc>
