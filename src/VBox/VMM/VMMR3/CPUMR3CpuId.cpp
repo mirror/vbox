@@ -4405,7 +4405,6 @@ DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszA
 
     uint32_t        uLeaf;
     CPUMCPUID       Host;
-    uint32_t        dummy;
     uint32_t        cLeaves  = pVM->cpum.s.GuestInfo.cCpuIdLeaves;
     PCPUMCPUIDLEAF  paLeaves = pVM->cpum.s.GuestInfo.paCpuIdLeavesR3;
     PCCPUMCPUIDLEAF pCurLeaf;
