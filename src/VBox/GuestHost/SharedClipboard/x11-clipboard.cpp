@@ -622,7 +622,7 @@ void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
  */
 static int clipEventThread(RTTHREAD self, void *pvUser)
 {
-    LogRel(("Shared clipboard: starting shared clipboard thread\n"));
+    LogRel(("Shared clipboard: Starting shared clipboard thread\n"));
 
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pvUser;
 
@@ -633,7 +633,7 @@ static int clipEventThread(RTTHREAD self, void *pvUser)
         clipPeekEventAndDoXFixesHandling(pCtx);
         XtAppProcessEvent(pCtx->appContext, XtIMAll);
     }
-    LogRel(("Shared clipboard: shared clipboard thread terminated successfully\n"));
+    LogRel(("Shared clipboard: Shared clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
 #endif
@@ -740,7 +740,7 @@ static int clipInit(CLIPBACKEND *pCtx)
     pDisplay = XtOpenDisplay(pCtx->appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
     if (NULL == pDisplay)
     {
-        LogRel(("Shared clipboard: failed to connect to the X11 clipboard - the window system may not be running.\n"));
+        LogRel(("Shared clipboard: Failed to connect to the X11 clipboard - the window system may not be running.\n"));
         rc = VERR_NOT_SUPPORTED;
     }
 #ifndef TESTCASE
@@ -748,7 +748,7 @@ static int clipInit(CLIPBACKEND *pCtx)
     {
         rc = clipLoadXFixes(pDisplay, pCtx);
         if (RT_FAILURE(rc))
-           LogRel(("Shared clipboard: failed to load the XFIXES extension.\n"));
+           LogRel(("Shared clipboard: Failed to load the XFIXES extension.\n"));
     }
 #endif
     if (RT_SUCCESS(rc))
@@ -759,7 +759,7 @@ static int clipInit(CLIPBACKEND *pCtx)
                                           1, NULL);
         if (NULL == pCtx->widget)
         {
-            LogRel(("Shared clipboard: failed to construct the X11 window for the shared clipboard manager.\n"));
+            LogRel(("Shared clipboard: Failed to construct the X11 window for the shared clipboard manager.\n"));
             rc = VERR_NO_MEMORY;
         }
         else
@@ -792,14 +792,14 @@ static int clipInit(CLIPBACKEND *pCtx)
             && (fcntl(pCtx->wakeupPipeRead, F_SETFL, O_NONBLOCK) != 0))
             rc = RTErrConvertFromErrno(errno);
         if (RT_FAILURE(rc))
-            LogRel(("Shared clipboard: failed to setup the termination mechanism.\n"));
+            LogRel(("Shared clipboard: Failed to setup the termination mechanism.\n"));
     }
     else
         rc = RTErrConvertFromErrno(errno);
     if (RT_FAILURE(rc))
         clipUninit(pCtx);
     if (RT_FAILURE(rc))
-        LogRel(("Shared clipboard: initialisation failed: %Rrc\n", rc));
+        LogRel(("Shared clipboard: Initialisation failed: %Rrc\n", rc));
     return rc;
 }
 
@@ -828,7 +828,7 @@ CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless)
 
     pCtx->fHaveX11 = true;
 
-    LogRel(("Initializing X11 clipboard backend\n"));
+    LogRel(("Shared clipboard: Initializing X11 clipboard backend\n"));
     if (pCtx)
         pCtx->pFrontend = pFrontend;
     return pCtx;
@@ -879,7 +879,7 @@ int ClipStartX11(CLIPBACKEND *pCtx, bool grab)
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SHCLIP");
         if (RT_FAILURE(rc))
         {
-            LogRel(("Failed to start the shared clipboard thread.\n"));
+            LogRel(("Shared clipboard: Failed to start the shared clipboard thread.\n"));
             clipUninit(pCtx);
         }
     }
