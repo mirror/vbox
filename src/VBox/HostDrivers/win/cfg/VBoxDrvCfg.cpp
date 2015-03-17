@@ -348,6 +348,8 @@ static HRESULT vboxDrvCfgInfQueryModelsSectionName(HINF hInf, LPWSTR *lppszValue
 
 static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
 {
+    *lppszPnPId = NULL;
+
     LPWSTR lpszModels;
     LPWSTR lpszPnPId;
     HRESULT hr = vboxDrvCfgInfQueryModelsSectionName(hInf, &lpszModels, NULL);
@@ -370,16 +372,12 @@ static HRESULT vboxDrvCfgInfQueryFirstPnPId(HINF hInf, LPWSTR *lppszPnPId)
         NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) returned lpszPnPId (%S) \n", lpszModels, lpszPnPId));
 
         if (hr != S_OK)
-        {
             NonStandardLogRelCrap((__FUNCTION__ ": vboxDrvCfgRegQueryKeyValue for models (%S) failed, hr=0x%x\n", lpszModels, hr));
-        }
     }
     /* free models string right away */
     free(lpszModels);
     if (hr != S_OK)
-    {
         return hr;
-    }
 
     *lppszPnPId = lpszPnPId;
     return S_OK;
