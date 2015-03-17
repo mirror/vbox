@@ -153,6 +153,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
             return VINF_SUCCESS;
 
         default:
+        {
 #ifdef IN_RING3
             static uint32_t s_cTimes = 0;
             if (s_cTimes++ < 20)
@@ -160,6 +161,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRR
 #endif
             LogFunc(("Unknown/invalid RdMsr (%#RX32) -> #GP(0)\n", idMsr));
             break;
+        }
     }
 
     return VERR_CPUM_RAISE_GP_0;
@@ -313,14 +315,16 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSR
             return VERR_CPUM_RAISE_GP_0;
 
         default:
+        {
 #ifdef IN_RING3
             static uint32_t s_cTimes = 0;
             if (s_cTimes++ < 20)
-                LogRel(("GIM: HyperV: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr, uRawValue & UINT64_C(0xffffffff00000000),
-                        uRawValue & UINT64_C(0xffffffff)));
+                LogRel(("GIM: HyperV: Unknown/invalid WrMsr (%#x,%#x`%08x) -> #GP(0)\n", idMsr,
+                        uRawValue & UINT64_C(0xffffffff00000000), uRawValue & UINT64_C(0xffffffff)));
 #endif
             LogFunc(("Unknown/invalid WrMsr (%#RX32,%#RX64) -> #GP(0)\n", idMsr, uRawValue));
             break;
+        }
     }
 
     return VERR_CPUM_RAISE_GP_0;

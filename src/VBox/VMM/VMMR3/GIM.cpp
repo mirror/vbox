@@ -29,17 +29,17 @@
  * Hyper-V, Linux KVM and so on. It hooks into various components in the VMM to
  * ease the guest in running under a recognized, virtualized environment.
  *
- * If the GIM provider configured for the VM needs to be recognized by the guest
- * OS inorder to make use of features supported by the interface. Since it
- * requires co-operation from the guest OS, a GIM provider is also referred to
+ * The GIM provider configured for the VM needs to be recognized by the guest OS
+ * in order to make use of features supported by the interface. Since it
+ * requires co-operation from the guest OS, a GIM provider may also referred to
  * as a paravirtualization interface.
  *
- * One of the ideas behind this, is primarily for making guests more accurate
- * and efficient when operating in a virtualized environment. For instance, a
- * guest OS which interfaces to VirtualBox through a GIM provider may rely on
- * the provider (and VirtualBox ultimately) for providing the correct TSC
- * frequency of the host processor and may therefore not have to caliberate the
- * TSC itself, resulting in higher accuracy and saving several CPU cycles.
+ * One of the goals of having a paravirtualized interface is for enabling guests
+ * to be more accurate and efficient when operating in a virtualized
+ * environment. For instance, a guest OS which interfaces to VirtualBox through
+ * a GIM provider may rely on the provider for supplying the correct TSC
+ * frequency of the host processor. The guest can then avoid caliberating the
+ * TSC itself, resulting in higher accuracy and better performance.
  *
  * At most, only one GIM provider can be active for a running VM and cannot be
  * changed during the lifetime of the VM.
@@ -62,12 +62,13 @@
 /* Include all GIM providers. */
 #include "GIMMinimalInternal.h"
 #include "GIMHvInternal.h"
+#include "GIMKvmInternal.h"
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass);
 
 
 /**
@@ -135,6 +136,11 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
             pVM->gim.s.enmProviderId = GIMPROVIDERID_HYPERV;
             rc = gimR3HvInit(pVM);
         }
+        else if (!RTStrCmp(szProvider, "KVM"))
+        {
+            pVM->gim.s.enmProviderId = GIMPROVIDERID_KVM;
+            rc = gimR3KvmInit(pVM);
+        }
         /** @todo KVM and others. */
         else
             rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider \"%s\" unknown.", szProvider);
@@ -163,9 +169,16 @@ VMMR3_INT_DECL(int) GIMR3InitCompleted(PVM pVM)
         case GIMPROVIDERID_HYPERV:
             return gimR3HvInitCompleted(pVM);
 
+        case GIMPROVIDERID_KVM:
+            return gimR3KvmInitCompleted(pVM);
+
         default:
             break;
     }
+
+    if (!TMR3CpuTickIsFixedRateMonotonic(pVM, true /* fWithParavirtEnabled */))
+        LogRel(("GIM: Warning!!! Host TSC is unstable. The guest may behave unpredictably with a paravirtualized clock.\n"));
+
     return VINF_SUCCESS;
 }
 
@@ -185,9 +198,7 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
     if (   pVM->gim.s.enmProviderId == GIMPROVIDERID_NONE
         || HMIsEnabled(pVM))
-    {
         return;
-    }
 
     switch (pVM->gim.s.enmProviderId)
     {
@@ -203,7 +214,12 @@ VMM_INT_DECL(void) GIMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             break;
         }
 
-        case GIMPROVIDERID_KVM:            /** @todo KVM. */
+        case GIMPROVIDERID_KVM:
+        {
+            gimR3KvmRelocate(pVM, offDelta);
+            break;
+        }
+
         default:
         {
             AssertMsgFailed(("Invalid provider Id %#x\n", pVM->gim.s.enmProviderId));
@@ -251,6 +267,11 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
             AssertRCReturn(rc, rc);
             break;
 
+        case GIMPROVIDERID_KVM:
+            rc = gimR3KvmSave(pVM, pSSM);
+            AssertRCReturn(rc, rc);
+            break;
+
         default:
             break;
     }
@@ -268,11 +289,11 @@ DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass)
 {
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
-    if (uVersion != GIM_SAVED_STATE_VERSION)
+    if (uSSMVersion != GIM_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /** @todo Load per-CPU data. */
@@ -310,7 +331,12 @@ DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_HYPERV:
-            rc = gimR3HvLoad(pVM, pSSM, uVersion);
+            rc = gimR3HvLoad(pVM, pSSM, uSSMVersion);
+            AssertRCReturn(rc, rc);
+            break;
+
+        case GIMPROVIDERID_KVM:
+            rc = gimR3KvmLoad(pVM, pSSM, uSSMVersion);
             AssertRCReturn(rc, rc);
             break;
 
@@ -338,6 +364,9 @@ VMMR3_INT_DECL(int) GIMR3Term(PVM pVM)
         case GIMPROVIDERID_HYPERV:
             return gimR3HvTerm(pVM);
 
+        case GIMPROVIDERID_KVM:
+            return gimR3KvmTerm(pVM);
+
         default:
             break;
     }
@@ -360,6 +389,9 @@ VMMR3_INT_DECL(void) GIMR3Reset(PVM pVM)
     {
         case GIMPROVIDERID_HYPERV:
             return gimR3HvReset(pVM);
+
+        case GIMPROVIDERID_KVM:
+            return gimR3KvmReset(pVM);
 
         default:
             break;
@@ -402,7 +434,6 @@ VMMR3DECL(PGIMMMIO2REGION) GIMR3GetMmio2Regions(PVM pVM, uint32_t *pcRegions)
         case GIMPROVIDERID_HYPERV:
             return gimR3HvGetMmio2Regions(pVM, pcRegions);
 
-        case GIMPROVIDERID_KVM:            /** @todo KVM. */
         default:
             break;
     }

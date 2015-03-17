@@ -20,6 +20,7 @@
 
 #include <VBox/vmm/gim.h>
 #include "GIMHvInternal.h"
+#include "GIMKvmInternal.h"
 #include "GIMMinimalInternal.h"
 
 RT_C_DECLS_BEGIN
@@ -72,8 +73,7 @@ typedef struct GIM
     union
     {
         GIMHV Hv;
-
-        /** @todo KVM and others. */
+        GIMKVM Kvm;
     } u;
 } GIM;
 /** Pointer to GIM VM instance data. */
@@ -85,6 +85,10 @@ typedef GIM *PGIM;
  */
 typedef struct GIMCPU
 {
+    union
+    {
+        GIMKVMCPU KvmCpu;
+    } u;
 } GIMCPU;
 /** Pointer to GIM VMCPU instance data. */
 typedef GIMCPU *PGIMCPU;

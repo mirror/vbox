@@ -150,6 +150,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/FTM.cpp \
 	VMMR3/GIM.cpp \
 	VMMR3/GIMHv.cpp \
+	VMMR3/GIMKvm.cpp \
 	VMMR3/GIMMinimal.cpp \
 	VMMR3/IEMR3.cpp \
 	VMMR3/IOM.cpp \
@@ -229,6 +230,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/FTMAll.cpp \
 	VMMAll/GIMAll.cpp \
 	VMMAll/GIMAllHv.cpp \
+	VMMAll/GIMAllKvm.cpp \
 	VMMAll/TMAll.cpp \
 	VMMAll/TMAllCpu.cpp \
 	VMMAll/TMAllReal.cpp \
@@ -455,25 +457,26 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMRC/VMMRC.cpp \
  	VMMRC/VMMRCA.asm \
  	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMRC/CSAMRC.cpp \
+ 	VMMRC/CSAMRC.cpp \
  	VMMRC/PATMRC.cpp \
-	,) \
+ 	,) \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/PGMRZDynMap.cpp \
  	VMMRZ/VMMRZ.cpp \
  	VMMAll/CPUMAllRegs.cpp \
-	VMMAll/CPUMAllMsrs.cpp \
+ 	VMMAll/CPUMAllMsrs.cpp \
  	VMMAll/DBGFAll.cpp \
-	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllAImpl.asm \
-	VMMAll/IEMAllAImplC.cpp \
-  	VMMAll/IOMAll.cpp \
+ 	VMMAll/IEMAll.cpp \
+ 	VMMAll/IEMAllAImpl.asm \
+ 	VMMAll/IEMAllAImplC.cpp \
+ 	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMMIO.cpp \
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
-	VMMAll/FTMAll.cpp \
-	VMMAll/GIMAll.cpp \
-	VMMAll/GIMAllHv.cpp \
+ 	VMMAll/FTMAll.cpp \
+ 	VMMAll/GIMAll.cpp \
+ 	VMMAll/GIMAllHv.cpp \
+ 	VMMAll/GIMAllKvm.cpp \
  	VMMAll/MMAll.cpp \
  	VMMAll/MMAllHyper.cpp \
  	VMMAll/PDMAll.cpp \
@@ -497,7 +500,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm \
  	$(if-expr defined(VBOX_WITH_RAW_MODE), \
-	VMMAll/CSAMAll.cpp \
+ 	VMMAll/CSAMAll.cpp \
  	VMMAll/PATMAll.cpp \
        ,)
  ifeq ($(VBOX_LDR_FMT32),pe)
@@ -551,14 +554,14 @@ ifndef VBOX_ONLY_EXTPACKS
  	VBoxVMM.d \
  	VMMR0/CPUMR0.cpp \
  	VMMR0/CPUMR0A.asm \
-	VMMR0/GIMR0.cpp \
-	VMMR0/GIMR0Hv.cpp \
+ 	VMMR0/GIMR0.cpp \
+ 	VMMR0/GIMR0Hv.cpp \
  	VMMR0/GMMR0.cpp \
  	VMMR0/GVMMR0.cpp \
  	VMMR0/HMR0.cpp \
  	VMMR0/HMR0A.asm \
-	VMMR0/HMVMXR0.cpp \
-	VMMR0/HMSVMR0.cpp \
+ 	VMMR0/HMVMXR0.cpp \
+ 	VMMR0/HMSVMR0.cpp \
  	VMMR0/PDMR0Device.cpp \
  	VMMR0/PDMR0Driver.cpp \
  	VMMR0/PGMR0.cpp \
@@ -569,18 +572,19 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/VMMRZ.cpp \
  	VMMAll/CPUMAllRegs.cpp \
-	VMMAll/CPUMAllMsrs.cpp \
+ 	VMMAll/CPUMAllMsrs.cpp \
  	VMMAll/CPUMStack.cpp \
  	VMMAll/DBGFAll.cpp \
  	VMMAll/EMAll.cpp \
  	VMMAll/EMAllA.asm \
  	VMMAll/FTMAll.cpp \
-	VMMAll/GIMAll.cpp \
-	VMMAll/GIMAllHv.cpp \
+ 	VMMAll/GIMAll.cpp \
+ 	VMMAll/GIMAllHv.cpp \
+ 	VMMAll/GIMAllKvm.cpp \
  	VMMAll/HMAll.cpp \
-	VMMAll/IEMAll.cpp \
-	VMMAll/IEMAllAImpl.asm \
-	VMMAll/IEMAllAImplC.cpp \
+ 	VMMAll/IEMAll.cpp \
+ 	VMMAll/IEMAllAImpl.asm \
+ 	VMMAll/IEMAllAImplC.cpp \
  	VMMAll/IOMAll.cpp \
  	VMMAll/IOMAllMMIO.cpp \
  	VMMAll/MMAll.cpp \
@@ -612,7 +616,7 @@ ifndef VBOX_ONLY_EXTPACKS
  ifdef VBOX_WITH_TRIPLE_FAULT_HACK
   VMMR0_SOURCES += \
  	VMMR0/VMMR0TripleFaultHack.cpp \
-	VMMR0/VMMR0TripleFaultHackA.asm
+ 	VMMR0/VMMR0TripleFaultHackA.asm
  endif
  ifdef VBOX_WITH_NETSHAPER
   VMMR0_SOURCES += \
@@ -660,12 +664,12 @@ if !defined(VBOX_ONLY_EXTPACKS) \
  INSTALLS += VMMLibDTrace
  VMMLibDTrace_INST    = $(VBOX_INST_DTRACE_LIB)$(KBUILD_TARGET_ARCH)/
  VMMLibDTrace_SOURCES = \
-	dtrace/lib/vbox-types.d \
-	dtrace/lib/$(KBUILD_TARGET_ARCH)/vbox-arch-types.d \
-	$(VMMLibDTrace_0_OUTDIR)/vm.d \
-	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d \
-	$(VMMLibDTrace_0_OUTDIR)/CPUMInternal.d \
-	$(VMMLibDTrace_0_OUTDIR)/x86.d \
+ 	dtrace/lib/vbox-types.d \
+ 	dtrace/lib/$(KBUILD_TARGET_ARCH)/vbox-arch-types.d \
+ 	$(VMMLibDTrace_0_OUTDIR)/vm.d \
+ 	$(VMMLibDTrace_0_OUTDIR)/cpumctx.d \
+ 	$(VMMLibDTrace_0_OUTDIR)/CPUMInternal.d \
+ 	$(VMMLibDTrace_0_OUTDIR)/x86.d \
 
 
  ##

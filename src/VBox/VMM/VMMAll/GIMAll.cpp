@@ -153,6 +153,9 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRAN
         case GIMPROVIDERID_HYPERV:
             return gimHvReadMsr(pVCpu, idMsr, pRange, puValue);
 
+        case GIMPROVIDERID_KVM:
+            return gimKvmReadMsr(pVCpu, idMsr, pRange, puValue);
+
         default:
             AssertMsgFailed(("GIMReadMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));
             return VERR_CPUM_RAISE_GP_0;
@@ -186,6 +189,9 @@ VMM_INT_DECL(VBOXSTRICTRC) GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRA
     {
         case GIMPROVIDERID_HYPERV:
             return gimHvWriteMsr(pVCpu, idMsr, pRange, uRawValue);
+
+        case GIMPROVIDERID_KVM:
+            return gimKvmWriteMsr(pVCpu, idMsr, pRange, uRawValue);
 
         default:
             AssertMsgFailed(("GIMWriteMsr: for unknown provider %u idMsr=%#RX32 -> #GP(0)", pVM->gim.s.enmProviderId, idMsr));

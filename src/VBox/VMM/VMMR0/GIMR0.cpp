@@ -95,6 +95,9 @@ VMMR0_INT_DECL(int) GIMR0UpdateParavirtTsc(PVM pVM, uint64_t u64Offset)
         case GIMPROVIDERID_HYPERV:
             return gimR0HvUpdateParavirtTsc(pVM, u64Offset);
 
+        case GIMPROVIDERID_KVM:
+            return VINF_SUCCESS;
+
         case GIMPROVIDERID_NONE:
             return VERR_GIM_NOT_ENABLED;
 
