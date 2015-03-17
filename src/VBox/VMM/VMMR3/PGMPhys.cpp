@@ -1568,7 +1568,9 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
     RTR0PTR      R0PtrChunk   = NIL_RTR0PTR;
     void        *pvChunk      = NULL;
     int rc = SUPR3PageAllocEx(cChunkPages, 0 /*fFlags*/, &pvChunk,
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
+                              &R0PtrChunk,
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
                               HMIsEnabled(pVM) ? &R0PtrChunk : NULL,
 #else
                               NULL,
@@ -1576,7 +1578,9 @@ static int pgmR3PhysRegisterHighRamChunk(PVM pVM, RTGCPHYS GCPhys, uint32_t cRam
                               paChunkPages);
     if (RT_SUCCESS(rc))
     {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
+        Assert(R0PtrChunk != NIL_RTR0PTR);
+#elif defined(VBOX_WITH_2X_4GB_ADDR_SPACE)
         if (!HMIsEnabled(pVM))
             R0PtrChunk = NIL_RTR0PTR;
 #else
@@ -4046,7 +4050,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                 /*
                  * Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses).
                  */
-                /** todo: we should not flush chunks which include cr3 mappings. */
+                /** @todo We should not flush chunks which include cr3 mappings. */
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
                     PPGMCPU pPGM = &pVM->aCpus[idCpu].pgm.s;

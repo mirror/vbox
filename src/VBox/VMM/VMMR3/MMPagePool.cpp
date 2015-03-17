@@ -62,7 +62,7 @@ int mmR3PagePoolInit(PVM pVM)
      * Allocate the pool structures.
      */
     /** @todo @bufref{1865},@bufref{3202}: mapping the page pool page into
-     *        ring-0. Need to change the wasy we allocate it... */
+     *        ring-0. Need to change the ways we allocate it... */
     AssertReleaseReturn(sizeof(*pVM->mm.s.pPagePoolR3) + sizeof(*pVM->mm.s.pPagePoolLowR3) < PAGE_SIZE, VERR_INTERNAL_ERROR);
     int rc = SUPR3PageAllocEx(1, 0 /*fFlags*/, (void **)&pVM->mm.s.pPagePoolR3, NULL /*pR0Ptr*/, NULL /*paPages*/);
     if (RT_FAILURE(rc))

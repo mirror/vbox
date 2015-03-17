@@ -815,7 +815,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pv,
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if defined(VBOX_WITH_2X_4GB_ADDR_SPACE) || defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
                               &pvR0,
 #else
                               NULL,
@@ -823,7 +823,7 @@ static int mmR3HyperHeapCreate(PVM pVM, const size_t cb, PMMHYPERHEAP *ppHeap, P
                               paPages);
     if (RT_SUCCESS(rc))
     {
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
+#if !defined(VBOX_WITH_2X_4GB_ADDR_SPACE) && !defined(VBOX_WITH_MORE_RING0_MEM_MAPPINGS)
         pvR0 = (uintptr_t)pv;
 #endif
         memset(pv, 0, cbAligned);
@@ -1011,15 +1011,23 @@ VMMR3DECL(int) MMR3HyperAllocOnceNoRelEx(PVM pVM, size_t cb, unsigned uAlignment
     int rc = SUPR3PageAllocEx(cPages,
                               0 /*fFlags*/,
                               &pvPages,
+#ifdef VBOX_WITH_MORE_RING0_MEM_MAPPINGS
+                              &pvR0,
+#else
                               fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING ? &pvR0 : NULL,
+#endif
                               paPages);
     if (RT_SUCCESS(rc))
     {
-        if (!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING))
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-            pvR0 = NIL_RTR0PTR;
+#ifdef VBOX_WITH_MORE_RING0_MEM_MAPPINGS
+        Assert(pvR0 != NIL_RTR0PTR);
 #else
+        if (!(fFlags & MMHYPER_AONR_FLAGS_KERNEL_MAPPING))
+# ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+            pvR0 = NIL_RTR0PTR;
+# else
             pvR0 = (RTR0PTR)pvPages;
+# endif
 #endif
 
         memset(pvPages, 0, cbAligned);
