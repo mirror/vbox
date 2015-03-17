@@ -153,7 +153,9 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 # if defined(CPU_TASKS_FROZEN) && defined(CPU_ONLINE_FROZEN)
         case CPU_ONLINE_FROZEN:
 # endif
+            stac();
             rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, idCpu);
+            clac();
             break;
 
 # ifdef CPU_DOWN_PREPARE
@@ -161,7 +163,9 @@ static int rtMpNotificationLinuxCallback(struct notifier_block *pNotifierBlock, 
 #  if defined(CPU_TASKS_FROZEN) && defined(CPU_DOWN_PREPARE_FROZEN)
         case CPU_DOWN_PREPARE_FROZEN:
 #  endif
+            stac();
             rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, idCpu);
+            clac();
             break;
 # endif
     }
