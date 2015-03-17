@@ -4573,10 +4573,8 @@ int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PP
     }
 
     /** @todo What about ballooning of large pages??! */
-#if 0
     Assert(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
            && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED);
-#endif
 
     if (    PGM_PAGE_IS_ZERO(pPage)
         ||  PGM_PAGE_IS_BALLOONED(pPage))
