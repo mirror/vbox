@@ -97,11 +97,6 @@ struct socket
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
     void *so_timeout_arg;
 
-#ifdef VBOX_WITH_NAT_SERVICE
-    /* storage of source ether address */
-    unsigned char so_ethaddr[6];
-#endif
-
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
     struct socket *so_cloneOf; /* pointer to master instance */
     int so_cCloneCounter;      /* number of clones */

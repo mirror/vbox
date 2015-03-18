@@ -1679,9 +1679,7 @@ int slirp_remove_redirect(PNATState pData, int is_udp, struct in_addr host_addr,
 
 void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP)
 {
-#ifndef VBOX_WITH_NAT_SERVICE
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
-#endif
     if (GuestIP != INADDR_ANY)
     {
         slirp_arp_cache_update_or_add(pData, GuestIP, ethaddr);
