@@ -1008,8 +1008,10 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
         return;
 
     /* No updates for a blank guest screen. */
-    if (maFramebuffers[uScreenId].flags & VBVA_SCREEN_F_BLANK)
-        return;
+    /** @note Disabled for now, as the GUI does not update the picture when we
+     * first blank. */
+    /* if (maFramebuffers[uScreenId].flags & VBVA_SCREEN_F_BLANK)
+        return; */
 
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
         i_checkCoordBounds (&x, &y, &w, &h, mpDrv->IConnector.cx, mpDrv->IConnector.cy);
@@ -3972,7 +3974,7 @@ DECLCALLBACK(int) Display::i_displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface,
     /* If the screen if blanked, then do a resize request to make sure that the framebuffer
      * switches to the default format.
      */
-    fResize = fResize || RT_BOOL(pScreen->u16Flags & VBVA_SCREEN_F_BLANK);
+    fResize = fResize || RT_BOOL((pScreen->u16Flags ^ pFBInfo->flags) & VBVA_SCREEN_F_BLANK);
 
     /* Check if this is a real resize or a notification about the screen origin.
      * The guest uses this VBVAResize call for both.
