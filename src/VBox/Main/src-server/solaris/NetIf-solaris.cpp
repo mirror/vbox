@@ -52,6 +52,10 @@
 
 #include "DynLoadLibSolaris.h"
 
+/** @todo Unify this define with VBoxNetFltBow-solaris.c */
+#define VBOXBOW_VNIC_TEMPLATE_NAME      "vboxvnic_template"
+
+
 static uint32_t getInstance(const char *pszIfaceName, char *pszDevName)
 {
     /*
@@ -171,7 +175,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432) Ethernet"));
         SolarisNICMap.insert(NICPair("vboxnet", "VirtualBox Host Ethernet"));
-        SolarisNICMap.insert(NICPair("vboxvnic_template", "VirtualBox Virtual Network Interface Template"));
+        SolarisNICMap.insert(NICPair(VBOXBOW_VNIC_TEMPLATE_NAME, "VirtualBox Virtual Network Interface Template"));
         SolarisNICMap.insert(NICPair("vlan", "Virtual LAN Ethernet"));
         SolarisNICMap.insert(NICPair("vr", "VIA Rhine Fast Ethernet"));
         SolarisNICMap.insert(NICPair("vnic", "Virtual Network Interface Ethernet"));
@@ -190,6 +194,15 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     {
         if (Description != "")
             RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", szNICInstance, Description.c_str());
+        else if (!strncmp(szNICInstance, RT_STR_TUPLE(VBOXBOW_VNIC_TEMPLATE_NAME)))
+        {
+            /*
+             * We want prefix matching only for "vboxvnic_template" as it's possible to create "vboxvnic_template_abcd123",
+             * which our Solaris Crossbow NetFilter driver will interpret as a VNIC template.
+             */
+            Description = SolarisNICMap[VBOXBOW_VNIC_TEMPLATE_NAME];
+            RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - %s", szNICInstance, Description.c_str());
+        }
         else
             RTStrPrintf(szNICDesc, sizeof(szNICDesc), "%s - Ethernet", szNICInstance);
     }
@@ -299,8 +312,10 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
     /*
      * Skip our own dynamic VNICs but don't skip VNIC templates.
      * These names originate from VBoxNetFltBow-solaris.c, hardcoded here for now.
+     *                                                                           .
+     * ASSUMES template name is longer than 'vboxvnic'.
      */
-    if (    strncmp(pszIface, RT_STR_TUPLE("vboxvnic_template"))
+    if (    strncmp(pszIface, RT_STR_TUPLE(VBOXBOW_VNIC_TEMPLATE_NAME))
         && !strncmp(pszIface, RT_STR_TUPLE("vboxvnic")))
         return _B_FALSE;
 
