@@ -1543,28 +1543,18 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
         if (rule->activated)
             continue;
 
-#ifdef VBOX_WITH_NAT_SERVICE
-        /**
-         * case when guest ip is INADDR_ANY shouldn't appear in NAT service
-         */
-        Assert((rule->guest_addr.s_addr != INADDR_ANY));
-        guest_addr = rule->guest_addr.s_addr;
-#else /* VBOX_WITH_NAT_SERVICE */
         guest_addr = find_guest_ip(pData, pu8EthSource);
-#endif /* !VBOX_WITH_NAT_SERVICE */
         if (guest_addr == INADDR_ANY)
         {
             /* the address wasn't granted */
             return;
         }
 
-#if !defined(VBOX_WITH_NAT_SERVICE)
         if (   rule->guest_addr.s_addr != guest_addr
             && rule->guest_addr.s_addr != INADDR_ANY)
             continue;
         if (rule->guest_addr.s_addr == INADDR_ANY)
             rule->guest_addr.s_addr = guest_addr;
-#endif
 
         LogRel(("NAT: set redirect %s host %RTnaipv4:%d => guest %RTnaipv4:%d\n",
                 rule->proto == IPPROTO_UDP ? "UDP" : "TCP",
