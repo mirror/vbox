@@ -1514,6 +1514,8 @@ void Display::i_notifyPowerDown(void)
     /* Source bitmaps are not available anymore. */
     mfSourceBitmapEnabled = false;
 
+    alock.release();
+
     /* Resize all displays to tell framebuffers to forget current source bitmap. */
     unsigned uScreenId = mcMonitors;
     while (uScreenId > 0)
