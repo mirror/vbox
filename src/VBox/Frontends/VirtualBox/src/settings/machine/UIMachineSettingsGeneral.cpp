@@ -297,7 +297,7 @@ void UIMachineSettingsGeneral::preparePageDescription()
     {
         /* Configure Description text editor: */
 #ifdef Q_WS_MAC
-        mTeDescription->setMinimum(150);
+        mTeDescription->setMinimumHeight(150);
 #endif /* Q_WS_MAC */
     }
 }
