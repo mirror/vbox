@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,10 +39,11 @@
      *
      *  Note that it is more convenient to use the following individual
      *  shortcut classes instead of using this template directly:
-     *  AutoAnyStateDependency, AutoMutableStateDependency and
-     *  AutoMutableOrSavedStateDependency. The usage pattern is exactly the
-     *  same as above except that there is no need to specify the template
-     *  argument because it is already done by the shortcut class.
+     *  AutoAnyStateDependency, AutoMutableStateDependency,
+     *  AutoMutableOrSavedStateDependency, AutoMutableOrRunningStateDependency
+     *  or AutoMutableOrSavedOrRunningStateDependency. The usage pattern is
+     *  exactly the same as above except that there is no need to specify the
+     *  template argument because it is already done by the shortcut class.
      *
      *  @param taDepType    Dependency type to manage.
      */
@@ -138,7 +139,8 @@
      *
      *  Intended to be used within all setter methods of IMachine
      *  children objects (DVDDrive, NetworkAdapter, AudioAdapter, etc.) to
-     *  provide data protection and consistency.
+     *  provide data protection and consistency. There must be no VM process,
+     *  i.e. use for settings changes which are valid when the VM is shut down.
      */
     typedef AutoStateDependency<Machine::MutableStateDep> AutoMutableStateDependency;
 
@@ -154,9 +156,44 @@
      *  should return the failed result code to the upper level.
      *
      *  Intended to be used within setter methods of IMachine
-     *  children objects that may also operate on Saved machines.
+     *  children objects that may operate on shut down or Saved machines.
      */
     typedef AutoStateDependency<Machine::MutableOrSavedStateDep> AutoMutableOrSavedStateDependency;
+
+    /**
+     *  Shortcut to AutoStateDependency<MutableOrRunningStateDep>.
+     *  See AutoStateDependency to get the usage pattern.
+     *
+     *  Succeeds only if the machine state is in one of the mutable states, or
+     *  if the machine is in the Running or Paused state, and guarantees the
+     *  given mutable state won't change before this object is destroyed. If
+     *  the machine is not mutable, this instance's #rc() method will indicate
+     *  a failure, and the caller is not allowed to rely on any particular
+     *  machine state and should return the failed result code to the upper
+     *  level.
+     *
+     *  Intended to be used within setter methods of IMachine
+     *  children objects that may operate on shut down or running machines.
+     */
+    typedef AutoStateDependency<Machine::MutableOrRunningStateDep> AutoMutableOrRunningStateDependency;
+
+    /**
+     *  Shortcut to AutoStateDependency<MutableOrSavedOrRunningStateDep>.
+     *  See AutoStateDependency to get the usage pattern.
+     *
+     *  Succeeds only if the machine state is in one of the mutable states, or
+     *  if the machine is in the Running, Paused or Saved state, and guarantees
+     *  the given mutable state won't change before this object is destroyed.
+     *  If the machine is not mutable, this instance's #rc() method will
+     *  indicate a failure, and the caller is not allowed to rely on any
+     *  particular machine state and should return the failed result code to
+     *  the upper level.
+     *
+     *  Intended to be used within setter methods of IMachine
+     *  children objects that may operate on shut down, running or saved
+     *  machines.
+     */
+    typedef AutoStateDependency<Machine::MutableOrSavedOrRunningStateDep> AutoMutableOrSavedOrRunningStateDependency;
 
 #endif // ____H_AUTOSTATEDEP
 
