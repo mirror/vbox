@@ -137,8 +137,9 @@ struct VBOXTLSREFDATA_DUMMY
 
 
 /* host 3D->Fe[/Qt] notification mechanism defines */
-#define VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA  2
 #define VBOX3D_NOTIFY_EVENT_TYPE_TEST_FUNCTIONAL 3
+#define VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_VISIBLE  4
+#define VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_HIDDEN   5
 
 
 #endif /* #ifndef ___VBox_VBoxVideo3D_h */

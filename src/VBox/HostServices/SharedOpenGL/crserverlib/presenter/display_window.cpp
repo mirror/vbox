@@ -321,7 +321,10 @@ void CrFbDisplayWindow::onUpdateEnd()
     bool fVisible = isVisible();
     if (mFlags.fNeVisible != fVisible || mFlags.fNeForce)
     {
-        crVBoxServerNotifyEvent(mu32Screen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, &fVisible, sizeof(fVisible));
+        crVBoxServerNotifyEvent(mu32Screen,
+                                fVisible? VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_VISIBLE:
+                                          VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_HIDDEN,
+                                NULL, 0);
         mFlags.fNeVisible = fVisible;
         mFlags.fNeForce = 0;
     }

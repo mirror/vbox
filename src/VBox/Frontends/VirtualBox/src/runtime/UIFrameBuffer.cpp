@@ -1007,17 +1007,18 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
         return E_FAIL;
     }
 
-    com::SafeArray<BYTE> eventData(ComSafeArrayInArg(data));
+    // com::SafeArray<BYTE> eventData(ComSafeArrayInArg(data));
     switch (uType)
     {
-        case VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA:
+        case VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_VISIBLE:
+        case VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_HIDDEN:
         {
             /* Notify machine-view with the async-signal
              * about 3D overlay visibility change: */
-            BOOL fVisible = eventData[0];
+            BOOL fVisible = uType == VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_VISIBLE;
             LogRel2(("GUI: UIFrameBufferPrivate::Notify3DEvent: Sending to async-handler: "
-                     "(VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA = %s)\n",
-                     fVisible ? "TRUE" : "FALSE"));
+                     "(VBOX3D_NOTIFY_EVENT_TYPE_3DDATA_%s)\n",
+                     fVisible ? "VISIBLE" : "HIDDEN"));
             emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
 
             /* Unlock access to frame-buffer: */
