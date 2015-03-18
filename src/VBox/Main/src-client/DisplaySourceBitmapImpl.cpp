@@ -57,7 +57,7 @@ HRESULT DisplaySourceBitmap::init(ComObjPtr<Display> pDisplay, unsigned uScreenI
     m.ulHeight = 0;
     m.ulBitsPerPixel = 0;
     m.ulBytesPerLine = 0;
-    m.ulPixelFormat = 0;
+    m.bitmapFormat = BitmapFormat_Opaque;
 
     int rc = initSourceBitmap(uScreenId, pFBInfo);
 
@@ -99,7 +99,7 @@ HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
                                              ULONG *aHeight,
                                              ULONG *aBitsPerPixel,
                                              ULONG *aBytesPerLine,
-                                             ULONG *aPixelFormat)
+                                             BitmapFormat_T *aBitmapFormat)
 {
     HRESULT hr = S_OK;
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -109,7 +109,7 @@ HRESULT DisplaySourceBitmap::queryBitmapInfo(BYTE **aAddress,
     *aHeight       = m.ulHeight;
     *aBitsPerPixel = m.ulBitsPerPixel;
     *aBytesPerLine = m.ulBytesPerLine;
-    *aPixelFormat  = m.ulPixelFormat;
+    *aBitmapFormat  = m.bitmapFormat;
 
     return hr;
 }
@@ -129,7 +129,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
     ULONG ulHeight = 0;
     ULONG ulBitsPerPixel = 0;
     ULONG ulBytesPerLine = 0;
-    ULONG ulPixelFormat = 0;
+    BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
     if (pFBInfo->pu8FramebufferVRAM && pFBInfo->u16BitsPerPixel == 32)
     {
@@ -140,7 +140,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         ulHeight       = pFBInfo->h;
         ulBitsPerPixel = pFBInfo->u16BitsPerPixel;
         ulBytesPerLine = pFBInfo->u32LineSize;
-        ulPixelFormat  = 0;
+        bitmapFormat   = BitmapFormat_BGR;
         m.pu8Allocated = NULL;
     }
     else
@@ -152,7 +152,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         ulHeight       = pFBInfo->h;
         ulBitsPerPixel = 32;
         ulBytesPerLine = ulWidth * 4;
-        ulPixelFormat  = 0;
+        bitmapFormat   = BitmapFormat_BGR;
 
         m.pu8Allocated = (uint8_t *)RTMemAlloc(ulBytesPerLine * ulHeight);
         if (m.pu8Allocated == NULL)
@@ -172,7 +172,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         m.ulHeight = ulHeight;
         m.ulBitsPerPixel = ulBitsPerPixel;
         m.ulBytesPerLine = ulBytesPerLine;
-        m.ulPixelFormat = ulPixelFormat;
+        m.bitmapFormat = bitmapFormat;
     }
 
     return rc;

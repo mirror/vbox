@@ -1096,14 +1096,14 @@ DECLCALLBACK(bool) ConsoleVRDPServer::VRDPCallbackFramebufferQuery(void *pvCallb
         ULONG ulHeight = 0;
         ULONG ulBitsPerPixel = 0;
         ULONG ulBytesPerLine = 0;
-        ULONG ulPixelFormat = 0;
+        BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
         hr = server->maSourceBitmaps[uScreenId]->QueryBitmapInfo(&pAddress,
                                                                  &ulWidth,
                                                                  &ulHeight,
                                                                  &ulBitsPerPixel,
                                                                  &ulBytesPerLine,
-                                                                 &ulPixelFormat);
+                                                                 &bitmapFormat);
 
         if (SUCCEEDED(hr))
         {

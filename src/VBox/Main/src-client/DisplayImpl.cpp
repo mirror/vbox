@@ -932,14 +932,14 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
             ULONG ulHeight = 0;
             ULONG ulBitsPerPixel = 0;
             ULONG ulBytesPerLine = 0;
-            ULONG ulPixelFormat = 0;
+            BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
             hr = pSourceBitmap->QueryBitmapInfo(&pAddress,
                                                 &ulWidth,
                                                 &ulHeight,
                                                 &ulBitsPerPixel,
                                                 &ulBytesPerLine,
-                                                &ulPixelFormat);
+                                                &bitmapFormat);
             if (SUCCEEDED(hr))
             {
                 pFBInfo->updateImage.pSourceBitmap = pSourceBitmap;
@@ -2406,14 +2406,14 @@ int Display::i_drawToScreenEMT(Display *pDisplay, ULONG aScreenId, BYTE *address
                     ULONG ulHeight = 0;
                     ULONG ulBitsPerPixel = 0;
                     ULONG ulBytesPerLine = 0;
-                    ULONG ulPixelFormat = 0;
+                    BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
                     HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
                                                                           &ulWidth,
                                                                           &ulHeight,
                                                                           &ulBitsPerPixel,
                                                                           &ulBytesPerLine,
-                                                                          &ulPixelFormat);
+                                                                          &bitmapFormat);
                     if (SUCCEEDED(hrc))
                     {
                         pu8Src       = pFBInfo->pu8FramebufferVRAM;
@@ -2545,14 +2545,14 @@ int Display::i_InvalidateAndUpdateEMT(Display *pDisplay, unsigned uId, bool fUpd
                     ULONG ulHeight = 0;
                     ULONG ulBitsPerPixel = 0;
                     ULONG ulBytesPerLine = 0;
-                    ULONG ulPixelFormat = 0;
+                    BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
                     HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
                                                                           &ulWidth,
                                                                           &ulHeight,
                                                                           &ulBitsPerPixel,
                                                                           &ulBytesPerLine,
-                                                                          &ulPixelFormat);
+                                                                          &bitmapFormat);
                     if (SUCCEEDED(hrc))
                     {
                         uint32_t width              = pFBInfo->w;
@@ -2757,14 +2757,14 @@ HRESULT Display::querySourceBitmap(ULONG aScreenId,
                 ULONG ulHeight = 0;
                 ULONG ulBitsPerPixel = 0;
                 ULONG ulBytesPerLine = 0;
-                ULONG ulPixelFormat = 0;
+                BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
                 obj->QueryBitmapInfo(&pAddress,
                                      &ulWidth,
                                      &ulHeight,
                                      &ulBitsPerPixel,
                                      &ulBytesPerLine,
-                                     &ulPixelFormat);
+                                     &bitmapFormat);
 
                 mpDrv->IConnector.pu8Data    = pAddress;
                 mpDrv->IConnector.cbScanline = ulBytesPerLine;
@@ -3784,14 +3784,14 @@ DECLCALLBACK(void) Display::i_displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pIn
             ULONG ulHeight = 0;
             ULONG ulBitsPerPixel = 0;
             ULONG ulBytesPerLine = 0;
-            ULONG ulPixelFormat = 0;
+            BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
             HRESULT hrc = pFBInfo->pSourceBitmap->QueryBitmapInfo(&pAddress,
                                                                   &ulWidth,
                                                                   &ulHeight,
                                                                   &ulBitsPerPixel,
                                                                   &ulBytesPerLine,
-                                                                  &ulPixelFormat);
+                                                                  &bitmapFormat);
             if (SUCCEEDED(hrc))
             {
                 uint32_t width              = pCmd->w;

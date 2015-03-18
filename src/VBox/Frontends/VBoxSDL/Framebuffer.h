@@ -75,7 +75,7 @@ public:
     STDMETHOD(COMGETTER(Height))(ULONG *height);
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *bitsPerPixel);
     STDMETHOD(COMGETTER(BytesPerLine))(ULONG *bytesPerLine);
-    STDMETHOD(COMGETTER(PixelFormat)) (ULONG *pixelFormat);
+    STDMETHOD(COMGETTER(PixelFormat)) (BitmapFormat_T *pixelFormat);
     STDMETHOD(COMGETTER(HeightReduction)) (ULONG *heightReduction);
     STDMETHOD(COMGETTER(Overlay)) (IFramebufferOverlay **aOverlay);
     STDMETHOD(COMGETTER(WinId)) (int64_t *winId);

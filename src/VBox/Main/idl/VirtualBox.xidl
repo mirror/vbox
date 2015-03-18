@@ -1329,7 +1329,7 @@
 
   <enum
     name="BitmapFormat"
-    uuid="2526302a-cd88-4491-8637-ae50b9804fbc"
+    uuid="afb2bf39-8b1e-4f9f-8948-d1b887f83eb0"
     >
     <desc>
       Format of a bitmap. Generic values for formats used by
@@ -1344,7 +1344,17 @@
     </const>
     <const name="BGR"             value="0x20524742">
       <desc>
-        Generic BGR format. Pixel layout depends on the number of bits per pixel.
+        Generic BGR format without alpha channel.
+        Pixel layout depends on the number of bits per pixel:
+        <ul>
+          <li>
+            <b>32</b> - bits 31:24 undefined, bits 23:16 R, bits 15:8 G, bits 7:0 B.
+          </li>
+
+          <li>
+            <b>16</b> - bits 15:11 R, bits 10:5 G, bits 4:0 B.
+          </li>
+        </ul>
       </desc>
     </const>
     <const name="BGR0"            value="0x30524742">
@@ -1365,6 +1375,11 @@
     <const name="PNG"             value="0x20474E50">
       <desc>
         PNG image.
+      </desc>
+    </const>
+    <const name="JPEG"            value="0x4745504A">
+      <desc>
+        JPEG image.
       </desc>
     </const>
   </enum>
@@ -15505,7 +15520,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplaySourceBitmap" extends="$unknown" wsmap="suppress"
-    uuid="b00907f7-d85e-4dce-b1a6-16a2d91b0269"
+    uuid="0b78daeb-f52f-43b9-99e8-4a3c226cbe2d"
     >
     <attribute name="screenId" type="unsigned long" readonly="yes"/>
     <method name="queryBitmapInfo">
@@ -15515,7 +15530,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="height" type="unsigned long" dir="out"/>
       <param name="bitsPerPixel" type="unsigned long" dir="out"/>
       <param name="bytesPerLine" type="unsigned long" dir="out"/>
-      <param name="pixelFormat" type="unsigned long" dir="out"/>
+      <param name="bitmapFormat" type="BitmapFormat" dir="out"/>
     </method>
 
   </interface>
@@ -15549,7 +15564,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="735365aa-544d-415c-a25b-a5ea913d63f3"
+    uuid="dd07f843-be2e-4cae-83fe-8bf5d33c80e9"
     wsmap="managed"
     >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -15572,7 +15587,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="pixelFormat" type="unsigned long" readonly="yes">
+    <attribute name="pixelFormat" type="BitmapFormat" readonly="yes">
       <desc>
         Frame buffer pixel format. It's one of the values defined by <link
         to="BitmapFormat"/>.

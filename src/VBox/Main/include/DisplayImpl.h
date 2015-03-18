@@ -531,7 +531,7 @@ private:
                                     ULONG *aHeight,
                                     ULONG *aBitsPerPixel,
                                     ULONG *aBytesPerLine,
-                                    ULONG *aPixelFormat);
+                                    BitmapFormat_T *aBitmapFormat);
 
     int initSourceBitmap(unsigned aScreenId, DISPLAYFBINFO *pFBInfo);
 
@@ -548,7 +548,7 @@ private:
         ULONG ulHeight;
         ULONG ulBitsPerPixel;
         ULONG ulBytesPerLine;
-        ULONG ulPixelFormat;
+        BitmapFormat_T bitmapFormat;
     };
 
     Data m;

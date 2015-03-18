@@ -336,7 +336,7 @@ STDMETHODIMP VBoxSDLFB::COMGETTER(BytesPerLine)(ULONG *bytesPerLine)
     return S_OK;
 }
 
-STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (ULONG *pixelFormat)
+STDMETHODIMP VBoxSDLFB::COMGETTER(PixelFormat) (BitmapFormat_T *pixelFormat)
 {
     if (!pixelFormat)
         return E_POINTER;
@@ -655,14 +655,14 @@ void VBoxSDLFB::notifyChange(ULONG aScreenId)
         ULONG ulHeight = 0;
         ULONG ulBitsPerPixel = 0;
         ULONG ulBytesPerLine = 0;
-        ULONG ulPixelFormat = 0;
+        BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
         mpSourceBitmap->QueryBitmapInfo(&pAddress,
                                         &ulWidth,
                                         &ulHeight,
                                         &ulBitsPerPixel,
                                         &ulBytesPerLine,
-                                        &ulPixelFormat);
+                                        &bitmapFormat);
 
         if (   mGuestXRes    == ulWidth
             && mGuestYRes    == ulHeight

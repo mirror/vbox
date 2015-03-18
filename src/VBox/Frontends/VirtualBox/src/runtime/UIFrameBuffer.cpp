@@ -180,7 +180,7 @@ public:
     STDMETHOD(COMGETTER(Height))(ULONG *puHeight);
     STDMETHOD(COMGETTER(BitsPerPixel))(ULONG *puBitsPerPixel);
     STDMETHOD(COMGETTER(BytesPerLine))(ULONG *puBytesPerLine);
-    STDMETHOD(COMGETTER(PixelFormat))(ULONG *puPixelFormat);
+    STDMETHOD(COMGETTER(PixelFormat))(BitmapFormat_T *puPixelFormat);
     STDMETHOD(COMGETTER(HeightReduction))(ULONG *puHeightReduction);
     STDMETHOD(COMGETTER(Overlay))(IFramebufferOverlay **ppOverlay);
     STDMETHOD(COMGETTER(WinId))(LONG64 *pWinId);
@@ -657,11 +657,11 @@ STDMETHODIMP UIFrameBufferPrivate::COMGETTER(BytesPerLine)(ULONG *puBytesPerLine
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBufferPrivate::COMGETTER(PixelFormat)(ULONG *puPixelFormat)
+STDMETHODIMP UIFrameBufferPrivate::COMGETTER(PixelFormat)(BitmapFormat_T *puPixelFormat)
 {
     if (!puPixelFormat)
         return E_POINTER;
-    *puPixelFormat = pixelFormat();
+    *puPixelFormat = (BitmapFormat_T)pixelFormat();
     return S_OK;
 }
 
@@ -1180,13 +1180,13 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
         ULONG ulHeight = 0;
         ULONG ulBitsPerPixel = 0;
         ULONG ulBytesPerLine = 0;
-        ULONG ulPixelFormat = 0;
+        KBitmapFormat bitmapFormat = KBitmapFormat_Opaque;
         m_sourceBitmap.QueryBitmapInfo(pAddress,
                                        ulWidth,
                                        ulHeight,
                                        ulBitsPerPixel,
                                        ulBytesPerLine,
-                                       ulPixelFormat);
+                                       bitmapFormat);
         Assert(ulBitsPerPixel == 32);
 
         /* Remember new actual size: */
