@@ -60,7 +60,12 @@
 
       <listitem>
         <para>API: fix crashes in Java API clients using the XPCOM binding,
-           happened with output parameters only (bug #11232)</para>
+          happened with output parameters only (bug #11232)</para>
+      </listitem>
+
+      <listitem>
+        <para>API: a number of settings (e.g. network settings) can now also
+          be changed when the VM is in saved state</para>
       </listitem>
 
     </itemizedlist>
