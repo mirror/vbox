@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,68 +18,29 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 # include <QDir>
 # include <QLineEdit>
-
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsGeneral.h"
 # include "UIMessageCenter.h"
 # include "UIConverter.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : m_fHWVirtExEnabled(false)
 {
-    /* Apply UI decorations */
-    Ui::UIMachineSettingsGeneral::setupUi (this);
+    /* Prepare: */
+    prepare();
 
-    /* Setup validators */
-    m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
-
-    /* Shared Clipboard mode */
-    mCbClipboard->addItem (""); /* KClipboardMode_Disabled */
-    mCbClipboard->addItem (""); /* KClipboardMode_HostToGuest */
-    mCbClipboard->addItem (""); /* KClipboardMode_GuestToHost */
-    mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
-
-    /* Drag'n'drop mode */
-    mCbDragAndDrop->addItem (""); /* KDnDMode_Disabled */
-    mCbDragAndDrop->addItem (""); /* KDnDMode_HostToGuest */
-    mCbDragAndDrop->addItem (""); /* KDnDMode_GuestToHost */
-    mCbDragAndDrop->addItem (""); /* KDnDMode_Bidirectional */
-
-#ifdef Q_WS_MAC
-    mTeDescription->setMinimumHeight (150);
-#endif /* Q_WS_MAC */
-
-    /* Prepare validation: */
-    prepareValidation();
-
-    /* Applying language settings */
+    /* Translate: */
     retranslateUi();
 }
 
 CGuestOSType UIMachineSettingsGeneral::guestOSType() const
 {
     return m_pNameAndSystemEditor->type();
-}
-
-void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
-{
-    /* Make sure hardware virtualization extension has changed: */
-    if (m_fHWVirtExEnabled == fEnabled)
-        return;
-
-    /* Update hardware virtualization extension value: */
-    m_fHWVirtExEnabled = fEnabled;
-
-    /* Revalidate: */
-    revalidate();
 }
 
 bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
@@ -94,8 +55,19 @@ bool UIMachineSettingsGeneral::isWindowsOSTypeSelected() const
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-/* Load data to cache from corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
+void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
+{
+    /* Make sure hardware virtualization extension has changed: */
+    if (m_fHWVirtExEnabled == fEnabled)
+        return;
+
+    /* Update hardware virtualization extension value: */
+    m_fHWVirtExEnabled = fEnabled;
+
+    /* Revalidate: */
+    revalidate();
+}
+
 void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -123,8 +95,6 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-/* Load data to corresponding widgets from cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsGeneral::getFromCache()
 {
     /* Get general data from cache: */
@@ -146,8 +116,6 @@ void UIMachineSettingsGeneral::getFromCache()
     revalidate();
 }
 
-/* Save data from corresponding widgets to cache,
- * this task SHOULD be performed in GUI thread only: */
 void UIMachineSettingsGeneral::putToCache()
 {
     /* Prepare general data: */
@@ -166,8 +134,6 @@ void UIMachineSettingsGeneral::putToCache()
     m_cache.cacheCurrentData(generalData);
 }
 
-/* Save data from cache to corresponding external object(s),
- * this task COULD be performed in other than GUI thread: */
 void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
 {
     /* Fetch data to machine: */
@@ -194,12 +160,10 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
             if (generalData.m_strGuestOsTypeId != m_cache.base().m_strGuestOsTypeId)
             {
                 m_machine.SetOSTypeId(generalData.m_strGuestOsTypeId);
-
                 CVirtualBox vbox = vboxGlobal().virtualBox();
                 CGuestOSType newType = vbox.GetGuestOSType(generalData.m_strGuestOsTypeId);
                 m_machine.SetCPUProperty(KCPUPropertyType_LongMode, newType.GetIs64Bit());
             }
-
             /* Advanced tab: */
             m_machine.SetSnapshotFolder(generalData.m_strSnapshotsFolder);
             /* Basic (again) tab: */
@@ -245,50 +209,97 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     return fPass;
 }
 
-void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)
+void UIMachineSettingsGeneral::setOrderAfter(QWidget *pWidget)
 {
-    /* Basic tab-order */
-    setTabOrder (aWidget, mTwGeneral->focusProxy());
-    setTabOrder (mTwGeneral->focusProxy(), m_pNameAndSystemEditor);
+    /* Basic tab-order: */
+    setTabOrder(pWidget, mTwGeneral->focusProxy());
+    setTabOrder(mTwGeneral->focusProxy(), m_pNameAndSystemEditor);
 
-    /* Advanced tab-order */
-    setTabOrder (m_pNameAndSystemEditor, mPsSnapshot);
-    setTabOrder (mPsSnapshot, mCbClipboard);
-    setTabOrder (mCbClipboard, mCbDragAndDrop);
+    /* Advanced tab-order: */
+    setTabOrder(m_pNameAndSystemEditor, mPsSnapshot);
+    setTabOrder(mPsSnapshot, mCbClipboard);
+    setTabOrder(mCbClipboard, mCbDragAndDrop);
 
-    /* Description tab-order */
-    setTabOrder (mCbDragAndDrop, mTeDescription);
+    /* Description tab-order: */
+    setTabOrder(mCbDragAndDrop, mTeDescription);
 }
 
 void UIMachineSettingsGeneral::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIMachineSettingsGeneral::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIMachineSettingsGeneral::retranslateUi(this);
 
-    /* Path selector */
-    mPsSnapshot->setWhatsThis (tr ("Holds the path where snapshots of this "
-                                   "virtual machine will be stored. Be aware that "
-                                   "snapshots can take quite a lot of disk "
-                                   "space."));
-
-    /* Shared Clipboard mode */
-    mCbClipboard->setItemText (0, gpConverter->toString (KClipboardMode_Disabled));
-    mCbClipboard->setItemText (1, gpConverter->toString (KClipboardMode_HostToGuest));
-    mCbClipboard->setItemText (2, gpConverter->toString (KClipboardMode_GuestToHost));
-    mCbClipboard->setItemText (3, gpConverter->toString (KClipboardMode_Bidirectional));
-
-    /* Drag'n'drop mode */
-    mCbDragAndDrop->setItemText (0, gpConverter->toString (KDnDMode_Disabled));
-    mCbDragAndDrop->setItemText (1, gpConverter->toString (KDnDMode_HostToGuest));
-    mCbDragAndDrop->setItemText (2, gpConverter->toString (KDnDMode_GuestToHost));
-    mCbDragAndDrop->setItemText (3, gpConverter->toString (KDnDMode_Bidirectional));
+    /* Translate path selector: */
+    mPsSnapshot->setWhatsThis(tr("Holds the path where snapshots of this "
+                                 "virtual machine will be stored. Be aware that "
+                                 "snapshots can take quite a lot of disk space."));
+    /* Translate Shared Clipboard mode combo: */
+    mCbClipboard->setItemText(0, gpConverter->toString(KClipboardMode_Disabled));
+    mCbClipboard->setItemText(1, gpConverter->toString(KClipboardMode_HostToGuest));
+    mCbClipboard->setItemText(2, gpConverter->toString(KClipboardMode_GuestToHost));
+    mCbClipboard->setItemText(3, gpConverter->toString(KClipboardMode_Bidirectional));
+    /* Translate Drag'n'drop mode combo: */
+    mCbDragAndDrop->setItemText(0, gpConverter->toString(KDnDMode_Disabled));
+    mCbDragAndDrop->setItemText(1, gpConverter->toString(KDnDMode_HostToGuest));
+    mCbDragAndDrop->setItemText(2, gpConverter->toString(KDnDMode_GuestToHost));
+    mCbDragAndDrop->setItemText(3, gpConverter->toString(KDnDMode_Bidirectional));
 }
 
-void UIMachineSettingsGeneral::prepareValidation()
+void UIMachineSettingsGeneral::prepare()
 {
-    /* Prepare validation: */
-    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(revalidate()));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), this, SLOT(revalidate()));
+    /* Apply UI decorations: */
+    Ui::UIMachineSettingsGeneral::setupUi(this);
+
+    /* Prepare pages: */
+    preparePageBasic();
+    preparePageAdvanced();
+    preparePageDescription();
+}
+
+void UIMachineSettingsGeneral::preparePageBasic()
+{
+    /* Name and OS Type widget was created in the .ui file: */
+    AssertPtrReturnVoid(m_pNameAndSystemEditor);
+    {
+        /* Configure Name and OS Type widget: */
+        m_pNameAndSystemEditor->nameEditor()->setValidator(new QRegExpValidator(QRegExp(".+"), this));
+        connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(revalidate()));
+        connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), this, SLOT(revalidate()));
+    }
+}
+
+void UIMachineSettingsGeneral::preparePageAdvanced()
+{
+    /* Shared Clipboard mode combo was created in the .ui file: */
+    AssertPtrReturnVoid(mCbClipboard);
+    {
+        /* Configure Shared Clipboard mode combo: */
+        mCbClipboard->addItem (""); /* KClipboardMode_Disabled */
+        mCbClipboard->addItem (""); /* KClipboardMode_HostToGuest */
+        mCbClipboard->addItem (""); /* KClipboardMode_GuestToHost */
+        mCbClipboard->addItem (""); /* KClipboardMode_Bidirectional */
+    }
+    /* Drag&drop mode combo was created in the .ui file: */
+    AssertPtrReturnVoid(mCbDragAndDrop);
+    {
+        /* Configure Drag&drop mode combo: */
+        mCbDragAndDrop->addItem (""); /* KDnDMode_Disabled */
+        mCbDragAndDrop->addItem (""); /* KDnDMode_HostToGuest */
+        mCbDragAndDrop->addItem (""); /* KDnDMode_GuestToHost */
+        mCbDragAndDrop->addItem (""); /* KDnDMode_Bidirectional */
+    }
+}
+
+void UIMachineSettingsGeneral::preparePageDescription()
+{
+    /* Description text editor was created in the .ui file: */
+    AssertPtrReturnVoid(mTeDescription);
+    {
+        /* Configure Description text editor: */
+#ifdef Q_WS_MAC
+        mTeDescription->setMinimum(150);
+#endif /* Q_WS_MAC */
+    }
 }
 
 void UIMachineSettingsGeneral::polishPage()
