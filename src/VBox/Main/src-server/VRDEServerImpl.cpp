@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -257,7 +257,7 @@ HRESULT VRDEServer::getEnabled(BOOL *aEnabled)
 HRESULT VRDEServer::setEnabled(BOOL aEnabled)
 {
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -372,7 +372,7 @@ HRESULT VRDEServer::setVRDEProperty(const com::Utf8Str &aKey, const com::Utf8Str
     LogFlowThisFunc(("\n"));
 
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -601,7 +601,7 @@ HRESULT VRDEServer::getAuthType(AuthType_T *aType)
 HRESULT VRDEServer::setAuthType(AuthType_T aType)
 {
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -637,7 +637,7 @@ HRESULT VRDEServer::getAuthTimeout(ULONG *aTimeout)
 HRESULT VRDEServer::setAuthTimeout(ULONG aTimeout)
 {
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -694,7 +694,7 @@ HRESULT VRDEServer::getAuthLibrary(com::Utf8Str &aLibrary)
 HRESULT VRDEServer::setAuthLibrary(const com::Utf8Str &aLibrary)
 {
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -731,7 +731,7 @@ HRESULT VRDEServer::getAllowMultiConnection(BOOL *aAllowMultiConnection)
 HRESULT VRDEServer::setAllowMultiConnection(BOOL aAllowMultiConnection)
 {
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -766,7 +766,7 @@ HRESULT VRDEServer::getReuseSingleConnection(BOOL *aReuseSingleConnection)
 
 HRESULT VRDEServer::setReuseSingleConnection(BOOL aReuseSingleConnection)
 {
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -834,7 +834,7 @@ HRESULT VRDEServer::setVRDEExtPack(const com::Utf8Str &aExtPack)
 {
     HRESULT hrc = S_OK;
     /* the machine can also be in saved state for this property to change */
-    AutoMutableOrSavedStateDependency adep(mParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     hrc = adep.rc();
     if (SUCCEEDED(hrc))
     {
