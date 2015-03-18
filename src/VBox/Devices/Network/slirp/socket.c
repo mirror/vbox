@@ -235,7 +235,6 @@ sofree(PNATState pData, struct socket *so)
  * NOTE: This will only be called if it is select()ed for reading, so
  * a read() of 0 (or less) means it's disconnected
  */
-#ifndef VBOX_WITH_SLIRP_BSD_SBUF
 int
 soread(PNATState pData, struct socket *so)
 {
@@ -423,83 +422,6 @@ soread(PNATState pData, struct socket *so)
     SOCKET_UNLOCK(so);
     return nn;
 }
-#else /* VBOX_WITH_SLIRP_BSD_SBUF */
-int
-soread(PNATState pData, struct socket *so)
-{
-    int n;
-    char *buf;
-    struct sbuf *sb = &so->so_snd;
-    size_t len = sbspace(sb);
-    int mss = so->so_tcpcb->t_maxseg;
-
-    STAM_PROFILE_START(&pData->StatIOread, a);
-    STAM_COUNTER_RESET(&pData->StatIORead_in_1);
-    STAM_COUNTER_RESET(&pData->StatIORead_in_2);
-
-    QSOCKET_LOCK(tcb);
-    SOCKET_LOCK(so);
-    QSOCKET_UNLOCK(tcb);
-
-    LogFlowFunc(("soread: so = %lx\n", (long)so));
-
-    if (len > mss)
-        len -= len % mss;
-    buf = RTMemAlloc(len);
-    if (buf == NULL)
-    {
-        Log(("NAT: can't alloc enough memory\n"));
-        return -1;
-    }
-
-    n = recv(so->s, buf, len, (so->so_tcpcb->t_force? MSG_OOB:0));
-    if (n <= 0)
-    {
-        /*
-         * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
-         * _could_ mean that the connection is closed. But we will receive an
-         * FD_CLOSE event later if the connection was _really_ closed. With
-         * www.youtube.com I see this very often. Closing the socket too early
-         * would be dangerous.
-         */
-        int status;
-        unsigned long pending = 0;
-        status = ioctlsocket(so->s, FIONREAD, &pending);
-        if (status < 0)
-            Log(("NAT:error in WSAIoctl: %d\n", errno));
-        if (n == 0 && (pending != 0))
-        {
-            SOCKET_UNLOCK(so);
-            STAM_PROFILE_STOP(&pData->StatIOread, a);
-            RTMemFree(buf);
-            return 0;
-        }
-        if (   n < 0
-            && soIgnorableErrorCode(errno))
-        {
-            SOCKET_UNLOCK(so);
-            STAM_PROFILE_STOP(&pData->StatIOread, a);
-            RTMemFree(buf);
-            return 0;
-        }
-        else
-        {
-            Log2((" --- soread() disconnected, n = %d, errno = %d (%s)\n",
-                  n, errno, strerror(errno)));
-            sofcantrcvmore(so);
-            tcp_sockclosed(pData, sototcpcb(so));
-            SOCKET_UNLOCK(so);
-            STAM_PROFILE_STOP(&pData->StatIOread, a);
-            RTMemFree(buf);
-            return -1;
-        }
-    }
-
-    sbuf_bcat(sb, buf, n);
-    RTMemFree(buf);
-    return n;
-}
-#endif
 
 /*
  * Get urgent data
@@ -533,7 +455,7 @@ sorecvoob(PNATState pData, struct socket *so)
         tp->t_force = 0;
     }
 }
-#ifndef VBOX_WITH_SLIRP_BSD_SBUF
+
 /*
  * Send urgent data
  * There's a lot duplicated code here, but...
@@ -749,58 +671,6 @@ sowrite(PNATState pData, struct socket *so)
     STAM_PROFILE_STOP(&pData->StatIOwrite, a);
     return nn;
 }
-#else /* VBOX_WITH_SLIRP_BSD_SBUF */
-static int
-do_sosend(struct socket *so, int fUrg)
-{
-    struct sbuf *sb = &so->so_rcv;
-
-    int n, len;
-
-    LogFlowFunc(("sosendoob: so = %R[natsock]\n", so));
-
-    len = sbuf_len(sb);
-
-    n = send(so->s, sbuf_data(sb), len, (fUrg ? MSG_OOB : 0));
-    if (n < 0)
-        Log(("NAT: Can't sent sbuf via socket.\n"));
-    if (fUrg)
-        so->so_urgc -= n;
-    if (n > 0 && n < len)
-    {
-        char *ptr;
-        char *buff;
-        buff = RTMemAlloc(len);
-        if (buff == NULL)
-        {
-            Log(("NAT: No space to allocate temporal buffer\n"));
-            return -1;
-        }
-        ptr = sbuf_data(sb);
-        memcpy(buff, &ptr[n], len - n);
-        sbuf_bcpy(sb, buff, len - n);
-        RTMemFree(buff);
-        return n;
-    }
-    sbuf_clear(sb);
-    return n;
-}
-int
-sosendoob(struct socket *so)
-{
-    return do_sosend(so, 1);
-}
-
-/*
- * Write data from so_rcv to so's socket,
- * updating all sbuf field as necessary
- */
-int
-sowrite(PNATState pData, struct socket *so)
-{
-    return do_sosend(so, 0);
-}
-#endif
 
 /*
  * recvfrom() a UDP socket

@@ -566,7 +566,6 @@ void slirp_term(PNATState pData)
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
-#ifndef VBOX_WITH_SLIRP_BSD_SBUF
 #ifdef LOG_ENABLED
     Log(("\n"
          "NAT statistics\n"
@@ -581,7 +580,6 @@ void slirp_term(PNATState pData)
     Log(("\n"
          "\n"
          "\n"));
-#endif
 #endif
     RTCritSectRwDelete(&pData->CsRwHandlerChain);
     RTMemFree(pData);

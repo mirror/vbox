@@ -304,13 +304,8 @@ tcp_close(PNATState pData, register struct tcpcb *tp)
      * any sbufs reserved. */
     if (!(so->so_state & SS_FACCEPTCONN))
     {
-#ifndef VBOX_WITH_SLIRP_BSD_SBUF
         sbfree(&so->so_rcv);
         sbfree(&so->so_snd);
-#else
-        sbuf_delete(&so->so_rcv);
-        sbuf_delete(&so->so_snd);
-#endif
     }
     sofree(pData, so);
     SOCKET_UNLOCK(so);

@@ -421,12 +421,8 @@ send:
         if (len <= MHLEN - hdrlen - max_linkhdr)
         {
 #endif
-#ifndef VBOX_WITH_SLIRP_BSD_SBUF
             sbcopy(&so->so_snd, off, (int) len, mtod(m, caddr_t) + hdrlen);
             m->m_len += len;
-#else
-            m_copyback(pData, m, hdrlen, len, sbuf_data(&so->so_snd) + off);
-#endif
 #if 0
         }
         else
