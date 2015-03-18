@@ -261,6 +261,8 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
         }
 
         SSMR3PutU64(pSSM, pcKvmCpu->u64SystemTimeMsr);
+        SSMR3PutU64(pSSM, pcKvmCpu->uTsc);
+        SSMR3PutU64(pSSM, pcKvmCpu->uVirtNanoTS);
         SSMR3PutGCPhys(pSSM, pcKvmCpu->GCPhysSystemTime);
         SSMR3PutU32(pSSM, pcKvmCpu->u32SystemTimeVersion);
         SSMR3PutU8(pSSM, SystemTime.fFlags);
@@ -270,8 +272,6 @@ VMMR3_INT_DECL(int) gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM)
      * Save per-VM data.
      */
     SSMR3PutU64(pSSM, pcKvm->u64WallClockMsr);
-    SSMR3PutGCPhys(pSSM, pcKvm->GCPhysWallClock);
-    SSMR3PutU32(pSSM, pcKvm->u32WallClockVersion);
     return SSMR3PutU32(pSSM, pcKvm->uBaseFeat);
 }
 
@@ -307,6 +307,8 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
 
         uint8_t fSystemTimeFlags = 0;
         SSMR3GetU64(pSSM, &pKvmCpu->u64SystemTimeMsr);
+        SSMR3GetU64(pSSM, &pKvmCpu->uTsc);
+        SSMR3GetU64(pSSM, &pKvmCpu->uVirtNanoTS);
         SSMR3GetGCPhys(pSSM, &pKvmCpu->GCPhysSystemTime);
         SSMR3GetU32(pSSM, &pKvmCpu->u32SystemTimeVersion);
         SSMR3GetU8(pSSM, &fSystemTimeFlags);
@@ -314,7 +316,7 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         /* Enable the system-time struct. if necessary. */
         if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
         {
-            rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu->GCPhysSystemTime, pKvmCpu->u32SystemTimeVersion, fSystemTimeFlags);
+            rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fSystemTimeFlags);
             AssertRCReturn(rc, rc);
         }
     }
@@ -324,19 +326,6 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
      */
     PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     SSMR3GetU64(pSSM, &pKvm->u64WallClockMsr);
-    SSMR3GetGCPhys(pSSM, &pKvm->GCPhysWallClock);
-    SSMR3GetU32(pSSM, &pKvm->u32WallClockVersion);
-
-    /** @todo This is wrong, we only need to update it when the guest writes the
-     *        MSR. Remove this and the members in the data structure as
-     *        well. */
-    /* Enable the wall-clock struct. if necessary. */
-    if (MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(pKvm->u64WallClockMsr))
-    {
-        rc = gimR3KvmEnableWallClock(pVM, pKvm->GCPhysWallClock, pKvm->u32WallClockVersion);
-        AssertRCReturn(rc, rc);
-    }
-
     rc = SSMR3GetU32(pSSM, &pKvm->uBaseFeat);
     AssertRCReturn(rc, rc);
 
@@ -350,21 +339,20 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  * @returns VBox status code.
  * @param   pVM                Pointer to the VM.
  * @param   pVCpu              Pointer to the VMCPU.
- * @param   GCPhysSystemTime   Guest-physical address of where the VCPU
- *                             system-time struct. is to be placed.
- * @param   uVersion           The version value to use.
+ * @param   pKvmCpu            Pointer to the GIMKVMCPU with all fields
+ *                             populated by the caller.
  * @param   fFlags             The system-time struct. flags.
  *
  * @remarks Don't do any release assertions here, these can be triggered by
  *          guest R0 code.
  */
-VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSystemTime, uint32_t uVersion, uint8_t fFlags)
+VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags)
 {
     GIMKVMSYSTEMTIME SystemTime;
     RT_ZERO(SystemTime);
-    SystemTime.u32Version  = uVersion;
-    SystemTime.u64NanoTS   = TMVirtualGetNoCheck(pVM);  /** @todo better if this is atomic with TMCpuTickGetNoCheck() */
-    SystemTime.u64Tsc      = TMCpuTickGetNoCheck(pVCpu);
+    SystemTime.u32Version  = pKvmCpu->u32SystemTimeVersion;
+    SystemTime.u64NanoTS   = pKvmCpu->uVirtNanoTS;
+    SystemTime.u64Tsc      = pKvmCpu->uTsc;
     SystemTime.fFlags      = fFlags | GIM_KVM_SYSTEM_TIME_FLAGS_TSC_STABLE;
 
     /*
@@ -393,17 +381,17 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCP
     SystemTime.u32TscScale = ASMDivU64ByU32RetU32(RT_NS_1SEC_64 << 32, uTscFreqLo);
 
     Assert(!(SystemTime.u32Version & UINT32_C(1)));
-    Assert(PGMPhysIsGCPhysNormal(pVM, GCPhysSystemTime));
-    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
+    Assert(PGMPhysIsGCPhysNormal(pVM, pKvmCpu->GCPhysSystemTime));
+    int rc = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
     if (RT_SUCCESS(rc))
     {
         LogRel(("GIM: KVM: VCPU%3d: Enabled system-time struct. at %#RGp - u32TscScale=%#RX32 i8TscShift=%d uVersion=%#RU32 "
-                "fFlags=%#x\n", pVCpu->idCpu, GCPhysSystemTime, SystemTime.u32TscScale, SystemTime.i8TscShift,
-                SystemTime.u32Version, SystemTime.fFlags));
+                "fFlags=%#x uTsc=%#RX64 uVirtNanoTS=%#RX64\n", pVCpu->idCpu, pKvmCpu->GCPhysSystemTime, SystemTime.u32TscScale,
+                SystemTime.i8TscShift, SystemTime.u32Version, SystemTime.fFlags, pKvmCpu->uTsc, pKvmCpu->uVirtNanoTS));
         TMR3CpuTickParavirtEnable(pVM);
     }
     else
-        LogRel(("GIM: KVM: VCPU%3d: Failed to write system-time struct. at %#RGp. rc=%Rrc\n", GCPhysSystemTime, rc));
+        LogRel(("GIM: KVM: VCPU%3d: Failed to write system-time struct. at %#RGp. rc=%Rrc\n", pKvmCpu->GCPhysSystemTime, rc));
 
     return rc;
 }

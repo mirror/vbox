@@ -174,13 +174,9 @@ AssertCompileSize(GIMKVMWALLCLOCK, 12);
  */
 typedef struct GIMKVM
 {
-    /** @name MSRs & related data. */
+    /** @name MSRs. */
     /** Wall-clock MSR. */
     uint64_t                    u64WallClockMsr;
-    /** Guest-physical address of the wall-clock struct. */
-    RTGCPHYS                    GCPhysWallClock;
-    /** The version (sequence number) of the wall-clock struct. */
-    uint32_t                    u32WallClockVersion;
     /** @} */
 
     /** @name CPUID features. */
@@ -205,6 +201,10 @@ typedef struct GIMKVMCPU
     RTGCPHYS                    GCPhysSystemTime;
     /** The version (sequence number) of the system-time struct. */
     uint32_t                    u32SystemTimeVersion;
+    /** The guest TSC value while enabling the system-time MSR. */
+    uint64_t                    uTsc;
+    /** The guest virtual time while enabling the system-time MSR. */
+    uint64_t                    uVirtNanoTS;
 } GIMKVMCPU;
 /** Pointer to per-VCPU GIM KVM instance data. */
 typedef GIMKVMCPU *PGIMKVMCPU;
@@ -232,7 +232,7 @@ VMMR3_INT_DECL(int)             gimR3KvmSave(PVM pVM, PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)             gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion);
 
 VMMR3_INT_DECL(int)             gimR3KvmDisableSystemTime(PVM pVM);
-VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysSysTime, uint32_t uVersion, uint8_t fFlags);
+VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags);
 VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysSysTime, uint32_t uVersion);
 #endif /* IN_RING3 */
 

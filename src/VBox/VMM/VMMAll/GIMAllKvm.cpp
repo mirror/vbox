@@ -147,11 +147,17 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
         case MSR_GIM_KVM_SYSTEM_TIME:
         case MSR_GIM_KVM_SYSTEM_TIME_OLD:
         {
+            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
 #ifndef IN_RING3
+            if (fEnable)
+            {
+                RTCCUINTREG fEFlags = ASMIntDisableFlags();
+                pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu);
+                pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM);
+                ASMSetFlags(fEFlags);
+            }
             return VINF_CPUM_R3_MSR_WRITE;
 #else
-            /* Is the guest disabling the system-time struct.? */
-            bool fEnable = RT_BOOL(uRawValue & MSR_GIM_KVM_SYSTEM_TIME_ENABLE_BIT);
             if (!fEnable)
             {
                 gimR3KvmDisableSystemTime(pVM);
@@ -163,26 +169,25 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             uint8_t fFlags = 0;
             GIMKVMSYSTEMTIME SystemTime;
             RT_ZERO(SystemTime);
-            if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
+            if (   MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr)
+                && MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue) == pKvmCpu->GCPhysSystemTime)
             {
                 int rc2 = PGMPhysSimpleReadGCPhys(pVM, &SystemTime, pKvmCpu->GCPhysSystemTime, sizeof(GIMKVMSYSTEMTIME));
                 if (RT_SUCCESS(rc2))
                     fFlags = (SystemTime.fFlags & GIM_KVM_SYSTEM_TIME_FLAGS_GUEST_PAUSED);
             }
 
-            /* Enable/re-enable the system-time struct. */
-            RTGCPHYS GCPhysSysTime = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
-            uint32_t uVersion      = pKvmCpu->u32SystemTimeVersion + 2;
-            int rc = gimR3KvmEnableSystemTime(pVM, pVCpu, GCPhysSysTime, uVersion, fFlags);
-            if (RT_SUCCESS(rc))
+            /* Enable and populate the system-time struct. */
+            pKvmCpu->u64SystemTimeMsr     = uRawValue;
+            pKvmCpu->GCPhysSystemTime     = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
+            pKvmCpu->u32SystemTimeVersion = pKvmCpu->u32SystemTimeVersion + 2;
+            int rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fFlags);
+            if (RT_FAILURE(rc))
             {
-                pKvmCpu->u64SystemTimeMsr     = uRawValue;
-                pKvmCpu->GCPhysSystemTime     = GCPhysSysTime;
-                pKvmCpu->u32SystemTimeVersion = uVersion;
-                return VINF_SUCCESS;
+                pKvmCpu->u64SystemTimeMsr = 0;
+                return VERR_CPUM_RAISE_GP_0;
             }
-
-            return VERR_CPUM_RAISE_GP_0;
+            return VINF_SUCCESS;
 #endif /* IN_RING3 */
         }
 
@@ -197,13 +202,11 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             RTGCPHYS GCPhysWallClock = MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(uRawValue);
             if (RT_LIKELY(RT_ALIGN_64(GCPhysWallClock, 4) == GCPhysWallClock))
             {
-                uint32_t uVersion = pKvm->u32WallClockVersion + 2;
+                uint32_t uVersion = 2;
                 int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock, uVersion);
                 if (RT_SUCCESS(rc))
                 {
                     pKvm->u64WallClockMsr     = uRawValue;
-                    pKvm->GCPhysWallClock     = GCPhysWallClock;
-                    pKvm->u32WallClockVersion = uVersion;
                     return VINF_SUCCESS;
                 }
             }
