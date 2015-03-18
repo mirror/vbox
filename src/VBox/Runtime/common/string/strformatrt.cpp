@@ -55,6 +55,42 @@
 #endif
 #include "internal/string.h"
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static char g_szHexDigits[17] = "0123456789abcdef";
+
+
+/**
+ * Helper that formats a 16-bit hex word in a IPv6 address.
+ *
+ * @returns Length in chars.
+ * @param   pszDst      The output buffer.  Written from the start.
+ * @param   uWord       The word to format as hex.
+ */
+static size_t rtstrFormatIPv6HexWord(char *pszDst, uint16_t uWord)
+{
+    size_t   off;
+    uint16_t cDigits;
+
+    if (uWord & UINT16_C(0xff00))
+        cDigits = uWord & UINT16_C(0xf000) ? 4 : 3;
+    else
+        cDigits = uWord & UINT16_C(0x00f0) ? 2 : 1;
+
+    off = 0;
+    switch (cDigits)
+    {
+        case 4: pszDst[off++] = g_szHexDigits[(uWord >> 12) & 0xf];
+        case 3: pszDst[off++] = g_szHexDigits[(uWord >>  8) & 0xf];
+        case 2: pszDst[off++] = g_szHexDigits[(uWord >>  4) & 0xf];
+        case 1: pszDst[off++] = g_szHexDigits[(uWord >>  0) & 0xf];
+            break;
+    }
+    pszDst[off] = '\0';
+    return off;
+}
+
 
 /**
  * Helper function to format IPv6 address according to RFC 5952.
@@ -66,13 +102,13 @@
  */
 static size_t rtstrFormatIPv6(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PCRTNETADDRIPV6 pIpv6Addr)
 {
-    size_t cch = 0; /* result */
-
-    bool fEmbeddedIpv4;
+    size_t cch; /* result */
+    bool   fEmbeddedIpv4;
     size_t cwHexPart;
-    size_t cwZeroRun, cwLongestZeroRun;
-    size_t iZeroStart, iLongestZeroStart;
+    size_t cwLongestZeroRun;
+    size_t iLongestZeroStart;
     size_t idx;
+    char   szHexWord[8];
 
     Assert(pIpv6Addr != NULL);
 
@@ -85,78 +121,81 @@ static size_t rtstrFormatIPv6(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PCRTN
      */
     fEmbeddedIpv4 = false;
     cwHexPart = RT_ELEMENTS(pIpv6Addr->au16);
-    if (pIpv6Addr->au64[0] == 0
-        && (   (pIpv6Addr->au32[2] == 0
-                && (   pIpv6Addr->au32[3] != 0
-                    && pIpv6Addr->au32[3] != RT_H2BE_U32_C(1)))
+    if (   pIpv6Addr->au64[0] == 0
+        && (   (   pIpv6Addr->au32[2] == 0
+                && pIpv6Addr->au32[3] != 0
+                && pIpv6Addr->au32[3] != RT_H2BE_U32_C(1) )
             || pIpv6Addr->au32[2] == RT_H2BE_U32_C(0x0000ffff)
-            || pIpv6Addr->au32[2] == RT_H2BE_U32_C(0xffff0000)))
+            || pIpv6Addr->au32[2] == RT_H2BE_U32_C(0xffff0000) ) )
     {
         fEmbeddedIpv4 = true;
         cwHexPart -= 2;
     }
 
-    cwZeroRun = cwLongestZeroRun = 0;
-    iZeroStart = iLongestZeroStart = -1;
-    for (idx = 0; idx <= cwHexPart; ++idx)
-    {
-        if (idx < cwHexPart && pIpv6Addr->au16[idx] == 0)
+    /*
+     * Find the longest sequences of two or more zero words.
+     */
+    cwLongestZeroRun  = 0;
+    iLongestZeroStart = 0;
+    for (idx = 0; idx < cwHexPart; idx++)
+        if (pIpv6Addr->au16[idx] == 0)
         {
-            if (cwZeroRun == 0)
+            size_t iZeroStart = idx;
+            size_t cwZeroRun;
+            do
+                idx++;
+            while (idx < cwHexPart && pIpv6Addr->au16[idx] == 0);
+            cwZeroRun = idx - iZeroStart;
+            if (cwZeroRun > 1 && cwZeroRun > cwLongestZeroRun)
             {
-                cwZeroRun = 1;
-                iZeroStart = idx;
-            }
-            else
-                ++cwZeroRun;
-        }
-        else
-        {
-            if (cwZeroRun != 0)
-            {
-                if (cwZeroRun > 1 && cwZeroRun > cwLongestZeroRun)
-                {
-                    cwLongestZeroRun = cwZeroRun;
-                    iLongestZeroStart = iZeroStart;
-                }
-                cwZeroRun = 0;
-                iZeroStart = -1;
+                cwLongestZeroRun  = cwZeroRun;
+                iLongestZeroStart = iZeroStart;
+                if (cwZeroRun >= cwHexPart - idx)
+                    break;
             }
         }
-    }
 
+    /*
+     * Do the formatting.
+     */
+    cch = 0;
     if (cwLongestZeroRun == 0)
     {
         for (idx = 0; idx < cwHexPart; ++idx)
-            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                               "%s%x",
-                               idx == 0 ? "" : ":",
-                               RT_BE2H_U16(pIpv6Addr->au16[idx]));
+        {
+            if (idx > 0)
+                cch += pfnOutput(pvArgOutput, ":", 1);
+            cch += pfnOutput(pvArgOutput, szHexWord, rtstrFormatIPv6HexWord(szHexWord, RT_BE2H_U16(pIpv6Addr->au16[idx])));
+        }
 
         if (fEmbeddedIpv4)
-            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+            cch += pfnOutput(pvArgOutput, ":", 1);
     }
     else
     {
         const size_t iLongestZeroEnd = iLongestZeroStart + cwLongestZeroRun;
 
         if (iLongestZeroStart == 0)
-            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+            cch += pfnOutput(pvArgOutput, ":", 1);
         else
             for (idx = 0; idx < iLongestZeroStart; ++idx)
-                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                   "%x:", RT_BE2H_U16(pIpv6Addr->au16[idx]));
+            {
+                cch += pfnOutput(pvArgOutput, szHexWord, rtstrFormatIPv6HexWord(szHexWord, RT_BE2H_U16(pIpv6Addr->au16[idx])));
+                cch += pfnOutput(pvArgOutput, ":", 1);
+            }
 
         if (iLongestZeroEnd == cwHexPart)
-            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+            cch += pfnOutput(pvArgOutput, ":", 1);
         else
         {
             for (idx = iLongestZeroEnd; idx < cwHexPart; ++idx)
-                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                   ":%x", RT_BE2H_U16(pIpv6Addr->au16[idx]));
+            {
+                cch += pfnOutput(pvArgOutput, ":", 1);
+                cch += pfnOutput(pvArgOutput, szHexWord, rtstrFormatIPv6HexWord(szHexWord, RT_BE2H_U16(pIpv6Addr->au16[idx])));
+            }
 
             if (fEmbeddedIpv4)
-                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ":");
+                cch += pfnOutput(pvArgOutput, ":", 1);
         }
     }
 
