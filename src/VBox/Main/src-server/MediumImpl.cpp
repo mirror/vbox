@@ -8960,7 +8960,10 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                 i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, it->second.c_str(), task.mstrOldPassword.c_str(),
                                            false /* fCreateKeyStore */);
                 vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
-                if (RT_FAILURE(vrc))
+                if (vrc == VERR_VD_PASSWORD_INCORRECT)
+                    throw setError(VBOX_E_PASSWORD_INCORRECT,
+                                   tr("The password to decrypt the image is incorrect"));
+                else if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("Failed to load the decryption filter: %s"),
                                    i_vdError(vrc).c_str());
