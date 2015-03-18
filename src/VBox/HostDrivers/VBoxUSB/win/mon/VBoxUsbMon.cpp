@@ -189,8 +189,8 @@ NTSTATUS VBoxUsbMonQueryBusRelations(PDEVICE_OBJECT pDevObj, PFILE_OBJECT pFileO
         WARN(("IoBuildDeviceIoControlRequest failed!!"));
         return STATUS_INSUFFICIENT_RESOURCES;
     }
-    IoStatus.Status = STATUS_NOT_SUPPORTED;
-
+    pIrp->IoStatus.Status = STATUS_NOT_SUPPORTED;
+	
     pSl = IoGetNextIrpStackLocation(pIrp);
     pSl->MajorFunction = IRP_MJ_PNP;
     pSl->MinorFunction = IRP_MN_QUERY_DEVICE_RELATIONS;
