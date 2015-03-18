@@ -730,7 +730,8 @@ struct Medium::CryptoFilterSettings
           pszKeyStoreLoad(NULL),
           pbDek(NULL),
           cbDek(0),
-          pszCipher(NULL)
+          pszCipher(NULL),
+          pszCipherReturned(NULL)
     { }
 
     bool              fCreateKeyStore;
@@ -741,6 +742,9 @@ struct Medium::CryptoFilterSettings
     const uint8_t     *pbDek;
     size_t            cbDek;
     const char        *pszCipher;
+
+    /** The cipher returned by the crypto filter. */
+    char              *pszCipherReturned;
 
     PVDINTERFACE      vdFilterIfaces;
 
@@ -3159,6 +3163,80 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
     }
     else if (pTask != NULL)
         delete pTask;
+
+    return rc;
+}
+
+HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPasswordId)
+{
+    HRESULT rc = S_OK;
+
+    try
+    {
+        ComObjPtr<Medium> pBase = i_getBase();
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
+        if (it == pBase->m->mapProperties.end())
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("The image is not configured for encryption"));
+
+# ifdef VBOX_WITH_EXTPACK
+        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+        static const char *s_pszVDPlugin = "VDPluginCrypt";
+        ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
+        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        {
+            /* Load the plugin */
+            Utf8Str strPlugin;
+            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            if (SUCCEEDED(rc))
+            {
+                int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                   i_vdError(vrc).c_str());
+            }
+            else
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
+                               strExtPackPuel.c_str());
+        }
+        else
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Encryption is not supported because the extension pack '%s' is missing"),
+                           strExtPackPuel.c_str());
+
+        PVBOXHDD pDisk = NULL;
+        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Medium::CryptoFilterSettings CryptoSettings;
+
+        i_taskEncryptSettingsSetup(&CryptoSettings, NULL, it->second.c_str(), NULL, false /* fCreateKeyStore */);
+        vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ | VD_FILTER_FLAGS_INFO, CryptoSettings.vdFilterIfaces);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                           tr("Failed to load the encryption filter: %s"),
+                           i_vdError(vrc).c_str());
+
+        it = pBase->m->mapProperties.find("CRYPT/KeyId");
+        if (it == pBase->m->mapProperties.end())
+            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                           tr("Image is configured for encryption but doesn't has a KeyId set"));
+
+        aPasswordId = it->second.c_str();
+        aCipher = CryptoSettings.pszCipherReturned;
+        RTStrFree(CryptoSettings.pszCipherReturned);
+
+        VDDestroy(pDisk);
+# else
+        throw setError(VBOX_E_NOT_SUPPORTED,
+                       tr("Encryption is not supported because extension pack support is not built in"));
+# endif
+    }
+    catch (HRESULT aRC) { rc = aRC; }
 
     return rc;
 }
@@ -6954,11 +7032,11 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStoreReturnParameters(void *pvUser, const
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
-    pSettings->pszCipher = pszCipher;
-    pSettings->pbDek     = pbDek;
-    pSettings->cbDek     = cbDek;
+    pSettings->pszCipherReturned = RTStrDup(pszCipher);
+    pSettings->pbDek             = pbDek;
+    pSettings->cbDek             = cbDek;
 
-    return VINF_SUCCESS;
+    return pSettings->pszCipherReturned ? VINF_SUCCESS : VERR_NO_MEMORY;
 }
 
 /**
@@ -8971,6 +9049,12 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                 pBase->m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
                 pBase->m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
             }
+
+            if (CryptoSettingsRead.pszCipherReturned)
+                RTStrFree(CryptoSettingsRead.pszCipherReturned);
+
+            if (CryptoSettingsWrite.pszCipherReturned)
+                RTStrFree(CryptoSettingsWrite.pszCipherReturned);
 
             thisLock.release();
             pBase->i_markRegistriesModified();

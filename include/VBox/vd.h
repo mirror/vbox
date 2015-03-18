@@ -248,10 +248,12 @@ typedef struct VBOXHDDRAW
 #define VD_FILTER_FLAGS_WRITE RT_BIT(0)
 /** The filter is applied during reads. */
 #define VD_FILTER_FLAGS_READ  RT_BIT(1)
+/** Open the filter in info mode. */
+#define VD_FILTER_FLAGS_INFO  RT_BIT(2)
 /** Default set of filter flags. */
 #define VD_FILTER_FLAGS_DEFAULT (VD_FILTER_FLAGS_WRITE | VD_FILTER_FLAGS_READ)
 /** Mask of valid flags. */
-#define VD_FILTER_FLAGS_MASK    (VD_FILTER_FLAGS_WRITE | VD_FILTER_FLAGS_READ)
+#define VD_FILTER_FLAGS_MASK    (VD_FILTER_FLAGS_WRITE | VD_FILTER_FLAGS_READ | VD_FILTER_FLAGS_INFO)
 /** @} */
 
 /**

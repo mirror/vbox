@@ -13488,7 +13488,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="edf10636-fd4f-4e24-8d24-f38a41721a00"
+    uuid="41e09c4f-97bf-4a1a-bf5c-c5b87f58464b"
     wsmap="managed"
     >
     <desc>
@@ -14773,6 +14773,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="getEncryptionSettings">
+      <desc>
+        Returns the encryption settings for this medium.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not configured for this medium.
+        </result>
+      </desc>
+      <param name="cipher" type="wstring" dir="out">
+        <desc>The cipher used for encryption.</desc>
+      </param>
+      <param name="passwordId" type="wstring" dir="return">
+        <desc>The ID of the password when unlocking the medium.</desc>
       </param>
     </method>
 

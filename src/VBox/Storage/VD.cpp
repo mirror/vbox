@@ -6777,8 +6777,8 @@ VBOXDDU_DECL(int) VDFilterAdd(PVBOXHDD pDisk, const char *pszFilter, uint32_t fF
                             &pFilter->VDIo, sizeof(VDINTERFACEIOINT), &pFilter->pVDIfsFilter);
         AssertRC(rc);
 
-        rc = pFilter->pBackend->pfnCreate(pDisk->pVDIfsDisk, pFilter->pVDIfsFilter,
-                                          &pFilter->pvBackendData);
+        rc = pFilter->pBackend->pfnCreate(pDisk->pVDIfsDisk, fFlags & VD_FILTER_FLAGS_INFO,
+                                          pFilter->pVDIfsFilter, &pFilter->pvBackendData);
         if (RT_FAILURE(rc))
             break;
 
