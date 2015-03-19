@@ -394,6 +394,8 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(unsigned cScreen, unsigned cx, unsigned cy,
     }
     if (u32ClientId != 0)
         rc2 = VbglR3GuestPropDisconnect(u32ClientId);
+    if (rc == VINF_PERMISSION_DENIED)
+        return rc;
     if (RT_SUCCESS(rc))
         rc = rc2;
     /* Sanity check 1.  We do not try to make allowance for someone else
