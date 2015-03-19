@@ -14767,8 +14767,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="newPassword" type="wstring" dir="in">
         <desc>
-          The new password the medium should be protected with. Use an empty string
-          to indicate that the result should not be encrypted.
+          The new password the medium should be protected with. An empty password and password ID
+          will result in the medium being encrypted with the current password.
         </desc>
       </param>
       <param name="newPasswordId" type="wstring" dir="in">

@@ -8936,6 +8936,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         char *pszCipherOld = NULL;
         char *pszKeyStoreEncNew = NULL;
         void *pvBuf = NULL;
+        const char *pszPasswordNew = NULL;
         try
         {
             /* Set up disk encryption filters. */
@@ -8971,16 +8972,24 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
 
             if (task.mstrCipher.isNotEmpty())
             {
-                if (task.mstrNewPassword.isEmpty())
+                if (   task.mstrNewPassword.isEmpty()
+                    && task.mstrNewPasswordId.isEmpty()
+                    && task.mstrCurrentPassword.isNotEmpty())
+                {
+                    /* An empty password and password ID will default to the current password. */
+                    pszPasswordNew = task.mstrCurrentPassword.c_str();
+                }
+                else if (task.mstrNewPassword.isEmpty())
                     throw setError(VBOX_E_OBJECT_NOT_FOUND,
                                    tr("A password must be given for the image encryption"));
-
-                if (task.mstrNewPasswordId.isEmpty())
+                else if (task.mstrNewPasswordId.isEmpty())
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("A valid identifier for the password must be given"));
+                else
+                    pszPasswordNew = task.mstrNewPassword.c_str();
 
                 i_taskEncryptSettingsSetup(&CryptoSettingsWrite, task.mstrCipher.c_str(), NULL,
-                                           task.mstrNewPassword.c_str(), true /* fCreateKeyStore */);
+                                           pszPasswordNew, true /* fCreateKeyStore */);
                 vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_WRITE, CryptoSettingsWrite.vdFilterIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -8989,7 +8998,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             }
             else if (task.mstrNewPasswordId.isNotEmpty() || task.mstrNewPassword.isNotEmpty())
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                               tr("The password and password identifier must be empty if there is the output shuld be unencrypted"));
+                               tr("The password and password identifier must be empty if the output should be unencrypted"));
 
             /* Open all media in the chain. */
             MediumLockList::Base::const_iterator mediumListBegin =
@@ -9043,14 +9052,18 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             if (it != pBase->m->mapProperties.end())
                 pBase->m->mapProperties.erase(it);
 
-            it = pBase->m->mapProperties.find("CRYPT/KeyId");
-            if (it != pBase->m->mapProperties.end())
-                pBase->m->mapProperties.erase(it);
+            if (task.mstrNewPasswordId.isNotEmpty())
+            {
+                it = pBase->m->mapProperties.find("CRYPT/KeyId");
+                if (it != pBase->m->mapProperties.end())
+                    pBase->m->mapProperties.erase(it);
+            }
 
             if (CryptoSettingsWrite.pszKeyStore)
             {
                 pBase->m->mapProperties["CRYPT/KeyStore"] = Utf8Str(CryptoSettingsWrite.pszKeyStore);
-                pBase->m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
+                if (task.mstrNewPasswordId.isNotEmpty())
+                    pBase->m->mapProperties["CRYPT/KeyId"] = task.mstrNewPasswordId;
             }
 
             if (CryptoSettingsRead.pszCipherReturned)
@@ -9073,8 +9086,6 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         throw setError(VBOX_E_NOT_SUPPORTED,
                        tr("Encryption is not supported because extension pack support is not built in"));
 # endif
-
-
     }
     catch (HRESULT aRC) { rc = aRC; }
 
