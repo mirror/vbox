@@ -606,8 +606,6 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
             if (err != noErr)
             {
                 LogFlowFunc(("Failed rendering audio data (%RI32)\n", err));
-                RTMemFree(pStreamIn->bufferList.mBuffers[0].mData);
-                pStreamIn->bufferList.mBuffers[0].mData = NULL;
                 rc = VERR_IO_GEN_FAILURE; /** @todo Improve this. */
                 break;
             }
@@ -638,13 +636,13 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioRecordingCallback(void            
             }
         }
 
-        if (pStreamIn->bufferList.mBuffers[0].mData)
-        {
-            RTMemFree(pStreamIn->bufferList.mBuffers[0].mData);
-            pStreamIn->bufferList.mBuffers[0].mData = NULL;
-        }
-
     } while (0);
+
+    if (pStreamIn->bufferList.mBuffers[0].mData)
+    {
+        RTMemFree(pStreamIn->bufferList.mBuffers[0].mData);
+        pStreamIn->bufferList.mBuffers[0].mData = NULL;
+    }
 
     return err;
 }
