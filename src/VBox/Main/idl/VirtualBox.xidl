@@ -14776,7 +14776,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <method name="getEncryptionSettings">
+    <method name="getEncryptionSettings" const="yes">
       <desc>
         Returns the encryption settings for this medium.
 
