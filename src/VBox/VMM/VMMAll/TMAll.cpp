@@ -2575,3 +2575,15 @@ VMM_INT_DECL(uint32_t) TMCalcHostTimerFrequency(PVM pVM, PVMCPU pVCpu)
     return uHz;
 }
 
+
+/**
+ * Whether the guest virtual clock is ticking.
+ *
+ * @returns true if ticking, false otherwise.
+ * @param   pVM     Pointer to the VM.
+ */
+VMM_INT_DECL(bool) TMVirtualIsTicking(PVM pVM)
+{
+    return RT_BOOL(pVM->tm.s.cVirtualTicking);
+}
+

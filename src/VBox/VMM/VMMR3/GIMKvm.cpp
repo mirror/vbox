@@ -316,6 +316,8 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         /* Enable the system-time struct. if necessary. */
         if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
         {
+            Assert(!TMVirtualIsTicking(pVM));       /* paranoia. */
+            Assert(!TMCpuTickIsTicking(pVCpu));
             rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fSystemTimeFlags);
             AssertRCReturn(rc, rc);
         }

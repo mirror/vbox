@@ -542,3 +542,15 @@ VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM)
     return pVM->tm.s.cTSCTicksPerSecond;
 }
 
+
+/**
+ * Whether the TSC is ticking for the VCPU.
+ *
+ * @returns true if ticking, false otherwise.
+ * @param   pVCpu           Pointer to the VMCPU.
+ */
+VMM_INT_DECL(bool) TMCpuTickIsTicking(PVMCPU pVCpu)
+{
+    return pVCpu->tm.s.fTSCTicking;
+}
+

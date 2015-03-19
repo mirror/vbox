@@ -124,6 +124,7 @@ VMM_INT_DECL(uint64_t)  TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
 VMM_INT_DECL(uint64_t)  TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS);
 VMM_INT_DECL(uint64_t)  TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS);
 VMM_INT_DECL(uint64_t)  TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
+VMM_INT_DECL(bool)      TMVirtualIsTicking(PVM pVM);
 /** @} */
 
 
@@ -138,6 +139,7 @@ VMM_INT_DECL(int)       TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
 VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
 VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPU pVCpu);
 VMMDECL(uint64_t)       TMCpuTicksPerSecond(PVM pVM);
+VMM_INT_DECL(bool)      TMCpuTickIsTicking(PVMCPU pVCpu);
 /** @} */
 
 
@@ -239,7 +241,6 @@ VMMDECL(uint64_t)       TMTimerFromMilli(PTMTIMER pTimer, uint64_t cMilliSecs);
 VMMDECL(bool)           TMTimerPollBool(PVM pVM, PVMCPU pVCpu);
 VMM_INT_DECL(void)      TMTimerPollVoid(PVM pVM, PVMCPU pVCpu);
 VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
-
 /** @} */
 
 
