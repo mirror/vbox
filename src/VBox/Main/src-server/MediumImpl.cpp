@@ -8947,7 +8947,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                  */
                 settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
                 if (it != pBase->m->mapProperties.end())
-                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                    throw setError(VBOX_E_PASSWORD_INCORRECT,
                                    tr("The password given for the encrypted image is incorrect"));
             }
             else
