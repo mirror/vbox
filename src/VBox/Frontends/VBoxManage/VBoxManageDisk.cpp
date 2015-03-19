@@ -1820,8 +1820,8 @@ int handleEncryptMedium(HandlerArg *a)
     }
 
     ComPtr<IProgress> progress;
-    CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordNew).raw(), Bstr(strPasswordOld).raw(),
-                                           Bstr(pszCipher).raw(), Bstr(pszNewPasswordId).raw(),
+    CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
+                                           Bstr(strPasswordNew).raw(), Bstr(pszNewPasswordId).raw(),
                                            progress.asOutParam()));
     if (SUCCEEDED(rc))
         rc = showProgress(progress);

@@ -13488,7 +13488,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="41e09c4f-97bf-4a1a-bf5c-c5b87f58464b"
+    uuid="9fae9ea1-c57c-4a3d-8992-cbb2b9b4b4a3"
     wsmap="managed"
     >
     <desc>
@@ -14753,20 +14753,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           or has children.
         </result>
       </desc>
+      <param name="currentPassword" type="wstring" dir="in">
+        <desc>
+          The olcurrentd password the medium is protected with. Use an empty string to indicate
+          that the medium isn't encrypted.
+        </desc>
+      </param>
+      <param name="cipher" type="wstring" dir="in">
+        <desc>
+          The cipher to use for encryption. An empty string indicates no encryption for the
+          result.
+        </desc>
+      </param>
       <param name="newPassword" type="wstring" dir="in">
         <desc>
           The new password the medium should be protected with. Use an empty string
           to indicate that the result should not be encrypted.
         </desc>
-      </param>
-      <param name="oldPassword" type="wstring" dir="in">
-        <desc>
-          The old password the medium is protected with. Use an empty string to indicate
-          that the medium wasn't encrypted before.
-        </desc>
-      </param>
-      <param name="cipher" type="wstring" dir="in">
-        <desc>The cipher to use for encryption.</desc>
       </param>
       <param name="newPasswordId" type="wstring" dir="in">
         <desc>The ID of the new password when unlocking the medium.</desc>

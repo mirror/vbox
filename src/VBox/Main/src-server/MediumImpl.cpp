@@ -675,14 +675,14 @@ class Medium::EncryptTask : public Medium::Task
 public:
     EncryptTask(Medium *aMedium,
                 const com::Utf8Str &strNewPassword,
-                const com::Utf8Str &strOldPassword,
+                const com::Utf8Str &strCurrentPassword,
                 const com::Utf8Str &strCipher,
                 const com::Utf8Str &strNewPasswordId,
                 Progress *aProgress,
                 MediumLockList *aMediumLockList)
         : Medium::Task(aMedium, aProgress),
           mstrNewPassword(strNewPassword),
-          mstrOldPassword(strOldPassword),
+          mstrCurrentPassword(strCurrentPassword),
           mstrCipher(strCipher),
           mstrNewPasswordId(strNewPasswordId),
           mpMediumLockList(aMediumLockList)
@@ -700,13 +700,13 @@ public:
     {
         if (mstrNewPassword.length())
             RTMemWipeThoroughly(mstrNewPassword.mutableRaw(), mstrNewPassword.length(), 10 /* cPasses */);
-        if (mstrOldPassword.length())
-            RTMemWipeThoroughly(mstrOldPassword.mutableRaw(), mstrOldPassword.length(), 10 /* cPasses */);
+        if (mstrCurrentPassword.length())
+            RTMemWipeThoroughly(mstrCurrentPassword.mutableRaw(), mstrCurrentPassword.length(), 10 /* cPasses */);
         delete mpMediumLockList;
     }
 
     Utf8Str mstrNewPassword;
-    Utf8Str mstrOldPassword;
+    Utf8Str mstrCurrentPassword;
     Utf8Str mstrCipher;
     Utf8Str mstrNewPasswordId;
     MediumLockList *mpMediumLockList;
@@ -3038,8 +3038,8 @@ HRESULT Medium::reset(ComPtr<IProgress> &aProgress)
     return rc;
 }
 
-HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Utf8Str &aOldPassword,
-                                 const com::Utf8Str &aCipher, const com::Utf8Str &aNewPasswordId,
+HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com::Utf8Str &aCipher,
+                                 const com::Utf8Str &aNewPassword, const com::Utf8Str &aNewPasswordId,
                                  ComPtr<IProgress> &aProgress)
 {
     HRESULT rc = S_OK;
@@ -3145,7 +3145,7 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aNewPassword, const com::Ut
         }
 
         /* setup task object to carry out the operation asynchronously */
-        pTask = new Medium::EncryptTask(this, aNewPassword, aOldPassword,
+        pTask = new Medium::EncryptTask(this, aNewPassword, aCurrentPassword,
                                         aCipher, aNewPasswordId, pProgress, pMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
@@ -8939,7 +8939,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         try
         {
             /* Set up disk encryption filters. */
-            if (task.mstrOldPassword.isEmpty())
+            if (task.mstrCurrentPassword.isEmpty())
             {
                 /*
                  * Query whether the medium property indicating that encryption is
@@ -8957,7 +8957,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
                                    tr("The image is not configured for encryption"));
 
-                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, it->second.c_str(), task.mstrOldPassword.c_str(),
+                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, it->second.c_str(), task.mstrCurrentPassword.c_str(),
                                            false /* fCreateKeyStore */);
                 vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
                 if (vrc == VERR_VD_PASSWORD_INCORRECT)
@@ -8969,15 +8969,15 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                                    i_vdError(vrc).c_str());
             }
 
-            if (task.mstrNewPassword.isNotEmpty())
+            if (task.mstrCipher.isNotEmpty())
             {
-                if (task.mstrCipher.isEmpty())
+                if (task.mstrNewPassword.isEmpty())
                     throw setError(VBOX_E_OBJECT_NOT_FOUND,
-                                   tr("No valid cipher identifier was given for encryption"));
+                                   tr("A password must be given for the image encryption"));
 
                 if (task.mstrNewPasswordId.isEmpty())
                     throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                                   tr("A new password must always have a valid identifier"));
+                                   tr("A valid identifier for the password must be given"));
 
                 i_taskEncryptSettingsSetup(&CryptoSettingsWrite, task.mstrCipher.c_str(), NULL,
                                            task.mstrNewPassword.c_str(), true /* fCreateKeyStore */);
@@ -8987,9 +8987,9 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
                                    tr("Failed to load the encryption filter: %s"),
                                    i_vdError(vrc).c_str());
             }
-            else if (task.mstrNewPasswordId.isNotEmpty())
+            else if (task.mstrNewPasswordId.isNotEmpty() || task.mstrNewPassword.isNotEmpty())
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
-                               tr("The password identifier must be empty if there is no new password set for encryption"));
+                               tr("The password and password identifier must be empty if there is the output shuld be unencrypted"));
 
             /* Open all media in the chain. */
             MediumLockList::Base::const_iterator mediumListBegin =
