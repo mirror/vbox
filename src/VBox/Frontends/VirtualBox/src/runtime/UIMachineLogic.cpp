@@ -2423,10 +2423,11 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
         {
             /* Get the attachment medium base: */
             const CMedium medium = attachment.GetMedium().GetBase();
-            /* Update the map with this medium if necessary: */
-            const QString strKeyId = medium.GetProperty("CRYPT/KeyId");
-            if (!strKeyId.isEmpty())
-                encryptedMediums.insert(strKeyId, medium.GetId());
+            /* Update the map with this medium if it's encrypted: */
+            QString strCipher;
+            const QString strPasswordId = medium.GetEncryptionSettings(strCipher);
+            if (medium.isOk())
+                encryptedMediums.insert(strPasswordId, medium.GetId());
         }
     }
 
