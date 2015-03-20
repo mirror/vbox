@@ -2254,10 +2254,9 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
     uint32_t uClientID;
     int rc = VbglR3DnDConnect(&uClientID);
     if (RT_FAILURE(rc))
-    {
         LogRel(("DnD: Unable to connect to drag'n drop service, rc=%Rrc\n", rc));
+    if (rc != VINF_SUCCESS)
         return rc;
-    }
 
     /* Number of invalid messages skipped in a row. */
     int cMsgSkippedInvalid = 0;

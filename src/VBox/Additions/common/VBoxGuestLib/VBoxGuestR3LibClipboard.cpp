@@ -57,6 +57,8 @@ VBGLR3DECL(int) VbglR3ClipboardConnect(uint32_t *pu32ClientId)
         if (RT_SUCCESS(rc))
             *pu32ClientId = Info.u32ClientID;
     }
+    if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
+        rc = VINF_PERMISSION_DENIED;
     return rc;
 }
 

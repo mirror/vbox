@@ -201,7 +201,7 @@ int vboxClipboardConnect(void)
         }
     }
 
-    if (RT_FAILURE(rc) && g_ctx.pBackend)
+    if (rc != VINF_SUCCESS && g_ctx.pBackend)
         ClipDestructX11(g_ctx.pBackend);
     LogRelFlowFunc(("g_ctx.client=%u rc=%Rrc\n", g_ctx.client, rc));
     return rc;
@@ -292,7 +292,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     rc = vboxClipboardConnect();
-    if (RT_SUCCESS(rc))
+    if (rc == VINF_SUCCESS)
         rc = vboxClipboardMain();
     if (rc == VERR_NOT_SUPPORTED)
         rc = VINF_SUCCESS;  /* Prevent automatic restart. */
