@@ -27,7 +27,9 @@
 
 typedef boolean_t dlpi_walkfunc_t(const char*, void *);
 
-extern int (*g_pfnLibDlpiWalk)(dlpi_walkfunc_t *, void *, uint_t);
+extern int  (*g_pfnLibDlpiWalk)(dlpi_walkfunc_t *, void *, uint_t);
+extern int  (*g_pfnLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
+extern void (*g_pfnLibDlpiClose)(dlpi_handle_t);
 
 extern bool VBoxSolarisLibDlpiFound(void);
 
