@@ -4984,6 +4984,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
                     }
                 }
 
+                SUPR0ObjAddRef(pNetwork->pvObj, pSession);
                 SUPR0ObjRelease(pIf->pvObj, pSession);
                 LogFlow(("intnetR0NetworkCreateIf: returns %Rrc\n", rc));
                 return rc;
