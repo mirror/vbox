@@ -2000,6 +2000,20 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
 }
 
 
+/** @name Instruction Set Extension Options
+ * @{  */
+/** Configuration option type. */
+typedef uint8_t CPUMISAEXTCFG;
+/** Default choice of the VMM.   */
+#define CPUMISAEXTCFG_DEFAULT               UINT8_C(0)
+/** Always disable the extension. */
+#define CPUMISAEXTCFG_DISABLED              UINT8_C(1)
+/** Enable the extension if it's supported by the host CPU. */
+#define CPUMISAEXTCFG_ENABLED_SUPPORTED     UINT8_C(2)
+/** Always enable the extension. */
+#define CPUMISAEXTCFG_ENABLED_ALWAYS        UINT8_C(3)
+/** @} */
+
 /**
  * CPUID Configuration (from CFGM).
  *
@@ -2008,18 +2022,20 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
  */
 typedef struct CPUMCPUIDCONFIG
 {
-    bool        fSyntheticCpu;
-    bool        fCmpXchg16b;
-    bool        fMonitor;
-    bool        fMWaitExtensions;
-    bool        fSse41;
-    bool        fSse42;
-    bool        fNt4LeafLimit;
-    bool        fInvariantTsc;
-    uint32_t    uMaxStdLeaf;
-    uint32_t    uMaxExtLeaf;
-    uint32_t    uMaxCentaurLeaf;
-    uint32_t    uMaxIntelFamilyModelStep;
+    bool            fSyntheticCpu;
+    bool            fCmpXchg16b;
+    bool            fMonitor;
+    bool            fMWaitExtensions;
+    bool            fSse41;
+    bool            fSse42;
+    bool            fNt4LeafLimit;
+    bool            fInvariantTsc;
+    CPUMISAEXTCFG   enmAesNi;
+    CPUMISAEXTCFG   enmPClMulQDQ;
+    uint32_t        uMaxStdLeaf;
+    uint32_t        uMaxExtLeaf;
+    uint32_t        uMaxCentaurLeaf;
+    uint32_t        uMaxIntelFamilyModelStep;
     char        szCpuName[128];
 } CPUMCPUIDCONFIG;
 /** Pointer to CPUID config (from CFGM). */
@@ -3140,7 +3156,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 }
 
 
-static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pCpumCfg)
+static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pCpumCfg, bool fNestedPagingAndFullGuestExec)
 {
     int rc;
 
@@ -3165,37 +3181,6 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
      * The name of the CPU we're to emulate.  The default is the host CPU.
      * Note! CPUs other than "host" one is currently unsupported. */
     rc = CFGMR3QueryStringDef(pCpumCfg, "GuestCpuName", pConfig->szCpuName, sizeof(pConfig->szCpuName), "host");
-    AssertLogRelRCReturn(rc, rc);
-
-    /** @cfgm{/CPUM/CMPXCHG16B, boolean, false}
-     * Expose CMPXCHG16B to the guest if supported by the host.
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &pConfig->fCmpXchg16b, false);
-    AssertLogRelRCReturn(rc, rc);
-
-    /** @cfgm{/CPUM/MONITOR, boolean, true}
-     * Expose MONITOR/MWAIT instructions to the guest.
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "MONITOR", &pConfig->fMonitor, true);
-    AssertLogRelRCReturn(rc, rc);
-
-    /** @cfgm{/CPUM/MWaitExtensions, boolean, false}
-     * Expose MWAIT extended features to the guest.  For now we expose just MWAIT
-     * break on interrupt feature (bit 1).
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &pConfig->fMWaitExtensions, false);
-    AssertLogRelRCReturn(rc, rc);
-
-    /** @cfgm{/CPUM/SSE4.1, boolean, true}
-     * Expose SSE4.1 to the guest if available.
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.1", &pConfig->fSse41, true);
-    AssertLogRelRCReturn(rc, rc);
-
-    /** @cfgm{/CPUM/SSE4.2, boolean, true}
-     * Expose SSE4.2 to the guest if available.
-     */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &pConfig->fSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
@@ -3249,6 +3234,54 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
+
+    /*
+     * Instruction Set Architecture (ISA) Extensions.
+     */
+    PCFGMNODE pIsaExts = CFGMR3GetChild(pCpumCfg, "IsaExts");
+
+    /** @cfgm{/CPUM/CMPXCHG16B, boolean, false}
+     * Expose CMPXCHG16B to the guest if supported by the host.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &pConfig->fCmpXchg16b, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/MONITOR, boolean, true}
+     * Expose MONITOR/MWAIT instructions to the guest.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "MONITOR", &pConfig->fMonitor, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/MWaitExtensions, boolean, false}
+     * Expose MWAIT extended features to the guest.  For now we expose just MWAIT
+     * break on interrupt feature (bit 1).
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &pConfig->fMWaitExtensions, false);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/SSE4.1, boolean, true}
+     * Expose SSE4.1 to the guest if available.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.1", &pConfig->fSse41, true);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/SSE4.2, boolean, true}
+     * Expose SSE4.2 to the guest if available.
+     */
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &pConfig->fSse42, true);
+    AssertLogRelRCReturn(rc, rc);
+
+#if 0
+    /** @cfgm{/CPUM/IsaExts/AESNI, isaextcfg, depends}
+     * Whether to expose the AES instructions to the guest.  For the time being the
+     * default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pIsaExts, "AESNI", &pConfig->enmAesNi, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+#endif
+
+
     return VINF_SUCCESS;
 }
 
@@ -3269,7 +3302,8 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
      */
     CPUMCPUIDCONFIG Config;
     RT_ZERO(Config);
-    int rc = cpumR3CpuIdReadConfig(pCpum, &Config, pCpumCfg);
+
+    int rc = cpumR3CpuIdReadConfig(pCpum, &Config, pCpumCfg, HMAreNestedPagingAndFullGuestExecEnabled(pVM));
     AssertRCReturn(rc, rc);
 
     /*
