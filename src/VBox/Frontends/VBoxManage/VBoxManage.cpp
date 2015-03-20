@@ -491,6 +491,7 @@ int main(int argc, char *argv[])
             { "clonehd",          USAGE_CLONEMEDIUM,       handleCloneMedium }, /* backward compatibility */
             { "clonevdi",         USAGE_CLONEMEDIUM,       handleCloneMedium }, /* backward compatibility */
             { "encryptmedium",    USAGE_ENCRYPTMEDIUM,     handleEncryptMedium},
+            { "checkmediumpwd",   USAGE_MEDIUMENCCHKPWD,   handleCheckMediumPassword},
             { "createvm",         USAGE_CREATEVM,          handleCreateVM },
             { "modifyvm",         USAGE_MODIFYVM,          handleModifyVM },
             { "startvm",          USAGE_STARTVM,           handleStartVM },

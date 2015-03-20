@@ -3241,6 +3241,79 @@ HRESULT Medium::getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPass
     return rc;
 }
 
+HRESULT Medium::checkEncryptionPassword(const com::Utf8Str &aPassword)
+{
+    HRESULT rc = S_OK;
+
+    try
+    {
+        ComObjPtr<Medium> pBase = i_getBase();
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        settings::StringsMap::iterator it = pBase->m->mapProperties.find("CRYPT/KeyStore");
+        if (it == pBase->m->mapProperties.end())
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("The image is not configured for encryption"));
+
+        if (aPassword.isEmpty())
+            throw setError(E_INVALIDARG,
+                           tr("The given password must not be empty"));
+
+# ifdef VBOX_WITH_EXTPACK
+        static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+        static const char *s_pszVDPlugin = "VDPluginCrypt";
+        ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
+        if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+        {
+            /* Load the plugin */
+            Utf8Str strPlugin;
+            rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+            if (SUCCEEDED(rc))
+            {
+                int vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                   i_vdError(vrc).c_str());
+            }
+            else
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
+                               strExtPackPuel.c_str());
+        }
+        else
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Encryption is not supported because the extension pack '%s' is missing"),
+                           strExtPackPuel.c_str());
+
+        PVBOXHDD pDisk = NULL;
+        int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &pDisk);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Medium::CryptoFilterSettings CryptoSettings;
+
+        i_taskEncryptSettingsSetup(&CryptoSettings, NULL, it->second.c_str(), aPassword.c_str(),
+                                   false /* fCreateKeyStore */);
+        vrc = VDFilterAdd(pDisk, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettings.vdFilterIfaces);
+        if (vrc == VERR_VD_PASSWORD_INCORRECT)
+            throw setError(VBOX_E_PASSWORD_INCORRECT,
+                           tr("The given password is incorrect"));
+        else if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                           tr("Failed to load the encryption filter: %s"),
+                           i_vdError(vrc).c_str());
+
+        VDDestroy(pDisk);
+# else
+        throw setError(VBOX_E_NOT_SUPPORTED,
+                       tr("Encryption is not supported because extension pack support is not built in"));
+# endif
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    return rc;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Medium public internal methods

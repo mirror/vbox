@@ -644,6 +644,12 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--newpasswordid <password identifier>]\n"
                      "\n", SEP);
 
+    if (fCategory & USAGE_MEDIUMENCCHKPWD)
+        RTStrmPrintf(pStrm,
+                           "%s checkmediumpwd %s  <uuid|filename>\n"
+                     "                            <pwd file>|-\n"
+                     "\n", SEP);
+
     if (fCategory & USAGE_CONVERTFROMRAW)
         RTStrmPrintf(pStrm,
                            "%s convertfromraw %s  <filename> <outputfile>\n"

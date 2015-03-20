@@ -13488,7 +13488,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="9fae9ea1-c57c-4a3d-8992-cbb2b9b4b4a3"
+    uuid="9680d99b-3550-4e14-8fc4-82ad1426cbde"
     wsmap="managed"
     >
     <desc>
@@ -14792,6 +14792,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="passwordId" type="wstring" dir="return">
         <desc>The ID of the password when unlocking the medium.</desc>
+      </param>
+    </method>
+
+    <method name="checkEncryptionPassword" const="yes">
+      <desc>
+        Checks whether the supplied password is correct for the medium.
+
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Encryption is not configured for this medium.
+        </result>
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The given password is incorrect.
+        </result>
+      </desc>
+      <param name="password" type="wstring" dir="in">
+        <desc>The password to check.</desc>
       </param>
     </method>
 

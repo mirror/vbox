@@ -1840,4 +1840,55 @@ int handleEncryptMedium(HandlerArg *a)
     return SUCCEEDED(rc) ? 0 : 1;
 }
 
+int handleCheckMediumPassword(HandlerArg *a)
+{
+    HRESULT rc;
+    int vrc;
+    ComPtr<IMedium> hardDisk;
+    const char *pszFilenameOrUuid = NULL;
+    Utf8Str strPassword;
+
+    if (a->argc != 2)
+        return errorSyntax(USAGE_MEDIUMENCCHKPWD, "Invalid number of arguments: %d", a->argc);
+
+    pszFilenameOrUuid = a->argv[0];
+
+    if (!RTStrCmp(a->argv[1], "-"))
+    {
+        /* Get password from console. */
+        vrc = getPassword("Enter password:", &strPassword);
+        if (RT_FAILURE(vrc))
+        {
+            RTMsgError("Failed to read password from standard input");
+            return 1;
+        }
+    }
+    else
+    {
+        RTEXITCODE rcExit = readPasswordFile(a->argv[1], &strPassword);
+        if (rcExit == RTEXITCODE_FAILURE)
+        {
+            RTMsgError("Failed to read password from file");
+            return rcExit;
+        }
+    }
+
+    /* Always open the medium if necessary, there is no other way. */
+    rc = openMedium(a, pszFilenameOrUuid, DeviceType_HardDisk,
+                    AccessMode_ReadWrite, hardDisk,
+                    false /* fForceNewUuidOnOpen */, false /* fSilent */);
+    if (FAILED(rc))
+        return 1;
+    if (hardDisk.isNull())
+    {
+        RTMsgError("Invalid hard disk reference, avoiding crash");
+        return 1;
+    }
+
+    CHECK_ERROR(hardDisk, CheckEncryptionPassword(Bstr(strPassword).raw()));
+    if (SUCCEEDED(rc))
+        RTPrintf("The given password is correct\n");
+    return SUCCEEDED(rc) ? 0 : 1;
+}
+
 #endif /* !VBOX_ONLY_DOCS */

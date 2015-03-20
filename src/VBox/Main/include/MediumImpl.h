@@ -279,6 +279,7 @@ private:
                              const com::Utf8Str &aNewPassword, const com::Utf8Str &aNewPasswordId,
                              ComPtr<IProgress> &aProgress);
     HRESULT getEncryptionSettings(com::Utf8Str &aCipher, com::Utf8Str &aPasswordId);
+    HRESULT checkEncryptionPassword(const com::Utf8Str &aPassword);
 
     // Private internal nmethods
     HRESULT i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &autoCaller);
