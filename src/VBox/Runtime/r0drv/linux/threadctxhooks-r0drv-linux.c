@@ -36,6 +36,9 @@
 #include <iprt/thread.h>
 #include <iprt/err.h>
 #include <iprt/asm.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
 #include "internal/thread.h"
 
 /*
@@ -84,14 +87,22 @@ typedef struct RTTHREADCTXINT
 static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifier, struct task_struct *pNext)
 {
     PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    RTCCUINTREG fSavedEFlags = ASMGetFlags();
+    stac();
+#endif
+
     AssertPtr(pThis);
     AssertPtr(pThis->pfnThreadCtxHook);
     Assert(pThis->fRegistered);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    stac();
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_PREEMPTING, pThis->pvUser);
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     clac();
+    ASMSetFlags(fSavedEFlags);
+#endif
 }
 
 
@@ -107,13 +118,22 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
 static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier, int iCpu)
 {
     PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+    RTCCUINTREG fSavedEFlags = ASMGetFlags();
+    stac();
+#endif
+
     AssertPtr(pThis);
     AssertPtr(pThis->pfnThreadCtxHook);
     Assert(pThis->fRegistered);
 
-    stac();
+
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_RESUMED, pThis->pvUser);
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     clac();
+    ASMSetFlags(fSavedEFlags);
+#endif
 }
 
 
