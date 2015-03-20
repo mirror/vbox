@@ -245,12 +245,16 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
     /* If machine-window is visible: */
     if (uisession()->isScreenVisible(m_uScreenId))
     {
-        /* Check if that notify-change brings actual resize-event: */
-        const bool fActualResize = frameBuffer()->width() != (ulong)iWidth ||
-                                   frameBuffer()->height() != (ulong)iHeight;
+        /* Get old frame-buffer size: */
+        const QSize frameBufferSizeOld = QSize(frameBuffer()->width(),
+                                               frameBuffer()->height());
 
         /* Perform frame-buffer mode-change: */
         frameBuffer()->handleNotifyChange(iWidth, iHeight);
+
+        /* Get new frame-buffer size: */
+        const QSize frameBufferSizeNew = QSize(frameBuffer()->width(),
+                                               frameBuffer()->height());
 
         /* For 'scale' mode: */
         if (visualStateType() == UIVisualStateType_Scale)
@@ -278,7 +282,8 @@ void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
             machineWindow()->centralWidget()->update();
 
             /* Normalize 'normal' machine-window geometry if necessary: */
-            if (visualStateType() == UIVisualStateType_Normal && fActualResize)
+            if (visualStateType() == UIVisualStateType_Normal &&
+                frameBufferSizeNew != frameBufferSizeOld)
                 machineWindow()->normalizeGeometry(true /* adjust position */);
         }
 
