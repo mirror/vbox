@@ -402,6 +402,9 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
      * Driver names doesn't always imply the same link name probably since
      * S11's vanity names by default (e.g. highly descriptive "net0") names
      * was introduced. Try opening the link to find out if it really exists.
+     *
+     * This weeds out listing of "e1000g0" as a valid interface on my S11.2
+     * Dell Optiplex box.
      */
     if (VBoxSolarisLibDlpiFound())
     {
