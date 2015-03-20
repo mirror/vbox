@@ -632,6 +632,8 @@
 #define VINF_CPUM_R3_MSR_WRITE                  (1759)
 /** Too may CPUID leaves. */
 #define VERR_TOO_MANY_CPUID_LEAVES              (1760)
+/** Invalid config value. */
+#define VERR_CPUM_INVALID_CONFIG_VALUE          (1761)
 /** @} */
 
 

@@ -419,6 +419,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_SSSE3     RT_BIT(9)
 /** ECX Bit 10 - CNTX-ID - L1 Context ID. */
 #define X86_CPUID_FEATURE_ECX_CNTXID    RT_BIT(10)
+/** ECX Bit 11 - SDBG - Sillicon debug interface (IA32_DEBUG_INTERFACE MSR).
+ * See figure 3-6 and table 3-10, in intel Vol. 2A. from 2015-01-01. */
+#define X86_CPUID_FEATURE_ECX_SDBG      RT_BIT(11)
 /** ECX Bit 12 - FMA. */
 #define X86_CPUID_FEATURE_ECX_FMA       RT_BIT(12)
 /** ECX Bit 13 - CX16 - CMPXCHG16B. */

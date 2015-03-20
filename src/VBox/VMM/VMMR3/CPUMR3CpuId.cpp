@@ -2002,16 +2002,14 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
 
 /** @name Instruction Set Extension Options
  * @{  */
-/** Configuration option type. */
+/** Configuration option type (extended boolean, really). */
 typedef uint8_t CPUMISAEXTCFG;
-/** Default choice of the VMM.   */
-#define CPUMISAEXTCFG_DEFAULT               UINT8_C(0)
 /** Always disable the extension. */
-#define CPUMISAEXTCFG_DISABLED              UINT8_C(1)
+#define CPUMISAEXTCFG_DISABLED              false
 /** Enable the extension if it's supported by the host CPU. */
-#define CPUMISAEXTCFG_ENABLED_SUPPORTED     UINT8_C(2)
+#define CPUMISAEXTCFG_ENABLED_SUPPORTED     true
 /** Always enable the extension. */
-#define CPUMISAEXTCFG_ENABLED_ALWAYS        UINT8_C(3)
+#define CPUMISAEXTCFG_ENABLED_ALWAYS        UINT8_MAX
 /** @} */
 
 /**
@@ -2031,7 +2029,11 @@ typedef struct CPUMCPUIDCONFIG
     bool            fNt4LeafLimit;
     bool            fInvariantTsc;
     CPUMISAEXTCFG   enmAesNi;
-    CPUMISAEXTCFG   enmPClMulQDQ;
+    CPUMISAEXTCFG   enmPClMul;
+    CPUMISAEXTCFG   enmPopCnt;
+    CPUMISAEXTCFG   enmMovBe;
+    CPUMISAEXTCFG   enmRdRand;
+    CPUMISAEXTCFG   enmRdSeed;
     uint32_t        uMaxStdLeaf;
     uint32_t        uMaxExtLeaf;
     uint32_t        uMaxCentaurLeaf;
@@ -2320,7 +2322,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            ;
     pStdFeatureLeaf->uEcx &= 0
                            | X86_CPUID_FEATURE_ECX_SSE3
-                           //| X86_CPUID_FEATURE_ECX_PCLMUL - not implemented yet.
+                           | (pConfig->enmPClMul ? X86_CPUID_FEATURE_ECX_PCLMUL : 0)
                            //| X86_CPUID_FEATURE_ECX_DTES64 - not implemented yet.
                            /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
                            | ((pConfig->fMonitor && pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
@@ -2341,15 +2343,15 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            | (pConfig->fSse41 ? X86_CPUID_FEATURE_ECX_SSE4_1 : 0)
                            | (pConfig->fSse42 ? X86_CPUID_FEATURE_ECX_SSE4_2 : 0)
                            //| X86_CPUID_FEATURE_ECX_X2APIC - turned on later by the device if enabled.
-                           //| X86_CPUID_FEATURE_ECX_MOVBE - not implemented yet.
-                           //| X86_CPUID_FEATURE_ECX_POPCNT
+                           | (pConfig->enmMovBe ? X86_CPUID_FEATURE_ECX_MOVBE : 0)
+                           | (pConfig->enmPopCnt ? X86_CPUID_FEATURE_ECX_POPCNT : 0)
                            //| X86_CPUID_FEATURE_ECX_TSCDEADL - not implemented yet.
-                           //| X86_CPUID_FEATURE_ECX_AES   - not implemented yet.
+                           | (pConfig->enmAesNi ? X86_CPUID_FEATURE_ECX_AES : 0)
                            //| X86_CPUID_FEATURE_ECX_XSAVE - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_OSXSAVE - mirrors CR4.OSXSAVE state
                            //| X86_CPUID_FEATURE_ECX_AVX   - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_F16C  - not implemented yet.
-                           //| X86_CPUID_FEATURE_ECX_RDRAND - not implemented yet.
+                           | (pConfig->enmRdRand ? X86_CPUID_FEATURE_ECX_RDRAND : 0)
                            //| X86_CPUID_FEATURE_ECX_HVP   - Set explicitly later.
                            ;
 
@@ -2696,7 +2698,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_EBX_PQE               RT_BIT(15)
                                //| X86_CPUID_STEXT_FEATURE_EBX_AVX512F           RT_BIT(16)
                                //| RT_BIT(17) - reserved
-                               //| X86_CPUID_STEXT_FEATURE_EBX_RDSEED            RT_BIT(18)
+                               | (pConfig->enmRdSeed ? X86_CPUID_STEXT_FEATURE_EBX_RDSEED : 0)
                                //| X86_CPUID_STEXT_FEATURE_EBX_ADX               RT_BIT(19)
                                //| X86_CPUID_STEXT_FEATURE_EBX_SMAP              RT_BIT(20)
                                //| RT_BIT(21) - reserved
@@ -3156,7 +3158,67 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 }
 
 
-static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pCpumCfg, bool fNestedPagingAndFullGuestExec)
+static int cpumR3CpuIdReadIsaExtCfg(PVM pVM, PCFGMNODE pIsaExts, const char *pszValueName,
+                                    CPUMISAEXTCFG *penmValue, CPUMISAEXTCFG enmDefault)
+{
+    /*
+     * Try integer encoding first.
+     */
+    uint64_t uValue;
+    int rc = CFGMR3QueryInteger(pIsaExts, pszValueName, &uValue);
+    if (RT_SUCCESS(rc))
+        switch (uValue)
+        {
+            case 0: *penmValue = CPUMISAEXTCFG_DISABLED; break;
+            case 1: *penmValue = CPUMISAEXTCFG_ENABLED_SUPPORTED; break;
+            case 2: *penmValue = CPUMISAEXTCFG_ENABLED_ALWAYS; break;
+            default:
+                return VMSetError(pVM, VERR_CPUM_INVALID_CONFIG_VALUE, RT_SRC_POS,
+                                  "Invalid config value for '/CPUM/IsaExts/%s': %llu (expected 0/'disabled', 1/'enabled', or 2/'forced')",
+                                  pszValueName, uValue);
+        }
+    /*
+     * If missing, use default.
+     */
+    else if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+        *penmValue = enmDefault;
+    else
+    {
+        if (rc == VERR_CFGM_NOT_INTEGER)
+        {
+            /*
+             * Not an integer, try read it as a string.
+             */
+            char szValue[32];
+            rc = CFGMR3QueryString(pIsaExts, pszValueName, szValue, sizeof(szValue));
+            if (RT_SUCCESS(rc))
+            {
+                RTStrToLower(szValue);
+                size_t cchValue = strlen(szValue);
+#define EQ(a_str) (cchValue == sizeof(a_str) - 1U && memcmp(szValue, a_str, sizeof(a_str) - 1))
+                if (     EQ("disabled") || EQ("disable") || EQ("off") || EQ("no"))
+                    *penmValue = CPUMISAEXTCFG_DISABLED;
+                else if (EQ("enabled")  || EQ("enable")  || EQ("on")  || EQ("yes"))
+                    *penmValue = CPUMISAEXTCFG_ENABLED_SUPPORTED;
+                else if (EQ("forced")   || EQ("force")   || EQ("always"))
+                    *penmValue = CPUMISAEXTCFG_ENABLED_ALWAYS;
+                else if (EQ("default")  || EQ("def"))
+                    *penmValue = enmDefault;
+                else
+                    return VMSetError(pVM, VERR_CPUM_INVALID_CONFIG_VALUE, RT_SRC_POS,
+                                      "Invalid config value for '/CPUM/IsaExts/%s': '%s' (expected 0/'disabled', 1/'enabled', or 2/'forced')",
+                                      pszValueName, uValue);
+#undef EQ
+            }
+        }
+        if (RT_FAILURE(rc))
+            return VMSetError(pVM, rc, RT_SRC_POS, "Error reading config value '/CPUM/IsaExts/%s': %Rrc", pszValueName, rc);
+    }
+    return VINF_SUCCESS;
+}
+
+
+static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pCpumCfg, bool fNestedPagingAndFullGuestExec)
 {
     int rc;
 
@@ -3174,7 +3236,7 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
      * stripped.  The higher the value the more features gets stripped.  Higher
      * values should only be used when older CPUs are involved since it may
      * harm performance and maybe also cause problems with specific guests. */
-    rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pCpum->u8PortableCpuIdLevel, pConfig->fSyntheticCpu ? 1 : 0);
+    rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pVM->cpum.s.u8PortableCpuIdLevel, pConfig->fSyntheticCpu ? 1 : 0);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/GuestCpuName, string}
@@ -3239,6 +3301,24 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
      * Instruction Set Architecture (ISA) Extensions.
      */
     PCFGMNODE pIsaExts = CFGMR3GetChild(pCpumCfg, "IsaExts");
+    if (pIsaExts)
+    {
+        rc = CFGMR3ValidateConfig(pIsaExts, "/CPUM/IsaExts/",
+                                   "CMPXCHG16B"
+                                  "|MONITOR"
+                                  "|MWaitExtensions"
+                                  "|SSE4.1"
+                                  "|SSE4.2"
+                                  "|AESNI"
+                                  "|PCLMUL"
+                                  "|POPCNT"
+                                  "|MOVBE"
+                                  "|RDRAND"
+                                  "|RDSEED",
+                                  "" /*pszValidNodes*/, "CPUM" /*pszWho*/, 0 /*uInstance*/);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     /** @cfgm{/CPUM/CMPXCHG16B, boolean, false}
      * Expose CMPXCHG16B to the guest if supported by the host.
@@ -3271,16 +3351,53 @@ static int cpumR3CpuIdReadConfig(PCPUM pCpum, PCPUMCPUIDCONFIG pConfig, PCFGMNOD
     rc = CFGMR3QueryBoolDef(pCpumCfg, "SSE4.2", &pConfig->fSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
-#if 0
     /** @cfgm{/CPUM/IsaExts/AESNI, isaextcfg, depends}
      * Whether to expose the AES instructions to the guest.  For the time being the
      * default is to only do this for VMs with nested paging and AMD-V or
      * unrestricted guest mode.
      */
-    rc = cpumR3CpuIdReadIsaExtCfg(pIsaExts, "AESNI", &pConfig->enmAesNi, fNestedPagingAndFullGuestExec);
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "AESNI", &pConfig->enmAesNi, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
-#endif
 
+    /** @cfgm{/CPUM/IsaExts/PCLMUL, isaextcfg, depends}
+     * Whether to expose the PCLMULQDQ instructions to the guest.  For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "PCLMUL", &pConfig->enmPClMul, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/POPCNT, isaextcfg, depends}
+     * Whether to expose the POPCNT instructions to the guest.  For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "POPCNT", &pConfig->enmPopCnt, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/MOVBE, isaextcfg, depends}
+     * Whether to expose the MOVBE instructions to the guest.  For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "MOVBE", &pConfig->enmMovBe, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/RDRAND, isaextcfg, depends}
+     * Whether to expose the RDRAND instructions to the guest.  For the time being
+     * the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "RDRAND", &pConfig->enmRdRand, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/RDSEED, isaextcfg, depends}
+     * Whether to expose the RDSEED instructions to the guest.  For the time being
+     * the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "RDSEED", &pConfig->enmRdSeed, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -3303,7 +3420,7 @@ int cpumR3InitCpuIdAndMsrs(PVM pVM)
     CPUMCPUIDCONFIG Config;
     RT_ZERO(Config);
 
-    int rc = cpumR3CpuIdReadConfig(pCpum, &Config, pCpumCfg, HMAreNestedPagingAndFullGuestExecEnabled(pVM));
+    int rc = cpumR3CpuIdReadConfig(pVM, &Config, pCpumCfg, HMAreNestedPagingAndFullGuestExecEnabled(pVM));
     AssertRCReturn(rc, rc);
 
     /*
@@ -4445,6 +4562,7 @@ static DBGFREGSUBFIELD const g_aLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("TM2\0"        "Terminal Monitor 2",                          8, 1, 0),
     DBGFREGSUBFIELD_RO("SSSE3\0"      "Supplemental Streaming SIMD Extensions 3",    9, 1, 0),
     DBGFREGSUBFIELD_RO("CNTX-ID\0"    "L1 Context ID",                              10, 1, 0),
+    DBGFREGSUBFIELD_RO("SDBG\0"       "Sillicon debug interface",                   11, 1, 0),
     DBGFREGSUBFIELD_RO("FMA\0"        "FMA Support",                                12, 1, 0),
     DBGFREGSUBFIELD_RO("CX16\0"       "CMPXCHG16B",                                 13, 1, 0),
     DBGFREGSUBFIELD_RO("TPRUPDATE\0"  "xTPR Update Control",                        14, 1, 0),
