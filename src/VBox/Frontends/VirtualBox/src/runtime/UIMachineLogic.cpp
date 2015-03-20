@@ -2422,7 +2422,7 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
         if (attachment.GetType() == KDeviceType_HardDisk)
         {
             /* Get the attachment medium base: */
-            const CMedium medium = attachment.GetMedium().GetBase();
+            const CMedium medium = attachment.GetMedium();
             /* Update the map with this medium if it's encrypted: */
             QString strCipher;
             const QString strPasswordId = medium.GetEncryptionSettings(strCipher);
