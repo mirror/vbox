@@ -746,7 +746,7 @@ VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR4;
     if (!CPUMSupportsFXSR(pVCpu->CTX_SUFF(pVM)))
-        cr4 &= ~X86_CR4_OSFSXR;
+        cr4 &= ~X86_CR4_OSFXSR;
     pVCpu->cpum.s.Guest.cr4 = cr4;
     return VINF_SUCCESS;
 }

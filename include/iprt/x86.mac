@@ -227,7 +227,7 @@
 %define X86_CR4_MCE                         RT_BIT(6)
 %define X86_CR4_PGE                         RT_BIT(7)
 %define X86_CR4_PCE                         RT_BIT(8)
-%define X86_CR4_OSFSXR                      RT_BIT(9)
+%define X86_CR4_OSFXSR                      RT_BIT(9)
 %define X86_CR4_OSXMMEEXCPT                 RT_BIT(10)
 %define X86_CR4_VMXE                        RT_BIT(13)
 %define X86_CR4_SMXE                        RT_BIT(14)

@@ -955,13 +955,14 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_cr4[] =
     DBGFREGSUBFIELD_RW("mce",     6,      1,  0),
     DBGFREGSUBFIELD_RW("pge",     7,      1,  0),
     DBGFREGSUBFIELD_RW("pce",     8,      1,  0),
-    DBGFREGSUBFIELD_RW("osfsxr",  9,      1,  0),
+    DBGFREGSUBFIELD_RW("osfxsr",  9,      1,  0),
     DBGFREGSUBFIELD_RW("osxmmeexcpt", 10, 1,  0),
-    DBGFREGSUBFIELD_RW("vmxe",   10,      1,  0),
-    DBGFREGSUBFIELD_RW("smxe",   13,      1,  0),
-    DBGFREGSUBFIELD_RW("pcide",  14,      1,  0),
-    DBGFREGSUBFIELD_RW("osxsave", 17,     1,  0),
-    DBGFREGSUBFIELD_RW("smep",   18,      1,  0),
+    DBGFREGSUBFIELD_RW("vmxe",   13,      1,  0),
+    DBGFREGSUBFIELD_RW("smxe",   14,      1,  0),
+    DBGFREGSUBFIELD_RW("pcide",  17,      1,  0),
+    DBGFREGSUBFIELD_RW("osxsave", 18,     1,  0),
+    DBGFREGSUBFIELD_RW("smep",   20,      1,  0),
+    DBGFREGSUBFIELD_RW("smap",   21,      1,  0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 

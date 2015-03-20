@@ -4976,7 +4976,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
                             | X86_CR4_TSD | X86_CR4_DE
                             | X86_CR4_PSE | X86_CR4_PAE
                             | X86_CR4_MCE | X86_CR4_PGE
-                            | X86_CR4_PCE | X86_CR4_OSFSXR
+                            | X86_CR4_PCE | X86_CR4_OSFXSR
                             | X86_CR4_OSXMMEEXCPT;
             //if (xxx)
             //    fValid |= X86_CR4_VMXE;

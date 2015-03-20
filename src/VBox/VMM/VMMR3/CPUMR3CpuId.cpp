@@ -2330,7 +2330,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                            //| X86_CPUID_FEATURE_ECX_TSCDEADL - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_AES   - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_XSAVE - not implemented yet.
-                           //| X86_CPUID_FEATURE_ECX_OSXSAVE - not implemented yet.
+                           //| X86_CPUID_FEATURE_ECX_OSXSAVE - mirrors CR4.OSXSAVE state
                            //| X86_CPUID_FEATURE_ECX_AVX   - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_F16C  - not implemented yet.
                            //| X86_CPUID_FEATURE_ECX_RDRAND - not implemented yet.

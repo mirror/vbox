@@ -802,8 +802,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_PGE                         RT_BIT(7)
 /** Bit 8 - PCE - Performance-Monitoring Counter Enable. */
 #define X86_CR4_PCE                         RT_BIT(8)
-/** Bit 9 - OSFSXR - Operating System Support for FXSAVE and FXRSTORE instruction. */
-#define X86_CR4_OSFSXR                      RT_BIT(9)
+/** Bit 9 - OSFXSR - Operating System Support for FXSAVE and FXRSTORE instructions. */
+#define X86_CR4_OSFXSR                      RT_BIT(9)
 /** Bit 10 - OSXMMEEXCPT - Operating System Support for Unmasked SIMD Floating-Point Exceptions. */
 #define X86_CR4_OSXMMEEXCPT                 RT_BIT(10)
 /** Bit 13 - VMXE - VMX mode is enabled. */

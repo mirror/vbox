@@ -339,7 +339,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
 VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
-    Assert(ASMGetCR4() & X86_CR4_OSFSXR);
+    Assert(ASMGetCR4() & X86_CR4_OSFXSR);
 
     /* If the FPU state has already been loaded, then it's a guest trap. */
     if (CPUMIsGuestFPUStateActive(pVCpu))
@@ -460,7 +460,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
-    Assert(ASMGetCR4() & X86_CR4_OSFSXR);
+    Assert(ASMGetCR4() & X86_CR4_OSFXSR);
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
     NOREF(pVM); NOREF(pCtx);
 

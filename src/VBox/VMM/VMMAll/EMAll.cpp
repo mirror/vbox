@@ -1548,7 +1548,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
                | X86_CR4_TSD | X86_CR4_DE
                | X86_CR4_PSE | X86_CR4_PAE
                | X86_CR4_MCE | X86_CR4_PGE
-               | X86_CR4_PCE | X86_CR4_OSFSXR
+               | X86_CR4_PCE | X86_CR4_OSFXSR
                | X86_CR4_OSXMMEEXCPT;
         //if (xxx)
         //    fValid |= X86_CR4_VMXE;
@@ -1571,8 +1571,8 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
 
         /* Feeling extremely lazy. */
 # ifdef IN_RC
-        if (    (oldval & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
-            !=  (val    & (X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
+        if (    (oldval & (X86_CR4_OSFXSR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME))
+            !=  (val    & (X86_CR4_OSFXSR|X86_CR4_OSXMMEEXCPT|X86_CR4_PCE|X86_CR4_MCE|X86_CR4_PAE|X86_CR4_DE|X86_CR4_TSD|X86_CR4_PVI|X86_CR4_VME)))
         {
             Log(("emInterpretMovCRx: CR4: %#RX64->%#RX64 => R3\n", oldval, val));
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);

@@ -498,7 +498,7 @@ htg_apic_done:
     ;; relevant for 32-bit, but whatever) and X86_CR4_VMXE must be cleared.
     ;;
     and     esi, X86_CR4_VME | X86_CR4_PVI | X86_CR4_TSD | X86_CR4_DE | X86_CR4_PSE | X86_CR4_PAE \
-               | X86_CR4_MCE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT | X86_CR4_SMXE | X86_CR4_OSXSAVE
+               | X86_CR4_MCE | X86_CR4_OSFXSR | X86_CR4_OSXMMEEXCPT | X86_CR4_SMXE | X86_CR4_OSXSAVE
     mov     cr4, esi
 
     ;;
