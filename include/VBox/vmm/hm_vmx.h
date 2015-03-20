@@ -893,7 +893,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_TASK_SWITCH                                    9
 /** 10 Guest software attempted to execute CPUID. */
 #define VMX_EXIT_CPUID                                          10
-/** 10 Guest software attempted to execute GETSEC. */
+/** 11 Guest software attempted to execute GETSEC. */
 #define VMX_EXIT_GETSEC                                         11
 /** 12 Guest software attempted to execute HLT. */
 #define VMX_EXIT_HLT                                            12
@@ -981,8 +981,26 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INVPCID                                        58
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
 #define VMX_EXIT_VMFUNC                                         59
+#if 1
 /** The maximum exit value (inclusive). */
 #define VMX_EXIT_MAX                                            (VMX_EXIT_VMFUNC)
+#else
+/** 60 ??? */
+#define VMX_EXIT_RESERVED_60                                    60
+/** 61 - RDSEED - Guest software attempted to executed RDSEED and exiting was
+ * enabled. */
+#define VMX_EXIT_RDSEED                                         61
+/** 62 ??? */
+#define VMX_EXIT_RESERVED_62                                    62
+/** 63 - XSAVES - Guest software attempted to executed XSAVES and exiting was
+ * enabled (XSAVES/XRSTORS was enabled too, of course). */
+#define VMX_EXIT_XSAVES                                         63
+/** 63 - XRSTORS - Guest software attempted to executed XRSTORS and exiting
+ * was enabled (XSAVES/XRSTORS was enabled too, of course). */
+#define VMX_EXIT_XRSTORS                                        64
+/** The maximum exit value (inclusive). */
+#define VMX_EXIT_MAX                                            (VMX_EXIT_XRSTORS)
+#endif
 /** @} */
 
 
@@ -1367,6 +1385,15 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_VMCS_CTRL_PROC_EXEC2_INVPCID                        RT_BIT(12)
 /** Enables VMFUNC instructions. */
 #define VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC                         RT_BIT(13)
+/** Enables VMCS shadowing. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_VMCS_SHADOWING                 RT_BIT_64(14)
+/** VM-exit when executing RDSEED. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_RDSEED_EXIT                    RT_BIT_64(16)
+/** Controls whether EPT-violations may cause \#VE instead of exits. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_EPT_VE                         RT_BIT_64(18)
+/** Enables XSAVES/SRSTORS. */
+#define VMX_VMCS_CTRL_PROC_EXEC2_XSAVES                         RT_BIT_64(20)
+
 /** @} */
 
 
