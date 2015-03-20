@@ -1853,8 +1853,16 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
 
     <para><screen>name="vboxnet" parent="pseudo" instance=1;
 name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
-    as required and make sure "instance" number is uniquely incremented. Next
-    reload the vboxnet driver using:</para>
+    as required and make sure to assign a unique instance number.
+    
+    <para>For each instance that you have added, create a corresponding
+    file "/etc/hostname.vboxnetX" where "X" is the instance number. In the
+    above example, we would have to create "/etc/hostname.vboxnet1".</para>
+
+    <para>Specify the IP address you want assigned to the interface in the 
+    hostname.vboxnetX file. In the above example, we would use 192.168.57.1.</para>
+
+    <para>Finally, reload the vboxnet driver using:</para>
 
     <para><screen>add_drv vboxnet</screen>Now plumb all the interfaces using
     <computeroutput>ifconfig vboxnetX plumb</computeroutput> (where X can be
@@ -1863,7 +1871,7 @@ name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
 
     <para>To make your newly added interfaces' settings persistent across
     reboots you will need to edit the files
-    <computeroutput>/etc/netmasks</computeroutput>, and if you are using NWAM
+    <computeroutput>/etc/inet/netmasks</computeroutput>, and if you are using NWAM
     <computeroutput>/etc/nwam/llp</computeroutput> and add the appropriate
     entries to set the netmask and static IP for each of those interfaces. The
     VirtualBox installer only updates these configuration files for the one
