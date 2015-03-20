@@ -1367,10 +1367,10 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     int rc = VINF_SUCCESS;
     NOREF(pvUser);
-    if (cb == 1)
+    if (cb == 1 || cb == 2)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        rc = kbd_write_data(pThis, Port, u32);
+        rc = kbd_write_data(pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortDataWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
     }
     else
@@ -1418,10 +1418,10 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 {
     int rc = VINF_SUCCESS;
     NOREF(pvUser);
-    if (cb == 1)
+    if (cb == 1 || cb == 2)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        rc = kbd_write_command(pThis, Port, u32);
+        rc = kbd_write_command(pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Rrc\n", Port, cb, u32, rc));
     }
     else
