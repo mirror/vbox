@@ -2803,8 +2803,8 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
      * Validate the input.
      */
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pObj) && pObj->u32Magic == SUPDRVOBJ_MAGIC,
-                    ("Invalid pvObj=%p magic=%#x (exepcted %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
+    AssertMsgReturn(VALID_PTR(pObj)&& pObj->u32Magic == SUPDRVOBJ_MAGIC,
+                    ("Invalid pvObj=%p magic=%#x (expected %#x)\n", pvObj, pObj ? pObj->u32Magic : 0, SUPDRVOBJ_MAGIC),
                     VERR_INVALID_PARAMETER);
 
     /*
