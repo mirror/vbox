@@ -356,6 +356,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
 	src/settings/UISettingsPage.h \
+	src/settings/UISettingsSerializer.h \
 	src/settings/VBoxSettingsSelector.h \
 	src/settings/global/UIGlobalSettingsExtension.h \
 	src/settings/global/UIGlobalSettingsGeneral.h \
@@ -369,8 +370,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/machine/UIMachineSettingsAudio.h \
 	src/settings/machine/UIMachineSettingsDisplay.h \
 	src/settings/machine/UIMachineSettingsGeneral.h \
-    src/settings/machine/UIMachineSettingsInterface.h \
-    src/settings/machine/UIMachineSettingsNetwork.h \
+	src/settings/machine/UIMachineSettingsInterface.h \
+	src/settings/machine/UIMachineSettingsNetwork.h \
 	src/settings/machine/UIMachineSettingsParallel.h \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.h \
 	src/settings/machine/UIMachineSettingsSF.h \
@@ -497,7 +498,6 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIStatusBarEditorWindow.cpp \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
-	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
@@ -638,6 +638,7 @@ VirtualBox_SOURCES = \
 	src/settings/UISettingsDialog.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/UISettingsPage.cpp \
+	src/settings/UISettingsSerializer.cpp \
 	src/settings/VBoxSettingsSelector.cpp \
 	src/settings/global/UIGlobalSettingsExtension.cpp \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
