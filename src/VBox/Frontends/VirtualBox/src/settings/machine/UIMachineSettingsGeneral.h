@@ -143,4 +143,4 @@ private:
     bool m_fHWVirtExEnabled;
 };
 
-#endif / !___UIMachineSettingsGeneral_h___ */
+#endif /* !___UIMachineSettingsGeneral_h___ */
