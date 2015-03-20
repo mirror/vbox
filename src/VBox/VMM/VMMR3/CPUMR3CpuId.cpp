@@ -3434,10 +3434,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             return rc;
     }
 
-    /** @cfgm{/CPUM/IsaExts/CMPXCHG16B, boolean, false}
-     * Expose CMPXCHG16B to the guest if supported by the host.
+    /** @cfgm{/CPUM/IsaExts/CMPXCHG16B, boolean, depends}
+     * Expose CMPXCHG16B to the guest if supported by the host. For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
      */
-    rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "CMPXCHG16B", &pConfig->enmCmpXchg16b, false);
+    rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "CMPXCHG16B", &pConfig->enmCmpXchg16b, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/IsaExts/MONITOR, boolean, true}
