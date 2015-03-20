@@ -32,7 +32,8 @@ struct UIDataSettingsMachineGeneral
         , m_strSnapshotsHomeDir(QString())
         , m_clipboardMode(KClipboardMode_Disabled)
         , m_dndMode(KDnDMode_Disabled)
-        , m_strDescription(QString()) {}
+        , m_strDescription(QString())
+    {}
 
     /** Returns whether passed @a other is equal to this. */
     bool equal(const UIDataSettingsMachineGeneral &other) const
@@ -60,7 +61,6 @@ struct UIDataSettingsMachineGeneral
     QString m_strSnapshotsFolder;
     /** Holds the default VM snapshot folder. */
     QString m_strSnapshotsHomeDir;
-
     /** Holds the VM shared clipboard mode. */
     KClipboardMode m_clipboardMode;
     /** Holds the VM drag&drop mode. */
@@ -126,12 +126,12 @@ private:
 
     /** Prepare routine. */
     void prepare();
-    /** Prepare 'Basic' page routine. */
-    void preparePageBasic();
-    /** Prepare 'Advanced' page routine. */
-    void preparePageAdvanced();
-    /** Prepare 'Description' page routine. */
-    void preparePageDescription();
+    /** Prepare 'Basic' tab routine. */
+    void prepareTabBasic();
+    /** Prepare 'Advanced' tab routine. */
+    void prepareTabAdvanced();
+    /** Prepare 'Description' tab routine. */
+    void prepareTabDescription();
 
     /** Polish routine. */
     void polishPage();
