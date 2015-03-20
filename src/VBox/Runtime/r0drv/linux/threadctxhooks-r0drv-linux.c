@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,6 +71,11 @@ typedef struct RTTHREADCTXINT
     struct preempt_ops          hPreemptOps;
     /** The reference count for this object. */
     uint32_t volatile           cRefs;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+    /** Starting with 3.1.19, the linux kernel doesn't restore kernel RFLAGS during
+     * task switch, so we have to do that ourselves. (x86 code is not affected.) */
+    RTCCUINTREG                 fSavedRFlags;
+#endif
 } RTTHREADCTXINT, *PRTTHREADCTXINT;
 
 
@@ -100,8 +105,10 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_PREEMPTING, pThis->pvUser);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    clac();
     ASMSetFlags(fSavedEFlags);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+    pThis->fSavedRFlags = fSavedEFlags;
+# endif
 #endif
 }
 
@@ -127,11 +134,13 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
     AssertPtr(pThis->pfnThreadCtxHook);
     Assert(pThis->fRegistered);
 
-
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_RESUMED, pThis->pvUser);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    clac();
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
+    fSavedEFlags &= ~RT_BIT_64(18) /*X86_EFL_AC*/;
+    fSavedEFlags |= pThis->fSavedRFlags & RT_BIT_64(18) /*X86_EFL_AC*/;
+# endif
     ASMSetFlags(fSavedEFlags);
 #endif
 }
