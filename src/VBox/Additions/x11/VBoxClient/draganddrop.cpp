@@ -2255,6 +2255,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
     int rc = VbglR3DnDConnect(&uClientID);
     if (RT_FAILURE(rc))
         LogRel(("DnD: Unable to connect to drag'n drop service, rc=%Rrc\n", rc));
+    /* Not RT_FAILURE: VINF_PERMISSION_DENIED is host service not present. */
     if (rc != VINF_SUCCESS)
         return rc;
 
