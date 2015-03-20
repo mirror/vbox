@@ -1853,7 +1853,7 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
 
     <para><screen>name="vboxnet" parent="pseudo" instance=1;
 name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
-    as required and make sure to assign a unique instance number.
+    as required and make sure to assign a unique instance number.</para>
     
     <para>For each instance that you have added, create a corresponding
     file "/etc/hostname.vboxnetX" where "X" is the instance number. In the
