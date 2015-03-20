@@ -9052,7 +9052,7 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
             if (it != pBase->m->mapProperties.end())
                 pBase->m->mapProperties.erase(it);
 
-            if (task.mstrNewPasswordId.isNotEmpty())
+            if (task.mstrNewPasswordId.isEmpty())
             {
                 it = pBase->m->mapProperties.find("CRYPT/KeyId");
                 if (it != pBase->m->mapProperties.end())
