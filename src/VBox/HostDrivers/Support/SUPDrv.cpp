@@ -3945,6 +3945,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                         vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
                         if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
                             *pfCaps |= SUPVTCAPS_NESTED_PAGING;
+                        if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                            *pfCaps |= SUPVTCAPS_NESTED_PAGING;
                     }
                 }
             }

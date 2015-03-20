@@ -724,9 +724,14 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 /** SUPR3QueryVTCaps capability flags
  * @{
  */
-#define SUPVTCAPS_AMD_V             RT_BIT(0)
-#define SUPVTCAPS_VT_X              RT_BIT(1)
-#define SUPVTCAPS_NESTED_PAGING     RT_BIT(2)
+/** AMD-V support. */
+#define SUPVTCAPS_AMD_V                     RT_BIT(0)
+/** VT-x support. */
+#define SUPVTCAPS_VT_X                      RT_BIT(1)
+/** Nested paging is supported. */
+#define SUPVTCAPS_NESTED_PAGING             RT_BIT(2)
+/** VT-x: Unrestricted guest execution is supported. */
+#define SUPVTCAPS_VTX_UNRESTRICTED_GUEST    RT_BIT(3)
 /** @} */
 
 /**
