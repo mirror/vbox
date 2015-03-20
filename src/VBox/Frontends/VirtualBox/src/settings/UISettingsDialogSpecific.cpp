@@ -75,45 +75,55 @@
 typedef QList<UISettingsPage*> UISettingsPageList;
 typedef QMap<int, UISettingsPage*> UISettingsPageMap;
 
-/* Serializer direction: */
-enum UISettingsSerializeDirection
-{
-    UISettingsSerializeDirection_Load,
-    UISettingsSerializeDirection_Save
-};
-
-/* QThread reimplementation for loading/saving settings in async mode: */
+/** QThread reimplementation used for
+  * loading/saving settings in async mode.
+  * @todo To be moved into the separate files! */
 class UISettingsSerializer : public QThread
 {
     Q_OBJECT;
 
 signals:
 
-    /* Signal to notify main GUI thread about process has been started: */
+    /** Notifies GUI thread about process has been started. */
     void sigNotifyAboutProcessStarted();
 
-    /* Signal to notify main GUI thread about some page was processed: */
+    /** Notifies GUI thread about some page was processed. */
     void sigNotifyAboutPageProcessed(int iPageId);
 
-    /* Signal to notify main GUI thread about all pages were processed: */
+    /** Notifies GUI thread about all pages were processed. */
     void sigNotifyAboutPagesProcessed();
 
 public:
 
-    /* Settings serializer instance: */
-    static UISettingsSerializer* instance() { return m_pInstance; }
+    /** Serialization directions. */
+    enum SerializationDirection { Load, Save };
 
-    /* Settings serializer constructor: */
-    UISettingsSerializer(QObject *pParent, const QVariant &data, UISettingsSerializeDirection direction)
+    /** Returns the singleton instance. */
+    static UISettingsSerializer* instance() { return m_spInstance; }
+
+    /** Constructor.
+      * @param pParent   being passed to the base-class,
+      * @param direction determines the load/save direction,
+      * @param data      contains the wrapper(s) to load/save the data from/to,
+      * @param pages     contains the page(s) to load/save the data to/from. */
+    UISettingsSerializer(QObject *pParent, SerializationDirection direction,
+                         const QVariant &data, const UISettingsPageList &pages)
         : QThread(pParent)
         , m_direction(direction)
         , m_data(data)
-        , m_fSavingComplete(m_direction == UISettingsSerializeDirection_Load)
-        , m_fAllowToDestroySerializer(m_direction == UISettingsSerializeDirection_Load)
+        , m_fSavingComplete(m_direction == Load)
+        , m_fAllowToDestroySerializer(m_direction == Load)
         , m_iIdOfHighPriorityPage(-1)
     {
-        /* Set instance: */
-        m_pInstance = this;
+        /* Prepare instance: */
+        m_spInstance = this;
+
+        /* Copy the page(s) from incoming list to our map: */
+        for (int iPageIndex = 0; iPageIndex < pages.size(); ++iPageIndex)
+        {
+            UISettingsPage *pPage = pages[iPageIndex];
+            m_pages.insert(pPage->id(), pPage);
+        }
 
         /* Connecting this signals: */
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
@@ -124,7 +134,7 @@ public:
         connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), parent(), SLOT(sltHandlePageProcessed()), Qt::QueuedConnection);
     }
 
-    /* Settings serializer destructor: */
+    /** Destructor. */
     ~UISettingsSerializer()
     {
         /* If serializer is being destructed by it's parent,
@@ -133,59 +143,43 @@ public:
         if (isRunning())
             wait();
 
-        /* Clear instance: */
-        m_pInstance = 0;
+        /* Cleanup instance: */
+        m_spInstance = 0;
     }
 
-    /* Set pages list: */
-    void setPageList(const UISettingsPageList &pageList)
-    {
-        for (int iPageIndex = 0; iPageIndex < pageList.size(); ++iPageIndex)
-        {
-            UISettingsPage *pPage = pageList[iPageIndex];
-            m_pages.insert(pPage->id(), pPage);
-        }
-    }
+    /** Returns the instance of wrapper(s) to load/save the data from/to. */
+    QVariant& data() { return m_data; }
 
-    /* Raise priority of page: */
+    /** Raises the priority of page with @a iPageId. */
     void raisePriorityOfPage(int iPageId)
     {
-        /* If that page is not present or was processed already: */
-        if (!m_pages.contains(iPageId) || m_pages[iPageId]->processed())
-        {
-            /* We just ignoring that request: */
-            return;
-        }
-        else
-        {
-            /* Else remember which page we should be processed next: */
+        /* If that page is present and was not processed already =>
+         * we should remember which page should be processed next: */
+        if (m_pages.contains(iPageId) && !(m_pages[iPageId]->processed()))
             m_iIdOfHighPriorityPage = iPageId;
-        }
     }
-
-    /* Return current m_data content: */
-    QVariant& data() { return m_data; }
 
 public slots:
 
+    /** Starts the process of data loading with passed @a priority. */
     void start(Priority priority = InheritPriority)
     {
         /* Notify listeners about we are starting: */
         emit sigNotifyAboutProcessStarted();
 
         /* If serializer saves settings: */
-        if (m_direction == UISettingsSerializeDirection_Save)
+        if (m_direction == Save)
         {
             /* We should update internal page cache first: */
-            for (int iPageIndex = 0; iPageIndex < m_pages.values().size(); ++iPageIndex)
-                m_pages.values()[iPageIndex]->putToCache();
+            foreach (UISettingsPage *pPage, m_pages.values())
+                pPage->putToCache();
         }
 
         /* Start async serializing thread: */
         QThread::start(priority);
 
         /* If serializer saves settings: */
-        if (m_direction == UISettingsSerializeDirection_Save)
+        if (m_direction == Save)
         {
             /* We should block calling thread until all pages will be saved: */
             while (!m_fSavingComplete)
@@ -200,21 +194,23 @@ public slots:
                 /* Unlock mutex finally: */
                 m_mutex.unlock();
             }
+            /* Allow to destroy serializer finally: */
             m_fAllowToDestroySerializer = true;
         }
     }
 
 protected slots:
 
-    /* Slot to handle the fact of some page was processed: */
+    /** Handles the fact of some page was processed. */
     void sltHandleProcessedPage(int iPageId)
     {
         /* If serializer loads settings: */
-        if (m_direction == UISettingsSerializeDirection_Load)
+        if (m_direction == Load)
         {
-            /* If such page present we should fetch internal page cache: */
+            /* If such page present: */
             if (m_pages.contains(iPageId))
             {
+                /* We should fetch internal page cache: */
                 UISettingsPage *pSettingsPage = m_pages[iPageId];
                 pSettingsPage->setValidatorBlocked(true);
                 pSettingsPage->getFromCache();
@@ -223,11 +219,11 @@ protected slots:
         }
     }
 
-    /* Slot to handle the fact of all pages were processed: */
+    /** Handles the fact of all pages were processed. */
     void sltHandleProcessedPages()
     {
         /* If serializer saves settings: */
-        if (m_direction == UISettingsSerializeDirection_Save)
+        if (m_direction == Save)
         {
             /* We should flag GUI thread to unlock itself: */
             if (!m_fSavingComplete)
@@ -242,7 +238,7 @@ protected slots:
         }
     }
 
-    /* Slot to destroy serializer: */
+    /** Killing serializer, softly :) */
     void sltDestroySerializer()
     {
         /* If not yet all events were processed,
@@ -255,16 +251,15 @@ protected slots:
 
 protected:
 
-    /* Settings processor: */
+    /** Settings serializer. */
     void run()
     {
         /* Initialize COM for other thread: */
         COMBase::InitializeCOM(false);
 
         /* Mark all the pages initially as NOT processed: */
-        QList<UISettingsPage*> pageList = m_pages.values();
-        for (int iPageNumber = 0; iPageNumber < pageList.size(); ++iPageNumber)
-            pageList[iPageNumber]->setProcessed(false);
+        foreach (UISettingsPage *pPage, m_pages.values())
+            pPage->setProcessed(false);
 
         /* Iterate over the all left settings pages: */
         UISettingsPageMap pages(m_pages);
@@ -272,16 +267,16 @@ protected:
         {
             /* Get required page pointer, protect map by mutex while getting pointer: */
             UISettingsPage *pPage = m_iIdOfHighPriorityPage != -1 && pages.contains(m_iIdOfHighPriorityPage) ?
-                                    pages[m_iIdOfHighPriorityPage] : *pages.begin();
+                                    pages.value(m_iIdOfHighPriorityPage) : *pages.begin();
             /* Reset request of high priority: */
             if (m_iIdOfHighPriorityPage != -1)
                 m_iIdOfHighPriorityPage = -1;
             /* Process this page if its enabled: */
             if (pPage->isEnabled())
             {
-                if (m_direction == UISettingsSerializeDirection_Load)
+                if (m_direction == Load)
                     pPage->loadToCacheFrom(m_data);
-                if (m_direction == UISettingsSerializeDirection_Save)
+                if (m_direction == Save)
                     pPage->saveFromCacheTo(m_data);
             }
             /* Remember what page was processed: */
@@ -291,7 +286,7 @@ protected:
             /* Notify listeners about page was processed: */
             emit sigNotifyAboutPageProcessed(pPage->id());
             /* If serializer saves settings => wake up GUI thread: */
-            if (m_direction == UISettingsSerializeDirection_Save)
+            if (m_direction == Save)
                 m_condition.wakeAll();
             /* Break further processing if page had failed: */
             if (pPage->failed())
@@ -300,26 +295,37 @@ protected:
         /* Notify listeners about all pages were processed: */
         emit sigNotifyAboutPagesProcessed();
         /* If serializer saves settings => wake up GUI thread: */
-        if (m_direction == UISettingsSerializeDirection_Save)
+        if (m_direction == Save)
             m_condition.wakeAll();
 
         /* Deinitialize COM for other thread: */
         COMBase::CleanupCOM();
     }
 
-    /* Variables: */
-    UISettingsSerializeDirection m_direction;
+    /** Holds the singleton instance. */
+    static UISettingsSerializer *m_spInstance;
+
+    /** Holds the the load/save direction. */
+    SerializationDirection m_direction;
+
+    /** Holds the wrapper(s) to load/save the data from/to. */
     QVariant m_data;
+    /** Holds the page(s) to load/save the data to/from. */
     UISettingsPageMap m_pages;
+
+    /** Holds whether the save was complete. */
     bool m_fSavingComplete;
+    /** Holds whether it is allowed to destroy the serializer. */
     bool m_fAllowToDestroySerializer;
+    /** Holds the ID of the high priority page. */
     int m_iIdOfHighPriorityPage;
+    /** Holds the synchronization mutex. */
     QMutex m_mutex;
+    /** Holds the synchronization condition. */
     QWaitCondition m_condition;
-    static UISettingsSerializer *m_pInstance;
 };
 
-UISettingsSerializer* UISettingsSerializer::m_pInstance = 0;
+UISettingsSerializer* UISettingsSerializer::m_spInstance = 0;
 
 UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
                                                const QString &strCategory /* = QString() */,
@@ -476,10 +482,11 @@ void UISettingsDialogGlobal::loadData()
     UISettingsDataGlobal data(vboxGlobal().virtualBox().GetSystemProperties(), vboxGlobal().settings());
     /* Create global settings loader,
      * it will load global settings & delete itself in the appropriate time: */
-    UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this,
+                                                                           UISettingsSerializer::Load,
+                                                                           QVariant::fromValue(data),
+                                                                           m_pSelector->settingPages());
     connect(pGlobalSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
-    /* Set pages to be loaded: */
-    pGlobalSettingsLoader->setPageList(m_pSelector->settingPages());
     /* Start loader: */
     pGlobalSettingsLoader->start();
 }
@@ -497,9 +504,10 @@ void UISettingsDialogGlobal::saveData()
     UISettingsDataGlobal data(properties, settings);
     /* Create global settings saver,
      * it will save global settings & delete itself in the appropriate time: */
-    UISettingsSerializer *pGlobalSettingsSaver = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Save);
-    /* Set pages to be saved: */
-    pGlobalSettingsSaver->setPageList(m_pSelector->settingPages());
+    UISettingsSerializer *pGlobalSettingsSaver = new UISettingsSerializer(this,
+                                                                          UISettingsSerializer::Save,
+                                                                          QVariant::fromValue(data),
+                                                                          m_pSelector->settingPages());
     /* Start saver: */
     pGlobalSettingsSaver->start();
 
@@ -791,11 +799,12 @@ void UISettingsDialogMachine::loadData()
     UISettingsDataMachine data(m_machine, m_console);
     /* Create machine settings loader,
      * it will load machine settings & delete itself in the appropriate time: */
-    UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Load);
+    UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this,
+                                                                            UISettingsSerializer::Load,
+                                                                            QVariant::fromValue(data),
+                                                                            m_pSelector->settingPages());
     connect(pMachineSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
     connect(pMachineSettingsLoader, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltSetFirstRunFlag()));
-    /* Set pages to be loaded: */
-    pMachineSettingsLoader->setPageList(m_pSelector->settingPages());
     /* Ask to raise required page priority: */
     pMachineSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
     /* Start page loader: */
@@ -835,9 +844,10 @@ void UISettingsDialogMachine::saveData()
     UISettingsDataMachine data(m_machine, m_console);
     /* Create machine settings saver,
      * it will save machine settings & delete itself in the appropriate time: */
-    UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this, QVariant::fromValue(data), UISettingsSerializeDirection_Save);
-    /* Set pages to be saved: */
-    pMachineSettingsSaver->setPageList(m_pSelector->settingPages());
+    UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this,
+                                                                           UISettingsSerializer::Save,
+                                                                           QVariant::fromValue(data),
+                                                                           m_pSelector->settingPages());
     /* Start saver: */
     pMachineSettingsSaver->start();
 
