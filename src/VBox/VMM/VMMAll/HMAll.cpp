@@ -277,10 +277,31 @@ VMM_INT_DECL(int) HMFlushTLBOnAllVCpus(PVM pVM)
  *
  * @returns true if nested paging is active, false otherwise.
  * @param   pVM         Pointer to the VM.
+ *
+ * @remarks Works before hmR3InitFinalizeR0.
  */
 VMM_INT_DECL(bool) HMIsNestedPagingActive(PVM pVM)
 {
     return HMIsEnabled(pVM) && pVM->hm.s.fNestedPaging;
+}
+
+
+/**
+ * Checks if both nested paging and unhampered guest execution are enabled.
+ *
+ * The almost complete guest execution in harware is only applicable to VT-x.
+ *
+ * @returns true if we have both enabled, otherwise false.
+ * @param   pVM         Pointer to the VM.
+ *
+ * @remarks Works before hmR3InitFinalizeR0.
+ */
+VMM_INT_DECL(bool) HMAreNestedPagingAndFullGuestExecEnabled(PVM pVM)
+{
+    return HMIsEnabled(pVM)
+        && pVM->hm.s.fNestedPaging
+        && (   pVM->hm.s.vmx.fUnrestrictedGuest
+            || pVM->hm.s.svm.fSupported);
 }
 
 

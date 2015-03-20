@@ -453,12 +453,20 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
         if (RT_SUCCESS(rc))
         {
             if (fCaps & SUPVTCAPS_AMD_V)
+            {
                 LogRel(("HM: HMR3Init: AMD-V%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
+                pVM->hm.s.svm.fSupported = true;
+            }
             else if (fCaps & SUPVTCAPS_VT_X)
             {
                 rc = SUPR3QueryVTxSupported();
                 if (RT_SUCCESS(rc))
-                    LogRel(("HM: HMR3Init: VT-x%s\n", fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : ""));
+                {
+                    LogRel(("HM: HMR3Init: VT-x%s%s\n",
+                            fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : "",
+                            fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : ""));
+                    pVM->hm.s.vmx.fSupported = true;
+                }
                 else
                 {
 #ifdef RT_OS_LINUX
@@ -484,6 +492,32 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
             pVM->fHMNeedRawModeCtx = HC_ARCH_BITS == 32
                                   && pVM->fHMEnabled
                                   && pVM->hm.s.fAllow64BitGuests;
+
+            /*
+             * Disable nested paging and unrestricted guest execution now if they're
+             * configured so that CPUM can make decisions based on our configuration.
+             */
+            Assert(!pVM->hm.s.fNestedPaging);
+            if (pVM->hm.s.fAllowNestedPaging)
+            {
+                if (fCaps & SUPVTCAPS_NESTED_PAGING)
+                    pVM->hm.s.fNestedPaging = true;
+                else
+                    pVM->hm.s.fAllowNestedPaging = false;
+            }
+
+            if (fCaps & SUPVTCAPS_VT_X)
+            {
+                Assert(!pVM->hm.s.vmx.fUnrestrictedGuest);
+                if (pVM->hm.s.vmx.fAllowUnrestricted)
+                {
+                    if (   (fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST)
+                        && pVM->hm.s.fNestedPaging)
+                        pVM->hm.s.vmx.fUnrestrictedGuest = true;
+                    else
+                        pVM->hm.s.vmx.fAllowUnrestricted = false;
+                }
+            }
         }
         else
         {
@@ -1156,9 +1190,20 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         LogRel(("HM: VCPU%3d: VMCS physaddr          = %#RHp\n", i, pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
     }
 
-    if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
-        pVM->hm.s.fNestedPaging = pVM->hm.s.fAllowNestedPaging;
+    /*
+     * EPT and unhampered guest execution are determined in HMR3Init, verify the sanity of that.
+     */
+    AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
+                       || (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT),
+                       VERR_HM_IPE_1);
+    AssertLogRelReturn(   !pVM->hm.s.vmx.fUnrestrictedGuest
+                       || (   (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST)
+                           && pVM->hm.s.fNestedPaging),
+                       VERR_HM_IPE_1);
 
+    /*
+     * Enable VPID of configured and supported.
+     */
     if (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VPID)
         pVM->hm.s.vmx.fVpid = pVM->hm.s.vmx.fAllowVpid;
 
@@ -1172,14 +1217,6 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP);
         LogRel(("HM: RDTSCP disabled\n"));
-    }
-
-    /* Unrestricted guest execution also requires EPT. */
-    if (    pVM->hm.s.vmx.fAllowUnrestricted
-        &&  pVM->hm.s.fNestedPaging
-        &&  (pVM->hm.s.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_UNRESTRICTED_GUEST))
-    {
-        pVM->hm.s.vmx.fUnrestrictedGuest = true;
     }
 
     if (!pVM->hm.s.vmx.fUnrestrictedGuest)
@@ -1402,10 +1439,11 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
                 LogRel(("HM:   Reserved bit %u\n", iBit));
 
     /*
-     * Adjust feature(s).
+     * Nested paging is determined in HMR3Init, verify the sanity of that.
      */
-    if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
-        pVM->hm.s.fNestedPaging = pVM->hm.s.fAllowNestedPaging;
+    AssertLogRelReturn(   !pVM->hm.s.fNestedPaging
+                       || (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING),
+                       VERR_HM_IPE_1);
 
     /*
      * Call ring-0 to set up the VM.
