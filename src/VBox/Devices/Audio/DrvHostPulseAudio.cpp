@@ -741,7 +741,7 @@ static DECLCALLBACK(int) drvHostPulseAudioCaptureIn(PPDMIHOSTAUDIO pInterface, P
         }
 
         Assert(pThisStrmIn->cbPeekBuf >= pThisStrmIn->offPeekBuf);
-        size_t cbToWrite = pThisStrmIn->cbPeekBuf - pThisStrmIn->offPeekBuf;
+        size_t cbToWrite = RT_MIN(pThisStrmIn->cbPeekBuf - pThisStrmIn->offPeekBuf, cbToRead);
 
         LogFlowFunc(("cbToRead=%zu, cbToWrite=%zu, offPeekBuf=%zu, cbPeekBuf=%zu, pu8PeekBuf=%p\n",
                      cbToRead, cbToWrite,
