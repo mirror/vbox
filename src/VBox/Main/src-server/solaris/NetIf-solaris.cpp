@@ -175,7 +175,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("skge", "SksKonnect Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("spwr", "SMC EtherPower II 10/100 (9432) Ethernet"));
         SolarisNICMap.insert(NICPair("vboxnet", "VirtualBox Host Ethernet"));
-        SolarisNICMap.insert(NICPair(VBOXBOW_VNIC_TEMPLATE_NAME, "VirtualBox Virtual Network Interface Template"));
+        SolarisNICMap.insert(NICPair(VBOXBOW_VNIC_TEMPLATE_NAME, "VirtualBox VNIC Template"));
         SolarisNICMap.insert(NICPair("vlan", "Virtual LAN Ethernet"));
         SolarisNICMap.insert(NICPair("vr", "VIA Rhine Fast Ethernet"));
         SolarisNICMap.insert(NICPair("vnic", "Virtual Network Interface Ethernet"));
@@ -383,25 +383,41 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
 {
     NOREF(Minor);
 
+    char *pszDriverName = di_driver_name(Node);
+    int   Instance      = di_instance(Node);
+
     /*
      * Skip aggregations.
      */
-    if (!strcmp(di_driver_name(Node), "aggr"))
+    if (!strcmp(pszDriverName, "aggr"))
         return DI_WALK_CONTINUE;
 
     /*
      * Skip softmacs.
      */
-    if (!strcmp(di_driver_name(Node), "softmac"))
+    if (!strcmp(pszDriverName, "softmac"))
         return DI_WALK_CONTINUE;
 
-    vboxSolarisAddHostIface(di_driver_name(Node), di_instance(Node), pvHostNetworkInterfaceList);
+    /*
+     * Driver names doesn't always imply the same link name probably since
+     * S11's vanity names by default (e.g. highly descriptive "net0") names
+     * was introduced. Try opening the link to find out if it really exists.
+     */
+    if (VBoxSolarisLibDlpiFound())
+    {
+        /** @todo should we try also opening "linkname+instance"? */
+        dlpi_handle_t hLink;
+        if (g_pfnLibDlpiOpen(pszDriverName, &hLink, 0) != DLPI_SUCCESS)
+            return DI_WALK_CONTINUE;
+        g_pfnLibDlpiClose(hLink);
+    }
+
+    vboxSolarisAddHostIface(pszDriverName, Instance, pvHostNetworkInterfaceList);
     return DI_WALK_CONTINUE;
 }
 
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
-
     /*
      * Use libdevinfo for determining all physical interfaces.
      */
@@ -409,7 +425,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     Root = di_init("/", DINFOCACHE);
     if (Root != DI_NODE_NIL)
     {
-        di_walk_minor(Root, DDI_NT_NET, 0, &list, vboxSolarisAddPhysHostIface);
+        di_walk_minor(Root, DDI_NT_NET, 0 /* flag */, &list, vboxSolarisAddPhysHostIface);
         di_fini(Root);
     }
 

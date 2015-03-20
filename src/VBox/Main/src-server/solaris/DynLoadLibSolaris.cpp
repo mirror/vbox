@@ -27,7 +27,7 @@
  * Global pointer to the libdlpi module. This should only be set once all needed libraries
  * and symbols have been successfully loaded.
  */
-static RTLDRMOD g_hLibDlpi = NULL;
+static RTLDRMOD g_hLibDlpi = NIL_RTLDRMOD;
 
 /**
  * Whether we have tried to load libdlpi yet.  This flag should only be set
@@ -40,33 +40,36 @@ static bool g_fCheckedForLibDlpi = false;
  * @{
  */
 int (*g_pfnLibDlpiWalk)(dlpi_walkfunc_t *, void *, uint_t);
+int (*g_pfnLibDlpiOpen)(const char *, dlpi_handle_t *, uint_t);
+void (*g_pfnLibDlpiClose)(dlpi_handle_t);
 /** @} */
 
 bool VBoxSolarisLibDlpiFound(void)
 {
     RTLDRMOD hLibDlpi;
 
-    if (g_hLibDlpi && g_fCheckedForLibDlpi)
-        return true;
     if (g_fCheckedForLibDlpi)
-        return false;
-    if (!RT_SUCCESS(RTLdrLoad(LIB_DLPI, &hLibDlpi)))
-        return false;
-    /*
-     * Unfortunately; we cannot make use of dlpi_get_physaddr because it requires us to
-     * open the VNIC/link which requires root permissions :/
-     */
-    if (RT_SUCCESS(RTLdrGetSymbol(hLibDlpi, "dlpi_walk", (void **)&g_pfnLibDlpiWalk)))
+        return g_hLibDlpi != NIL_RTLDRMOD;
+    g_fCheckedForLibDlpi = true;
+    int rc = RTLdrLoad(LIB_DLPI, &hLibDlpi);
+    if (RT_SUCCESS(rc))
     {
-        g_hLibDlpi = hLibDlpi;
-        g_fCheckedForLibDlpi = true;
-        return true;
-    }
-    else
-    {
+        /*
+         * Unfortunately; we cannot make use of dlpi_get_physaddr because it requires us to
+         * open the VNIC/link which requires root permissions :/
+         */
+        rc  = RTLdrGetSymbol(hLibDlpi, "dlpi_walk", (void **)&g_pfnLibDlpiWalk);
+        rc |= RTLdrGetSymbol(hLibDlpi, "dlpi_close", (void **)&g_pfnLibDlpiClose);
+        rc |= RTLdrGetSymbol(hLibDlpi, "dlpi_open", (void **)&g_pfnLibDlpiOpen);
+        if (RT_SUCCESS(rc))
+        {
+            g_hLibDlpi = hLibDlpi;
+            return true;
+        }
+
         RTLdrClose(hLibDlpi);
-        g_fCheckedForLibDlpi = true;
-        return false;
     }
+    hLibDlpi = NIL_RTLDRMOD;
+    return false;
 }
 
