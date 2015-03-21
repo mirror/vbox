@@ -2536,8 +2536,8 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 /** Flush-to-zero for masked underflow.  */
 #define X86_MXSCR_FZ          RT_BIT(15)
 
-/** Misaligned Exception Mask.  */
-#define X86_MXSCR_MM          RT_BIT(16)
+/** Misaligned Exception Mask (AMD MISALIGNSSE).  */
+#define X86_MXSCR_MM          RT_BIT(17)
 /** @} */
 
 

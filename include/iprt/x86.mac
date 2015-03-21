@@ -646,7 +646,7 @@
 %define X86_MXSCR_RC_UP       0x4000
 %define X86_MXSCR_RC_ZERO     0x6000
 %define X86_MXSCR_FZ          RT_BIT(15)
-%define X86_MXSCR_MM          RT_BIT(16)
+%define X86_MXSCR_MM          RT_BIT(17)
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86DESCATTR_TYPE            0x0000000f
