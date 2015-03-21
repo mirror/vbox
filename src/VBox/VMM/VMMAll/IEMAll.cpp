@@ -7171,7 +7171,7 @@ static VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PIEMCPU pIemCpu, uint128_t *pu
 {
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
-    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MSXCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t const *pu128Src;
@@ -7371,7 +7371,7 @@ static VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPT
 static VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
 {
     /* The lazy approach for now... */
-    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MSXCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t *pu128Dst;
