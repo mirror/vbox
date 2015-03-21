@@ -317,7 +317,17 @@ proxy_create_socket(int sdom, int stype)
         return INVALID_SOCKET;
     }
 
-#if !defined(SOCK_NONBLOCK) && !defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
+    {
+        u_long mode = 1;
+        status = ioctlsocket(s, FIONBIO, &mode);
+        if (status == SOCKET_ERROR) {
+            DPRINTF(("FIONBIO: %R[sockerr]\n", SOCKERRNO()));
+            closesocket(s);
+            return INVALID_SOCKET;
+        }
+    }
+#elif !defined(SOCK_NONBLOCK)
     {
         int sflags;
 
@@ -345,18 +355,6 @@ proxy_create_socket(int sdom, int stype)
         status = setsockopt(s, SOL_SOCKET, SO_NOSIGPIPE, &on, onlen);
         if (status < 0) {
             DPRINTF(("SO_NOSIGPIPE: %R[sockerr]\n", SOCKERRNO()));
-            closesocket(s);
-            return INVALID_SOCKET;
-        }
-    }
-#endif
-
-#if defined(RT_OS_WINDOWS)
-    {
-        u_long mode = 1;
-        status = ioctlsocket(s, FIONBIO, &mode);
-        if (status == SOCKET_ERROR) {
-            DPRINTF(("FIONBIO: %R[sockerr]\n", SOCKERRNO()));
             closesocket(s);
             return INVALID_SOCKET;
         }
