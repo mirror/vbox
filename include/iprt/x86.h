@@ -679,8 +679,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_FEATURE_ECX_OSVW      RT_BIT(9)
 /** Bit 10 - IBS - Instruct based sampling. */
 #define X86_CPUID_AMD_FEATURE_ECX_IBS       RT_BIT(10)
-/** Bit 11 - SSE5 - SSE5 instruction support. */
-#define X86_CPUID_AMD_FEATURE_ECX_SSE5      RT_BIT(11)
+/** Bit 11 - XOP - Extended operation support (see APM6). */
+#define X86_CPUID_AMD_FEATURE_ECX_XOP       RT_BIT(11)
 /** Bit 12 - SKINIT - AMD SKINIT: SKINIT, STGI, and DEV support. */
 #define X86_CPUID_AMD_FEATURE_ECX_SKINIT    RT_BIT(12)
 /** Bit 13 - WDT - AMD Watchdog timer support. */

@@ -2039,6 +2039,12 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmRdRand;
     CPUMISAEXTCFG   enmRdSeed;
     CPUMISAEXTCFG   enmCLFlushOpt;
+
+    CPUMISAEXTCFG   enmAbm;
+    CPUMISAEXTCFG   enmSse4A;
+    CPUMISAEXTCFG   enmMisAlnSse;
+    CPUMISAEXTCFG   enm3dNowPrf;
+
     uint32_t        uMaxStdLeaf;
     uint32_t        uMaxExtLeaf;
     uint32_t        uMaxCentaurLeaf;
@@ -2372,7 +2378,6 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     {
         PORTABLE_CLEAR_BITS_WHEN(1, pStdFeatureLeaf->uEax, ProcessorType, (UINT32_C(3) << 12), (UINT32_C(2) << 12));
         PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, SSSE3,  X86_CPUID_FEATURE_ECX_SSSE3);
-        PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, SSE3,   X86_CPUID_FEATURE_ECX_SSE3);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, SSE4_1, X86_CPUID_FEATURE_ECX_SSE4_1, pConfig->enmSse41);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, SSE4_2, X86_CPUID_FEATURE_ECX_SSE4_2, pConfig->enmSse42);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, MOVBE,  X86_CPUID_FEATURE_ECX_MOVBE,  pConfig->enmMovBe);
@@ -2384,7 +2389,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         PORTABLE_DISABLE_FEATURE_BIT(    1, pStdFeatureLeaf->uEcx, AVX,    X86_CPUID_FEATURE_ECX_AVX);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, RDRAND, X86_CPUID_FEATURE_ECX_RDRAND, pConfig->enmRdRand);
         PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pStdFeatureLeaf->uEcx, CX16,   X86_CPUID_FEATURE_ECX_CX16,   pConfig->enmCmpXchg16b);
-        PORTABLE_DISABLE_FEATURE_BIT(    2, pStdFeatureLeaf->uEdx, SSE2,   X86_CPUID_FEATURE_EDX_SSE2);
+        PORTABLE_DISABLE_FEATURE_BIT(    2, pStdFeatureLeaf->uEcx, SSE3,   X86_CPUID_FEATURE_ECX_SSE3);
+        PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, SSE2,   X86_CPUID_FEATURE_EDX_SSE2);
         PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, SSE,    X86_CPUID_FEATURE_EDX_SSE);
         PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, CLFSH,  X86_CPUID_FEATURE_EDX_CLFSH);
         PORTABLE_DISABLE_FEATURE_BIT(    3, pStdFeatureLeaf->uEdx, CMOV,   X86_CPUID_FEATURE_EDX_CMOV);
@@ -2397,8 +2403,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                           | X86_CPUID_FEATURE_EDX_TM
                                           | X86_CPUID_FEATURE_EDX_PBE
                                           )));
-        Assert(!(pStdFeatureLeaf->uEcx & (  X86_CPUID_FEATURE_ECX_PCLMUL
-                                          | X86_CPUID_FEATURE_ECX_DTES64
+        Assert(!(pStdFeatureLeaf->uEcx & (  X86_CPUID_FEATURE_ECX_DTES64
                                           | X86_CPUID_FEATURE_ECX_CPLDS
                                           | X86_CPUID_FEATURE_ECX_VMX
                                           | X86_CPUID_FEATURE_ECX_SMX
@@ -2406,18 +2411,12 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                           | X86_CPUID_FEATURE_ECX_TM2
                                           | X86_CPUID_FEATURE_ECX_CNTXID
                                           | X86_CPUID_FEATURE_ECX_FMA
-                                          | X86_CPUID_FEATURE_ECX_CX16
                                           | X86_CPUID_FEATURE_ECX_TPRUPDATE
                                           | X86_CPUID_FEATURE_ECX_PDCM
                                           | X86_CPUID_FEATURE_ECX_DCA
-                                          | X86_CPUID_FEATURE_ECX_MOVBE
-                                          | X86_CPUID_FEATURE_ECX_AES
-                                          | X86_CPUID_FEATURE_ECX_POPCNT
                                           | X86_CPUID_FEATURE_ECX_XSAVE
                                           | X86_CPUID_FEATURE_ECX_OSXSAVE
                                           | X86_CPUID_FEATURE_ECX_AVX
-                                          | X86_CPUID_FEATURE_ECX_F16C
-                                          | X86_CPUID_FEATURE_ECX_RDRAND
                                           )));
     }
 
@@ -2433,7 +2432,6 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     }
 #endif
     pStdFeatureLeaf = NULL; /* Must refetch! */
-
 
     /* Force standard feature bits. */
     if (pConfig->enmPClMul == CPUMISAEXTCFG_ENABLED_ALWAYS)
@@ -2512,20 +2510,19 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                | X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX
                                | X86_CPUID_AMD_FEATURE_EDX_3DNOW
                                ;
-        pExtFeatureLeaf->uEcx &= 0
-                               //| X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF
+        pExtFeatureLeaf->uEcx &= X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF
                                //| X86_CPUID_AMD_FEATURE_ECX_CMPL   - set below if applicable.
                                //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
                                //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
                                /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
-                               //| X86_CPUID_AMD_FEATURE_ECX_ABM
-                               //| X86_CPUID_AMD_FEATURE_ECX_SSE4A
-                               //| X86_CPUID_AMD_FEATURE_ECX_MISALNSSE
-                               //| X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF
+                               | (pConfig->enmAbm       ? X86_CPUID_AMD_FEATURE_ECX_ABM : 0)
+                               | (pConfig->enmSse4A     ? X86_CPUID_AMD_FEATURE_ECX_SSE4A : 0)
+                               | (pConfig->enmMisAlnSse ? X86_CPUID_AMD_FEATURE_ECX_MISALNSSE : 0)
+                               | (pConfig->enm3dNowPrf  ? X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF : 0)
                                //| X86_CPUID_AMD_FEATURE_ECX_OSVW
                                //| X86_CPUID_AMD_FEATURE_ECX_IBS
-                               //| X86_CPUID_AMD_FEATURE_ECX_SSE5
+                               //| X86_CPUID_AMD_FEATURE_ECX_XOP
                                //| X86_CPUID_AMD_FEATURE_ECX_SKINIT
                                //| X86_CPUID_AMD_FEATURE_ECX_WDT
                                //| RT_BIT_32(14)                    - reserved
@@ -2555,27 +2552,31 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
 
         if (pCpum->u8PortableCpuIdLevel > 0)
         {
-            PORTABLE_DISABLE_FEATURE_BIT(1, pExtFeatureLeaf->uEcx, CR8L,       X86_CPUID_AMD_FEATURE_ECX_CR8L);
-            PORTABLE_DISABLE_FEATURE_BIT(1, pExtFeatureLeaf->uEdx, 3DNOW,      X86_CPUID_AMD_FEATURE_EDX_3DNOW);
-            PORTABLE_DISABLE_FEATURE_BIT(1, pExtFeatureLeaf->uEdx, 3DNOW_EX,   X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
-            PORTABLE_DISABLE_FEATURE_BIT(1, pExtFeatureLeaf->uEdx, FFXSR,      X86_CPUID_AMD_FEATURE_EDX_FFXSR);
-            PORTABLE_DISABLE_FEATURE_BIT(1, pExtFeatureLeaf->uEdx, RDTSCP,     X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
-            PORTABLE_DISABLE_FEATURE_BIT(2, pExtFeatureLeaf->uEcx, LAHF_SAHF,  X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
-            PORTABLE_DISABLE_FEATURE_BIT(3, pExtFeatureLeaf->uEcx, CMOV,       X86_CPUID_AMD_FEATURE_EDX_CMOV);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, CR8L,       X86_CPUID_AMD_FEATURE_ECX_CR8L);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, ABM,        X86_CPUID_AMD_FEATURE_ECX_ABM,       pConfig->enmAbm);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, SSE4A,      X86_CPUID_AMD_FEATURE_ECX_SSE4A,     pConfig->enmSse4A);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, MISALNSSE,  X86_CPUID_AMD_FEATURE_ECX_MISALNSSE, pConfig->enmMisAlnSse);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEcx, 3DNOWPRF,   X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF,  pConfig->enm3dNowPrf);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, XOP,        X86_CPUID_AMD_FEATURE_ECX_XOP);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, TBM,        X86_CPUID_AMD_FEATURE_ECX_TBM);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, FMA4,       X86_CPUID_AMD_FEATURE_ECX_FMA4);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, 3DNOW,      X86_CPUID_AMD_FEATURE_EDX_3DNOW);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, 3DNOW_EX,   X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, FFXSR,      X86_CPUID_AMD_FEATURE_EDX_FFXSR);
+            PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, RDTSCP,     X86_CPUID_EXT_FEATURE_EDX_RDTSCP);
+            PORTABLE_DISABLE_FEATURE_BIT(    2, pExtFeatureLeaf->uEcx, LAHF_SAHF,  X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);
+            PORTABLE_DISABLE_FEATURE_BIT(    3, pExtFeatureLeaf->uEcx, CMOV,       X86_CPUID_AMD_FEATURE_EDX_CMOV);
 
             Assert(!(pExtFeatureLeaf->uEcx & (  X86_CPUID_AMD_FEATURE_ECX_SVM
                                               | X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
-                                              | X86_CPUID_AMD_FEATURE_ECX_CR8L
-                                              | X86_CPUID_AMD_FEATURE_ECX_ABM
-                                              | X86_CPUID_AMD_FEATURE_ECX_SSE4A
-                                              | X86_CPUID_AMD_FEATURE_ECX_MISALNSSE
-                                              | X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF
                                               | X86_CPUID_AMD_FEATURE_ECX_OSVW
                                               | X86_CPUID_AMD_FEATURE_ECX_IBS
-                                              | X86_CPUID_AMD_FEATURE_ECX_SSE5
                                               | X86_CPUID_AMD_FEATURE_ECX_SKINIT
                                               | X86_CPUID_AMD_FEATURE_ECX_WDT
-                                              | UINT32_C(0xffffc000)
+                                              | X86_CPUID_AMD_FEATURE_ECX_LWP
+                                              | X86_CPUID_AMD_FEATURE_ECX_NODEID
+                                              | X86_CPUID_AMD_FEATURE_ECX_TOPOEXT
+                                              | UINT32_C(0xff964000)
                                               )));
             Assert(!(pExtFeatureLeaf->uEdx & (  RT_BIT(10)
                                               | X86_CPUID_EXT_FEATURE_EDX_SYSCALL
@@ -2587,6 +2588,16 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                               | RT_BIT(28)
                                               )));
         }
+
+        /* Force extended feature bits. */
+        if (pConfig->enmAbm       == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_ABM;
+        if (pConfig->enmSse4A     == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_SSE4A;
+        if (pConfig->enmMisAlnSse == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_MISALNSSE;
+        if (pConfig->enm3dNowPrf  == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF;
     }
     pExtFeatureLeaf = NULL; /* Must refetch! */
 
@@ -3523,6 +3534,41 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "CLFLUSHOPT", &pConfig->enmCLFlushOpt, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
 
+
+    /* AMD: */
+
+    /** @cfgm{/CPUM/IsaExts/ABM, isaextcfg, depends}
+     * Whether to expose the AMD ABM instructions to the guest.  For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "ABM", &pConfig->enmAbm, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/SSE4A, isaextcfg, depends}
+     * Whether to expose the AMD SSE4A instructions to the guest.  For the time
+     * being the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "SSE4A", &pConfig->enmSse4A, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/MISALNSSE, isaextcfg, depends}
+     * Whether to expose the AMD MisAlSse feature (MXCSR flag 17) to the guest.  For
+     * the time being the default is to only do this for VMs with nested paging and
+     * AMD-V or unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "MISALNSSE", &pConfig->enmMisAlnSse, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/3DNOWPRF, isaextcfg, depends}
+     * Whether to expose the AMD 3D Now! prefetch instructions to the guest.
+     * For the time being the default is to only do this for VMs with nested paging
+     * and AMD-V or unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "3DNOWPRF", &pConfig->enm3dNowPrf, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
     return VINF_SUCCESS;
 }
 
@@ -4289,7 +4335,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
             CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);
             CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_OSVW);
             CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_IBS);
-            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE5);
+            CPUID_RAW_FEATURE_WRN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_XOP);
             CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);
             CPUID_RAW_FEATURE_IGN(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_WDT);
             CPUID_RAW_FEATURE_WRN(Ext, uEcx, RT_BIT_32(14));
@@ -4456,7 +4502,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
         CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF);// -> EMU
         CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_OSVW);    // -> EMU?
         CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_IBS);     // -> EMU
-        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SSE5);    // -> EMU
+        CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_XOP);     // -> EMU
         CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_SKINIT);  // -> EMU
         CPUID_GST_AMD_FEATURE_RET(Ext, uEcx, X86_CPUID_AMD_FEATURE_ECX_WDT);     // -> EMU
         CPUID_GST_AMD_FEATURE_WRN(Ext, uEcx, RT_BIT_32(14));
@@ -4825,7 +4871,7 @@ static DBGFREGSUBFIELD const g_aExtLeaf1EcxSubFields[] =
     DBGFREGSUBFIELD_RO("3DNOWPRF\0"     "AMD PREFETCH and PREFETCHW instr.",             8, 1, 0),
     DBGFREGSUBFIELD_RO("OSVW\0"         "AMD OS visible workaround",                     9, 1, 0),
     DBGFREGSUBFIELD_RO("IBS\0"          "Instruct based sampling",                      10, 1, 0),
-    DBGFREGSUBFIELD_RO("SSE5\0"         "SSE5 instruction support",                     11, 1, 0),
+    DBGFREGSUBFIELD_RO("XOP\0"          "Extended operation support",                   11, 1, 0),
     DBGFREGSUBFIELD_RO("SKINIT\0"       "SKINIT, STGI, and DEV support",                12, 1, 0),
     DBGFREGSUBFIELD_RO("WDT\0"          "AMD Watchdog timer support",                   13, 1, 0),
     DBGFREGSUBFIELD_RO("LWP\0"          "Lightweight profiling support",                15, 1, 0),
