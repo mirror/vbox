@@ -133,8 +133,6 @@ struc VMCPU
     .aStatAdHoc             resb STAMPROFILEADV_size * 8
 
     alignb 64
-
-    .cpum                   resb 3584
     .hm                     resb 5760
     .em                     resb 1408
     .iem                    resb 3072
@@ -145,7 +143,9 @@ struc VMCPU
     .iom                    resb 512
     .dbgf                   resb 64
     .gim                    resb 64
+
     alignb 4096
+    .cpum                   resb 4096
     .pgm                    resb 4096
 endstruc
 

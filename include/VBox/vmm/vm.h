@@ -136,15 +136,6 @@ typedef struct VMCPU
     /** Profiling samples for use by ad hoc profiling. */
     STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
-    /** CPUM part. */
-    union
-    {
-#ifdef ___CPUMInternal_h
-        struct CPUMCPU      s;
-#endif
-        uint8_t             padding[3584];      /* multiple of 64 */
-    } cpum;
-
     /** HM part. */
     union
     {
@@ -237,7 +228,16 @@ typedef struct VMCPU
     } gim;
 
     /** Align the following members on page boundary. */
-    /*uint8_t                 abAlignment2[64];*/
+    uint8_t                 abAlignment2[3584];
+
+    /** CPUM part. */
+    union
+    {
+#ifdef ___CPUMInternal_h
+        struct CPUMCPU      s;
+#endif
+        uint8_t             padding[4096];      /* multiple of 4096 */
+    } cpum;
 
     /** PGM part. */
     union

@@ -409,6 +409,7 @@ typedef struct CPUMCTX
 #pragma pack()
 
 #ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSizeAlignment(CPUMCTX, 64);
 
 /**
  * Gets the CPUMCTXCORE part of a CPUMCTX.

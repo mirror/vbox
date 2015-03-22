@@ -529,23 +529,6 @@ typedef CPUM *PCPUM;
 typedef struct CPUMCPU
 {
     /**
-     * Hypervisor context.
-     * Aligned on a 64-byte boundary.
-     */
-    CPUMCTX                 Hyper;
-
-    /**
-     * Saved host context. Only valid while inside GC.
-     * Aligned on a 64-byte boundary.
-     */
-    CPUMHOSTCTX             Host;
-
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    uint8_t                 aMagic[56];
-    uint64_t                uMagic;
-#endif
-
-    /**
      * Guest context.
      * Aligned on a 64-byte boundary.
      */
@@ -595,8 +578,19 @@ typedef struct CPUMCPU
     /** Have we entered the recompiler? */
     bool                    fRemEntered;
 
-    /** Align the structure on a 64-byte boundary. */
+    /** Align the next member on a 64-bit boundrary. */
     uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 2];
+
+    /** Saved host context.  Only valid while inside RC or HM contexts.
+     * Must be aligned on a 64-byte boundary. */
+    CPUMHOSTCTX             Host;
+    /** Hypervisor context. Must be aligned on a 64-byte boundary. */
+    CPUMCTX                 Hyper;
+
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    uint8_t                 aMagic[56];
+    uint64_t                uMagic;
+#endif
 } CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;

@@ -122,227 +122,8 @@ endstruc
 
 struc CPUMCPU
     ;
-    ; Hypervisor Context.
-    ;
-    .Hyper.fpu                resb    512
-    .Hyper.eax                resq    1
-    .Hyper.ecx                resq    1
-    .Hyper.edx                resq    1
-    .Hyper.ebx                resq    1
-    .Hyper.esp                resq    1
-    .Hyper.ebp                resq    1
-    .Hyper.esi                resq    1
-    .Hyper.edi                resq    1
-    .Hyper.r8                 resq    1
-    .Hyper.r9                 resq    1
-    .Hyper.r10                resq    1
-    .Hyper.r11                resq    1
-    .Hyper.r12                resq    1
-    .Hyper.r13                resq    1
-    .Hyper.r14                resq    1
-    .Hyper.r15                resq    1
-    .Hyper.es.Sel             resw    1
-    .Hyper.es.PaddingSel      resw    1
-    .Hyper.es.ValidSel        resw    1
-    .Hyper.es.fFlags          resw    1
-    .Hyper.es.u64Base         resq    1
-    .Hyper.es.u32Limit        resd    1
-    .Hyper.es.Attr            resd    1
-    .Hyper.cs.Sel             resw    1
-    .Hyper.cs.PaddingSel      resw    1
-    .Hyper.cs.ValidSel        resw    1
-    .Hyper.cs.fFlags          resw    1
-    .Hyper.cs.u64Base         resq    1
-    .Hyper.cs.u32Limit        resd    1
-    .Hyper.cs.Attr            resd    1
-    .Hyper.ss.Sel             resw    1
-    .Hyper.ss.PaddingSel      resw    1
-    .Hyper.ss.ValidSel        resw    1
-    .Hyper.ss.fFlags          resw    1
-    .Hyper.ss.u64Base         resq    1
-    .Hyper.ss.u32Limit        resd    1
-    .Hyper.ss.Attr            resd    1
-    .Hyper.ds.Sel             resw    1
-    .Hyper.ds.PaddingSel      resw    1
-    .Hyper.ds.ValidSel        resw    1
-    .Hyper.ds.fFlags          resw    1
-    .Hyper.ds.u64Base         resq    1
-    .Hyper.ds.u32Limit        resd    1
-    .Hyper.ds.Attr            resd    1
-    .Hyper.fs.Sel             resw    1
-    .Hyper.fs.PaddingSel      resw    1
-    .Hyper.fs.ValidSel        resw    1
-    .Hyper.fs.fFlags          resw    1
-    .Hyper.fs.u64Base         resq    1
-    .Hyper.fs.u32Limit        resd    1
-    .Hyper.fs.Attr            resd    1
-    .Hyper.gs.Sel             resw    1
-    .Hyper.gs.PaddingSel      resw    1
-    .Hyper.gs.ValidSel        resw    1
-    .Hyper.gs.fFlags          resw    1
-    .Hyper.gs.u64Base         resq    1
-    .Hyper.gs.u32Limit        resd    1
-    .Hyper.gs.Attr            resd    1
-    .Hyper.eip                resq    1
-    .Hyper.eflags             resq    1
-    .Hyper.cr0                resq    1
-    .Hyper.cr2                resq    1
-    .Hyper.cr3                resq    1
-    .Hyper.cr4                resq    1
-    .Hyper.dr                 resq    8
-    .Hyper.gdtrPadding        resw    3
-    .Hyper.gdtr               resw    0
-    .Hyper.gdtr.cbGdt         resw    1
-    .Hyper.gdtr.pGdt          resq    1
-    .Hyper.idtrPadding        resw    3
-    .Hyper.idtr               resw    0
-    .Hyper.idtr.cbIdt         resw    1
-    .Hyper.idtr.pIdt          resq    1
-    .Hyper.ldtr.Sel           resw    1
-    .Hyper.ldtr.PaddingSel    resw    1
-    .Hyper.ldtr.ValidSel      resw    1
-    .Hyper.ldtr.fFlags        resw    1
-    .Hyper.ldtr.u64Base       resq    1
-    .Hyper.ldtr.u32Limit      resd    1
-    .Hyper.ldtr.Attr          resd    1
-    .Hyper.tr.Sel             resw    1
-    .Hyper.tr.PaddingSel      resw    1
-    .Hyper.tr.ValidSel        resw    1
-    .Hyper.tr.fFlags          resw    1
-    .Hyper.tr.u64Base         resq    1
-    .Hyper.tr.u32Limit        resd    1
-    .Hyper.tr.Attr            resd    1
-    .Hyper.SysEnter.cs        resb    8
-    .Hyper.SysEnter.eip       resb    8
-    .Hyper.SysEnter.esp       resb    8
-    .Hyper.msrEFER            resb    8
-    .Hyper.msrSTAR            resb    8
-    .Hyper.msrPAT             resb    8
-    .Hyper.msrLSTAR           resb    8
-    .Hyper.msrCSTAR           resb    8
-    .Hyper.msrSFMASK          resb    8
-    .Hyper.msrKERNELGSBASE    resb    8
-    .Hyper.msrApicBase        resb    8
-
-    ;
-    ; Host context state
-    ;
-    alignb 64
-    .Host.fpu            resb    FPUSTATE_SIZE
-
-%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
-    ;.Host.rax            resq    1 - scratch
-    .Host.rbx            resq    1
-    ;.Host.rcx            resq    1 - scratch
-    ;.Host.rdx            resq    1 - scratch
-    .Host.rdi            resq    1
-    .Host.rsi            resq    1
-    .Host.rbp            resq    1
-    .Host.rsp            resq    1
-    ;.Host.r8             resq    1 - scratch
-    ;.Host.r9             resq    1 - scratch
-    .Host.r10            resq    1
-    .Host.r11            resq    1
-    .Host.r12            resq    1
-    .Host.r13            resq    1
-    .Host.r14            resq    1
-    .Host.r15            resq    1
-    ;.Host.rip            resd    1 - scratch
-    .Host.rflags         resq    1
-%endif
-%if HC_ARCH_BITS == 32
-    ;.Host.eax            resd    1 - scratch
-    .Host.ebx            resd    1
-    ;.Host.edx            resd    1 - scratch
-    ;.Host.ecx            resd    1 - scratch
-    .Host.edi            resd    1
-    .Host.esi            resd    1
-    .Host.ebp            resd    1
-    .Host.eflags         resd    1
-    ;.Host.eip            resd    1 - scratch
-    ; lss pair!
-    .Host.esp            resd    1
-%endif
-    .Host.ss             resw    1
-    .Host.ssPadding      resw    1
-    .Host.gs             resw    1
-    .Host.gsPadding      resw    1
-    .Host.fs             resw    1
-    .Host.fsPadding      resw    1
-    .Host.es             resw    1
-    .Host.esPadding      resw    1
-    .Host.ds             resw    1
-    .Host.dsPadding      resw    1
-    .Host.cs             resw    1
-    .Host.csPadding      resw    1
-
-%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBRID_32BIT_KERNEL == 0
-    .Host.cr0            resd    1
-    ;.Host.cr2            resd    1 - scratch
-    .Host.cr3            resd    1
-    .Host.cr4            resd    1
-
-    .Host.dr0            resd    1
-    .Host.dr1            resd    1
-    .Host.dr2            resd    1
-    .Host.dr3            resd    1
-    .Host.dr6            resd    1
-    .Host.dr7            resd    1
-
-    .Host.gdtr           resb    6           ; GDT limit + linear address
-    .Host.gdtrPadding    resw    1
-    .Host.idtr           resb    6           ; IDT limit + linear address
-    .Host.idtrPadding    resw    1
-    .Host.ldtr           resw    1
-    .Host.ldtrPadding    resw    1
-    .Host.tr             resw    1
-    .Host.trPadding      resw    1
-
-    .Host.SysEnterPadding resd   1
-    .Host.SysEnter.cs    resq    1
-    .Host.SysEnter.eip   resq    1
-    .Host.SysEnter.esp   resq    1
-    .Host.efer           resq    1
-
-%else ; 64-bit
-
-    .Host.cr0            resq    1
-    ;.Host.cr2            resq    1 - scratch
-    .Host.cr3            resq    1
-    .Host.cr4            resq    1
-    .Host.cr8            resq    1
-
-    .Host.dr0            resq    1
-    .Host.dr1            resq    1
-    .Host.dr2            resq    1
-    .Host.dr3            resq    1
-    .Host.dr6            resq    1
-    .Host.dr7            resq    1
-
-    .Host.gdtr           resb    10         ; GDT limit + linear address
-    .Host.gdtrPadding    resw    1
-    .Host.idtr           resb    10         ; IDT limit + linear address
-    .Host.idtrPadding    resw    1
-    .Host.ldtr           resw    1
-    .Host.ldtrPadding    resw    1
-    .Host.tr             resw    1
-    .Host.trPadding      resw    1
-
-    .Host.SysEnter.cs    resq    1
-    .Host.SysEnter.eip   resq    1
-    .Host.SysEnter.esp   resq    1
-    .Host.FSbase         resq    1
-    .Host.GSbase         resq    1
-    .Host.efer           resq    1
-%endif ; 64-bit
-
-%ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    .aMagic              resb    56
-    .uMagic              resq    1
-%endif
-    ;
     ; Guest context state
-    ; (Identical to the .Hyper chunk above.)
+    ; (Identical to the .Hyper chunk below.)
     ;
     alignb 64
     .Guest.fpu                resb    512
@@ -469,6 +250,228 @@ struc CPUMCPU
     .fRemEntered          resb    1
 
     .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2)
+
+    ;
+    ; Host context state
+    ;
+    alignb 64
+    .Host.fpu            resb    FPUSTATE_SIZE
+
+%if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
+    ;.Host.rax            resq    1 - scratch
+    .Host.rbx            resq    1
+    ;.Host.rcx            resq    1 - scratch
+    ;.Host.rdx            resq    1 - scratch
+    .Host.rdi            resq    1
+    .Host.rsi            resq    1
+    .Host.rbp            resq    1
+    .Host.rsp            resq    1
+    ;.Host.r8             resq    1 - scratch
+    ;.Host.r9             resq    1 - scratch
+    .Host.r10            resq    1
+    .Host.r11            resq    1
+    .Host.r12            resq    1
+    .Host.r13            resq    1
+    .Host.r14            resq    1
+    .Host.r15            resq    1
+    ;.Host.rip            resd    1 - scratch
+    .Host.rflags         resq    1
+%endif
+%if HC_ARCH_BITS == 32
+    ;.Host.eax            resd    1 - scratch
+    .Host.ebx            resd    1
+    ;.Host.edx            resd    1 - scratch
+    ;.Host.ecx            resd    1 - scratch
+    .Host.edi            resd    1
+    .Host.esi            resd    1
+    .Host.ebp            resd    1
+    .Host.eflags         resd    1
+    ;.Host.eip            resd    1 - scratch
+    ; lss pair!
+    .Host.esp            resd    1
+%endif
+    .Host.ss             resw    1
+    .Host.ssPadding      resw    1
+    .Host.gs             resw    1
+    .Host.gsPadding      resw    1
+    .Host.fs             resw    1
+    .Host.fsPadding      resw    1
+    .Host.es             resw    1
+    .Host.esPadding      resw    1
+    .Host.ds             resw    1
+    .Host.dsPadding      resw    1
+    .Host.cs             resw    1
+    .Host.csPadding      resw    1
+
+%if HC_ARCH_BITS == 32 && fVBOX_WITH_HYBRID_32BIT_KERNEL == 0
+    .Host.cr0            resd    1
+    ;.Host.cr2            resd    1 - scratch
+    .Host.cr3            resd    1
+    .Host.cr4            resd    1
+
+    .Host.dr0            resd    1
+    .Host.dr1            resd    1
+    .Host.dr2            resd    1
+    .Host.dr3            resd    1
+    .Host.dr6            resd    1
+    .Host.dr7            resd    1
+
+    .Host.gdtr           resb    6           ; GDT limit + linear address
+    .Host.gdtrPadding    resw    1
+    .Host.idtr           resb    6           ; IDT limit + linear address
+    .Host.idtrPadding    resw    1
+    .Host.ldtr           resw    1
+    .Host.ldtrPadding    resw    1
+    .Host.tr             resw    1
+    .Host.trPadding      resw    1
+
+    .Host.SysEnterPadding resd   1
+    .Host.SysEnter.cs    resq    1
+    .Host.SysEnter.eip   resq    1
+    .Host.SysEnter.esp   resq    1
+    .Host.efer           resq    1
+
+%else ; 64-bit
+
+    .Host.cr0            resq    1
+    ;.Host.cr2            resq    1 - scratch
+    .Host.cr3            resq    1
+    .Host.cr4            resq    1
+    .Host.cr8            resq    1
+
+    .Host.dr0            resq    1
+    .Host.dr1            resq    1
+    .Host.dr2            resq    1
+    .Host.dr3            resq    1
+    .Host.dr6            resq    1
+    .Host.dr7            resq    1
+
+    .Host.gdtr           resb    10         ; GDT limit + linear address
+    .Host.gdtrPadding    resw    1
+    .Host.idtr           resb    10         ; IDT limit + linear address
+    .Host.idtrPadding    resw    1
+    .Host.ldtr           resw    1
+    .Host.ldtrPadding    resw    1
+    .Host.tr             resw    1
+    .Host.trPadding      resw    1
+
+    .Host.SysEnter.cs    resq    1
+    .Host.SysEnter.eip   resq    1
+    .Host.SysEnter.esp   resq    1
+    .Host.FSbase         resq    1
+    .Host.GSbase         resq    1
+    .Host.efer           resq    1
+%endif ; 64-bit
+
+    ;
+    ; Hypervisor Context (same as .Guest above).
+    ;
+    alignb 64
+    .Hyper.fpu                resb    512
+    .Hyper.eax                resq    1
+    .Hyper.ecx                resq    1
+    .Hyper.edx                resq    1
+    .Hyper.ebx                resq    1
+    .Hyper.esp                resq    1
+    .Hyper.ebp                resq    1
+    .Hyper.esi                resq    1
+    .Hyper.edi                resq    1
+    .Hyper.r8                 resq    1
+    .Hyper.r9                 resq    1
+    .Hyper.r10                resq    1
+    .Hyper.r11                resq    1
+    .Hyper.r12                resq    1
+    .Hyper.r13                resq    1
+    .Hyper.r14                resq    1
+    .Hyper.r15                resq    1
+    .Hyper.es.Sel             resw    1
+    .Hyper.es.PaddingSel      resw    1
+    .Hyper.es.ValidSel        resw    1
+    .Hyper.es.fFlags          resw    1
+    .Hyper.es.u64Base         resq    1
+    .Hyper.es.u32Limit        resd    1
+    .Hyper.es.Attr            resd    1
+    .Hyper.cs.Sel             resw    1
+    .Hyper.cs.PaddingSel      resw    1
+    .Hyper.cs.ValidSel        resw    1
+    .Hyper.cs.fFlags          resw    1
+    .Hyper.cs.u64Base         resq    1
+    .Hyper.cs.u32Limit        resd    1
+    .Hyper.cs.Attr            resd    1
+    .Hyper.ss.Sel             resw    1
+    .Hyper.ss.PaddingSel      resw    1
+    .Hyper.ss.ValidSel        resw    1
+    .Hyper.ss.fFlags          resw    1
+    .Hyper.ss.u64Base         resq    1
+    .Hyper.ss.u32Limit        resd    1
+    .Hyper.ss.Attr            resd    1
+    .Hyper.ds.Sel             resw    1
+    .Hyper.ds.PaddingSel      resw    1
+    .Hyper.ds.ValidSel        resw    1
+    .Hyper.ds.fFlags          resw    1
+    .Hyper.ds.u64Base         resq    1
+    .Hyper.ds.u32Limit        resd    1
+    .Hyper.ds.Attr            resd    1
+    .Hyper.fs.Sel             resw    1
+    .Hyper.fs.PaddingSel      resw    1
+    .Hyper.fs.ValidSel        resw    1
+    .Hyper.fs.fFlags          resw    1
+    .Hyper.fs.u64Base         resq    1
+    .Hyper.fs.u32Limit        resd    1
+    .Hyper.fs.Attr            resd    1
+    .Hyper.gs.Sel             resw    1
+    .Hyper.gs.PaddingSel      resw    1
+    .Hyper.gs.ValidSel        resw    1
+    .Hyper.gs.fFlags          resw    1
+    .Hyper.gs.u64Base         resq    1
+    .Hyper.gs.u32Limit        resd    1
+    .Hyper.gs.Attr            resd    1
+    .Hyper.eip                resq    1
+    .Hyper.eflags             resq    1
+    .Hyper.cr0                resq    1
+    .Hyper.cr2                resq    1
+    .Hyper.cr3                resq    1
+    .Hyper.cr4                resq    1
+    .Hyper.dr                 resq    8
+    .Hyper.gdtrPadding        resw    3
+    .Hyper.gdtr               resw    0
+    .Hyper.gdtr.cbGdt         resw    1
+    .Hyper.gdtr.pGdt          resq    1
+    .Hyper.idtrPadding        resw    3
+    .Hyper.idtr               resw    0
+    .Hyper.idtr.cbIdt         resw    1
+    .Hyper.idtr.pIdt          resq    1
+    .Hyper.ldtr.Sel           resw    1
+    .Hyper.ldtr.PaddingSel    resw    1
+    .Hyper.ldtr.ValidSel      resw    1
+    .Hyper.ldtr.fFlags        resw    1
+    .Hyper.ldtr.u64Base       resq    1
+    .Hyper.ldtr.u32Limit      resd    1
+    .Hyper.ldtr.Attr          resd    1
+    .Hyper.tr.Sel             resw    1
+    .Hyper.tr.PaddingSel      resw    1
+    .Hyper.tr.ValidSel        resw    1
+    .Hyper.tr.fFlags          resw    1
+    .Hyper.tr.u64Base         resq    1
+    .Hyper.tr.u32Limit        resd    1
+    .Hyper.tr.Attr            resd    1
+    .Hyper.SysEnter.cs        resb    8
+    .Hyper.SysEnter.eip       resb    8
+    .Hyper.SysEnter.esp       resb    8
+    .Hyper.msrEFER            resb    8
+    .Hyper.msrSTAR            resb    8
+    .Hyper.msrPAT             resb    8
+    .Hyper.msrLSTAR           resb    8
+    .Hyper.msrCSTAR           resb    8
+    .Hyper.msrSFMASK          resb    8
+    .Hyper.msrKERNELGSBASE    resb    8
+    .Hyper.msrApicBase        resb    8
+    alignb 64
+
+%ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    .aMagic              resb    56
+    .uMagic              resq    1
+%endif
 endstruc
 
 
