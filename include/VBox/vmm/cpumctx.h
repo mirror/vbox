@@ -249,7 +249,7 @@ typedef struct CPUMCTX
     /** FPU state. (16-byte alignment)
      * @todo This doesn't have to be in X86FXSTATE on CPUs without fxsr - we need a type for the
      *       actual format or convert it (waste of time).  */
-    X86FXSTATE      fpu;
+    X86XSAVEAREA        XState;
 
     /** CPUMCTXCORE Part.
      * @{ */

@@ -1975,10 +1975,10 @@ VMMR0DECL(void) HMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         "FOP=%04x FPUIP=%08x CS=%04x Rsrvd1=%04x\n"
         "FPUDP=%04x DS=%04x Rsvrd2=%04x MXCSR=%08x MXCSR_MASK=%08x\n"
         ,
-        pCtx->fpu.FCW, pCtx->fpu.FSW, pCtx->fpu.FTW,
-        pCtx->fpu.FOP, pCtx->fpu.FPUIP, pCtx->fpu.CS, pCtx->fpu.Rsrvd1,
-        pCtx->fpu.FPUDP, pCtx->fpu.DS, pCtx->fpu.Rsrvd2,
-        pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK));
+        pCtx->XState.x87.FCW, pCtx->XState.x87.FSW, pCtx->XState.x87.FTW,
+        pCtx->XState.x87.FOP, pCtx->XState.x87.FPUIP, pCtx->XState.x87.CS, pCtx->XState.x87.Rsrvd1,
+        pCtx->XState.x87.FPUDP, pCtx->XState.x87.DS, pCtx->XState.x87.Rsrvd2,
+        pCtx->XState.x87.MXCSR, pCtx->XState.x87.MXCSR_MASK));
 
     Log(("MSR:\n"
         "EFER         =%016RX64\n"

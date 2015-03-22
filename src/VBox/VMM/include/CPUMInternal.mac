@@ -16,6 +16,7 @@
 ;
 
 %include "VBox/asmdefs.mac"
+%include "VBox/vmm/cpum.mac"
 
 ;;
 ; CPU info
@@ -63,7 +64,6 @@ endstruc
 
 %define VMMGCRET_USED_FPU               040000000h
 
-%define FPUSTATE_SIZE                   512
 
 ;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) in
 ; nasm please tell / fix this hack.
@@ -126,7 +126,7 @@ struc CPUMCPU
     ; (Identical to the .Hyper chunk below.)
     ;
     alignb 64
-    .Guest.fpu                resb    512
+    .Guest.XState             resb    XSTATE_SIZE
     .Guest.eax                resq    1
     .Guest.ecx                resq    1
     .Guest.edx                resq    1
@@ -255,7 +255,7 @@ struc CPUMCPU
     ; Host context state
     ;
     alignb 64
-    .Host.fpu            resb    FPUSTATE_SIZE
+    .Host.XState         resb    XSTATE_SIZE
 
 %if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
     ;.Host.rax            resq    1 - scratch
@@ -367,7 +367,7 @@ struc CPUMCPU
     ; Hypervisor Context (same as .Guest above).
     ;
     alignb 64
-    .Hyper.fpu                resb    512
+    .Hyper.XState             resb    XSTATE_SIZE
     .Hyper.eax                resq    1
     .Hyper.ecx                resq    1
     .Hyper.edx                resq    1

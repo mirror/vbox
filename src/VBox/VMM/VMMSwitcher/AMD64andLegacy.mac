@@ -1143,8 +1143,8 @@ gth_sysenter_no:
     and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rcx
 
-    fxsave  [rdx + r8 + CPUMCPU.Guest.fpu]
-    o64 fxrstor [rdx + r8 + CPUMCPU.Host.fpu]       ; Restore 64-bit host FPU state. See @bugref{7138}
+    fxsave  [rdx + r8 + CPUMCPU.Guest.XState]
+    o64 fxrstor [rdx + r8 + CPUMCPU.Host.XState]    ; Restore 64-bit host FPU state. See @bugref{7138}
     jmp short gth_fpu_no
 
 ALIGNCODE(16)

@@ -664,7 +664,7 @@ GLOBALNAME ICEnterTarget
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rax
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Guest.XState]
     mov     cr0, rcx                    ; and restore old CR0 again
 
     and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
@@ -724,7 +724,7 @@ htg_debug_done:
 
     ; parameter for all helper functions (pCtx)
     DEBUG64_CHAR('9')
-    lea     rsi, [rdx + CPUMCPU.Guest.fpu]
+    lea     rsi, [rdx + CPUMCPU.Guest.XState]
     lea     rax, [htg_return wrt rip]
     push    rax                         ; return address
 
@@ -1258,7 +1258,7 @@ BEGINPROC HMRCSaveGuestFPU64
     mov     cr0, rax
 
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxsave  [rsi + CPUMCTX.fpu]
+    o64 fxsave  [rsi + CPUMCTX.XState]
 
     mov     cr0, rcx                    ; and restore old CR0 again
 

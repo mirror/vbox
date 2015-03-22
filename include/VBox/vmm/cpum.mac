@@ -132,8 +132,10 @@ struc CPUMCTXCORE
 endstruc
 
 
+%define XSTATE_SIZE             8192
+
 struc CPUMCTX
-    .fpu                resb    512
+    .XState             resb    XSTATE_SIZE
     .eax                resq    1
     .ecx                resq    1
     .edx                resq    1

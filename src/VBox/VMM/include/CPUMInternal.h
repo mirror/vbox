@@ -287,7 +287,7 @@ typedef struct CPUMHOSTCTX
 {
     /** FPU state. (16-byte alignment)
      * @remark On x86, the format isn't necessarily X86FXSTATE (not important). */
-    X86FXSTATE      fpu;
+    X86XSAVEAREA    XState;
 
     /** General purpose register, selectors, flags and more
      * @{ */

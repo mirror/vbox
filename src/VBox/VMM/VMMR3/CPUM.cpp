@@ -113,42 +113,42 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 /** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
 {
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FCW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FSW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FTW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FOP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUIP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.CS),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd1),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUDP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.DS),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd2),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR_MASK),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[0]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[1]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[2]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[3]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[4]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[5]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[6]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[7]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[0]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[1]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[2]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[3]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[4]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[5]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[6]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[7]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[8]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[9]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[10]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[11]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[12]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[13]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[14]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[15]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FCW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FSW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FTW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FOP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FPUIP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.CS),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.Rsrvd1),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FPUDP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.DS),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.Rsrvd2),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.MXCSR),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.MXCSR_MASK),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[8]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[9]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[10]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[11]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[12]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[13]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[14]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[15]),
     SSMFIELD_ENTRY(         CPUMCTX, rdi),
     SSMFIELD_ENTRY(         CPUMCTX, rsi),
     SSMFIELD_ENTRY(         CPUMCTX, rbp),
@@ -247,43 +247,43 @@ static const SSMFIELD g_aCpumCtxFields[] =
  * registeres changed. */
 static const SSMFIELD g_aCpumCtxFieldsMem[] =
 {
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FCW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FSW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FTW),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FOP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUIP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.CS),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd1),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.FPUDP),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.DS),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.Rsrvd2),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.MXCSR_MASK),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[0]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[1]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[2]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[3]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[4]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[5]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[6]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aRegs[7]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[0]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[1]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[2]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[3]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[4]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[5]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[6]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[7]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[8]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[9]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[10]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[11]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[12]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[13]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[14]),
-    SSMFIELD_ENTRY(         CPUMCTX, fpu.aXMM[15]),
-    SSMFIELD_ENTRY_IGNORE(  CPUMCTX, fpu.au32RsrvdRest),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FCW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FSW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FTW),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FOP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FPUIP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.CS),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.Rsrvd1),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.FPUDP),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.DS),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.Rsrvd2),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.MXCSR),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.MXCSR_MASK),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aRegs[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[0]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[1]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[2]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[3]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[4]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[5]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[6]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[7]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[8]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[9]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[10]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[11]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[12]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[13]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[14]),
+    SSMFIELD_ENTRY(         CPUMCTX, XState.x87.aXMM[15]),
+    SSMFIELD_ENTRY_IGNORE(  CPUMCTX, XState.x87.au32RsrvdRest),
     SSMFIELD_ENTRY(         CPUMCTX, rdi),
     SSMFIELD_ENTRY(         CPUMCTX, rsi),
     SSMFIELD_ENTRY(         CPUMCTX, rbp),
@@ -377,43 +377,43 @@ static const SSMFIELD g_aCpumCtxFieldsMem[] =
 /** Saved state field descriptors for CPUMCTX_VER1_6. */
 static const SSMFIELD g_aCpumCtxFieldsV16[] =
 {
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FCW),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FSW),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FTW),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FOP),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FPUIP),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.CS),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.Rsrvd1),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.FPUDP),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.DS),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.Rsrvd2),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.MXCSR),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.MXCSR_MASK),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[0]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[1]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[2]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[3]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[4]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[5]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[6]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aRegs[7]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[0]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[1]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[2]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[3]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[4]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[5]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[6]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[7]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[8]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[9]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[10]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[11]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[12]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[13]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[14]),
-    SSMFIELD_ENTRY(             CPUMCTX, fpu.aXMM[15]),
-    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, fpu.au32RsrvdRest),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FCW),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FSW),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FTW),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FOP),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FPUIP),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.CS),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.Rsrvd1),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.FPUDP),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.DS),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.Rsrvd2),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.MXCSR),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.MXCSR_MASK),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[0]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[1]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[2]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[3]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[4]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[5]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[6]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aRegs[7]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[0]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[1]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[2]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[3]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[4]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[5]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[6]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[7]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[8]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[9]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[10]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[11]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[12]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[13]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[14]),
+    SSMFIELD_ENTRY(             CPUMCTX, XState.x87.aXMM[15]),
+    SSMFIELD_ENTRY_IGNORE(      CPUMCTX, XState.x87.au32RsrvdRest),
     SSMFIELD_ENTRY(             CPUMCTX, rdi),
     SSMFIELD_ENTRY(             CPUMCTX, rsi),
     SSMFIELD_ENTRY(             CPUMCTX, rbp),
@@ -841,13 +841,13 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
     pCtx->dr[6]                     = X86_DR6_INIT_VAL;
     pCtx->dr[7]                     = X86_DR7_INIT_VAL;
 
-    pCtx->fpu.FTW                   = 0x00;         /* All empty (abbridged tag reg edition). */
-    pCtx->fpu.FCW                   = 0x37f;
+    pCtx->XState.x87.FTW            = 0x00;         /* All empty (abbridged tag reg edition). */
+    pCtx->XState.x87.FCW            = 0x37f;
 
     /* Intel 64 and IA-32 Architectures Software Developer's Manual Volume 3A, Table 8-1.
        IA-32 Processor States Following Power-up, Reset, or INIT */
-    pCtx->fpu.MXCSR                 = 0x1F80;
-    pCtx->fpu.MXCSR_MASK            = 0xffff; /** @todo REM always changed this for us. Should probably check if the HW really
+    pCtx->XState.x87.MXCSR          = 0x1F80;
+    pCtx->XState.x87.MXCSR_MASK     = 0xffff; /** @todo REM always changed this for us. Should probably check if the HW really
                                                         supports all bits, since a zero value here should be read as 0xffbf. */
 
     /*
@@ -1520,46 +1520,46 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
                 "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
                 ,
-                pszPrefix, pCtx->fpu.FCW,   pszPrefix, pCtx->fpu.FSW, pszPrefix, pCtx->fpu.FTW, pszPrefix, pCtx->fpu.FOP,
-                pszPrefix, pCtx->fpu.MXCSR, pszPrefix, pCtx->fpu.MXCSR_MASK,
-                pszPrefix, pCtx->fpu.FPUIP, pszPrefix, pCtx->fpu.CS,  pszPrefix, pCtx->fpu.Rsrvd1,
-                pszPrefix, pCtx->fpu.FPUDP, pszPrefix, pCtx->fpu.DS,  pszPrefix, pCtx->fpu.Rsrvd2
+                pszPrefix, pCtx->XState.x87.FCW,   pszPrefix, pCtx->XState.x87.FSW, pszPrefix, pCtx->XState.x87.FTW, pszPrefix, pCtx->XState.x87.FOP,
+                pszPrefix, pCtx->XState.x87.MXCSR, pszPrefix, pCtx->XState.x87.MXCSR_MASK,
+                pszPrefix, pCtx->XState.x87.FPUIP, pszPrefix, pCtx->XState.x87.CS,  pszPrefix, pCtx->XState.x87.Rsrvd1,
+                pszPrefix, pCtx->XState.x87.FPUDP, pszPrefix, pCtx->XState.x87.DS,  pszPrefix, pCtx->XState.x87.Rsrvd2
                 );
-            unsigned iShift = (pCtx->fpu.FSW >> 11) & 7;
-            for (unsigned iST = 0; iST < RT_ELEMENTS(pCtx->fpu.aRegs); iST++)
+            unsigned iShift = (pCtx->XState.x87.FSW >> 11) & 7;
+            for (unsigned iST = 0; iST < RT_ELEMENTS(pCtx->XState.x87.aRegs); iST++)
             {
-                unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pCtx->fpu.aRegs);
-                unsigned uTag        = pCtx->fpu.FTW & (1 << iFPR) ? 1 : 0;
-                char     chSign      = pCtx->fpu.aRegs[0].au16[4] & 0x8000 ? '-' : '+';
-                unsigned iInteger    = (unsigned)(pCtx->fpu.aRegs[0].au64[0] >> 63);
-                uint64_t u64Fraction = pCtx->fpu.aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
-                unsigned uExponent   = pCtx->fpu.aRegs[0].au16[4] & 0x7fff;
+                unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pCtx->XState.x87.aRegs);
+                unsigned uTag        = pCtx->XState.x87.FTW & (1 << iFPR) ? 1 : 0;
+                char     chSign      = pCtx->XState.x87.aRegs[0].au16[4] & 0x8000 ? '-' : '+';
+                unsigned iInteger    = (unsigned)(pCtx->XState.x87.aRegs[0].au64[0] >> 63);
+                uint64_t u64Fraction = pCtx->XState.x87.aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
+                unsigned uExponent   = pCtx->XState.x87.aRegs[0].au16[4] & 0x7fff;
                 /** @todo This isn't entirenly correct and needs more work! */
                 pHlp->pfnPrintf(pHlp,
                                 "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u",
                                 pszPrefix, iST, pszPrefix, iFPR,
-                                pCtx->fpu.aRegs[0].au16[4], pCtx->fpu.aRegs[0].au32[1], pCtx->fpu.aRegs[0].au32[0],
+                                pCtx->XState.x87.aRegs[0].au16[4], pCtx->XState.x87.aRegs[0].au32[1], pCtx->XState.x87.aRegs[0].au32[0],
                                 uTag, chSign, iInteger, u64Fraction, uExponent);
-                if (pCtx->fpu.aRegs[0].au16[5] || pCtx->fpu.aRegs[0].au16[6] || pCtx->fpu.aRegs[0].au16[7])
+                if (pCtx->XState.x87.aRegs[0].au16[5] || pCtx->XState.x87.aRegs[0].au16[6] || pCtx->XState.x87.aRegs[0].au16[7])
                     pHlp->pfnPrintf(pHlp, " res={%04RX16,%04RX16,%04RX16}\n",
-                                    pCtx->fpu.aRegs[0].au16[5], pCtx->fpu.aRegs[0].au16[6], pCtx->fpu.aRegs[0].au16[7]);
+                                    pCtx->XState.x87.aRegs[0].au16[5], pCtx->XState.x87.aRegs[0].au16[6], pCtx->XState.x87.aRegs[0].au16[7]);
                 else
                     pHlp->pfnPrintf(pHlp, "\n");
             }
-            for (unsigned iXMM = 0; iXMM < RT_ELEMENTS(pCtx->fpu.aXMM); iXMM++)
+            for (unsigned iXMM = 0; iXMM < RT_ELEMENTS(pCtx->XState.x87.aXMM); iXMM++)
                 pHlp->pfnPrintf(pHlp,
                                 iXMM & 1
                                 ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
                                 : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
                                 pszPrefix, iXMM, iXMM < 10 ? " " : "",
-                                pCtx->fpu.aXMM[iXMM].au32[3],
-                                pCtx->fpu.aXMM[iXMM].au32[2],
-                                pCtx->fpu.aXMM[iXMM].au32[1],
-                                pCtx->fpu.aXMM[iXMM].au32[0]);
-            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->fpu.au32RsrvdRest); i++)
-                if (pCtx->fpu.au32RsrvdRest[i])
+                                pCtx->XState.x87.aXMM[iXMM].au32[3],
+                                pCtx->XState.x87.aXMM[iXMM].au32[2],
+                                pCtx->XState.x87.aXMM[iXMM].au32[1],
+                                pCtx->XState.x87.aXMM[iXMM].au32[0]);
+            for (unsigned i = 0; i < RT_ELEMENTS(pCtx->XState.x87.au32RsrvdRest); i++)
+                if (pCtx->XState.x87.au32RsrvdRest[i])
                     pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
-                                    pszPrefix, i, pCtx->fpu.au32RsrvdRest[i], RT_OFFSETOF(X86FXSTATE, au32RsrvdRest[i]) );
+                                    pszPrefix, i, pCtx->XState.x87.au32RsrvdRest[i], RT_OFFSETOF(X86FXSTATE, au32RsrvdRest[i]) );
 
             pHlp->pfnPrintf(pHlp,
                 "%sEFER         =%016RX64\n"

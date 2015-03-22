@@ -64,7 +64,7 @@ BEGINCODE
 .clean_fpu:
     ffree   st7              ; Clear FPU stack register(7)'s tag entry to prevent overflow if a wraparound occurs
                              ; for the upcoming push (load)
-    fild    dword [xDX + CPUMCPU.Guest.fpu] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
+    fild    dword [xDX + CPUMCPU.Guest.XState] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
 
 .nothing_to_clean:
 %endmacro
@@ -196,12 +196,12 @@ hlfpua_switch_fpu_ctx:
 
 %ifdef RT_ARCH_AMD64
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxsave  [xDX + CPUMCPU.Host.fpu]
+    o64 fxsave  [xDX + CPUMCPU.Host.XState]
 %else
-    fxsave  [xDX + CPUMCPU.Host.fpu]
+    fxsave  [xDX + CPUMCPU.Host.XState]
 %endif
     or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
-    fxrstor [xDX + CPUMCPU.Guest.fpu]           ; raw-mode guest is always 32-bit. See @bugref{7138}.
+    fxrstor [xDX + CPUMCPU.Guest.XState]        ; raw-mode guest is always 32-bit. See @bugref{7138}.
 
 hlfpua_finished_switch:
 
@@ -216,17 +216,17 @@ hlfpua_finished_switch:
 %ifndef RT_ARCH_AMD64
 ; legacy support.
 hlfpua_no_fxsave:
-    fnsave  [xDX + CPUMCPU.Host.fpu]
+    fnsave  [xDX + CPUMCPU.Host.XState]
     or      dword [xDX + CPUMCPU.fUseFlags], dword (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) ; yasm / nasm
-    mov     eax, [xDX + CPUMCPU.Guest.fpu]      ; control word
+    mov     eax, [xDX + CPUMCPU.Guest.XState]   ; control word
     not     eax                                 ; 1 means exception ignored (6 LS bits)
     and     eax, byte 03Fh                      ; 6 LS bits only
-    test    eax, [xDX + CPUMCPU.Guest.fpu + 4]  ; status word
+    test    eax, [xDX + CPUMCPU.Guest.XState + 4] ; status word
     jz short hlfpua_no_exceptions_pending
     ; technically incorrect, but we certainly don't want any exceptions now!!
-    and     dword [xDX + CPUMCPU.Guest.fpu + 4], ~03Fh
+    and     dword [xDX + CPUMCPU.Guest.XState + 4], ~03Fh
 hlfpua_no_exceptions_pending:
-    frstor  [xDX + CPUMCPU.Guest.fpu]
+    frstor  [xDX + CPUMCPU.Guest.XState]
     jmp near hlfpua_finished_switch
 %endif ; !RT_ARCH_AMD64
 

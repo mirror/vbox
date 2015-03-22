@@ -487,7 +487,7 @@ VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          *        I'm not able to test such an optimization tonight.
          *        We could just all this in assembly. */
         uint128_t aGuestXmmRegs[16];
-        memcpy(&aGuestXmmRegs[0], &pVCpu->cpum.s.Guest.fpu.aXMM[0], sizeof(aGuestXmmRegs));
+        memcpy(&aGuestXmmRegs[0], &pVCpu->cpum.s.Guest.XState.x87.aXMM[0], sizeof(aGuestXmmRegs));
 #endif
 
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
@@ -510,7 +510,7 @@ VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             ASMWrMsr(MSR_K6_EFER, uHostEfer | MSR_K6_EFER_FFXSR);
 
 #ifdef VBOX_WITH_KERNEL_USING_XMM
-        memcpy(&pVCpu->cpum.s.Guest.fpu.aXMM[0], &aGuestXmmRegs[0], sizeof(aGuestXmmRegs));
+        memcpy(&pVCpu->cpum.s.Guest.XState.x87.aXMM[0], &aGuestXmmRegs[0], sizeof(aGuestXmmRegs));
 #endif
     }
 

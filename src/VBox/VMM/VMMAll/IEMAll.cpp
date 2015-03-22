@@ -5228,26 +5228,26 @@ DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg)
  */
 DECLINLINE(void) iemFpuUpdateOpcodeAndIpWorker(PIEMCPU pIemCpu, PCPUMCTX pCtx)
 {
-    pCtx->fpu.FOP   = pIemCpu->abOpcode[pIemCpu->offFpuOpcode]
+    pCtx->XState.x87.FOP   = pIemCpu->abOpcode[pIemCpu->offFpuOpcode]
                     | ((uint16_t)(pIemCpu->abOpcode[pIemCpu->offFpuOpcode - 1] & 0x7) << 8);
-    /** @todo FPU.CS and FPUIP needs to be kept seperately. */
+    /** @todo XState.x87.CS and FPUIP needs to be kept seperately. */
     if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
     {
         /** @todo Testcase: making assumptions about how FPUIP and FPUDP are handled
          *        happens in real mode here based on the fnsave and fnstenv images. */
-        pCtx->fpu.CS    = 0;
-        pCtx->fpu.FPUIP = pCtx->eip | ((uint32_t)pCtx->cs.Sel << 4);
+        pCtx->XState.x87.CS    = 0;
+        pCtx->XState.x87.FPUIP = pCtx->eip | ((uint32_t)pCtx->cs.Sel << 4);
     }
     else
     {
-        pCtx->fpu.CS    = pCtx->cs.Sel;
-        pCtx->fpu.FPUIP = pCtx->rip;
+        pCtx->XState.x87.CS    = pCtx->cs.Sel;
+        pCtx->XState.x87.FPUIP = pCtx->rip;
     }
 }
 
 
 /**
- * Updates the FPU.DS and FPUDP registers.
+ * Updates the XState.x87.DS and FPUDP registers.
  *
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pCtx                The CPU context.
@@ -5269,16 +5269,16 @@ DECLINLINE(void) iemFpuUpdateDP(PIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t iEffSeg,
             AssertMsgFailed(("%d\n", iEffSeg));
             sel = pCtx->ds.Sel;
     }
-    /** @todo FPU.DS and FPUDP needs to be kept seperately. */
+    /** @todo XState.x87.DS and FPUDP needs to be kept seperately. */
     if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
     {
-        pCtx->fpu.DS    = 0;
-        pCtx->fpu.FPUDP = (uint32_t)GCPtrEff | ((uint32_t)sel << 4);
+        pCtx->XState.x87.DS    = 0;
+        pCtx->XState.x87.FPUDP = (uint32_t)GCPtrEff | ((uint32_t)sel << 4);
     }
     else
     {
-        pCtx->fpu.DS    = sel;
-        pCtx->fpu.FPUDP = GCPtrEff;
+        pCtx->XState.x87.DS    = sel;
+        pCtx->XState.x87.FPUDP = GCPtrEff;
     }
 }
 
@@ -5292,15 +5292,15 @@ DECLINLINE(void) iemFpuUpdateDP(PIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t iEffSeg,
  */
 DECLINLINE(void) iemFpuRotateStackPush(PCPUMCTX pCtx)
 {
-    RTFLOAT80U r80Tmp = pCtx->fpu.aRegs[7].r80;
-    pCtx->fpu.aRegs[7].r80 = pCtx->fpu.aRegs[6].r80;
-    pCtx->fpu.aRegs[6].r80 = pCtx->fpu.aRegs[5].r80;
-    pCtx->fpu.aRegs[5].r80 = pCtx->fpu.aRegs[4].r80;
-    pCtx->fpu.aRegs[4].r80 = pCtx->fpu.aRegs[3].r80;
-    pCtx->fpu.aRegs[3].r80 = pCtx->fpu.aRegs[2].r80;
-    pCtx->fpu.aRegs[2].r80 = pCtx->fpu.aRegs[1].r80;
-    pCtx->fpu.aRegs[1].r80 = pCtx->fpu.aRegs[0].r80;
-    pCtx->fpu.aRegs[0].r80 = r80Tmp;
+    RTFLOAT80U r80Tmp = pCtx->XState.x87.aRegs[7].r80;
+    pCtx->XState.x87.aRegs[7].r80 = pCtx->XState.x87.aRegs[6].r80;
+    pCtx->XState.x87.aRegs[6].r80 = pCtx->XState.x87.aRegs[5].r80;
+    pCtx->XState.x87.aRegs[5].r80 = pCtx->XState.x87.aRegs[4].r80;
+    pCtx->XState.x87.aRegs[4].r80 = pCtx->XState.x87.aRegs[3].r80;
+    pCtx->XState.x87.aRegs[3].r80 = pCtx->XState.x87.aRegs[2].r80;
+    pCtx->XState.x87.aRegs[2].r80 = pCtx->XState.x87.aRegs[1].r80;
+    pCtx->XState.x87.aRegs[1].r80 = pCtx->XState.x87.aRegs[0].r80;
+    pCtx->XState.x87.aRegs[0].r80 = r80Tmp;
 }
 
 
@@ -5313,15 +5313,15 @@ DECLINLINE(void) iemFpuRotateStackPush(PCPUMCTX pCtx)
  */
 DECLINLINE(void) iemFpuRotateStackPop(PCPUMCTX pCtx)
 {
-    RTFLOAT80U r80Tmp = pCtx->fpu.aRegs[0].r80;
-    pCtx->fpu.aRegs[0].r80 = pCtx->fpu.aRegs[1].r80;
-    pCtx->fpu.aRegs[1].r80 = pCtx->fpu.aRegs[2].r80;
-    pCtx->fpu.aRegs[2].r80 = pCtx->fpu.aRegs[3].r80;
-    pCtx->fpu.aRegs[3].r80 = pCtx->fpu.aRegs[4].r80;
-    pCtx->fpu.aRegs[4].r80 = pCtx->fpu.aRegs[5].r80;
-    pCtx->fpu.aRegs[5].r80 = pCtx->fpu.aRegs[6].r80;
-    pCtx->fpu.aRegs[6].r80 = pCtx->fpu.aRegs[7].r80;
-    pCtx->fpu.aRegs[7].r80 = r80Tmp;
+    RTFLOAT80U r80Tmp = pCtx->XState.x87.aRegs[0].r80;
+    pCtx->XState.x87.aRegs[0].r80 = pCtx->XState.x87.aRegs[1].r80;
+    pCtx->XState.x87.aRegs[1].r80 = pCtx->XState.x87.aRegs[2].r80;
+    pCtx->XState.x87.aRegs[2].r80 = pCtx->XState.x87.aRegs[3].r80;
+    pCtx->XState.x87.aRegs[3].r80 = pCtx->XState.x87.aRegs[4].r80;
+    pCtx->XState.x87.aRegs[4].r80 = pCtx->XState.x87.aRegs[5].r80;
+    pCtx->XState.x87.aRegs[5].r80 = pCtx->XState.x87.aRegs[6].r80;
+    pCtx->XState.x87.aRegs[6].r80 = pCtx->XState.x87.aRegs[7].r80;
+    pCtx->XState.x87.aRegs[7].r80 = r80Tmp;
 }
 
 
@@ -5336,39 +5336,39 @@ DECLINLINE(void) iemFpuRotateStackPop(PCPUMCTX pCtx)
 static void iemFpuMaybePushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, PCPUMCTX pCtx)
 {
     /* Update FSW and bail if there are pending exceptions afterwards. */
-    uint16_t fFsw = pCtx->fpu.FSW & ~X86_FSW_C_MASK;
+    uint16_t fFsw = pCtx->XState.x87.FSW & ~X86_FSW_C_MASK;
     fFsw |= pResult->FSW & ~X86_FSW_TOP_MASK;
-    if (   (fFsw          & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
-        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
+    if (   (fFsw                 & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+        & ~(pCtx->XState.x87.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
     {
-        pCtx->fpu.FSW = fFsw;
+        pCtx->XState.x87.FSW = fFsw;
         return;
     }
 
     uint16_t iNewTop = (X86_FSW_TOP_GET(fFsw) + 7) & X86_FSW_TOP_SMASK;
-    if (!(pCtx->fpu.FTW & RT_BIT(iNewTop)))
+    if (!(pCtx->XState.x87.FTW & RT_BIT(iNewTop)))
     {
         /* All is fine, push the actual value. */
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
+        pCtx->XState.x87.FTW |= RT_BIT(iNewTop);
+        pCtx->XState.x87.aRegs[7].r80 = pResult->r80Result;
     }
-    else if (pCtx->fpu.FCW & X86_FCW_IM)
+    else if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked stack overflow, push QNaN. */
         fFsw |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1;
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[7].r80);
     }
     else
     {
         /* Raise stack overflow, don't push anything. */
-        pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
+        pCtx->XState.x87.FSW |= pResult->FSW & ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
         return;
     }
 
     fFsw &= ~X86_FSW_TOP_MASK;
     fFsw |= iNewTop << X86_FSW_TOP_SHIFT;
-    pCtx->fpu.FSW = fFsw;
+    pCtx->XState.x87.FSW = fFsw;
 
     iemFpuRotateStackPush(pCtx);
 }
@@ -5385,11 +5385,11 @@ static void iemFpuMaybePushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, PCPUMC
 static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, PCPUMCTX pCtx)
 {
     Assert(iStReg < 8);
-    uint16_t  iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-    pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
-    pCtx->fpu.FTW |= RT_BIT(iReg);
-    pCtx->fpu.aRegs[iStReg].r80 = pResult->r80Result;
+    uint16_t  iReg = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+    pCtx->XState.x87.FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
+    pCtx->XState.x87.FTW |= RT_BIT(iReg);
+    pCtx->XState.x87.aRegs[iStReg].r80 = pResult->r80Result;
 }
 
 
@@ -5402,8 +5402,8 @@ static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_
  */
 static void iemFpuUpdateFSWOnly(PCPUMCTX pCtx, uint16_t u16FSW)
 {
-    pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-    pCtx->fpu.FSW |= u16FSW & ~X86_FSW_TOP_MASK;
+    pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+    pCtx->XState.x87.FSW |= u16FSW & ~X86_FSW_TOP_MASK;
 }
 
 
@@ -5415,20 +5415,20 @@ static void iemFpuUpdateFSWOnly(PCPUMCTX pCtx, uint16_t u16FSW)
 static void iemFpuMaybePopOne(PCPUMCTX pCtx)
 {
     /* Check pending exceptions. */
-    uint16_t uFSW = pCtx->fpu.FSW;
-    if (   (pCtx->fpu.FSW & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
-        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
+    uint16_t uFSW = pCtx->XState.x87.FSW;
+    if (   (pCtx->XState.x87.FSW & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+        & ~(pCtx->XState.x87.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
         return;
 
     /* TOP--. */
     uint16_t iOldTop = uFSW & X86_FSW_TOP_MASK;
     uFSW &= ~X86_FSW_TOP_MASK;
     uFSW |= (iOldTop + (UINT16_C(9) << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
-    pCtx->fpu.FSW = uFSW;
+    pCtx->XState.x87.FSW = uFSW;
 
     /* Mark the previous ST0 as empty. */
     iOldTop >>= X86_FSW_TOP_SHIFT;
-    pCtx->fpu.FTW &= ~RT_BIT(iOldTop);
+    pCtx->XState.x87.FTW &= ~RT_BIT(iOldTop);
 
     /* Rotate the registers. */
     iemFpuRotateStackPop(pCtx);
@@ -5480,41 +5480,41 @@ static void iemFpuPushResultTwo(PIEMCPU pIemCpu, PIEMFPURESULTTWO pResult)
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
 
     /* Update FSW and bail if there are pending exceptions afterwards. */
-    uint16_t fFsw = pCtx->fpu.FSW & ~X86_FSW_C_MASK;
+    uint16_t fFsw = pCtx->XState.x87.FSW & ~X86_FSW_C_MASK;
     fFsw |= pResult->FSW & ~X86_FSW_TOP_MASK;
     if (   (fFsw          & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
-        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
+        & ~(pCtx->XState.x87.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
     {
-        pCtx->fpu.FSW = fFsw;
+        pCtx->XState.x87.FSW = fFsw;
         return;
     }
 
     uint16_t iNewTop = (X86_FSW_TOP_GET(fFsw) + 7) & X86_FSW_TOP_SMASK;
-    if (!(pCtx->fpu.FTW & RT_BIT(iNewTop)))
+    if (!(pCtx->XState.x87.FTW & RT_BIT(iNewTop)))
     {
         /* All is fine, push the actual value. */
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        pCtx->fpu.aRegs[0].r80 = pResult->r80Result1;
-        pCtx->fpu.aRegs[7].r80 = pResult->r80Result2;
+        pCtx->XState.x87.FTW |= RT_BIT(iNewTop);
+        pCtx->XState.x87.aRegs[0].r80 = pResult->r80Result1;
+        pCtx->XState.x87.aRegs[7].r80 = pResult->r80Result2;
     }
-    else if (pCtx->fpu.FCW & X86_FCW_IM)
+    else if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked stack overflow, push QNaN. */
         fFsw |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1;
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[0].r80);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[7].r80);
     }
     else
     {
         /* Raise stack overflow, don't push anything. */
-        pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
+        pCtx->XState.x87.FSW |= pResult->FSW & ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_C1 | X86_FSW_B | X86_FSW_ES;
         return;
     }
 
     fFsw &= ~X86_FSW_TOP_MASK;
     fFsw |= iNewTop << X86_FSW_TOP_SHIFT;
-    pCtx->fpu.FSW = fFsw;
+    pCtx->XState.x87.FSW = fFsw;
 
     iemFpuRotateStackPush(pCtx);
 }
@@ -5618,8 +5618,8 @@ static void iemFpuStackFree(PIEMCPU pIemCpu, uint8_t iStReg)
 {
     Assert(iStReg < 8);
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint8_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    pCtx->fpu.FTW &= ~RT_BIT(iReg);
+    uint8_t iReg = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    pCtx->XState.x87.FTW &= ~RT_BIT(iReg);
 }
 
 
@@ -5631,12 +5631,12 @@ static void iemFpuStackFree(PIEMCPU pIemCpu, uint8_t iStReg)
 static void iemFpuStackIncTop(PIEMCPU pIemCpu)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t uFsw = pCtx->fpu.FSW;
+    uint16_t uFsw = pCtx->XState.x87.FSW;
     uint16_t uTop = uFsw & X86_FSW_TOP_MASK;
     uTop  = (uTop + (1 << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
     uFsw &= ~X86_FSW_TOP_MASK;
     uFsw |= uTop;
-    pCtx->fpu.FSW = uFsw;
+    pCtx->XState.x87.FSW = uFsw;
 }
 
 
@@ -5648,12 +5648,12 @@ static void iemFpuStackIncTop(PIEMCPU pIemCpu)
 static void iemFpuStackDecTop(PIEMCPU pIemCpu)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t uFsw = pCtx->fpu.FSW;
+    uint16_t uFsw = pCtx->XState.x87.FSW;
     uint16_t uTop = uFsw & X86_FSW_TOP_MASK;
     uTop  = (uTop + (7 << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
     uFsw &= ~X86_FSW_TOP_MASK;
     uFsw |= uTop;
-    pCtx->fpu.FSW = uFsw;
+    pCtx->XState.x87.FSW = uFsw;
 }
 
 
@@ -5747,22 +5747,22 @@ static void iemFpuUpdateFSWWithMemOpThenPop(PIEMCPU pIemCpu, uint16_t u16FSW, ui
 static void iemFpuStackUnderflowOnly(PIEMCPU pIemCpu, uint8_t iStReg, PCPUMCTX pCtx)
 {
     Assert(iStReg < 8 || iStReg == UINT8_MAX);
-    if (pCtx->fpu.FCW & X86_FCW_IM)
+    if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked underflow. */
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF;
-        uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF;
+        uint16_t iReg = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + iStReg) & X86_FSW_TOP_SMASK;
         if (iStReg != UINT8_MAX)
         {
-            pCtx->fpu.FTW |= RT_BIT(iReg);
-            iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+            pCtx->XState.x87.FTW |= RT_BIT(iReg);
+            iemFpuStoreQNan(&pCtx->XState.x87.aRegs[iStReg].r80);
         }
     }
     else
     {
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 }
 
@@ -5829,22 +5829,22 @@ iemFpuStackPushUnderflow(PIEMCPU pIemCpu)
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
 
-    if (pCtx->fpu.FCW & X86_FCW_IM)
+    if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked overflow - Push QNaN. */
-        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
-        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + 7) & X86_FSW_TOP_SMASK;
+        pCtx->XState.x87.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF;
+        pCtx->XState.x87.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
+        pCtx->XState.x87.FTW |= RT_BIT(iNewTop);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[7].r80);
         iemFpuRotateStackPush(pCtx);
     }
     else
     {
         /* Exception pending - don't change TOP or the register stack. */
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 }
 
@@ -5855,23 +5855,23 @@ iemFpuStackPushUnderflowTwo(PIEMCPU pIemCpu)
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
 
-    if (pCtx->fpu.FCW & X86_FCW_IM)
+    if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked overflow - Push QNaN. */
-        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
-        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + 7) & X86_FSW_TOP_SMASK;
+        pCtx->XState.x87.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF;
+        pCtx->XState.x87.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
+        pCtx->XState.x87.FTW |= RT_BIT(iNewTop);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[0].r80);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[7].r80);
         iemFpuRotateStackPush(pCtx);
     }
     else
     {
         /* Exception pending - don't change TOP or the register stack. */
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 }
 
@@ -5884,22 +5884,22 @@ iemFpuStackPushUnderflowTwo(PIEMCPU pIemCpu)
  */
 static void iemFpuStackPushOverflowOnly(PIEMCPU pIemCpu, PCPUMCTX pCtx)
 {
-    if (pCtx->fpu.FCW & X86_FCW_IM)
+    if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked overflow. */
-        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
-        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + 7) & X86_FSW_TOP_SMASK;
+        pCtx->XState.x87.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
+        pCtx->XState.x87.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+        pCtx->XState.x87.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
+        pCtx->XState.x87.FTW |= RT_BIT(iNewTop);
+        iemFpuStoreQNan(&pCtx->XState.x87.aRegs[7].r80);
         iemFpuRotateStackPush(pCtx);
     }
     else
     {
         /* Exception pending - don't change TOP or the register stack. */
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 }
 
@@ -5937,8 +5937,8 @@ iemFpuStackPushOverflowWithMemOp(PIEMCPU pIemCpu, uint8_t iEffSeg, RTGCPTR GCPtr
 static int iemFpuStRegNotEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    if (pCtx->fpu.FTW & RT_BIT(iReg))
+    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    if (pCtx->XState.x87.FTW & RT_BIT(iReg))
         return VINF_SUCCESS;
     return VERR_NOT_FOUND;
 }
@@ -5947,10 +5947,10 @@ static int iemFpuStRegNotEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
 static int iemFpuStRegNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    if (pCtx->fpu.FTW & RT_BIT(iReg))
+    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->XState.x87.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    if (pCtx->XState.x87.FTW & RT_BIT(iReg))
     {
-        *ppRef = &pCtx->fpu.aRegs[iStReg].r80;
+        *ppRef = &pCtx->XState.x87.aRegs[iStReg].r80;
         return VINF_SUCCESS;
     }
     return VERR_NOT_FOUND;
@@ -5961,13 +5961,13 @@ static int iemFpu2StRegsNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT8
                                     uint8_t iStReg1, PCRTFLOAT80U *ppRef1)
 {
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->XState.x87.FSW);
     uint16_t iReg0 = (iTop + iStReg0) & X86_FSW_TOP_SMASK;
     uint16_t iReg1 = (iTop + iStReg1) & X86_FSW_TOP_SMASK;
-    if ((pCtx->fpu.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
+    if ((pCtx->XState.x87.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
     {
-        *ppRef0 = &pCtx->fpu.aRegs[iStReg0].r80;
-        *ppRef1 = &pCtx->fpu.aRegs[iStReg1].r80;
+        *ppRef0 = &pCtx->XState.x87.aRegs[iStReg0].r80;
+        *ppRef1 = &pCtx->XState.x87.aRegs[iStReg1].r80;
         return VINF_SUCCESS;
     }
     return VERR_NOT_FOUND;
@@ -5977,12 +5977,12 @@ static int iemFpu2StRegsNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT8
 static int iemFpu2StRegsNotEmptyRefFirst(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0, uint8_t iStReg1)
 {
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->XState.x87.FSW);
     uint16_t iReg0 = (iTop + iStReg0) & X86_FSW_TOP_SMASK;
     uint16_t iReg1 = (iTop + iStReg1) & X86_FSW_TOP_SMASK;
-    if ((pCtx->fpu.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
+    if ((pCtx->XState.x87.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
     {
-        *ppRef0 = &pCtx->fpu.aRegs[iStReg0].r80;
+        *ppRef0 = &pCtx->XState.x87.aRegs[iStReg0].r80;
         return VINF_SUCCESS;
     }
     return VERR_NOT_FOUND;
@@ -5996,12 +5996,12 @@ static int iemFpu2StRegsNotEmptyRefFirst(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTF
  */
 static void iemFpuRecalcExceptionStatus(PCPUMCTX pCtx)
 {
-    uint16_t u16Fsw = pCtx->fpu.FSW;
-    if ((u16Fsw & X86_FSW_XCPT_MASK) & ~(pCtx->fpu.FCW & X86_FCW_XCPT_MASK))
+    uint16_t u16Fsw = pCtx->XState.x87.FSW;
+    if ((u16Fsw & X86_FSW_XCPT_MASK) & ~(pCtx->XState.x87.FCW & X86_FCW_XCPT_MASK))
         u16Fsw |= X86_FSW_ES | X86_FSW_B;
     else
         u16Fsw &= ~(X86_FSW_ES | X86_FSW_B);
-    pCtx->fpu.FSW = u16Fsw;
+    pCtx->XState.x87.FSW = u16Fsw;
 }
 
 
@@ -6013,9 +6013,9 @@ static void iemFpuRecalcExceptionStatus(PCPUMCTX pCtx)
  */
 static uint16_t iemFpuCalcFullFtw(PCCPUMCTX pCtx)
 {
-    uint8_t const   u8Ftw  = (uint8_t)pCtx->fpu.FTW;
+    uint8_t const   u8Ftw  = (uint8_t)pCtx->XState.x87.FTW;
     uint16_t        u16Ftw = 0;
-    unsigned const  iTop   = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    unsigned const  iTop   = X86_FSW_TOP_GET(pCtx->XState.x87.FSW);
     for (unsigned iSt = 0; iSt < 8; iSt++)
     {
         unsigned const iReg = (iSt + iTop) & 7;
@@ -6024,7 +6024,7 @@ static uint16_t iemFpuCalcFullFtw(PCCPUMCTX pCtx)
         else
         {
             uint16_t uTag;
-            PCRTFLOAT80U const pr80Reg = &pCtx->fpu.aRegs[iSt].r80;
+            PCRTFLOAT80U const pr80Reg = &pCtx->XState.x87.aRegs[iSt].r80;
             if (pr80Reg->s.uExponent == 0x7fff)
                 uTag = 2; /* Exponent is all 1's => Special. */
             else if (pr80Reg->s.uExponent == 0x0000)
@@ -7171,7 +7171,7 @@ static VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PIEMCPU pIemCpu, uint128_t *pu
 {
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
-    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->XState.x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t const *pu128Src;
@@ -7371,7 +7371,7 @@ static VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPT
 static VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
 {
     /* The lazy approach for now... */
-    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->XState.x87.MXCSR & X86_MXSCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t *pu128Dst;
@@ -8303,7 +8303,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if ((pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW & X86_FSW_ES) \
+        if ((pIemCpu)->CTX_SUFF(pCtx)->XState.x87.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pIemCpu); \
     } while (0)
 #define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT() \
@@ -8386,8 +8386,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** @note Not for IOPL or IF testing or modification. */
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
-#define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FSW
-#define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FCW
+#define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.FSW
+#define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.FCW
 
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pIemCpu, (a_iGReg)) = (a_u8Value)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (a_u16Value)
@@ -8400,7 +8400,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) &= UINT32_MAX
 #define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { (a_pu32Dst)[1] = 0; } while (0)
 #define IEM_MC_STORE_FPUREG_R80_SRC_REF(a_iSt, a_pr80Src) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[a_iSt].r80 = *(a_pr80Src); } while (0)
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[a_iSt].r80 = *(a_pr80Src); } while (0)
 
 #define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst) = iemGRegRefU8(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = (uint16_t *)iemGRegRef(pIemCpu, (a_iGReg))
@@ -8491,46 +8491,46 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** @note Not for IOPL or IF modification. */
 #define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u ^= (a_fBit); } while (0)
 
-#define IEM_MC_CLEAR_FSW_EX()   do { (pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
+#define IEM_MC_CLEAR_FSW_EX()   do { (pIemCpu)->CTX_SUFF(pCtx)->XState.x87.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
 
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg) \
-    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx; } while (0)
+    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx; } while (0)
 #define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg) \
-    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].au32[0]; } while (0)
+    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].au32[0]; } while (0)
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); } while (0)
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); } while (0)
 #define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)         \
-        (a_pu64Dst) = (&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
+        (a_pu64Dst) = (&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx)
 #define IEM_MC_REF_MREG_U64_CONST(a_pu64Dst, a_iMReg) \
-        (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
+        (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx)
 #define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg) \
-        (a_pu32Dst) = ((uint32_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
+        (a_pu32Dst) = ((uint32_t const *)&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aRegs[(a_iMReg)].mmx)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
-    do { (a_u128Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm; } while (0)
+    do { (a_u128Value) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].xmm; } while (0)
 #define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg) \
-    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0]; } while (0)
+    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[0]; } while (0)
 #define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg) \
-    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au32[0]; } while (0)
+    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au32[0]; } while (0)
 #define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
-         pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
+         pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[1] = 0; \
     } while (0)
 #define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value) \
-    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (uint32_t)(a_u32Value); \
-         pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
+    do { pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[0] = (uint32_t)(a_u32Value); \
+         pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[1] = 0; \
     } while (0)
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)       \
-    (a_pu128Dst) = (&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm)
+    (a_pu128Dst) = (&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].xmm)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
-    (a_pu128Dst) = ((uint128_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm)
+    (a_pu128Dst) = ((uint128_t const *)&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].xmm)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
-    (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0])
+    (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->XState.x87.aXMM[(a_iXReg)].au64[0])
 
 #define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &(a_u8Dst), (a_iSeg), (a_GCPtrMem)))
@@ -8738,7 +8738,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     do { \
         if (   !(a_u16FSW & X86_FSW_ES) \
             || !(  (a_u16FSW & (X86_FSW_UE | X86_FSW_OE | X86_FSW_IE)) \
-                 & ~(pIemCpu->CTX_SUFF(pCtx)->fpu.FCW & X86_FCW_MASK_ALL) ) ) \
+                 & ~(pIemCpu->CTX_SUFF(pCtx)->XState.x87.FCW & X86_FCW_MASK_ALL) ) ) \
             IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pIemCpu, (a_pvMem), (a_fAccess))); \
     } while (0)
 
@@ -8874,7 +8874,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
     do { \
         iemFpuPrepareUsage(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0)); \
     } while (0)
 
 /**
@@ -8887,7 +8887,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         iemFpuPrepareUsage(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1)); \
     } while (0)
 
 /**
@@ -8901,7 +8901,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         iemFpuPrepareUsage(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1), (a2)); \
     } while (0)
 
 #define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value) \
@@ -9018,7 +9018,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         iemFpuPrepareUsage(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1)); \
     } while (0)
 
 /**
@@ -9032,7 +9032,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         iemFpuPrepareUsage(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1), (a2)); \
     } while (0)
 
 
@@ -9046,7 +9046,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
     do { \
         iemFpuPrepareUsageSse(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1)); \
     } while (0)
 
 /**
@@ -9060,7 +9060,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
     do { \
         iemFpuPrepareUsageSse(pIemCpu); \
-        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->XState.x87, (a0), (a1), (a2)); \
     } while (0)
 
 
@@ -9130,7 +9130,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(a_pr80Dst0, a_iSt0, a_iSt1) \
     if (iemFpu2StRegsNotEmptyRefFirst(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1)) == VINF_SUCCESS) {
 #define IEM_MC_IF_FCW_IM() \
-    if (pIemCpu->CTX_SUFF(pCtx)->fpu.FCW & X86_FCW_IM) {
+    if (pIemCpu->CTX_SUFF(pCtx)->XState.x87.FCW & X86_FCW_IM) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)
@@ -10218,60 +10218,60 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 #if 1 /* The recompiler doesn't update these the intel way. */
         if (fRem)
         {
-            pOrgCtx->fpu.FOP        = pDebugCtx->fpu.FOP;
-            pOrgCtx->fpu.FPUIP      = pDebugCtx->fpu.FPUIP;
-            pOrgCtx->fpu.CS         = pDebugCtx->fpu.CS;
-            pOrgCtx->fpu.Rsrvd1     = pDebugCtx->fpu.Rsrvd1;
-            pOrgCtx->fpu.FPUDP      = pDebugCtx->fpu.FPUDP;
-            pOrgCtx->fpu.DS         = pDebugCtx->fpu.DS;
-            pOrgCtx->fpu.Rsrvd2     = pDebugCtx->fpu.Rsrvd2;
-            //pOrgCtx->fpu.MXCSR_MASK = pDebugCtx->fpu.MXCSR_MASK;
-            if ((pOrgCtx->fpu.FSW & X86_FSW_TOP_MASK) == (pDebugCtx->fpu.FSW & X86_FSW_TOP_MASK))
-                pOrgCtx->fpu.FSW = pDebugCtx->fpu.FSW;
+            pOrgCtx->XState.x87.FOP        = pDebugCtx->XState.x87.FOP;
+            pOrgCtx->XState.x87.FPUIP      = pDebugCtx->XState.x87.FPUIP;
+            pOrgCtx->XState.x87.CS         = pDebugCtx->XState.x87.CS;
+            pOrgCtx->XState.x87.Rsrvd1     = pDebugCtx->XState.x87.Rsrvd1;
+            pOrgCtx->XState.x87.FPUDP      = pDebugCtx->XState.x87.FPUDP;
+            pOrgCtx->XState.x87.DS         = pDebugCtx->XState.x87.DS;
+            pOrgCtx->XState.x87.Rsrvd2     = pDebugCtx->XState.x87.Rsrvd2;
+            //pOrgCtx->XState.x87.MXCSR_MASK = pDebugCtx->XState.x87.MXCSR_MASK;
+            if ((pOrgCtx->XState.x87.FSW & X86_FSW_TOP_MASK) == (pDebugCtx->XState.x87.FSW & X86_FSW_TOP_MASK))
+                pOrgCtx->XState.x87.FSW = pDebugCtx->XState.x87.FSW;
         }
 #endif
-        if (memcmp(&pOrgCtx->fpu, &pDebugCtx->fpu, sizeof(pDebugCtx->fpu)))
+        if (memcmp(&pOrgCtx->XState.x87, &pDebugCtx->XState.x87, sizeof(pDebugCtx->XState.x87)))
         {
             RTAssertMsg2Weak("  the FPU state differs\n");
             cDiffs++;
-            CHECK_FIELD(fpu.FCW);
-            CHECK_FIELD(fpu.FSW);
-            CHECK_FIELD(fpu.FTW);
-            CHECK_FIELD(fpu.FOP);
-            CHECK_FIELD(fpu.FPUIP);
-            CHECK_FIELD(fpu.CS);
-            CHECK_FIELD(fpu.Rsrvd1);
-            CHECK_FIELD(fpu.FPUDP);
-            CHECK_FIELD(fpu.DS);
-            CHECK_FIELD(fpu.Rsrvd2);
-            CHECK_FIELD(fpu.MXCSR);
-            CHECK_FIELD(fpu.MXCSR_MASK);
-            CHECK_FIELD(fpu.aRegs[0].au64[0]); CHECK_FIELD(fpu.aRegs[0].au64[1]);
-            CHECK_FIELD(fpu.aRegs[1].au64[0]); CHECK_FIELD(fpu.aRegs[1].au64[1]);
-            CHECK_FIELD(fpu.aRegs[2].au64[0]); CHECK_FIELD(fpu.aRegs[2].au64[1]);
-            CHECK_FIELD(fpu.aRegs[3].au64[0]); CHECK_FIELD(fpu.aRegs[3].au64[1]);
-            CHECK_FIELD(fpu.aRegs[4].au64[0]); CHECK_FIELD(fpu.aRegs[4].au64[1]);
-            CHECK_FIELD(fpu.aRegs[5].au64[0]); CHECK_FIELD(fpu.aRegs[5].au64[1]);
-            CHECK_FIELD(fpu.aRegs[6].au64[0]); CHECK_FIELD(fpu.aRegs[6].au64[1]);
-            CHECK_FIELD(fpu.aRegs[7].au64[0]); CHECK_FIELD(fpu.aRegs[7].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 0].au64[0]);  CHECK_FIELD(fpu.aXMM[ 0].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 1].au64[0]);  CHECK_FIELD(fpu.aXMM[ 1].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 2].au64[0]);  CHECK_FIELD(fpu.aXMM[ 2].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 3].au64[0]);  CHECK_FIELD(fpu.aXMM[ 3].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 4].au64[0]);  CHECK_FIELD(fpu.aXMM[ 4].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 5].au64[0]);  CHECK_FIELD(fpu.aXMM[ 5].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 6].au64[0]);  CHECK_FIELD(fpu.aXMM[ 6].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 7].au64[0]);  CHECK_FIELD(fpu.aXMM[ 7].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 8].au64[0]);  CHECK_FIELD(fpu.aXMM[ 8].au64[1]);
-            CHECK_FIELD(fpu.aXMM[ 9].au64[0]);  CHECK_FIELD(fpu.aXMM[ 9].au64[1]);
-            CHECK_FIELD(fpu.aXMM[10].au64[0]);  CHECK_FIELD(fpu.aXMM[10].au64[1]);
-            CHECK_FIELD(fpu.aXMM[11].au64[0]);  CHECK_FIELD(fpu.aXMM[11].au64[1]);
-            CHECK_FIELD(fpu.aXMM[12].au64[0]);  CHECK_FIELD(fpu.aXMM[12].au64[1]);
-            CHECK_FIELD(fpu.aXMM[13].au64[0]);  CHECK_FIELD(fpu.aXMM[13].au64[1]);
-            CHECK_FIELD(fpu.aXMM[14].au64[0]);  CHECK_FIELD(fpu.aXMM[14].au64[1]);
-            CHECK_FIELD(fpu.aXMM[15].au64[0]);  CHECK_FIELD(fpu.aXMM[15].au64[1]);
-            for (unsigned i = 0; i < RT_ELEMENTS(pOrgCtx->fpu.au32RsrvdRest); i++)
-                CHECK_FIELD(fpu.au32RsrvdRest[i]);
+            CHECK_FIELD(XState.x87.FCW);
+            CHECK_FIELD(XState.x87.FSW);
+            CHECK_FIELD(XState.x87.FTW);
+            CHECK_FIELD(XState.x87.FOP);
+            CHECK_FIELD(XState.x87.FPUIP);
+            CHECK_FIELD(XState.x87.CS);
+            CHECK_FIELD(XState.x87.Rsrvd1);
+            CHECK_FIELD(XState.x87.FPUDP);
+            CHECK_FIELD(XState.x87.DS);
+            CHECK_FIELD(XState.x87.Rsrvd2);
+            CHECK_FIELD(XState.x87.MXCSR);
+            CHECK_FIELD(XState.x87.MXCSR_MASK);
+            CHECK_FIELD(XState.x87.aRegs[0].au64[0]); CHECK_FIELD(XState.x87.aRegs[0].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[1].au64[0]); CHECK_FIELD(XState.x87.aRegs[1].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[2].au64[0]); CHECK_FIELD(XState.x87.aRegs[2].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[3].au64[0]); CHECK_FIELD(XState.x87.aRegs[3].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[4].au64[0]); CHECK_FIELD(XState.x87.aRegs[4].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[5].au64[0]); CHECK_FIELD(XState.x87.aRegs[5].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[6].au64[0]); CHECK_FIELD(XState.x87.aRegs[6].au64[1]);
+            CHECK_FIELD(XState.x87.aRegs[7].au64[0]); CHECK_FIELD(XState.x87.aRegs[7].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 0].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 0].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 1].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 1].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 2].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 2].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 3].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 3].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 4].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 4].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 5].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 5].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 6].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 6].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 7].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 7].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 8].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 8].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[ 9].au64[0]);  CHECK_FIELD(XState.x87.aXMM[ 9].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[10].au64[0]);  CHECK_FIELD(XState.x87.aXMM[10].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[11].au64[0]);  CHECK_FIELD(XState.x87.aXMM[11].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[12].au64[0]);  CHECK_FIELD(XState.x87.aXMM[12].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[13].au64[0]);  CHECK_FIELD(XState.x87.aXMM[13].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[14].au64[0]);  CHECK_FIELD(XState.x87.aXMM[14].au64[1]);
+            CHECK_FIELD(XState.x87.aXMM[15].au64[0]);  CHECK_FIELD(XState.x87.aXMM[15].au64[1]);
+            for (unsigned i = 0; i < RT_ELEMENTS(pOrgCtx->XState.x87.au32RsrvdRest); i++)
+                CHECK_FIELD(XState.x87.au32RsrvdRest[i]);
         }
         CHECK_FIELD(rip);
         uint32_t fFlagsMask = UINT32_MAX & ~pIemCpu->fUndefinedEFlags;
@@ -10528,7 +10528,7 @@ static void iemLogCurInstr(PVMCPU pVCpu, PCPUMCTX pCtx, bool fSameCtx)
               pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL, pCtx->tr.Sel,
               pCtx->cs.Sel, pCtx->ss.Sel, pCtx->ds.Sel, pCtx->es.Sel,
               pCtx->fs.Sel, pCtx->gs.Sel, pCtx->eflags.u,
-              pCtx->fpu.FSW, pCtx->fpu.FCW, pCtx->fpu.FTW, pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK,
+              pCtx->XState.x87.FSW, pCtx->XState.x87.FCW, pCtx->XState.x87.FTW, pCtx->XState.x87.MXCSR, pCtx->XState.x87.MXCSR_MASK,
               szInstr));
 
         if (LogIs3Enabled())

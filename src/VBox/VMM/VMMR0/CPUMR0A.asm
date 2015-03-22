@@ -89,7 +89,7 @@ BEGINCODE
 .clean_fpu:
     ffree   st7              ; Clear FPU stack register(7)'s tag entry to prevent overflow if a wraparound occurs
                              ; for the upcoming push (load)
-    fild    dword [xDX + CPUMCPU.Guest.fpu] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
+    fild    dword [xDX + CPUMCPU.Guest.XState] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
 
 .nothing_to_clean:
 %endmacro
@@ -100,24 +100,24 @@ BEGINCODE
 ;
 ; @remarks Requires CPUMCPU pointer in RDX
 %macro SAVE_32_OR_64_FPU 0
-    o64 fxsave  [rdx + CPUMCPU.Guest.fpu]
+    o64 fxsave  [rdx + CPUMCPU.Guest.XState]
 
     ; Shouldn't be necessary to check if the entire 64-bit FIP is 0 (i.e. guest hasn't used its FPU yet) because it should
     ; be taken care of by the calling code, i.e. hmR0[Vmx|Svm]LoadSharedCR0() and hmR0[Vmx|Svm]ExitXcptNm() which ensure
     ; we swap the guest FPU state when it starts using it (#NM). In any case it's only a performance optimization.
-    ; cmp         qword [rdx + CPUMCPU.Guest.fpu + IP_OFF_IN_X86FXSTATE], 0
+    ; cmp         qword [rdx + CPUMCPU.Guest.XState + IP_OFF_IN_X86FXSTATE], 0
     ; je          short %%save_done
 
-    cmp         dword [rdx + CPUMCPU.Guest.fpu + CS_OFF_IN_X86FXSTATE], 0
+    cmp         dword [rdx + CPUMCPU.Guest.XState + CS_OFF_IN_X86FXSTATE], 0
     jne         short %%save_done
     sub         rsp, 20h                         ; Only need 1ch bytes but keep stack aligned otherwise we #GP(0)
     fnstenv     [rsp]
     movzx       eax, word [rsp + 10h]
-    mov         [rdx + CPUMCPU.Guest.fpu + CS_OFF_IN_X86FXSTATE], eax
+    mov         [rdx + CPUMCPU.Guest.XState + CS_OFF_IN_X86FXSTATE], eax
     movzx       eax, word [rsp + 18h]
-    mov         [rdx + CPUMCPU.Guest.fpu + DS_OFF_IN_X86FXSTATE], eax
+    mov         [rdx + CPUMCPU.Guest.XState + DS_OFF_IN_X86FXSTATE], eax
     add         rsp, 20h
-    mov         dword [rdx + CPUMCPU.Guest.fpu + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
+    mov         dword [rdx + CPUMCPU.Guest.XState + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
 %%save_done:
 %endmacro
 
@@ -126,12 +126,12 @@ BEGINCODE
 ;
 ; @remarks Requires CPUMCPU pointer in RDX
 %macro RESTORE_32_OR_64_FPU 0
-    cmp         dword [rdx + CPUMCPU.Guest.fpu + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
+    cmp         dword [rdx + CPUMCPU.Guest.XState + X86_OFF_FXSTATE_RSVD], X86_FXSTATE_RSVD_32BIT_MAGIC
     jne         short %%restore_64bit_fpu
-    fxrstor     [rdx + CPUMCPU.Guest.fpu]
+    fxrstor     [rdx + CPUMCPU.Guest.XState]
     jmp         short %%restore_fpu_done
 %%restore_64bit_fpu:
-    o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Guest.XState]
 %%restore_fpu_done:
 %endmacro
 
@@ -200,24 +200,24 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 
 %ifdef RT_ARCH_AMD64
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxsave  [rdx + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    o64 fxsave  [rdx + CPUMCPU.Host.XState] ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
 
     ; Restore the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
     test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
     jnz     short .fpu_load_32_or_64
-    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    fxrstor [rdx + CPUMCPU.Guest.XState]
     jmp     short .fpu_load_done
 .fpu_load_32_or_64:
     RESTORE_32_OR_64_FPU
 .fpu_load_done:
 %else
-    fxsave  [edx + CPUMCPU.Host.fpu]        ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
-    fxrstor [edx + CPUMCPU.Guest.fpu]
+    fxsave  [edx + CPUMCPU.Host.XState]     ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    fxrstor [edx + CPUMCPU.Guest.XState]
 %endif
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
     ; Restore the non-volatile xmm registers. ASSUMING 64-bit windows
-    lea     r11, [xDX + CPUMCPU.Host.fpu + XMM_OFF_IN_X86FXSTATE]
+    lea     r11, [xDX + CPUMCPU.Host.XState + XMM_OFF_IN_X86FXSTATE]
     movdqa  xmm6,  [r11 + 060h]
     movdqa  xmm7,  [r11 + 070h]
     movdqa  xmm8,  [r11 + 080h]
@@ -242,12 +242,12 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    o64 fxsave  [rdx + CPUMCPU.Host.fpu]
+    o64 fxsave  [rdx + CPUMCPU.Host.XState]
 
     ; Restore the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
     test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
     jnz     short .fpu_load_32_or_64_darwin
-    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    fxrstor [rdx + CPUMCPU.Guest.XState]
     jmp     short .fpu_load_done_darwin
 .fpu_load_32_or_64_darwin:
     RESTORE_32_OR_64_FPU
@@ -283,7 +283,7 @@ BEGINPROC cpumR0SaveHostFPUState
     SAVE_CR0_CLEAR_FPU_TRAPS
     ; Do NOT use xCX from this point!
 
-    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
+    fxsave  [xDX + CPUMCPU.Host.XState] ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
 
     ; Restore CR0 from xCX if it was saved previously.
     RESTORE_CR0
@@ -339,17 +339,17 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
     ; Save the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
     test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
     jnz     short .fpu_save_32_or_64
-    fxsave  [rdx + CPUMCPU.Guest.fpu]
+    fxsave  [rdx + CPUMCPU.Guest.XState]
     jmp     short .fpu_save_done
 .fpu_save_32_or_64:
     SAVE_32_OR_64_FPU
 .fpu_save_done:
 
     ; Use explicit REX prefix. See @bugref{6398}.
-    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.XState]
 %else
-    fxsave  [edx + CPUMCPU.Guest.fpu]       ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
-    fxrstor [edx + CPUMCPU.Host.fpu]
+    fxsave  [edx + CPUMCPU.Guest.XState]    ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
+    fxrstor [edx + CPUMCPU.Host.XState]
 %endif
 
 .done:
@@ -370,13 +370,13 @@ BITS 64
     ; Save the guest FPU (32-bit or 64-bit), preserves existing broken state. See @bugref{7138}.
     test    dword [rdx + CPUMCPU.fUseFlags], CPUM_USE_SUPPORTS_LONGMODE
     jnz     short .fpu_save_32_or_64_darwin
-    fxsave  [rdx + CPUMCPU.Guest.fpu]
+    fxsave  [rdx + CPUMCPU.Guest.XState]
     jmp     short .fpu_save_done_darwin
 .fpu_save_32_or_64_darwin:
     SAVE_32_OR_64_FPU
 .fpu_save_done_darwin:
 
-    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.XState]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)
@@ -424,9 +424,9 @@ BEGINPROC cpumR0RestoreHostFPUState
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
 %ifdef RT_ARCH_AMD64
-    o64 fxrstor [xDX + CPUMCPU.Host.fpu]
+    o64 fxrstor [xDX + CPUMCPU.Host.XState]
 %else
-    fxrstor [xDX + CPUMCPU.Host.fpu]
+    fxrstor [xDX + CPUMCPU.Host.XState]
 %endif
 
 .done:
@@ -443,7 +443,7 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.XState]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)

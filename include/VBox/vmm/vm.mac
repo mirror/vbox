@@ -145,8 +145,10 @@ struc VMCPU
     .gim                    resb 64
 
     alignb 4096
-    .cpum                   resb 4096
     .pgm                    resb 4096
+    alignb 4096
+    .cpum                   resb 28672
+    alignb 4096
 endstruc
 
 

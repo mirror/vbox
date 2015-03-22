@@ -512,14 +512,14 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
 
     if (cpumR3RegIsFxSaveFormat(pVCpu))
     {
-        unsigned iReg = (pVCpu->cpum.s.Guest.fpu.FSW >> 11) & 7;
+        unsigned iReg = (pVCpu->cpum.s.Guest.XState.x87.FSW >> 11) & 7;
         iReg += pDesc->offRegister;
         iReg &= 7;
-        pValue->r80Ex = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80Ex;
+        pValue->r80Ex = pVCpu->cpum.s.Guest.XState.x87.aRegs[iReg].r80Ex;
     }
     else
     {
-        PCX86FPUSTATE pOldFpu = (PCX86FPUSTATE)&pVCpu->cpum.s.Guest.fpu;
+        PCX86FPUSTATE pOldFpu = (PCX86FPUSTATE)&pVCpu->cpum.s.Guest.XState.x87;
 
         unsigned iReg = (pOldFpu->FSW >> 11) & 7;
         iReg += pDesc->offRegister;
@@ -676,14 +676,14 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_stN(void *pvUser, PCDBGFREGDESC pDesc
 
     if (cpumR3RegIsFxSaveFormat(pVCpu))
     {
-        unsigned iReg = (pVCpu->cpum.s.Guest.fpu.FSW >> 11) & 7;
+        unsigned iReg = (pVCpu->cpum.s.Guest.XState.x87.FSW >> 11) & 7;
         iReg += pDesc->offRegister;
         iReg &= 7;
-        pValue->r80Ex = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80Ex;
+        pValue->r80Ex = pVCpu->cpum.s.Guest.XState.x87.aRegs[iReg].r80Ex;
     }
     else
     {
-        PCX86FPUSTATE pOldFpu = (PCX86FPUSTATE)&pVCpu->cpum.s.Guest.fpu;
+        PCX86FPUSTATE pOldFpu = (PCX86FPUSTATE)&pVCpu->cpum.s.Guest.XState.x87;
 
         unsigned iReg = (pOldFpu->FSW >> 11) & 7;
         iReg += pDesc->offRegister;
@@ -1078,10 +1078,10 @@ static DBGFREGSUBFIELD const g_aCpumRegFields_sf_mask[] =
     CPU_REG_RW_AS(#LName "_lim",    UName##_LIMIT,  U32, LName.u32Limit,        cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       NULL                )
 
 #define CPU_REG_MM(n) \
-    CPU_REG_RW_AS("mm" #n,          MM##n,          U64, fpu.aRegs[n].mmx,      cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       g_aCpumRegFields_mmN)
+    CPU_REG_RW_AS("mm" #n,          MM##n,          U64, XState.x87.aRegs[n].mmx, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       g_aCpumRegFields_mmN)
 
 #define CPU_REG_XMM(n) \
-    CPU_REG_RW_AS("xmm" #n,         XMM##n,         U128, fpu.aXMM[n].xmm,      cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       g_aCpumRegFields_xmmN)
+    CPU_REG_RW_AS("xmm" #n,         XMM##n,         U128, XState.x87.aXMM[n].xmm, cpumR3RegGet_Generic, cpumR3RegSet_Generic, NULL,                       g_aCpumRegFields_xmmN)
 /** @} */
 
 
@@ -1123,16 +1123,16 @@ static DBGFREGDESC const g_aCpumRegGstDescs[] =
     CPU_REG_SEG(SS, ss),
     CPU_REG_REG(RIP, rip),
     CPU_REG_RW_AS("rflags",         RFLAGS,         U64, rflags,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_rflags,   g_aCpumRegFields_rflags ),
-    CPU_REG_RW_AS("fcw",            FCW,            U16, fpu.FCW,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fcw    ),
-    CPU_REG_RW_AS("fsw",            FSW,            U16, fpu.FSW,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fsw    ),
-    CPU_REG_RO_AS("ftw",            FTW,            U16, fpu,                   cpumR3RegGet_ftw,       cpumR3RegSet_ftw,       NULL,                       g_aCpumRegFields_ftw    ),
-    CPU_REG_RW_AS("fop",            FOP,            U16, fpu.FOP,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("fpuip",          FPUIP,          U32, fpu.FPUIP,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpuip,    NULL                    ),
-    CPU_REG_RW_AS("fpucs",          FPUCS,          U16, fpu.CS,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("fpudp",          FPUDP,          U32, fpu.FPUDP,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpudp,    NULL                    ),
-    CPU_REG_RW_AS("fpuds",          FPUDS,          U16, fpu.DS,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("mxcsr",          MXCSR,          U32, fpu.MXCSR,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
-    CPU_REG_RW_AS("mxcsr_mask",     MXCSR_MASK,     U32, fpu.MXCSR_MASK,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
+    CPU_REG_RW_AS("fcw",            FCW,            U16, XState.x87.FCW,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fcw    ),
+    CPU_REG_RW_AS("fsw",            FSW,            U16, XState.x87.FSW,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fsw    ),
+    CPU_REG_RO_AS("ftw",            FTW,            U16, XState.x87,            cpumR3RegGet_ftw,       cpumR3RegSet_ftw,       NULL,                       g_aCpumRegFields_ftw    ),
+    CPU_REG_RW_AS("fop",            FOP,            U16, XState.x87.FOP,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("fpuip",          FPUIP,          U32, XState.x87.FPUIP,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpuip,    NULL                    ),
+    CPU_REG_RW_AS("fpucs",          FPUCS,          U16, XState.x87.CS,         cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("fpudp",          FPUDP,          U32, XState.x87.FPUDP,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpudp,    NULL                    ),
+    CPU_REG_RW_AS("fpuds",          FPUDS,          U16, XState.x87.DS,         cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("mxcsr",          MXCSR,          U32, XState.x87.MXCSR,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
+    CPU_REG_RW_AS("mxcsr_mask",     MXCSR_MASK,     U32, XState.x87.MXCSR_MASK, cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
     CPU_REG_ST(0),
     CPU_REG_ST(1),
     CPU_REG_ST(2),
@@ -1251,16 +1251,16 @@ static DBGFREGDESC const g_aCpumRegHyperDescs[] =
     CPU_REG_SEG(SS, ss),
     CPU_REG_REG(RIP, rip),
     CPU_REG_RW_AS("rflags",         RFLAGS,         U64, rflags,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_rflags,   g_aCpumRegFields_rflags ),
-    CPU_REG_RW_AS("fcw",            FCW,            U16, fpu.FCW,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fcw    ),
-    CPU_REG_RW_AS("fsw",            FSW,            U16, fpu.FSW,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fsw    ),
-    CPU_REG_RO_AS("ftw",            FTW,            U16, fpu,                   cpumR3RegGet_ftw,       cpumR3RegSet_ftw,       NULL,                       g_aCpumRegFields_ftw    ),
-    CPU_REG_RW_AS("fop",            FOP,            U16, fpu.FOP,               cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("fpuip",          FPUIP,          U32, fpu.FPUIP,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpuip,    NULL                    ),
-    CPU_REG_RW_AS("fpucs",          FPUCS,          U16, fpu.CS,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("fpudp",          FPUDP,          U32, fpu.FPUDP,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpudp,    NULL                    ),
-    CPU_REG_RW_AS("fpuds",          FPUDS,          U16, fpu.DS,                cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
-    CPU_REG_RW_AS("mxcsr",          MXCSR,          U32, fpu.MXCSR,             cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
-    CPU_REG_RW_AS("mxcsr_mask",     MXCSR_MASK,     U32, fpu.MXCSR_MASK,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
+    CPU_REG_RW_AS("fcw",            FCW,            U16, XState.x87.FCW,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fcw    ),
+    CPU_REG_RW_AS("fsw",            FSW,            U16, XState.x87.FSW,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_fsw    ),
+    CPU_REG_RO_AS("ftw",            FTW,            U16, XState.x87,            cpumR3RegGet_ftw,       cpumR3RegSet_ftw,       NULL,                       g_aCpumRegFields_ftw    ),
+    CPU_REG_RW_AS("fop",            FOP,            U16, XState.x87.FOP,        cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("fpuip",          FPUIP,          U32, XState.x87.FPUIP,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpuip,    NULL                    ),
+    CPU_REG_RW_AS("fpucs",          FPUCS,          U16, XState.x87.CS,         cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("fpudp",          FPUDP,          U32, XState.x87.FPUDP,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   g_aCpumRegAliases_fpudp,    NULL                    ),
+    CPU_REG_RW_AS("fpuds",          FPUDS,          U16, XState.x87.DS,         cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       NULL                    ),
+    CPU_REG_RW_AS("mxcsr",          MXCSR,          U32, XState.x87.MXCSR,      cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
+    CPU_REG_RW_AS("mxcsr_mask",     MXCSR_MASK,     U32, XState.x87.MXCSR_MASK, cpumR3RegGet_Generic,   cpumR3RegSet_Generic,   NULL,                       g_aCpumRegFields_mxcsr  ),
     CPU_REG_ST(0),
     CPU_REG_ST(1),
     CPU_REG_ST(2),

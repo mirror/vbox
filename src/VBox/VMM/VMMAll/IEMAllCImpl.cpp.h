@@ -5435,11 +5435,15 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         rcStrict = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
     else
     {
+#ifdef IN_RING3
         CPUMCTX CtxTmp = *pCtx;
         rcStrict = CPUMSetGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, uValue.u);
         PCPUMCTX pCtx2 = CPUMQueryGuestCtxPtr(IEMCPU_TO_VMCPU(pIemCpu));
         *pCtx = *pCtx2;
         *pCtx2 = CtxTmp;
+#else
+        AssertReleaseFailedReturn(VERR_INTERNAL_ERROR_4);
+#endif
     }
     if (rcStrict == VINF_SUCCESS)
     {
@@ -6040,20 +6044,20 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 
     if (iemFRegIsFxSaveFormat(pIemCpu))
     {
-        pCtx->fpu.FCW   = 0x37f;
-        pCtx->fpu.FSW   = 0;
-        pCtx->fpu.FTW   = 0x00;         /* 0 - empty. */
-        pCtx->fpu.FPUDP = 0;
-        pCtx->fpu.DS    = 0; //??
-        pCtx->fpu.Rsrvd2= 0;
-        pCtx->fpu.FPUIP = 0;
-        pCtx->fpu.CS    = 0; //??
-        pCtx->fpu.Rsrvd1= 0;
-        pCtx->fpu.FOP   = 0;
+        pCtx->XState.x87.FCW   = 0x37f;
+        pCtx->XState.x87.FSW   = 0;
+        pCtx->XState.x87.FTW   = 0x00;         /* 0 - empty. */
+        pCtx->XState.x87.FPUDP = 0;
+        pCtx->XState.x87.DS    = 0; //??
+        pCtx->XState.x87.Rsrvd2= 0;
+        pCtx->XState.x87.FPUIP = 0;
+        pCtx->XState.x87.CS    = 0; //??
+        pCtx->XState.x87.Rsrvd1= 0;
+        pCtx->XState.x87.FOP   = 0;
     }
     else
     {
-        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->fpu;
+        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->XState.x87;
         pFpu->FCW       = 0x37f;
         pFpu->FSW       = 0;
         pFpu->FTW       = 0xffff;       /* 11 - empty */
@@ -6116,32 +6120,32 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
      * implementation specific whether MXCSR and XMM0-XMM7 are saved. */
 
     /* common for all formats */
-    pDst->FCW           = pCtx->fpu.FCW;
-    pDst->FSW           = pCtx->fpu.FSW;
-    pDst->FTW           = pCtx->fpu.FTW & UINT16_C(0xff);
-    pDst->FOP           = pCtx->fpu.FOP;
-    pDst->MXCSR         = pCtx->fpu.MXCSR;
-    pDst->MXCSR_MASK    = pCtx->fpu.MXCSR_MASK;
+    pDst->FCW           = pCtx->XState.x87.FCW;
+    pDst->FSW           = pCtx->XState.x87.FSW;
+    pDst->FTW           = pCtx->XState.x87.FTW & UINT16_C(0xff);
+    pDst->FOP           = pCtx->XState.x87.FOP;
+    pDst->MXCSR         = pCtx->XState.x87.MXCSR;
+    pDst->MXCSR_MASK    = pCtx->XState.x87.MXCSR_MASK;
     for (uint32_t i = 0; i < RT_ELEMENTS(pDst->aRegs); i++)
     {
         /** @todo Testcase: What actually happens to the 6 reserved bytes? I'm clearing
          *        them for now... */
-        pDst->aRegs[i].au32[0] = pCtx->fpu.aRegs[i].au32[0];
-        pDst->aRegs[i].au32[1] = pCtx->fpu.aRegs[i].au32[1];
-        pDst->aRegs[i].au32[2] = pCtx->fpu.aRegs[i].au32[2] & UINT32_C(0xffff);
+        pDst->aRegs[i].au32[0] = pCtx->XState.x87.aRegs[i].au32[0];
+        pDst->aRegs[i].au32[1] = pCtx->XState.x87.aRegs[i].au32[1];
+        pDst->aRegs[i].au32[2] = pCtx->XState.x87.aRegs[i].au32[2] & UINT32_C(0xffff);
         pDst->aRegs[i].au32[3] = 0;
     }
 
     /* FPU IP, CS, DP and DS. */
-    pDst->FPUIP  = pCtx->fpu.FPUIP;
-    pDst->CS     = pCtx->fpu.CS;
-    pDst->FPUDP  = pCtx->fpu.FPUDP;
-    pDst->DS     = pCtx->fpu.DS;
+    pDst->FPUIP  = pCtx->XState.x87.FPUIP;
+    pDst->CS     = pCtx->XState.x87.CS;
+    pDst->FPUDP  = pCtx->XState.x87.FPUDP;
+    pDst->DS     = pCtx->XState.x87.DS;
     if (enmEffOpSize == IEMMODE_64BIT)
     {
         /* Save upper 16-bits of FPUIP (IP:CS:Rsvd1) and FPUDP (DP:DS:Rsvd2). */
-        pDst->Rsrvd1 = pCtx->fpu.Rsrvd1;
-        pDst->Rsrvd2 = pCtx->fpu.Rsrvd2;
+        pDst->Rsrvd1 = pCtx->XState.x87.Rsrvd1;
+        pDst->Rsrvd2 = pCtx->XState.x87.Rsrvd2;
         pDst->au32RsrvdForSoftware[0] = 0;
     }
     else
@@ -6158,7 +6162,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     {
         uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
         for (uint32_t i = 0; i < cXmmRegs; i++)
-            pDst->aXMM[i] = pCtx->fpu.aXMM[i];
+            pDst->aXMM[i] = pCtx->XState.x87.aXMM[i];
         /** @todo Testcase: What happens to the reserved XMM registers? Untouched,
          *        right? */
     }
@@ -6217,7 +6221,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
      * Check the state for stuff which will #GP(0).
      */
     uint32_t const fMXCSR      = pSrc->MXCSR;
-    uint32_t const fMXCSR_MASK = pCtx->fpu.MXCSR_MASK ? pCtx->fpu.MXCSR_MASK : UINT32_C(0xffbf);
+    uint32_t const fMXCSR_MASK = pCtx->XState.x87.MXCSR_MASK ? pCtx->XState.x87.MXCSR_MASK : UINT32_C(0xffbf);
     if (fMXCSR & ~fMXCSR_MASK)
     {
         Log(("fxrstor: MXCSR=%#x (MXCSR_MASK=%#x) -> #GP(0)\n", fMXCSR, fMXCSR_MASK));
@@ -6231,38 +6235,38 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
      * implementation specific whether MXCSR and XMM0-XMM7 are restored. */
 
     /* common for all formats */
-    pCtx->fpu.FCW       = pSrc->FCW;
-    pCtx->fpu.FSW       = pSrc->FSW;
-    pCtx->fpu.FTW       = pSrc->FTW & UINT16_C(0xff);
-    pCtx->fpu.FOP       = pSrc->FOP;
-    pCtx->fpu.MXCSR     = fMXCSR;
+    pCtx->XState.x87.FCW       = pSrc->FCW;
+    pCtx->XState.x87.FSW       = pSrc->FSW;
+    pCtx->XState.x87.FTW       = pSrc->FTW & UINT16_C(0xff);
+    pCtx->XState.x87.FOP       = pSrc->FOP;
+    pCtx->XState.x87.MXCSR     = fMXCSR;
     /* (MXCSR_MASK is read-only) */
     for (uint32_t i = 0; i < RT_ELEMENTS(pSrc->aRegs); i++)
     {
-        pCtx->fpu.aRegs[i].au32[0] = pSrc->aRegs[i].au32[0];
-        pCtx->fpu.aRegs[i].au32[1] = pSrc->aRegs[i].au32[1];
-        pCtx->fpu.aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
-        pCtx->fpu.aRegs[i].au32[3] = 0;
+        pCtx->XState.x87.aRegs[i].au32[0] = pSrc->aRegs[i].au32[0];
+        pCtx->XState.x87.aRegs[i].au32[1] = pSrc->aRegs[i].au32[1];
+        pCtx->XState.x87.aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
+        pCtx->XState.x87.aRegs[i].au32[3] = 0;
     }
 
     /* FPU IP, CS, DP and DS. */
     if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
     {
-        pCtx->fpu.FPUIP  = pSrc->FPUIP;
-        pCtx->fpu.CS     = pSrc->CS;
-        pCtx->fpu.Rsrvd1 = pSrc->Rsrvd1;
-        pCtx->fpu.FPUDP  = pSrc->FPUDP;
-        pCtx->fpu.DS     = pSrc->DS;
-        pCtx->fpu.Rsrvd2 = pSrc->Rsrvd2;
+        pCtx->XState.x87.FPUIP  = pSrc->FPUIP;
+        pCtx->XState.x87.CS     = pSrc->CS;
+        pCtx->XState.x87.Rsrvd1 = pSrc->Rsrvd1;
+        pCtx->XState.x87.FPUDP  = pSrc->FPUDP;
+        pCtx->XState.x87.DS     = pSrc->DS;
+        pCtx->XState.x87.Rsrvd2 = pSrc->Rsrvd2;
     }
     else
     {
-        pCtx->fpu.FPUIP  = pSrc->FPUIP;
-        pCtx->fpu.CS     = pSrc->CS;
-        pCtx->fpu.Rsrvd1 = 0;
-        pCtx->fpu.FPUDP  = pSrc->FPUDP;
-        pCtx->fpu.DS     = pSrc->DS;
-        pCtx->fpu.Rsrvd2 = 0;
+        pCtx->XState.x87.FPUIP  = pSrc->FPUIP;
+        pCtx->XState.x87.CS     = pSrc->CS;
+        pCtx->XState.x87.Rsrvd1 = 0;
+        pCtx->XState.x87.FPUDP  = pSrc->FPUDP;
+        pCtx->XState.x87.DS     = pSrc->DS;
+        pCtx->XState.x87.Rsrvd2 = 0;
     }
 
     /* XMM registers. */
@@ -6272,7 +6276,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     {
         uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
         for (uint32_t i = 0; i < cXmmRegs; i++)
-            pCtx->fpu.aXMM[i] = pSrc->aXMM[i];
+            pCtx->XState.x87.aXMM[i] = pSrc->aXMM[i];
     }
 
     /*
@@ -6298,8 +6302,8 @@ static void iemCImplCommonFpuStoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTP
 {
     if (enmEffOpSize == IEMMODE_16BIT)
     {
-        uPtr.pu16[0] = pCtx->fpu.FCW;
-        uPtr.pu16[1] = pCtx->fpu.FSW;
+        uPtr.pu16[0] = pCtx->XState.x87.FCW;
+        uPtr.pu16[1] = pCtx->XState.x87.FSW;
         uPtr.pu16[2] = iemFpuCalcFullFtw(pCtx);
         if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         {
@@ -6308,39 +6312,39 @@ static void iemCImplCommonFpuStoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTP
              *        versa?  And with 32-bit operand size?  I think CPU is storing the
              *        effective address ((CS << 4) + IP) in the offset register and not
              *        doing any address calculations here. */
-            uPtr.pu16[3] = (uint16_t)pCtx->fpu.FPUIP;
-            uPtr.pu16[4] = ((pCtx->fpu.FPUIP >> 4) & UINT16_C(0xf000)) | pCtx->fpu.FOP;
-            uPtr.pu16[5] = (uint16_t)pCtx->fpu.FPUDP;
-            uPtr.pu16[6] = (pCtx->fpu.FPUDP  >> 4) & UINT16_C(0xf000);
+            uPtr.pu16[3] = (uint16_t)pCtx->XState.x87.FPUIP;
+            uPtr.pu16[4] = ((pCtx->XState.x87.FPUIP >> 4) & UINT16_C(0xf000)) | pCtx->XState.x87.FOP;
+            uPtr.pu16[5] = (uint16_t)pCtx->XState.x87.FPUDP;
+            uPtr.pu16[6] = (pCtx->XState.x87.FPUDP  >> 4) & UINT16_C(0xf000);
         }
         else
         {
-            uPtr.pu16[3] = pCtx->fpu.FPUIP;
-            uPtr.pu16[4] = pCtx->fpu.CS;
-            uPtr.pu16[5] = pCtx->fpu.FPUDP;
-            uPtr.pu16[6] = pCtx->fpu.DS;
+            uPtr.pu16[3] = pCtx->XState.x87.FPUIP;
+            uPtr.pu16[4] = pCtx->XState.x87.CS;
+            uPtr.pu16[5] = pCtx->XState.x87.FPUDP;
+            uPtr.pu16[6] = pCtx->XState.x87.DS;
         }
     }
     else
     {
         /** @todo Testcase: what is stored in the "gray" areas? (figure 8-9 and 8-10) */
-        uPtr.pu16[0*2] = pCtx->fpu.FCW;
-        uPtr.pu16[1*2] = pCtx->fpu.FSW;
+        uPtr.pu16[0*2] = pCtx->XState.x87.FCW;
+        uPtr.pu16[1*2] = pCtx->XState.x87.FSW;
         uPtr.pu16[2*2] = iemFpuCalcFullFtw(pCtx);
         if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         {
-            uPtr.pu16[3*2]  = (uint16_t)pCtx->fpu.FPUIP;
-            uPtr.pu32[4]    = ((pCtx->fpu.FPUIP & UINT32_C(0xffff0000)) >> 4) | pCtx->fpu.FOP;
-            uPtr.pu16[5*2]  = (uint16_t)pCtx->fpu.FPUDP;
-            uPtr.pu32[6]    = (pCtx->fpu.FPUDP  & UINT32_C(0xffff0000)) >> 4;
+            uPtr.pu16[3*2]  = (uint16_t)pCtx->XState.x87.FPUIP;
+            uPtr.pu32[4]    = ((pCtx->XState.x87.FPUIP & UINT32_C(0xffff0000)) >> 4) | pCtx->XState.x87.FOP;
+            uPtr.pu16[5*2]  = (uint16_t)pCtx->XState.x87.FPUDP;
+            uPtr.pu32[6]    = (pCtx->XState.x87.FPUDP  & UINT32_C(0xffff0000)) >> 4;
         }
         else
         {
-            uPtr.pu32[3]    = pCtx->fpu.FPUIP;
-            uPtr.pu16[4*2]  = pCtx->fpu.CS;
-            uPtr.pu16[4*2+1]= pCtx->fpu.FOP;
-            uPtr.pu32[5]    = pCtx->fpu.FPUDP;
-            uPtr.pu16[6*2]  = pCtx->fpu.DS;
+            uPtr.pu32[3]    = pCtx->XState.x87.FPUIP;
+            uPtr.pu16[4*2]  = pCtx->XState.x87.CS;
+            uPtr.pu16[4*2+1]= pCtx->XState.x87.FOP;
+            uPtr.pu32[5]    = pCtx->XState.x87.FPUDP;
+            uPtr.pu16[6*2]  = pCtx->XState.x87.DS;
         }
     }
 }
@@ -6356,60 +6360,60 @@ static void iemCImplCommonFpuRestoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, R
 {
     if (enmEffOpSize == IEMMODE_16BIT)
     {
-        pCtx->fpu.FCW = uPtr.pu16[0];
-        pCtx->fpu.FSW = uPtr.pu16[1];
-        pCtx->fpu.FTW = uPtr.pu16[2];
+        pCtx->XState.x87.FCW = uPtr.pu16[0];
+        pCtx->XState.x87.FSW = uPtr.pu16[1];
+        pCtx->XState.x87.FTW = uPtr.pu16[2];
         if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         {
-            pCtx->fpu.FPUIP = uPtr.pu16[3] | ((uint32_t)(uPtr.pu16[4] & UINT16_C(0xf000)) << 4);
-            pCtx->fpu.FPUDP = uPtr.pu16[5] | ((uint32_t)(uPtr.pu16[6] & UINT16_C(0xf000)) << 4);
-            pCtx->fpu.FOP   = uPtr.pu16[4] & UINT16_C(0x07ff);
-            pCtx->fpu.CS    = 0;
-            pCtx->fpu.Rsrvd1= 0;
-            pCtx->fpu.DS    = 0;
-            pCtx->fpu.Rsrvd2= 0;
+            pCtx->XState.x87.FPUIP = uPtr.pu16[3] | ((uint32_t)(uPtr.pu16[4] & UINT16_C(0xf000)) << 4);
+            pCtx->XState.x87.FPUDP = uPtr.pu16[5] | ((uint32_t)(uPtr.pu16[6] & UINT16_C(0xf000)) << 4);
+            pCtx->XState.x87.FOP   = uPtr.pu16[4] & UINT16_C(0x07ff);
+            pCtx->XState.x87.CS    = 0;
+            pCtx->XState.x87.Rsrvd1= 0;
+            pCtx->XState.x87.DS    = 0;
+            pCtx->XState.x87.Rsrvd2= 0;
         }
         else
         {
-            pCtx->fpu.FPUIP = uPtr.pu16[3];
-            pCtx->fpu.CS    = uPtr.pu16[4];
-            pCtx->fpu.Rsrvd1= 0;
-            pCtx->fpu.FPUDP = uPtr.pu16[5];
-            pCtx->fpu.DS    = uPtr.pu16[6];
-            pCtx->fpu.Rsrvd2= 0;
+            pCtx->XState.x87.FPUIP = uPtr.pu16[3];
+            pCtx->XState.x87.CS    = uPtr.pu16[4];
+            pCtx->XState.x87.Rsrvd1= 0;
+            pCtx->XState.x87.FPUDP = uPtr.pu16[5];
+            pCtx->XState.x87.DS    = uPtr.pu16[6];
+            pCtx->XState.x87.Rsrvd2= 0;
             /** @todo Testcase: Is FOP cleared when doing 16-bit protected mode fldenv? */
         }
     }
     else
     {
-        pCtx->fpu.FCW = uPtr.pu16[0*2];
-        pCtx->fpu.FSW = uPtr.pu16[1*2];
-        pCtx->fpu.FTW = uPtr.pu16[2*2];
+        pCtx->XState.x87.FCW = uPtr.pu16[0*2];
+        pCtx->XState.x87.FSW = uPtr.pu16[1*2];
+        pCtx->XState.x87.FTW = uPtr.pu16[2*2];
         if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         {
-            pCtx->fpu.FPUIP = uPtr.pu16[3*2] | ((uPtr.pu32[4] & UINT32_C(0x0ffff000)) << 4);
-            pCtx->fpu.FOP   = uPtr.pu32[4] & UINT16_C(0x07ff);
-            pCtx->fpu.FPUDP = uPtr.pu16[5*2] | ((uPtr.pu32[6] & UINT32_C(0x0ffff000)) << 4);
-            pCtx->fpu.CS    = 0;
-            pCtx->fpu.Rsrvd1= 0;
-            pCtx->fpu.DS    = 0;
-            pCtx->fpu.Rsrvd2= 0;
+            pCtx->XState.x87.FPUIP = uPtr.pu16[3*2] | ((uPtr.pu32[4] & UINT32_C(0x0ffff000)) << 4);
+            pCtx->XState.x87.FOP   = uPtr.pu32[4] & UINT16_C(0x07ff);
+            pCtx->XState.x87.FPUDP = uPtr.pu16[5*2] | ((uPtr.pu32[6] & UINT32_C(0x0ffff000)) << 4);
+            pCtx->XState.x87.CS    = 0;
+            pCtx->XState.x87.Rsrvd1= 0;
+            pCtx->XState.x87.DS    = 0;
+            pCtx->XState.x87.Rsrvd2= 0;
         }
         else
         {
-            pCtx->fpu.FPUIP = uPtr.pu32[3];
-            pCtx->fpu.CS    = uPtr.pu16[4*2];
-            pCtx->fpu.Rsrvd1= 0;
-            pCtx->fpu.FOP   = uPtr.pu16[4*2+1];
-            pCtx->fpu.FPUDP = uPtr.pu32[5];
-            pCtx->fpu.DS    = uPtr.pu16[6*2];
-            pCtx->fpu.Rsrvd2= 0;
+            pCtx->XState.x87.FPUIP = uPtr.pu32[3];
+            pCtx->XState.x87.CS    = uPtr.pu16[4*2];
+            pCtx->XState.x87.Rsrvd1= 0;
+            pCtx->XState.x87.FOP   = uPtr.pu16[4*2+1];
+            pCtx->XState.x87.FPUDP = uPtr.pu32[5];
+            pCtx->XState.x87.DS    = uPtr.pu16[6*2];
+            pCtx->XState.x87.Rsrvd2= 0;
         }
     }
 
     /* Make adjustments. */
-    pCtx->fpu.FTW = iemFpuCompressFtw(pCtx->fpu.FTW);
-    pCtx->fpu.FCW &= ~X86_FCW_ZERO_MASK;
+    pCtx->XState.x87.FTW = iemFpuCompressFtw(pCtx->XState.x87.FTW);
+    pCtx->XState.x87.FCW &= ~X86_FCW_ZERO_MASK;
     iemFpuRecalcExceptionStatus(pCtx);
     /** @todo Testcase: Check if ES and/or B are automatically cleared if no
      *        exceptions are pending after loading the saved state? */
@@ -6461,11 +6465,11 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 
     iemCImplCommonFpuStoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
     PRTFLOAT80U paRegs = (PRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
-    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->fpu.aRegs); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->XState.x87.aRegs); i++)
     {
-        paRegs[i].au32[0] = pCtx->fpu.aRegs[i].au32[0];
-        paRegs[i].au32[1] = pCtx->fpu.aRegs[i].au32[1];
-        paRegs[i].au16[4] = pCtx->fpu.aRegs[i].au16[4];
+        paRegs[i].au32[0] = pCtx->XState.x87.aRegs[i].au32[0];
+        paRegs[i].au32[1] = pCtx->XState.x87.aRegs[i].au32[1];
+        paRegs[i].au16[4] = pCtx->XState.x87.aRegs[i].au16[4];
     }
 
     rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtr.pv, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
@@ -6473,18 +6477,18 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
         return rcStrict;
 
     /*
-     * Re-initialize the FPU.
+     * Re-initialize the XState.x87.
      */
-    pCtx->fpu.FCW   = 0x37f;
-    pCtx->fpu.FSW   = 0;
-    pCtx->fpu.FTW   = 0x00;       /* 0 - empty */
-    pCtx->fpu.FPUDP = 0;
-    pCtx->fpu.DS    = 0;
-    pCtx->fpu.Rsrvd2= 0;
-    pCtx->fpu.FPUIP = 0;
-    pCtx->fpu.CS    = 0;
-    pCtx->fpu.Rsrvd1= 0;
-    pCtx->fpu.FOP   = 0;
+    pCtx->XState.x87.FCW   = 0x37f;
+    pCtx->XState.x87.FSW   = 0;
+    pCtx->XState.x87.FTW   = 0x00;       /* 0 - empty */
+    pCtx->XState.x87.FPUDP = 0;
+    pCtx->XState.x87.DS    = 0;
+    pCtx->XState.x87.Rsrvd2= 0;
+    pCtx->XState.x87.FPUIP = 0;
+    pCtx->XState.x87.CS    = 0;
+    pCtx->XState.x87.Rsrvd1= 0;
+    pCtx->XState.x87.FOP   = 0;
 
     iemHlpUsedFpu(pIemCpu);
     iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
@@ -6538,12 +6542,12 @@ IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
 
     iemCImplCommonFpuRestoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
     PCRTFLOAT80U paRegs = (PCRTFLOAT80U)(uPtr.pu8 + (enmEffOpSize == IEMMODE_16BIT ? 14 : 28));
-    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->fpu.aRegs); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pCtx->XState.x87.aRegs); i++)
     {
-        pCtx->fpu.aRegs[i].au32[0] = paRegs[i].au32[0];
-        pCtx->fpu.aRegs[i].au32[1] = paRegs[i].au32[1];
-        pCtx->fpu.aRegs[i].au32[2] = paRegs[i].au16[4];
-        pCtx->fpu.aRegs[i].au32[3] = 0;
+        pCtx->XState.x87.aRegs[i].au32[0] = paRegs[i].au32[0];
+        pCtx->XState.x87.aRegs[i].au32[1] = paRegs[i].au32[1];
+        pCtx->XState.x87.aRegs[i].au32[2] = paRegs[i].au16[4];
+        pCtx->XState.x87.aRegs[i].au32[3] = 0;
     }
 
     rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uPtr.pv, IEM_ACCESS_DATA_R);
@@ -6570,7 +6574,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
      *        (other than 6 and 7).  Currently ignoring them. */
     /** @todo Testcase: Test that it raises and loweres the FPU exception bits
      *        according to FSW. (This is was is currently implemented.) */
-    pCtx->fpu.FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
+    pCtx->XState.x87.FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
     iemFpuRecalcExceptionStatus(pCtx);
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
@@ -6590,36 +6594,36 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-    unsigned const iReg1 = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    unsigned const iReg1 = X86_FSW_TOP_GET(pCtx->XState.x87.FSW);
     unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
-    Assert(!(RT_BIT(iReg1) & pCtx->fpu.FTW) || !(RT_BIT(iReg2) & pCtx->fpu.FTW));
+    Assert(!(RT_BIT(iReg1) & pCtx->XState.x87.FTW) || !(RT_BIT(iReg2) & pCtx->XState.x87.FTW));
 
     /** @todo Testcase: fxch underflow. Making assumptions that underflowed
      *        registers are read as QNaN and then exchanged. This could be
      *        wrong... */
-    if (pCtx->fpu.FCW & X86_FCW_IM)
+    if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
-        if (RT_BIT(iReg1) & pCtx->fpu.FTW)
+        if (RT_BIT(iReg1) & pCtx->XState.x87.FTW)
         {
-            if (RT_BIT(iReg2) & pCtx->fpu.FTW)
-                iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
+            if (RT_BIT(iReg2) & pCtx->XState.x87.FTW)
+                iemFpuStoreQNan(&pCtx->XState.x87.aRegs[0].r80);
             else
-                pCtx->fpu.aRegs[0].r80 = pCtx->fpu.aRegs[iStReg].r80;
-            iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+                pCtx->XState.x87.aRegs[0].r80 = pCtx->XState.x87.aRegs[iStReg].r80;
+            iemFpuStoreQNan(&pCtx->XState.x87.aRegs[iStReg].r80);
         }
         else
         {
-            pCtx->fpu.aRegs[iStReg].r80 = pCtx->fpu.aRegs[0].r80;
-            iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
+            pCtx->XState.x87.aRegs[iStReg].r80 = pCtx->XState.x87.aRegs[0].r80;
+            iemFpuStoreQNan(&pCtx->XState.x87.aRegs[0].r80);
         }
-        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C_MASK;
+        pCtx->XState.x87.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
     }
     else
     {
         /* raise underflow exception, don't change anything. */
-        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_XCPT_MASK);
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_XCPT_MASK);
+        pCtx->XState.x87.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
@@ -6644,7 +6648,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
      */
     if (pCtx->cr0 & (X86_CR0_EM | X86_CR0_TS))
         return iemRaiseDeviceNotAvailable(pIemCpu);
-    uint16_t u16Fsw = pCtx->fpu.FSW;
+    uint16_t u16Fsw = pCtx->XState.x87.FSW;
     if (u16Fsw & X86_FSW_ES)
         return iemRaiseMathFault(pIemCpu);
 
@@ -6653,33 +6657,34 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
      */
     unsigned const iReg1 = X86_FSW_TOP_GET(u16Fsw);
     unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
-    if ((pCtx->fpu.FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
+    if ((pCtx->XState.x87.FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
     {
-        uint32_t u32Eflags = pfnAImpl(&pCtx->fpu, &u16Fsw, &pCtx->fpu.aRegs[0].r80, &pCtx->fpu.aRegs[iStReg].r80);
+        uint32_t u32Eflags = pfnAImpl(&pCtx->XState.x87, &u16Fsw,
+                                      &pCtx->XState.x87.aRegs[0].r80, &pCtx->XState.x87.aRegs[iStReg].r80);
         NOREF(u32Eflags);
 
-        pCtx->fpu.FSW &= ~X86_FSW_C1;
-        pCtx->fpu.FSW |= u16Fsw & ~X86_FSW_TOP_MASK;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C1;
+        pCtx->XState.x87.FSW |= u16Fsw & ~X86_FSW_TOP_MASK;
         if (   !(u16Fsw & X86_FSW_IE)
-            || (pCtx->fpu.FCW & X86_FCW_IM) )
+            || (pCtx->XState.x87.FCW & X86_FCW_IM) )
         {
             pCtx->eflags.u &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
             pCtx->eflags.u |= pCtx->eflags.u & (X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
         }
     }
-    else if (pCtx->fpu.FCW & X86_FCW_IM)
+    else if (pCtx->XState.x87.FCW & X86_FCW_IM)
     {
         /* Masked underflow. */
-        pCtx->fpu.FSW &= ~X86_FSW_C1;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C1;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF;
         pCtx->eflags.u &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
         pCtx->eflags.u |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF;
     }
     else
     {
         /* Raise underflow - don't touch EFLAGS or TOP. */
-        pCtx->fpu.FSW &= ~X86_FSW_C1;
-        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        pCtx->XState.x87.FSW &= ~X86_FSW_C1;
+        pCtx->XState.x87.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
         fPop = false;
     }
 
@@ -6688,9 +6693,9 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
      */
     if (fPop)
     {
-        pCtx->fpu.FTW &= ~RT_BIT(iReg1);
-        pCtx->fpu.FSW &= X86_FSW_TOP_MASK;
-        pCtx->fpu.FSW |= ((iReg1 + 7) & X86_FSW_TOP_SMASK) << X86_FSW_TOP_SHIFT;
+        pCtx->XState.x87.FTW &= ~RT_BIT(iReg1);
+        pCtx->XState.x87.FSW &= X86_FSW_TOP_MASK;
+        pCtx->XState.x87.FSW |= ((iReg1 + 7) & X86_FSW_TOP_SMASK) << X86_FSW_TOP_SHIFT;
     }
 
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);

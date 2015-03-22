@@ -2771,12 +2771,17 @@ typedef struct X86XSAVEAREA
             X86XSAVELWP         Lwp;
         } AmdBd;
 
-        /** Reserved 8K here for current and future state info. */
+        /** To enbling static deployments that have a reasonable chance of working for
+         * the next 3-6 CPU generations without running short on space, we allocate a
+         * lot of extra space here, making the structure a round 8KB in size.  This
+         * leaves us 7616 bytes for extended state.  The skylake xeons are likely to use
+         * 2112 of these, leaving us with 5504 bytes for future Intel generations. */
         uint8_t         ab[8192 - 512 - 64];
     } u;
 } X86XSAVEAREA;
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86XSAVEAREA, 8192);
+AssertCompileMemberSize(X86XSAVEAREA, u.Intel, 0x840 /*2112 => total 0xa80 (2688) */);
 AssertCompileMemberOffset(X86XSAVEAREA, Hdr,                0x200);
 AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.YmmHi,      0x240);
 AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.BndRegs,    0x340);
