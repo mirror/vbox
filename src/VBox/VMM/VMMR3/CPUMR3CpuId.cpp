@@ -4804,12 +4804,12 @@ static DBGFREGSUBFIELD const g_aXSaveStateBits[] =
     DBGFREGSUBFIELD_RO("x87\0"       "Legacy FPU state",                                 0, 1, 0),
     DBGFREGSUBFIELD_RO("SSE\0"       "128-bit SSE state",                                1, 1, 0),
     DBGFREGSUBFIELD_RO("YMM_Hi128\0" "Upper 128 bits of YMM0-15 (AVX)",                  2, 1, 0),
-    DBGFREGSUBFIELD_RO("AVX\0"       "256-bit AVX state",                                3, 1, 0),
-    DBGFREGSUBFIELD_RO("BNDREGS\0"   "MPX bound register state",                         4, 1, 0),
-    DBGFREGSUBFIELD_RO("BNDCSR\0"    "MPX bound config and status state",                5, 1, 0),
-    DBGFREGSUBFIELD_RO("Opmask\0"    "opmask state",                                     6, 1, 0),
-    DBGFREGSUBFIELD_RO("ZMM_Hi256\0" "Upper 256 bits of ZMM0-15 (AVX-512)",              7, 1, 0),
-    DBGFREGSUBFIELD_RO("Hi16_ZMM\0"  "512-bits ZMM16-31 state (AVX-512)",                8, 1, 0),
+    DBGFREGSUBFIELD_RO("BNDREGS\0"   "MPX bound register state",                         3, 1, 0),
+    DBGFREGSUBFIELD_RO("BNDCSR\0"    "MPX bound config and status state",                4, 1, 0),
+    DBGFREGSUBFIELD_RO("Opmask\0"    "opmask state",                                     5, 1, 0),
+    DBGFREGSUBFIELD_RO("ZMM_Hi256\0" "Upper 256 bits of ZMM0-15 (AVX-512)",              6, 1, 0),
+    DBGFREGSUBFIELD_RO("Hi16_ZMM\0"  "512-bits ZMM16-31 state (AVX-512)",                7, 1, 0),
+    DBGFREGSUBFIELD_RO("LWP\0"       "Lightweight Profiling (AMD)",                     62, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 

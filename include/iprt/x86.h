@@ -2250,10 +2250,124 @@ typedef struct X86FPUMMX
 {
     uint8_t reg[10];
 } X86FPUMMX;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86FPUMMX, 10);
+#endif
 /** Pointer to a 80-bit MMX/FPU register type. */
 typedef X86FPUMMX *PX86FPUMMX;
 /** Pointer to a const 80-bit MMX/FPU register type. */
 typedef const X86FPUMMX *PCX86FPUMMX;
+
+/** FPU (x87) register. */
+typedef union X86FPUREG
+{
+    /** MMX view. */
+    uint64_t    mmx;
+    /** FPU view - todo. */
+    X86FPUMMX   fpu;
+    /** Extended precision floating point view. */
+    RTFLOAT80U  r80;
+    /** Extended precision floating point view v2 */
+    RTFLOAT80U2 r80Ex;
+    /** 8-bit view. */
+    uint8_t     au8[16];
+    /** 16-bit view. */
+    uint16_t    au16[8];
+    /** 32-bit view. */
+    uint32_t    au32[4];
+    /** 64-bit view. */
+    uint64_t    au64[2];
+    /** 128-bit view. (yeah, very helpful) */
+    uint128_t   au128[1];
+} X86FPUREG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86FPUREG, 16);
+#endif
+/** Pointer to a FPU register. */
+typedef X86FPUREG *PX86FPUREG;
+/** Pointer to a const FPU register. */
+typedef X86FPUREG const *PCX86FPUREG;
+
+/**
+ * XMM register union.
+ */
+typedef union X86XMMREG
+{
+    /** XMM Register view *. */
+    uint128_t   xmm;
+    /** 8-bit view. */
+    uint8_t     au8[16];
+    /** 16-bit view. */
+    uint16_t    au16[8];
+    /** 32-bit view. */
+    uint32_t    au32[4];
+    /** 64-bit view. */
+    uint64_t    au64[2];
+    /** 128-bit view. (yeah, very helpful) */
+    uint128_t   au128[1];
+} X86XMMREG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XMMREG, 16);
+#endif
+/** Pointer to an XMM register state. */
+typedef X86XMMREG *PX86XMMREG;
+/** Pointer to a const XMM register state. */
+typedef X86XMMREG const *PCX86XMMREG;
+
+/**
+ * YMM register union.
+ */
+typedef union X86YMMREG
+{
+    /** 8-bit view. */
+    uint8_t     au8[32];
+    /** 16-bit view. */
+    uint16_t    au16[16];
+    /** 32-bit view. */
+    uint32_t    au32[8];
+    /** 64-bit view. */
+    uint64_t    au64[4];
+    /** 128-bit view. (yeah, very helpful) */
+    uint128_t   au128[2];
+    /** XMM sub register view. */
+    X86XMMREG   aXmm[2];
+} X86YMMREG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86YMMREG, 32);
+#endif
+/** Pointer to an YMM register state. */
+typedef X86YMMREG *PX86YMMREG;
+/** Pointer to a const YMM register state. */
+typedef X86YMMREG const *PCX86YMMREG;
+
+/**
+ * ZMM register union.
+ */
+typedef union X86ZMMREG
+{
+    /** 8-bit view. */
+    uint8_t     au8[64];
+    /** 16-bit view. */
+    uint16_t    au16[32];
+    /** 32-bit view. */
+    uint32_t    au32[16];
+    /** 64-bit view. */
+    uint64_t    au64[8];
+    /** 128-bit view. (yeah, very helpful) */
+    uint128_t   au128[4];
+    /** XMM sub register view. */
+    X86XMMREG   aXmm[4];
+    /** YMM sub register view. */
+    X86YMMREG   aYmm[2];
+} X86ZMMREG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86ZMMREG, 64);
+#endif
+/** Pointer to an ZMM register state. */
+typedef X86ZMMREG *PX86ZMMREG;
+/** Pointer to a const ZMM register state. */
+typedef X86ZMMREG const *PCX86ZMMREG;
+
 
 /**
  * 32-bit FPU state (aka FSAVE/FRSTOR Memory Region).
@@ -2285,28 +2399,8 @@ typedef struct X86FPUSTATE
     uint32_t    FPUOO;
     /** 0x18 - FOS. */
     uint32_t    FPUOS;
-    /** 0x1c */
-    union
-    {
-        /** MMX view. */
-        uint64_t    mmx;
-        /** FPU view - todo. */
-        X86FPUMMX   fpu;
-        /** Extended precision floating point view. */
-        RTFLOAT80U  r80;
-        /** Extended precision floating point view v2. */
-        RTFLOAT80U2 r80Ex;
-        /** 8-bit view. */
-        uint8_t     au8[16];
-        /** 16-bit view. */
-        uint16_t    au16[8];
-        /** 32-bit view. */
-        uint32_t    au32[4];
-        /** 64-bit view. */
-        uint64_t    au64[2];
-        /** 128-bit view. (yeah, very helpful) */
-        uint128_t   au128[1];
-    } regs[8];
+    /** 0x1c - FPU register. */
+    X86FPUREG   regs[8];
 } X86FPUSTATE;
 #pragma pack()
 /** Pointer to a FPU state. */
@@ -2343,44 +2437,10 @@ typedef struct X86FXSTATE
     uint32_t    MXCSR;
     /** 0x1c */
     uint32_t    MXCSR_MASK;
-    /** 0x20 */
-    union
-    {
-        /** MMX view. */
-        uint64_t    mmx;
-        /** FPU view - todo. */
-        X86FPUMMX   fpu;
-        /** Extended precision floating point view. */
-        RTFLOAT80U  r80;
-        /** Extended precision floating point view v2 */
-        RTFLOAT80U2 r80Ex;
-        /** 8-bit view. */
-        uint8_t     au8[16];
-        /** 16-bit view. */
-        uint16_t    au16[8];
-        /** 32-bit view. */
-        uint32_t    au32[4];
-        /** 64-bit view. */
-        uint64_t    au64[2];
-        /** 128-bit view. (yeah, very helpful) */
-        uint128_t   au128[1];
-    } aRegs[8];
-    /* - offset 160 - */
-    union
-    {
-        /** XMM Register view *. */
-        uint128_t   xmm;
-        /** 8-bit view. */
-        uint8_t     au8[16];
-        /** 16-bit view. */
-        uint16_t    au16[8];
-        /** 32-bit view. */
-        uint32_t    au32[4];
-        /** 64-bit view. */
-        uint64_t    au64[2];
-        /** 128-bit view. (yeah, very helpful) */
-        uint128_t   au128[1];
-    } aXMM[16]; /* 8 registers in 32 bits mode; 16 in long mode */
+    /** 0x20 - FPU registers. */
+    X86FPUREG   aRegs[8];
+    /** 0xA0 - XMM registers - 8 registers in 32 bits mode, 16 in long mode. */
+    X86XMMREG   aXMM[16];
     /* - offset 416 - */
     uint32_t    au32RsrvdRest[(464 - 416) / sizeof(uint32_t)];
     /* - offset 464 - Software usable reserved bits. */
@@ -2539,6 +2599,216 @@ AssertCompileMemberOffset(X86FXSTATE, au32RsrvdForSoftware, X86_OFF_FXSTATE_RSVD
 /** Misaligned Exception Mask (AMD MISALIGNSSE).  */
 #define X86_MXSCR_MM          RT_BIT(17)
 /** @} */
+
+/**
+ * XSAVE header.
+ */
+typedef struct X86XSAVEHDR
+{
+    /** XTATE_BV - Bitmap indicating whether a component is in the state. */
+    uint64_t        bmXState;
+    /** XCOMP_BC - Bitmap used by instructions applying structure compaction. */
+    uint64_t        bmXComp;
+    /** Reserved for furture extensions, probably MBZ. */
+    uint64_t        au64Reserved[6];
+} X86XSAVEHDR;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEHDR, 64);
+#endif
+/** Pointer to an XSAVE header. */
+typedef X86XSAVEHDR *PX86XSAVEHDR;
+/** Pointer to a const XSAVE header. */
+typedef X86XSAVEHDR const *PCX86XSAVEHDR;
+
+
+/**
+ * The high 128-bit YMM register state (XSAVE_C_YMM).
+ * (The lower 128-bits being in X86FXSTATE.)
+ */
+typedef struct X86XSAVEYMMHI
+{
+    /** 16 registers in 64-bit mode, 8 in 32-bit mode. */
+    X86XMMREG       aYmmHi[16];
+} X86XSAVEYMMHI;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEYMMHI, 256);
+#endif
+/** Pointer to a high 128-bit YMM register state. */
+typedef X86XSAVEYMMHI *PX86XSAVEYMMHI;
+/** Pointer to a const high 128-bit YMM register state. */
+typedef X86XSAVEYMMHI const *PCX86XSAVEYMMHI;
+
+/**
+ * Intel MPX bound registers state (XSAVE_C_BNDREGS).
+ */
+typedef struct X86XSAVEBNDREGS
+{
+    /** Array of registers (BND0...BND3). */
+    struct
+    {
+        /** Lower bound. */
+        uint64_t    uLowerBound;
+        /** Upper bound. */
+        uint64_t    uUpperBound;
+    } aRegs[4];
+} X86XSAVEBNDREGS;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEBNDREGS, 64);
+#endif
+/** Pointer to a MPX bound register state. */
+typedef X86XSAVEBNDREGS *PX86XSAVEBNDREGS;
+/** Pointer to a const MPX bound register state. */
+typedef X86XSAVEBNDREGS const *PCX86XSAVEBNDREGS;
+
+/**
+ * Intel MPX bound config and status register state (XSAVE_C_BNDCSR).
+ */
+typedef struct X86XSAVEBNDCFG
+{
+    uint64_t        fConfig;
+    uint64_t        fStatus;
+} X86XSAVEBNDCFG;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEBNDCFG, 16);
+#endif
+/** Pointer to a MPX bound config and status register state. */
+typedef X86XSAVEBNDCFG *PX86XSAVEBNDCFG;
+/** Pointer to a const MPX bound config and status register state. */
+typedef X86XSAVEBNDCFG *PCX86XSAVEBNDCFG;
+
+/**
+ * AVX-512 opmask state (XSAVE_C_OPMASK).
+ */
+typedef struct X86XSAVEOPMASK
+{
+    /** The K0..K7 values. */
+    uint64_t    aKRegs[8];
+} X86XSAVEOPMASK;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEOPMASK, 64);
+#endif
+/** Pointer to a AVX-512 opmask state. */
+typedef X86XSAVEOPMASK *PX86XSAVEOPMASK;
+/** Pointer to a const AVX-512 opmask state. */
+typedef X86XSAVEOPMASK const *PCX86XSAVEOPMASK;
+
+/**
+ * ZMM0-15 upper 256 bits introduced in AVX-512 (XSAVE_C_ZMM_HI256).
+ */
+typedef struct X86XSAVEZMMHI256
+{
+    /** Upper 256-bits of ZMM0-15. */
+    X86YMMREG   aHi256Regs[16];
+} X86XSAVEZMMHI256;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEZMMHI256, 512);
+#endif
+/** Pointer to a state comprising the upper 256-bits of ZMM0-15. */
+typedef X86XSAVEZMMHI256 *PX86XSAVEZMMHI256;
+/** Pointer to a const state comprising the upper 256-bits of ZMM0-15. */
+typedef X86XSAVEZMMHI256 const *PCX86XSAVEZMMHI256;
+
+/**
+ * ZMM16-31 register state introduced in AVX-512 (XSAVE_C_ZMM_16HI).
+ */
+typedef struct X86XSAVEZMM16HI
+{
+    /** ZMM16 thru ZMM31. */
+    X86ZMMREG   aRegs[16];
+} X86XSAVEZMM16HI;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEZMM16HI, 1024);
+#endif
+/** Pointer to a state comprising ZMM16-32. */
+typedef X86XSAVEZMM16HI *PX86XSAVEZMM16HI;
+/** Pointer to a const state comprising ZMM16-32. */
+typedef X86XSAVEZMM16HI const *PCX86XSAVEZMM16HI;
+
+/**
+ * AMD Light weight profiling state (XSAVE_C_LWP).
+ *
+ * We probably won't play with this as AMD seems to be dropping from their "zen"
+ * processor micro architecture.
+ */
+typedef struct X86XSAVELWP
+{
+    /** Details when needed. */
+    uint64_t        auLater[128/8];
+} X86XSAVELWP;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVELWP, 128);
+#endif
+
+
+
+typedef struct X86XSAVEAREA
+{
+    /** The x87 and SSE region (or legacy region if you like).  */
+    X86FXSTATE      x87;
+    /** The XSAVE header. */
+    X86XSAVEHDR     Hdr;
+    /** Beyond the header, there isn't really a fixed layout, but we can
+       generally assume the YMM (AVX) register extensions are present and
+       follows immediately. */
+    union
+    {
+        /** This is a typical layout on intel CPUs (good for debuggers). */
+        struct
+        {
+            X86XSAVEYMMHI       YmmHi;
+            X86XSAVEBNDREGS     BndRegs;
+            X86XSAVEBNDCFG      BndCfg;
+            uint8_t             abFudgeToMatchDocs[0xB0];
+            X86XSAVEOPMASK      Opmask;
+            X86XSAVEZMMHI256    ZmmHi256;
+            X86XSAVEZMM16HI     Zmm16Hi;
+        } Intel;
+
+        /** This is a typical layout on AMD Bulldozer type CPUs (good for debuggers). */
+        struct
+        {
+            X86XSAVEYMMHI       YmmHi;
+            X86XSAVELWP         Lwp;
+        } AmdBd;
+
+        /** Reserved 8K here for current and future state info. */
+        uint8_t         ab[8192 - 512 - 64];
+    } u;
+} X86XSAVEAREA;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(X86XSAVEAREA, 8192);
+AssertCompileMemberOffset(X86XSAVEAREA, Hdr,                0x200);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.YmmHi,      0x240);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.BndRegs,    0x340);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.BndCfg,     0x380);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.Opmask,     0x440 /* 1088 */);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.ZmmHi256,   0x480 /* 1152 */);
+AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.Zmm16Hi,    0x680 /* 1664 */);
+#endif
+
+
+/** @name XSAVE_C_XXX - XSAVE State Components Bits.
+ * @{ */
+/** Bit 0 - x87 - Legacy FPU state. */
+#define XSAVE_C_X87         RT_BIT_64(0)
+/** Bit 1 - SSE - 128-bit SSE state. */
+#define XSAVE_C_SSE         RT_BIT_64(1)
+/** Bit 2 - YMM_Hi128 - Upper 128 bits of YMM0-15 (AVX). */
+#define XSAVE_C_YMM         RT_BIT_64(2)
+/** Bit 3 - BNDREGS - MPX bound register state. */
+#define XSAVE_C_BNDREGS     RT_BIT_64(3)
+/** Bit 4 - BNDCSR - MPX bound config and status state. */
+#define XSAVE_C_BNDCSR      RT_BIT_64(4)
+/** Bit 5 - Opmask - opmask state. */
+#define XSAVE_C_OPMASK      RT_BIT_64(5)
+/** Bit 6 - ZMM_Hi256 - Upper 256 bits of ZMM0-15 (AVX-512). */
+#define XSAVE_C_ZMM_HI256   RT_BIT_64(6)
+/** Bit 7 - Hi16_ZMM - 512-bits ZMM16-31 state (AVX-512). */
+#define XSAVE_C_ZMM_16HI    RT_BIT_64(7)
+/** Bit 62 - LWP - Lightweight Profiling (AMD). */
+#define XSAVE_C_LWP         RT_BIT_64(62)
+/** @} */
+
 
 
 /** @name Selector Descriptor
