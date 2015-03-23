@@ -3046,7 +3046,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
-    if (   pVCpu->hm.s.fUseGuestFpu
+    if (   pVCpu->hm.s.fPreloadGuestFpu
         && !CPUMIsGuestFPUStateActive(pVCpu))
     {
         CPUMR0LoadGuestFPU(pVM, pVCpu, pCtx);
@@ -5187,7 +5187,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         /* Guest FPU state was activated, we'll want to change CR0 FPU intercepts before the next VM-reentry. */
         HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
-        pVCpu->hm.s.fUseGuestFpu = true;
+        pVCpu->hm.s.fPreloadGuestFpu = true;
     }
     else
     {
