@@ -1204,6 +1204,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 pcszParavirtProvider = "HyperV";
                 break;
 
+            case ParavirtProvider_KVM:
+                pcszParavirtProvider = "KVM";
+                break;
+
             default:
                 AssertMsgFailed(("Invalid paravirtProvider=%d\n", paravirtProvider));
                 return VMR3SetError(pUVM, VERR_INVALID_PARAMETER, RT_SRC_POS, N_("Invalid paravirt. provider '%d'"),

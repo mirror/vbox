@@ -2855,6 +2855,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     hw.paravirtProvider = ParavirtProvider_Minimal;
                 else if (strProvider == "HyperV")
                     hw.paravirtProvider = ParavirtProvider_HyperV;
+                else if (strProvider == "KVM")
+                    hw.paravirtProvider = ParavirtProvider_KVM;
                 else
                     throw ConfigFileError(this,
                                           pelmHwChild,
@@ -4178,6 +4180,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             case ParavirtProvider_Legacy:       pcszParavirtProvider = "Legacy";   break;
             case ParavirtProvider_Minimal:      pcszParavirtProvider = "Minimal";  break;
             case ParavirtProvider_HyperV:       pcszParavirtProvider = "HyperV";   break;
+            case ParavirtProvider_KVM:          pcszParavirtProvider = "KVM";      break;
             default:            Assert(false);  pcszParavirtProvider = "None";     break;
         }
 

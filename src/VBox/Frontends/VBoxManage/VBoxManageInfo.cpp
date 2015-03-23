@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -717,6 +717,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 pszParavirtProvider = "hyperv";
             else
                 pszParavirtProvider = "HyperV";
+            break;
+
+        case ParavirtProvider_KVM:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszParavirtProvider = "kvm";
+            else
+                pszParavirtProvider = "KVM";
             break;
 
         default:

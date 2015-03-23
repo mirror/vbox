@@ -1026,7 +1026,7 @@
 
   <enum
     name="ParavirtProvider"
-    uuid="f9448c17-7caa-4ca7-9349-edafe369fcb5"
+    uuid="696453ec-3742-4a05-bead-658ccbf2c944"
     >
     <desc>
       The paravirtualized guest interface provider. This enumeration represents possible
@@ -1048,6 +1048,9 @@
     <const name="HyperV"   value="4">
       <desc>Microsoft Hyper-V.</desc>
     </const>
+	<const name="KVM"      value="5">
+	  <desc>Linux KVM.</desc>
+	</const>
   </enum>
 
   <enum

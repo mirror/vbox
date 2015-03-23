@@ -660,6 +660,8 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_Minimal));
                 else if (!RTStrICmp(ValueUnion.psz, "hyperv"))
                     CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_HyperV));
+                else if (!RTStrICmp(ValueUnion.psz, "kvm"))
+                    CHECK_ERROR(machine, COMSETTER(ParavirtProvider)(ParavirtProvider_KVM));
                 else
                 {
                     errorArgument("Invalid --paravirtprovider argument '%s'", ValueUnion.psz);
