@@ -281,7 +281,7 @@ int _init(void)
     if (pModCtl)
         pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
     else
-        LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
+        cmn_err(CE_NOTE, ":failed to disable autounloading!\n");
 
     /*
      * Initialize IPRT.
@@ -312,7 +312,7 @@ int _init(void)
         RTR0Term();
     }
     else
-        LogRel((DEVICE_NAME ":failed to initialize IPRT (rc=%d)\n", rc));
+        cmn_err(CE_NOTE, "failed to initialize IPRT (rc=%d)\n", rc);
 
     memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
     return RTErrConvertToErrno(rc);
@@ -344,11 +344,8 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    Log((DEVICE_NAME ":_info\n"));
-
+    /* _info() can be called before _init() so RTR0Init() might not be called at this point. */
     int rc = mod_info(&g_VBoxNetFltSolarisModLinkage, pModInfo);
-
-    Log((DEVICE_NAME ":_info returns %d\n", rc));
     return rc;
 }
 
