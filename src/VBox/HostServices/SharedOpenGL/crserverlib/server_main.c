@@ -203,9 +203,11 @@ static void crServerTearDown( void )
 
     if (!fContextsDeleted)
     {
+#ifndef VBOX_WITH_CR_DISPLAY_LISTS
         /* sync our state with renderspu,
          * do it before mural & context deletion to avoid deleting currently set murals/contexts*/
         cr_server.head_spu->dispatch_table.MakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+#endif
     }
 
     /* Deallocate all semaphores */

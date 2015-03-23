@@ -186,6 +186,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
 #ifdef CHROMIUM_THREADSAFE
     crDebug("Render SPU: thread-safe");
+    crInitTSD(&_RenderTSD);
 #endif
 
     crMemZero(&render_spu, sizeof(render_spu));

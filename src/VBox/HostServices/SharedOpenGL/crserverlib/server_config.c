@@ -115,7 +115,11 @@ void crServerSetVBoxConfiguration()
         crError("CRServer: Couldn't get my own hostname?");
     }
 
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+    strcpy(response, "1 0 expando");
+#else
     strcpy(response, "1 0 render");
+#endif
     crDebug("CRServer: my SPU chain: %s", response);
 
     /* response will describe the SPU chain.
@@ -285,8 +289,13 @@ void crServerSetVBoxConfigurationHGCM()
 {
     CRMuralInfo *defaultMural;
 
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+    int spu_ids[1]     = {0};
+    char *spu_names[1] = {"expando"};
+#else
     int spu_ids[1]     = {0};
     char *spu_names[1] = {"render"};
+#endif
     char *spu_dir = NULL;
     int i;
     GLint dims[4];

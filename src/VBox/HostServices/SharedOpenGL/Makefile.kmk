@@ -30,6 +30,15 @@ BLDDIRS   += \
 endif
 
 ifeq ($(KBUILD_TARGET),darwin)
+ #VBOX_WITH_CR_DISPLAY_LISTS=1
+endif
+
+ifdef VBOX_WITH_CR_DISPLAY_LISTS
+ LIBRARIES += VBoxOGLcrdlm
+ DLLS      += VBoxOGLexpandospu
+endif # VBOX_WITH_CR_DISPLAY_LISTS
+
+ifeq ($(KBUILD_TARGET),darwin)
  #
  # We have to symlink the system headers of OpenGl cause they have some
  # different directory hierarchy on Mac OS X (no /GL sub directory).
@@ -154,6 +163,9 @@ VBoxOGLcrserverlib_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_simpleget.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h
+ifdef VBOX_WITH_CR_DISPLAY_LISTS
+VBoxOGLcrserverlib_DEFS += VBOX_WITH_CR_DISPLAY_LISTS
+endif
 ifdef VBOXCR_LOGFPS
 VBoxOGLcrserverlib_DEFS += VBOXCR_LOGFPS
 endif
@@ -252,6 +264,94 @@ $(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h: \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
+
+
+ifdef VBOX_WITH_CR_DISPLAY_LISTS
+#
+# VBoxOGLcrdlm
+#
+
+VBoxOGLcrdlm_TEMPLATE       = VBOXCROGLR3HOSTLIB
+VBoxOGLcrdlm_INCS           = \
+	dlm
+VBoxOGLcrdlm_INTERMEDIATES  = \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_dlm.h \
+	$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.h
+
+VBoxOGLcrdlm_SOURCES  = \
+	dlm/dlm.c \
+	dlm/dlm_arrays.c \
+	dlm/dlm_bbox.c \
+	dlm/dlm_calllist.c \
+	dlm/dlm_checklist.c \
+	dlm/dlm_error.c \
+	dlm/dlm_lists.c \
+	dlm/dlm_pointers.c \
+	$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.c
+
+VBoxOGLcrdlm_CLEAN = \
+	$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.c \
+	$(VBOX_PATH_CROGL_GENFILES)/cr_dlm.h \
+	$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.h
+#
+# Generate files for VBoxOGLcrdlm.
+#
+$(VBOX_PATH_CROGL_GENFILES)/cr_dlm.h: \
+		$(addprefix $(PATH_SUB_CURRENT)/dlm/, dlm_header.py) \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< header $(VBOX_PATH_CROGL_GLAPI) > $@
+
+$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.h: \
+		$(addprefix $(PATH_SUB_CURRENT)/dlm/, dlm_generated.py dlm_special) \
+		$(VBOX_PATH_CROGL_GENFILES)/cr_dlm.h \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< headers $(<D) $(VBOX_PATH_CROGL_GLAPI) > $@
+
+$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.c: \
+		$(addprefix $(PATH_SUB_CURRENT)/dlm/, dlm_generated.py dlm_special) \
+		$(VBOX_PATH_CROGL_GENFILES)/dlm_generated.h \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< source $(<D) $(VBOX_PATH_CROGL_GLAPI) > $@
+
+
+#
+# VBoxOGLexpandospu
+#
+VBoxOGLexpandospu_TEMPLATE       = VBOXCROGLR3HOSTDLL
+VBoxOGLexpandospu_INCS           = \
+	expando
+VBoxOGLexpandospu_SOURCES  = \
+	expando/expandospu.c \
+	expando/expandospu_config.c \
+	expando/expandospu_init.c \
+	$(VBOX_PATH_CROGL_GENFILES)/expando.c
+VBoxOGLexpandospu_CLEAN = \
+	$(VBOX_PATH_CROGL_GENFILES)/expando.c
+VBoxOGLexpandospu_CLEAN = \
+	$(VBOX_PATH_CROGL_GENFILES)/expando.c
+VBoxOGLexpandospu_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLexpandospu.dylib
+VBoxOGLexpandospu_LIBS = \
+	$(PATH_STAGE_LIB)/VBoxOGLcrdlm$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostcrstate$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
+	$(VBOX_LIB_OGL_HOSTCRUTIL) \
+	$(LIB_RUNTIME)
+#
+# Generate files for VBoxOGLexpandospu.
+#
+$(VBOX_PATH_CROGL_GENFILES)/expando.c: \
+		$(addprefix $(PATH_SUB_CURRENT)/expando/, expando.py expando_special) \
+		$(VBOX_CROGL_API_FILES) \
+		| $$(dir $$@)
+	$(call MSG_GENERATE,python,$@,$<)
+	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D) > $@
+endif
 
 
 #
