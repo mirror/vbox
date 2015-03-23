@@ -247,7 +247,7 @@ static dev_info_t *g_pVBoxNetFltSolarisDip = NULL;
 /** The (common) global data. */
 static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
 /** Global next-free VNIC Id (never decrements). */
-static volatile uint64_t g_VBoxNetFltSolarisVNICId = 0;
+static volatile uint64_t g_VBoxNetFltSolarisVNICId;
 
 
 /*******************************************************************************
