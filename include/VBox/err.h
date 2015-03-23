@@ -1685,6 +1685,18 @@
 #define VERR_INTNET_INCOMPATIBLE_FLAGS              (-3604)
 /** Failed to create a virtual network interface instance. */
 #define VERR_INTNET_FLT_VNIC_CREATE_FAILED          (-3605)
+/** Failed to retreive a virtual network interface link ID. */
+#define VERR_INTNET_FLT_VNIC_LINK_ID_NOT_FOUND      (-3606)
+/** Failed to initialize a virtual network interface instance. */
+#define VERR_INTNET_FLT_VNIC_INIT_FAILED            (-3607)
+/** Failed to open a virtual network interface instance. */
+#define VERR_INTNET_FLT_VNIC_OPEN_FAILED            (-3608)
+/** Failed to retreive underlying (lower mac) link. */
+#define VERR_INTNET_FLT_LOWER_LINK_INFO_NOT_FOUND   (-3609)
+/** Failed to open underlying link instance. */
+#define VERR_INTNET_FLT_LOWER_LINK_OPEN_FAILED      (-3610)
+/** Failed to get underlying link ID. */
+#define VERR_INTNET_FLT_LOWER_LINK_ID_NOT_FOUND     (-3611)
 /** @} */
 
 
