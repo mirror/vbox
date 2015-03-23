@@ -848,16 +848,16 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
             {
                 case 0:
                 {
-                    LogFunc(("Failed to read %RI32 frames\n", cRead));
+                    LogFunc(("No input frames available\n"));
                     rc = VERR_ACCESS_DENIED;
                     break;
                 }
 
                 case -EAGAIN:
                     /*
-                     * Don't set error here because EAGAIN means there are no ffurther rames
+                     * Don't set error here because EAGAIN means there are no further frames
                      * available at the moment, try later. As we might have read some frames
-                     * already the need to be processed.
+                     * already these need to be processed instead.
                      */
                     cbToRead = 0;
                     break;
@@ -873,9 +873,8 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                 }
 
                 default:
-                    LogFlowFunc(("Failed to read %RI32 input frames, rc=%Rrc\n",
-                                 cRead, rc));
-                    rc = VERR_GENERAL_FAILURE; /** @todo */
+                    LogFunc(("Failed to read input frames: %s\n", snd_strerror(cRead));
+                    rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
                     break;
             }
         }
