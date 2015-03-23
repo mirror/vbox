@@ -873,7 +873,7 @@ static DECLCALLBACK(int) drvHostALSAAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                 }
 
                 default:
-                    LogFunc(("Failed to read input frames: %s\n", snd_strerror(cRead));
+                    LogFunc(("Failed to read input frames: %s\n", snd_strerror(cRead)));
                     rc = VERR_GENERAL_FAILURE; /** @todo Fudge! */
                     break;
             }
