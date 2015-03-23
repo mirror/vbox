@@ -187,6 +187,7 @@ template<> QString toString(const KParavirtProvider &type)
         case KParavirtProvider_Legacy:  return QApplication::translate("VBoxGlobal", "Legacy", "ParavirtProvider");
         case KParavirtProvider_Minimal: return QApplication::translate("VBoxGlobal", "Minimal", "ParavirtProvider");
         case KParavirtProvider_HyperV:  return QApplication::translate("VBoxGlobal", "Hyper-V", "ParavirtProvider");
+        case KParavirtProvider_KVM:     return QApplication::translate("VBoxGlobal", "KVM", "ParavirtProvider");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();

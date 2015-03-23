@@ -353,6 +353,7 @@ void UIGDetailsUpdateThreadSystem::run()
             {
                 case KParavirtProvider_Minimal: acceleration << QApplication::translate("UIGDetails", "Minimal Paravirtualization", "details (system)"); break;
                 case KParavirtProvider_HyperV:  acceleration << QApplication::translate("UIGDetails", "Hyper-V Paravirtualization", "details (system)"); break;
+                case KParavirtProvider_KVM:     acceleration << QApplication::translate("UIGDetails", "KVM Paravirtualization", "details (system)"); break;
                 default: break;
             }
             if (!acceleration.isEmpty())
