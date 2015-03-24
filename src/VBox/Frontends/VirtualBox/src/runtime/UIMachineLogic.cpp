@@ -2436,8 +2436,9 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
     if (!encryptedMediums.isEmpty())
     {
         /* Create corresponding dialog: */
+        QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
-             new UIAddDiskEncryptionPasswordDialog(activeMachineWindow(),
+             new UIAddDiskEncryptionPasswordDialog(pDlgParent,
                                                    machineName(),
                                                    encryptedMediums);
         /* Execute it and acquire the result: */

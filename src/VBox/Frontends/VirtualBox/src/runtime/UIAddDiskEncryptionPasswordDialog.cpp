@@ -410,6 +410,9 @@ EncryptionPasswordsMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() 
 
 void UIAddDiskEncryptionPasswordDialog::prepare()
 {
+    /* Configure self: */
+    setWindowModality(Qt::WindowModal);
+
     /* Create main-layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     AssertPtrReturnVoid(pMainLayout);
