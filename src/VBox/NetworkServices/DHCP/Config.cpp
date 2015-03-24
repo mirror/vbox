@@ -1063,7 +1063,7 @@ static int fillDhcpOption(RawOption &opt, const std::string &OptText, int OptEnc
         char *pszNext = const_cast<char *>(OptText.c_str());
         while (*pszNext != '\0')
         {
-            if (cbRawOpt == 256)
+            if (cbRawOpt >= RT_ELEMENTS(opt.au8RawOpt))
                 return VERR_INVALID_PARAMETER;
 
             uint8_t u8Byte;
