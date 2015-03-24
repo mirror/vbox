@@ -207,14 +207,16 @@ UISettingsDialogGlobal::~UISettingsDialogGlobal()
 
 void UISettingsDialogGlobal::loadData()
 {
-    /* Call for base-class: */
+    /* Call to base-class: */
     UISettingsDialog::loadData();
 
+    /* Get properties and settings: */
+    CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
+    VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
-    UISettingsDataGlobal data(vboxGlobal().virtualBox().GetSystemProperties(), vboxGlobal().settings());
-    /* Create global settings loader,
-     * it will load global settings & delete itself in the appropriate time: */
+    UISettingsDataGlobal data(properties, settings);
+    /* Create global settings loader: */
     UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this,
                                                                            UISettingsSerializer::Load,
                                                                            QVariant::fromValue(data),
@@ -226,7 +228,7 @@ void UISettingsDialogGlobal::loadData()
 
 void UISettingsDialogGlobal::saveData()
 {
-    /* Call for base-class: */
+    /* Call to base-class: */
     UISettingsDialog::saveData();
 
     /* Get properties and settings: */
@@ -235,8 +237,7 @@ void UISettingsDialogGlobal::saveData()
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(properties, settings);
-    /* Create global settings saver,
-     * it will save global settings & delete itself in the appropriate time: */
+    /* Create global settings saver: */
     UISettingsSerializer *pGlobalSettingsSaver = new UISettingsSerializer(this,
                                                                           UISettingsSerializer::Save,
                                                                           QVariant::fromValue(data),
@@ -510,28 +511,27 @@ void UISettingsDialogMachine::loadData()
     if (!m_session.isNull())
         return;
 
-    /* Call for base-class: */
+    /* Call to base-class: */
     UISettingsDialog::loadData();
 
     /* Disconnect global VBox events from this dialog: */
     gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
-    m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() : vboxGlobal().openExistingSession(m_strMachineId);
+    m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_strMachineId) :
+                                                                              vboxGlobal().openExistingSession(m_strMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
 
-    /* Get machine from session: */
+    /* Get machine and console: */
     m_machine = m_session.GetMachine();
-    /* Get console from session: */
     m_console = configurationAccessLevel() == ConfigurationAccessLevel_Full ? CConsole() : m_session.GetConsole();
-
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
-    /* Create machine settings loader,
-     * it will load machine settings & delete itself in the appropriate time: */
+    /* Create machine settings loader: */
     UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this,
                                                                             UISettingsSerializer::Load,
                                                                             QVariant::fromValue(data),
@@ -550,33 +550,27 @@ void UISettingsDialogMachine::saveData()
     if (!m_session.isNull())
         return;
 
-    /* Call for base-class: */
+    /* Call to base-class: */
     UISettingsDialog::saveData();
 
     /* Disconnect global VBox events from this dialog: */
     gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
-    if (configurationAccessLevel() == ConfigurationAccessLevel_Null)
-        m_session = CSession();
-    else if (configurationAccessLevel() != ConfigurationAccessLevel_Full)
-        m_session = vboxGlobal().openExistingSession(m_strMachineId);
-    else
-        m_session = vboxGlobal().openSession(m_strMachineId);
+    m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
+                configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_strMachineId) :
+                                                                              vboxGlobal().openExistingSession(m_strMachineId);
     /* Check that session was created: */
     if (m_session.isNull())
         return;
 
-    /* Get machine from session: */
+    /* Get machine and console: */
     m_machine = m_session.GetMachine();
-    /* Get console from session: */
     m_console = configurationAccessLevel() == ConfigurationAccessLevel_Full ? CConsole() : m_session.GetConsole();
-
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
-    /* Create machine settings saver,
-     * it will save machine settings & delete itself in the appropriate time: */
+    /* Create machine settings saver: */
     UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this,
                                                                            UISettingsSerializer::Save,
                                                                            QVariant::fromValue(data),
@@ -586,7 +580,7 @@ void UISettingsDialogMachine::saveData()
 
     /* Get updated machine: */
     m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
-    /* If machine is ok => perform final operations: */
+    /* If machine is OK => perform final operations: */
     if (m_machine.isOk())
     {
         /* Guest OS type & VT-x/AMD-V option correlation auto-fix: */
@@ -621,7 +615,7 @@ void UISettingsDialogMachine::saveData()
         m_machine.SaveSettings();
     }
 
-    /* If machine is NOT ok => show the error message: */
+    /* If machine is NOT OK => show the error message: */
     if (!m_machine.isOk())
         msgCenter().cannotSaveMachineSettings(m_machine, this);
 
