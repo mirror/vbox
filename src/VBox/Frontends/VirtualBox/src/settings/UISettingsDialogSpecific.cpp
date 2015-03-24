@@ -198,13 +198,6 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
         m_pSelector->selectById(GlobalSettingsPageType_General);
 }
 
-UISettingsDialogGlobal::~UISettingsDialogGlobal()
-{
-    /* Delete serializer early if exists: */
-    if (UISettingsSerializer::instance())
-        delete UISettingsSerializer::instance();
-}
-
 void UISettingsDialogGlobal::loadOwnData()
 {
     /* Get properties and settings: */
@@ -483,13 +476,6 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     /* First item as default: */
     else
         m_pSelector->selectById(MachineSettingsPageType_General);
-}
-
-UISettingsDialogMachine::~UISettingsDialogMachine()
-{
-    /* Delete serializer early if exists: */
-    if (UISettingsSerializer::instance())
-        delete UISettingsSerializer::instance();
 }
 
 void UISettingsDialogMachine::loadOwnData()

@@ -36,7 +36,6 @@ public:
     UISettingsDialogGlobal(QWidget *pParent,
                            const QString &strCategory = QString(),
                            const QString &strControl = QString());
-    ~UISettingsDialogGlobal();
 
 protected:
 
@@ -63,7 +62,6 @@ public:
 
     UISettingsDialogMachine(QWidget *pParent, const QString &strMachineId,
                             const QString &strCategory, const QString &strControl);
-    ~UISettingsDialogMachine();
 
 protected:
 

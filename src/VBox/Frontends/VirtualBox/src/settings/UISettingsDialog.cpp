@@ -149,8 +149,13 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
 UISettingsDialog::~UISettingsDialog()
 {
+    /* Delete serializer early if exists: */
+    if (UISettingsSerializer::instance())
+        delete UISettingsSerializer::instance();
+
     /* Recall popup-pane if any: */
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
+
     /* Delete selector early! */
     delete m_pSelector;
 }
