@@ -40,8 +40,10 @@ public:
 
 protected:
 
-    void loadData();
-    void saveData();
+    /** Loads the data from the corresponding source. */
+    void loadOwnData();
+    /** Saves the data to the corresponding source. */
+    void saveOwnData();
 
     void retranslateUi();
 
@@ -65,8 +67,10 @@ public:
 
 protected:
 
-    void loadData();
-    void saveData();
+    /** Loads the data from the corresponding source. */
+    void loadOwnData();
+    /** Saves the data to the corresponding source. */
+    void saveOwnData();
 
     void retranslateUi();
 

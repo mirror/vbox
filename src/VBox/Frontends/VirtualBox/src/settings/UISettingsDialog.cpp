@@ -34,6 +34,7 @@
 # include "UIPopupCenter.h"
 # include "QIWidgetValidator.h"
 # include "VBoxSettingsSelector.h"
+# include "UISettingsSerializer.h"
 # include "UISettingsPage.h"
 # include "UIToolBar.h"
 # include "UIIconPool.h"
@@ -157,14 +158,14 @@ UISettingsDialog::~UISettingsDialog()
 void UISettingsDialog::execute()
 {
     /* Load data: */
-    loadData();
+    loadOwnData();
 
     /* Execute dialog and wait for completion: */
     if (exec() != QDialog::Accepted)
         return;
 
     /* Save data: */
-    saveData();
+    saveOwnData();
 }
 
 void UISettingsDialog::sltCategoryChanged(int cId)
@@ -196,11 +197,13 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 
 void UISettingsDialog::sltMarkLoaded()
 {
+    /* Mark as loaded: */
     m_fLoaded = true;
 }
 
 void UISettingsDialog::sltMarkSaved()
 {
+    /* Mark as saved: */
     m_fSaved = true;
 }
 
@@ -222,14 +225,41 @@ void UISettingsDialog::sltHandlePageProcessed()
     }
 }
 
-void UISettingsDialog::loadData()
+void UISettingsDialog::loadData(QVariant &data)
 {
+    /* Mark as not loaded: */
     m_fLoaded = false;
+
+    /* Create settings loader: */
+    UISettingsSerializer *pSettingsLoader = new UISettingsSerializer(this,
+                                                                     UISettingsSerializer::Load,
+                                                                     QVariant::fromValue(data),
+                                                                     m_pSelector->settingPages());
+    connect(pSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
+    /* Ask to raise required page priority: */
+    pSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
+    /* Start loader: */
+    pSettingsLoader->start();
+
+    /* Upload data finally: */
+    data = pSettingsLoader->data();
 }
 
-void UISettingsDialog::saveData()
+void UISettingsDialog::saveData(QVariant &data)
 {
+    /* Mark as not saved: */
     m_fSaved = false;
+
+    /* Create settings saver: */
+    UISettingsSerializer *pSettingsSaver = new UISettingsSerializer(this,
+                                                                    UISettingsSerializer::Save,
+                                                                    QVariant::fromValue(data),
+                                                                    m_pSelector->settingPages());
+    /* Start saver: */
+    pSettingsSaver->start();
+
+    /* Upload data finally: */
+    data = pSettingsSaver->data();
 }
 
 void UISettingsDialog::retranslateUi()

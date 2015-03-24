@@ -205,49 +205,36 @@ UISettingsDialogGlobal::~UISettingsDialogGlobal()
         delete UISettingsSerializer::instance();
 }
 
-void UISettingsDialogGlobal::loadData()
+void UISettingsDialogGlobal::loadOwnData()
 {
-    /* Call to base-class: */
-    UISettingsDialog::loadData();
-
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(properties, settings);
-    /* Create global settings loader: */
-    UISettingsSerializer *pGlobalSettingsLoader = new UISettingsSerializer(this,
-                                                                           UISettingsSerializer::Load,
-                                                                           QVariant::fromValue(data),
-                                                                           m_pSelector->settingPages());
-    connect(pGlobalSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
-    /* Start loader: */
-    pGlobalSettingsLoader->start();
+    QVariant varData = QVariant::fromValue(data);
+
+    /* Call to base-class: */
+    UISettingsDialog::loadData(varData);
 }
 
-void UISettingsDialogGlobal::saveData()
+void UISettingsDialogGlobal::saveOwnData()
 {
-    /* Call to base-class: */
-    UISettingsDialog::saveData();
-
     /* Get properties and settings: */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
     VBoxGlobalSettings settings = vboxGlobal().settings();
     /* Prepare global data: */
     qRegisterMetaType<UISettingsDataGlobal>();
     UISettingsDataGlobal data(properties, settings);
-    /* Create global settings saver: */
-    UISettingsSerializer *pGlobalSettingsSaver = new UISettingsSerializer(this,
-                                                                          UISettingsSerializer::Save,
-                                                                          QVariant::fromValue(data),
-                                                                          m_pSelector->settingPages());
-    /* Start saver: */
-    pGlobalSettingsSaver->start();
+    QVariant varData = QVariant::fromValue(data);
+
+    /* Call to base-class: */
+    UISettingsDialog::saveData(varData);
 
     /* Get updated properties & settings: */
-    CSystemProperties newProperties = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_properties;
-    VBoxGlobalSettings newSettings = pGlobalSettingsSaver->data().value<UISettingsDataGlobal>().m_settings;
+    CSystemProperties newProperties = varData.value<UISettingsDataGlobal>().m_properties;
+    VBoxGlobalSettings newSettings = varData.value<UISettingsDataGlobal>().m_settings;
     /* If properties are not OK => show the error: */
     if (!newProperties.isOk())
         msgCenter().cannotSetSystemProperties(newProperties, this);
@@ -505,14 +492,11 @@ UISettingsDialogMachine::~UISettingsDialogMachine()
         delete UISettingsSerializer::instance();
 }
 
-void UISettingsDialogMachine::loadData()
+void UISettingsDialogMachine::loadOwnData()
 {
     /* Check that session is NOT created: */
     if (!m_session.isNull())
         return;
-
-    /* Call to base-class: */
-    UISettingsDialog::loadData();
 
     /* Disconnect global VBox events from this dialog: */
     gVBoxEvents->disconnect(this);
@@ -531,27 +515,17 @@ void UISettingsDialogMachine::loadData()
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
-    /* Create machine settings loader: */
-    UISettingsSerializer *pMachineSettingsLoader = new UISettingsSerializer(this,
-                                                                            UISettingsSerializer::Load,
-                                                                            QVariant::fromValue(data),
-                                                                            m_pSelector->settingPages());
-    connect(pMachineSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
-    connect(pMachineSettingsLoader, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltSetFirstRunFlag()));
-    /* Ask to raise required page priority: */
-    pMachineSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
-    /* Start page loader: */
-    pMachineSettingsLoader->start();
+    QVariant varData = QVariant::fromValue(data);
+
+    /* Call to base-class: */
+    UISettingsDialog::loadData(varData);
 }
 
-void UISettingsDialogMachine::saveData()
+void UISettingsDialogMachine::saveOwnData()
 {
     /* Check that session is NOT created: */
     if (!m_session.isNull())
         return;
-
-    /* Call to base-class: */
-    UISettingsDialog::saveData();
 
     /* Disconnect global VBox events from this dialog: */
     gVBoxEvents->disconnect(this);
@@ -570,16 +544,13 @@ void UISettingsDialogMachine::saveData()
     /* Prepare machine data: */
     qRegisterMetaType<UISettingsDataMachine>();
     UISettingsDataMachine data(m_machine, m_console);
-    /* Create machine settings saver: */
-    UISettingsSerializer *pMachineSettingsSaver = new UISettingsSerializer(this,
-                                                                           UISettingsSerializer::Save,
-                                                                           QVariant::fromValue(data),
-                                                                           m_pSelector->settingPages());
-    /* Start saver: */
-    pMachineSettingsSaver->start();
+    QVariant varData = QVariant::fromValue(data);
+
+    /* Call to base-class: */
+    UISettingsDialog::saveData(varData);
 
     /* Get updated machine: */
-    m_machine = pMachineSettingsSaver->data().value<UISettingsDataMachine>().m_machine;
+    m_machine = varData.value<UISettingsDataMachine>().m_machine;
     /* If machine is OK => perform final operations: */
     if (m_machine.isOk())
     {
@@ -742,6 +713,8 @@ void UISettingsDialogMachine::sltMarkLoaded()
     /* Call for base-class: */
     UISettingsDialog::sltMarkLoaded();
 
+    sltSetFirstRunFlag();
+
     /* Unlock the session if exists: */
     if (!m_session.isNull())
     {
@@ -820,7 +793,7 @@ void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
         return;
 
     /* Reload data: */
-    loadData();
+    loadOwnData();
 }
 
 void UISettingsDialogMachine::sltCategoryChanged(int cId)

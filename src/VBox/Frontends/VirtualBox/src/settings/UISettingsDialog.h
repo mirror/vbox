@@ -65,9 +65,17 @@ protected slots:
 
 protected:
 
-    /* Save/load API: */
-    virtual void loadData();
-    virtual void saveData();
+    /** Loads the @a data. */
+    void loadData(QVariant &data);
+    /** Wrapper for the method above.
+      * Loads the data from the corresponding source. */
+    virtual void loadOwnData() = 0;
+
+    /** Saves the @a data. */
+    void saveData(QVariant &data);
+    /** Wrapper for the method above.
+      * Saves the data to the corresponding source. */
+    virtual void saveOwnData() = 0;
 
     /* UI translator: */
     virtual void retranslateUi();
