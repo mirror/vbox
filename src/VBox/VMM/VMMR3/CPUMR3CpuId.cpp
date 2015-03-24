@@ -2748,7 +2748,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| X86_CPUID_STEXT_FEATURE_EBX_INVPCID           RT_BIT(10)
                                //| X86_CPUID_STEXT_FEATURE_EBX_RTM               RT_BIT(11)
                                //| X86_CPUID_STEXT_FEATURE_EBX_PQM               RT_BIT(12)
-                               //| X86_CPUID_STEXT_FEATURE_EBX_DEPR_FPU_CS_DS    RT_BIT(13)
+                               | X86_CPUID_STEXT_FEATURE_EBX_DEPR_FPU_CS_DS
                                //| X86_CPUID_STEXT_FEATURE_EBX_MPE               RT_BIT(14)
                                //| X86_CPUID_STEXT_FEATURE_EBX_PQE               RT_BIT(15)
                                //| X86_CPUID_STEXT_FEATURE_EBX_AVX512F           RT_BIT(16)
