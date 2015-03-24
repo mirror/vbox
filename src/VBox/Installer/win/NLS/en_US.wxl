@@ -130,9 +130,10 @@
     <!---->
 
     <String Id="SelectionNetworkTypeDlg_CommonDescription">Please choose which type of network drivers you will use:</String>
-    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">NDIS5 network drivers (default).</String>
-    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">NDIS6 network drivers. 
-This is an experimental feature not recommended for use in production systems.</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS5">NDIS5 network drivers.
+This is default for older versions of Windows (pre-Vista).</String>
+    <String Id="SelectionNetworkTypeDlg_DescriptionNDIS6">NDIS6 network drivers.
+This is default for newer versions of Windows (Vista and newer).</String>
     <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS5">Use NDIS5 network drivers.</String>
     <String Id="SelectionNetworkTypeDlg_RadioButtonNDIS6">Use NDIS6 network drivers.</String>
 

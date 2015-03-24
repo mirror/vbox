@@ -31,9 +31,6 @@
                 ICH9 chipset emulation
             </listitem>
             <listitem>
-                NDIS6 host drivers
-            </listitem>
-            <listitem>
                 EFI firmware
             </listitem>
             <listitem>
