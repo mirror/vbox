@@ -398,7 +398,7 @@ UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pP
 {
     /* Prepare: */
     prepare();
-    /* Retranslate: */
+    /* Translate: */
     retranslateUi();
 }
 
