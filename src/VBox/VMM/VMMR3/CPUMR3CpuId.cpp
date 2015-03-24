@@ -4796,7 +4796,7 @@ static DBGFREGSUBFIELD const g_aLeaf7Sub0EbxSubFields[] =
     DBGFREGSUBFIELD_RO("CLFLUSHOPT\0"   "CLFLUSHOPT (Cache Line Flush) instruction",    23, 1, 0),
     DBGFREGSUBFIELD_RO("INTEL_PT\0"     "Intel Processor Trace",                        25, 1, 0),
     DBGFREGSUBFIELD_RO("AVX512PF\0"     "AVX512 Prefetch instructions",                 26, 1, 0),
-    DBGFREGSUBFIELD_RO("AVX512ER\0"     "AVX512 Exponential & reciprocal instructions", 27, 1, 0),
+    DBGFREGSUBFIELD_RO("AVX512ER\0"     "AVX512 Exponential & Reciprocal instructions", 27, 1, 0),
     DBGFREGSUBFIELD_RO("AVX512CD\0"     "AVX512 Conflict Detection instructions",       28, 1, 0),
     DBGFREGSUBFIELD_RO("SHA\0"          "Secure Hash Algorithm extensions",             29, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
