@@ -2044,6 +2044,7 @@ typedef struct CPUMCPUIDCONFIG
     CPUMISAEXTCFG   enmSse4A;
     CPUMISAEXTCFG   enmMisAlnSse;
     CPUMISAEXTCFG   enm3dNowPrf;
+    CPUMISAEXTCFG   enmAmdExtMmx;
 
     uint32_t        uMaxStdLeaf;
     uint32_t        uMaxExtLeaf;
@@ -2499,7 +2500,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                //| RT_BIT_32(19)                    - reserved
                                //| X86_CPUID_EXT_FEATURE_EDX_NX     - enabled later by PGM
                                //| RT_BIT_32(21)                    - reserved
-                               //| X86_CPUID_AMD_FEATURE_EDX_AXMMX
+                               | (pConfig->enmAmdExtMmx ? X86_CPUID_AMD_FEATURE_EDX_AXMMX : 0)
                                | X86_CPUID_AMD_FEATURE_EDX_MMX
                                | X86_CPUID_AMD_FEATURE_EDX_FXSR
                                | X86_CPUID_AMD_FEATURE_EDX_FFXSR
@@ -2560,6 +2561,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, XOP,        X86_CPUID_AMD_FEATURE_ECX_XOP);
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, TBM,        X86_CPUID_AMD_FEATURE_ECX_TBM);
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEcx, FMA4,       X86_CPUID_AMD_FEATURE_ECX_FMA4);
+            PORTABLE_DISABLE_FEATURE_BIT_CFG(1, pExtFeatureLeaf->uEdx, AXMMX,      X86_CPUID_AMD_FEATURE_EDX_AXMMX,     pConfig->enmAmdExtMmx);
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, 3DNOW,      X86_CPUID_AMD_FEATURE_EDX_3DNOW);
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, 3DNOW_EX,   X86_CPUID_AMD_FEATURE_EDX_3DNOW_EX);
             PORTABLE_DISABLE_FEATURE_BIT(    1, pExtFeatureLeaf->uEdx, FFXSR,      X86_CPUID_AMD_FEATURE_EDX_FFXSR);
@@ -2598,6 +2600,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_MISALNSSE;
         if (pConfig->enm3dNowPrf  == CPUMISAEXTCFG_ENABLED_ALWAYS)
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF;
+        if (pConfig->enmAmdExtMmx  == CPUMISAEXTCFG_ENABLED_ALWAYS)
+            pExtFeatureLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_AXMMX;
     }
     pExtFeatureLeaf = NULL; /* Must refetch! */
 
@@ -3567,6 +3571,14 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
      * and AMD-V or unrestricted guest mode.
      */
     rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "3DNOWPRF", &pConfig->enm3dNowPrf, fNestedPagingAndFullGuestExec);
+    AssertLogRelRCReturn(rc, rc);
+
+    /** @cfgm{/CPUM/IsaExts/AXMMX, isaextcfg, depends}
+     * Whether to expose the AMD's MMX Extensions to the guest.  For the time being
+     * the default is to only do this for VMs with nested paging and AMD-V or
+     * unrestricted guest mode.
+     */
+    rc = cpumR3CpuIdReadIsaExtCfg(pVM, pIsaExts, "AXMMX", &pConfig->enmAmdExtMmx, fNestedPagingAndFullGuestExec);
     AssertLogRelRCReturn(rc, rc);
 
     return VINF_SUCCESS;
