@@ -21,9 +21,13 @@
 #include <QThread>
 #include <QVariant>
 #include <QWaitCondition>
+#include <QProgressDialog>
 #include <QMutex>
 #include <QList>
 #include <QMap>
+
+/* GUI includes: */
+#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class UISettingsPage;
@@ -75,8 +79,14 @@ public:
     /** Destructor. */
     ~UISettingsSerializer();
 
+    /** Returns the load/save direction. */
+    SerializationDirection direction() const { return m_direction; }
+
     /** Returns the instance of wrapper(s) to load/save the data from/to. */
     QVariant& data() { return m_data; }
+
+    /** Returns the count of the page(s) to load/save the data to/from. */
+    int pageCount() const { return m_pages.size(); }
 
     /** Raises the priority of page with @a iPageId. */
     void raisePriorityOfPage(int iPageId);
@@ -102,8 +112,8 @@ protected:
     /** Holds the singleton instance. */
     static UISettingsSerializer *m_spInstance;
 
-    /** Holds the the load/save direction. */
-    SerializationDirection m_direction;
+    /** Holds the load/save direction. */
+    const SerializationDirection m_direction;
 
     /** Holds the wrapper(s) to load/save the data from/to. */
     QVariant m_data;
@@ -118,6 +128,55 @@ protected:
     QMutex m_mutex;
     /** Holds the synchronization condition. */
     QWaitCondition m_condition;
+};
+
+/** QProgressDialog reimplementation used to
+  * reflect the settings serialization operation. */
+class UISettingsSerializerProgress : public QIWithRetranslateUI<QProgressDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    /** Constructor.
+      * @param pParent   being passed to the base-class,
+      * @param direction determines the load/save direction,
+      * @param data      contains the wrapper(s) to load/save the data from/to,
+      * @param pages     contains the page(s) to load/save the data to/from. */
+    UISettingsSerializerProgress(QWidget *pParent, UISettingsSerializer::SerializationDirection direction,
+                                 const QVariant &data, const UISettingsPageList &pages);
+
+    /** Executes the dialog. */
+    int exec();
+
+    /** Returns the instance of wrapper(s) to load/save the data from/to. */
+    QVariant& data();
+
+protected:
+
+    /** Prepare routine. */
+    void prepare();
+
+    /** Translate routine: */
+    void retranslateUi();
+
+private slots:
+
+    /** Advances the current progress value. */
+    void sltAdvanceProgressValue() { setValue(value() + 1); }
+
+private:
+
+    /** Holds the load/save direction. */
+    const UISettingsSerializer::SerializationDirection m_direction;
+
+    /** Holds the wrapper(s) to load/save the data from/to. */
+    QVariant m_data;
+    /** Holds the page(s) to load/save the data to/from. */
+    UISettingsPageList m_pages;
+
+    /** Holds the pointer to the thread loading/saving settings in async mode. */
+    UISettingsSerializer *m_pSerializer;
 };
 
 #endif /* !___UISettingsSerializer_h___ */

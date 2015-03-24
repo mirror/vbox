@@ -39,11 +39,8 @@ UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirect
     m_spInstance = this;
 
     /* Copy the page(s) from incoming list to our map: */
-    for (int iPageIndex = 0; iPageIndex < pages.size(); ++iPageIndex)
-    {
-        UISettingsPage *pPage = pages[iPageIndex];
+    foreach (UISettingsPage *pPage, pages)
         m_pages.insert(pPage->id(), pPage);
-    }
 
     /* Handling internal signals, they are also redirected in their handlers: */
     connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
@@ -88,24 +85,6 @@ void UISettingsSerializer::start(Priority priority /* = InheritPriority */)
 
     /* Start async serializing thread: */
     QThread::start(priority);
-
-    /* If serializer saves settings: */
-    if (m_direction == Save)
-    {
-        /* We should block calling thread until all pages will be saved: */
-        while (!m_fSavingComplete)
-        {
-            /* Lock mutex initially: */
-            m_mutex.lock();
-            /* Perform idle-processing every 100ms,
-             * and waiting for direct wake up signal: */
-            m_condition.wait(&m_mutex, 100);
-            /* Process queued signals posted to GUI thread: */
-            qApp->processEvents();
-            /* Unlock mutex finally: */
-            m_mutex.unlock();
-        }
-    }
 }
 
 void UISettingsSerializer::sltHandleProcessedPage(int iPageId)
@@ -195,5 +174,64 @@ void UISettingsSerializer::run()
 
     /* Deinitialize COM for other thread: */
     COMBase::CleanupCOM();
+}
+
+UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent, UISettingsSerializer::SerializationDirection direction,
+                                                           const QVariant &data, const UISettingsPageList &pages)
+    : QIWithRetranslateUI<QProgressDialog>(pParent)
+    , m_pSerializer(0)
+    , m_direction(direction)
+    , m_data(data)
+    , m_pages(pages)
+{
+    /* Prepare: */
+    prepare();
+
+    /* Translate: */
+    retranslateUi();
+}
+
+int UISettingsSerializerProgress::exec()
+{
+    /* Start the serializer: */
+    m_pSerializer->start();
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QProgressDialog>::exec();
+}
+
+QVariant& UISettingsSerializerProgress::data()
+{
+    AssertPtrReturn(m_pSerializer, m_data);
+    return m_pSerializer->data();
+}
+
+void UISettingsSerializerProgress::prepare()
+{
+    /* Create serializer: */
+    m_pSerializer = new UISettingsSerializer(this, m_direction, m_data, m_pages);
+    AssertPtrReturnVoid(m_pSerializer);
+    {
+        /* Install progress handler: */
+        connect(m_pSerializer, SIGNAL(sigNotifyAboutPagePostprocessed(int)),
+                this, SLOT(sltAdvanceProgressValue()));
+        connect(m_pSerializer, SIGNAL(sigNotifyAboutPagesPostprocessed()),
+                this, SLOT(sltAdvanceProgressValue()));
+    }
+
+    /* Set maximum/minimum/current values: */
+    setMaximum(m_pSerializer->pageCount() + 1);
+    setMinimum(0);
+    setValue(0);
+}
+
+void UISettingsSerializerProgress::retranslateUi()
+{
+    /* Translate title: */
+    switch (m_pSerializer->direction())
+    {
+        case UISettingsSerializer::Load: setLabelText(tr("Loading Settings...")); break;
+        case UISettingsSerializer::Save: setLabelText(tr("Saving Settings...")); break;
+    }
 }
 

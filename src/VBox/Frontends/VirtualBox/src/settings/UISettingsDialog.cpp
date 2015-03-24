@@ -165,12 +165,17 @@ void UISettingsDialog::execute()
     /* Load data: */
     loadOwnData();
 
-    /* Execute dialog and wait for completion: */
-    if (exec() != QDialog::Accepted)
-        return;
+    /* Execute dialog: */
+    exec();
+}
 
+void UISettingsDialog::accept()
+{
     /* Save data: */
     saveOwnData();
+
+    /* Call to base-class: */
+    QIWithRetranslateUI<QIMainDialog>::accept();
 }
 
 void UISettingsDialog::sltCategoryChanged(int cId)
@@ -244,10 +249,8 @@ void UISettingsDialog::loadData(QVariant &data)
     m_fLoaded = false;
 
     /* Create settings loader: */
-    UISettingsSerializer *pSettingsLoader = new UISettingsSerializer(this,
-                                                                     UISettingsSerializer::Load,
-                                                                     QVariant::fromValue(data),
-                                                                     m_pSelector->settingPages());
+    UISettingsSerializer *pSettingsLoader = new UISettingsSerializer(this, UISettingsSerializer::Load,
+                                                                     data, m_pSelector->settingPages());
     AssertPtrReturnVoid(pSettingsLoader);
     {
         /* Configure settings loader: */
@@ -270,18 +273,18 @@ void UISettingsDialog::saveData(QVariant &data)
     m_fSaved = false;
 
     /* Create settings saver: */
-    UISettingsSerializer *pSettingsSaver = new UISettingsSerializer(this,
-                                                                    UISettingsSerializer::Save,
-                                                                    QVariant::fromValue(data),
-                                                                    m_pSelector->settingPages());
-    AssertPtrReturnVoid(pSettingsSaver);
+    UISettingsSerializerProgress *pSettingsSaveProgress = new UISettingsSerializerProgress(this, UISettingsSerializer::Save,
+                                                                                           data, m_pSelector->settingPages());
+    AssertPtrReturnVoid(pSettingsSaveProgress);
     {
+        /* Configure settings saver: */
+        connect(pSettingsSaveProgress, SIGNAL(finished(int)), this, SLOT(sltMarkSaved()));
         /* Start settings saver: */
-        pSettingsSaver->start();
+        pSettingsSaveProgress->exec();
     }
 
     /* Upload data finally: */
-    data = pSettingsSaver->data();
+    data = pSettingsSaveProgress->data();
 }
 
 void UISettingsDialog::retranslateUi()

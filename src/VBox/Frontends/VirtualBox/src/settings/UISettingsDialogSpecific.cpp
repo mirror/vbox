@@ -234,9 +234,6 @@ void UISettingsDialogGlobal::saveOwnData()
     /* Else save the new settings if they were changed: */
     else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
-
-    /* Mark page processed: */
-    sltMarkSaved();
 }
 
 void UISettingsDialogGlobal::retranslateUi()
@@ -575,9 +572,6 @@ void UISettingsDialogMachine::saveOwnData()
     /* If machine is NOT OK => show the error message: */
     if (!m_machine.isOk())
         msgCenter().cannotSaveMachineSettings(m_machine, this);
-
-    /* Mark page processed: */
-    sltMarkSaved();
 }
 
 void UISettingsDialogMachine::retranslateUi()
@@ -699,7 +693,8 @@ void UISettingsDialogMachine::sltMarkLoaded()
     /* Call for base-class: */
     UISettingsDialog::sltMarkLoaded();
 
-    sltSetFirstRunFlag();
+    /* No need to reset 'first run' flag: */
+    m_fResetFirstRunFlag = false;
 
     /* Unlock the session if exists: */
     if (!m_session.isNull())
@@ -793,11 +788,6 @@ void UISettingsDialogMachine::sltCategoryChanged(int cId)
 void UISettingsDialogMachine::sltAllowResetFirstRunFlag()
 {
     m_fAllowResetFirstRunFlag = true;
-}
-
-void UISettingsDialogMachine::sltSetFirstRunFlag()
-{
-    m_fResetFirstRunFlag = false;
 }
 
 void UISettingsDialogMachine::sltResetFirstRunFlag()

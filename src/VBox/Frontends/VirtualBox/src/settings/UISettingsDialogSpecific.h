@@ -85,7 +85,6 @@ private slots:
     void sltMachineDataChanged(QString strMachineId);
     void sltCategoryChanged(int cId);
     void sltAllowResetFirstRunFlag();
-    void sltSetFirstRunFlag();
     void sltResetFirstRunFlag();
 
 private:

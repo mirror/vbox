@@ -51,6 +51,9 @@ public:
 
 protected slots:
 
+    /** Hides the modal dialog and sets the result code to Accepted. */
+    virtual void accept();
+
     /* Category-change slot: */
     virtual void sltCategoryChanged(int cId);
 
