@@ -31,6 +31,8 @@ class QTimer;
 class UIWarningPane;
 class VBoxSettingsSelector;
 class UISettingsPage;
+class UISettingsSerializer;
+class UISettingsSerializerProgress;
 
 /* Using declarations: */
 using namespace UISettingsDefs;
@@ -67,6 +69,11 @@ protected slots:
     void sltHandlePageProcessed();
 
 protected:
+
+    /** Returns the serialize process instance. */
+    UISettingsSerializer* serializeProcess() const { return m_pSerializeProcess; }
+    /** Returns the serialize progress instance. */
+    UISettingsSerializerProgress* serializeProgress() const { return m_pSerializeProgress; }
 
     /** Loads the @a data. */
     void loadData(QVariant &data);
@@ -134,6 +141,11 @@ private:
 
     /* Global Flags: */
     bool m_fPolished;
+
+    /** Holds the serialize process instance. */
+    UISettingsSerializer *m_pSerializeProcess;
+    /** Holds the serialize progress instance. */
+    UISettingsSerializerProgress *m_pSerializeProgress;
 
     /* Loading/saving stuff: */
     bool m_fLoaded;

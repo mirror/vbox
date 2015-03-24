@@ -25,8 +25,6 @@
 # include "UISettingsPage.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UISettingsSerializer* UISettingsSerializer::m_spInstance = 0;
-
 UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirection direction,
                                            const QVariant &data, const UISettingsPageList &pages)
     : QThread(pParent)
@@ -35,9 +33,6 @@ UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirect
     , m_fSavingComplete(m_direction == Load)
     , m_iIdOfHighPriorityPage(-1)
 {
-    /* Prepare instance: */
-    m_spInstance = this;
-
     /* Copy the page(s) from incoming list to our map: */
     foreach (UISettingsPage *pPage, pages)
         m_pages.insert(pPage->id(), pPage);
@@ -57,9 +52,6 @@ UISettingsSerializer::~UISettingsSerializer()
      * for it to be finished! */
     if (isRunning())
         wait();
-
-    /* Cleanup instance: */
-    m_spInstance = 0;
 }
 
 void UISettingsSerializer::raisePriorityOfPage(int iPageId)

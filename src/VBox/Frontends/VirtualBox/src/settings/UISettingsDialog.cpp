@@ -64,6 +64,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fPolished(false)
     /* Loading/saving stuff: */
+    , m_pSerializeProcess(0)
+    , m_pSerializeProgress(0)
     , m_fLoaded(false)
     , m_fSaved(false)
     /* Status-bar stuff: */
@@ -149,9 +151,17 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
 UISettingsDialog::~UISettingsDialog()
 {
-    /* Delete serializer early if exists: */
-    if (UISettingsSerializer::instance())
-        delete UISettingsSerializer::instance();
+    /* Delete serializer if exists: */
+    if (serializeProcess())
+    {
+        delete m_pSerializeProcess;
+        m_pSerializeProcess = 0;
+    }
+    if (serializeProgress())
+    {
+        delete m_pSerializeProgress;
+        m_pSerializeProgress = 0;
+    }
 
     /* Recall popup-pane if any: */
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
@@ -207,9 +217,17 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 
 void UISettingsDialog::sltMarkLoaded()
 {
-    /* Delete serializer early if exists: */
-    if (UISettingsSerializer::instance())
-        delete UISettingsSerializer::instance();
+    /* Delete serializer if exists: */
+    if (serializeProcess())
+    {
+        delete m_pSerializeProcess;
+        m_pSerializeProcess = 0;
+    }
+    if (serializeProgress())
+    {
+        delete m_pSerializeProgress;
+        m_pSerializeProgress = 0;
+    }
 
     /* Mark as loaded: */
     m_fLoaded = true;
@@ -217,9 +235,17 @@ void UISettingsDialog::sltMarkLoaded()
 
 void UISettingsDialog::sltMarkSaved()
 {
-    /* Delete serializer early if exists: */
-    if (UISettingsSerializer::instance())
-        delete UISettingsSerializer::instance();
+    /* Delete serializer if exists: */
+    if (serializeProcess())
+    {
+        delete m_pSerializeProcess;
+        m_pSerializeProcess = 0;
+    }
+    if (serializeProgress())
+    {
+        delete m_pSerializeProgress;
+        m_pSerializeProgress = 0;
+    }
 
     /* Mark as saved: */
     m_fSaved = true;
@@ -249,22 +275,22 @@ void UISettingsDialog::loadData(QVariant &data)
     m_fLoaded = false;
 
     /* Create settings loader: */
-    UISettingsSerializer *pSettingsLoader = new UISettingsSerializer(this, UISettingsSerializer::Load,
-                                                                     data, m_pSelector->settingPages());
-    AssertPtrReturnVoid(pSettingsLoader);
+    m_pSerializeProcess = new UISettingsSerializer(this, UISettingsSerializer::Load,
+                                                   data, m_pSelector->settingPages());
+    AssertPtrReturnVoid(m_pSerializeProcess);
     {
         /* Configure settings loader: */
-        connect(pSettingsLoader, SIGNAL(sigNotifyAboutProcessStarted()), this, SLOT(sltHandleProcessStarted()));
-        connect(pSettingsLoader, SIGNAL(sigNotifyAboutPagePostprocessed(int)), this, SLOT(sltHandlePageProcessed()));
-        connect(pSettingsLoader, SIGNAL(sigNotifyAboutProcessFinished()), this, SLOT(sltMarkLoaded()));
+        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutProcessStarted()), this, SLOT(sltHandleProcessStarted()));
+        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutPagePostprocessed(int)), this, SLOT(sltHandlePageProcessed()));
+        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutProcessFinished()), this, SLOT(sltMarkLoaded()));
         /* Raise current page priority: */
-        pSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
+        m_pSerializeProcess->raisePriorityOfPage(m_pSelector->currentId());
         /* Start settings loader: */
-        pSettingsLoader->start();
+        m_pSerializeProcess->start();
     }
 
     /* Upload data finally: */
-    data = pSettingsLoader->data();
+    data = m_pSerializeProcess->data();
 }
 
 void UISettingsDialog::saveData(QVariant &data)
@@ -273,18 +299,16 @@ void UISettingsDialog::saveData(QVariant &data)
     m_fSaved = false;
 
     /* Create settings saver: */
-    UISettingsSerializerProgress *pSettingsSaveProgress = new UISettingsSerializerProgress(this, UISettingsSerializer::Save,
-                                                                                           data, m_pSelector->settingPages());
-    AssertPtrReturnVoid(pSettingsSaveProgress);
+    m_pSerializeProgress = new UISettingsSerializerProgress(this, UISettingsSerializer::Save,
+                                                            data, m_pSelector->settingPages());
+    AssertPtrReturnVoid(m_pSerializeProgress);
     {
-        /* Configure settings saver: */
-        connect(pSettingsSaveProgress, SIGNAL(finished(int)), this, SLOT(sltMarkSaved()));
         /* Start settings saver: */
-        pSettingsSaveProgress->exec();
+        m_pSerializeProgress->exec();
     }
 
     /* Upload data finally: */
-    data = pSettingsSaveProgress->data();
+    data = m_pSerializeProgress->data();
 }
 
 void UISettingsDialog::retranslateUi()

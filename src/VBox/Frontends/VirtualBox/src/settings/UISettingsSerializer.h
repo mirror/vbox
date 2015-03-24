@@ -65,9 +65,6 @@ public:
     /** Serialization directions. */
     enum SerializationDirection { Load, Save };
 
-    /** Returns the singleton instance. */
-    static UISettingsSerializer* instance() { return m_spInstance; }
-
     /** Constructor.
       * @param pParent   being passed to the base-class,
       * @param direction determines the load/save direction,
@@ -108,9 +105,6 @@ protected:
 
     /** Worker-thread serialization rutine. */
     void run();
-
-    /** Holds the singleton instance. */
-    static UISettingsSerializer *m_spInstance;
 
     /** Holds the load/save direction. */
     const SerializationDirection m_direction;

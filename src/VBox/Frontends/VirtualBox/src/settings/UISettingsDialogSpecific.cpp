@@ -234,6 +234,9 @@ void UISettingsDialogGlobal::saveOwnData()
     /* Else save the new settings if they were changed: */
     else if (!(newSettings == settings))
         vboxGlobal().setSettings(newSettings);
+
+    /* Mark as saved: */
+    sltMarkSaved();
 }
 
 void UISettingsDialogGlobal::retranslateUi()
@@ -572,6 +575,9 @@ void UISettingsDialogMachine::saveOwnData()
     /* If machine is NOT OK => show the error message: */
     if (!m_machine.isOk())
         msgCenter().cannotSaveMachineSettings(m_machine, this);
+
+    /* Mark as saved: */
+    sltMarkSaved();
 }
 
 void UISettingsDialogMachine::retranslateUi()
@@ -779,8 +785,8 @@ void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
 
 void UISettingsDialogMachine::sltCategoryChanged(int cId)
 {
-    if (UISettingsSerializer::instance())
-        UISettingsSerializer::instance()->raisePriorityOfPage(cId);
+    if (serializeProcess())
+        serializeProcess()->raisePriorityOfPage(cId);
 
     UISettingsDialog::sltCategoryChanged(cId);
 }
