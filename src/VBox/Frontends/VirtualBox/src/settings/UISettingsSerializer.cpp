@@ -33,7 +33,6 @@ UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirect
     , m_direction(direction)
     , m_data(data)
     , m_fSavingComplete(m_direction == Load)
-    , m_fAllowToDestroySerializer(m_direction == Load)
     , m_iIdOfHighPriorityPage(-1)
 {
     /* Prepare instance: */
@@ -46,13 +45,12 @@ UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirect
         m_pages.insert(pPage->id(), pPage);
     }
 
-    /* Connecting this signals: */
+    /* Handling internal signals, they are also redirected in their handlers: */
     connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
     connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
-    connect(this, SIGNAL(finished()), this, SLOT(sltDestroySerializer()), Qt::QueuedConnection);
-    /* Connecting parent signals: */
-    connect(this, SIGNAL(sigNotifyAboutProcessStarted()), parent(), SLOT(sltHandleProcessStarted()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), parent(), SLOT(sltHandlePageProcessed()), Qt::QueuedConnection);
+
+    /* Redirecting unhandled internal signals: */
+    connect(this, SIGNAL(finished()), this, SIGNAL(sigNotifyAboutProcessFinished()), Qt::QueuedConnection);
 }
 
 UISettingsSerializer::~UISettingsSerializer()
@@ -107,8 +105,6 @@ void UISettingsSerializer::start(Priority priority /* = InheritPriority */)
             /* Unlock mutex finally: */
             m_mutex.unlock();
         }
-        /* Allow to destroy serializer finally: */
-        m_fAllowToDestroySerializer = true;
     }
 }
 
@@ -127,6 +123,8 @@ void UISettingsSerializer::sltHandleProcessedPage(int iPageId)
             pSettingsPage->setValidatorBlocked(false);
         }
     }
+    /* Notify listeners about page postprocessed: */
+    emit sigNotifyAboutPagePostprocessed(iPageId);
 }
 
 void UISettingsSerializer::sltHandleProcessedPages()
@@ -145,16 +143,8 @@ void UISettingsSerializer::sltHandleProcessedPages()
         foreach (UISettingsPage *pPage, m_pages.values())
             pPage->revalidate();
     }
-}
-
-void UISettingsSerializer::sltDestroySerializer()
-{
-    /* If not yet all events were processed,
-     * we should postpone destruction for now: */
-    if (!m_fAllowToDestroySerializer)
-        QTimer::singleShot(0, this, SLOT(sltDestroySerializer()));
-    else
-        deleteLater();
+    /* Notify listeners about pages postprocessed: */
+    emit sigNotifyAboutPagesPostprocessed();
 }
 
 void UISettingsSerializer::run()

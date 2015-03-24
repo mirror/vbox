@@ -45,9 +45,16 @@ signals:
 
     /** Notifies GUI thread about some page was processed. */
     void sigNotifyAboutPageProcessed(int iPageId);
-
     /** Notifies GUI thread about all pages were processed. */
     void sigNotifyAboutPagesProcessed();
+
+    /** Notifies listeners about some page was post-processed. */
+    void sigNotifyAboutPagePostprocessed(int iPageId);
+    /** Notifies listeners about all pages were post-processed. */
+    void sigNotifyAboutPagesPostprocessed();
+
+    /** Notifies listeners about process has been finished. */
+    void sigNotifyAboutProcessFinished();
 
 public:
 
@@ -87,9 +94,6 @@ protected slots:
     /** Handles the fact of all pages were processed. */
     void sltHandleProcessedPages();
 
-    /** Killing serializer, softly :) */
-    void sltDestroySerializer();
-
 protected:
 
     /** Worker-thread serialization rutine. */
@@ -108,8 +112,6 @@ protected:
 
     /** Holds whether the save was complete. */
     bool m_fSavingComplete;
-    /** Holds whether it is allowed to destroy the serializer. */
-    bool m_fAllowToDestroySerializer;
     /** Holds the ID of the high priority page. */
     int m_iIdOfHighPriorityPage;
     /** Holds the synchronization mutex. */

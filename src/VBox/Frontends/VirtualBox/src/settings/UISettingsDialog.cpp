@@ -202,12 +202,20 @@ void UISettingsDialog::sltCategoryChanged(int cId)
 
 void UISettingsDialog::sltMarkLoaded()
 {
+    /* Delete serializer early if exists: */
+    if (UISettingsSerializer::instance())
+        delete UISettingsSerializer::instance();
+
     /* Mark as loaded: */
     m_fLoaded = true;
 }
 
 void UISettingsDialog::sltMarkSaved()
 {
+    /* Delete serializer early if exists: */
+    if (UISettingsSerializer::instance())
+        delete UISettingsSerializer::instance();
+
     /* Mark as saved: */
     m_fSaved = true;
 }
@@ -240,11 +248,17 @@ void UISettingsDialog::loadData(QVariant &data)
                                                                      UISettingsSerializer::Load,
                                                                      QVariant::fromValue(data),
                                                                      m_pSelector->settingPages());
-    connect(pSettingsLoader, SIGNAL(destroyed(QObject*)), this, SLOT(sltMarkLoaded()));
-    /* Ask to raise required page priority: */
-    pSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
-    /* Start loader: */
-    pSettingsLoader->start();
+    AssertPtrReturnVoid(pSettingsLoader);
+    {
+        /* Configure settings loader: */
+        connect(pSettingsLoader, SIGNAL(sigNotifyAboutProcessStarted()), this, SLOT(sltHandleProcessStarted()));
+        connect(pSettingsLoader, SIGNAL(sigNotifyAboutPagePostprocessed(int)), this, SLOT(sltHandlePageProcessed()));
+        connect(pSettingsLoader, SIGNAL(sigNotifyAboutProcessFinished()), this, SLOT(sltMarkLoaded()));
+        /* Raise current page priority: */
+        pSettingsLoader->raisePriorityOfPage(m_pSelector->currentId());
+        /* Start settings loader: */
+        pSettingsLoader->start();
+    }
 
     /* Upload data finally: */
     data = pSettingsLoader->data();
@@ -260,8 +274,11 @@ void UISettingsDialog::saveData(QVariant &data)
                                                                     UISettingsSerializer::Save,
                                                                     QVariant::fromValue(data),
                                                                     m_pSelector->settingPages());
-    /* Start saver: */
-    pSettingsSaver->start();
+    AssertPtrReturnVoid(pSettingsSaver);
+    {
+        /* Start settings saver: */
+        pSettingsSaver->start();
+    }
 
     /* Upload data finally: */
     data = pSettingsSaver->data();
