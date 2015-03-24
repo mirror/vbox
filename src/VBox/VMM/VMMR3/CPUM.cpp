@@ -514,12 +514,11 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
 /**
  * Checks for partial/leaky FXSAVE/FXRSTOR handling on AMD CPUs.
  *
- * AMD K7, K8 and newer AMD CPUs do not save/restore the x87 error
- * pointers (last instruction pointer, last data pointer, last opcode)
- * except when the ES bit (Exception Summary) in x87 FSW (FPU Status
- * Word) is set. Thus if we don't clear these registers there is
- * potential, local FPU leakage from a process using the FPU to
- * another.
+ * AMD K7, K8 and newer AMD CPUs do not save/restore the x87 error pointers
+ * (last instruction pointer, last data pointer, last opcode) except when the ES
+ * bit (Exception Summary) in x87 FSW (FPU Status Word) is set. Thus if we don't
+ * clear these registers there is potential, local FPU leakage from a process
+ * using the FPU to another.
  *
  * See AMD Instruction Reference for FXSAVE, FXRSTOR.
  *
