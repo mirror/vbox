@@ -56,6 +56,14 @@ GLuint crServerTranslateProgramID( GLuint id )
     return id;
 }
 
+GLuint SERVER_DISPATCH_APIENTRY crServerDispatchGenLists( GLsizei range )
+{
+    GLuint retval;
+    retval = cr_server.head_spu->dispatch_table.GenLists( range );
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
+}
+
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchNewList( GLuint list, GLenum mode )

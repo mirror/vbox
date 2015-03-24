@@ -18,6 +18,7 @@ GetPixelMapfv
 GetPixelMapuiv 
 GetPixelMapusv
 GetPointerv
+GenLists
 Writeback
 Viewport
 LoadMatrixf
