@@ -100,13 +100,26 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     /*
      * Resolve the API dynamically (one try) as it requires XP w/ sp3 or later.
-     */
+     */    
     typedef BOOL (WINAPI *PFNGETLOGICALPROCINFO)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
     static PFNGETLOGICALPROCINFO s_pfnGetLogicalProcInfo = (PFNGETLOGICALPROCINFO)~(uintptr_t)0;
     if (s_pfnGetLogicalProcInfo == (PFNGETLOGICALPROCINFO)~(uintptr_t)0)
         s_pfnGetLogicalProcInfo = (PFNGETLOGICALPROCINFO)RTLdrGetSystemSymbol("kernel32.dll", "GetLogicalProcessorInformation");
 
-    if (s_pfnGetLogicalProcInfo)
+    /*
+     * Sadly, on XP and Server 2003, even if the API is present, it does not tell us
+     * how many physical cores there are (any package will look like a single core).
+     * That is worse than not using the API at all, so just skip it unless it's Vista+.
+     */
+    bool fIsVistaOrLater = false;
+    OSVERSIONINFOEX OSInfoEx = { 0 };
+    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (   GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+        && (OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT)
+        && (OSInfoEx.dwMajorVersion >= 6))
+        fIsVistaOrLater = true;
+
+    if (s_pfnGetLogicalProcInfo && fIsVistaOrLater)
     {
         /*
          * Query the information. This unfortunately requires a buffer, so we
