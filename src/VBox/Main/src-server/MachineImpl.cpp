@@ -1301,8 +1301,8 @@ HRESULT Machine::getEffectiveParavirtProvider(ParavirtProvider_T *aParavirtProvi
                     {
                         *aParavirtProvider = ParavirtProvider_HyperV;
                     }
-                    else if (   mUserData->s.strOsType == "Linux26"
-                             || mUserData->s.strOsType == "Linux26_64"
+                    else if (   mUserData->s.strOsType == "Linux26"      // Linux22 and Linux24 omitted as they're too old
+                             || mUserData->s.strOsType == "Linux26_64"   // for having any KVM paravirtualization support.
                              || mUserData->s.strOsType == "Linux"
                              || mUserData->s.strOsType == "Linux_64"
                              || mUserData->s.strOsType == "ArchLinux"
