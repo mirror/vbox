@@ -1,12 +1,10 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -91,9 +89,14 @@ public:
     bool i_sharesSavedStateFile(const Utf8Str &strPath,
                                 Snapshot *pSnapshotToIgnore);
 
-    HRESULT i_saveSnapshot(settings::Snapshot &data, bool aAttrsOnly);
-    HRESULT i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly);
+    HRESULT i_saveSnapshot(settings::Snapshot &data) const;
+    HRESULT i_saveSnapshotImpl(settings::Snapshot &data) const;
+    HRESULT i_saveSnapshotImplOne(settings::Snapshot &data) const;
 
+    HRESULT i_uninitOne(AutoWriteLock &writeLock,
+                        CleanupMode_T cleanupMode,
+                        MediaList &llMedia,
+                        std::list<Utf8Str> &llFilenames);
     HRESULT i_uninitRecursively(AutoWriteLock &writeLock,
                                 CleanupMode_T cleanupMode,
                                 MediaList &llMedia,

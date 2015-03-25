@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
@@ -71,12 +69,18 @@ public:
                  DeviceType_T aDeviceType);
 
     // initializer used when loading settings
+    HRESULT initOne(Medium *aParent,
+                    DeviceType_T aDeviceType,
+                    const Guid &uuidMachineRegistry,
+                    const settings::Medium &data,
+                    const Utf8Str &strMachineFolder);
     HRESULT init(VirtualBox *aVirtualBox,
                  Medium *aParent,
                  DeviceType_T aDeviceType,
                  const Guid &uuidMachineRegistry,
                  const settings::Medium &data,
-                 const Utf8Str &strMachineFolder);
+                 const Utf8Str &strMachineFolder,
+                 AutoWriteLock &mediaTreeLock);
 
     // initializer for host floppy/DVD
     HRESULT init(VirtualBox *aVirtualBox,
@@ -108,9 +112,13 @@ public:
     Utf8Str i_getName();
 
     /* handles caller/locking itself */
-    bool i_addRegistry(const Guid& id, bool fRecurse);
+    bool i_addRegistry(const Guid &id);
+    /* handles caller/locking itself, caller is responsible for tree lock */
+    bool i_addRegistryRecursive(const Guid &id);
     /* handles caller/locking itself */
-    bool i_removeRegistry(const Guid& id, bool fRecurse);
+    bool i_removeRegistry(const Guid& id);
+    /* handles caller/locking itself, caller is responsible for tree lock */
+    bool i_removeRegistryRecursive(const Guid& id);
     bool i_isInRegistry(const Guid& id);
     bool i_getFirstRegistryMachineId(Guid &uuid) const;
     void i_markRegistriesModified();
@@ -134,11 +142,16 @@ public:
 
     HRESULT i_updatePath(const Utf8Str &strOldPath, const Utf8Str &strNewPath);
 
+    /* handles caller/locking itself */
     ComObjPtr<Medium> i_getBase(uint32_t *aLevel = NULL);
+    /* handles caller/locking itself */
+    uint32_t i_getDepth();
 
     bool i_isReadOnly();
     void i_updateId(const Guid &id);
 
+    void i_saveSettingsOne(settings::Medium &data,
+                           const Utf8Str &strHardDiskFolder);
     HRESULT i_saveSettings(settings::Medium &data,
                            const Utf8Str &strHardDiskFolder);
 

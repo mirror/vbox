@@ -4272,6 +4272,9 @@ HRESULT Machine::attachDevice(const com::Utf8Str &aName,
         }
     }
 
+    /* Save modified registries, but skip this machine as it's the caller's
+     * job to save its settings like all other settings changes. */
+    mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
     return rc;
@@ -4352,6 +4355,9 @@ HRESULT Machine::detachDevice(const com::Utf8Str &aName, LONG aControllerPort,
 
     alock.release();
 
+    /* Save modified registries, but skip this machine as it's the caller's
+     * job to save its settings like all other settings changes. */
+    mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
     return rc;
@@ -4793,6 +4799,9 @@ HRESULT Machine::mountMedium(const com::Utf8Str &aName,
     mediumLock.release();
     multiLock.release();
 
+    /* Save modified registries, but skip this machine as it's the caller's
+     * job to save its settings like all other settings changes. */
+    mParent->i_unmarkRegistryModified(i_getId());
     mParent->i_saveModifiedRegistries();
 
     return rc;
@@ -5117,8 +5126,6 @@ HRESULT Machine::unregister(CleanupMode_T aCleanupMode,
 
     if (cSnapshots)
     {
-        // autoCleanup must be true here, or we would have failed above
-
         // add the media from the medium attachments of the snapshots to llMedia
         // as well, after the "main" machine media; Snapshot::uninitRecursively()
         // calls Machine::detachAllMedia() for the snapshot machine, recursing
@@ -9277,7 +9284,7 @@ HRESULT Machine::i_loadStorageDevices(StorageController *aStorageController,
 
             if (puuidRegistry)
                 // caller wants registry ID to be set on all attached media (OVF import case)
-                medium->i_addRegistry(*puuidRegistry, false /* fRecurse */);
+                medium->i_addRegistry(*puuidRegistry);
         }
 
         if (FAILED(rc))
@@ -9962,14 +9969,12 @@ HRESULT Machine::i_saveAllSnapshots(settings::MachineConfigFile &config)
 
         if (mData->mFirstSnapshot)
         {
-            settings::Snapshot snapNew;
-            config.llFirstSnapshot.push_back(snapNew);
+            // the settings use a list for "the first snapshot"
+            config.llFirstSnapshot.push_back(settings::g_SnapshotEmpty);
 
-            // get reference to the fresh copy of the snapshot on the list and
-            // work on that copy directly to avoid excessive copying later
-            settings::Snapshot &snap = config.llFirstSnapshot.front();
-
-            rc = mData->mFirstSnapshot->i_saveSnapshot(snap, false /*aAttrsOnly*/);
+            // get reference to the snapshot on the list and work on that
+            // element straight in the list to avoid excessive copying later
+            rc = mData->mFirstSnapshot->i_saveSnapshot(config.llFirstSnapshot.back());
             if (FAILED(rc)) throw rc;
         }
 
@@ -10472,15 +10477,20 @@ void Machine::i_addMediumToRegistry(ComObjPtr<Medium> &pMedium)
     else
         uuid = mParent->i_getGlobalRegistryId(); // VirtualBox global registry UUID
 
-    if (pMedium->i_addRegistry(uuid, false /* fRecurse */))
+    if (pMedium->i_addRegistry(uuid))
         mParent->i_markRegistryModified(uuid);
 
     /* For more complex hard disk structures it can happen that the base
      * medium isn't yet associated with any medium registry. Do that now. */
     if (pMedium != pBase)
     {
-        if (pBase->i_addRegistry(uuid, true /* fRecurse */))
+        /* Tree lock needed by Medium::addRegistry when recursing. */
+        AutoReadLock treeLock(&mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        if (pBase->i_addRegistryRecursive(uuid))
+        {
+            treeLock.release();
             mParent->i_markRegistryModified(uuid);
+        }
     }
 }
 

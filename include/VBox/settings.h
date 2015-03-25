@@ -17,7 +17,7 @@
  */
 
 /*
- * Copyright (C) 2007-2014 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -51,10 +51,20 @@
 #include <map>
 
 /**
- * Maximum depth of the snapshot tree, to prevent stack overflows.
+ * Maximum depth of a medium tree, to prevent stack overflows.
  * XPCOM has a relatively low stack size for its workers, and we have
  * to avoid crashes due to exceeding the limit both on reading and
  * writing config files.
+ */
+#define SETTINGS_MEDIUM_DEPTH_MAX 300
+
+/**
+ * Maximum depth of the snapshot tree, to prevent stack overflows.
+ * XPCOM has a relatively low stack size for its workers, and we have
+ * to avoid crashes due to exceeding the limit both on reading and
+ * writing config files. The bottleneck is reading config files with
+ * deep snapshot nesting, as libxml2 needs quite some stack space,
+ * so with the current stack size the margin isn't big.
  */
 #define SETTINGS_SNAPSHOT_DEPTH_MAX 250
 
@@ -143,6 +153,8 @@ struct Medium
     bool operator==(const Medium &m) const;
 };
 
+extern const struct Medium g_MediumEmpty;
+
 /**
  * A media registry. Starting with VirtualBox 3.3, this can appear in both the
  * VirtualBox.xml file as well as machine XML files with settings version 1.11
@@ -228,19 +240,21 @@ protected:
 
     ~ConfigFileBase();
 
+    typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
+
+    static const char *stringifyMediaType(MediaType t);
     void parseUUID(com::Guid &guid,
                    const com::Utf8Str &strUUID) const;
     void parseTimestamp(RTTIMESPEC &timestamp,
                         const com::Utf8Str &str) const;
-
-    com::Utf8Str makeString(const RTTIMESPEC &tm);
+    com::Utf8Str stringifyTimestamp(const RTTIMESPEC &tm) const;
 
     void readExtraData(const xml::ElementNode &elmExtraData,
                        StringsMap &map);
     void readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilters,
                               USBDeviceFiltersList &ll);
-    typedef enum {Error, HardDisk, DVDImage, FloppyImage} MediaType;
-    void readMedium(MediaType t, const xml::ElementNode &elmMedium, MediaList &llMedia);
+    void readMediumOne(MediaType t, const xml::ElementNode &elmMedium, Medium &med);
+    void readMedium(MediaType t, uint32_t depth, const xml::ElementNode &elmMedium, Medium &med);
     void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
     void readNATForwardRuleList(const xml::ElementNode  &elmParent, NATRuleList &llRules);
     void readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopBacks);
@@ -252,10 +266,10 @@ protected:
     void buildUSBDeviceFilters(xml::ElementNode &elmParent,
                                const USBDeviceFiltersList &ll,
                                bool fHostMode);
-    void buildMedium(xml::ElementNode &elmMedium,
-                     DeviceType_T devType,
-                     const Medium &m,
-                     uint32_t level);
+    void buildMedium(MediaType t,
+                     uint32_t depth,
+                     xml::ElementNode &elmMedium,
+                     const Medium &mdm);
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
     void buildNATForwardRuleList(xml::ElementNode &elmParent, const NATRuleList &natRuleList);
@@ -1150,6 +1164,11 @@ typedef std::list<Snapshot> SnapshotsList;
  */
 struct Snapshot
 {
+    Snapshot()
+    {
+        RTTimeSpecSetNano(&timestamp, 0);
+    }
+
     bool operator==(const Snapshot &s) const;
 
     com::Guid       uuid;
@@ -1224,6 +1243,8 @@ struct MachineUserData
     bool                    fRTCUseUTC;
     com::Utf8Str            ovIcon;
 };
+
+extern const struct Snapshot g_SnapshotEmpty;
 
 /**
  * MachineConfigFile represents an XML machine configuration. All the machine settings

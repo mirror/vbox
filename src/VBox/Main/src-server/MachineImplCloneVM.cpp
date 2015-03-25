@@ -1341,7 +1341,7 @@ HRESULT MachineCloneVM::run()
                 }
                 mlock.acquire();
             }
-            pMedium->i_addRegistry(uuid, false /* fRecurse */);
+            pMedium->i_addRegistry(uuid);
         }
         /* Check if a snapshot folder is necessary and if so doesn't already
          * exists. */

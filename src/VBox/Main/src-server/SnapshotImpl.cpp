@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * COM class implementation for Snapshot and SnapshotMachine in VBoxSVC.
  */
 
@@ -174,6 +173,12 @@ void Snapshot::uninit()
     }
     m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
 
+    // since there is no guarantee anyone holds a reference to us except the
+    // list of children in our parent, make sure that the reference count
+    // will not drop to 0 before we've declared ourselves as uninitialized,
+    // otherwise there will be another uninit call which causes a self-deadlock
+    // because this uninit isn't complete yet.
+    ComObjPtr<Snapshot> pSnapshot(this);
     if (m->pParent)
         i_deparent();
 
@@ -185,6 +190,10 @@ void Snapshot::uninit()
 
     delete m;
     m = NULL;
+
+    autoUninitSpan.setSucceeded();
+    // see above, now the refcount may reach 0
+    pSnapshot.setNull();
 }
 
 /**
@@ -724,14 +733,12 @@ void Snapshot::i_updateSavedStatePaths(const Utf8Str &strOldPath,
 }
 
 /**
- * Internal implementation for Snapshot::saveSnapshot (below). Caller has
- * requested the snapshots tree (machine) lock.
+ * Saves the settings attributes of one snapshot.
  *
- * @param aNode
- * @param aAttrsOnly
+ * @param data      Target for saving snapshot settings.
  * @return
  */
-HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
+HRESULT Snapshot::i_saveSnapshotImplOne(settings::Snapshot &data) const
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -739,9 +746,6 @@ HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
     data.strName = m->strName;
     data.timestamp = m->timeStamp;
     data.strDescription = m->strDescription;
-
-    if (aAttrsOnly)
-        return S_OK;
 
     // state file (only if this snapshot is online)
     if (i_getStateFilePath().isNotEmpty())
@@ -755,29 +759,38 @@ HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
     rc = m->pMachine->i_saveStorageControllers(data.storage);
     if (FAILED(rc)) return rc;
 
-    alock.release();
+    return S_OK;
+}
 
-    data.llChildSnapshots.clear();
+/**
+ * Internal implementation for Snapshot::saveSnapshot (below). Caller has
+ * requested the snapshots tree (machine) lock.
+ *
+ * @param data      Target for saving snapshot settings.
+ * @return
+ */
+HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data) const
+{
+    HRESULT rc = i_saveSnapshotImplOne(data);
+    if (FAILED(rc))
+        return rc;
 
-    if (m->llChildren.size())
+    settings::SnapshotsList &llSettingsChildren = data.llChildSnapshots;
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
     {
-        for (SnapshotsList::const_iterator it = m->llChildren.begin();
-             it != m->llChildren.end();
-             ++it)
+        // Use the heap (indirectly through the list container) to reduce the
+        // stack footprint, avoiding local settings objects on the stack which
+        // need a lot of stack space. There can be VMs with deeply nested
+        // snapshots. The stack can be quite small, especially with XPCOM.
+        llSettingsChildren.push_back(settings::g_SnapshotEmpty);
+        Snapshot *pSnap = *it;
+        rc = pSnap->i_saveSnapshotImpl(llSettingsChildren.back());
+        if (FAILED(rc))
         {
-           // Use the heap to reduce the stack footprint. Each recursion needs
-           // over 1K, and there can be VMs with deeply nested snapshots. The
-           // stack can be quite small, especially with XPCOM.
-
-            settings::Snapshot *snap = new settings::Snapshot();
-            rc = (*it)->i_saveSnapshotImpl(*snap, aAttrsOnly);
-            if (FAILED(rc))
-            {
-                delete snap;
-                return rc;
-            }
-            data.llChildSnapshots.push_back(*snap);
-            delete snap;
+            llSettingsChildren.pop_back();
+            return rc;
         }
     }
 
@@ -785,19 +798,70 @@ HRESULT Snapshot::i_saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
 }
 
 /**
- *  Saves the given snapshot and all its children (unless \a aAttrsOnly is true).
- *  It is assumed that the given node is empty (unless \a aAttrsOnly is true).
+ * Saves the given snapshot and all its children.
+ * It is assumed that the given node is empty.
  *
- *  @param aNode        <Snapshot> node to save the snapshot to.
- *  @param aSnapshot    Snapshot to save.
- *  @param aAttrsOnly   If true, only update user-changeable attrs.
+ * @param data      Target for saving snapshot settings.
  */
-HRESULT Snapshot::i_saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
+HRESULT Snapshot::i_saveSnapshot(settings::Snapshot &data) const
 {
     // snapshots tree is protected by machine lock
     AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
-    return i_saveSnapshotImpl(data, aAttrsOnly);
+    return i_saveSnapshotImpl(data);
+}
+
+/**
+ * Part of the cleanup engine of Machine::Unregister().
+ *
+ * This removes all medium attachments from the snapshot's machine and returns
+ * the snapshot's saved state file name, if any, and then calls uninit() on
+ * "this" itself.
+ *
+ * Caller must hold the machine write lock (which protects the snapshots tree!)
+ *
+ * @param writeLock Machine write lock, which can get released temporarily here.
+ * @param cleanupMode Cleanup mode; see Machine::detachAllMedia().
+ * @param llMedia List of media returned to caller, depending on cleanupMode.
+ * @param llFilenames
+ * @return
+ */
+HRESULT Snapshot::i_uninitOne(AutoWriteLock &writeLock,
+                              CleanupMode_T cleanupMode,
+                              MediaList &llMedia,
+                              std::list<Utf8Str> &llFilenames)
+{
+    // now call detachAllMedia on the snapshot machine
+    HRESULT rc = m->pMachine->i_detachAllMedia(writeLock,
+                                               this /* pSnapshot */,
+                                               cleanupMode,
+                                               llMedia);
+    if (FAILED(rc))
+        return rc;
+
+    // report the saved state file if it's not on the list yet
+    if (!m->pMachine->mSSData->strStateFilePath.isEmpty())
+    {
+        bool fFound = false;
+        for (std::list<Utf8Str>::const_iterator it = llFilenames.begin();
+             it != llFilenames.end();
+             ++it)
+        {
+            const Utf8Str &str = *it;
+            if (str == m->pMachine->mSSData->strStateFilePath)
+            {
+                fFound = true;
+                break;
+            }
+        }
+        if (!fFound)
+            llFilenames.push_back(m->pMachine->mSSData->strStateFilePath);
+    }
+
+    i_beginSnapshotDelete();
+    uninit();
+
+    return S_OK;
 }
 
 /**
@@ -839,58 +903,30 @@ HRESULT Snapshot::i_uninitRecursively(AutoWriteLock &writeLock,
     LogFlowThisFunc(("Entering for snapshot '%s' {%RTuuid}\n", name.c_str(), uuid.raw()));
 #endif
 
-    // recurse into children first so that the child media appear on
-    // the list first; this way caller can close the media from the
-    // beginning to the end because parent media can't be closed if
-    // they have children
-
-    // make a copy of the children list since uninit() modifies it
-    SnapshotsList llChildrenCopy(m->llChildren);
-    for (SnapshotsList::iterator it = llChildrenCopy.begin();
-         it != llChildrenCopy.end();
-         ++it)
+    // Recurse into children first so that the child media appear on the list
+    // first; this way caller can close the media from the beginning to the end
+    // because parent media can't be closed if they have children and
+    // additionally it postpones the uninit() call until we no longer need
+    // anything from the list. Oh, and remember that the child removes itself
+    // from the list, so keep the iterator at the beginning.
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         it = m->llChildren.begin())
     {
         Snapshot *pChild = *it;
         rc = pChild->i_uninitRecursively(writeLock, cleanupMode, llMedia, llFilenames);
         if (FAILED(rc))
-            return rc;
+            break;
     }
 
-    // now call detachAllMedia on the snapshot machine
-    rc = m->pMachine->i_detachAllMedia(writeLock,
-                                       this /* pSnapshot */,
-                                       cleanupMode,
-                                       llMedia);
-    if (FAILED(rc))
-        return rc;
-
-    // report the saved state file if it's not on the list yet
-    if (!m->pMachine->mSSData->strStateFilePath.isEmpty())
-    {
-        bool fFound = false;
-        for (std::list<Utf8Str>::const_iterator it = llFilenames.begin();
-             it != llFilenames.end();
-             ++it)
-        {
-            const Utf8Str &str = *it;
-            if (str == m->pMachine->mSSData->strStateFilePath)
-            {
-                fFound = true;
-                break;
-            }
-        }
-        if (!fFound)
-            llFilenames.push_back(m->pMachine->mSSData->strStateFilePath);
-    }
-
-    this->i_beginSnapshotDelete();
-    this->uninit();
+    if (SUCCEEDED(rc))
+        rc = i_uninitOne(writeLock, cleanupMode, llMedia, llFilenames);
 
 #ifdef LOG_ENABLED
-    LogFlowThisFunc(("Leaving for snapshot '%s' {%RTuuid}\n", name.c_str(), uuid.raw()));
+    LogFlowThisFunc(("Leaving for snapshot '%s' {%RTuuid}: %Rhrc\n", name.c_str(), uuid.raw(), rc));
 #endif
 
-    return S_OK;
+    return rc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

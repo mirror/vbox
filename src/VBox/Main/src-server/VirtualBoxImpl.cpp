@@ -649,7 +649,7 @@ HRESULT VirtualBox::initMachines()
  * @return
  */
 HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
-                              const settings::MediaRegistry mediaRegistry,
+                              const settings::MediaRegistry &mediaRegistry,
                               const Utf8Str &strMachineFolder)
 {
     LogFlow(("VirtualBox::initMedia ENTERING, uuidRegistry=%s, strMachineFolder=%s\n",
@@ -673,7 +673,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  DeviceType_HardDisk,
                                  uuidRegistry,
                                  xmlHD,         // XML data; this recurses to processes the children
-                                 strMachineFolder);
+                                 strMachineFolder,
+                                 treeLock);
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pHardDisk, &pHardDisk, treeLock);
@@ -693,7 +694,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               DeviceType_DVD,
                               uuidRegistry,
                               xmlDvd,
-                              strMachineFolder);
+                              strMachineFolder,
+                              treeLock);
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
@@ -713,7 +715,8 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               DeviceType_Floppy,
                               uuidRegistry,
                               xmlFloppy,
-                              strMachineFolder);
+                              strMachineFolder,
+                              treeLock);
         if (FAILED(rc)) return rc;
 
         rc = i_registerMedium(pImage, &pImage, treeLock);
@@ -4013,10 +4016,13 @@ void VirtualBox::i_saveMediaRegistry(settings::MediaRegistry &mediaRegistry,
 
             if (pMedium->i_isInRegistry(uuidRegistry))
             {
-                settings::Medium med;
-                rc = pMedium->i_saveSettings(med, strMachineFolder);     // this recurses into child hard disks
-                if (FAILED(rc)) throw rc;
-                llTarget.push_back(med);
+                llTarget.push_back(settings::g_MediumEmpty);
+                rc = pMedium->i_saveSettings(llTarget.back(), strMachineFolder);     // this recurses into child hard disks
+                if (FAILED(rc))
+                {
+                    llTarget.pop_back();
+                    throw rc;
+                }
             }
         }
     }
@@ -4481,7 +4487,7 @@ HRESULT VirtualBox::i_unregisterMachine(Machine *pMachine,
             if (FAILED(medCaller.rc())) return medCaller.rc();
             AutoWriteLock mlock(pMedium COMMA_LOCKVAL_SRC_POS);
 
-            if (pMedium->i_removeRegistry(id, true /* fRecurse */))
+            if (pMedium->i_removeRegistryRecursive(id))
             {
                 // machine ID was found in base medium's registry list:
                 // move this base image and all its children to another registry then
@@ -4490,13 +4496,13 @@ HRESULT VirtualBox::i_unregisterMachine(Machine *pMachine,
                 if (puuidBetter)
                 {
                     // 2) better registry found: then use that
-                    pMedium->i_addRegistry(*puuidBetter, true /* fRecurse */);
+                    pMedium->i_addRegistryRecursive(*puuidBetter);
                     // 3) and make sure the registry is saved below
                     mlock.release();
                     tlock.release();
                     i_markRegistryModified(*puuidBetter);
                     tlock.acquire();
-                    mlock.release();
+                    mlock.acquire();
                 }
             }
         }
@@ -4532,6 +4538,53 @@ void VirtualBox::i_markRegistryModified(const Guid &uuid)
             AutoCaller machineCaller(pMachine);
             if (SUCCEEDED(machineCaller.rc()))
                 ASMAtomicIncU64(&pMachine->uRegistryNeedsSaving);
+        }
+    }
+}
+
+/**
+ * Marks the registry for @a uuid as unmodified, so that it's not saved in
+ * a later call to saveModifiedRegistries().
+ *
+ * @param uuid
+ */
+void VirtualBox::i_unmarkRegistryModified(const Guid &uuid)
+{
+    uint64_t uOld;
+    if (uuid == i_getGlobalRegistryId())
+    {
+        for (;;)
+        {
+            uOld = ASMAtomicReadU64(&m->uRegistryNeedsSaving);
+            if (!uOld)
+                break;
+            if (ASMAtomicCmpXchgU64(&m->uRegistryNeedsSaving, 0, uOld))
+                break;
+            ASMNopPause();
+        }
+    }
+    else
+    {
+        ComObjPtr<Machine> pMachine;
+        HRESULT rc = i_findMachine(uuid,
+                                   false /* fPermitInaccessible */,
+                                   false /* aSetError */,
+                                   &pMachine);
+        if (SUCCEEDED(rc))
+        {
+            AutoCaller machineCaller(pMachine);
+            if (SUCCEEDED(machineCaller.rc()))
+            {
+                for (;;)
+                {
+                    uOld = ASMAtomicReadU64(&pMachine->uRegistryNeedsSaving);
+                    if (!uOld)
+                        break;
+                    if (ASMAtomicCmpXchgU64(&pMachine->uRegistryNeedsSaving, 0, uOld))
+                        break;
+                    ASMNopPause();
+                }
+            }
         }
     }
 }

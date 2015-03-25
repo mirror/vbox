@@ -1212,41 +1212,29 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 
 /**
  * Initializes the medium object by loading its data from the given settings
- * node. In this mode, the medium will always be opened read/write.
+ * node. The medium will always be opened read/write.
  *
  * In this case, since we're loading from a registry, uuidMachineRegistry is
  * always set: it's either the global registry UUID or a machine UUID when
  * loading from a per-machine registry.
  *
- * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
  * @param aDeviceType   Device type of the medium.
  * @param uuidMachineRegistry The registry to which this medium should be
  *                            added (global registry UUID or machine UUID).
- * @param aNode         Configuration settings.
+ * @param data          Configuration settings.
  * @param strMachineFolder The machine folder with which to resolve relative paths;
  *                         if empty, then we use the VirtualBox home directory
  *
  * @note Locks the medium tree for writing.
  */
-HRESULT Medium::init(VirtualBox *aVirtualBox,
-                     Medium *aParent,
-                     DeviceType_T aDeviceType,
-                     const Guid &uuidMachineRegistry,
-                     const settings::Medium &data,
-                     const Utf8Str &strMachineFolder)
+HRESULT Medium::initOne(Medium *aParent,
+                        DeviceType_T aDeviceType,
+                        const Guid &uuidMachineRegistry,
+                        const settings::Medium &data,
+                        const Utf8Str &strMachineFolder)
 {
-    using namespace settings;
-
-    AssertReturn(aVirtualBox, E_INVALIDARG);
-
-    /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    unconst(m->pVirtualBox) = aVirtualBox;
+    HRESULT rc;
 
     if (uuidMachineRegistry.isValid() && !uuidMachineRegistry.isZero())
         m->llRegistryIDs.push_back(uuidMachineRegistry);
@@ -1257,8 +1245,8 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     {
         // differencing medium: add to parent
         AutoWriteLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-        m->pParent = aParent;
-        aParent->m->llChildren.push_back(this);
+        // no need to check maximum depth as settings reading did it
+        i_setParent(aParent);
     }
 
     /* see below why we don't call Medium::i_queryInfo (and therefore treat
@@ -1368,6 +1356,51 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     LogFlowThisFunc(("m->strLocationFull='%s', m->strFormat=%s, m->id={%RTuuid}\n",
                      m->strLocationFull.c_str(), m->strFormat.c_str(), m->id.raw()));
 
+    return S_OK;
+}
+
+/**
+ * Initializes the medium object and its children by loading its data from the
+ * given settings node. The medium will always be opened read/write.
+ *
+ * In this case, since we're loading from a registry, uuidMachineRegistry is
+ * always set: it's either the global registry UUID or a machine UUID when
+ * loading from a per-machine registry.
+ *
+ * @param aVirtualBox   VirtualBox object.
+ * @param aParent       Parent medium disk or NULL for a root (base) medium.
+ * @param aDeviceType   Device type of the medium.
+ * @param uuidMachineRegistry The registry to which this medium should be added (global registry UUID or machine UUID).
+ * @param data          Configuration settings.
+ * @param strMachineFolder The machine folder with which to resolve relative paths; if empty, then we use the VirtualBox home directory
+ *
+ * @note Locks the medium tree for writing.
+ */
+HRESULT Medium::init(VirtualBox *aVirtualBox,
+                     Medium *aParent,
+                     DeviceType_T aDeviceType,
+                     const Guid &uuidMachineRegistry,
+                     const settings::Medium &data,
+                     const Utf8Str &strMachineFolder,
+                     AutoWriteLock &mediaTreeLock)
+{
+    using namespace settings;
+
+    Assert(aVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    AssertReturn(aVirtualBox, E_INVALIDARG);
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    unconst(m->pVirtualBox) = aVirtualBox;
+
+    // Do not inline this method call, as the purpose of having this separate
+    // is to save on stack size. Less local variables are the key for reaching
+    // deep recursion levels with small stack (XPCOM/g++ without optimization).
+    HRESULT rc = initOne(aParent, aDeviceType, uuidMachineRegistry, data, strMachineFolder);
+
+
     /* Don't call Medium::i_queryInfo for registered media to prevent the calling
      * thread (i.e. the VirtualBox server startup thread) from an unexpected
      * freeze but mark it as initially inaccessible instead. The vital UUID,
@@ -1389,12 +1422,11 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                            aDeviceType,
                            uuidMachineRegistry,
                            med,               // child data
-                           strMachineFolder);
+                           strMachineFolder,
+                           mediaTreeLock);
         if (FAILED(rc)) break;
 
-        AutoWriteLock treeLock(aVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-        rc = m->pVirtualBox->i_registerMedium(pMedium, &pMedium, treeLock);
+        rc = m->pVirtualBox->i_registerMedium(pMedium, &pMedium, mediaTreeLock);
         if (FAILED(rc)) break;
     }
 
@@ -3072,10 +3104,10 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
                             tr("Cannot encrypt medium '%s' because it is attached to %d virtual machines"),
                             m->strLocationFull.c_str(), m->backRefs.size());
 
-        if (m->llChildren.size() != 0)
+        if (i_getChildren().size() != 0)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("Cannot encrypt medium '%s' because it has %d children"),
-                            m->strLocationFull.c_str(), m->llChildren.size());
+                            m->strLocationFull.c_str(), i_getChildren().size());
 
         /* Build the medium lock list. */
         MediumLockList *pMediumLockList(new MediumLockList());
@@ -3126,11 +3158,11 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
                               pMedium->m->strLocationFull.c_str(), pMedium->m->backRefs.size());
                 break;
             }
-            else if (pMedium->m->llChildren.size() > 1)
+            else if (pMedium->i_getChildren().size() > 1)
             {
                 rc = setError(VBOX_E_INVALID_OBJECT_STATE,
                               tr("Cannot encrypt medium '%s' because it has %d children"),
-                              pMedium->m->strLocationFull.c_str(), pMedium->m->llChildren.size());
+                              pMedium->m->strLocationFull.c_str(), pMedium->i_getChildren().size());
                 break;
             }
         }
@@ -3472,13 +3504,10 @@ Utf8Str Medium::i_getName()
  * one registry, which causes trouble with keeping diff images in sync.
  * See getFirstRegistryMachineId() for details.
  *
- * If fRecurse == true, then the media tree lock must be held for reading.
- *
  * @param id
- * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
  * @return true if the registry was added; false if the given id was already on the list.
  */
-bool Medium::i_addRegistry(const Guid& id, bool fRecurse)
+bool Medium::i_addRegistry(const Guid& id)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -3510,35 +3539,52 @@ bool Medium::i_addRegistry(const Guid& id, bool fRecurse)
     if (fAdd)
         m->llRegistryIDs.push_back(id);
 
-    if (fRecurse)
-    {
-        // Get private list of children and release medium lock straight away.
-        MediaList llChildren(m->llChildren);
-        alock.release();
+    return fAdd;
+}
 
-        for (MediaList::iterator it = llChildren.begin();
-             it != llChildren.end();
-             ++it)
-        {
-            Medium *pChild = *it;
-            fAdd |= pChild->i_addRegistry(id, true);
-        }
+/**
+ * This adds the given UUID to the list of media registries in which this
+ * medium should be registered. The UUID can either be a machine UUID,
+ * to add a machine registry, or the global registry UUID as returned by
+ * VirtualBox::getGlobalRegistryId(). This recurses over all children.
+ *
+ * Note that for hard disks, this method does nothing if the medium is
+ * already in another registry to avoid having hard disks in more than
+ * one registry, which causes trouble with keeping diff images in sync.
+ * See getFirstRegistryMachineId() for details.
+ *
+ * @note the caller must hold the media tree lock for reading.
+ *
+ * @param id
+ * @return true if the registry was added; false if the given id was already on the list.
+ */
+bool Medium::i_addRegistryRecursive(const Guid &id)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return false;
+
+    bool fAdd = i_addRegistry(id);
+
+    // protected by the medium tree lock held by our original caller
+    for (MediaList::const_iterator it = i_getChildren().begin();
+         it != i_getChildren().end();
+         ++it)
+    {
+        Medium *pChild = *it;
+        fAdd |= pChild->i_addRegistryRecursive(id);
     }
 
     return fAdd;
 }
 
 /**
- * Removes the given UUID from the list of media registry UUIDs. Returns true
- * if found or false if not.
- *
- * If fRecurse == true, then the media tree lock must be held for reading.
+ * Removes the given UUID from the list of media registry UUIDs of this medium.
  *
  * @param id
- * @param fRecurse If true, recurses into child media to make sure the whole tree has registries in sync.
- * @return
+ * @return true if the UUID was found or false if not.
  */
-bool Medium::i_removeRegistry(const Guid& id, bool fRecurse)
+bool Medium::i_removeRegistry(const Guid &id)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc()))
@@ -3547,31 +3593,47 @@ bool Medium::i_removeRegistry(const Guid& id, bool fRecurse)
 
     bool fRemove = false;
 
+    // @todo r=klaus eliminate this code, replace it by using find.
     for (GuidList::iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)
     {
         if ((*it) == id)
         {
+            // getting away with this as the iterator isn't used after
             m->llRegistryIDs.erase(it);
             fRemove = true;
             break;
         }
     }
 
-    if (fRecurse)
-    {
-        // Get private list of children and release medium lock straight away.
-        MediaList llChildren(m->llChildren);
-        alock.release();
+    return fRemove;
+}
 
-        for (MediaList::iterator it = llChildren.begin();
-             it != llChildren.end();
-             ++it)
-        {
-            Medium *pChild = *it;
-            fRemove |= pChild->i_removeRegistry(id, true);
-        }
+/**
+ * Removes the given UUID from the list of media registry UUIDs, for this
+ * medium and all its children recursively.
+ *
+ * @note the caller must hold the media tree lock for reading.
+ *
+ * @param id
+ * @return true if the UUID was found or false if not.
+ */
+bool Medium::i_removeRegistryRecursive(const Guid &id)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return false;
+
+    bool fRemove = i_removeRegistry(id);
+
+    // protected by the medium tree lock held by our original caller
+    for (MediaList::const_iterator it = i_getChildren().begin();
+         it != i_getChildren().end();
+         ++it)
+    {
+        Medium *pChild = *it;
+        fRemove |= pChild->i_removeRegistryRecursive(id);
     }
 
     return fRemove;
@@ -3585,8 +3647,9 @@ bool Medium::i_removeRegistry(const Guid& id, bool fRecurse)
  * @param id
  * @return
  */
-bool Medium::i_isInRegistry(const Guid& id)
+bool Medium::i_isInRegistry(const Guid &id)
 {
+    // @todo r=klaus eliminate this code, replace it by using find.
     for (GuidList::const_iterator it = m->llRegistryIDs.begin();
          it != m->llRegistryIDs.end();
          ++it)
@@ -3831,8 +3894,8 @@ const Guid* Medium::i_getAnyMachineBackref() const
     if (m->backRefs.size())
         return &m->backRefs.front().machineId;
 
-    for (MediaList::iterator it = m->llChildren.begin();
-         it != m->llChildren.end();
+    for (MediaList::const_iterator it = i_getChildren().begin();
+         it != i_getChildren().end();
          ++it)
     {
         Medium *pChild = *it;
@@ -3983,6 +4046,36 @@ ComObjPtr<Medium> Medium::i_getBase(uint32_t *aLevel /*= NULL*/)
 }
 
 /**
+ * Returns the depth of this medium in the media chain.
+ *
+ * @note Locks medium tree for reading.
+ */
+uint32_t Medium::i_getDepth()
+{
+    /* it is possible that some previous/concurrent uninit has already cleared
+     * the pVirtualBox reference, and in this case we don't need to continue */
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+    if (!pVirtualBox)
+        return 1;
+
+    /* we access mParent */
+    AutoReadLock treeLock(pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    uint32_t cDepth = 0;
+    ComObjPtr<Medium> pMedium(this);
+    while (!pMedium.isNull())
+    {
+        AutoCaller autoCaller(this);
+        AssertReturn(autoCaller.isOk(), cDepth + 1);
+
+        pMedium = pMedium->m->pParent;
+        cDepth++;
+    }
+
+    return cDepth;
+}
+
+/**
  * Returns @c true if this medium cannot be modified because it has
  * dependents (children) or is part of the snapshot. Related to the medium
  * type and posterity, not to the current media state.
@@ -4040,23 +4133,15 @@ void Medium::i_updateId(const Guid &id)
 }
 
 /**
- * Saves medium data by appending a new child node to the given
- * parent XML settings node.
+ * Saves the settings of one medium.
+ *
+ * @note Caller MUST take care of the medium tree lock and caller.
  *
  * @param data      Settings struct to be updated.
  * @param strHardDiskFolder Folder for which paths should be relative.
- *
- * @note Locks this object, medium tree and children for reading.
  */
-HRESULT Medium::i_saveSettings(settings::Medium &data,
-                               const Utf8Str &strHardDiskFolder)
+void Medium::i_saveSettingsOne(settings::Medium &data, const Utf8Str &strHardDiskFolder)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* we access mParent */
-    AutoReadLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     data.uuid = m->id;
@@ -4116,16 +4201,45 @@ HRESULT Medium::i_saveSettings(settings::Medium &data,
     /* only for base media */
     if (m->pParent.isNull())
         data.hdType = m->type;
+}
+
+/**
+ * Saves medium data by putting it into the provided data structure.
+ * Recurses over all children to save their settings, too.
+ *
+ * @param data      Settings struct to be updated.
+ * @param strHardDiskFolder Folder for which paths should be relative.
+ *
+ * @note Locks this object, medium tree and children for reading.
+ */
+HRESULT Medium::i_saveSettings(settings::Medium &data,
+                               const Utf8Str &strHardDiskFolder)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* we access mParent */
+    AutoReadLock treeLock(m->pVirtualBox->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    i_saveSettingsOne(data, strHardDiskFolder);
 
     /* save all children */
+    settings::MediaList &llSettingsChildren = data.llChildren;
     for (MediaList::const_iterator it = i_getChildren().begin();
          it != i_getChildren().end();
          ++it)
     {
-        settings::Medium med;
-        HRESULT rc = (*it)->i_saveSettings(med, strHardDiskFolder);
-        AssertComRCReturnRC(rc);
-        data.llChildren.push_back(med);
+        // Use the element straight in the list to reduce both unnecessary
+        // deep copying (when unwinding the recursion the entire medium
+        // settings sub-tree is copied) and the stack footprint (the settings
+        // need almost 1K, and there can be VMs with long image chains.
+        llSettingsChildren.push_back(settings::g_MediumEmpty);
+        HRESULT rc = (*it)->i_saveSettings(llSettingsChildren.back(), strHardDiskFolder);
+        if (FAILED(rc))
+        {
+            llSettingsChildren.pop_back();
+            return rc;
+        }
     }
 
     return S_OK;
@@ -6119,6 +6233,15 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
 
                     if (m->pParent)
                         i_deparent();
+
+                    if (!pParent.isNull())
+                        if (pParent->i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
+                        {
+                            AutoReadLock plock(pParent COMMA_LOCKVAL_SRC_POS);
+                            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                           tr("Cannot open differencing image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
+                                           pParent->m->strLocationFull.c_str());
+                        }
                     i_setParent(pParent);
 
                     treeLock.release();
@@ -6352,8 +6475,7 @@ HRESULT Medium::i_unregisterWithVirtualBox()
         if (pParentBackup)
         {
             // re-associate with the parent as we are still relatives in the registry
-            m->pParent = pParentBackup;
-            m->pParent->m->llChildren.push_back(this);
+            i_setParent(pParentBackup);
         }
     }
 
@@ -7345,6 +7467,14 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
     try
     {
+        if (i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                           tr("Cannot create differencing image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
+                           m->strLocationFull.c_str());
+        }
+
         /* Lock both in {parent,child} order. */
         AutoMultiWriteLock2 mediaLock(this, pTarget COMMA_LOCKVAL_SRC_POS);
 
@@ -7466,14 +7596,20 @@ HRESULT Medium::i_taskCreateDiffHandler(Medium::CreateDiffTask &task)
 
         Assert(pTarget->m->pParent.isNull());
 
-        /* associate the child with the parent */
-        pTarget->m->pParent = this;
-        m->llChildren.push_back(pTarget);
+        /* associate child with the parent, maximum depth was checked above */
+        pTarget->i_setParent(this);
 
-        /** @todo r=klaus neither target nor base() are locked,
-            * potential race! */
         /* diffs for immutable media are auto-reset by default */
-        pTarget->m->autoReset = (i_getBase()->m->type == MediumType_Immutable);
+        bool fAutoReset;
+        {
+            ComObjPtr<Medium> pBase = i_getBase();
+            AutoReadLock block(pBase COMMA_LOCKVAL_SRC_POS);
+            fAutoReset = (pBase->m->type == MediumType_Immutable);
+        }
+        {
+            AutoWriteLock tlock(pTarget COMMA_LOCKVAL_SRC_POS);
+            pTarget->m->autoReset = fAutoReset;
+        }
 
         /* register with mVirtualBox as the last step and move to
          * Created state only on success (leaving an orphan file is
@@ -7547,6 +7683,15 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
 
     try
     {
+        if (!task.mParentForTarget.isNull())
+            if (task.mParentForTarget->i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
+            {
+                AutoReadLock plock(task.mParentForTarget COMMA_LOCKVAL_SRC_POS);
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Cannot merge image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
+                               task.mParentForTarget->m->strLocationFull.c_str());
+            }
+
         PVBOXHDD hdd;
         int vrc = VDCreate(m->vdDiskIfaces, i_convertDeviceType(), &hdd);
         ComAssertRCThrow(vrc, E_FAIL);
@@ -7701,15 +7846,12 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
             rc2 = m->pVirtualBox->i_unregisterMedium(pTarget);
             AssertComRC(rc2);
 
-            /* then, reparent it and disconnect the deleted branch at
-             * both ends (chain->parent() is source's parent) */
+            /* then, reparent it and disconnect the deleted branch at both ends
+             * (chain->parent() is source's parent). Depth check above. */
             pTarget->i_deparent();
-            pTarget->m->pParent = task.mParentForTarget;
-            if (pTarget->m->pParent)
-            {
-                pTarget->m->pParent->m->llChildren.push_back(pTarget);
+            pTarget->i_setParent(task.mParentForTarget);
+            if (task.mParentForTarget)
                 i_deparent();
-            }
 
             /* then, register again */
             ComObjPtr<Medium> pMedium;
@@ -7742,6 +7884,7 @@ HRESULT Medium::i_taskMergeHandler(Medium::MergeTask &task)
                     AutoWriteLock childLock(pMedium COMMA_LOCKVAL_SRC_POS);
 
                     pMedium->i_deparent();  // removes pMedium from source
+                    // no depth check, reduces depth
                     pMedium->i_setParent(pTarget);
                 }
             }
@@ -7858,6 +8001,15 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 
     try
     {
+        if (!pParent.isNull())
+            if (pParent->i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
+            {
+                AutoReadLock plock(pParent COMMA_LOCKVAL_SRC_POS);
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Cannot clone image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
+                               pParent->m->strLocationFull.c_str());
+            }
+
         /* Lock all in {parent,child} order. The lock is also used as a
          * signal from the task initiator (which releases it only after
          * RTThreadCreate()) that we can start the job. */
@@ -7982,7 +8134,7 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
                                        i_vdError(vrc).c_str());
                 }
 
-                /** @todo r=klaus target isn't locked, race getting the state */
+                /* target isn't locked, but no changing data is accessed */
                 if (task.midxSrcImageSame == UINT32_MAX)
                 {
                     vrc = VDCopy(hdd,
@@ -8052,10 +8204,9 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
 
         if (pParent)
         {
-            /* associate the clone with the parent and deassociate
-             * from VirtualBox */
-            pTarget->m->pParent = pParent;
-            pParent->m->llChildren.push_back(pTarget);
+            /* Associate the clone with the parent and deassociate
+             * from VirtualBox. Depth check above. */
+            pTarget->i_setParent(pParent);
 
             /* register with mVirtualBox as the last step and move to
              * Created state only on success (leaving an orphan file is
@@ -8691,6 +8842,15 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
 
     try
     {
+        if (!pParent.isNull())
+            if (pParent->i_getDepth() >= SETTINGS_MEDIUM_DEPTH_MAX)
+            {
+                AutoReadLock plock(pParent COMMA_LOCKVAL_SRC_POS);
+                throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                               tr("Cannot import image for medium '%s', because it exceeds the medium tree depth limit. Please merge some images which you no longer need"),
+                               pParent->m->strLocationFull.c_str());
+            }
+
         /* Lock all in {parent,child} order. The lock is also used as a
          * signal from the task initiator (which releases it only after
          * RTThreadCreate()) that we can start the job. */
@@ -8798,7 +8958,6 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
                                        i_vdError(vrc).c_str());
                 }
 
-                /** @todo r=klaus target isn't locked, race getting the state */
                 vrc = VDCopy(hdd,
                              VD_LAST_IMAGE,
                              targetHdd,
@@ -8847,10 +9006,9 @@ HRESULT Medium::i_taskImportHandler(Medium::ImportTask &task)
 
         if (pParent)
         {
-            /* associate the imported medium with the parent and deassociate
-             * from VirtualBox */
-            m->pParent = pParent;
-            pParent->m->llChildren.push_back(this);
+            /* Associate the imported medium with the parent and deassociate
+             * from VirtualBox. Depth check above. */
+            i_setParent(pParent);
 
             /* register with mVirtualBox as the last step and move to
              * Created state only on success (leaving an orphan file is

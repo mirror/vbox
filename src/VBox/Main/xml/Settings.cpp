@@ -54,7 +54,7 @@
  */
 
 /*
- * Copyright (C) 2007-2014 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -119,6 +119,9 @@ using namespace settings;
 
 /** VirtualBox XML settings full version string ("x.y-platform") */
 #define VBOX_XML_VERSION_FULL   VBOX_XML_VERSION "-" VBOX_XML_PLATFORM
+
+const struct Snapshot settings::g_SnapshotEmpty; /* default ctor is OK */
+const struct Medium settings::g_MediumEmpty; /* default ctor is OK */
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -376,6 +379,27 @@ ConfigFileBase::~ConfigFileBase()
 }
 
 /**
+ * Helper function to convert a MediaType enum value into string from.
+ * @param t
+ */
+/*static*/
+const char *ConfigFileBase::stringifyMediaType(MediaType t)
+{
+    switch (t)
+    {
+        case HardDisk:
+            return "hard disk";
+        case DVDImage:
+            return "DVD";
+        case FloppyImage:
+            return "floppy";
+        default:
+            AssertMsgFailed(("media type %d\n", t));
+            return "UNKNOWN";
+    }
+}
+
+/**
  * Helper function that parses a UUID in string form into
  * a com::Guid item. Accepts UUIDs both with and without
  * "{}" brackets. Throws on errors.
@@ -465,7 +489,7 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
  * @param stamp
  * @return
  */
-com::Utf8Str ConfigFileBase::makeString(const RTTIMESPEC &stamp)
+com::Utf8Str ConfigFileBase::stringifyTimestamp(const RTTIMESPEC &stamp) const
 {
     RTTIME time;
     if (!RTTimeExplode(&time, &stamp))
@@ -565,15 +589,14 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
  *
  * @param t
  * @param elmMedium
- * @param llMedia
+ * @param med
  */
-void ConfigFileBase::readMedium(MediaType t,
-                                const xml::ElementNode &elmMedium,  // HardDisk node if root; if recursing,
-                                                                    // child HardDisk node or DiffHardDisk node for pre-1.4
-                                MediaList &llMedia)     // list to append medium to (root disk or child list)
+void ConfigFileBase::readMediumOne(MediaType t,
+                                   const xml::ElementNode &elmMedium,
+                                   Medium &med)
 {
     // <HardDisk uuid="{5471ecdb-1ddb-4012-a801-6d98e226868b}" location="/mnt/innotek-unix/vdis/Windows XP.vdi" format="VDI" type="Normal">
-    settings::Medium med;
+
     Utf8Str strUUID;
     if (!elmMedium.getAttributeValue("uuid", strUUID))
         throw ConfigFileError(this, &elmMedium, N_("Required %s/@uuid attribute is missing"), elmMedium.getName());
@@ -725,34 +748,61 @@ void ConfigFileBase::readMedium(MediaType t,
 
     elmMedium.getAttributeValue("Description", med.strDescription);       // optional
 
-    // recurse to handle children
-    xml::NodesLoop nl2(elmMedium);
+    // handle medium properties
+    xml::NodesLoop nl2(elmMedium, "Property");
     const xml::ElementNode *pelmHDChild;
     while ((pelmHDChild = nl2.forAllNodes()))
     {
-        if (    t == HardDisk
-             && (    pelmHDChild->nameEquals("HardDisk")
-                  || (    (m->sv < SettingsVersion_v1_4)
-                       && (pelmHDChild->nameEquals("DiffHardDisk"))
-                     )
-                )
-           )
-            // recurse with this element and push the child onto our current children list
-            readMedium(t,
-                        *pelmHDChild,
-                        med.llChildren);
-        else if (pelmHDChild->nameEquals("Property"))
-        {
-            Utf8Str strPropName, strPropValue;
-            if (   pelmHDChild->getAttributeValue("name", strPropName)
-                && pelmHDChild->getAttributeValue("value", strPropValue) )
-                med.properties[strPropName] = strPropValue;
-            else
-                throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
-        }
+        Utf8Str strPropName, strPropValue;
+        if (   pelmHDChild->getAttributeValue("name", strPropName)
+            && pelmHDChild->getAttributeValue("value", strPropValue) )
+            med.properties[strPropName] = strPropValue;
+        else
+            throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
     }
+}
 
-    llMedia.push_back(med);
+/**
+ * Reads a media registry entry from the main VirtualBox.xml file and recurses
+ * into children where applicable.
+ *
+ * @param t
+ * @param depth
+ * @param elmMedium
+ * @param med
+ */
+void ConfigFileBase::readMedium(MediaType t,
+                                uint32_t depth,
+                                const xml::ElementNode &elmMedium,  // HardDisk node if root; if recursing,
+                                                                    // child HardDisk node or DiffHardDisk node for pre-1.4
+                                Medium &med)                        // medium settings to fill out
+{
+    if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
+        throw ConfigFileError(this, &elmMedium, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+
+    // Do not inline this method call, as the purpose of having this separate
+    // is to save on stack size. Less local variables are the key for reaching
+    // deep recursion levels with small stack (XPCOM/g++ without optimization).
+    readMediumOne(t, elmMedium, med);
+
+    if (t != HardDisk)
+        return;
+
+    // recurse to handle children
+    MediaList &llSettingsChildren = med.llChildren;
+    xml::NodesLoop nl2(elmMedium, m->sv >= SettingsVersion_v1_4 ? "HardDisk" : "DiffHardDisk");
+    const xml::ElementNode *pelmHDChild;
+    while ((pelmHDChild = nl2.forAllNodes()))
+    {
+        // recurse with this element and put the child at the end of the list.
+        // XPCOM has very small stack, avoid big local variables and use the
+        // list element.
+        llSettingsChildren.push_back(g_MediumEmpty);
+        readMedium(t,
+                   depth + 1,
+                   *pelmHDChild,
+                   llSettingsChildren.back());
+    }
 }
 
 /**
@@ -787,24 +837,24 @@ void ConfigFileBase::readMediaRegistry(const xml::ElementNode &elmMediaRegistry,
         const xml::ElementNode *pelmMedium;
         while ((pelmMedium = nl2.forAllNodes()))
         {
-            if (    t == HardDisk
-                 && (pelmMedium->nameEquals("HardDisk"))
-               )
-                readMedium(t,
-                           *pelmMedium,
-                           mr.llHardDisks);      // list to append hard disk data to: the root list
-            else if (    t == DVDImage
-                      && (pelmMedium->nameEquals("Image"))
-                    )
-                readMedium(t,
-                           *pelmMedium,
-                           mr.llDvdImages);      // list to append dvd images to: the root list
-            else if (    t == FloppyImage
-                      && (pelmMedium->nameEquals("Image"))
-                    )
-                readMedium(t,
-                           *pelmMedium,
-                           mr.llFloppyImages);      // list to append floppy images to: the root list
+            if (   t == HardDisk
+                && (pelmMedium->nameEquals("HardDisk")))
+            {
+                mr.llHardDisks.push_back(g_MediumEmpty);
+                readMedium(t, 1, *pelmMedium, mr.llHardDisks.back());
+            }
+            else if (   t == DVDImage
+                     && (pelmMedium->nameEquals("Image")))
+            {
+                mr.llDvdImages.push_back(g_MediumEmpty);
+                readMedium(t, 1, *pelmMedium, mr.llDvdImages.back());
+            }
+            else if (   t == FloppyImage
+                     && (pelmMedium->nameEquals("Image")))
+            {
+                mr.llFloppyImages.push_back(g_MediumEmpty);
+                readMedium(t, 1, *pelmMedium, mr.llFloppyImages.back());
+            }
         }
     }
 }
@@ -1085,18 +1135,22 @@ void ConfigFileBase::buildUSBDeviceFilters(xml::ElementNode &elmParent,
  * and recurses to write the child hard disks underneath. Called from
  * MainConfigFile::write().
  *
+ * @param t
+ * @param depth
  * @param elmMedium
- * @param m
- * @param level
+ * @param mdm
  */
-void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
-                                 DeviceType_T devType,
-                                 const Medium &mdm,
-                                 uint32_t level)          // 0 for "root" call, incremented with each recursion
+void ConfigFileBase::buildMedium(MediaType t,
+                                 uint32_t depth,
+                                 xml::ElementNode &elmMedium,
+                                 const Medium &mdm)
 {
+    if (depth > SETTINGS_MEDIUM_DEPTH_MAX)
+        throw ConfigFileError(this, &elmMedium, N_("Maximum medium tree depth of %u exceeded"), SETTINGS_MEDIUM_DEPTH_MAX);
+
     xml::ElementNode *pelmMedium;
 
-    if (devType == DeviceType_HardDisk)
+    if (t == HardDisk)
         pelmMedium = elmMedium.createChild("HardDisk");
     else
         pelmMedium = elmMedium.createChild("Image");
@@ -1105,9 +1159,9 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
 
     pelmMedium->setAttributePath("location", mdm.strLocation);
 
-    if (devType == DeviceType_HardDisk || RTStrICmp(mdm.strFormat.c_str(), "RAW"))
+    if (t == HardDisk || RTStrICmp(mdm.strFormat.c_str(), "RAW"))
         pelmMedium->setAttribute("format", mdm.strFormat);
-    if (   devType == DeviceType_HardDisk
+    if (   t == HardDisk
         && mdm.fAutoReset)
         pelmMedium->setAttribute("autoReset", mdm.fAutoReset);
     if (mdm.strDescription.length())
@@ -1123,13 +1177,13 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
     }
 
     // only for base hard disks, save the type
-    if (level == 0)
+    if (depth == 1)
     {
         // no need to save the usual DVD/floppy medium types
-        if (   (   devType != DeviceType_DVD
+        if (   (   t != DVDImage
                 || (   mdm.hdType != MediumType_Writethrough // shouldn't happen
                     && mdm.hdType != MediumType_Readonly))
-            && (   devType != DeviceType_Floppy
+            && (   t != FloppyImage
                 || mdm.hdType != MediumType_Writethrough))
         {
             const char *pcszType =
@@ -1149,10 +1203,10 @@ void ConfigFileBase::buildMedium(xml::ElementNode &elmMedium,
          ++it)
     {
         // recurse for children
-        buildMedium(*pelmMedium, // parent
-                    devType,     // device type
-                    *it,         // settings::Medium
-                    ++level);    // recursion level
+        buildMedium(t,              // device type
+                    depth + 1,      // depth
+                    *pelmMedium,    // parent
+                    *it);           // settings::Medium
     }
 }
 
@@ -1177,7 +1231,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llHardDisks.end();
          ++it)
     {
-        buildMedium(*pelmHardDisks, DeviceType_HardDisk, *it, 0);
+        buildMedium(HardDisk, 1, *pelmHardDisks, *it);
     }
 
     xml::ElementNode *pelmDVDImages = pelmMediaRegistry->createChild("DVDImages");
@@ -1185,7 +1239,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llDvdImages.end();
          ++it)
     {
-        buildMedium(*pelmDVDImages, DeviceType_DVD, *it, 0);
+        buildMedium(DVDImage, 1, *pelmDVDImages, *it);
     }
 
     xml::ElementNode *pelmFloppyImages = pelmMediaRegistry->createChild("FloppyImages");
@@ -1193,7 +1247,7 @@ void ConfigFileBase::buildMediaRegistry(xml::ElementNode &elmParent,
          it != mr.llFloppyImages.end();
          ++it)
     {
-        buildMedium(*pelmFloppyImages, DeviceType_Floppy, *it, 0);
+        buildMedium(FloppyImage, 1, *pelmFloppyImages, *it);
     }
 }
 
@@ -3766,7 +3820,7 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
                                      Snapshot &snap)
 {
     if (depth > SETTINGS_SNAPSHOT_DEPTH_MAX)
-        throw ConfigFileError(this, &elmSnapshot, N_("Maximum snapshot tree depth of %u exceeded"), depth);
+        throw ConfigFileError(this, &elmSnapshot, N_("Maximum snapshot tree depth of %u exceeded"), SETTINGS_SNAPSHOT_DEPTH_MAX);
 
     Utf8Str strTemp;
 
@@ -3813,15 +3867,12 @@ bool MachineConfigFile::readSnapshot(const Guid &curSnapshotUuid,
             {
                 if (pelmChildSnapshot->nameEquals("Snapshot"))
                 {
-                    // Use the heap to reduce the stack footprint. Each
-                    // recursion needs over 1K, and there can be VMs with
-                    // deeply nested snapshots. The stack can be quite
-                    // small, especially with XPCOM.
-                    Snapshot *child = new Snapshot();
-                    bool found = readSnapshot(curSnapshotUuid, depth + 1, *pelmChildSnapshot, *child);
+                    // recurse with this element and put the child at the
+                    // end of the list. XPCOM has very small stack, avoid
+                    // big local variables and use the list element.
+                    snap.llChildSnapshots.push_back(g_SnapshotEmpty);
+                    bool found = readSnapshot(curSnapshotUuid, depth + 1, *pelmChildSnapshot, snap.llChildSnapshots.back());
                     foundCurrentSnapshot = foundCurrentSnapshot || found;
-                    snap.llChildSnapshots.push_back(*child);
-                    delete child;
                 }
             }
         }
@@ -5148,7 +5199,7 @@ void MachineConfigFile::buildSnapshotXML(uint32_t depth,
 
     pelmSnapshot->setAttribute("uuid", snap.uuid.toStringCurly());
     pelmSnapshot->setAttribute("name", snap.strName);
-    pelmSnapshot->setAttribute("timeStamp", makeString(snap.timestamp));
+    pelmSnapshot->setAttribute("timeStamp", stringifyTimestamp(snap.timestamp));
 
     if (snap.strStateFile.length())
         pelmSnapshot->setAttributePath("stateFile", snap.strStateFile);
@@ -5255,7 +5306,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttributePath("snapshotFolder", machineUserData.strSnapshotFolder);
     if (!fCurrentStateModified)
         elmMachine.setAttribute("currentStateModified", fCurrentStateModified);
-    elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));
+    elmMachine.setAttribute("lastStateChange", stringifyTimestamp(timeLastStateChange));
     if (fAborted)
         elmMachine.setAttribute("aborted", fAborted);
     // Please keep the icon last so that one doesn't have to check if there

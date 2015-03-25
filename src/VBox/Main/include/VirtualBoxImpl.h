@@ -92,7 +92,7 @@ public:
     HRESULT init();
     HRESULT initMachines();
     HRESULT initMedia(const Guid &uuidMachineRegistry,
-                      const settings::MediaRegistry mediaRegistry,
+                      const settings::MediaRegistry &mediaRegistry,
                       const Utf8Str &strMachineFolder);
     void uninit();
 
@@ -229,6 +229,7 @@ public:
                              const Utf8Str &strMachineFolder);
     HRESULT i_saveSettings();
     void i_markRegistryModified(const Guid &uuid);
+    void i_unmarkRegistryModified(const Guid &uuid);
     void i_saveModifiedRegistries();
     static const com::Utf8Str &i_getVersionNormalized();
     static HRESULT i_ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
