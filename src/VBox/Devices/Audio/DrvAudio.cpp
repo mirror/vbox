@@ -1481,19 +1481,21 @@ static DECLCALLBACK(int) drvAudioSetVolume(PPDMIAUDIOCONNECTOR pInterface,
 }
 
 static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
-                                           PPDMAUDIOGSTSTRMOUT pGstVoiceOut, bool fEnable)
+                                           PPDMAUDIOGSTSTRMOUT pGstStrmOut, bool fEnable)
 {
     AssertPtrReturn(pInterface, VERR_INVALID_POINTER);
-    /* pGstVoiceOut is optional. */
+    /* pGstStrmOut is optional. */
 
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
 
-    if (pGstVoiceOut)
+    if (pGstStrmOut)
     {
-        PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstVoiceOut->pHstStrmOut;
+        PPDMAUDIOHSTSTRMOUT pHstStrmOut = pGstStrmOut->pHstStrmOut;
         AssertPtr(pHstStrmOut);
 
-        if (pGstVoiceOut->State.fActive != fEnable)
+        LogFlowFunc(("%s: fEnable=%RTbool\n", pGstStrmOut->MixBuf.pszName, fEnable));
+
+        if (pGstStrmOut->State.fActive != fEnable)
         {
             if (fEnable)
             {
@@ -1523,7 +1525,7 @@ static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
                 }
             }
 
-            pGstVoiceOut->State.fActive = fEnable;
+            pGstStrmOut->State.fActive = fEnable;
         }
     }
 
@@ -1543,8 +1545,7 @@ static DECLCALLBACK(int) drvAudioEnableIn(PPDMIAUDIOCONNECTOR pInterface,
         PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
         AssertPtr(pHstStrmIn);
 
-        LogFlowFunc(("%s -> %s, fEnable=%RTbool\n",
-                     pHstStrmIn->MixBuf.pszName, pGstStrmIn->MixBuf.pszName, fEnable));
+        LogFlowFunc(("%s: fEnable=%RTbool\n", pGstStrmIn->MixBuf.pszName, fEnable));
 
         if (pGstStrmIn->State.fActive != fEnable)
         {
