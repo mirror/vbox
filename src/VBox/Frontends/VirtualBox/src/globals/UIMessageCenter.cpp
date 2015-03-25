@@ -2459,7 +2459,7 @@ QString UIMessageCenter::formatRC(HRESULT rc)
     PCRTCOMERRMSG msg = NULL;
     const char *errMsg = NULL;
 
-    /* first, try as is (only set bit 31 bit for warnings) */
+    /* First, try as is (only set bit 31 bit for warnings): */
     if (SUCCEEDED_WARNING(rc))
         msg = RTErrCOMGet(rc | 0x80000000);
     else
@@ -2468,11 +2468,10 @@ QString UIMessageCenter::formatRC(HRESULT rc)
     if (msg != NULL)
         errMsg = msg->pszDefine;
 
-#if defined (Q_WS_WIN)
-
+#ifdef Q_WS_WIN
     PCRTWINERRMSG winMsg = NULL;
 
-    /* if not found, try again using RTErrWinGet with masked off top 16bit */
+    /* If not found, try again using RTErrWinGet with masked off top 16bit: */
     if (msg == NULL)
     {
         winMsg = RTErrWinGet(rc & 0xFFFF);
@@ -2480,8 +2479,43 @@ QString UIMessageCenter::formatRC(HRESULT rc)
         if (winMsg != NULL)
             errMsg = winMsg->pszDefine;
     }
+#endif /* Q_WS_WIN */
 
-#endif
+    if (errMsg != NULL && *errMsg != '\0')
+        str.sprintf("%s", errMsg);
+
+    return str;
+}
+
+/* static */
+QString UIMessageCenter::formatRCFull(HRESULT rc)
+{
+    QString str;
+
+    PCRTCOMERRMSG msg = NULL;
+    const char *errMsg = NULL;
+
+    /* First, try as is (only set bit 31 bit for warnings): */
+    if (SUCCEEDED_WARNING(rc))
+        msg = RTErrCOMGet(rc | 0x80000000);
+    else
+        msg = RTErrCOMGet(rc);
+
+    if (msg != NULL)
+        errMsg = msg->pszDefine;
+
+#ifdef Q_WS_WIN
+    PCRTWINERRMSG winMsg = NULL;
+
+    /* If not found, try again using RTErrWinGet with masked off top 16bit: */
+    if (msg == NULL)
+    {
+        winMsg = RTErrWinGet(rc & 0xFFFF);
+
+        if (winMsg != NULL)
+            errMsg = winMsg->pszDefine;
+    }
+#endif /* Q_WS_WIN */
 
     if (errMsg != NULL && *errMsg != '\0')
         str.sprintf("%s (0x%08X)", errMsg, rc);
@@ -2507,7 +2541,7 @@ QString UIMessageCenter::formatErrorInfo(const CProgress &progress)
     return QString("<table bgcolor=#EEEEEE border=0 cellspacing=0 cellpadding=0 width=100%>"
                    "<tr><td>%1</td><td><tt>%2</tt></td></tr></table>")
                    .arg(tr("Result&nbsp;Code: ", "error info"))
-                   .arg(formatRC(progress.GetResultCode()))
+                   .arg(formatRCFull(progress.GetResultCode()))
                    .prepend("<!--EOM-->") /* move to details */;
 }
 
@@ -2728,7 +2762,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
         {
             formatted += QString("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
                 .arg(tr("Result&nbsp;Code: ", "error info"))
-                .arg(formatRC(info.resultCode()));
+                .arg(formatRCFull(info.resultCode()));
         }
 
         if (haveComponent)
@@ -2759,7 +2793,7 @@ QString UIMessageCenter::errorInfoToString(const COMErrorInfo &info,
     {
         formatted += QString("<tr><td>%1</td><td><tt>%2</tt></td></tr>")
             .arg(tr("Callee&nbsp;RC: ", "error info"))
-            .arg(formatRC(wrapperRC));
+            .arg(formatRCFull(wrapperRC));
     }
 
     formatted += "</table>";

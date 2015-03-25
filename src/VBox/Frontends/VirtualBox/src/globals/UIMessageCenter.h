@@ -359,6 +359,7 @@ public:
 
     /* API: Static helpers: */
     static QString formatRC(HRESULT rc);
+    static QString formatRCFull(HRESULT rc);
     static QString formatErrorInfo(const CProgress &progress);
     static QString formatErrorInfo(const COMErrorInfo &info, HRESULT wrapperRC = S_OK);
     static QString formatErrorInfo(const CVirtualBoxErrorInfo &info);
