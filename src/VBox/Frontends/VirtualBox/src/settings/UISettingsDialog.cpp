@@ -34,6 +34,7 @@
 # include "UIPopupCenter.h"
 # include "QIWidgetValidator.h"
 # include "VBoxSettingsSelector.h"
+# include "UIModalWindowManager.h"
 # include "UISettingsSerializer.h"
 # include "UISettingsPage.h"
 # include "UIToolBar.h"
@@ -299,10 +300,13 @@ void UISettingsDialog::saveData(QVariant &data)
     m_fSaved = false;
 
     /* Create settings saver: */
-    m_pSerializeProgress = new UISettingsSerializerProgress(this, UISettingsSerializer::Save,
+    QWidget *pDlgParent = windowManager().realParentWindow(window());
+    m_pSerializeProgress = new UISettingsSerializerProgress(pDlgParent, UISettingsSerializer::Save,
                                                             data, m_pSelector->settingPages());
     AssertPtrReturnVoid(m_pSerializeProgress);
     {
+        /* Make setting saver the temporary parent for all the sub-dialogs: */
+        windowManager().registerNewParent(m_pSerializeProgress, pDlgParent);
         /* Start settings saver: */
         m_pSerializeProgress->exec();
     }
