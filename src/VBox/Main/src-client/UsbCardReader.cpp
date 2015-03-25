@@ -549,7 +549,7 @@ static DECLCALLBACK(int) drvCardReaderDownControl(PPDMICARDREADERDOWN pInterface
         && cbInBuffer)
     {
         pvInBufferCopy = RTMemDup(pvInBuffer, cbInBuffer);
-        AssertPtrReturn(pvInBufferCopy, VERR_NO_MEMORY);
+        AssertReturn(pvInBufferCopy, VERR_NO_MEMORY);
     }
     int rc = RTReqQueueCallEx(pThis->hReqQCardReaderCmd, NULL, 0, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                               (PFNRT)drvCardReaderCmdControl, 6,

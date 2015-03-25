@@ -201,7 +201,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     uint32_t cbScratchBuf = _64K; /** @todo Make buffer size configurable via guest properties/argv! */
     AssertReturn(RT_IS_POWER_OF_TWO(cbScratchBuf), VERR_INVALID_PARAMETER);
     uint8_t *pvScratchBuf = (uint8_t*)RTMemAlloc(cbScratchBuf);
-    AssertPtrReturn(pvScratchBuf, VERR_NO_MEMORY);
+    AssertReturn(pvScratchBuf, VERR_NO_MEMORY);
 
     VBGLR3GUESTCTRLCMDCTX ctxHost = { g_uControlSvcClientID };
     /* Set default protocol version to 1. */

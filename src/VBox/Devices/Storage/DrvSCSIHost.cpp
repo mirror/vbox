@@ -285,7 +285,7 @@ static int drvscsihostProcessRequestOne(PDRVSCSIHOST pThis, PPDMSCSIREQUEST pReq
                 ScsiIoReq.iovec_count = pRequest->cScatterGatherEntries;
 
                 paSG = (sg_iovec_t *)RTMemAllocZ(pRequest->cScatterGatherEntries * sizeof(sg_iovec_t));
-                AssertPtrReturn(paSG, VERR_NO_MEMORY);
+                AssertReturn(paSG, VERR_NO_MEMORY);
 
                 for (unsigned i = 0; i < pRequest->cScatterGatherEntries; i++)
                 {
