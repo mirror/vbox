@@ -159,7 +159,13 @@ protected:
     /** Translate routine: */
     void retranslateUi();
 
+    /** Close event-handler called with the given window system @a pEvent. */
+    virtual void closeEvent(QCloseEvent *pEvent);
+
 private slots:
+
+    /** Hides the modal dialog and sets the result code to <i>Rejected</i>. */
+    virtual void reject();
 
     /** Starts the process. */
     void sltStartProcess();

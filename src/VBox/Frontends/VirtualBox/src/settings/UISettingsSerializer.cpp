@@ -233,6 +233,17 @@ void UISettingsSerializerProgress::retranslateUi()
     }
 }
 
+void UISettingsSerializerProgress::closeEvent(QCloseEvent *pEvent)
+{
+    /* No need to close the dialog: */
+    pEvent->ignore();
+}
+
+void UISettingsSerializerProgress::reject()
+{
+    /* No need to reject the dialog. */
+}
+
 void UISettingsSerializerProgress::sltStartProcess()
 {
     /* Start the serializer: */
