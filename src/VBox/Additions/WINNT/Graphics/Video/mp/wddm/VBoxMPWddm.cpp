@@ -5451,6 +5451,9 @@ DxgkDdiControlInterrupt(
 
     switch (InterruptType)
     {
+#ifdef VBOX_WDDM_WIN8
+        case DXGK_INTERRUPT_DISPLAYONLY_VSYNC:
+#endif
         case DXGK_INTERRUPT_CRTC_VSYNC:
         {
             Status = VBoxWddmSlEnableVSyncNotification(pDevExt, Enable);
