@@ -47,8 +47,8 @@
 
 typedef struct DSOUNDHOSTCFG
 {
-    int     cbBufferIn;
-    int     cbBufferOut;
+    DWORD   cbBufferIn;
+    DWORD   cbBufferOut;
     RTUUID  uuidPlay;
     LPCGUID pGuidPlay;
     RTUUID  uuidCapture;
@@ -114,9 +114,9 @@ typedef struct DSOUNDDEV
 
 static void dsoundDevRemove(PDSOUNDDEV pDev);
 
-static size_t dsoundRingDistance(size_t offEnd, size_t offBegin, size_t cSize)
+static DWORD dsoundRingDistance(DWORD offEnd, DWORD offBegin, DWORD cSize)
 {
-    return offEnd >= offBegin ? offEnd - offBegin: cSize - offBegin + offEnd;
+    return offEnd >= offBegin ? offEnd - offBegin : cSize - offBegin + offEnd;
 }
 
 static int dsoundWaveFmtFromCfg(PPDMAUDIOSTREAMCFG pCfg, PWAVEFORMATEX pFmt)
@@ -366,7 +366,7 @@ static void dsoundPlayClose(PDSOUNDSTREAMOUT pDSoundStrmOut)
 
 static int dsoundPlayOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMOUT pDSoundStrmOut)
 {
-    DSLOG(("DSound: playback open %p size %d bytes, freq %d, chan %d, bits %d, sign %d\n",
+    DSLOG(("DSound: playback open %p size %u bytes, freq %u, chan %u, bits %u, sign %d\n",
            pDSoundStrmOut,
            pThis->cfg.cbBufferOut,
            pDSoundStrmOut->hw.Props.uHz,
@@ -695,7 +695,7 @@ static void dsoundCaptureClose(PDSOUNDSTREAMIN pDSoundStrmIn)
 
 static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn)
 {
-    DSLOG(("DSound: capture open %p size %d bytes freq %d, chan %d, bits %d, sign %d\n",
+    DSLOG(("DSound: capture open %p size %u bytes freq %u, chan %u, bits %u, sign %d\n",
            pDSoundStrmIn,
            pThis->cfg.cbBufferIn,
            pDSoundStrmIn->hw.Props.uHz,
@@ -791,7 +791,7 @@ static int dsoundCaptureOpen(PDRVHOSTDSOUND pThis, PDSOUNDSTREAMIN pDSoundStrmIn
 
         if (bc.dwBufferBytes != pThis->cfg.cbBufferIn)
         {
-            DSLOGREL(("DSound: buffer size mismatch dsound %d, requested %d bytes\n",
+            DSLOGREL(("DSound: buffer size mismatch dsound %u, requested %u bytes\n",
                       bc.dwBufferBytes, pThis->cfg.cbBufferIn));
         }
 
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
     }
 
     int cShift = pHstStrmOut->Props.cShift;
-    int cbBuffer = pDSoundStrmOut->csPlaybackBufferSize << cShift;
+    DWORD cbBuffer = pDSoundStrmOut->csPlaybackBufferSize << cShift;
 
     DWORD cbPlayPos, cbWritePos;
     HRESULT hr = IDirectSoundBuffer_GetCurrentPosition(pDSB, &cbPlayPos, &cbWritePos);
@@ -1105,7 +1105,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         return VINF_SUCCESS;
     }
 
-    int cbFree;
+    DWORD cbFree;
     DWORD cbPlayWritePos;
     if (pDSoundStrmOut->fReinitPlayPos)
     {
@@ -1114,7 +1114,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         pDSoundStrmOut->cbPlayWritePos = cbWritePos;
 
         cbPlayWritePos = pDSoundStrmOut->cbPlayWritePos;
-        cbFree = cbBuffer - (int)dsoundRingDistance(cbWritePos, cbPlayPos, cbBuffer);
+        cbFree = cbBuffer - dsoundRingDistance(cbWritePos, cbPlayPos, cbBuffer);
     }
     else
     {
@@ -1127,17 +1127,17 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         }
 
         cbPlayWritePos = pDSoundStrmOut->cbPlayWritePos;
-        cbFree = (int)dsoundRingDistance(cbPlayPos, cbPlayWritePos, cbBuffer);
+        cbFree = dsoundRingDistance(cbPlayPos, cbPlayWritePos, cbBuffer);
     }
 
     uint32_t csLive = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
-    int cbLive = csLive << cShift;
+    uint32_t cbLive = csLive << cShift;
 
     /* Do not write more than available space in the DirectSound playback buffer. */
     cbLive = RT_MIN(cbFree, cbLive);
 
     cbLive &= ~pHstStrmOut->Props.uAlign;
-    if (cbLive <= 0 || cbLive > cbBuffer)
+    if (cbLive == 0 || cbLive > cbBuffer)
     {
         DSLOG(("DSound: cbLive=%d cbBuffer=%d cbPlayWritePos=%d cbPlayPos=%d\n",
               cbLive, cbBuffer, cbPlayWritePos, cbPlayPos));
@@ -1353,7 +1353,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     audioMixBufReset(&pHstStrmIn->MixBuf);
 
     /* Get number of free samples in the mix buffer and check that is has free space */
-    size_t csMixFree = audioMixBufFree(&pHstStrmIn->MixBuf);
+    uint32_t csMixFree = audioMixBufFree(&pHstStrmIn->MixBuf);
     if (csMixFree == 0)
     {
         DSLOG(("DSound: capture mix buffer full\n"));
@@ -1362,7 +1362,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         return VINF_SUCCESS;
     }
 
-    LogFlow(("DSound: CaptureIn csMixFree = %d, csReadPos = %d, csCaptureReadPos = %d, csCaptured = %d\n",
+    LogFlow(("DSound: CaptureIn csMixFree = %u, csReadPos = %d, csCaptureReadPos = %d, csCaptured = %u\n",
              csMixFree, csReadPos, pDSoundStrmIn->csCaptureReadPos, csCaptured));
 
     /* No need to fetch more samples than mix buffer can receive. */
@@ -1567,8 +1567,12 @@ static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID
 
 static void dSoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 {
-    CFGMR3QuerySIntDef(pCfg, "BufsizeOut",       &pThis->cfg.cbBufferOut,       _16K);
-    CFGMR3QuerySIntDef(pCfg, "BufsizeIn",        &pThis->cfg.cbBufferIn,        _16K);
+    uint32_t    uBufsizeOut, uBufsizeIn;
+
+    CFGMR3QueryUIntDef(pCfg, "BufsizeOut",       &uBufsizeOut,      _16K);
+    CFGMR3QueryUIntDef(pCfg, "BufsizeIn",        &uBufsizeIn,       _16K);
+    pThis->cfg.cbBufferOut = uBufsizeOut;
+    pThis->cfg.cbBufferIn  = uBufsizeIn;
 
     pThis->cfg.pGuidPlay    = dsoundConfigQueryGUID(pCfg, "DeviceGuidOut", &pThis->cfg.uuidPlay);
     pThis->cfg.pGuidCapture = dsoundConfigQueryGUID(pCfg, "DeviceGuidIn",  &pThis->cfg.uuidCapture);
