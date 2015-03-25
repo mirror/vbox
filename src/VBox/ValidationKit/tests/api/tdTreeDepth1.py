@@ -33,9 +33,6 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import os
 import sys
-import time
-import threading
-import types
 
 # Only the main script needs to modify the path.
 try:    __file__
@@ -45,7 +42,6 @@ sys.path.append(g_ksValidationKitDir)
 
 # Validation Kit imports.
 from testdriver import reporter
-from testdriver import base
 from testdriver import vbox
 from testdriver import vboxcon
 
