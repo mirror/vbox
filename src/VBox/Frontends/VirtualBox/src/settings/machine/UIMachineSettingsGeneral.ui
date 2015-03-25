@@ -215,7 +215,7 @@
        <item row="0" column="0" colspan="2">
         <widget class="QCheckBox" name="m_pCheckBoxEncryption">
          <property name="whatsThis">
-          <string>When checked, enables the encryption of this virtual machine.</string>
+          <string>When checked, enables encryption for this virtual machine.</string>
          </property>
          <property name="text">
           <string>En&amp;able Encryption</string>
@@ -275,7 +275,7 @@
           <item row="0" column="1">
            <widget class="QComboBox" name="m_pComboCipher">
             <property name="whatsThis" >
-             <string>Holds the cipher to be used for the virtual machine storage encryption.</string>
+             <string>Holds the cipher to be used for encrypting the virtual machine disks.</string>
             </property>
            </widget>
           </item>
@@ -295,7 +295,7 @@
           <item row="1" column="1">
            <widget class="QLineEdit" name="m_pEditorEncryptionPassword">
             <property name="whatsThis" >
-             <string>Holds the password to be assigned for the virtual machine.</string>
+             <string>Holds the password to be assigned to the virtual machine.</string>
             </property>
            </widget>
           </item>
@@ -315,7 +315,7 @@
           <item row="2" column="1">
            <widget class="QLineEdit" name="m_pEditorEncryptionPasswordConfirm">
             <property name="whatsThis" >
-             <string>Confirms the password to be assigned for the virtual machine.</string>
+             <string>Confirms the password to be assigned to the virtual machine.</string>
             </property>
            </widget>
           </item>

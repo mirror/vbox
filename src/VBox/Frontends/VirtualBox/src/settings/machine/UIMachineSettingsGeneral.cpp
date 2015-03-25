@@ -402,7 +402,7 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
             m_fEncryptionCipherChanged)
         {
             if (m_pComboCipher->currentIndex() == 0)
-                message.second << tr("Encryption cipher type is not specified.");
+                message.second << tr("Encryption cipher type not specified.");
         }
         /* Password should be entered and confirmed if once changed: */
         AssertPtrReturn(m_pEditorEncryptionPassword, false);
@@ -411,14 +411,11 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
             m_fEncryptionPasswordChanged)
         {
             if (m_pEditorEncryptionPassword->text().isEmpty())
-                message.second << tr("Encryption password is not entered.");
-            else
-            if (m_pEditorEncryptionPasswordConfirm->text().isEmpty())
-                message.second << tr("Encryption password is not confirmed.");
+                message.second << tr("Encryption password empty.");
             else
             if (m_pEditorEncryptionPassword->text() !=
                 m_pEditorEncryptionPasswordConfirm->text())
-                message.second << tr("Entered and confirmed encryption passwords doesn't match.");
+                message.second << tr("Encryption passwords do not match.");
             fPass = false;
         }
     }
