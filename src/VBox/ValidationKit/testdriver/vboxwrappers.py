@@ -1646,13 +1646,13 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
-    def attachHd(self, sHd, sController = "IDE Controller", iPort = 0, iDevice = 0, fImmutable = True):
+    def attachHd(self, sHd, sController = "IDE Controller", iPort = 0, iDevice = 0, fImmutable = True, fForceResource = True):
         """
         Attaches a HD to a VM.
         Returns True on success and False on failure.  Error information is logged.
         """
         # Input validation.
-        if not self.oTstDrv.isResourceFile(sHd):
+        if fForceResource and not self.oTstDrv.isResourceFile(sHd):
             reporter.fatal('"%s" is not in the resource set' % (sHd,));
             return None;
 
@@ -1660,7 +1660,10 @@ class SessionWrapper(TdTaskBase):
             return False;
 
         # Find the HD, registering it if necessary (as immutable).
-        sFullName = self.oTstDrv.getFullResourceName(sHd);
+        if fForceResource:
+            sFullName = self.oTstDrv.getFullResourceName(sHd);
+        else:
+            sFullName = sHd;
         try:
             oHd = self.oVBox.findHardDisk(sFullName);
         except:
@@ -1702,6 +1705,46 @@ class SessionWrapper(TdTaskBase):
         self.oTstDrv.processPendingEvents();
         return fRc;
 
+    def createBaseHd(self, sHd, sFmt = "VDI", cb = 10*1024*1024*1024):
+        """
+        Creates a base HD.
+        Returns Medium object on success and None on failure.  Error information is logged.
+        """
+        try:
+            if self.fpApiVer >= 4.4:
+                oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
+            else:
+                oHd = self.oVBox.createHardDisk(sFmt, sHd);
+            oProgressXpcom = oHd.createBaseStorage(cb, (vboxcon.MediumVariant_Standard, ))
+            oProgress = ProgressWrapper(oProgressXpcom, self.oVBoxMgr, self.oTstDrv, 'create base disk %s' % (sHd));
+            oProgress.wait();
+            oProgress.logResult();
+        except:
+            reporter.errorXcpt('failed to create base hd "%s"' % (sHd));
+            oHd = None
+
+        return oHd;
+
+    def createDiffHd(self, oParentHd, sHd, sFmt = "VDI"):
+        """
+        Creates a differencing HD.
+        Returns Medium object on success and None on failure.  Error information is logged.
+        """
+        try:
+            if self.fpApiVer >= 4.4:
+                oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
+            else:
+                oHd = self.oVBox.createHardDisk(sFmt, sHd);
+            oProgressXpcom = oParentHd.createDiffStorage(oHd, (vboxcon.MediumVariant_Standard, ))
+            oProgress = ProgressWrapper(oProgressXpcom, self.oVBoxMgr, self.oTstDrv, 'create diff disk %s' % (sHd));
+            oProgress.wait();
+            oProgress.logResult();
+        except:
+            reporter.errorXcpt('failed to create diff hd "%s"' % (sHd));
+            oHd = None
+
+        return oHd;
+
     def createAndAttachHd(self, sHd, sFmt = "VDI", sController = "IDE Controller", cb = 10*1024*1024*1024, \
                           iPort = 0, iDevice = 0, fImmutable = True):
         """
@@ -1711,17 +1754,8 @@ class SessionWrapper(TdTaskBase):
         if not self.ensureControllerAttached(sController):
             return False;
 
-        try:
-            if self.fpApiVer >= 4.4:
-                oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
-            else:
-                oHd = self.oVBox.createHardDisk(sFmt, sHd);
-            oProgressXpcom = oHd.createBaseStorage(cb, (vboxcon.MediumVariant_Standard, ))
-            oProgress = ProgressWrapper(oProgressXpcom, self.oVBoxMgr, self.oTstDrv, 'create disk %s' % (sHd));
-            oProgress.wait();
-            oProgress.logResult();
-        except:
-            reporter.errorXcpt('failed to create hd "%s"' % (sHd));
+        oHd = self.createBaseHd(sHd, sFmt, cb)
+        if oHd is None:
             return False;
 
         fRc = True;
