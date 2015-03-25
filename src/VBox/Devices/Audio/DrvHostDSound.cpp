@@ -1479,8 +1479,11 @@ static DECLCALLBACK(int) drvHostDSoundGetConf(PPDMIHOSTAUDIO pInterface, PPDMAUD
         DSLOG(("DSound: Enumerating host capturing devices failed %Rhrc\n", hr));
 
     DSLOGREL(("DSound: Found %RU32 host capturing devices\n", pCfg->cMaxHstStrmsIn));
-    if (pCfg->cMaxHstStrmsIn == 0)
-        pCfg->cMaxHstStrmsIn = 1; /* Support at least one stream. */
+    if (pCfg->cMaxHstStrmsIn < 2)
+    {
+        DSLOGREL(("DSound: Adjusting the number of host capturing devices from %RU32 to 2\n", pCfg->cMaxHstStrmsIn));
+        pCfg->cMaxHstStrmsIn = 2; /* Support at least two streams (line in + mic). */
+    }
 
     return VINF_SUCCESS;
 }
