@@ -72,7 +72,7 @@
 
 static int drvAudioDestroyGstIn(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMIN pGstStrmIn);
 
-static int drvAudioAllocHstIn(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOHSTSTRMIN *ppHstStrmIn);
+static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOHSTSTRMIN *ppHstStrmIn);
 static int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn);
 
 volume_t nominal_volume =
@@ -478,7 +478,7 @@ PPDMAUDIOHSTSTRMIN drvAudioFindNextEqHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN p
     return NULL;
 }
 
-static int drvAudioHstInAdd(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORECSOURCE enmRecSource,
+static int drvAudioHstInAdd(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORECSOURCE enmRecSource,
                             PPDMAUDIOHSTSTRMIN *ppHstStrmIn)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -486,7 +486,7 @@ static int drvAudioHstInAdd(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORE
     AssertPtrReturn(ppHstStrmIn, VERR_INVALID_POINTER);
 
     PPDMAUDIOHSTSTRMIN pHstStrmIn;
-    int rc = drvAudioAllocHstIn(pThis, pCfg, enmRecSource, &pHstStrmIn);
+    int rc = drvAudioAllocHstIn(pThis, pszName, pCfg, enmRecSource, &pHstStrmIn);
     if (RT_SUCCESS(rc))
         *ppHstStrmIn = pHstStrmIn;
 
@@ -500,10 +500,16 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
     int rc = drvAudioStreamCfgToProps(pCfg, &pGstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
-        rc = audioMixBufInit(&pGstStrmOut->MixBuf, pszName, &pGstStrmOut->Props,
+        char *pszTemp;
+        if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
+            return VERR_NO_MEMORY;
+
+        rc = audioMixBufInit(&pGstStrmOut->MixBuf, pszTemp, &pGstStrmOut->Props,
                              audioMixBufSize(&pHostStrmOut->MixBuf));
         if (RT_SUCCESS(rc))
             rc = audioMixBufLinkTo(&pGstStrmOut->MixBuf, &pHostStrmOut->MixBuf);
+
+        RTStrFree(pszTemp);
 
         if (RT_SUCCESS(rc))
         {
@@ -541,8 +547,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
         return VERR_INVALID_PARAMETER;
     }
 
-    PPDMAUDIOHSTSTRMOUT pHstStrmOut =
-        (PPDMAUDIOHSTSTRMOUT)RTMemAllocZ(pThis->BackendCfg.cbStreamOut);
+    PPDMAUDIOHSTSTRMOUT pHstStrmOut = (PPDMAUDIOHSTSTRMOUT)RTMemAllocZ(pThis->BackendCfg.cbStreamOut);
     if (!pHstStrmOut)
     {
         LogFlowFunc(("Error allocating host output stream with %zu bytes\n",
@@ -558,8 +563,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
         RTListInit(&pHstStrmOut->lstGstStrmOut);
 
         uint32_t cSamples;
-        rc = pThis->pHostDrvAudio->pfnInitOut(pThis->pHostDrvAudio, pHstStrmOut, pCfg,
-                                              &cSamples);
+        rc = pThis->pHostDrvAudio->pfnInitOut(pThis->pHostDrvAudio, pHstStrmOut, pCfg, &cSamples);
         if (RT_FAILURE(rc))
         {
             LogFlowFunc(("Initializing host backend failed with rc=%Rrc\n", rc));
@@ -568,12 +572,21 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
 
         fInitialized = true;
 
-        rc = audioMixBufInit(&pHstStrmOut->MixBuf, pszName, &pHstStrmOut->Props, cSamples);
+        char *pszTemp;
+        if (RTStrAPrintf(&pszTemp, "%s (Host)", pszName) <= 0)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = audioMixBufInit(&pHstStrmOut->MixBuf, pszTemp, &pHstStrmOut->Props, cSamples);
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmOut, &pHstStrmOut->Node);
             pThis->cFreeOutputStreams--;
         }
+
+        RTStrFree(pszTemp);
 
     } while (0);
 
@@ -581,8 +594,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
     {
         if (fInitialized)
         {
-            int rc2 = pThis->pHostDrvAudio->pfnFiniOut(pThis->pHostDrvAudio,
-                                                       pHstStrmOut);
+            int rc2 = pThis->pHostDrvAudio->pfnFiniOut(pThis->pHostDrvAudio, pHstStrmOut);
             AssertRC(rc2);
         }
 
@@ -664,17 +676,16 @@ static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMA
         pThisCfg = pCfg;
     AssertPtrReturn(pThisCfg, VERR_INVALID_POINTER);
 
-    PPDMAUDIOGSTSTRMIN pGstStrmIn =
-        (PPDMAUDIOGSTSTRMIN)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMIN));
+    PPDMAUDIOGSTSTRMIN pGstStrmIn = (PPDMAUDIOGSTSTRMIN)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMIN));
     if (!pGstStrmIn)
         return VERR_NO_MEMORY;
 
+
     PPDMAUDIOHSTSTRMIN pHstStrmIn;
-    int rc = drvAudioHstInAdd(pThis, pThisCfg, enmRecSource, &pHstStrmIn);
+    int rc = drvAudioHstInAdd(pThis, pszName, pThisCfg, enmRecSource, &pHstStrmIn);
     if (RT_FAILURE(rc))
     {
-        LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n",
-                 pszName, rc));
+        LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n", pszName, rc));
 
         RTMemFree(pGstStrmIn);
         return rc;
@@ -716,16 +727,22 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
     int rc = drvAudioStreamCfgToProps(pCfg, &pGstStrmIn->Props);
     if (RT_SUCCESS(rc))
     {
-        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszName, &pHstStrmIn->Props,
+        char *pszTemp;
+        if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
+            return VERR_NO_MEMORY;
+
+        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pHstStrmIn->Props,
                              audioMixBufSize(&pHstStrmIn->MixBuf));
         if (RT_SUCCESS(rc))
             rc = audioMixBufLinkTo(&pHstStrmIn->MixBuf, &pGstStrmIn->MixBuf);
 
+        RTStrFree(pszTemp);
+
         if (RT_SUCCESS(rc))
         {
-    #ifdef DEBUG
+#ifdef DEBUG
             drvAudioStreamCfgPrint(pCfg);
-    #endif
+#endif
             pGstStrmIn->State.fActive = false;
             pGstStrmIn->State.fEmpty  = true;
 
@@ -741,7 +758,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
     return rc;
 }
 
-static int drvAudioAllocHstIn(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
+static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg,
                               PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOHSTSTRMIN *ppHstStrmIn)
 {
     if (!pThis->cFreeInputStreams)
@@ -782,13 +799,21 @@ static int drvAudioAllocHstIn(PDRVAUDIO pThis, PPDMAUDIOSTREAMCFG pCfg,
 
         fInitialized = true;
 
-        rc = audioMixBufInit(&pHstStrmIn->MixBuf, "HostIn", &pHstStrmIn->Props,
-                             cSamples);
+        char *pszTemp;
+        if (RTStrAPrintf(&pszTemp, "%s (Host)", pszName) <= 0)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = audioMixBufInit(&pHstStrmIn->MixBuf, pszTemp, &pHstStrmIn->Props, cSamples);
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmIn, &pHstStrmIn->Node);
             pThis->cFreeInputStreams--;
         }
+
+        RTStrFree(pszTemp);
 
     } while (0);
 
@@ -1381,7 +1406,7 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
         if (pcbRead)
             *pcbRead = 0;
         return VINF_SUCCESS;
-    } 
+    }
 
     PPDMAUDIOHSTSTRMIN pHstStrmIn = pGstStrmIn->pHstStrmIn;
     AssertPtrReturn(pHstStrmIn, VERR_INVALID_POINTER);
@@ -1611,7 +1636,17 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
         AssertPtr(pHstStrmIn);
 
         drvAudioGstInFreeRes(pGstStrmIn);
+
+        char *pszTemp;
+        if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
+        {
+            RTMemFree(pGstStrmIn);
+            return VERR_NO_MEMORY;
+        }
+
         rc = drvAudioGstInInit(pGstStrmIn, pHstStrmIn, pszName, pCfg);
+
+        RTStrFree(pszTemp);
     }
     else
         rc = drvAudioCreateStreamPairIn(pThis, pszName, enmRecSource, pCfg, &pGstStrmIn);
