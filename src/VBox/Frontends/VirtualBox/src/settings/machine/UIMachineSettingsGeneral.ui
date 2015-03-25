@@ -207,6 +207,139 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="m_pTabEncryption">
+      <attribute name="title">
+       <string>Enc&amp;ryption</string>
+      </attribute>
+      <layout class="QGridLayout" name="m_pLayoutEncryption">
+       <item row="0" column="0" colspan="2">
+        <widget class="QCheckBox" name="m_pCheckBoxEncryption">
+         <property name="whatsThis">
+          <string>When checked, enables the encryption of this virtual machine.</string>
+         </property>
+         <property name="text">
+          <string>En&amp;able Encryption</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <spacer>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint">
+          <size>
+           <width>20</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="1">
+        <widget class="QWidget" name="m_pWidgetEncryption">
+         <property name="sizePolicy">
+          <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+           <horstretch>1</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <layout class="QGridLayout" name="m_pLayoutEncryptionSettings">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="m_pLabelCipher">
+            <property name="text">
+             <string>Encryption C&amp;ipher:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy">
+             <cstring>m_pComboCipher</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="m_pComboCipher">
+            <property name="whatsThis" >
+             <string>Holds the cipher to be used for the virtual machine storage encryption.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="m_pLabelPassword1">
+            <property name="text">
+             <string>E&amp;nter New Password:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy">
+             <cstring>m_pEditorEncryptionPassword</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="m_pEditorEncryptionPassword">
+            <property name="whatsThis" >
+             <string>Holds the password to be assigned for the virtual machine.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="m_pLabelPassword2">
+            <property name="text">
+             <string>C&amp;onfirm New Password:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy">
+             <cstring>m_pEditorEncryptionPasswordConfirm</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="m_pEditorEncryptionPasswordConfirm">
+            <property name="whatsThis" >
+             <string>Confirms the password to be assigned for the virtual machine.</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <spacer>
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Expanding</enum>
+         </property>
+         <property name="sizeHint">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -230,5 +363,12 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>m_pCheckBoxEncryption</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>m_pWidgetEncryption</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+ </connections>
 </ui>

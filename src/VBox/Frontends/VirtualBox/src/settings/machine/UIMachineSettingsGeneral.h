@@ -20,6 +20,7 @@
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIMachineSettingsGeneral.gen.h"
+#include "UIAddDiskEncryptionPasswordDialog.h"
 
 /** Machine settings: General page: Data structure. */
 struct UIDataSettingsMachineGeneral
@@ -33,6 +34,11 @@ struct UIDataSettingsMachineGeneral
         , m_clipboardMode(KClipboardMode_Disabled)
         , m_dndMode(KDnDMode_Disabled)
         , m_strDescription(QString())
+        , m_fEncryptionEnabled(false)
+        , m_fEncryptionCipherChanged(false)
+        , m_fEncryptionPasswordChanged(false)
+        , m_iEncryptionCipherIndex(-1)
+        , m_strEncryptionPassword(QString())
     {}
 
     /** Returns whether passed @a other is equal to this. */
@@ -44,7 +50,10 @@ struct UIDataSettingsMachineGeneral
                (m_strSnapshotsHomeDir == other.m_strSnapshotsHomeDir) &&
                (m_clipboardMode == other.m_clipboardMode) &&
                (m_dndMode == other.m_dndMode) &&
-               (m_strDescription == other.m_strDescription);
+               (m_strDescription == other.m_strDescription) &&
+               (m_fEncryptionEnabled == other.m_fEncryptionEnabled) &&
+               (m_fEncryptionCipherChanged == other.m_fEncryptionCipherChanged) &&
+               (m_fEncryptionPasswordChanged == other.m_fEncryptionPasswordChanged);
     }
 
     /** Operator== implementation which returns whether passed @a other is equal to this. */
@@ -68,6 +77,21 @@ struct UIDataSettingsMachineGeneral
 
     /** Holds the VM description. */
     QString m_strDescription;
+
+    /** Holds whether the encryption is enabled. */
+    bool m_fEncryptionEnabled;
+    /** Holds whether the encryption cipher was changed. */
+    bool m_fEncryptionCipherChanged;
+    /** Holds whether the encryption password was changed. */
+    bool m_fEncryptionPasswordChanged;
+    /** Holds the encryption cipher index. */
+    int m_iEncryptionCipherIndex;
+    /** Holds the encryption password. */
+    QString m_strEncryptionPassword;
+    /** Holds the encrypted medium ids. */
+    EncryptedMediumMap m_encryptedMediums;
+    /** Holds the encryption passwords. */
+    EncryptionPasswordsMap m_encryptionPasswords;
 };
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UICacheSettingsMachineGeneral;
 
@@ -122,6 +146,13 @@ protected:
     /** Translation routine. */
     void retranslateUi();
 
+private slots:
+
+    /** Marks the encryption cipher as changed. */
+    void sltMarkEncryptionCipherChanged() { m_fEncryptionCipherChanged = true; }
+    /** Marks the encryption cipher and password as changed. */
+    void sltMarkEncryptionPasswordChanged() { m_fEncryptionCipherChanged = true; m_fEncryptionPasswordChanged = true; }
+
 private:
 
     /** Prepare routine. */
@@ -132,6 +163,8 @@ private:
     void prepareTabAdvanced();
     /** Prepare 'Description' tab routine. */
     void prepareTabDescription();
+    /** Prepare 'Encryption' tab routine. */
+    void prepareTabEncryption();
 
     /** Polish routine. */
     void polishPage();
@@ -141,6 +174,19 @@ private:
 
     /** Holds whether HW virtualization extension is enabled. */
     bool m_fHWVirtExEnabled;
+
+    /** Holds whether the encryption cipher was changed.
+      * We are holding that argument here because we do not know
+      * the old <i>cipher</i> for sure to compare the new one with. */
+    bool m_fEncryptionCipherChanged;
+    /** Holds whether the encryption password was changed.
+      * We are holding that argument here because we do not know
+      * the old <i>password</i> at all to compare the new one with. */
+    bool m_fEncryptionPasswordChanged;
+
+    /** Holds the hard-coded encryption cipher list.
+      * We are hard-coding it because there is no place we can get it from. */
+    QStringList m_encryptionCiphers;
 };
 
 #endif /* !___UIMachineSettingsGeneral_h___ */

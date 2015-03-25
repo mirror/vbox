@@ -24,12 +24,18 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsGeneral.h"
+ #include "UIModalWindowManager.h"
 # include "UIMessageCenter.h"
 # include "UIConverter.h"
+/* COM includes: */
+# include "CMedium.h"
+# include "CMediumAttachment.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     : m_fHWVirtExEnabled(false)
+    , m_fEncryptionCipherChanged(false)
+    , m_fEncryptionPasswordChanged(false)
 {
     /* Prepare: */
     prepare();
@@ -95,6 +101,43 @@ void UIMachineSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* 'Description' tab data: */
     generalData.m_strDescription = m_machine.GetDescription();
 
+    /* 'Encryption' tab data: */
+    QString strCipher;
+    bool fEncryptionCipherCommon = true;
+    /* Prepare the map of the encrypted mediums: */
+    EncryptedMediumMap encryptedMediums;
+    foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachments())
+    {
+        /* Acquire hard-drive attachments only: */
+        if (attachment.GetType() == KDeviceType_HardDisk)
+        {
+            /* Get the attachment medium base: */
+            const CMedium medium = attachment.GetMedium();
+            /* Check medium encryption attributes: */
+            QString strCurrentCipher;
+            const QString strCurrentPasswordId = medium.GetEncryptionSettings(strCurrentCipher);
+            if (medium.isOk())
+            {
+                encryptedMediums.insert(strCurrentPasswordId, medium.GetId());
+                if (strCurrentCipher != strCipher)
+                {
+                    if (strCipher.isNull())
+                        strCipher = strCurrentCipher;
+                    else
+                        fEncryptionCipherCommon = false;
+                }
+            }
+        }
+    }
+    generalData.m_fEncryptionEnabled = !encryptedMediums.isEmpty();
+    generalData.m_fEncryptionCipherChanged = false;
+    generalData.m_fEncryptionPasswordChanged = false;
+    if (fEncryptionCipherCommon)
+        generalData.m_iEncryptionCipherIndex = m_encryptionCiphers.indexOf(strCipher);
+    if (generalData.m_iEncryptionCipherIndex == -1)
+        generalData.m_iEncryptionCipherIndex = 0;
+    generalData.m_encryptedMediums = encryptedMediums;
+
     /* Cache general data: */
     m_cache.cacheInitialData(generalData);
 
@@ -125,6 +168,14 @@ void UIMachineSettingsGeneral::getFromCache()
     AssertPtrReturnVoid(mTeDescription);
     mTeDescription->setPlainText(generalData.m_strDescription);
 
+    /* 'Encryption' tab data: */
+    AssertPtrReturnVoid(m_pCheckBoxEncryption);
+    AssertPtrReturnVoid(m_pComboCipher);
+    m_pCheckBoxEncryption->setChecked(generalData.m_fEncryptionEnabled);
+    m_pComboCipher->setCurrentIndex(generalData.m_iEncryptionCipherIndex);
+    m_fEncryptionCipherChanged = generalData.m_fEncryptionCipherChanged;
+    m_fEncryptionPasswordChanged = generalData.m_fEncryptionPasswordChanged;
+
     /* Polish page finally: */
     polishPage();
 
@@ -154,6 +205,38 @@ void UIMachineSettingsGeneral::putToCache()
     AssertPtrReturnVoid(mTeDescription);
     generalData.m_strDescription = mTeDescription->toPlainText().isEmpty() ?
                                    QString::null : mTeDescription->toPlainText();
+
+    /* 'Encryption' tab data: */
+    AssertPtrReturnVoid(m_pCheckBoxEncryption);
+    AssertPtrReturnVoid(m_pComboCipher);
+    AssertPtrReturnVoid(m_pEditorEncryptionPassword);
+    generalData.m_fEncryptionEnabled = m_pCheckBoxEncryption->isChecked();
+    generalData.m_fEncryptionCipherChanged = m_fEncryptionCipherChanged;
+    generalData.m_fEncryptionPasswordChanged = m_fEncryptionPasswordChanged;
+    generalData.m_iEncryptionCipherIndex = m_pComboCipher->currentIndex();
+    generalData.m_strEncryptionPassword = m_pEditorEncryptionPassword->text();
+    /* If encryption status, cipher or password is changed: */
+    if (generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled ||
+        generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged ||
+        generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)
+    {
+        /* Ask for the disk encryption passwords if necessary: */
+        if (!m_cache.base().m_encryptedMediums.isEmpty())
+        {
+            /* Create corresponding dialog: */
+            QWidget *pDlgParent = windowManager().realParentWindow(window());
+            QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+                 new UIAddDiskEncryptionPasswordDialog(pDlgParent,
+                                                       generalData.m_strName,
+                                                       generalData.m_encryptedMediums);
+            /* Execute it and acquire the result: */
+            if (pDlg->exec() == QDialog::Accepted)
+                generalData.m_encryptionPasswords = pDlg->encryptionPasswords();
+            /* Delete dialog if still valid: */
+            if (pDlg)
+                delete pDlg;
+        }
+    }
 
     /* Cache general data: */
     m_cache.cacheCurrentData(generalData);
@@ -204,6 +287,68 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
              * especially with the snapshot folder: */
             if (generalData.m_strName != m_cache.base().m_strName)
                 m_machine.SetName(generalData.m_strName);
+
+            /* Encryption tab data: */
+            if (generalData.m_fEncryptionEnabled != m_cache.base().m_fEncryptionEnabled ||
+                generalData.m_fEncryptionCipherChanged != m_cache.base().m_fEncryptionCipherChanged ||
+                generalData.m_fEncryptionPasswordChanged != m_cache.base().m_fEncryptionPasswordChanged)
+            {
+                /* Cipher attribute changed? */
+                QString strNewCipher;
+                if (generalData.m_fEncryptionCipherChanged)
+                {
+                    strNewCipher = generalData.m_fEncryptionEnabled ?
+                                   m_encryptionCiphers.at(generalData.m_iEncryptionCipherIndex) : QString();
+                }
+                /* Password attribute changed? */
+                QString strNewPassword;
+                QString strNewPasswordId;
+                if (generalData.m_fEncryptionPasswordChanged)
+                {
+                    strNewPassword = generalData.m_fEncryptionEnabled ?
+                                     generalData.m_strEncryptionPassword : QString();
+                    strNewPasswordId = generalData.m_fEncryptionEnabled ?
+                                       m_machine.GetName() : QString();
+                }
+
+                /* Get the maps of encrypted mediums and their passwords: */
+                const EncryptedMediumMap &encryptedMedium = generalData.m_encryptedMediums;
+                const EncryptionPasswordsMap &encryptionPasswords = generalData.m_encryptionPasswords;
+                /* Enumerate attachments: */
+                foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachments())
+                {
+                    /* Enumerate hard-drives only: */
+                    if (attachment.GetType() == KDeviceType_HardDisk)
+                    {
+                        /* Get corresponding medium: */
+                        CMedium medium = attachment.GetMedium();
+
+                        /* Check if old password exists/provided: */
+                        QString strOldPasswordId = encryptedMedium.key(medium.GetId());
+                        QString strOldPassword = encryptionPasswords.value(strOldPasswordId);
+
+//                        printf(" Medium: %s, old password = %s, new cipher = %s, new password = %s, new password id = %s\n",
+//                               medium.GetId().toAscii().constData(),
+//                               strOldPassword.toAscii().constData(),
+//                               strNewCipher.toAscii().constData(),
+//                               strNewPassword.toAscii().constData(),
+//                               strNewPasswordId.toAscii().constData());
+
+                        /* Update encryption: */
+                        CProgress progress = medium.ChangeEncryption(strOldPassword,
+                                                                     strNewCipher,
+                                                                     strNewPassword,
+                                                                     strNewPasswordId);
+//                        if (!medium.isOk())
+//                            printf("  Medium API Error, rc = %s\n", msgCenter().formatRC(medium.lastRC()).toAscii().constData());
+                        progress.WaitForCompletion(-1);
+//                        if (!progress.isOk())
+//                            printf("  Progress API Error, rc = %s\n", msgCenter().formatRC(progress.lastRC()).toAscii().constData());
+//                        if (progress.GetResultCode() != 0)
+//                            printf("  Progress Processing Error, rc = %s\n", msgCenter().formatRC(progress.GetResultCode()).toAscii().constData());
+                    }
+                }
+            }
         }
     }
 
@@ -218,9 +363,13 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
 
     /* Prepare message: */
     UIValidationMessage message;
+
+    /* 'Basic' tab validations: */
     message.first = VBoxGlobal::removeAccelMark(mTwGeneral->tabText(0));
+    message.second.clear();
 
     /* VM name validation: */
+    AssertPtrReturn(m_pNameAndSystemEditor, false);
     if (m_pNameAndSystemEditor->name().trimmed().isEmpty())
     {
         message.second << tr("No name specified for the virtual machine.");
@@ -233,6 +382,45 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         message.second << tr("The virtual machine operating system hint is set to a 64-bit type. "
                              "64-bit guest systems require hardware virtualization, "
                              "so this will be enabled automatically if you confirm the changes.");
+    }
+
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* 'Encryption' tab validations: */
+    message.first = VBoxGlobal::removeAccelMark(mTwGeneral->tabText(3));
+    message.second.clear();
+
+    /* Encryption validation: */
+    AssertPtrReturn(m_pCheckBoxEncryption, false);
+    if (m_pCheckBoxEncryption->isChecked())
+    {
+        /* Cipher should be chosen if once changed: */
+        AssertPtrReturn(m_pComboCipher, false);
+        if (!m_cache.base().m_fEncryptionEnabled ||
+            m_fEncryptionCipherChanged)
+        {
+            if (m_pComboCipher->currentIndex() == 0)
+                message.second << tr("Encryption cipher type is not specified.");
+        }
+        /* Password should be entered and confirmed if once changed: */
+        AssertPtrReturn(m_pEditorEncryptionPassword, false);
+        AssertPtrReturn(m_pEditorEncryptionPasswordConfirm, false);
+        if (!m_cache.base().m_fEncryptionEnabled ||
+            m_fEncryptionPasswordChanged)
+        {
+            if (m_pEditorEncryptionPassword->text().isEmpty())
+                message.second << tr("Encryption password is not entered.");
+            else
+            if (m_pEditorEncryptionPasswordConfirm->text().isEmpty())
+                message.second << tr("Encryption password is not confirmed.");
+            else
+            if (m_pEditorEncryptionPassword->text() !=
+                m_pEditorEncryptionPasswordConfirm->text())
+                message.second << tr("Entered and confirmed encryption passwords doesn't match.");
+            fPass = false;
+        }
     }
 
     /* Serialize message: */
@@ -288,6 +476,10 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbDragAndDrop->setItemText(1, gpConverter->toString(KDnDMode_HostToGuest));
     mCbDragAndDrop->setItemText(2, gpConverter->toString(KDnDMode_GuestToHost));
     mCbDragAndDrop->setItemText(3, gpConverter->toString(KDnDMode_Bidirectional));
+
+    /* Translate Cipher type combo: */
+    AssertPtrReturnVoid(m_pComboCipher);
+    m_pComboCipher->setItemText(0, tr("Leave Unchanged", "cipher type"));
 }
 
 void UIMachineSettingsGeneral::prepare()
@@ -299,6 +491,7 @@ void UIMachineSettingsGeneral::prepare()
     prepareTabBasic();
     prepareTabAdvanced();
     prepareTabDescription();
+    prepareTabEncryption();
 }
 
 void UIMachineSettingsGeneral::prepareTabBasic()
@@ -347,6 +540,52 @@ void UIMachineSettingsGeneral::prepareTabDescription()
     }
 }
 
+void UIMachineSettingsGeneral::prepareTabEncryption()
+{
+    /* Encryption check-box was created in the .ui file: */
+    AssertPtrReturnVoid(m_pCheckBoxEncryption);
+    {
+        /* Configure Encryption check-box: */
+        connect(m_pCheckBoxEncryption, SIGNAL(toggled(bool)),
+                this, SLOT(revalidate()));
+    }
+    /* Encryption Cipher combo was created in the .ui file: */
+    AssertPtrReturnVoid(m_pComboCipher);
+    {
+        /* Configure Encryption Cipher combo: */
+        m_encryptionCiphers << QString()
+                            << "AES-XTS256-PLAIN64"
+                            << "AES-XTS128-PLAIN64";
+        m_pComboCipher->addItems(m_encryptionCiphers);
+        connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
+                this, SLOT(sltMarkEncryptionCipherChanged()));
+        connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
+                this, SLOT(revalidate()));
+    }
+    /* Encryption Password editor was created in the .ui file: */
+    AssertPtrReturnVoid(m_pEditorEncryptionPassword);
+    {
+        /* Configure Encryption Password editor: */
+        m_pEditorEncryptionPassword->setAlignment(Qt::AlignCenter);
+        m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
+        connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
+                this, SLOT(sltMarkEncryptionPasswordChanged()));
+        connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
+                this, SLOT(revalidate()));
+    }
+    /* Encryption Password Confirmation editor was created in the .ui file: */
+    AssertPtrReturnVoid(m_pEditorEncryptionPasswordConfirm);
+    {
+        /* Configure Encryption Password Confirmation editor: */
+        m_pEditorEncryptionPasswordConfirm->setAlignment(Qt::AlignCenter);
+        m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
+        connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
+                this, SLOT(sltMarkEncryptionPasswordChanged()));
+        connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
+                this, SLOT(revalidate()));
+    }
+}
+
 void UIMachineSettingsGeneral::polishPage()
 {
     /* 'Basic' tab: */
@@ -370,5 +609,11 @@ void UIMachineSettingsGeneral::polishPage()
     /* 'Description' tab: */
     AssertPtrReturnVoid(mTeDescription);
     mTeDescription->setEnabled(isMachineInValidMode());
+
+    /* 'Encryption' tab: */
+    AssertPtrReturnVoid(m_pCheckBoxEncryption);
+    AssertPtrReturnVoid(m_pWidgetEncryption);
+    m_pCheckBoxEncryption->setEnabled(isMachineOffline());
+    m_pWidgetEncryption->setEnabled(isMachineOffline() && m_pCheckBoxEncryption->isChecked());
 }
 
