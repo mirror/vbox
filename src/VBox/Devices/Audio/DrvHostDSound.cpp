@@ -1567,10 +1567,10 @@ static LPCGUID dsoundConfigQueryGUID(PCFGMNODE pCfg, const char *pszName, RTUUID
 
 static void dSoundConfigInit(PDRVHOSTDSOUND pThis, PCFGMNODE pCfg)
 {
-    uint32_t    uBufsizeOut, uBufsizeIn;
+    unsigned int uBufsizeOut, uBufsizeIn;
 
-    CFGMR3QueryUIntDef(pCfg, "BufsizeOut",       &uBufsizeOut,      _16K);
-    CFGMR3QueryUIntDef(pCfg, "BufsizeIn",        &uBufsizeIn,       _16K);
+    CFGMR3QueryUIntDef(pCfg, "BufsizeOut", &uBufsizeOut, _16K);
+    CFGMR3QueryUIntDef(pCfg, "BufsizeIn",  &uBufsizeIn,  _16K);
     pThis->cfg.cbBufferOut = uBufsizeOut;
     pThis->cfg.cbBufferIn  = uBufsizeIn;
 
