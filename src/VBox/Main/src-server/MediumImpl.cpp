@@ -7123,6 +7123,8 @@ DECLCALLBACK(int) Medium::i_vdTcpGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr)
 DECLCALLBACK(bool) Medium::i_vdCryptoConfigAreKeysValid(void *pvUser, const char *pszzValid)
 {
     /* Just return always true here. */
+    NOREF(pvUser);
+    NOREF(pszzValid);
     return true;
 }
 
@@ -7189,6 +7191,9 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
                                               const uint8_t **ppbKey, size_t *pcbKey)
 {
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    NOREF(pszId);
+    NOREF(ppbKey);
+    NOREF(pcbKey);
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
 }
@@ -7196,6 +7201,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyRetain(void *pvUser, const char *pszId,
 DECLCALLBACK(int) Medium::i_vdCryptoKeyRelease(void *pvUser, const char *pszId)
 {
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
+    NOREF(pszId);
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
     AssertMsgFailedReturn(("This method should not be called here!\n"), VERR_INVALID_STATE);
 }
@@ -7205,6 +7211,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRetain(void *pvUser, const c
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
 
+    NOREF(pszId);
     *ppszPassword = pSettings->pszPassword;
     return VINF_SUCCESS;
 }
@@ -7213,6 +7220,7 @@ DECLCALLBACK(int) Medium::i_vdCryptoKeyStorePasswordRelease(void *pvUser, const 
 {
     Medium::CryptoFilterSettings *pSettings = (Medium::CryptoFilterSettings *)pvUser;
     AssertPtrReturn(pSettings, VERR_GENERAL_FAILURE);
+    NOREF(pszId);
     return VINF_SUCCESS;
 }
 
@@ -9170,10 +9178,6 @@ HRESULT Medium::i_taskEncryptHandler(Medium::EncryptTask &task)
         Medium::CryptoFilterSettings CryptoSettingsRead;
         Medium::CryptoFilterSettings CryptoSettingsWrite;
 
-        uint8_t *pbDek = NULL;
-        size_t cbDek = 0;
-        char *pszCipherOld = NULL;
-        char *pszKeyStoreEncNew = NULL;
         void *pvBuf = NULL;
         const char *pszPasswordNew = NULL;
         try
