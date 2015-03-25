@@ -130,6 +130,11 @@ class UISettingsSerializerProgress : public QIWithRetranslateUI<QProgressDialog>
 {
     Q_OBJECT;
 
+signals:
+
+    /** Asks itself for process start. */
+    void sigAskForProcessStart();
+
 public:
 
     /** Constructor.
@@ -155,6 +160,9 @@ protected:
     void retranslateUi();
 
 private slots:
+
+    /** Starts the process. */
+    void sltStartProcess();
 
     /** Advances the current progress value. */
     void sltAdvanceProgressValue() { setValue(value() + 1); }

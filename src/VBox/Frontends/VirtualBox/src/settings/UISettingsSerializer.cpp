@@ -184,8 +184,8 @@ UISettingsSerializerProgress::UISettingsSerializerProgress(QWidget *pParent, UIS
 
 int UISettingsSerializerProgress::exec()
 {
-    /* Start the serializer: */
-    m_pSerializer->start();
+    /* Ask for process start: */
+    emit sigAskForProcessStart();
 
     /* Call to base-class: */
     return QIWithRetranslateUI<QProgressDialog>::exec();
@@ -201,7 +201,10 @@ void UISettingsSerializerProgress::prepare()
 {
     /* Configure self: */
     setWindowModality(Qt::WindowModal);
+    setMinimumDuration(0);
     setCancelButton(0);
+    connect(this, SIGNAL(sigAskForProcessStart()),
+            this, SLOT(sltStartProcess()), Qt::QueuedConnection);
 
     /* Create serializer: */
     m_pSerializer = new UISettingsSerializer(this, m_direction, m_data, m_pages);
@@ -228,5 +231,11 @@ void UISettingsSerializerProgress::retranslateUi()
         case UISettingsSerializer::Load: setLabelText(tr("Loading Settings...")); break;
         case UISettingsSerializer::Save: setLabelText(tr("Saving Settings...")); break;
     }
+}
+
+void UISettingsSerializerProgress::sltStartProcess()
+{
+    /* Start the serializer: */
+    m_pSerializer->start();
 }
 
