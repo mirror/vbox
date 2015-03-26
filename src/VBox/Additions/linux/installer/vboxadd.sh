@@ -286,7 +286,7 @@ do_vboxguest_non_udev()
 start()
 {
     begin "Starting the VirtualBox Guest Additions ";
-    uname -r | grep -q -E '^2\.6|^3' 2>/dev/null &&
+    uname -r | grep -q -E '^2\.6|^3|^4' 2>/dev/null &&
         ps -A -o comm | grep -q '/*udevd$' 2>/dev/null ||
         no_udev=1
     running_vboxguest || {
