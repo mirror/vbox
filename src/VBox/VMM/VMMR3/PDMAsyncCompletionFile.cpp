@@ -1049,7 +1049,6 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 {
                     /* Simple mode. Every file has its own async I/O manager. */
                     rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, PDMACEPFILEMGRTYPE_SIMPLE);
-                    AssertRC(rc);
                 }
                 else
                 {
@@ -1064,25 +1063,25 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                     }
 
                     if (!pAioMgr)
-                    {
                         rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, enmMgrType);
-                        AssertRC(rc);
-                    }
                 }
 
-                pEpFile->AioMgr.pTreeRangesLocked = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
-                if (!pEpFile->AioMgr.pTreeRangesLocked)
-                    rc = VERR_NO_MEMORY;
-                else
+                if (RT_SUCCESS(rc))
                 {
-                    pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
-
-                    /* Assign the endpoint to the thread. */
-                    rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
-                    if (RT_FAILURE(rc))
+                    pEpFile->AioMgr.pTreeRangesLocked = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
+                    if (!pEpFile->AioMgr.pTreeRangesLocked)
+                        rc = VERR_NO_MEMORY;
+                    else
                     {
-                        RTMemFree(pEpFile->AioMgr.pTreeRangesLocked);
-                        MMR3HeapFree(pEpFile->pTasksFreeHead);
+                        pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
+
+                        /* Assign the endpoint to the thread. */
+                        rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
+                        if (RT_FAILURE(rc))
+                        {
+                            RTMemFree(pEpFile->AioMgr.pTreeRangesLocked);
+                            MMR3HeapFree(pEpFile->pTasksFreeHead);
+                        }
                     }
                 }
             }
