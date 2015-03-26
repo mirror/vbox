@@ -395,7 +395,7 @@ HRESULT BandwidthControl::createBandwidthGroup(const com::Utf8Str &aName,
                         tr("Bandwidth group limit cannot be negative"));
 
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    AutoMutableOrSavedStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -424,7 +424,7 @@ HRESULT BandwidthControl::createBandwidthGroup(const com::Utf8Str &aName,
 HRESULT BandwidthControl::deleteBandwidthGroup(const com::Utf8Str &aName)
 {
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    AutoMutableOrSavedStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

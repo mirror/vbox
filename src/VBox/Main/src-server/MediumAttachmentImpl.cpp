@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,6 @@
 #include "MediumImpl.h"
 #include "Global.h"
 
-#include "AutoStateDep.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 

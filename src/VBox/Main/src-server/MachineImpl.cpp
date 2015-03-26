@@ -1064,7 +1064,7 @@ HRESULT Machine::setGroups(const std::vector<com::Utf8Str> &aGroups)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    rc = i_checkStateDependency(MutableStateDep);
+    rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -1603,7 +1603,7 @@ HRESULT Machine::setEmulatedUSBCardReaderEnabled(BOOL aEmulatedUSBCardReaderEnab
 #ifdef VBOX_WITH_USB_CARDREADER
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -2926,7 +2926,7 @@ HRESULT Machine::setTeleporterPort(ULONG aTeleporterPort)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -2949,7 +2949,7 @@ HRESULT Machine::setTeleporterAddress(const com::Utf8Str &aTeleporterAddress)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -2985,7 +2985,7 @@ HRESULT Machine::setTeleporterPassword(const com::Utf8Str &aTeleporterPassword)
      * Do the update.
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HRESULT hrc = i_checkStateDependency(MutableStateDep);
+    HRESULT hrc = i_checkStateDependency(MutableOrSavedStateDep);
     if (SUCCEEDED(hrc))
     {
         i_setModified(IsModified_MachineData);
@@ -3031,7 +3031,7 @@ HRESULT Machine::setFaultToleranceAddress(const com::Utf8Str &aFaultToleranceAdd
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo deal with running state change. */
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -3053,7 +3053,7 @@ HRESULT Machine::setFaultTolerancePort(ULONG aFaultTolerancePort)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo deal with running state change. */
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -3076,7 +3076,7 @@ HRESULT Machine::setFaultTolerancePassword(const com::Utf8Str &aFaultTolerancePa
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo deal with running state change. */
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -3099,7 +3099,7 @@ HRESULT Machine::setFaultToleranceSyncInterval(ULONG aFaultToleranceSyncInterval
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* @todo deal with running state change. */
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     i_setModified(IsModified_MachineData);
@@ -4605,10 +4605,8 @@ HRESULT Machine::setBandwidthGroupForDevice(const com::Utf8Str &aName, LONG aCon
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
-
-    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
 
     if (Global::IsOnlineOrTransient(mData->mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
@@ -5077,6 +5075,7 @@ HRESULT Machine::unregister(CleanupMode_T aCleanupMode,
 
     HRESULT rc = S_OK;
 
+    /// @todo r=klaus this is stupid... why is the saved state always deleted?
     // discard saved state
     if (mData->mMachineState == MachineState_Saved)
     {

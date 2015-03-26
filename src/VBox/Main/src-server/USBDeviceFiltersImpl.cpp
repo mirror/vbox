@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * Implementation of IUSBController.
+ * Implementation of IUSBDeviceFilters.
  */
 
 /*
- * Copyright (C) 2005-2014 Oracle Corporation
+ * Copyright (C) 2005-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -320,7 +320,7 @@ HRESULT USBDeviceFilters::createDeviceFilter(const com::Utf8Str &aName,
 #ifdef VBOX_WITH_USB
 
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -347,7 +347,7 @@ HRESULT USBDeviceFilters::insertDeviceFilter(ULONG aPosition,
 #ifdef VBOX_WITH_USB
 
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -407,7 +407,7 @@ HRESULT USBDeviceFilters::removeDeviceFilter(ULONG aPosition,
 {
 #ifdef VBOX_WITH_USB
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
+    AutoMutableOrSavedOrRunningStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

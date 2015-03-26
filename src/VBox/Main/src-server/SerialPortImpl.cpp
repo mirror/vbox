@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -227,7 +227,7 @@ HRESULT SerialPort::getHostMode(PortMode_T *aHostMode)
 HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
 {
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableOrSavedStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -394,7 +394,7 @@ HRESULT SerialPort::getPath(com::Utf8Str &aPath)
 HRESULT SerialPort::setPath(const com::Utf8Str &aPath)
 {
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableOrSavedStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -433,7 +433,7 @@ HRESULT SerialPort::getServer(BOOL *aServer)
 HRESULT SerialPort::setServer(BOOL aServer)
 {
     /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableOrSavedStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

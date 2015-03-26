@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -625,8 +625,6 @@ HRESULT NetworkAdapter::getNATNetwork(com::Utf8Str &aNATNetwork)
 
 HRESULT NetworkAdapter::setNATNetwork(const com::Utf8Str &aNATNetwork)
 {
-
-
     /* the machine needs to be mutable */
     AutoMutableOrSavedOrRunningStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
