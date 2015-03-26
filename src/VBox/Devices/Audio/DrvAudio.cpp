@@ -615,13 +615,18 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
 
-    PPDMAUDIOSTREAMCFG pThisCfg;
+    /*
+     * Try figuring out which audio stream configuration this backend
+     * should use. If fixed output is enabled the backend will be tied
+     * to a fixed rate in (Hz), regardless of what the backend could do else.
+     */
+    PPDMAUDIOSTREAMCFG pBackendCfg;
     if (conf.fixed_out.enabled)
-        pThisCfg = &conf.fixed_out.settings;
+        pBackendCfg = &conf.fixed_out.settings;
     else
-        pThisCfg = pCfg;
+        pBackendCfg = pCfg;
 
-    AssertPtrReturn(pThisCfg, VERR_INVALID_POINTER);
+    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
 
     LogFlowFunc(("Using fixed audio output settings: %RTbool\n",
                  RT_BOOL(conf.fixed_out.enabled)));
@@ -634,8 +639,11 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
         return VERR_NO_MEMORY;
     }
 
+    /*
+     * The host stream always will get the backend audio stream configuration.
+     */
     PPDMAUDIOHSTSTRMOUT pHstStrmOut;
-    int rc = drvAudioAddHstOut(pThis, pszName, pThisCfg, &pHstStrmOut);
+    int rc = drvAudioAddHstOut(pThis, pszName, pBackendCfg, &pHstStrmOut);
     if (RT_FAILURE(rc))
     {
         LogFlowFunc(("Error adding host output stream \"%s\", rc=%Rrc\n", pszName, rc));
@@ -644,7 +652,11 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
         return rc;
     }
 
-    rc = drvAudioGstOutInit(pGstStrmOut, pHstStrmOut, pszName, pThisCfg);
+    /*
+     * The guest stream always will get the the audio stream configuration told
+     * by the device emulation (which in turn was/could be set by the guest OS).
+     */
+    rc = drvAudioGstOutInit(pGstStrmOut, pHstStrmOut, pszName, pCfg);
     if (RT_SUCCESS(rc))
     {
         RTListPrepend(&pHstStrmOut->lstGstStrmOut, &pGstStrmOut->Node);
