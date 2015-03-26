@@ -1016,22 +1016,25 @@ RT_C_DECLS_END
 #define VERR_FILE_AIO_NOT_PREPARED          (-136)
 /** Not all requests could be submitted due to resource shortage. */
 #define VERR_FILE_AIO_INSUFFICIENT_RESSOURCES (-137)
+/** There are not enough events available on the host to create the I/O context.
+ * This exact meaning is host platform dependent. */
+#define VERR_FILE_AIO_INSUFFICIENT_EVENTS   (-138)
 /** Device or resource is busy. */
-#define VERR_RESOURCE_BUSY                  (-138)
+#define VERR_RESOURCE_BUSY                  (-139)
 /** A file operation was attempted on a non-file object. */
-#define VERR_NOT_A_FILE                     (-139)
+#define VERR_NOT_A_FILE                     (-140)
 /** A non-file operation was attempted on a file object. */
-#define VERR_IS_A_FILE                      (-140)
+#define VERR_IS_A_FILE                      (-141)
 /** Unexpected filesystem object type. */
-#define VERR_UNEXPECTED_FS_OBJ_TYPE         (-141)
+#define VERR_UNEXPECTED_FS_OBJ_TYPE         (-142)
 /** A path does not start with a root specification. */
-#define VERR_PATH_DOES_NOT_START_WITH_ROOT  (-142)
+#define VERR_PATH_DOES_NOT_START_WITH_ROOT  (-143)
 /** A path is relative, expected an absolute path. */
-#define VERR_PATH_IS_RELATIVE               (-143)
+#define VERR_PATH_IS_RELATIVE               (-144)
 /** A path is not relative (start with root), expected an relative path. */
-#define VERR_PATH_IS_NOT_RELATIVE           (-144)
+#define VERR_PATH_IS_NOT_RELATIVE           (-145)
 /** Zero length path. */
-#define VERR_PATH_ZERO_LENGTH               (-145)
+#define VERR_PATH_ZERO_LENGTH               (-146)
 /** @} */
 
 

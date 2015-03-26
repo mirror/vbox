@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -589,24 +589,6 @@ static const char *pdmacFileBackendTypeToName(PDMACFILEEPBACKEND enmBackendType)
     return NULL;
 }
 
-/**
- * Get the size of the given file.
- * Works for block devices too.
- *
- * @returns VBox status code.
- * @param   hFile    The file handle.
- * @param   pcbSize  Where to store the size of the file on success.
- */
-static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
-{
-    uint64_t cbFile;
-    int rc = RTFileGetSize(hFile, &cbFile);
-    if (RT_SUCCESS(rc))
-        *pcbSize = cbFile;
-
-    return rc;
-}
-
 #ifdef VBOX_WITH_DEBUGGER
 
 /**
@@ -963,7 +945,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         {
             uint64_t cbSize;
 
-            rc = pdmacFileEpNativeGetSize(hFile, &cbSize);
+            rc = RTFileGetSize(hFile, &cbSize);
 
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
                 fFileFlags |= RTFILE_O_NO_CACHE;
@@ -1021,7 +1003,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     {
         pEpFile->fFlags = fFileFlags;
 
-        rc = pdmacFileEpNativeGetSize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
+        rc = RTFileGetSize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
         if (RT_SUCCESS(rc))
         {
             /* Initialize the segment cache */
@@ -1083,6 +1065,26 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                             MMR3HeapFree(pEpFile->pTasksFreeHead);
                         }
                     }
+                }
+                else if (rc == VERR_FILE_AIO_INSUFFICIENT_EVENTS)
+                {
+                    PUVM pUVM = VMR3GetUVM(pEpClassFile->Core.pVM);
+#if defined(RT_OS_LINUX)
+                    rc = VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                      N_("Failed to create I/O manager for VM due to insufficient resources on the host. "
+                                         "Either increase the amount of allowed events in /proc/sys/fs/aio-max-nr or enable "
+                                         "the host I/O cache"));
+#else
+                    rc = VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                      N_("Failed to create I/O manager for VM due to insufficient resources on the host. "
+                                         "Enable the host I/O cache"));
+#endif
+                }
+                else
+                {
+                    PUVM pUVM = VMR3GetUVM(pEpClassFile->Core.pVM);
+                    rc = VMR3SetError(pUVM, rc, RT_SRC_POS,
+                                      N_("Failed to create I/O manager for VM due to an unknown error"));
                 }
             }
         }
