@@ -653,7 +653,7 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
     }
 
     /*
-     * The guest stream always will get the the audio stream configuration told
+     * The guest stream always will get the audio stream configuration told
      * by the device emulation (which in turn was/could be set by the guest OS).
      */
     rc = drvAudioGstOutInit(pGstStrmOut, pHstStrmOut, pszName, pCfg);
