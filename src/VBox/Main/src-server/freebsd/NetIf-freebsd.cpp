@@ -290,12 +290,14 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
             ComObjPtr<HostNetworkInterface> IfObj;
             IfObj.createObject();
             if (SUCCEEDED(IfObj->init(Bstr(pNew->szName), enmType, pNew)))
+            {
                 /* Make sure the default interface gets to the beginning. */
                 if (   fDefaultIfaceExistent
                     && pIfMsg->ifm_index == u16DefaultIface)
                     list.push_front(IfObj);
                 else
                     list.push_back(IfObj);
+            }
         }
         RTMemFree(pNew);
     }
