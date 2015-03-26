@@ -512,11 +512,7 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
                 AssertLogRelRCReturn(rc, rc);
 
                 rc = CFGMR3ReplaceSubTree(*ppNode, pBelowThisCopy);
-                if (RT_FAILURE(rc))
-                {
-                    CFGMR3RemoveNode(pBelowThis);
-                    AssertLogRelReturn(("rc=%Rrc\n", rc), rc);
-                }
+                AssertLogRelRCReturnStmt(rc, CFGMR3RemoveNode(pBelowThis), rc);
             }
         }
         /*
