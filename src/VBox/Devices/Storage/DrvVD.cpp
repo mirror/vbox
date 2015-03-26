@@ -3108,7 +3108,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint
         else
         {
            rc = PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
-                                    N_("Failed to open image '%s' in %s mode rc=%Rrc"), pszName,
+                                    N_("Failed to open image '%s' in %s mode"), pszName,
                                     (uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "read-only" : "read-write", rc);
            break;
         }
