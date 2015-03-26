@@ -41,6 +41,8 @@
  * THE SOFTWARE.
  */
 #include "DrvAudio.h"
+#include "AudioMixBuffer.h"
+
 #include "VBoxDD.h"
 #include "vl_vbox.h"
 
@@ -115,7 +117,7 @@ static DECLCALLBACK(int) drvHostNullAudioInitIn(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pcSamples)
-            *pcSamples = 256;
+            *pcSamples = _1K;
     }
 
     return VINF_SUCCESS;
@@ -132,7 +134,7 @@ static DECLCALLBACK(int) drvHostNullAudioInitOut(PPDMIHOSTAUDIO pInterface,
     if (RT_SUCCESS(rc))
     {
         if (pcSamples)
-            *pcSamples = 256;
+            *pcSamples = _1K;
     }
 
     return rc;
@@ -148,8 +150,12 @@ static DECLCALLBACK(bool) drvHostNullAudioIsEnabled(PPDMIHOSTAUDIO pInterface, P
 static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
                                                  uint32_t *pcSamplesPlayed)
 {
+    /* Always pretend consuming all samples available at this time. */
+    const uint32_t cSamplesPlayed = audioMixBufSize(&pHstStrmOut->MixBuf);
+    audioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesPlayed);
+
     if (pcSamplesPlayed)
-        *pcSamplesPlayed = UINT32_MAX;
+        *pcSamplesPlayed = cSamplesPlayed;
 
     return VINF_SUCCESS;
 }
@@ -157,6 +163,7 @@ static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 static DECLCALLBACK(int) drvHostNullAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn,
                                                    uint32_t *pcSamplesCaptured)
 {
+    /* Never capture anything. */
     if (pcSamplesCaptured)
         *pcSamplesCaptured = 0;
 
