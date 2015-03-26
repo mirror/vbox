@@ -14135,7 +14135,7 @@ HRESULT SessionMachine::i_lockMedia()
         if (FAILED(rc))
         {
             mrc = setError(rc,
-                           tr("Locking of attached media failed"));
+                           tr("Locking of attached media failed. A possible reason is that one of the media is attached to a running VM"));
         }
     }
 
