@@ -204,7 +204,7 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
     int fAcLine = 0;
     size_t cbParameter = sizeof(fAcLine);
 
-    int rc = sysctlbyname("hw.acpi.acline", &fAcLine, &cbParameter, NULL, NULL);
+    int rc = sysctlbyname("hw.acpi.acline", &fAcLine, &cbParameter, NULL, 0);
 
     if (!rc)
     {
@@ -463,7 +463,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
         int fBatteryState = 0;
         size_t cbParameter = sizeof(fBatteryState);
 
-        rc = sysctlbyname("hw.acpi.battery.state", &fBatteryState, &cbParameter, NULL, NULL);
+        rc = sysctlbyname("hw.acpi.battery.state", &fBatteryState, &cbParameter, NULL, 0);
         if (!rc)
         {
             if ((fBatteryState & ACPI_BATT_STAT_NOT_PRESENT) == ACPI_BATT_STAT_NOT_PRESENT)
@@ -485,7 +485,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
                 /* Get battery level. */
                 int curCapacity = 0;
                 cbParameter = sizeof(curCapacity);
-                rc = sysctlbyname("hw.acpi.battery.life", &curCapacity, &cbParameter, NULL, NULL);
+                rc = sysctlbyname("hw.acpi.battery.life", &curCapacity, &cbParameter, NULL, 0);
                 if (!rc && curCapacity >= 0)
                     *penmRemainingCapacity = (PDMACPIBATCAPACITY)curCapacity;
 
