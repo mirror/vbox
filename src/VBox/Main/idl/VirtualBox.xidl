@@ -7553,7 +7553,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="a0059bfc-04e8-4ff0-93d9-2e4d5257d9ee"
+    uuid="080505f4-bca9-45aa-ab95-030036b665e6"
     wsmap="managed"
     >
     <desc>
@@ -8399,6 +8399,32 @@
         <desc>
           Flag whether to clear the password on VM suspend (due to a suspending host
           for example). The password must be supplied again before the VM can resume.
+        </desc>
+      </param>
+    </method>
+
+    <method name="addDiskEncryptionPasswords">
+      <desc>
+        Adds a password used for hard disk encryption/decryption.
+
+        <result name="VBOX_E_PASSWORD_INCORRECT">
+          The password provided wasn't correct for at least one disk using the provided
+          ID.
+        </result>
+      </desc>
+      <param name="ids" type="wstring" dir="in" safearray="yes">
+        <desc>
+          List of identifiers for the passwords. Must match the identifier
+          used when the encrypted medium was created.
+        </desc>
+      </param>
+      <param name="passwords" type="wstring" dir="in" safearray="yes">
+        <desc>List of passwords.</desc>
+      </param>
+      <param name="clearOnSuspend" type="boolean" dir="in">
+        <desc>
+          Flag whether to clear the given passwords on VM suspend (due to a suspending host
+          for example). The passwords must be supplied again before the VM can resume.
         </desc>
       </param>
     </method>

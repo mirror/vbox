@@ -352,6 +352,8 @@ private:
                      ComPtr<IProgress> &aProgress);
     HRESULT addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
                                       BOOL aClearOnSuspend);
+    HRESULT addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
+                                      BOOL aClearOnSuspend);
     HRESULT removeDiskEncryptionPassword(const com::Utf8Str &aId);
     HRESULT clearAllDiskEncryptionPasswords();
 

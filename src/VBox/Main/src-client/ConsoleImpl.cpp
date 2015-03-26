@@ -3415,6 +3415,83 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
     return hrc;
 }
 
+HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aIds, const std::vector<com::Utf8Str> &aPasswords,
+                                            BOOL aClearOnSuspend)
+{
+    HRESULT hrc = S_OK;
+
+    if (   !aIds.size()
+        || !aPasswords.size())
+        return setError(E_FAIL, tr("IDs and passwords must not be empty"));
+
+    if (aIds.size() != aPasswords.size())
+        return setError(E_FAIL, tr("The number of entries in the id and password arguments must match"));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Check that the IDs do not exist already before changing anything. */
+    for (unsigned i = 0; i < aIds.size(); i++)
+    {
+        SecretKeyMap::const_iterator it = m_mapSecretKeys.find(aIds[i]);
+        if (it != m_mapSecretKeys.end())
+            return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
+    }
+
+    for (unsigned i = 0; i < aIds.size(); i++)
+    {
+        size_t cbKey = aPasswords[i].length() + 1; /* Include terminator */
+        uint8_t *pbKey = NULL;
+        int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
+        if (RT_SUCCESS(rc))
+        {
+            memcpy(pbKey, aPasswords[i].c_str(), cbKey);
+
+            /* Scramble content to make retrieving the key more difficult. */
+            rc = RTMemSaferScramble(pbKey, cbKey);
+            AssertRC(rc);
+            SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
+            /* Add the key to the map */
+            m_mapSecretKeys.insert(std::make_pair(aIds[i], pKey));
+            hrc = i_configureEncryptionForDisk(aIds[i]);
+            if (FAILED(hrc))
+                m_mapSecretKeys.erase(aIds[i]);
+        }
+        else
+            hrc = setError(E_FAIL, tr("Failed to allocate secure memory for the password (%Rrc)"), rc);
+
+        if (FAILED(hrc))
+        {
+            /*
+             * Try to remove already successfully added passwords from the map to not
+             * change the state of the Console object.
+             */
+            for (unsigned ii = 0; ii < i; ii++)
+                removeDiskEncryptionPassword(aIds[ii]);
+
+            break;
+        }
+    }
+
+    if (   SUCCEEDED(hrc)
+        && m_mapSecretKeys.size() == m_cDisksEncrypted
+        && mMachineState == MachineState_Paused)
+    {
+        /* get the VM handle. */
+        SafeVMPtr ptrVM(this);
+        if (!ptrVM.isOk())
+            return ptrVM.rc();
+
+        alock.release();
+        int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
+
+        hrc = RT_SUCCESS(vrc) ? S_OK :
+                setError(VBOX_E_VM_ERROR,
+                         tr("Could not resume the machine execution (%Rrc)"), vrc);
+    }
+
+    return hrc;
+}
+
 HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
 {
     if (aId.isEmpty())
