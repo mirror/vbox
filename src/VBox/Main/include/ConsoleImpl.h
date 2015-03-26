@@ -594,7 +594,8 @@ public:
                : m_cRefs(0),
                  m_pbKey(pbKey),
                  m_cbKey(cbKey),
-                 m_fRemoveOnSuspend(fRemoveOnSuspend)
+                 m_fRemoveOnSuspend(fRemoveOnSuspend),
+                 m_cDisks(0)
             { }
 
             ~SecretKey()
@@ -604,16 +605,19 @@ public:
                 m_pbKey = NULL;
                 m_cbKey = 0;
                 m_fRemoveOnSuspend = false;
+                m_cDisks = 0;
             }
 
             /** Reference counter of the key. */
             volatile uint32_t m_cRefs;
             /** Key material. */
-            uint8_t *m_pbKey;
+            uint8_t          *m_pbKey;
             /** Size of the key in bytes. */
-            size_t   m_cbKey;
+            size_t            m_cbKey;
             /** Flag whether to remove the key on suspend. */
-            bool     m_fRemoveOnSuspend;
+            bool              m_fRemoveOnSuspend;
+            /** Number of disks using this key. */
+            uint32_t          m_cDisks;
     };
 
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
@@ -863,7 +867,7 @@ private:
     /** @name Disk encryption support
      * @{ */
     HRESULT i_consoleParseDiskEncryption(const char *psz, const char **ppszEnd);
-    HRESULT i_configureEncryptionForDisk(const Utf8Str &strId);
+    HRESULT i_configureEncryptionForDisk(const Utf8Str &strId, unsigned *pcDisksConfigured);
     HRESULT i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8Str &strId);
     HRESULT i_initSecretKeyIfOnAllAttachments(void);
     int i_consoleParseKeyValue(const char *psz, const char **ppszEnd,
@@ -996,6 +1000,8 @@ private:
     SecretKeyMap         m_mapSecretKeys;
     /** Number of disks configured for encryption. */
     unsigned             m_cDisksEncrypted;
+    /** Number of disks which have the key in the map. */
+    unsigned             m_cDisksPwProvided;
 
     /** Pointer to the key consumer -> provider (that's us) callbacks. */
     struct MYPDMISECKEY : public PDMISECKEY

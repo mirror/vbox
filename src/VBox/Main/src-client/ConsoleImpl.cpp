@@ -3378,6 +3378,7 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
     int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
     if (RT_SUCCESS(rc))
     {
+        unsigned cDisksConfigured = 0;
         memcpy(pbKey, aPassword.c_str(), cbKey);
 
         /* Scramble content to make retrieving the key more difficult. */
@@ -3386,10 +3387,13 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
         SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
         /* Add the key to the map */
         m_mapSecretKeys.insert(std::make_pair(aId, pKey));
-        hrc = i_configureEncryptionForDisk(aId);
+        hrc = i_configureEncryptionForDisk(aId, &cDisksConfigured);
         if (SUCCEEDED(hrc))
         {
-            if (   m_mapSecretKeys.size() == m_cDisksEncrypted
+            pKey->m_cDisks = cDisksConfigured;
+            m_cDisksPwProvided += cDisksConfigured;
+
+            if (   m_cDisksPwProvided == m_cDisksEncrypted
                 && mMachineState == MachineState_Paused)
             {
                 /* get the VM handle. */
@@ -3444,6 +3448,7 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
         int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
         if (RT_SUCCESS(rc))
         {
+            unsigned cDisksConfigured = 0;
             memcpy(pbKey, aPasswords[i].c_str(), cbKey);
 
             /* Scramble content to make retrieving the key more difficult. */
@@ -3452,9 +3457,11 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
             SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
             /* Add the key to the map */
             m_mapSecretKeys.insert(std::make_pair(aIds[i], pKey));
-            hrc = i_configureEncryptionForDisk(aIds[i]);
+            hrc = i_configureEncryptionForDisk(aIds[i], &cDisksConfigured);
             if (FAILED(hrc))
                 m_mapSecretKeys.erase(aIds[i]);
+            else
+                pKey->m_cDisks = cDisksConfigured;
         }
         else
             hrc = setError(E_FAIL, tr("Failed to allocate secure memory for the password (%Rrc)"), rc);
@@ -3466,14 +3473,17 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
              * change the state of the Console object.
              */
             for (unsigned ii = 0; ii < i; ii++)
+            {
+                i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(aIds[ii]);
                 removeDiskEncryptionPassword(aIds[ii]);
+            }
 
             break;
         }
     }
 
     if (   SUCCEEDED(hrc)
-        && m_mapSecretKeys.size() == m_cDisksEncrypted
+        && m_cDisksPwProvided == m_cDisksEncrypted
         && mMachineState == MachineState_Paused)
     {
         /* get the VM handle. */
@@ -3507,6 +3517,7 @@ HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
     if (pKey->m_cRefs)
         return setError(VBOX_E_OBJECT_IN_USE, tr("The password is still in use by the VM"));
 
+    m_cDisksPwProvided -= pKey->m_cDisks;
     m_mapSecretKeys.erase(it);
     delete pKey;
 
@@ -3533,6 +3544,7 @@ HRESULT Console::clearAllDiskEncryptionPasswords()
         it++)
         delete it->second;
     m_mapSecretKeys.clear();
+    m_cDisksPwProvided = 0;
 
     return S_OK;
 }
@@ -4849,10 +4861,12 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8St
  * with the configured key.
  *
  * @returns COM status code.
- * @param   strId    The ID of the password.
+ * @param   strId                The ID of the password.
+ * @param   pcDisksConfigured    Where to store the number of disks configured for the given ID.
  */
-HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId)
+HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId, unsigned *pcDisksConfigured)
 {
+    unsigned cDisksConfigured = 0;
     HRESULT hrc = S_OK;
     SafeIfaceArray<IMediumAttachment> sfaAttachments;
 
@@ -4958,16 +4972,34 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId)
                     {
                         rc = pIMedium->pfnSetSecKeyIf(pIMedium, mpIfSecKey, mpIfSecKeyHlp);
                         if (rc == VERR_VD_PASSWORD_INCORRECT)
-                            return setError(VBOX_E_PASSWORD_INCORRECT, tr("The provided password for ID \"%s\" is not correct for at least one disk using this ID"),
-                                            strId.c_str());
+                        {
+                            hrc = setError(VBOX_E_PASSWORD_INCORRECT, tr("The provided password for ID \"%s\" is not correct for at least one disk using this ID"),
+                                           strId.c_str());
+                            break;
+                        }
                         else if (RT_FAILURE(rc))
-                            return setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
+                        {
+                            hrc = setError(E_FAIL, tr("Failed to set the encryption key (%Rrc)"), rc);
+                            break;
+                        }
+
+                        if (RT_SUCCESS(rc))
+                           cDisksConfigured++;
                     }
                 }
                 else
                     return setError(E_FAIL, tr("could not query base interface of controller"));
             }
         }
+    }
+
+    if (   SUCCEEDED(hrc)
+        && pcDisksConfigured)
+        *pcDisksConfigured = cDisksConfigured;
+    else if (FAILED(hrc))
+    {
+        /* Clear disk encryption setup on successfully configured attachments. */
+        i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(strId);
     }
 
     return hrc;
@@ -5044,7 +5076,7 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
                     SecretKey *pKey = new SecretKey(pbKey, cbKey, true /* fRemoveOnSuspend */);
                     /* Add the key to the map */
                     m_mapSecretKeys.insert(std::make_pair(Utf8Str(pszUuid), pKey));
-                    hrc = i_configureEncryptionForDisk(Utf8Str(pszUuid));
+                    hrc = i_configureEncryptionForDisk(Utf8Str(pszUuid), NULL);
                     if (FAILED(hrc))
                     {
                         /* Delete the key from the map. */
@@ -5111,6 +5143,7 @@ void Console::i_removeSecretKeysOnSuspend()
             i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(it->first);
 
             AssertMsg(!pKey->m_cRefs, ("No one should access the stored key at this point anymore!\n"));
+            m_cDisksPwProvided -= pKey->m_cDisks;
             delete pKey;
             m_mapSecretKeys.erase(it++);
         }
@@ -6506,7 +6539,10 @@ HRESULT Console::i_pause(Reason_T aReason)
         hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
     else if (   aReason == Reason_HostSuspend
              || aReason == Reason_HostBatteryLow)
+    {
+        alock.acquire();
         i_removeSecretKeysOnSuspend();
+    }
 
     LogFlowThisFunc(("hrc=%Rhrc\n", hrc));
     LogFlowThisFuncLeave();
