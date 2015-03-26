@@ -618,7 +618,8 @@ int drvAudioCreateStreamPairOut(PDRVAUDIO pThis, const char *pszName,
     /*
      * Try figuring out which audio stream configuration this backend
      * should use. If fixed output is enabled the backend will be tied
-     * to a fixed rate in (Hz), regardless of what the backend could do else.
+     * to a fixed rate (in Hz, among other parameters), regardless of
+     * what the backend could do else.
      */
     PPDMAUDIOSTREAMCFG pBackendCfg;
     if (conf.fixed_out.enabled)
@@ -678,23 +679,32 @@ static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMA
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
-    PPDMAUDIOSTREAMCFG pThisCfg;
+/*
+     * Try figuring out which audio stream configuration this backend
+     * should use for the audio input data. If fixed input is enabled
+     * the backend will be tied to a fixed rate (in Hz, among other parameters),
+     * regardless of what the backend initially wanted to use.
+     */
+    PPDMAUDIOSTREAMCFG pBackendCfg;
     if (conf.fixed_in.enabled)
-    {
-        pThisCfg = &conf.fixed_in.settings;
-        LogFlowFunc(("Using fixed audio settings\n"));
-    }
+        pBackendCfg = &conf.fixed_in.settings;
     else
-        pThisCfg = pCfg;
-    AssertPtrReturn(pThisCfg, VERR_INVALID_POINTER);
+        pBackendCfg = pCfg;
+
+    AssertPtrReturn(pBackendCfg, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Using fixed audio input settings: %RTbool\n",
+                 RT_BOOL(conf.fixed_in.enabled)));
 
     PPDMAUDIOGSTSTRMIN pGstStrmIn = (PPDMAUDIOGSTSTRMIN)RTMemAllocZ(sizeof(PDMAUDIOGSTSTRMIN));
     if (!pGstStrmIn)
         return VERR_NO_MEMORY;
 
-
+    /*
+     * The host stream always will get the backend audio stream configuration.
+     */
     PPDMAUDIOHSTSTRMIN pHstStrmIn;
-    int rc = drvAudioHstInAdd(pThis, pszName, pThisCfg, enmRecSource, &pHstStrmIn);
+    int rc = drvAudioHstInAdd(pThis, pszName, pBackendCfg, enmRecSource, &pHstStrmIn);
     if (RT_FAILURE(rc))
     {
         LogFunc(("Failed to add host audio input stream \"%s\", rc=%Rrc\n", pszName, rc));
@@ -703,7 +713,11 @@ static int drvAudioCreateStreamPairIn(PDRVAUDIO pThis, const char *pszName, PDMA
         return rc;
     }
 
-    rc = drvAudioGstInInit(pGstStrmIn, pHstStrmIn, pszName, pThisCfg);
+    /*
+     * The guest stream always will get the audio stream configuration told
+     * by the device emulation (which in turn was/could be set by the guest OS).
+     */
+    rc = drvAudioGstInInit(pGstStrmIn, pHstStrmIn, pszName, pCfg);
     if (RT_SUCCESS(rc))
     {
         pHstStrmIn->pGstStrmIn = pGstStrmIn;
@@ -743,7 +757,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
         if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
             return VERR_NO_MEMORY;
 
-        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pHstStrmIn->Props,
+        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pGstStrmIn->Props,
                              audioMixBufSize(&pHstStrmIn->MixBuf));
         if (RT_SUCCESS(rc))
             rc = audioMixBufLinkTo(&pHstStrmIn->MixBuf, &pGstStrmIn->MixBuf);
