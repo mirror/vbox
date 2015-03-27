@@ -1540,6 +1540,185 @@ static int supHardNtVpAddRegion(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PME
 }
 
 
+#ifdef IN_RING3
+/**
+ * Frees (or replaces) executable memory of allocation type private.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The process scanning state structure. Details
+ *                              about images are added to this.
+ * @param   hProcess            The process to verify.
+ * @param   pMemInfo            The information we've got on this private
+ *                              executable memory.
+ */
+static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess,
+                                                      MEMORY_BASIC_INFORMATION const *pMemInfo)
+{
+    NTSTATUS rcNt;
+
+    /*
+     * Try figure if the entire allocation size. Free/Alloc may fail otherwise.
+     */
+    PVOID   pvFree = pMemInfo->AllocationBase;
+    SIZE_T  cbFree = pMemInfo->RegionSize + ((uintptr_t)pMemInfo->BaseAddress - (uintptr_t)pMemInfo->AllocationBase);
+    for (;;)
+    {
+        SIZE_T                      cbActual = 0;
+        MEMORY_BASIC_INFORMATION    MemInfo2 = { 0, 0, 0, 0, 0, 0, 0 };
+        uintptr_t                   uPtrNext = (uintptr_t)pvFree + cbFree;
+        rcNt = g_pfnNtQueryVirtualMemory(hProcess,
+                                         (void const *)uPtrNext,
+                                         MemoryBasicInformation,
+                                         &MemInfo2,
+                                         sizeof(MemInfo2),
+                                         &cbActual);
+        if (!NT_SUCCESS(rcNt))
+            break;
+        if (pMemInfo->AllocationBase != MemInfo2.AllocationBase)
+            break;
+    }
+    SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: %s exec mem at %p (LB %#zx, %p LB %#zx)\n",
+                 pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW ? "Replacing" : "Freeing",
+                 pvFree, cbFree, pMemInfo->BaseAddress, pMemInfo->RegionSize));
+
+    /*
+     * In the BSOD workaround mode, we need to make a copy of the memory before
+     * freeing it.
+     */
+    uintptr_t   uCopySrc  = (uintptr_t)pvFree;
+    size_t      cbCopy    = 0;
+    void       *pvCopy    = NULL;
+    if (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW)
+    {
+        cbCopy = cbFree;
+        pvCopy = RTMemAllocZ(cbCopy);
+        if (!pvCopy)
+        {
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED, "RTMemAllocZ(%#zx) failed", cbCopy);
+            return;
+        }
+
+        rcNt = supHardNtVpReadMem(hProcess, uCopySrc, pvCopy, cbCopy);
+        if (!NT_SUCCESS(rcNt))
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
+                                "Error reading data from original alloc: %#x (%p LB %#zx)", rcNt, uCopySrc, cbCopy, rcNt);
+    }
+
+    /*
+     * Free the memory.
+     */
+    for (uint32_t i = 0; i < 10; i++)
+    {
+        PVOID  pvFreeInOut = pvFree;
+        SIZE_T cbFreeInOut = 0;
+        rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
+        if (!NT_SUCCESS(rcNt))
+        {
+            SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #1 failed: %#x [%p LB 0]\n", rcNt, pvFree));
+            pvFreeInOut = pvFree;
+            cbFreeInOut = cbFree;
+            rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
+            if (!NT_SUCCESS(rcNt))
+            {
+                SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #2 failed: %#x [%p LB %#zx]\n",
+                             rcNt, pvFree, cbFree));
+                pvFreeInOut = pMemInfo->BaseAddress;
+                cbFreeInOut = pMemInfo->RegionSize;
+                rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
+                if (NT_SUCCESS(rcNt))
+                {
+                    pvFree = pMemInfo->BaseAddress;
+                    cbFree = pMemInfo->RegionSize;
+                    SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #3 succeeded [%p LB %#zx]\n",
+                                 pvFree, cbFree));
+                }
+                else
+                    supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
+                                        "NtFreeVirtualMemory [%p LB %#zx and %p LB %#zx] failed: %#x",
+                                        pvFree, cbFree, pMemInfo->BaseAddress, pMemInfo->RegionSize, rcNt);
+            }
+        }
+
+        /*
+         * Query the region again, redo the free operation if there's still memory there.
+         */
+        if (!NT_SUCCESS(rcNt) || (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
+            break;
+        SIZE_T                      cbActual = 0;
+        MEMORY_BASIC_INFORMATION    MemInfo3 = { 0, 0, 0, 0, 0, 0, 0 };
+        NTSTATUS rcNt2 = g_pfnNtQueryVirtualMemory(hProcess, pvFree, MemoryBasicInformation,
+                                                   &MemInfo3, sizeof(MemInfo3), &cbActual);
+        if (!NT_SUCCESS(rcNt2))
+            break;
+        SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: QVM after free %u: [%p]/%p LB %#zx s=%#x ap=%#x rp=%#p\n",
+                     i, MemInfo3.AllocationBase, MemInfo3.BaseAddress, MemInfo3.RegionSize, MemInfo3.State,
+                     MemInfo3.AllocationProtect, MemInfo3.Protect));
+        if (pMemInfo->State == MEM_FREE)
+            break;
+        SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Retrying free...\n"));
+    }
+
+    /*
+     * Restore memory as non-executable - Kludge for Trend Micro sakfile.sys
+     * and Digital Guardian dgmaster.sys BSODs.
+     */
+    if (NT_SUCCESS(rcNt) && (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
+    {
+        PVOID  pvAlloc = pvFree;
+        SIZE_T cbAlloc = cbFree;
+        rcNt = NtAllocateVirtualMemory(hProcess, &pvAlloc, 0, &cbAlloc, MEM_COMMIT, PAGE_READWRITE);
+        if (!NT_SUCCESS(rcNt))
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
+                                "NtAllocateVirtualMemory (%p LB %#zx) failed with rcNt=%#x allocating "
+                                "replacement memory for working around buggy protection software. "
+                                "See VBoxStartup.log for more details",
+                                pvAlloc, cbFree, rcNt);
+        else if (   (uintptr_t)pvFree < (uintptr_t)pvAlloc
+                 || (uintptr_t)pvFree + cbFree > (uintptr_t)pvAlloc + cbFree)
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
+                                "We wanted NtAllocateVirtualMemory to get us %p LB %#zx, but it returned %p LB %#zx.",
+                                pMemInfo->BaseAddress, pMemInfo->RegionSize, pvFree, cbFree, rcNt);
+        else
+        {
+            /*
+             * Copy what we can, considering the 2nd free attempt.
+             */
+            uint8_t *pbDst = (uint8_t *)pvFree;
+            size_t   cbDst = cbFree;
+            uint8_t *pbSrc = (uint8_t *)pvCopy;
+            size_t   cbSrc = cbCopy;
+            if ((uintptr_t)pbDst != uCopySrc)
+            {
+                if ((uintptr_t)pbDst > uCopySrc)
+                {
+                    uintptr_t cbAdj = (uintptr_t)pbDst - uCopySrc;
+                    pbSrc += cbAdj;
+                    cbSrc -= cbSrc;
+                }
+                else
+                {
+                    uintptr_t cbAdj = uCopySrc - (uintptr_t)pbDst;
+                    pbDst += cbAdj;
+                    cbDst -= cbAdj;
+                }
+            }
+            if (cbSrc > cbDst)
+                cbSrc = cbDst;
+
+            SIZE_T cbWritten;
+            rcNt = NtWriteVirtualMemory(hProcess, pbDst, pbSrc, cbSrc, &cbWritten);
+            if (!NT_SUCCESS(rcNt))
+                supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
+                                    "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
+                                    pMemInfo->BaseAddress, pMemInfo->RegionSize, rcNt);
+        }
+    }
+    if (pvCopy)
+        RTMemFree(pvCopy);
+}
+#endif /* IN_RING3 */
+
+
 /**
  * Scans the virtual memory of the process.
  *
@@ -1603,7 +1782,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
             SUP_DPRINTF((MemInfo.AllocationBase == MemInfo.BaseAddress
                          ? " *%p-%p %#06x/%#06x %#09x  %ls\n"
                          : "  %p-%p %#06x/%#06x %#09x  %ls\n",
-                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress - MemInfo.RegionSize - 1, MemInfo.Protect,
+                         MemInfo.BaseAddress, (uintptr_t)MemInfo.BaseAddress + MemInfo.RegionSize - 1, MemInfo.Protect,
                          MemInfo.AllocationProtect, MemInfo.Type, pThis->aImages[iImg].Name.UniStr.Buffer));
 
             /* New or existing image? */
@@ -1677,75 +1856,7 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                  * Free any private executable memory (sysplant.sys allocates executable memory).
                  */
                 if (MemInfo.Type == MEM_PRIVATE)
-                {
-                    PVOID   pvFree = MemInfo.BaseAddress;
-                    SIZE_T  cbFree = MemInfo.RegionSize;
-                    if (!(pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
-                    {
-                        SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Freeing exec mem at %p (%p LB %#zx)\n",
-                                     uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize));
-
-                        rcNt = NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);
-                        if (!NT_SUCCESS(rcNt))
-                            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                                "NtFreeVirtualMemory (%p LB %#zx) failed: %#x",
-                                                MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-                    }
-                    else
-                    {
-                        /* The Trend Micro sakfile.sys and Digital Guardian dgmaster.sys BSOD kludge. */
-                        SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Replacing exec mem at %p (%p LB %#zx)\n",
-                                     uPtrWhere, MemInfo.BaseAddress, MemInfo.RegionSize));
-                        void *pvCopy = RTMemAllocZ(cbFree);
-                        if (pvCopy)
-                        {
-                            rcNt = supHardNtVpReadMem(pThis->hProcess, (uintptr_t)pvFree, pvCopy, cbFree);
-                            if (!NT_SUCCESS(rcNt))
-                                supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
-                                                    "Error reading data from original alloc: %#x (%p LB %#zx)",
-                                                    rcNt, MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-
-                            rcNt = NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);
-                            if (NT_SUCCESS(rcNt))
-                            {
-                                pvFree = MemInfo.BaseAddress; cbFree = MemInfo.RegionSize;              /* fudge */
-                                NtFreeVirtualMemory(pThis->hProcess, &pvFree, &cbFree, MEM_RELEASE);    /* fudge */
-
-                                pvFree = MemInfo.BaseAddress;
-                                cbFree = MemInfo.RegionSize;
-                                rcNt = NtAllocateVirtualMemory(pThis->hProcess, &pvFree, 0, &cbFree, MEM_COMMIT, PAGE_READWRITE);
-                                if (!NT_SUCCESS(rcNt))
-                                    supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
-                                                        "NtAllocateVirtualMemory (%p LB %#zx) failed with rcNt=%#x allocating "
-                                                        "replacement memory for working around buggy protection software. "
-                                                        "See VBoxStartup.log for more details",
-                                                        MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-                                else if (pvFree != MemInfo.BaseAddress)
-                                    supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
-                                                        "We wanted NtAllocateVirtualMemory to get us %p LB %#zx, but it returned %p LB %#zx.",
-                                                        MemInfo.BaseAddress, MemInfo.RegionSize, pvFree, cbFree, rcNt);
-                                else
-                                {
-                                    SIZE_T cbWritten;
-                                    rcNt = NtWriteVirtualMemory(pThis->hProcess, MemInfo.BaseAddress, pvCopy, MemInfo.RegionSize,
-                                                                &cbWritten);
-                                    if (!NT_SUCCESS(rcNt))
-                                        supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                                            "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
-                                                            MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-                                }
-                            }
-                            else
-                                supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                                    "NtFreeVirtualMemory (%p LB %#zx) failed: %#x",
-                                                    MemInfo.BaseAddress, MemInfo.RegionSize, rcNt);
-                            RTMemFree(pvCopy);
-                        }
-                        else
-                            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                                "RTMemAllocZ(%#zx) failed", MemInfo.RegionSize);
-                    }
-                }
+                    supHardNtVpFreeOrReplacePrivateExecMemory(pThis, hProcess, &MemInfo);
                 /*
                  * Unmap mapped memory, failing that, drop exec privileges.
                  */
@@ -1753,14 +1864,14 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                 {
                     SUP_DPRINTF(("supHardNtVpScanVirtualMemory: Unmapping exec mem at %p (%p/%p LB %#zx)\n",
                                  uPtrWhere, MemInfo.AllocationBase, MemInfo.BaseAddress, MemInfo.RegionSize));
-                    rcNt = NtUnmapViewOfSection(pThis->hProcess, MemInfo.AllocationBase);
+                    rcNt = NtUnmapViewOfSection(hProcess, MemInfo.AllocationBase);
                     if (!NT_SUCCESS(rcNt))
                     {
                         PVOID  pvCopy = MemInfo.BaseAddress;
                         SIZE_T cbCopy = MemInfo.RegionSize;
-                        NTSTATUS rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvCopy, &cbCopy, PAGE_NOACCESS, NULL);
+                        NTSTATUS rcNt2 = NtProtectVirtualMemory(hProcess, &pvCopy, &cbCopy, PAGE_NOACCESS, NULL);
                         if (!NT_SUCCESS(rcNt2))
-                            rcNt2 = NtProtectVirtualMemory(pThis->hProcess, &pvCopy, &cbCopy, PAGE_READONLY, NULL);
+                            rcNt2 = NtProtectVirtualMemory(hProcess, &pvCopy, &cbCopy, PAGE_READONLY, NULL);
                         if (!NT_SUCCESS(rcNt2))
                             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_UNMAP_AND_PROTECT_FAILED,
                                                 "NtUnmapViewOfSection (%p/%p LB %#zx) failed: %#x (%#x)",
