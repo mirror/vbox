@@ -651,7 +651,7 @@ HRESULT Appliance::interpret()
                         /*
                          * Remove last extension from the file name if the file is compressed
                         */
-                        if(di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
+                        if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
                         {
                             strTargetPath.stripSuffix();
                         }
@@ -692,7 +692,7 @@ HRESULT Appliance::interpret()
                         /*
                          * Remove last extension from the file name if the file is compressed
                         */
-                        if(di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
+                        if (di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
                         {
                             strTargetPath.stripSuffix();
                         }
@@ -3151,7 +3151,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
             uint32_t cImportedDisks = 0;
 
-            while(oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
+            while (oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
             {
                 ovf::DiskImage diCurrent = oit->second;
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
@@ -3223,7 +3223,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     if (SUCCEEDED(rc))
                     {
                         /* current opened file isn't the same as passed one */
-                        if(availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
+                        if (availableImage.compare(diCurrent.strHref, Utf8Str::CaseInsensitive) != 0)
                         {
                             /*
                              * availableImage contains the disk file reference (e.g. "disk1.vmdk"), which should exist

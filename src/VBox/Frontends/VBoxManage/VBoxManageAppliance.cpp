@@ -641,7 +641,7 @@ int handleImportAppliance(HandlerArg *arg)
 
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
-                                    if(!optionsList.contains(ImportOptions_ImportToVDI))
+                                    if (!optionsList.contains(ImportOptions_ImportToVDI))
                                     {
                                         RTUUID uuid;
                                         /* Check if this is a uuid. If so, don't touch. */
@@ -710,7 +710,7 @@ int handleImportAppliance(HandlerArg *arg)
                                      * we need to replace files extensions to "vdi"
                                      * except CD/DVD disks
                                      */
-                                    if(optionsList.contains(ImportOptions_ImportToVDI))
+                                    if (optionsList.contains(ImportOptions_ImportToVDI))
                                     {
                                         ComPtr<IVirtualBox> pVirtualBox = arg->virtualBox;
                                         ComPtr<ISystemProperties> systemProperties;
