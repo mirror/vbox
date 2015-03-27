@@ -3472,6 +3472,7 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
              * Try to remove already successfully added passwords from the map to not
              * change the state of the Console object.
              */
+            ErrorInfoKeeper eik; /* Keep current error info or it gets deestroyed in the IPC methods below. */
             for (unsigned ii = 0; ii < i; ii++)
             {
                 i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(aIds[ii]);
@@ -4752,9 +4753,6 @@ HRESULT Console::i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(const Utf8St
     HRESULT hrc = S_OK;
     SafeIfaceArray<IMediumAttachment> sfaAttachments;
 
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
     /* Get the VM - must be done before the read-locking. */
     SafeVMPtr ptrVM(this);
     if (!ptrVM.isOk())
@@ -4999,6 +4997,7 @@ HRESULT Console::i_configureEncryptionForDisk(const com::Utf8Str &strId, unsigne
     else if (FAILED(hrc))
     {
         /* Clear disk encryption setup on successfully configured attachments. */
+        ErrorInfoKeeper eik; /* Keep current error info or it gets deestroyed in the IPC methods below. */
         i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(strId);
     }
 
