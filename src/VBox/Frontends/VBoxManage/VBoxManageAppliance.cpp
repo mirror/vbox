@@ -698,7 +698,7 @@ int handleImportAppliance(HandlerArg *arg)
                                     strOverride = aVBoxValues[a];
 
                                     /*
-                                     * Current solution isn't optimal. 
+                                     * Current solution isn't optimal.
                                      * Better way is to provide API call for function
                                      * Appliance::i_findMediumFormatFromDiskImage()
                                      * and creating one new function which returns
@@ -726,13 +726,13 @@ int handleImportAppliance(HandlerArg *arg)
                                         /* go through all supported media formats and store files extensions only for RAW */
                                         com::SafeArray<BSTR> extensions;
 
-                                        for (unsigned i = 0; i < mediumFormats.size(); ++i)
+                                        for (unsigned j = 0; j < mediumFormats.size(); ++j)
                                         {
                                             com::SafeArray<DeviceType_T> deviceType;
-                                            ComPtr<IMediumFormat> mediumFormat = mediumFormats[i];
+                                            ComPtr<IMediumFormat> mediumFormat = mediumFormats[j];
                                             CHECK_ERROR(mediumFormat, COMGETTER(Name)(bstrFormatName.asOutParam()));
                                             Utf8Str strFormatName = Utf8Str(bstrFormatName);
-                                            
+
                                             if (strFormatName.compare("RAW", Utf8Str::CaseInsensitive) == 0)
                                             {
                                                 /* getting files extensions for "RAW" format */
@@ -746,24 +746,24 @@ int handleImportAppliance(HandlerArg *arg)
                                         /* go through files extensions for RAW format and compare them with
                                          * extension of current file
                                          */
-                                        bool b_replace = true;
+                                        bool fReplace = true;
 
                                         const char *pszExtension = RTPathSuffix(strOverride.c_str());
                                         if (pszExtension)
                                             pszExtension++;
 
-                                        for (unsigned i = 0; i < extensions.size(); ++i)
+                                        for (unsigned j = 0; j < extensions.size(); ++j)
                                         {
-                                            Bstr bstrExt(extensions[i]);
+                                            Bstr bstrExt(extensions[j]);
                                             Utf8Str strExtension(bstrExt);
                                             if(strExtension.compare(pszExtension, Utf8Str::CaseInsensitive) == 0)
                                             {
-                                                b_replace = false;
+                                                fReplace = false;
                                                 break;
                                             }
                                         }
 
-                                        if (b_replace==true)
+                                        if (fReplace)
                                         {
                                             strOverride = strOverride.stripSuffix();
                                             strOverride = strOverride.append(".").append("vdi");
