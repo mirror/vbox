@@ -1048,7 +1048,7 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, 
 
     uint32_t    addr           = pReg->bd.addr;
     uint32_t    cbWrittenTotal = 0;
-    uint32_t    cbToRead       = 0;
+    uint32_t    cbToRead;
 
     uint32_t cbToWrite = RT_MIN((uint32_t)(pReg->picb << 1), cbMax);
     if (!cbToWrite)
@@ -1078,6 +1078,7 @@ static int ichac97WriteAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, 
         {
             int rc2 = pDrv->pConnector->pfnWrite(pDrv->pConnector, pDrv->Out.pStrmOut,
                                                  pThis->pvReadWriteBuf, cbToRead, &cbWritten);
+            AssertRCBreak(rc);
             if (RT_FAILURE(rc2))
                 continue;
 
@@ -1284,8 +1285,6 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     PAC97DRIVER pDrv;
 
-    LogFlowFuncEnter();
-
     uint32_t cbIn, cbOut, cSamplesLive;
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
@@ -1303,10 +1302,13 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
                     LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
                                  pDrv->uLUN, cSamplesLive, cSamplesPlayed));
 
-                rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
-                                                      &cbIn, &cbOut, &cSamplesLive);
-                if (RT_SUCCESS(rc))
-                    LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+                if (cSamplesPlayed)
+                {
+                    rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
+                                                          &cbIn, &cbOut, &cSamplesLive);
+                    if (RT_SUCCESS(rc))
+                        LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+                }
             }
 
             cbInMax  = RT_MAX(cbInMax, cbIn);
@@ -1336,8 +1338,6 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
 
     TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
 
-    LogFlowFuncLeave();
-
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
@@ -1365,7 +1365,7 @@ static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
         return VINF_SUCCESS;
     }
 
-    int rc;
+    int rc = VINF_SUCCESS;
     uint32_t cbWrittenTotal = 0;
 
     while (cbElapsed >> 1)
@@ -1401,34 +1401,34 @@ static int ichac97TransferAudio(PAC97STATE pThis, int index, uint32_t cbElapsed)
         switch (index)
         {
             case PO_INDEX:
+            {
+                rc = ichac97WriteAudio(pThis, pReg, cbElapsed, &cbTransferred);
+                if (   RT_SUCCESS(rc)
+                    && cbTransferred)
                 {
-                    rc = ichac97WriteAudio(pThis, pReg, cbElapsed, &cbTransferred);
-                    if (RT_SUCCESS(rc)
-                        && cbTransferred)
-                    {
-                        cbWrittenTotal += cbTransferred;
-                        Assert(cbElapsed >= cbTransferred);
-                        cbElapsed      -= cbTransferred;
-                        Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
-                        pReg->picb     -= (cbTransferred >> 1);
-                    }
-                    break;
+                    cbWrittenTotal += cbTransferred;
+                    Assert(cbElapsed >= cbTransferred);
+                    cbElapsed      -= cbTransferred;
+                    Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
+                    pReg->picb     -= (cbTransferred >> 1);
                 }
+                break;
+            }
 
             case PI_INDEX:
             case MC_INDEX:
+            {
+                rc = ichac97ReadAudio(pThis, pReg, cbElapsed, &cbTransferred);
+                if (   RT_SUCCESS(rc)
+                    && cbTransferred)
                 {
-                    rc = ichac97ReadAudio(pThis, pReg, cbElapsed, &cbTransferred);
-                    if (RT_SUCCESS(rc)
-                        && cbTransferred)
-                    {
-                        Assert(cbElapsed >= cbTransferred);
-                        cbElapsed  -= cbTransferred;
-                        Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
-                        pReg->picb -= (cbTransferred >> 1);
-                    }
-                    break;
+                    Assert(cbElapsed >= cbTransferred);
+                    cbElapsed  -= cbTransferred;
+                    Assert((cbTransferred & 1) == 0);    /* Else the following shift won't work */
+                    pReg->picb -= (cbTransferred >> 1);
                 }
+                break;
+            }
 
             default:
                 AssertMsgFailed(("Index %ld not supported\n", index));
@@ -2521,7 +2521,7 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Register statistics.
          */
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/AC97/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaTimer.");
+        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/AC97/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling ichac97Timer.");
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "/Devices/AC97/BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from AC97 emulation.");
         PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "/Devices/AC97/BytesWritten",      STAMUNIT_BYTES,          "Bytes written to AC97 emulation.");
     }
