@@ -249,7 +249,8 @@ static int RTLDRELF_NAME(RelocateSectionExecDyn)(PRTLDRMODELF pModElf, Elf_Addr 
         }
         else
         {
-            AssertReturn(pSym->st_shndx < pModElf->cSyms || pSym->st_shndx == SHN_ABS, ("%#x\n", pSym->st_shndx));
+            AssertMsgReturn(pSym->st_shndx < pModElf->cSyms || pSym->st_shndx == SHN_ABS, ("%#x\n", pSym->st_shndx),
+                            VERR_LDRELF_INVALID_RELOCATION_OFFSET);
 #if   ELF_MODE == 64
             SymValue = pSym->st_value;
 #endif
