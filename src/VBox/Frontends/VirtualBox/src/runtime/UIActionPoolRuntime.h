@@ -45,7 +45,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_Machine_S_ShowInformation,
     UIActionIndexRT_M_Machine_T_Pause,
     UIActionIndexRT_M_Machine_S_Reset,
-    UIActionIndexRT_M_Machine_S_Save,
+    UIActionIndexRT_M_Machine_S_SaveState,
     UIActionIndexRT_M_Machine_S_Shutdown,
     UIActionIndexRT_M_Machine_S_PowerOff,
 #ifndef RT_OS_DARWIN
