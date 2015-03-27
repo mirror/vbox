@@ -427,7 +427,7 @@ RTDECL(int) RTManifestEntryAddPassthruIoStream(RTMANIFEST hManifest, RTVFSIOSTRE
     uint32_t cRefs = RTManifestRetain(hManifest);
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
     cRefs = RTVfsIoStrmRetain(hVfsIos);
-    AssertReturnStmt(cRefs != UINT32_MAX, VERR_INVALID_HANDLE, RTManifestRelease(hManifest));
+    AssertReturnStmt(cRefs != UINT32_MAX, RTManifestRelease(hManifest), VERR_INVALID_HANDLE);
 
     /*
      * Create an instace of the passthru I/O stream.
