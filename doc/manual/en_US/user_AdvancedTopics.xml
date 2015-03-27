@@ -1836,41 +1836,56 @@ vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</scree
 
     <para>By default VirtualBox provides you with one host-only network
     interface. Adding more host-only network interfaces on Solaris hosts
-    requires manual configuration. Here's how to add two more host-only
-    network interfaces.</para>
+    requires manual configuration. Here's how to add another host-only
+    network interface.</para>
 
-    <para>You first need to stop all running VMs and unplumb all existing
-    "vboxnet" interfaces. Execute the following commands as root:</para>
+    <para>Begin by stopping all running VMs. Then, unplumb the existing
+    "vboxnet0" interface by execute the following command as root:</para>
 
     <screen>ifconfig vboxnet0 unplumb</screen>
 
-    <para>Once you make sure all vboxnet interfaces are unplumbed, remove the
-    driver using:</para>
+    <para>If you have several vboxnet interfaces, you will need to unplumb
+    all of them. Once all vboxnet interfaces are unplumbed, remove the
+    driver by executing the following command as root:</para>
 
-    <para><screen>rem_drv vboxnet</screen>then edit the file
-    <computeroutput>/platform/i86pc/kernel/drv/vboxnet.conf</computeroutput>
-    and add a line for the new interfaces:</para>
-
-    <para><screen>name="vboxnet" parent="pseudo" instance=1;
-name="vboxnet" parent="pseudo" instance=2;</screen>Add as many of these lines
-    as required and make sure to assign a unique instance number.</para>
+    <screen>rem_drv vboxnet</screen>
     
-    <para>For each instance that you have added, create a corresponding
-    file "/etc/hostname.vboxnetX" where "X" is the instance number. In the
-    above example, we would have to create "/etc/hostname.vboxnet1".</para>
+    <para>Edit the file <computeroutput>/platform/i86pc/kernel/drv/vboxnet.conf</computeroutput>
+    and add a line for the new interface we want to add as shown below:</para>
 
-    <para>Specify the IP address you want assigned to the interface in the 
-    hostname.vboxnetX file. In the above example, we would use 192.168.57.1.</para>
+    <screen>name="vboxnet" parent="pseudo" instance=1;
+name="vboxnet" parent="pseudo" instance=2;</screen>
 
-    <para>Finally, reload the vboxnet driver using:</para>
+    <para>Add as many of these lines as required with each line having a
+    unique instance number.</para>
 
-    <para><screen>add_drv vboxnet</screen>Now plumb all the interfaces using
-    <computeroutput>ifconfig vboxnetX plumb</computeroutput> (where X can be
-    0, 1 or 2 in this case) and once plumbed you can then configure the
-    interface like any other network interface.</para>
+    <para>Next, reload the vboxnet driver by executing the following command
+    as root:</para>
 
-    <para>To make your newly added interfaces' settings persistent across
-    reboots you will need to edit the files
+    <screen>add_drv vboxnet</screen>
+
+    <para>On Solaris 11.1 and newer hosts you may want to rename the default
+    vanity interface name. To check what name has been assigned, execute:</para>
+
+    <screen>dladm show-phys
+LINK              MEDIA                STATE      SPEED  DUPLEX    DEVICE
+net0              Ethernet             up         100    full      e1000g0
+net2              Ethernet             up         1000   full      vboxnet1
+net1              Ethernet             up         1000   full      vboxnet0</screen>
+
+    <para>In the above example, we can rename "net2" to "vboxnet1" before
+    proceeding to plumb the interface. This can be done by executing as root:</para>
+
+    <screen>dladm rename-link net2 vboxnet1</screen>
+
+    <para>Now plumb all the interfaces using
+    <computeroutput>ifconfig vboxnetX plumb</computeroutput> (where 'X' would
+    be 1 in this case). Once the interface is plumbed, it may be configured
+    like any other network interface. Refer to the
+    <computeroutput>ifconfig</computeroutput> documentation for further details.</para>
+
+    <para>To make the newly added interfaces' settings persistent across
+    reboots, you will need to edit the files
     <computeroutput>/etc/inet/netmasks</computeroutput>, and if you are using NWAM
     <computeroutput>/etc/nwam/llp</computeroutput> and add the appropriate
     entries to set the netmask and static IP for each of those interfaces. The
@@ -2619,7 +2634,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
             <para>Don't allow to switch the VM into scale mode.</para>
           </glossdef>
         </glossentry>
-      
+
       </glosslist>
 
       <para>This is a per-VM setting. Any combination of the above is allowed. To restore
@@ -2828,7 +2843,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         default is to show a message window which instructs the user to
         open a bug report.</para>
       <para>This behavior can be configured:</para>
-        
+
       <para><screen>VBoxManage setextradata "VM name" GUI/GuruMeditationHandler MODE</screen></para>
 
       <para>where <computeroutput>MODE</computeroutput> is one of the
@@ -2878,7 +2893,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         The default behavior is sometimes not desired. Therefore it can be configured:
       </para>
       <para><screen>VBoxManage setextradata "VM name" GUI/MouseCapturePolicy MODE</screen></para>
-      
+
       <para>where <computeroutput>MODE</computeroutput> is one of the
         following keywords:</para><glosslist>
         <glossentry>
