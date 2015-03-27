@@ -273,8 +273,12 @@ void UIShortcutPool::loadOverridesFor(const QString &strPoolExtraDataID)
             continue;
 
         /* Get shortcut ID/sequence: */
-        const QString strShortcutExtraDataID = strKeyValuePair.left(iDelimiterPosition);
+        QString strShortcutExtraDataID = strKeyValuePair.left(iDelimiterPosition);
         const QString strShortcutSequence = strKeyValuePair.right(strKeyValuePair.length() - iDelimiterPosition - 1);
+
+        // Hack for handling "Save" as "SaveState":
+        if (strShortcutExtraDataID == "Save")
+            strShortcutExtraDataID = "SaveState";
 
         /* Compose corresponding shortcut key: */
         const QString strShortcutKey(strShortcutKeyTemplate.arg(strShortcutExtraDataID));

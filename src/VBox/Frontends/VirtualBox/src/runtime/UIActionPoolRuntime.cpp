@@ -242,13 +242,13 @@ protected:
     }
 };
 
-class UIActionSimplePerformSave : public UIActionSimple
+class UIActionSimplePerformSaveState : public UIActionSimple
 {
     Q_OBJECT;
 
 public:
 
-    UIActionSimplePerformSave(UIActionPool *pParent)
+    UIActionSimplePerformSaveState(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/vm_save_state_16px.png", ":/vm_save_state_disabled_16px.png") {}
 
 protected:
@@ -262,7 +262,7 @@ protected:
 
     QString shortcutExtraDataID() const
     {
-        return QString("Save");
+        return QString("SaveState");
     }
 
     void retranslateUi()
@@ -2060,7 +2060,7 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_ShowInformation] = new UIActionSimpleShowInformationDialog(this);
     m_pool[UIActionIndexRT_M_Machine_T_Pause] = new UIActionTogglePause(this);
     m_pool[UIActionIndexRT_M_Machine_S_Reset] = new UIActionSimplePerformReset(this);
-    m_pool[UIActionIndexRT_M_Machine_S_Save] = new UIActionSimplePerformSave(this);
+    m_pool[UIActionIndexRT_M_Machine_S_Save] = new UIActionSimplePerformSaveState(this);
     m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
     m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
 #ifndef RT_OS_DARWIN
