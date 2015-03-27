@@ -14,6 +14,11 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "DrvAudioVRDE.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
@@ -33,12 +38,14 @@
 #include <VBox/vmm/cfgm.h>
 #include <VBox/err.h>
 
-#ifdef LOG_GROUP
- #undef LOG_GROUP
-#endif
+#undef LOG_GROUP
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 /**
  * Audio VRDE driver instance data.
  */
@@ -75,6 +82,8 @@ typedef struct VRDESTREAMOUT
     uint64_t old_ticks;
     uint64_t cSamplesSentPerSec;
 } VRDESTREAMOUT, *PVRDESTREAMOUT;
+
+
 
 static DECLCALLBACK(int) drvAudioVRDEInit(PPDMIHOSTAUDIO pInterface)
 {
@@ -132,6 +141,8 @@ static DECLCALLBACK(bool) drvAudioVRDEIsEnabled(PPDMIHOSTAUDIO pInterface, PDMAU
 }
 
 /**
+ * <Missing brief description>
+ *
  * Transfers audio input formerly sent by a connected RDP client / VRDE backend
  * (using the onVRDEInputXXX methods) over to the VRDE host (VM). The audio device
  * emulation then will read and send the data to the guest.
@@ -181,6 +192,8 @@ static DECLCALLBACK(int) drvAudioVRDECaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAU
 }
 
 /**
+ * Transfers VM audio output to remote client.
+ *
  * Transfers VM audio output over to the VRDE instance for playing remotely
  * on the client.
  *
@@ -473,10 +486,10 @@ int AudioVRDE::onVRDEInputIntercept(bool fEnabled)
 /* static */
 DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
     AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
     AssertPtrReturn(pCfg, VERR_INVALID_POINTER);
-
-    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
 
     LogRel(("Audio: Initializing VRDE driver\n"));
     LogFlowFunc(("fFlags=0x%x\n", fFlags));
@@ -502,11 +515,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      */
     void *pvUser;
     int rc = CFGMR3QueryPtr(pCfg, "ObjectVRDPServer", &pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc));
-        return rc;
-    }
+    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"ObjectVRDPServer\" value, rc=%Rrc\n", rc), rc);
 
     /* CFGM tree saves the pointer to ConsoleVRDPServer in the Object node of AudioVRDE. */
     pThis->pConsoleVRDPServer = (ConsoleVRDPServer *)pvUser;
@@ -516,11 +525,7 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      */
     pvUser = NULL;
     rc = CFGMR3QueryPtr(pCfg, "Object", &pvUser);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc));
-        return rc;
-    }
+    AssertMsgRCReturn(rc, ("Confguration error: No/bad \"Object\" value, rc=%Rrc\n", rc), rc);
 
     pThis->pAudioVRDE = (AudioVRDE *)pvUser;
     pThis->pAudioVRDE->mpDrv = pThis;
@@ -530,20 +535,33 @@ DECLCALLBACK(int) AudioVRDE::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      * Described in CFGM tree.
      */
     pThis->pDrvAudio = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOCONNECTOR);
-    if (!pThis->pDrvAudio)
-    {
-        AssertMsgFailed(("Configuration error: No upper interface specified!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    AssertMsgReturn(pThis->pDrvAudio, ("Configuration error: No upper interface specified!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     return VINF_SUCCESS;
 }
 
+
+/**
+ * @interface_method_impl{PDMDRVREG,pfnDestruct}
+ */
 /* static */
 DECLCALLBACK(void) AudioVRDE::drvDestruct(PPDMDRVINS pDrvIns)
 {
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    PDRVAUDIOVRDE pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOVRDE);
     LogFlowFuncEnter();
+
+    /*
+     * If the AudioVRDE object is still alive, we must clear it's reference to
+     * us since we'll be invalid when we return from this method.
+     */
+    if (pThis->pAudioVRDE)
+    {
+        pThis->pAudioVRDE->mpDrv = NULL;
+        pThis->pAudioVRDE = NULL;
+    }
 }
+
 
 /**
  * VRDE audio driver registration record.
