@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,13 +32,118 @@
 class ATL_NO_VTABLE Progress :
     public ProgressWrap
 {
+public:
+    DECLARE_NOT_AGGREGATABLE(Progress)
+
+    HRESULT FinalConstruct();
+    void FinalRelease();
+
+    // public initializer/uninitializer for internal purposes only
+
+    /**
+     * Simplified constructor for progress objects that have only one
+     * operation as a task.
+     * @param aParent
+     * @param aInitiator
+     * @param aDescription
+     * @param aCancelable
+     * @return
+     */
+    HRESULT init(
+#if !defined(VBOX_COM_INPROC)
+                  VirtualBox *aParent,
+#endif
+                  IUnknown *aInitiator,
+                  Utf8Str aDescription,
+                  BOOL aCancelable)
+    {
+        return init(
+#if !defined(VBOX_COM_INPROC)
+            aParent,
+#endif
+            aInitiator,
+            aDescription,
+            aCancelable,
+            1,      // cOperations
+            1,      // ulTotalOperationsWeight
+            aDescription, // aFirstOperationDescription
+            1);     // ulFirstOperationWeight
+    }
+
+    /**
+     * Not quite so simplified constructor for progress objects that have
+     * more than one operation, but all sub-operations are weighed the same.
+     * @param aParent
+     * @param aInitiator
+     * @param aDescription
+     * @param aCancelable
+     * @param cOperations
+     * @param bstrFirstOperationDescription
+     * @return
+     */
+    HRESULT init(
+#if !defined(VBOX_COM_INPROC)
+                  VirtualBox *aParent,
+#endif
+                  IUnknown *aInitiator,
+                  Utf8Str aDescription, BOOL aCancelable,
+                  ULONG cOperations,
+                  Utf8Str aFirstOperationDescription)
+    {
+        return init(
+#if !defined(VBOX_COM_INPROC)
+            aParent,
+#endif
+            aInitiator,
+            aDescription,
+            aCancelable,
+            cOperations,      // cOperations
+            cOperations,      // ulTotalOperationsWeight = cOperations
+            aFirstOperationDescription, // aFirstOperationDescription
+            1);     // ulFirstOperationWeight: weigh them all the same
+    }
+
+    HRESULT init(
+#if !defined(VBOX_COM_INPROC)
+                  VirtualBox *aParent,
+#endif
+                  IUnknown *aInitiator,
+                  Utf8Str aDescription,
+                  BOOL aCancelable,
+                  ULONG cOperations,
+                  ULONG ulTotalOperationsWeight,
+                  Utf8Str aFirstOperationDescription,
+                  ULONG ulFirstOperationWeight);
+
+    HRESULT init(BOOL aCancelable,
+                 ULONG aOperationCount,
+                 Utf8Str aOperationDescription);
+
+    void uninit();
+
+
+    // public methods only for internal purposes
+    HRESULT i_notifyComplete(HRESULT aResultCode);
+    HRESULT i_notifyComplete(HRESULT aResultCode,
+                             const GUID &aIID,
+                             const char *pcszComponent,
+                             const char *aText,
+                             ...);
+    HRESULT i_notifyCompleteV(HRESULT aResultCode,
+                              const GUID &aIID,
+                              const char *pcszComponent,
+                              const char *aText,
+                              va_list va);
+    HRESULT i_notifyCompleteEI(HRESULT aResultCode,
+                               const ComPtr<IVirtualBoxErrorInfo> &aErrorInfo);
+
+    bool i_notifyPointOfNoReturn(void);
+    bool i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
+
 protected:
+    DECLARE_EMPTY_CTOR_DTOR(Progress)
 
-    DECLARE_EMPTY_CTOR_DTOR (Progress)
-
-    void i_checkForAutomaticTimeout(void);
-
-#if !defined (VBOX_COM_INPROC)
+#if !defined(VBOX_COM_INPROC)
     /** Weak parent. */
     VirtualBox * const      mParent;
 #endif
@@ -75,124 +180,8 @@ protected:
     ULONG m_ulOperationPercent;                     // percentage of current operation, set with setCurrentOperationProgress()
     ULONG m_cMsTimeout;                             /**< Automatic timeout value. 0 means none. */
 
-public:
-    DECLARE_NOT_AGGREGATABLE (Progress)
-
-    HRESULT FinalConstruct();
-    void FinalRelease();
-
-    // public initializer/uninitializer for internal purposes only
-
-    /**
-     * Simplified constructor for progress objects that have only one
-     * operation as a task.
-     * @param aParent
-     * @param aInitiator
-     * @param aDescription
-     * @param aCancelable
-     * @return
-     */
-    HRESULT init(
-#if !defined (VBOX_COM_INPROC)
-                  VirtualBox *aParent,
-#endif
-                  IUnknown *aInitiator,
-                  Utf8Str aDescription,
-                  BOOL aCancelable)
-    {
-        return init(
-#if !defined (VBOX_COM_INPROC)
-            aParent,
-#endif
-            aInitiator,
-            aDescription,
-            aCancelable,
-            1,      // cOperations
-            1,      // ulTotalOperationsWeight
-            aDescription, // aFirstOperationDescription
-            1);     // ulFirstOperationWeight
-    }
-
-    /**
-     * Not quite so simplified constructor for progress objects that have
-     * more than one operation, but all sub-operations are weighed the same.
-     * @param aParent
-     * @param aInitiator
-     * @param aDescription
-     * @param aCancelable
-     * @param cOperations
-     * @param bstrFirstOperationDescription
-     * @return
-     */
-    HRESULT init(
-#if !defined (VBOX_COM_INPROC)
-                  VirtualBox *aParent,
-#endif
-                  IUnknown *aInitiator,
-                  Utf8Str aDescription, BOOL aCancelable,
-                  ULONG cOperations,
-                  Utf8Str aFirstOperationDescription)
-    {
-        return init(
-#if !defined (VBOX_COM_INPROC)
-            aParent,
-#endif
-            aInitiator,
-            aDescription,
-            aCancelable,
-            cOperations,      // cOperations
-            cOperations,      // ulTotalOperationsWeight = cOperations
-            aFirstOperationDescription, // aFirstOperationDescription
-            1);     // ulFirstOperationWeight: weigh them all the same
-    }
-
-    HRESULT init(
-#if !defined (VBOX_COM_INPROC)
-                  VirtualBox *aParent,
-#endif
-                  IUnknown *aInitiator,
-                  Utf8Str aDescription,
-                  BOOL aCancelable,
-                  ULONG cOperations,
-                  ULONG ulTotalOperationsWeight,
-                  Utf8Str aFirstOperationDescription,
-                  ULONG ulFirstOperationWeight);
-
-    HRESULT init(BOOL aCancelable,
-                 ULONG aOperationCount,
-                 Utf8Str aOperationDescription);
-
-    void uninit();
-
-
-    // public methods only for internal purposes
-    HRESULT i_setResultCode(HRESULT aResultCode);
-
-    HRESULT i_notifyComplete(HRESULT aResultCode);
-    HRESULT i_notifyComplete(HRESULT aResultCode,
-                             const GUID &aIID,
-                             const char *pcszComponent,
-                             const char *aText,
-                             ...);
-    HRESULT i_notifyCompleteV(HRESULT aResultCode,
-                              const GUID &aIID,
-                              const char *pcszComponent,
-                              const char *aText,
-                              va_list va);
-    bool i_notifyPointOfNoReturn(void);
-
-    // public methods only for internal purposes
-    bool i_setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
-
-    // unsafe inline public methods for internal purposes only (ensure there is
-    // a caller and a read lock before calling them!)
-    BOOL i_getCompleted() const { return mCompleted; }
-    HRESULT i_getResultCode() const { return mResultCode; }
-    double i_calcTotalPercent();
-
 private:
-
-    // Wrapped IProgress Data
+    // wrapped IProgress properties
     HRESULT getId(com::Guid &aId);
     HRESULT getDescription(com::Utf8Str &aDescription);
     HRESULT getInitiator(ComPtr<IUnknown> &aInitiator);
@@ -210,17 +199,20 @@ private:
     HRESULT getOperationWeight(ULONG *aOperationWeight);
     HRESULT getTimeout(ULONG *aTimeout);
     HRESULT setTimeout(ULONG aTimeout);
+
+    // wrapped IProgress methods
     HRESULT setCurrentOperationProgress(ULONG aPercent);
     HRESULT setNextOperation(const com::Utf8Str &aNextOperationDescription,
                              ULONG aNextOperationsWeight);
-
-    // Wrapped Iprogress methods
     HRESULT waitForCompletion(LONG aTimeout);
     HRESULT waitForOperationCompletion(ULONG aOperation,
                                        LONG aTimeout);
     HRESULT waitForAsyncProgressCompletion(const ComPtr<IProgress> &aPProgressAsync);
     HRESULT cancel();
 
+    // internal helper methods
+    double i_calcTotalPercent();
+    void i_checkForAutomaticTimeout(void);
 
     RTSEMEVENTMULTI mCompletedSem;
     ULONG mWaitersCount;
