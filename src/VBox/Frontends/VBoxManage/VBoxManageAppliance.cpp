@@ -754,7 +754,7 @@ int handleImportAppliance(HandlerArg *arg)
 
                                         for (unsigned i = 0; i < extensions.size(); ++i)
                                         {
-                                            Utf8Str strExtension(Bstr((extensions[i])));
+                                            Utf8Str strExtension(Bstr(extensions[i]));
                                             if(strExtension.compare(pszExtension, Utf8Str::CaseInsensitive) == 0)
                                             {
                                                 b_replace = false;
