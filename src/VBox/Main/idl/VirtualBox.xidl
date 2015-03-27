@@ -2940,6 +2940,10 @@
       <desc>Don't generate new MAC addresses of the attached network adapters when they are using NAT.</desc>
     </const>
 
+    <const name="ImportToVDI"       value="3">
+      <desc>Import all disks to VDI format</desc>
+    </const>
+
   </enum>
 
   <enum

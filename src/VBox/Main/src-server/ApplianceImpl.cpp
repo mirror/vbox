@@ -741,13 +741,37 @@ HRESULT Appliance::i_findMediumFormatFromDiskImage(const ovf::DiskImage &di, Com
      */
     if (strSrcFormat.isEmpty())
     {
-        /* Figure out from extension which format the image of disk has. */
+        strSrcFormat = di.strHref;
+
+        /* check either file gzipped or not
+         * if "yes" then remove last extension,
+         * i.e. "image.vmdk.gz"->"image.vmdk"
+         */
+        if (di.strCompression == "gzip")
         {
-            char *pszExt = RTPathSuffix(di.strHref.c_str());
+            if (RTPathHasSuffix(strSrcFormat.c_str()))
+            {
+                strSrcFormat.stripSuffix();
+            }
+            else
+            {
+                mf.setNull();
+                rc = setError(E_FAIL,
+                              tr("Internal inconsistency looking up medium format for the disk image '%s'"),
+                              di.strHref.c_str());
+                return rc;
+            }
+        }
+        /* Figure out from extension which format the image of disk has. */
+        if (RTPathHasSuffix(strSrcFormat.c_str()))
+        {
+            const char *pszExt = RTPathSuffix(strSrcFormat.c_str());
             if (pszExt)
                 pszExt++;
             mf = pSysProps->i_mediumFormatFromExtension(pszExt);
         }
+        else
+            mf.setNull();
     }
     else
         mf = pSysProps->i_mediumFormat(strSrcFormat);

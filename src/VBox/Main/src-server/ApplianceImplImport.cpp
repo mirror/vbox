@@ -648,6 +648,14 @@ HRESULT Appliance::interpret()
 
                         Utf8Str strTargetPath = Utf8Str(strMachineFolder);
                         strTargetPath.append(RTPATH_DELIMITER).append(di.strHref);
+                        /*
+                         * Remove last extension from the file name if the file is compressed
+                        */
+                        if(di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
+                        {
+                            strTargetPath.stripSuffix();
+                        }
+
                         i_searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
@@ -681,6 +689,14 @@ HRESULT Appliance::interpret()
                         Utf8Str strTargetPath = Utf8Str(strMachineFolder)
                             .append(RTPATH_DELIMITER)
                             .append(di.strHref);
+                        /*
+                         * Remove last extension from the file name if the file is compressed
+                        */
+                        if(di.strCompression.compare("gzip", Utf8Str::CaseInsensitive)==0)
+                        {
+                            strTargetPath.stripSuffix();
+                        }
+
                         i_searchUniqueDiskImageFilePath(strTargetPath);
 
                         /* find the description for the hard disk controller
@@ -2380,11 +2396,11 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                 /* Decompress the GZIP file and save a new file in the target path */
                 strTargetDir = strTargetDir.stripFilename();
-                strTargetDir.append("/temp_");
+                strTargetDir.append(RTPATH_SLASH_STR);
+                strTargetDir.append("temp_");
 
-                Utf8Str strTempTargetFilename(*strTargetPath);
+                Utf8Str strTempTargetFilename(strSrcFilePath);
                 strTempTargetFilename = strTempTargetFilename.stripPath();
-                strTempTargetFilename = strTempTargetFilename.stripSuffix();
 
                 strTargetDir.append(strTempTargetFilename);
 
@@ -2411,26 +2427,59 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
                 /* Correct the source and the target with the actual values */
                 strSrcFilePath = strTargetDir;
-                strTargetDir = strTargetDir.stripFilename();
-                strTargetDir.append(RTPATH_SLASH_STR);
-                strTargetDir.append(strTempTargetFilename.c_str());
-                *strTargetPath = strTargetDir.c_str();
 
                 pRealUsedStorage = &finalStorage;
             }
 
             Utf8Str strTrgFormat = "VMDK";
+            ComObjPtr<MediumFormat> trgFormat;
+            Bstr bstrFormatName;
             ULONG lCabs = 0;
 
-            if (RTPathHasSuffix(strTargetPath->c_str()))
+            //check existence of option "ImportToVDI", in this case all imported disks will be converted to VDI images
+            bool chExt = m->optListImport.contains(ImportOptions_ImportToVDI);
+
+            char *pszSuff = NULL;
+
+            if ((pszSuff = RTPathSuffix(strTargetPath->c_str()))!=NULL)
             {
-                const char *pszSuff = RTPathSuffix(strTargetPath->c_str());
-                /* Figure out which format the user like to have. Default is VMDK. */
-                ComObjPtr<MediumFormat> trgFormat = pSysProps->i_mediumFormatFromExtension(&pszSuff[1]);
+                /* 
+                 * Figure out which format the user like to have. Default is VMDK
+                 * or it can be VDI if according command-line option is set
+                 */
+
+                /*
+                 * We need a proper target format
+                 * if target format has been changed by user via GUI import wizard
+                 * or via VBoxManage import command (option --importtovdi)
+                 * then we need properly process such format like ISO
+                 * Because there is no conversion ISO to VDI
+                 */
+
+                pszSuff++;
+                trgFormat = pSysProps->i_mediumFormatFromExtension(pszSuff);
                 if (trgFormat.isNull())
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Could not find a valid medium format for the target disk '%s'"),
-                                   strTargetPath->c_str());
+                {
+                    rc = setError(E_FAIL,
+                           tr("Internal inconsistency looking up medium format for the disk image '%s'"),
+                           di.strHref.c_str());
+                }
+
+                rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
+                if (FAILED(rc)) throw rc;
+
+                strTrgFormat = Utf8Str(bstrFormatName);
+
+                if(chExt && strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) != 0)
+                {
+                    /* change the target extension */
+                    strTrgFormat = "vdi";
+                    trgFormat = pSysProps->i_mediumFormatFromExtension(strTrgFormat);
+                    *strTargetPath = strTargetPath->stripSuffix();
+                    *strTargetPath = strTargetPath->append(".");
+                    *strTargetPath = strTargetPath->append(strTrgFormat.c_str());
+                }
+
                 /* Check the capabilities. We need create capabilities. */
                 lCabs = 0;
                 com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
@@ -2449,10 +2498,6 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Could not find a valid medium format for the target disk '%s'"),
                                    strTargetPath->c_str());
-                Bstr bstrFormatName;
-                rc = trgFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
-                if (FAILED(rc)) throw rc;
-                strTrgFormat = Utf8Str(bstrFormatName);
             }
             else
             {
@@ -3807,6 +3852,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
                  */
                 Utf8Str savedVBoxCurrent = vsdeTargetHD->strVBoxCurrent;
                 ComObjPtr<Medium> pTargetHD;
+
                 i_importOneDiskImage(diCurrent,
                                      &vsdeTargetHD->strVBoxCurrent,
                                      pTargetHD,

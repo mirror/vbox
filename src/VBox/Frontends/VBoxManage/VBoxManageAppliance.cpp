@@ -91,6 +91,8 @@ static int parseImportOptions(const char *psz, com::SafeArray<ImportOptions_T> *
                 options->push_back(ImportOptions_KeepAllMACs);
             else if (!RTStrNICmp(psz, "KeepNATMACs", len))
                 options->push_back(ImportOptions_KeepNATMACs);
+            else if (!RTStrNICmp(psz, "ImportToVDI", len))
+                options->push_back(ImportOptions_ImportToVDI);
             else
                 rc = VERR_PARSE_ERROR;
         }
@@ -337,9 +339,9 @@ int handleImportAppliance(HandlerArg *arg)
                           COMGETTER(Disks)(ComSafeArrayAsOutParam(retDisks)));
         if (retDisks.size() > 0)
         {
-            RTPrintf("Disks:");
+            RTPrintf("Disks:\n");
             for (unsigned i = 0; i < retDisks.size(); i++)
-                RTPrintf("  %ls", retDisks[i]);
+                RTPrintf("  %ls\n", retDisks[i]);
             RTPrintf("\n");
         }
 
@@ -633,23 +635,39 @@ int handleImportAppliance(HandlerArg *arg)
                             else
                             {
                                 Utf8StrFmt strTypeArg("disk%u", a);
+                                RTCList<ImportOptions_T> optionsList = options.toList();
+
+                                bstrFinalValue = aVBoxValues[a];
+
                                 if (findArgValue(strOverride, pmapArgs, strTypeArg))
                                 {
-                                    RTUUID uuid;
-                                    /* Check if this is a uuid. If so, don't touch. */
-                                    int vrc = RTUuidFromStr(&uuid, strOverride.c_str());
-                                    if (vrc != VINF_SUCCESS)
+                                    if(!optionsList.contains(ImportOptions_ImportToVDI))
                                     {
-                                        /* Make the path absolute. */
-                                        if (!RTPathStartsWithRoot(strOverride.c_str()))
+                                        RTUUID uuid;
+                                        /* Check if this is a uuid. If so, don't touch. */
+                                        int vrc = RTUuidFromStr(&uuid, strOverride.c_str());
+                                        if (vrc != VINF_SUCCESS)
                                         {
-                                            char pszPwd[RTPATH_MAX];
-                                            vrc = RTPathGetCurrent(pszPwd, RTPATH_MAX);
-                                            if (RT_SUCCESS(vrc))
-                                                strOverride = Utf8Str(pszPwd).append(RTPATH_SLASH).append(strOverride);
+                                            /* Make the path absolute. */
+                                            if (!RTPathStartsWithRoot(strOverride.c_str()))
+                                            {
+                                                char pszPwd[RTPATH_MAX];
+                                                vrc = RTPathGetCurrent(pszPwd, RTPATH_MAX);
+                                                if (RT_SUCCESS(vrc))
+                                                    strOverride = Utf8Str(pszPwd).append(RTPATH_SLASH).append(strOverride);
+                                            }
                                         }
+                                        bstrFinalValue = strOverride;
                                     }
-                                    bstrFinalValue = strOverride;
+                                    else
+                                    {
+                                        //print some error about incompatible command-line arguments
+                                        return errorSyntax(USAGE_IMPORTAPPLIANCE,
+                                                           "Option --ImportToVDI shall not be used together with "
+                                                           "manually set target path.");
+
+                                    }
+
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls\n",
                                             a,
                                             aOvfValues[a],
@@ -676,14 +694,92 @@ int handleImportAppliance(HandlerArg *arg)
                                 }
 #endif
                                 else
+                                {
+                                    strOverride = aVBoxValues[a];
+
+                                    /*
+                                     * Current solution isn't optimal. 
+                                     * Better way is to provide API call for function
+                                     * Appliance::i_findMediumFormatFromDiskImage()
+                                     * and creating one new function which returns
+                                     * struct ovf::DiskImage for currently processed disk.
+                                    */
+
+                                    /*
+                                     * if user wants to convert all imported disks to VDI format
+                                     * we need to replace files extensions to "vdi"
+                                     * except CD/DVD disks
+                                     */
+                                    if(optionsList.contains(ImportOptions_ImportToVDI))
+                                    {
+                                        ComPtr<IVirtualBox> pVirtualBox = arg->virtualBox;
+                                        ComPtr<ISystemProperties> systemProperties;
+                                        com::SafeIfaceArray<IMediumFormat> mediumFormats;
+                                        Bstr bstrFormatName;
+
+                                        CHECK_ERROR(pVirtualBox,
+                                                     COMGETTER(SystemProperties)(systemProperties.asOutParam()));
+
+                                        CHECK_ERROR(systemProperties,
+                                             COMGETTER(MediumFormats)(ComSafeArrayAsOutParam(mediumFormats)));
+
+                                        /* go through all supported media formats and store files extensions only for RAW */
+                                        com::SafeArray<BSTR> extensions;
+
+                                        for (unsigned i = 0; i < mediumFormats.size(); ++i)
+                                        {
+                                            com::SafeArray<DeviceType_T> deviceType;
+                                            ComPtr<IMediumFormat> mediumFormat = mediumFormats[i];
+                                            CHECK_ERROR(mediumFormat, COMGETTER(Name)(bstrFormatName.asOutParam()));
+                                            Utf8Str strFormatName = Utf8Str(bstrFormatName);
+                                            
+                                            if (strFormatName.compare("RAW", Utf8Str::CaseInsensitive) == 0)
+                                            {
+                                                /* getting files extensions for "RAW" format */
+                                                CHECK_ERROR(mediumFormat,
+                                                            DescribeFileExtensions(ComSafeArrayAsOutParam(extensions),
+                                                                                   ComSafeArrayAsOutParam(deviceType)));
+                                                break;
+                                            }
+                                        }
+
+                                        /* go through files extensions for RAW format and compare them with
+                                         * extension of current file
+                                         */
+                                        bool b_replace = true;
+
+                                        const char *pszExtension = RTPathSuffix(strOverride.c_str());
+                                        if (pszExtension)
+                                            pszExtension++;
+
+                                        for (unsigned i = 0; i < extensions.size(); ++i)
+                                        {
+                                            Utf8Str strExtension(Bstr((extensions[i])));
+                                            if(strExtension.compare(pszExtension, Utf8Str::CaseInsensitive) == 0)
+                                            {
+                                                b_replace = false;
+                                                break;
+                                            }
+                                        }
+
+                                        if (b_replace==true)
+                                        {
+                                            strOverride = strOverride.stripSuffix();
+                                            strOverride = strOverride.append(".").append("vdi");
+                                        }
+                                    }
+
+                                    bstrFinalValue = strOverride;
+
                                     RTPrintf("%2u: Hard disk image: source image=%ls, target path=%ls, %ls"
                                             "\n    (change target path with \"--vsys %u --unit %u --disk path\";"
                                             "\n    disable with \"--vsys %u --unit %u --ignore\")\n",
                                             a,
                                             aOvfValues[a],
-                                            aVBoxValues[a],
+                                            bstrFinalValue.raw(),
                                             aExtraConfigValues[a],
                                             i, a, i, a);
+                                }
                             }
                         break;
 

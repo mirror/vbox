@@ -408,7 +408,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                            "%s import %s          <ovfname/ovaname>\n"
                      "                            [--dry-run|-n]\n"
-                     "                            [--options keepallmacs|keepnatmacs]\n"
+                     "                            [--options keepallmacs|keepnatmacs|importtovdi]\n"
                      "                            [more options]\n"
                      "                            (run with -n to have options displayed\n"
                      "                             for a particular OVF)\n\n", SEP);
