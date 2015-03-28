@@ -45,6 +45,7 @@
 # define NtCreateFile                   ZwCreateFile
 # define NtReadFile                     ZwReadFile
 # define NtWriteFile                    ZwWriteFile
+# define NtFlushBuffersFile             ZwFlushBuffersFile
 /** @todo this is very incomplete! */
 #endif
 
@@ -225,6 +226,9 @@
 #define RTNT_USE_NATIVE_NT              1
 /** Initializes a IO_STATUS_BLOCK. */
 #define RTNT_IO_STATUS_BLOCK_INITIALIZER  { STATUS_FAILED_DRIVER_ENTRY, ~(uintptr_t)42 }
+/** Reinitializes a IO_STATUS_BLOCK. */
+#define RTNT_IO_STATUS_BLOCK_REINIT(a_pIos) \
+    do { (a_pIos)->Status = STATUS_FAILED_DRIVER_ENTRY; (a_pIos)->Information = ~(uintptr_t)42; } while (0)
 /** Similar to INVALID_HANDLE_VALUE in the Windows environment. */
 #define RTNT_INVALID_HANDLE_VALUE         ( (HANDLE)~(uintptr_t)0 )
 /** Constant UNICODE_STRING initializer. */
@@ -1640,6 +1644,7 @@ NTSYSAPI NTSTATUS NTAPI NtQueryInformationToken(HANDLE, TOKEN_INFORMATION_CLASS,
 
 NTSYSAPI NTSTATUS NTAPI NtReadFile(HANDLE, HANDLE, PIO_APC_ROUTINE, PVOID, PIO_STATUS_BLOCK, PVOID, ULONG, PLARGE_INTEGER, PULONG);
 NTSYSAPI NTSTATUS NTAPI NtWriteFile(HANDLE, HANDLE, PIO_APC_ROUTINE, void const *, PIO_STATUS_BLOCK, PVOID, ULONG, PLARGE_INTEGER, PULONG);
+NTSYSAPI NTSTATUS NTAPI NtFlushBuffersFile(HANDLE, PIO_STATUS_BLOCK);
 
 NTSYSAPI NTSTATUS NTAPI NtReadVirtualMemory(HANDLE, PVOID, PVOID, SIZE_T, PSIZE_T);
 NTSYSAPI NTSTATUS NTAPI NtWriteVirtualMemory(HANDLE, PVOID, void const *, SIZE_T, PSIZE_T);

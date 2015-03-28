@@ -168,6 +168,8 @@ AssertCompileSize(g_enmSupR3HardenedMainState, sizeof(uint32_t));
 /** Pointer to VBoxRT's RTLogRelPrintf function so we can write errors to the
  * release log at runtime. */
 static PFNRTLOGRELPRINTF g_pfnRTLogRelPrintf = NULL;
+/** Log volume name (for attempting volume flush). */
+static RTUTF16          g_wszStartupLogVol[16];
 #endif
 
 
@@ -1001,8 +1003,22 @@ DECLHIDDEN(void) supR3HardenedOpenLog(int *pcArgs, char **papszArgs)
                                       &g_hStartupLog,
                                       NULL);
                 if (RT_SUCCESS(rc))
+                {
                     SUP_DPRINTF(("Log file opened: " VBOX_VERSION_STRING "r%u g_hStartupLog=%p g_uNtVerCombined=%#x\n",
                                  VBOX_SVN_REV, g_hStartupLog, g_uNtVerCombined));
+
+                    /*
+                     * If the path contains a drive volume, save it so we can
+                     * use it to flush the volume containing the log file.
+                     */
+                    if (RT_C_IS_ALPHA(pszLogFile[0]) && pszLogFile[1] == ':')
+                    {
+                        RTUtf16CopyAscii(g_wszStartupLogVol, RT_ELEMENTS(g_wszStartupLogVol), "\\??\\");
+                        g_wszStartupLogVol[sizeof("\\??\\") - 1] = RT_C_TO_UPPER(pszLogFile[0]);
+                        g_wszStartupLogVol[sizeof("\\??\\") + 0] = ':';
+                        g_wszStartupLogVol[sizeof("\\??\\") + 1] = '\0';
+                    }
+                }
                 else
                     g_hStartupLog = NULL;
             }
@@ -1050,6 +1066,74 @@ DECLHIDDEN(void) supR3HardenedLog(const char *pszFormat,  ...)
     va_start(va, pszFormat);
     supR3HardenedLogV(pszFormat, va);
     va_end(va);
+}
+
+
+DECLHIDDEN(void) supR3HardenedLogFlush(void)
+{
+#ifdef RT_OS_WINDOWS
+    if (   g_hStartupLog != NULL
+        && g_cbStartupLog < 16*_1M)
+    {
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
+        NTSTATUS rcNt = NtFlushBuffersFile(g_hStartupLog, &Ios);
+
+        /*
+         * Try flush the volume containing the log file too.
+         */
+        if (g_wszStartupLogVol[0])
+        {
+            HANDLE              hLogVol = RTNT_INVALID_HANDLE_VALUE;
+            UNICODE_STRING      NtName;
+            NtName.Buffer        = g_wszStartupLogVol;
+            NtName.Length        = (USHORT)(RTUtf16Len(g_wszStartupLogVol) * sizeof(RTUTF16));
+            NtName.MaximumLength = NtName.Length + 1;
+            OBJECT_ATTRIBUTES   ObjAttr;
+            InitializeObjectAttributes(&ObjAttr, &NtName, OBJ_CASE_INSENSITIVE, NULL /*hRootDir*/, NULL /*pSecDesc*/);
+            RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+            rcNt = NtCreateFile(&hLogVol,
+                                GENERIC_WRITE | GENERIC_READ | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+                                &ObjAttr,
+                                &Ios,
+                                NULL /* Allocation Size*/,
+                                0 /*FileAttributes*/,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                FILE_OPEN,
+                                FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                NULL /*EaBuffer*/,
+                                0 /*EaLength*/);
+            if (NT_SUCCESS(rcNt))
+                rcNt = Ios.Status;
+            if (NT_SUCCESS(rcNt))
+            {
+                RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+                rcNt = NtFlushBuffersFile(hLogVol, &Ios);
+                NtClose(hLogVol);
+            }
+            else
+            {
+                /* This may have sideeffects similar to what we want... */
+                hLogVol = RTNT_INVALID_HANDLE_VALUE;
+                RTNT_IO_STATUS_BLOCK_REINIT(&Ios);
+                rcNt = NtCreateFile(&hLogVol,
+                                    GENERIC_READ | SYNCHRONIZE | FILE_READ_ATTRIBUTES,
+                                    &ObjAttr,
+                                    &Ios,
+                                    NULL /* Allocation Size*/,
+                                    0 /*FileAttributes*/,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                    FILE_OPEN,
+                                    FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
+                                    NULL /*EaBuffer*/,
+                                    0 /*EaLength*/);
+                if (NT_SUCCESS(rcNt) && NT_SUCCESS(Ios.Status))
+                    NtClose(hLogVol);
+            }
+        }
+    }
+#else
+    /* later */
+#endif
 }
 
 

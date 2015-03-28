@@ -1544,14 +1544,15 @@ static int supHardNtVpAddRegion(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE pImage, PME
 /**
  * Frees (or replaces) executable memory of allocation type private.
  *
- * @returns VBox status code.
+ * @returns True if nothing really bad happen, false if to quit ASAP because we
+ *          killed the process being scanned.
  * @param   pThis               The process scanning state structure. Details
  *                              about images are added to this.
  * @param   hProcess            The process to verify.
  * @param   pMemInfo            The information we've got on this private
  *                              executable memory.
  */
-static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess,
+static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess,
                                                       MEMORY_BASIC_INFORMATION const *pMemInfo)
 {
     NTSTATUS rcNt;
@@ -1595,13 +1596,14 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         if (!pvCopy)
         {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED, "RTMemAllocZ(%#zx) failed", cbCopy);
-            return;
+            return true;
         }
 
         rcNt = supHardNtVpReadMem(hProcess, uCopySrc, pvCopy, cbCopy);
         if (!NT_SUCCESS(rcNt))
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "Error reading data from original alloc: %#x (%p LB %#zx)", rcNt, uCopySrc, cbCopy, rcNt);
+        supR3HardenedLogFlush();
     }
 
     /*
@@ -1612,16 +1614,30 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         PVOID  pvFreeInOut = pvFree;
         SIZE_T cbFreeInOut = 0;
         rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
-        if (!NT_SUCCESS(rcNt))
+        if (NT_SUCCESS(rcNt))
+        {
+            SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #1 succeeded: %#x [%p/%p LB 0/%#zx]\n",
+                         rcNt, pvFree, pvFreeInOut, cbFreeInOut));
+            supR3HardenedLogFlush();
+        }
+        else
         {
             SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #1 failed: %#x [%p LB 0]\n", rcNt, pvFree));
+            supR3HardenedLogFlush();
             pvFreeInOut = pvFree;
             cbFreeInOut = cbFree;
             rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
-            if (!NT_SUCCESS(rcNt))
+            if (NT_SUCCESS(rcNt))
+            {
+                SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #2 succeeded: %#x [%p/%p LB %#zx/%#zx]\n",
+                             rcNt, pvFree, pvFreeInOut, cbFree, cbFreeInOut));
+                supR3HardenedLogFlush();
+            }
+            else
             {
                 SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #2 failed: %#x [%p LB %#zx]\n",
                              rcNt, pvFree, cbFree));
+                supR3HardenedLogFlush();
                 pvFreeInOut = pMemInfo->BaseAddress;
                 cbFreeInOut = pMemInfo->RegionSize;
                 rcNt = NtFreeVirtualMemory(hProcess, &pvFreeInOut, &cbFreeInOut, MEM_RELEASE);
@@ -1631,6 +1647,7 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
                     cbFree = pMemInfo->RegionSize;
                     SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Free attempt #3 succeeded [%p LB %#zx]\n",
                                  pvFree, cbFree));
+                    supR3HardenedLogFlush();
                 }
                 else
                     supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
@@ -1642,7 +1659,7 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         /*
          * Query the region again, redo the free operation if there's still memory there.
          */
-        if (!NT_SUCCESS(rcNt) || (pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
+        if (!NT_SUCCESS(rcNt) || !(pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
             break;
         SIZE_T                      cbActual = 0;
         MEMORY_BASIC_INFORMATION    MemInfo3 = { 0, 0, 0, 0, 0, 0, 0 };
@@ -1653,9 +1670,12 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: QVM after free %u: [%p]/%p LB %#zx s=%#x ap=%#x rp=%#p\n",
                      i, MemInfo3.AllocationBase, MemInfo3.BaseAddress, MemInfo3.RegionSize, MemInfo3.State,
                      MemInfo3.AllocationProtect, MemInfo3.Protect));
+        supR3HardenedLogFlush();
         if (pMemInfo->State == MEM_FREE)
             break;
+        NtYieldExecution();
         SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Retrying free...\n"));
+        supR3HardenedLogFlush();
     }
 
     /*
@@ -1668,53 +1688,73 @@ static void supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         SIZE_T cbAlloc = cbFree;
         rcNt = NtAllocateVirtualMemory(hProcess, &pvAlloc, 0, &cbAlloc, MEM_COMMIT, PAGE_READWRITE);
         if (!NT_SUCCESS(rcNt))
+        {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "NtAllocateVirtualMemory (%p LB %#zx) failed with rcNt=%#x allocating "
                                 "replacement memory for working around buggy protection software. "
                                 "See VBoxStartup.log for more details",
                                 pvAlloc, cbFree, rcNt);
-        else if (   (uintptr_t)pvFree < (uintptr_t)pvAlloc
-                 || (uintptr_t)pvFree + cbFree > (uintptr_t)pvAlloc + cbFree)
+            supR3HardenedLogFlush();
+            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
+            return false;
+        }
+
+        if (   (uintptr_t)pvFree < (uintptr_t)pvAlloc
+            || (uintptr_t)pvFree + cbFree > (uintptr_t)pvAlloc + cbFree)
+        {
             supHardNtVpSetInfo2(pThis, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED,
                                 "We wanted NtAllocateVirtualMemory to get us %p LB %#zx, but it returned %p LB %#zx.",
                                 pMemInfo->BaseAddress, pMemInfo->RegionSize, pvFree, cbFree, rcNt);
+            supR3HardenedLogFlush();
+            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
+            return false;
+        }
+
+        /*
+         * Copy what we can, considering the 2nd free attempt.
+         */
+        uint8_t *pbDst = (uint8_t *)pvFree;
+        size_t   cbDst = cbFree;
+        uint8_t *pbSrc = (uint8_t *)pvCopy;
+        size_t   cbSrc = cbCopy;
+        if ((uintptr_t)pbDst != uCopySrc)
+        {
+            if ((uintptr_t)pbDst > uCopySrc)
+            {
+                uintptr_t cbAdj = (uintptr_t)pbDst - uCopySrc;
+                pbSrc += cbAdj;
+                cbSrc -= cbSrc;
+            }
+            else
+            {
+                uintptr_t cbAdj = uCopySrc - (uintptr_t)pbDst;
+                pbDst += cbAdj;
+                cbDst -= cbAdj;
+            }
+        }
+        if (cbSrc > cbDst)
+            cbSrc = cbDst;
+
+        SIZE_T cbWritten;
+        rcNt = NtWriteVirtualMemory(hProcess, pbDst, pbSrc, cbSrc, &cbWritten);
+        if (NT_SUCCESS(rcNt))
+        {
+            SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Restored the exec memory as non-exec.\n"));
+            supR3HardenedLogFlush();
+        }
         else
         {
-            /*
-             * Copy what we can, considering the 2nd free attempt.
-             */
-            uint8_t *pbDst = (uint8_t *)pvFree;
-            size_t   cbDst = cbFree;
-            uint8_t *pbSrc = (uint8_t *)pvCopy;
-            size_t   cbSrc = cbCopy;
-            if ((uintptr_t)pbDst != uCopySrc)
-            {
-                if ((uintptr_t)pbDst > uCopySrc)
-                {
-                    uintptr_t cbAdj = (uintptr_t)pbDst - uCopySrc;
-                    pbSrc += cbAdj;
-                    cbSrc -= cbSrc;
-                }
-                else
-                {
-                    uintptr_t cbAdj = uCopySrc - (uintptr_t)pbDst;
-                    pbDst += cbAdj;
-                    cbDst -= cbAdj;
-                }
-            }
-            if (cbSrc > cbDst)
-                cbSrc = cbDst;
-
-            SIZE_T cbWritten;
-            rcNt = NtWriteVirtualMemory(hProcess, pbDst, pbSrc, cbSrc, &cbWritten);
-            if (!NT_SUCCESS(rcNt))
-                supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
-                                    "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
-                                    pMemInfo->BaseAddress, pMemInfo->RegionSize, rcNt);
+            supHardNtVpSetInfo2(pThis, VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED,
+                                "NtWriteVirtualMemory (%p LB %#zx) failed: %#x",
+                                pMemInfo->BaseAddress, pMemInfo->RegionSize, rcNt);
+            supR3HardenedLogFlush();
+            NtTerminateProcess(hProcess, VERR_SUP_VP_REPLACE_VIRTUAL_MEMORY_FAILED);
+            return false;
         }
     }
     if (pvCopy)
         RTMemFree(pvCopy);
+    return true;
 }
 #endif /* IN_RING3 */
 
@@ -1856,7 +1896,10 @@ static int supHardNtVpScanVirtualMemory(PSUPHNTVPSTATE pThis, HANDLE hProcess)
                  * Free any private executable memory (sysplant.sys allocates executable memory).
                  */
                 if (MemInfo.Type == MEM_PRIVATE)
-                    supHardNtVpFreeOrReplacePrivateExecMemory(pThis, hProcess, &MemInfo);
+                {
+                    if (!supHardNtVpFreeOrReplacePrivateExecMemory(pThis, hProcess, &MemInfo))
+                        break;
+                }
                 /*
                  * Unmap mapped memory, failing that, drop exec privileges.
                  */
