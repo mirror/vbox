@@ -397,7 +397,7 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
 {
     PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 
-    return PATMAreInterruptsEnabledByCtxCore(pVM, CPUMCTX2CORE(pCtx));
+    return PATMAreInterruptsEnabledByCtx(pVM, pCtx);
 }
 
 /**
@@ -407,18 +407,18 @@ VMM_INT_DECL(bool) PATMAreInterruptsEnabled(PVM pVM)
  * @returns false if it's disabled.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pCtxCore    CPU context
+ * @param   pCtx        The guest CPU context.
  * @todo CPUM should wrap this, EM.cpp shouldn't call us.
  */
-VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore)
+VMM_INT_DECL(bool) PATMAreInterruptsEnabledByCtx(PVM pVM, PCPUMCTX pCtx)
 {
     if (PATMIsEnabled(pVM))
     {
         Assert(!HMIsEnabled(pVM));
-        if (PATMIsPatchGCAddr(pVM, pCtxCore->eip))
+        if (PATMIsPatchGCAddr(pVM, pCtx->eip))
             return false;
     }
-    return !!(pCtxCore->eflags.u32 & X86_EFL_IF);
+    return !!(pCtx->eflags.u32 & X86_EFL_IF);
 }
 
 /**

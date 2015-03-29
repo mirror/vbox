@@ -617,7 +617,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
         &&  !pCtx->eflags.Bits.u1VM)
     {
         Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
-        CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
+        CSAMR3CheckCodeEx(pVM, pCtx, pCtx->eip);
     }
 
     /*
@@ -1443,7 +1443,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             STAM_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWEntry, b);
-            CSAMR3CheckCodeEx(pVM, CPUMCTX2CORE(pCtx), pCtx->eip);
+            CSAMR3CheckCodeEx(pVM, pCtx, pCtx->eip);
             STAM_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWEntry, b);
             if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
                 ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))

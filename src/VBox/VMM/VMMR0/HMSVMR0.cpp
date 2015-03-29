@@ -3703,14 +3703,14 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
  * @return VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCpu            Pointer to the disassembler state.
- * @param   pRegFrame       Pointer to the register frame.
+ * @param   pCtx            The guest CPU context.
  */
-static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pRegFrame)
+static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTX pCtx)
 {
     DISQPVPARAMVAL Param1;
     RTGCPTR        GCPtrPage;
 
-    int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->Param1, &Param1, DISQPVWHICH_SRC);
+    int rc = DISQueryParamVal(CPUMCTX2CORE(pCtx), pCpu, &pCpu->Param1, &Param1, DISQPVWHICH_SRC);
     if (RT_FAILURE(rc))
         return VERR_EM_INTERPRETER;
 
@@ -3721,7 +3721,7 @@ static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCOR
             return VERR_EM_INTERPRETER;
 
         GCPtrPage = Param1.val.val64;
-        VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu, pRegFrame, GCPtrPage);
+        VBOXSTRICTRC rc2 = EMInterpretInvlpg(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx), GCPtrPage);
         rc = VBOXSTRICTRC_VAL(rc2);
     }
     else
@@ -3743,11 +3743,11 @@ static int hmR0SvmInterpretInvlPgEx(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCOR
  * @retval  VERR_*                  Fatal errors.
  *
  * @param   pVM         Pointer to the VM.
- * @param   pRegFrame   Pointer to the register frame.
+ * @param   pCtx        The guest CPU context.
  *
  * @remarks Updates the RIP if the instruction was executed successfully.
  */
-static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     /* Only allow 32 & 64 bit code. */
     if (CPUMGetGuestCodeBits(pVCpu) != 16)
@@ -3757,9 +3757,9 @@ static int hmR0SvmInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
         if (   RT_SUCCESS(rc)
             && pDis->pCurInstr->uOpcode == OP_INVLPG)
         {
-            rc = hmR0SvmInterpretInvlPgEx(pVCpu, pDis, pRegFrame);
+            rc = hmR0SvmInterpretInvlPgEx(pVCpu, pDis, pCtx);
             if (RT_SUCCESS(rc))
-                pRegFrame->rip += pDis->cbInstr;
+                pCtx->rip += pDis->cbInstr;
             return rc;
         }
         else
@@ -4325,7 +4325,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(!pVM->hm.s.fNestedPaging);
 
     /** @todo Decode Assist. */
-    int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));    /* Updates RIP if successful. */
+    int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, pCtx);    /* Updates RIP if successful. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);

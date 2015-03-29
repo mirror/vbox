@@ -2327,10 +2327,10 @@ VMMR3_INT_DECL(int) CSAMR3MarkCode(PVM pVM, RTRCPTR pInstr, uint32_t cbInstr, bo
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   pCtxCore    CPU context
- * @param   pInstrGC    Instruction pointer
+ * @param   pCtx        Guest CPU context.
+ * @param   pInstrGC    Instruction pointer.
  */
-VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pInstrGC)
+VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTX pCtx, RTRCPTR pInstrGC)
 {
     Assert(!HMIsEnabled(pVM));
     if (EMIsRawRing0Enabled(pVM) == false || PATMIsPatchGCAddr(pVM, pInstrGC) == true)
@@ -2344,7 +2344,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckCodeEx(PVM pVM, PCPUMCTXCORE pCtxCore, RTRCPTR pI
         /* Assuming 32 bits code for now. */
         Assert(CPUMGetGuestCodeBits(VMMGetCpu0(pVM)) == 32);
 
-        pInstrGC = SELMToFlat(pVM, DISSELREG_CS, pCtxCore, pInstrGC);
+        pInstrGC = SELMToFlat(pVM, DISSELREG_CS, CPUMCTX2CORE(pCtx), pInstrGC);
         return CSAMR3CheckCode(pVM, pInstrGC);
     }
     return VINF_SUCCESS;

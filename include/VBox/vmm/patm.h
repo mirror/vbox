@@ -154,7 +154,7 @@ VMM_INT_DECL(int)       PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR p
 
 VMM_INT_DECL(bool)      PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOpcode, uint32_t *pSize);
 VMM_INT_DECL(bool)      PATMAreInterruptsEnabled(PVM pVM);
-VMM_INT_DECL(bool)      PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
+VMM_INT_DECL(bool)      PATMAreInterruptsEnabledByCtx(PVM pVM, PCPUMCTX pCtx);
 #ifdef PATM_EMULATE_SYSENTER
 VMM_INT_DECL(int)       PATMSysCall(PVM pVM, PCPUMCTX pCtx, PDISCPUSTATE pCpu);
 #endif
