@@ -1178,8 +1178,8 @@ VMMDECL(PCPUMCTX)       CPUMGetHyperCtxPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetHyperCtxCore(PVMCPU pVCpu);
 VMMDECL(PCPUMCTX)       CPUMQueryGuestCtxPtr(PVMCPU pVCpu);
 VMMDECL(PCCPUMCTXCORE)  CPUMGetGuestCtxCore(PVMCPU pVCpu);
-VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
-VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc);
+VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu);
+VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 

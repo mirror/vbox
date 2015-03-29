@@ -144,10 +144,10 @@ VMMDECL(bool)           PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR uGCAddr);
 VMMDECL(bool)           PATMIsPatchGCAddrExclHelpers(PVM pVM, RTRCUINTPTR uGCAddr);
 VMM_INT_DECL(int)       PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst, size_t cbToRead, size_t *pcbRead);
 
-VMM_INT_DECL(void)      PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
-VMM_INT_DECL(void)      PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC);
-VMM_INT_DECL(uint32_t)  PATMRawGetEFlags(PVM pVM, PCCPUMCTXCORE pCtxCore);
-VMM_INT_DECL(void)      PATMRawSetEFlags(PVM pVM, PCPUMCTXCORE pCtxCore, uint32_t efl);
+VMM_INT_DECL(void)      PATMRawEnter(PVM pVM, PCPUMCTX pCtx);
+VMM_INT_DECL(void)      PATMRawLeave(PVM pVM, PCPUMCTX pCtx, int rawRC);
+VMM_INT_DECL(uint32_t)  PATMRawGetEFlags(PVM pVM, PCCPUMCTX pCtx);
+VMM_INT_DECL(void)      PATMRawSetEFlags(PVM pVM, PCPUMCTX pCtx, uint32_t efl);
 VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM);
 VMM_INT_DECL(bool)      PATMShouldUseRawMode(PVM pVM, RTRCPTR pAddrGC);
 VMM_INT_DECL(int)       PATMSetMMIOPatchInfo(PVM pVM, RTGCPHYS GCPhys, RTRCPTR pCachedData);
@@ -156,7 +156,7 @@ VMM_INT_DECL(bool)      PATMIsInt3Patch(PVM pVM, RTRCPTR pInstrGC, uint32_t *pOp
 VMM_INT_DECL(bool)      PATMAreInterruptsEnabled(PVM pVM);
 VMM_INT_DECL(bool)      PATMAreInterruptsEnabledByCtxCore(PVM pVM, PCPUMCTXCORE pCtxCore);
 #ifdef PATM_EMULATE_SYSENTER
-VMM_INT_DECL(int)       PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+VMM_INT_DECL(int)       PATMSysCall(PVM pVM, PCPUMCTX pCtx, PDISCPUSTATE pCpu);
 #endif
 
 #ifdef IN_RC

@@ -2259,69 +2259,67 @@ VMM_INT_DECL(bool) CPUMIsGuestInRawMode(PVMCPU pVCpu)
  *
  * @returns VBox status. (recompiler failure)
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
  */
-VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
+VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     Assert(!pVCpu->cpum.s.fRawEntered);
     Assert(!pVCpu->cpum.s.fRemEntered);
-    if (!pCtxCore)
-        pCtxCore = CPUMCTX2CORE(&pVCpu->cpum.s.Guest);
+    PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
 
     /*
      * Are we in Ring-0?
      */
-    if (    pCtxCore->ss.Sel
-        &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 0
-        &&  !pCtxCore->eflags.Bits.u1VM)
+    if (    pCtx->ss.Sel
+        &&  (pCtx->ss.Sel & X86_SEL_RPL) == 0
+        &&  !pCtx->eflags.Bits.u1VM)
     {
         /*
          * Enter execution mode.
          */
-        PATMRawEnter(pVM, pCtxCore);
+        PATMRawEnter(pVM, pCtx);
 
         /*
          * Set CPL to Ring-1.
          */
-        pCtxCore->ss.Sel |= 1;
-        if (    pCtxCore->cs.Sel
-            &&  (pCtxCore->cs.Sel & X86_SEL_RPL) == 0)
-            pCtxCore->cs.Sel |= 1;
+        pCtx->ss.Sel |= 1;
+        if (    pCtx->cs.Sel
+            &&  (pCtx->cs.Sel & X86_SEL_RPL) == 0)
+            pCtx->cs.Sel |= 1;
     }
     else
     {
 # ifdef VBOX_WITH_RAW_RING1
         if (    EMIsRawRing1Enabled(pVM)
-            &&  !pCtxCore->eflags.Bits.u1VM
-            &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 1)
+            &&  !pCtx->eflags.Bits.u1VM
+            &&  (pCtx->ss.Sel & X86_SEL_RPL) == 1)
         {
             /* Set CPL to Ring-2. */
-            pCtxCore->ss.Sel = (pCtxCore->ss.Sel & ~X86_SEL_RPL) | 2;
-            if (pCtxCore->cs.Sel && (pCtxCore->cs.Sel & X86_SEL_RPL) == 1)
-                pCtxCore->cs.Sel = (pCtxCore->cs.Sel & ~X86_SEL_RPL) | 2;
+            pCtx->ss.Sel = (pCtx->ss.Sel & ~X86_SEL_RPL) | 2;
+            if (pCtx->cs.Sel && (pCtx->cs.Sel & X86_SEL_RPL) == 1)
+                pCtx->cs.Sel = (pCtx->cs.Sel & ~X86_SEL_RPL) | 2;
         }
 # else
-        AssertMsg((pCtxCore->ss.Sel & X86_SEL_RPL) >= 2 || pCtxCore->eflags.Bits.u1VM,
+        AssertMsg((pCtx->ss.Sel & X86_SEL_RPL) >= 2 || pCtx->eflags.Bits.u1VM,
                   ("ring-1 code not supported\n"));
 # endif
         /*
          * PATM takes care of IOPL and IF flags for Ring-3 and Ring-2 code as well.
          */
-        PATMRawEnter(pVM, pCtxCore);
+        PATMRawEnter(pVM, pCtx);
     }
 
     /*
      * Assert sanity.
      */
-    AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
-    AssertReleaseMsg(pCtxCore->eflags.Bits.u2IOPL == 0,
-                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
+    AssertMsg((pCtx->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
+    AssertReleaseMsg(pCtx->eflags.Bits.u2IOPL == 0,
+                     ("X86_EFL_IOPL=%d CPL=%d\n", pCtx->eflags.Bits.u2IOPL, pCtx->ss.Sel & X86_SEL_RPL));
     Assert((pVCpu->cpum.s.Guest.cr0 & (X86_CR0_PG | X86_CR0_WP | X86_CR0_PE)) == (X86_CR0_PG | X86_CR0_PE | X86_CR0_WP));
 
-    pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */
+    pCtx->eflags.u32        |= X86_EFL_IF; /* paranoia */
 
     pVCpu->cpum.s.fRawEntered = true;
     return VINF_SUCCESS;
@@ -2336,10 +2334,9 @@ VMM_INT_DECL(int) CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
  * @returns Adjusted rc.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   rc          Raw mode return code
- * @param   pCtxCore    The context core (for trap usage).
  * @see     @ref pg_raw
  */
-VMM_INT_DECL(int) CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
+VMM_INT_DECL(int) CPUMRawLeave(PVMCPU pVCpu, int rc)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -2352,82 +2349,80 @@ VMM_INT_DECL(int) CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc)
     pVCpu->cpum.s.fRawEntered = false;
 
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (!pCtxCore)
-        pCtxCore = CPUMCTX2CORE(pCtx);
-    Assert(pCtxCore->eflags.Bits.u1VM || (pCtxCore->ss.Sel & X86_SEL_RPL));
-    AssertMsg(pCtxCore->eflags.Bits.u1VM || pCtxCore->eflags.Bits.u2IOPL < (unsigned)(pCtxCore->ss.Sel & X86_SEL_RPL),
-              ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
+    Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss.Sel & X86_SEL_RPL));
+    AssertMsg(pCtx->eflags.Bits.u1VM || pCtx->eflags.Bits.u2IOPL < (unsigned)(pCtx->ss.Sel & X86_SEL_RPL),
+              ("X86_EFL_IOPL=%d CPL=%d\n", pCtx->eflags.Bits.u2IOPL, pCtx->ss.Sel & X86_SEL_RPL));
 
     /*
      * Are we executing in raw ring-1?
      */
-    if (    (pCtxCore->ss.Sel & X86_SEL_RPL) == 1
-        &&  !pCtxCore->eflags.Bits.u1VM)
+    if (    (pCtx->ss.Sel & X86_SEL_RPL) == 1
+        &&  !pCtx->eflags.Bits.u1VM)
     {
         /*
          * Leave execution mode.
          */
-        PATMRawLeave(pVM, pCtxCore, rc);
+        PATMRawLeave(pVM, pCtx, rc);
         /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
         /** @todo See what happens if we remove this. */
-        if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 1)
-            pCtxCore->ds.Sel &= ~X86_SEL_RPL;
-        if ((pCtxCore->es.Sel & X86_SEL_RPL) == 1)
-            pCtxCore->es.Sel &= ~X86_SEL_RPL;
-        if ((pCtxCore->fs.Sel & X86_SEL_RPL) == 1)
-            pCtxCore->fs.Sel &= ~X86_SEL_RPL;
-        if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 1)
-            pCtxCore->gs.Sel &= ~X86_SEL_RPL;
+        if ((pCtx->ds.Sel & X86_SEL_RPL) == 1)
+            pCtx->ds.Sel &= ~X86_SEL_RPL;
+        if ((pCtx->es.Sel & X86_SEL_RPL) == 1)
+            pCtx->es.Sel &= ~X86_SEL_RPL;
+        if ((pCtx->fs.Sel & X86_SEL_RPL) == 1)
+            pCtx->fs.Sel &= ~X86_SEL_RPL;
+        if ((pCtx->gs.Sel & X86_SEL_RPL) == 1)
+            pCtx->gs.Sel &= ~X86_SEL_RPL;
 
         /*
          * Ring-1 selector => Ring-0.
          */
-        pCtxCore->ss.Sel &= ~X86_SEL_RPL;
-        if ((pCtxCore->cs.Sel & X86_SEL_RPL) == 1)
-            pCtxCore->cs.Sel &= ~X86_SEL_RPL;
+        pCtx->ss.Sel &= ~X86_SEL_RPL;
+        if ((pCtx->cs.Sel & X86_SEL_RPL) == 1)
+            pCtx->cs.Sel &= ~X86_SEL_RPL;
     }
     else
     {
         /*
          * PATM is taking care of the IOPL and IF flags for us.
          */
-        PATMRawLeave(pVM, pCtxCore, rc);
-        if (!pCtxCore->eflags.Bits.u1VM)
+        PATMRawLeave(pVM, pCtx, rc);
+        if (!pCtx->eflags.Bits.u1VM)
         {
 # ifdef VBOX_WITH_RAW_RING1
             if (    EMIsRawRing1Enabled(pVM)
-                &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 2)
+                &&  (pCtx->ss.Sel & X86_SEL_RPL) == 2)
             {
                 /* Not quite sure if this is really required, but shouldn't harm (too much anyways). */
                 /** @todo See what happens if we remove this. */
-                if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 2)
-                    pCtxCore->ds.Sel = (pCtxCore->ds.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtxCore->es.Sel & X86_SEL_RPL) == 2)
-                    pCtxCore->es.Sel = (pCtxCore->es.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtxCore->fs.Sel & X86_SEL_RPL) == 2)
-                    pCtxCore->fs.Sel = (pCtxCore->fs.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 2)
-                    pCtxCore->gs.Sel = (pCtxCore->gs.Sel & ~X86_SEL_RPL) | 1;
+                if ((pCtx->ds.Sel & X86_SEL_RPL) == 2)
+                    pCtx->ds.Sel = (pCtx->ds.Sel & ~X86_SEL_RPL) | 1;
+                if ((pCtx->es.Sel & X86_SEL_RPL) == 2)
+                    pCtx->es.Sel = (pCtx->es.Sel & ~X86_SEL_RPL) | 1;
+                if ((pCtx->fs.Sel & X86_SEL_RPL) == 2)
+                    pCtx->fs.Sel = (pCtx->fs.Sel & ~X86_SEL_RPL) | 1;
+                if ((pCtx->gs.Sel & X86_SEL_RPL) == 2)
+                    pCtx->gs.Sel = (pCtx->gs.Sel & ~X86_SEL_RPL) | 1;
 
                 /*
                  * Ring-2 selector => Ring-1.
                  */
-                pCtxCore->ss.Sel = (pCtxCore->ss.Sel & ~X86_SEL_RPL) | 1;
-                if ((pCtxCore->cs.Sel & X86_SEL_RPL) == 2)
-                    pCtxCore->cs.Sel = (pCtxCore->cs.Sel & ~X86_SEL_RPL) | 1;
+                pCtx->ss.Sel = (pCtx->ss.Sel & ~X86_SEL_RPL) | 1;
+                if ((pCtx->cs.Sel & X86_SEL_RPL) == 2)
+                    pCtx->cs.Sel = (pCtx->cs.Sel & ~X86_SEL_RPL) | 1;
             }
             else
             {
 # endif
                 /** @todo See what happens if we remove this. */
-                if ((pCtxCore->ds.Sel & X86_SEL_RPL) == 1)
-                    pCtxCore->ds.Sel &= ~X86_SEL_RPL;
-                if ((pCtxCore->es.Sel & X86_SEL_RPL) == 1)
-                    pCtxCore->es.Sel &= ~X86_SEL_RPL;
-                if ((pCtxCore->fs.Sel & X86_SEL_RPL) == 1)
-                    pCtxCore->fs.Sel &= ~X86_SEL_RPL;
-                if ((pCtxCore->gs.Sel & X86_SEL_RPL) == 1)
-                    pCtxCore->gs.Sel &= ~X86_SEL_RPL;
+                if ((pCtx->ds.Sel & X86_SEL_RPL) == 1)
+                    pCtx->ds.Sel &= ~X86_SEL_RPL;
+                if ((pCtx->es.Sel & X86_SEL_RPL) == 1)
+                    pCtx->es.Sel &= ~X86_SEL_RPL;
+                if ((pCtx->fs.Sel & X86_SEL_RPL) == 1)
+                    pCtx->fs.Sel &= ~X86_SEL_RPL;
+                if ((pCtx->gs.Sel & X86_SEL_RPL) == 1)
+                    pCtx->gs.Sel &= ~X86_SEL_RPL;
 # ifdef VBOX_WITH_RAW_RING1
             }
 # endif
@@ -2449,7 +2444,7 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (pVCpu->cpum.s.fRawEntered)
-        PATMRawSetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest), fEfl);
+        PATMRawSetEFlags(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.s.Guest, fEfl);
     else
 #endif
         pVCpu->cpum.s.Guest.eflags.u32 = fEfl;
@@ -2466,7 +2461,7 @@ VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
     if (pVCpu->cpum.s.fRawEntered)
-        return PATMRawGetEFlags(pVCpu->CTX_SUFF(pVM), CPUMCTX2CORE(&pVCpu->cpum.s.Guest));
+        return PATMRawGetEFlags(pVCpu->CTX_SUFF(pVM), &pVCpu->cpum.s.Guest);
 #endif
     return pVCpu->cpum.s.Guest.eflags.u32;
 }

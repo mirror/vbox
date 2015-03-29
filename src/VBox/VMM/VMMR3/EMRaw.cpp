@@ -128,11 +128,11 @@ int emR3RawResumeHyper(PVM pVM, PVMCPU pVCpu)
     /*
      * Resume execution.
      */
-    CPUMRawEnter(pVCpu, NULL);
+    CPUMRawEnter(pVCpu);
     CPUMSetHyperEFlags(pVCpu, CPUMGetHyperEFlags(pVCpu) | X86_EFL_RF);
     rc = VMMR3ResumeHyper(pVM, pVCpu);
     Log(("emR3RawResumeHyper: cs:eip=%RTsel:%RGr efl=%RGr - returned from GC with rc=%Rrc\n", pCtx->cs.Sel, pCtx->eip, pCtx->eflags, rc));
-    rc = CPUMRawLeave(pVCpu, NULL, rc);
+    rc = CPUMRawLeave(pVCpu, rc);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
 
     /*
@@ -190,7 +190,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
      * Single step.
      * We do not start time or anything, if anything we should just do a few nanoseconds.
      */
-    CPUMRawEnter(pVCpu, NULL);
+    CPUMRawEnter(pVCpu);
     do
     {
         if (pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER)
@@ -203,7 +203,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
 #endif
     } while (   rc == VINF_SUCCESS
              || rc == VINF_EM_RAW_INTERRUPT);
-    rc = CPUMRawLeave(pVCpu, NULL, rc);
+    rc = CPUMRawLeave(pVCpu, rc);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
 
     /*
@@ -1428,7 +1428,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * be modified a bit and some of the state components (IF, SS/CS RPL,
          * and perhaps EIP) needs to be stored with PATM.
          */
-        rc = CPUMRawEnter(pVCpu, NULL);
+        rc = CPUMRawEnter(pVCpu);
         if (rc != VINF_SUCCESS)
         {
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatRAWEntry, b);
@@ -1452,7 +1452,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
                 if (rc != VINF_SUCCESS)
                 {
-                    rc = CPUMRawLeave(pVCpu, NULL, rc);
+                    rc = CPUMRawLeave(pVCpu, rc);
                     break;
                 }
             }
@@ -1512,7 +1512,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Restore the real CPU state and deal with high priority post
          * execution FFs before doing anything else.
          */
-        rc = CPUMRawLeave(pVCpu, NULL, rc);
+        rc = CPUMRawLeave(pVCpu, rc);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
         if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))

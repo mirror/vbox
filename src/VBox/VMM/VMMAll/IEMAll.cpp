@@ -843,7 +843,7 @@ DECLINLINE(void) iemInitExec(PIEMCPU pIemCpu, bool fBypassHandlers)
                                && pCtx->cs.u32Limit == UINT32_MAX
                                && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
     if (!pIemCpu->fInPatchCode)
-        CPUMRawLeave(pVCpu, CPUMCTX2CORE(pCtx), VINF_SUCCESS);
+        CPUMRawLeave(pVCpu, VINF_SUCCESS);
 #endif
 }
 
@@ -913,7 +913,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
                                && pCtx->cs.u32Limit == UINT32_MAX
                                && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
     if (!pIemCpu->fInPatchCode)
-        CPUMRawLeave(pVCpu, CPUMCTX2CORE(pCtx), VINF_SUCCESS);
+        CPUMRawLeave(pVCpu, VINF_SUCCESS);
 #endif
 
 #ifdef DBGFTRACE_ENABLED
@@ -10678,7 +10678,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
 DECLINLINE(VBOXSTRICTRC) iemRCRawMaybeReenter(PIEMCPU pIemCpu, PVMCPU pVCpu, PCPUMCTX pCtx, VBOXSTRICTRC rcStrict)
 {
     if (!pIemCpu->fInPatchCode)
-        CPUMRawEnter(pVCpu, CPUMCTX2CORE(pCtx));
+        CPUMRawEnter(pVCpu);
     return rcStrict;
 }
 #endif
