@@ -246,11 +246,6 @@ typedef struct CPUMCTXCORE
 #pragma pack(1) /* for VBOXIDTR / VBOXGDTR. */
 typedef struct CPUMCTX
 {
-    /** FPU state. (16-byte alignment)
-     * @todo This doesn't have to be in X86FXSTATE on CPUs without fxsr - we need a type for the
-     *       actual format or convert it (waste of time).  */
-    X86XSAVEAREA        XState;
-
     /** CPUMCTXCORE Part.
      * @{ */
 
@@ -405,6 +400,11 @@ typedef struct CPUMCTX
 
     /** Size padding. */
     uint32_t        au32SizePadding[6];
+
+    /** FPU state. (16-byte alignment)
+     * @todo This doesn't have to be in X86FXSTATE on CPUs without fxsr - we need a type for the
+     *       actual format or convert it (waste of time).  */
+    X86XSAVEAREA        XState;
 } CPUMCTX;
 #pragma pack()
 

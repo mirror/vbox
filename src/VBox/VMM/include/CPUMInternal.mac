@@ -125,8 +125,6 @@ struc CPUMCPU
     ; Guest context state
     ; (Identical to the .Hyper chunk below.)
     ;
-    alignb 64
-    .Guest.XState             resb    XSTATE_SIZE
     .Guest.eax                resq    1
     .Guest.ecx                resq    1
     .Guest.edx                resq    1
@@ -225,7 +223,8 @@ struc CPUMCPU
     .Guest.msrSFMASK          resb    8
     .Guest.msrKERNELGSBASE    resb    8
     .Guest.msrApicBase        resb    8
-
+    alignb 64
+    .Guest.XState             resb    XSTATE_SIZE
 
     alignb 64
     .GuestMsrs.au64           resq    64
@@ -367,7 +366,6 @@ struc CPUMCPU
     ; Hypervisor Context (same as .Guest above).
     ;
     alignb 64
-    .Hyper.XState             resb    XSTATE_SIZE
     .Hyper.eax                resq    1
     .Hyper.ecx                resq    1
     .Hyper.edx                resq    1
@@ -467,6 +465,7 @@ struc CPUMCPU
     .Hyper.msrKERNELGSBASE    resb    8
     .Hyper.msrApicBase        resb    8
     alignb 64
+    .Hyper.XState             resb    XSTATE_SIZE
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     .aMagic              resb    56
