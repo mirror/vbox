@@ -27,6 +27,7 @@
 
 /* Forward declarations: */
 class UIEncryptionDataTable;
+class QIDialogButtonBox;
 class QLabel;
 
 /* Type definitions: */
@@ -52,6 +53,11 @@ public:
       * acquired from the UIEncryptionDataTable instance. */
     EncryptionPasswordMap encryptionPasswords() const;
 
+private slots:
+
+    /** Handles the data change. */
+    void sltDataChanged() { revalidate(); }
+
 private:
 
     /** Prepare routine. */
@@ -59,6 +65,9 @@ private:
 
     /** Translation routine. */
     void retranslateUi();
+
+    /** Validation routine. */
+    void revalidate();
 
     /** Holds the name of the machine we show this dialog for. */
     const QString m_strMachineName;
@@ -70,6 +79,8 @@ private:
     QLabel *m_pLabelDescription;
     /** Holds the encryption-data table instance. */
     UIEncryptionDataTable *m_pTableEncryptionData;
+    /** Holds the button-box instance. */
+    QIDialogButtonBox *m_pButtonBox;
 };
 
 #endif /* !___UIAddDiskEncryptionPasswordDialog_h___ */

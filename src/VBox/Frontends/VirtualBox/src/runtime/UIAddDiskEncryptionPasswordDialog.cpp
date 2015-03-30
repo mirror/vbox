@@ -25,6 +25,7 @@
 # include <QLineEdit>
 # include <QTableView>
 # include <QHeaderView>
+# include <QPushButton>
 # include <QItemEditorFactory>
 # include <QAbstractTableModel>
 # include <QStandardItemEditorCreator>
@@ -104,6 +105,9 @@ public:
     /** Returns the shallow copy of the encryption password map instance. */
     EncryptionPasswordMap encryptionPasswords() const { return m_encryptionPasswords; }
 
+    /** Returns whether the model is valid. */
+    bool isValid() const;
+
     /** Returns the row count, taking optional @a parent instead of root if necessary. */
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
     /** Returns the column count, taking optional @a parent instead of root if necessary. */
@@ -144,6 +148,11 @@ class UIEncryptionDataTable : public QTableView
 {
     Q_OBJECT;
 
+signals:
+
+    /** Notifies listeners about data change. */
+    void sigDataChanged();
+
 public:
 
     /** Constructor.
@@ -153,6 +162,9 @@ public:
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataModel instance. */
     EncryptionPasswordMap encryptionPasswords() const;
+
+    /** Returns whether the table is valid. */
+    bool isValid() const;
 
 private:
 
@@ -197,6 +209,16 @@ UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMe
 {
     /* Prepare: */
     prepare();
+}
+
+bool UIEncryptionDataModel::isValid() const
+{
+    /* Check whether the model contains invalid passwords: */
+    foreach (const bool &fValue, m_encryptionPasswordStatus.values())
+        if (!fValue)
+            return false;
+    /* Valid by default: */
+    return true;
 }
 
 int UIEncryptionDataModel::rowCount(const QModelIndex &parent /* = QModelIndex() */) const
@@ -401,6 +423,12 @@ EncryptionPasswordMap UIEncryptionDataTable::encryptionPasswords() const
     return m_pModelEncryptionData->encryptionPasswords();
 }
 
+bool UIEncryptionDataTable::isValid() const
+{
+    AssertPtrReturn(m_pModelEncryptionData, false);
+    return m_pModelEncryptionData->isValid();
+}
+
 void UIEncryptionDataTable::prepare()
 {
     /* Create encryption-data model: */
@@ -409,6 +437,9 @@ void UIEncryptionDataTable::prepare()
     {
         /* Assign configured model to table: */
         setModel(m_pModelEncryptionData);
+        /* Configure encryption-data model: */
+        connect(m_pModelEncryptionData, SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&)),
+                this, SIGNAL(sigDataChanged()));
     }
 
     /* Create item delegate: */
@@ -458,11 +489,14 @@ UIAddDiskEncryptionPasswordDialog::UIAddDiskEncryptionPasswordDialog(QWidget *pP
     , m_encryptedMediums(encryptedMediums)
     , m_pLabelDescription(0)
     , m_pTableEncryptionData(0)
+    , m_pButtonBox(0)
 {
     /* Prepare: */
     prepare();
     /* Translate: */
     retranslateUi();
+    /* Validate: */
+    revalidate();
 }
 
 EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() const
@@ -495,6 +529,9 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
             m_pTableEncryptionData = new UIEncryptionDataTable(m_encryptedMediums);
             AssertPtrReturnVoid(m_pTableEncryptionData);
             {
+                /* Configure encryption-data table: */
+                connect(m_pTableEncryptionData, SIGNAL(sigDataChanged()),
+                        this, SLOT(sltDataChanged()));
                 /* Add label into layout: */
                 pInputLayout->addWidget(m_pTableEncryptionData);
             }
@@ -502,15 +539,15 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
             pMainLayout->addLayout(pInputLayout);
         }
         /* Create button-box: */
-        QIDialogButtonBox *pButtonBox = new QIDialogButtonBox;
-        AssertPtrReturnVoid(pButtonBox);
+        m_pButtonBox = new QIDialogButtonBox;
+        AssertPtrReturnVoid(m_pButtonBox);
         {
             /* Configure button-box: */
-            pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-            connect(pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
-            connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+            m_pButtonBox->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+            connect(m_pButtonBox, SIGNAL(accepted()), this, SLOT(accept()));
+            connect(m_pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
             /* Add button-box into layout: */
-            pMainLayout->addWidget(pButtonBox);
+            pMainLayout->addWidget(m_pButtonBox);
         }
     }
 }
@@ -530,6 +567,13 @@ void UIAddDiskEncryptionPasswordDialog::retranslateUi()
                                     "(but the user can see how many passwords are in the list "
                                     "and doesn't need to be told).",
                                     m_encryptedMediums.size()));
+}
+
+void UIAddDiskEncryptionPasswordDialog::revalidate()
+{
+    /* Validate: */
+    AssertPtrReturnVoid(m_pButtonBox);
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_pTableEncryptionData->isValid());
 }
 
 #include "UIAddDiskEncryptionPasswordDialog.moc"
