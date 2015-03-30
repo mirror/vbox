@@ -20,6 +20,7 @@
 #include "cr_error.h" 
 #include "server_dispatch.h"
 #include "server.h"
+#include "cr_mem.h"
 
 #define CR_NOTHING()
 
@@ -189,3 +190,98 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetTexEnviv( GLenum target, GLenum
 
     crServerReturnValue( &(local_params[0]), crStateHlpComponentsCount(pname)*sizeof (GLint) );
 }
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchBindTexture( GLenum target, GLuint texture )
+{
+    crStateBindTexture( target, texture );
+    cr_server.head_spu->dispatch_table.BindTexture(target, crStateGetTextureHWID(texture));
+}
+
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteTextures( GLsizei n, const GLuint *textures)
+{
+    GLuint *newTextures = (GLuint *) crAlloc(n * sizeof(GLuint));
+    GLint i;
+
+    if (!newTextures)
+    {
+        crError("crServerDispatchDeleteTextures: out of memory");
+        return;
+    }
+
+    for (i = 0; i < n; i++)
+    {
+        newTextures[i] = crStateGetTextureHWID(textures[i]);
+    }
+
+//    for (i = 0; i < n; ++i)
+//    {
+//        crDebug("DeleteTexture: %d, pid %d, ctx %d", textures[i], (uint32_t)cr_server.curClient->pid, cr_server.currentCtxInfo->pContext->id);
+//    }
+
+
+    crStateDeleteTextures(n, textures);
+    cr_server.head_spu->dispatch_table.DeleteTextures(n, newTextures);
+    crFree(newTextures);
+}
+
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchPrioritizeTextures( GLsizei n, const GLuint * textures, const GLclampf * priorities )
+{
+    GLuint *newTextures = (GLuint *) crAlloc(n * sizeof(GLuint));
+    GLint i;
+
+    if (!newTextures)
+    {
+        crError("crServerDispatchDeleteTextures: out of memory");
+        return;
+    }
+
+    crStatePrioritizeTextures(n, textures, priorities);
+
+    for (i = 0; i < n; i++)
+    {
+        newTextures[i] = crStateGetTextureHWID(textures[i]);
+    }
+
+    cr_server.head_spu->dispatch_table.PrioritizeTextures(n, newTextures, priorities);
+    crFree(newTextures);
+}
+
+
+/*@todo will fail for textures loaded from snapshot */
+GLboolean SERVER_DISPATCH_APIENTRY crServerDispatchIsTexture( GLuint texture )
+{
+    GLboolean retval;
+    retval = cr_server.head_spu->dispatch_table.IsTexture(crStateGetTextureHWID(texture));
+    crServerReturnValue( &retval, sizeof(retval) );
+    return retval; /* WILL PROBABLY BE IGNORED */
+}
+
+
+GLboolean SERVER_DISPATCH_APIENTRY
+crServerDispatchAreTexturesResident(GLsizei n, const GLuint *textures,
+                                    GLboolean *residences)
+{
+    GLboolean retval;
+    GLsizei i;
+    GLboolean *res = (GLboolean *) crAlloc(n * sizeof(GLboolean));
+    GLuint *textures2 = (GLuint *) crAlloc(n * sizeof(GLuint));
+
+    (void) residences;
+
+    for (i = 0; i < n; i++)
+    {
+        textures2[i] = crStateGetTextureHWID(textures[i]);
+    }
+    retval = cr_server.head_spu->dispatch_table.AreTexturesResident(n, textures2, res);
+
+    crFree(textures2);
+
+    crServerReturnValue(res, n * sizeof(GLboolean));
+
+    crFree(res);
+
+    return retval; /* WILL PROBABLY BE IGNORED */
+}
+
