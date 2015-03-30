@@ -313,7 +313,7 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
 
                 /* Get the maps of encrypted mediums and their passwords: */
                 const EncryptedMediumMap &encryptedMedium = generalData.m_encryptedMediums;
-                const EncryptionPasswordsMap &encryptionPasswords = generalData.m_encryptionPasswords;
+                const EncryptionPasswordMap &encryptionPasswords = generalData.m_encryptionPasswords;
                 /* Enumerate attachments: */
                 foreach (const CMediumAttachment &attachment, m_machine.GetMediumAttachments())
                 {

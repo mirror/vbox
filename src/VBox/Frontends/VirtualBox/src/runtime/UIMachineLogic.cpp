@@ -2436,7 +2436,7 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
     }
 
     /* Ask for the disk encryption passwords if necessary: */
-    EncryptionPasswordsMap encryptionPasswords;
+    EncryptionPasswordMap encryptionPasswords;
     if (!encryptedMediums.isEmpty())
     {
         /* Create corresponding dialog: */

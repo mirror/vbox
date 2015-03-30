@@ -91,7 +91,7 @@ struct UIDataSettingsMachineGeneral
     /** Holds the encrypted medium ids. */
     EncryptedMediumMap m_encryptedMediums;
     /** Holds the encryption passwords. */
-    EncryptionPasswordsMap m_encryptionPasswords;
+    EncryptionPasswordMap m_encryptionPasswords;
 };
 typedef UISettingsCache<UIDataSettingsMachineGeneral> UICacheSettingsMachineGeneral;
 

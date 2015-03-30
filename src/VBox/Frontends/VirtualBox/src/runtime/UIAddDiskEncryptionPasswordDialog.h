@@ -31,7 +31,8 @@ class QLabel;
 
 /* Type definitions: */
 typedef QMultiMap<QString, QString> EncryptedMediumMap;
-typedef QMap<QString, QString> EncryptionPasswordsMap;
+typedef QMap<QString, QString> EncryptionPasswordMap;
+typedef QMap<QString, bool> EncryptionPasswordStatusMap;
 
 /** QDialog reimplementation used to
   * allow the user to enter disk encryption passwords for particular password ids. */
@@ -49,7 +50,7 @@ public:
 
     /** Returns the shallow copy of the encryption password map
       * acquired from the UIEncryptionDataTable instance. */
-    EncryptionPasswordsMap encryptionPasswords() const;
+    EncryptionPasswordMap encryptionPasswords() const;
 
 private:
 
