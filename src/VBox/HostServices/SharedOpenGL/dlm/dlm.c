@@ -194,7 +194,7 @@ void DLM_APIENTRY crDLMFreeDLM(CRDLM *dlm)
 	 * they're in big trouble anyway.
 	 */
 	crFreeTSD(&(dlm->tsdKey));
-	//crFreeTSD(&CRDLMTSDKey);
+	crFreeTSD(&CRDLMTSDKey);
 #endif
 
 	/* Free the master record, and we're all done. */
