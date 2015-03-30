@@ -188,7 +188,7 @@ typedef struct SB16STATE
     int cmd;
     int use_hdma;
     int highspeed;
-    int can_write; /** @Todo Value never gets 0? */
+    int can_write; /** @todo Value never gets 0? */
 
     int v2x6;
 
@@ -322,7 +322,7 @@ static void sb16AudioCallback(void *pvContext, uint32_t cbFree);
 static void sb16AudioCallback(void *pvContext, int cbFree);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-static int magic_of_irq (int irq)
+static int magic_of_irq(int irq)
 {
     switch (irq)
     {
@@ -342,7 +342,7 @@ static int magic_of_irq (int irq)
     return 2;
 }
 
-static int irq_of_magic (int magic)
+static int irq_of_magic(int magic)
 {
     switch (magic)
     {
@@ -362,18 +362,18 @@ static int irq_of_magic (int magic)
     return -1;
 }
 
-#if 0
-static void log_dsp (PSB16STATE dsp)
+#ifdef DEBUG
+static inline void log_dsp(PSB16STATE pThis)
 {
-    ldebug ("%s:%s:%d:%s:dmasize=%d:freq=%d:const=%d:speaker=%d\n",
-            dsp->fmt_stereo ? "Stereo" : "Mono",
-            dsp->fmt_signed ? "Signed" : "Unsigned",
-            dsp->fmt_bits,
-            dsp->dma_auto ? "Auto" : "Single",
-            dsp->block_size,
-            dsp->freq,
-            dsp->time_const,
-            dsp->speaker);
+    LogFlowFunc(("%s:%s:%d:%s:dmasize=%d:freq=%d:const=%d:speaker=%d\n",
+                 pThis->fmt_stereo ? "Stereo" : "Mono",
+                 pThis->fmt_signed ? "Signed" : "Unsigned",
+                 pThis->fmt_bits,
+                 pThis->dma_auto ? "Auto" : "Single",
+                 pThis->block_size,
+                 pThis->freq,
+                 pThis->time_const,
+                 pThis->speaker));
 }
 #endif
 
@@ -1146,7 +1146,7 @@ static void legacy_reset(PSB16STATE pThis)
     /* AUD_set_active_out (pThis->voice, 1); */
 }
 
-static void reset (PSB16STATE pThis)
+static void sb16Reset(PSB16STATE pThis)
 {
 #ifndef VBOX
     qemu_irq_lower (pThis->pic[pThis->irq]);
@@ -1180,90 +1180,101 @@ static void reset (PSB16STATE pThis)
     legacy_reset (pThis);
 }
 
-static IO_WRITE_PROTO (dsp_write)
+static IO_WRITE_PROTO(dsp_write)
 {
-    PSB16STATE pThis = (SB16STATE*)opaque;
+    PSB16STATE pThis = (PSB16STATE)opaque;
     int iport = nport - pThis->port;
 
     LogFlowFunc(("write %#x <- %#x\n", nport, val));
-    switch (iport) {
-    case 0x06:
-        switch (val) {
-        case 0x00:
-            if (pThis->v2x6 == 1) {
-                if (0 && pThis->highspeed) {
-                    pThis->highspeed = 0;
+    switch (iport)
+    {
+        case 0x06:
+            switch (val)
+            {
+                case 0x00:
+                {
+                    if (pThis->v2x6 == 1)
+                    {
+                        if (0 && pThis->highspeed)
+                        {
+                            pThis->highspeed = 0;
 #ifndef VBOX
-                    qemu_irq_lower (pThis->pic[pThis->irq]);
+                            qemu_irq_lower (pThis->pic[pThis->irq]);
 #else
-                    PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
+                            PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
 #endif
-                    sb16Control(pThis, 0);
+                            sb16Control(pThis, 0);
+                        }
+                        else
+                            sb16Reset(pThis);
+                    }
+                    pThis->v2x6 = 0;
+                    break;
                 }
-                else {
-                    reset (pThis);
+
+                case 0x01:
+                case 0x03:              /* FreeBSD kludge */
+                    pThis->v2x6 = 1;
+                    break;
+
+                case 0xc6:
+                    pThis->v2x6 = 0;    /* Prince of Persia, csp.sys, diagnose.exe */
+                    break;
+
+                case 0xb8:              /* Panic */
+                    sb16Reset(pThis);
+                    break;
+
+                case 0x39:
+                    dsp_out_data(pThis, 0x38);
+                    sb16Reset(pThis);
+                    pThis->v2x6 = 0x39;
+                    break;
+
+                default:
+                    pThis->v2x6 = val;
+                    break;
+            }
+            break;
+
+        case 0x0c:                      /* Write data or command | write status */
+#if 0
+            if (pThis->highspeed)
+                break;
+#endif
+            if (0 == pThis->needed_bytes)
+            {
+                command(pThis, val);
+#if 0
+                if (0 == pThis->needed_bytes) {
+                    log_dsp (pThis);
+                }
+#endif
+            }
+            else
+            {
+                if (pThis->in_index == sizeof (pThis->in2_data))
+                {
+                    LogFlowFunc(("in data overrun\n"));
+                }
+                else
+                {
+                    pThis->in2_data[pThis->in_index++] = val;
+                    if (pThis->in_index == pThis->needed_bytes)
+                    {
+                        pThis->needed_bytes = 0;
+                        complete (pThis);
+#if 0
+                        log_dsp (pThis);
+#endif
+                    }
                 }
             }
-            pThis->v2x6 = 0;
-            break;
-
-        case 0x01:
-        case 0x03:              /* FreeBSD kludge */
-            pThis->v2x6 = 1;
-            break;
-
-        case 0xc6:
-            pThis->v2x6 = 0;        /* Prince of Persia, csp.sys, diagnose.exe */
-            break;
-
-        case 0xb8:              /* Panic */
-            reset (pThis);
-            break;
-
-        case 0x39:
-            dsp_out_data (pThis, 0x38);
-            reset (pThis);
-            pThis->v2x6 = 0x39;
             break;
 
         default:
-            pThis->v2x6 = val;
+            LogFlowFunc(("nport=%#x, val=%#x)\n", nport, val));
             break;
-        }
-        break;
-
-    case 0x0c:                  /* write data or command | write status */
-/*         if (pThis->highspeed) */
-/*             break; */
-
-        if (0 == pThis->needed_bytes) {
-            command (pThis, val);
-#if 0
-            if (0 == pThis->needed_bytes) {
-                log_dsp (pThis);
-            }
-#endif
-        }
-        else {
-            if (pThis->in_index == sizeof (pThis->in2_data)) {
-                LogFlowFunc(("in data overrun\n"));
-            }
-            else {
-                pThis->in2_data[pThis->in_index++] = val;
-                if (pThis->in_index == pThis->needed_bytes) {
-                    pThis->needed_bytes = 0;
-                    complete (pThis);
-#if 0
-                    log_dsp (pThis);
-#endif
-                }
-            }
-        }
-        break;
-
-    default:
-        LogFlowFunc(("nport=%#x, val=%#x)\n", nport, val));
-        break;
     }
 
 #ifdef VBOX
@@ -1271,9 +1282,9 @@ static IO_WRITE_PROTO (dsp_write)
 #endif
 }
 
-static IO_READ_PROTO (dsp_read)
+static IO_READ_PROTO(dsp_read)
 {
-    PSB16STATE pThis = (SB16STATE*)opaque;
+    PSB16STATE pThis = (PSB16STATE)opaque;
     int iport, retval, ack = 0;
 
     iport = nport - pThis->port;
@@ -1428,7 +1439,7 @@ static void sb16MixerReset(PSB16STATE pThis)
 
 static IO_WRITE_PROTO(mixer_write_indexb)
 {
-    PSB16STATE pThis = (SB16STATE*)opaque;
+    PSB16STATE pThis = (PSB16STATE)opaque;
     (void) nport;
     pThis->mixer_nreg = val;
 
@@ -1592,7 +1603,7 @@ static IO_WRITE_PROTO(mixer_write)
     mixer_write_indexb (opaque, nport, val & 0xff);
     mixer_write_datab (opaque, nport, (val >> 8) & 0xff);
 #else  /* VBOX */
-    PSB16STATE pThis = (SB16STATE*)opaque;
+    PSB16STATE pThis = (PSB16STATE)opaque;
     int iport = nport - pThis->port;
     switch (cb)
     {
@@ -1621,7 +1632,7 @@ static IO_WRITE_PROTO(mixer_write)
 
 static IO_READ_PROTO(mixer_read)
 {
-    PSB16STATE pThis = (SB16STATE*)opaque;
+    PSB16STATE pThis = (PSB16STATE)opaque;
 
     (void) nport;
 #ifndef DEBUG_SB16_MOST
@@ -2096,7 +2107,7 @@ int SB16_init (AudioState *audio, qemu_irq *pic)
     pThis->csp_regs[5] = 1;
     pThis->csp_regs[9] = 0xf8;
 
-    sb16MixerReset (pThis);
+    sb16MixerReset(pThis);
     pThis->aux_ts = qemu_new_timer (vm_clock, aux_timer, s);
     if (!pThis->aux_ts) {
         LogFlowFunc(("warning: Could not create auxiliary timer\n"));
@@ -2340,6 +2351,10 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->csp_regs[5]             = 1;
     pThis->csp_regs[9]             = 0xf8;
 
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    RTListInit(&pThis->lstDrv);
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+
     sb16MixerReset(pThis);
 
     /*
@@ -2393,8 +2408,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Attach driver.
      */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    RTListInit(&pThis->lstDrv);
-
     uint8_t uLUN;
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
