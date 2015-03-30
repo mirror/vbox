@@ -75,27 +75,6 @@ static int drvAudioDestroyGstIn(PDRVAUDIO pThis, PPDMAUDIOGSTSTRMIN pGstStrmIn);
 static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOHSTSTRMIN *ppHstStrmIn);
 static int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn);
 
-volume_t nominal_volume =
-{
-    0,
-    INT_MAX,
-    INT_MAX
-};
-
-volume_t sum_out_volume =
-{
-    0,
-    INT_MAX,
-    INT_MAX
-};
-
-volume_t pcm_in_volume =
-{
-    0,
-    INT_MAX,
-    INT_MAX
-};
-
 int drvAudioAddHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg, PPDMAUDIOHSTSTRMOUT *ppHstStrmOut)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -497,6 +476,11 @@ static int drvAudioHstInAdd(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREA
 int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHostStrmOut,
                        const char *pszName, PPDMAUDIOSTREAMCFG pCfg)
 {
+    AssertPtrReturn(pGstStrmOut,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pHostStrmOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pCfg,         VERR_INVALID_POINTER);
+
     int rc = drvAudioStreamCfgToProps(pCfg, &pGstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
@@ -504,8 +488,7 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
         if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
             return VERR_NO_MEMORY;
 
-        rc = audioMixBufInit(&pGstStrmOut->MixBuf, pszTemp, &pGstStrmOut->Props,
-                             audioMixBufSize(&pHostStrmOut->MixBuf));
+        rc = audioMixBufInit(&pGstStrmOut->MixBuf, pszTemp, &pGstStrmOut->Props, audioMixBufSize(&pHostStrmOut->MixBuf));
         if (RT_SUCCESS(rc))
             rc = audioMixBufLinkTo(&pGstStrmOut->MixBuf, &pHostStrmOut->MixBuf);
 
@@ -757,8 +740,7 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
         if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
             return VERR_NO_MEMORY;
 
-        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pGstStrmIn->Props,
-                             audioMixBufSize(&pHstStrmIn->MixBuf));
+        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pGstStrmIn->Props, audioMixBufSize(&pHstStrmIn->MixBuf));
         if (RT_SUCCESS(rc))
             rc = audioMixBufLinkTo(&pHstStrmIn->MixBuf, &pGstStrmIn->MixBuf);
 
@@ -1457,52 +1439,6 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
     return rc;
 }
 
-static DECLCALLBACK(int) drvAudioIsSetOutVolume(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
-                                                bool fMute, uint8_t uVolLeft, uint8_t uVolRight)
-{
-    LogFlowFunc(("[%s] fMute=%RTbool, uVolLeft=%RU8, uVolRight=%RU8\n",
-                 pGstStrmOut->MixBuf.pszName, fMute, uVolLeft, uVolRight));
-
-    if (pGstStrmOut)
-    {
-        pGstStrmOut->State.fMuted       = fMute;
-        pGstStrmOut->State.uVolumeLeft  = (uint32_t)uVolLeft * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
-        pGstStrmOut->State.uVolumeRight = (uint32_t)uVolRight * 0x808080; /* maximum is INT_MAX = 0x7fffffff */
-    }
-
-    return VINF_SUCCESS;
-}
-
-/** @todo Handle more channels than stereo ... */
-static DECLCALLBACK(int) drvAudioSetVolume(PPDMIAUDIOCONNECTOR pInterface,
-                                           bool fMute, uint8_t uVolLeft, uint8_t uVolRight)
-{
-    LogFlowFunc(("fMute=%RTbool, uVolLeft=%RU8, uVolRight=%RU8\n",
-                 fMute, uVolLeft, uVolRight));
-
-    volume_t vol;
-
-    uint32_t u32VolumeLeft  = uVolLeft;
-    uint32_t u32VolumeRight = uVolRight;
-
-    /* 0x00..0xff => 0x01..0x100 */
-    if (u32VolumeLeft)
-        u32VolumeLeft++;
-    if (u32VolumeRight)
-        u32VolumeRight++;
-    vol.mute  = fMute ? 1 : 0;
-    vol.l     = u32VolumeLeft  * 0x800000; /* maximum is 0x80000000 */
-    vol.r     = u32VolumeRight * 0x800000; /* maximum is 0x80000000 */
-
-    sum_out_volume.mute = 0;
-    sum_out_volume.l    = ASMMultU64ByU32DivByU32(INT_MAX, INT_MAX, 0x80000000U);
-    sum_out_volume.r    = ASMMultU64ByU32DivByU32(INT_MAX, INT_MAX, 0x80000000U);
-
-    LogFlowFunc(("sum_out l=%RU32, r=%RU32\n", sum_out_volume.l, sum_out_volume.r));
-
-    return VINF_SUCCESS;
-}
-
 static DECLCALLBACK(int) drvAudioEnableOut(PPDMIAUDIOCONNECTOR pInterface,
                                            PPDMAUDIOGSTSTRMOUT pGstStrmOut, bool fEnable)
 {
@@ -1676,13 +1612,7 @@ static DECLCALLBACK(int) drvAudioOpenIn(PPDMIAUDIOCONNECTOR pInterface, const ch
         rc = drvAudioCreateStreamPairIn(pThis, pszName, enmRecSource, pCfg, &pGstStrmIn);
 
     if (pGstStrmIn)
-    {
-        pGstStrmIn->State.uVolumeLeft = nominal_volume.l;
-        pGstStrmIn->State.uVolumeRight = nominal_volume.r;
-        pGstStrmIn->State.fMuted = RT_BOOL(nominal_volume.mute);
-
         *ppGstStrmIn = pGstStrmIn;
-    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1762,10 +1692,6 @@ DECLCALLBACK(int) drvAudioOpenOut(PPDMIAUDIOCONNECTOR pInterface, const char *ps
     if (RT_SUCCESS(rc))
     {
         AssertPtr(pGstStrmOut);
-        pGstStrmOut->State.uVolumeLeft  = nominal_volume.l;
-        pGstStrmOut->State.uVolumeRight = nominal_volume.r;
-        pGstStrmOut->State.fMuted       = RT_BOOL(nominal_volume.mute);
-
         *ppGstStrmOut = pGstStrmOut;
 #if 0
         /* Update remaining live samples with new rate. */
@@ -1901,8 +1827,6 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     pThis->IAudioConnector.pfnIsInputOK              = drvAudioIsInputOK;
     pThis->IAudioConnector.pfnIsOutputOK             = drvAudioIsOutputOK;
     pThis->IAudioConnector.pfnInitNull               = drvAudioInitNull;
-    pThis->IAudioConnector.pfnSetVolumeOut           = drvAudioIsSetOutVolume;
-    pThis->IAudioConnector.pfnSetVolume              = drvAudioSetVolume;
     pThis->IAudioConnector.pfnEnableOut              = drvAudioEnableOut;
     pThis->IAudioConnector.pfnEnableIn               = drvAudioEnableIn;
     pThis->IAudioConnector.pfnCloseIn                = drvAudioCloseIn;

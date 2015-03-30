@@ -29,12 +29,14 @@
 #include <VBox/types.h>
 #include <iprt/list.h>
 
+#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct
 {
     int mute;
     uint32_t r;
     uint32_t l;
 } volume_t;
+#endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef uint32_t PDMAUDIODRVFLAGS;
@@ -136,6 +138,7 @@ typedef enum PDMAUDIOMIXERCTL
     PDMAUDIOMIXERCTL_VOLUME,
     PDMAUDIOMIXERCTL_PCM,
     PDMAUDIOMIXERCTL_LINE_IN,
+    PDMAUDIOMIXERCTL_MIC_IN,
     /** Hack to blow the type up to 32-bit. */
     PDMAUDIOMIXERCTL_32BIT_HACK = 0x7fffffff
 } PDMAUDIOMIXERCTL;
@@ -200,6 +203,19 @@ typedef struct PDMPCMPROPS
 } PDMPCMPROPS, *PPDMPCMPROPS;
 
 /**
+ * Structure keeping an audio volume level.
+ */
+typedef struct PDMAUDIOVOLUME
+{
+    /** Set to @c true if this stream is muted, @c false if not. */
+    bool                   fMuted;
+    /** Left channel volume. */
+    uint32_t               uLeft;
+    /** Right channel volume. */
+    uint32_t               uRight;
+} PDMAUDIOVOLUME, *PPDMAUDIOVOLUME;
+
+/**
  * Structure for holding rate processing information
  * of a source + destination audio stream. This is needed
  * because both streams can differ regarding their rates
@@ -242,22 +258,23 @@ typedef struct PDMAUDIOMIXBUF
     /** The current read/write position (in samples)
      *  in the samples buffer. */
     uint32_t               offReadWrite;
-    /** Total samples already mixed down to the
-     *  parent buffer (if any). Always starting at
-     *  the parent's offReadWrite position.
-     *  Note: Count always is specified in parent samples,
-     *        as the sample count can differ between parent
-     *        and child. */
+    /**
+     * Total samples already mixed down to the parent buffer (if any). Always starting at
+     * the parent's offReadWrite position.
+     *
+     * Note: Count always is specified in parent samples, as the sample count can differ between parent
+     *       and child.
+     */
     uint32_t               cMixed;
     uint32_t               cProcessed;
     /** Pointer to parent buffer (if any). */
     PPDMAUDIOMIXBUF        pParent;
-    /** List of children mix buffers to keep
-     *  in sync with (if being a parent buffer). */
+    /** List of children mix buffers to keep in sync with (if being a parent buffer). */
     RTLISTANCHOR           lstBuffers;
-    /** Intermediate structure for buffer
-     *  conversion tasks. */
+    /** Intermediate structure for buffer conversion tasks. */
     PPDMAUDIOSTRMRATE      pRate;
+    /** Current volume used for mixing. */
+    PDMAUDIOVOLUME         Volume;
     /** This buffer's audio format. */
     PDMAUDIOMIXBUFFMT      AudioFmt;
     /**
@@ -334,14 +351,8 @@ typedef struct PDMAUDIOGSTSTRMSTATE
     bool                   fActive;
     /** Guest audio output stream has some samples or not. */
     bool                   fEmpty;
-    /** Set to @c true if this stream is muted, @c false if not. */
-    bool                   fMuted;
     /** Name of this stream. */
     char                  *pszName;
-    /** Left channel volume. */
-    uint32_t               uVolumeLeft;
-    /** Right channel volume. */
-    uint32_t               uVolumeRight;
 } PDMAUDIOGSTSTRMSTATE, *PPDMAUDIOGSTSTRMSTATE;
 
 /**
@@ -442,31 +453,6 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      */
     DECLR3CALLBACKMEMBER(int, pfnInitNull, (PPDMIAUDIOCONNECTOR pInterface));
-
-    /**
-     * Sets the audio volume of a specific guest output stream.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pGstStrmOut     Pointer to guest output stream.
-     * @param   fMute           Whether to mute or not.
-     * @param   uVolLeft        Left audio stream volume.
-     * @param   uVolRight       Right audio stream volume.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetVolumeOut, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
-                                                bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
-
-    /**
-     * Sets the overall audio volume.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   fMute           Whether to mute or not.
-     * @param   uVolLeft        Left audio stream volume.
-     * @param   uVolRight       Right audio stream volume.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PPDMIAUDIOCONNECTOR pInterface,
-                                             bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
 
     /**
      * Enables a specific guest output stream and starts the audio device.

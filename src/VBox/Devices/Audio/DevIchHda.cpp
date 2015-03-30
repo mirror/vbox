@@ -677,6 +677,8 @@ typedef struct HDASTATE
     };
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)             pMixer;
+    /** Audio sink for PCM output. */
+    R3PTRTYPE(PAUDMIXSINK)             pSinkOutput;
     /** Audio mixer sink for line input. */
     R3PTRTYPE(PAUDMIXSINK)             pSinkLineIn;
     /** Audio mixer sink for microphone input. */
@@ -2205,7 +2207,7 @@ static int hdaReadAudio(PHDASTATE pThis, PAUDMIXSINK pSink,
     else
     {
         uint32_t cbRead = 0;
-        rc = audioMixerProcessSinkIn(pSink, pBdle->au8HdaBuffer, cb2Copy, &cbRead);
+        rc = audioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pBdle->au8HdaBuffer, cb2Copy, &cbRead);
         if (RT_SUCCESS(rc))
         {
             Assert(cbRead);
@@ -2510,19 +2512,8 @@ static DECLCALLBACK(int) hdaSetVolume(PHDASTATE pThis,
 {
     int rc = VINF_SUCCESS;
 
-    PHDADRIVER pDrv;
-    RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-    {
-        int rc2 = pDrv->pConnector->pfnSetVolume(pDrv->pConnector,
-                                                 fMute, uVolLeft, uVolRight);
-        if (RT_FAILURE(rc2))
-        {
-            LogFunc(("Failed for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-            /* Keep going. */
-        }
-    }
+    PDMAUDIOVOLUME vol = { fMute, uVolLeft, uVolRight };
+    audioMixerSetMasterVolume(pThis->pMixer, &vol);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3836,12 +3827,12 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     if (RT_SUCCESS(rc))
     {
-        rc = audioMixerCreate("HDA Mixer", 0 /* uFlags */,
-                              &pThis->pMixer);
+        rc = audioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
         if (RT_SUCCESS(rc))
         {
+            /* Set a default audio format for our mixer. */
             PDMAUDIOSTREAMCFG streamCfg;
-            streamCfg.uHz           = 48000;
+            streamCfg.uHz           = 41000;
             streamCfg.cChannels     = 2;
             streamCfg.enmFormat     = AUD_FMT_S16;
             streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
@@ -3850,12 +3841,16 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             AssertRC(rc);
 
             /* Add all required audio sinks. */
+            rc = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
+                                   AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
+            AssertRC(rc);
+
             rc = audioMixerAddSink(pThis->pMixer, "[Recording] Line In",
-                                   &pThis->pSinkLineIn);
+                                   AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
             AssertRC(rc);
 
             rc = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
-                                   &pThis->pSinkMicIn);
+                                   AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
             AssertRC(rc);
         }
     }

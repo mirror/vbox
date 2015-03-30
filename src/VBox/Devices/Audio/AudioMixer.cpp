@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,6 +18,7 @@
  */
 
 #include "AudioMixer.h"
+#include "AudioMixBuffer.h"
 
 #include <VBox/vmm/pdm.h>
 #include <VBox/err.h>
@@ -35,7 +36,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
 
-int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, PAUDMIXSINK *ppSink)
+int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink)
 {
     AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
@@ -52,9 +53,15 @@ int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, PAUDMIXSINK *ppSi
 
         if (RT_SUCCESS(rc))
         {
-            pSink->pParent = pMixer;
+            pSink->pParent  = pMixer;
             pSink->cStreams = 0;
+            pSink->enmDir   = enmDir;
             RTListInit(&pSink->lstStreams);
+
+            /* Set initial volume to max. */
+            pSink->Volume.fMuted = false;
+            pSink->Volume.uLeft  = UINT32_MAX;
+            pSink->Volume.uRight = UINT32_MAX;
 
             RTListAppend(&pMixer->lstSinks, &pSink->Node);
             pMixer->cSinks++;
@@ -84,7 +91,7 @@ int audioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPD
 
     int rc;
 
-    if (pSink->cStreams == INT8_MAX) /* 255 streams per sink max. */
+    if (pSink->cStreams == UINT8_MAX) /* 255 streams per sink max. */
         return VERR_TOO_MUCH_DATA;
 
     PAUDMIXSTREAM pMixStream
@@ -92,7 +99,45 @@ int audioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPD
     if (pMixStream)
     {
         pMixStream->pConn = pConnector;
-        pMixStream->pStrm = pStream;
+        pMixStream->pIn   = pStream;
+        /** @todo Process flags. */
+
+        RTListAppend(&pSink->lstStreams, &pMixStream->Node);
+        pSink->cStreams++;
+
+        LogFlowFunc(("pSink=%p, pStream=%p, cStreams=%RU8\n",
+                     pSink, pMixStream, pSink->cStreams));
+
+        if (ppStream)
+            *ppStream = pMixStream;
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+int audioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMOUT pStream,
+                           uint32_t uFlags, PAUDMIXSTREAM *ppStream)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStream, VERR_INVALID_POINTER);
+    /** @todo Add flag validation. */
+    /* ppStream is optional. */
+
+    int rc;
+
+    if (pSink->cStreams == UINT8_MAX) /* 255 streams per sink max. */
+        return VERR_TOO_MUCH_DATA;
+
+    PAUDMIXSTREAM pMixStream
+        = (PAUDMIXSTREAM)RTMemAllocZ(sizeof(AUDMIXSTREAM));
+    if (pMixStream)
+    {
+        pMixStream->pConn = pConnector;
+        pMixStream->pOut  = pStream;
         /** @todo Process flags. */
 
         RTListAppend(&pSink->lstStreams, &pMixStream->Node);
@@ -136,6 +181,10 @@ int audioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer)
         {
             pMixer->cSinks = 0;
             RTListInit(&pMixer->lstSinks);
+
+            pMixer->VolMaster.fMuted = false;
+            pMixer->VolMaster.uLeft  = UINT32_MAX;
+            pMixer->VolMaster.uRight = UINT32_MAX;
 
             LogFlowFunc(("Created %p ...\n", pMixer));
 
@@ -212,12 +261,14 @@ uint32_t audioMixerGetStreamCount(PAUDIOMIXER pMixer)
     return cStreams;
 }
 
-int audioMixerProcessSinkIn(PAUDMIXSINK pSink, void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed)
+int audioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed)
 {
     AssertPtrReturn(pSink, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbProcessed is optional. */
+
+    /** @todo Handle mixing operation enmOp! */
 
     uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbBuf);
     if (!pvMixBuf)
@@ -232,7 +283,7 @@ int audioMixerProcessSinkIn(PAUDMIXSINK pSink, void *pvBuf, size_t cbBuf, uint32
     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
     {
         /** @todo Support output sinks as well! */
-        if (!pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->pStrm))
+        if (!pStream->pConn->pfnIsActiveIn(pStream->pConn, pStream->pIn))
             continue;
 
         uint32_t cbTotalRead = 0;
@@ -242,7 +293,7 @@ int audioMixerProcessSinkIn(PAUDMIXSINK pSink, void *pvBuf, size_t cbBuf, uint32
         {
             uint32_t cbRead;
             AssertPtr(pStream->pConn);
-            rc = pStream->pConn->pfnRead(pStream->pConn, pStream->pStrm,
+            rc = pStream->pConn->pfnRead(pStream->pConn, pStream->pIn,
                                          (uint8_t *)pvMixBuf + cbTotalRead, cbToRead, &cbRead);
             if (   RT_FAILURE(rc)
                 || !cbRead)
@@ -271,6 +322,11 @@ int audioMixerProcessSinkIn(PAUDMIXSINK pSink, void *pvBuf, size_t cbBuf, uint32
 
     LogFlowFunc(("cbProcessed=%RU32, rc=%Rrc\n", cbProcessed, rc));
     return rc;
+}
+
+int audioMixerProcessSinkOut(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed)
+{
+    return VERR_NOT_IMPLEMENTED;
 }
 
 void audioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
@@ -311,8 +367,8 @@ void audioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     if (!pStream)
         return;
 
-    RTListNodeRemove(&pStream->Node);
     Assert(pSink->cStreams);
+    RTListNodeRemove(&pStream->Node);
     pSink->cStreams--;
 
     LogFlowFunc(("pSink=%p, pStream=%p, cStreams=%RU8\n",
@@ -328,6 +384,79 @@ int audioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
 
     /** @todo Perform a deep copy, if needed. */
     pMixer->devFmt = *pCfg;
+
+    return VINF_SUCCESS;
+}
+
+static PDMAUDIOVOLUME audioMixerTranslateVolume(const PPDMAUDIOVOLUME pVolMaster, PPDMAUDIOVOLUME pVol)
+{
+    PDMAUDIOVOLUME volMaster = *pVolMaster;
+
+    uint32_t u32VolumeLeft  = (uint32_t)pVol->uLeft;
+    uint32_t u32VolumeRight = (uint32_t)pVol->uRight;
+    /* 0x00..0xff => 0x01..0x100 */
+    if (u32VolumeLeft)
+        u32VolumeLeft++;
+    if (u32VolumeRight)
+        u32VolumeRight++;
+
+    volMaster.uLeft  = u32VolumeLeft  * 0x800000; /* Maximum is 0x80000000 */
+    volMaster.uRight = u32VolumeRight * 0x800000; /* Maximum is 0x80000000 */
+
+    PDMAUDIOVOLUME volOut;
+    volOut.fMuted = volMaster.fMuted || pVol->fMuted;
+    volOut.uLeft  = ASMMultU64ByU32DivByU32(volMaster.uLeft,  pVol->uLeft,  0x80000000U); /* Maximum is 0x80000000U */
+    volOut.uRight = ASMMultU64ByU32DivByU32(volMaster.uRight, pVol->uRight, 0x80000000U); /* Maximum is 0x80000000U */
+
+    LogFlowFunc(("pMaster=%p, lVol=%RU32, rVol=%RU32\n",
+                 pVolMaster, pVolMaster->uLeft, pVolMaster->uRight));
+    LogFlowFunc(("pVol=%p, lVol=%RU32, rVol=%RU32 => lVol=%RU32, rVol=%RU32\n",
+                 pVol, pVol->uLeft, pVol->uRight, volOut.uLeft, volOut.uRight));
+
+    return volOut;
+}
+
+int audioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol, VERR_INVALID_POINTER);
+
+    pMixer->VolMaster = audioMixerTranslateVolume(&pMixer->VolMaster,  pVol);
+#if 0
+        .uLeft  = pVol->uLeft  * 0x800000; /* maximum is 0x80000000 */
+    pMixer->VolMaster.uRight = pVol->uRight * 0x800000; /* maximum is 0x80000000 */
+#endif
+    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32 => lVol=%RU32, rVol=%RU32\n",
+                  pVol->uLeft, pVol->uRight, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
+
+    return VINF_SUCCESS;
+}
+
+int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pSink->pszName, pVol->uLeft, pVol->uRight));
+
+    pSink->Volume.uLeft  = pVol->uLeft  * 0x808080; /* Maximum is INT_MAX = 0x7fffffff */
+    pSink->Volume.uRight = pVol->uRight * 0x808080; /* Maximum is INT_MAX = 0x7fffffff */
+
+    /** @todo Apply the mixer's master volume to it. */
+
+    /** @todo Very crude implementation for now -- needs more work! */
+
+    bool fOut = pSink->enmDir == AUDMIXSINKDIR_OUTPUT;
+
+    /* Propagate new sink volume to all streams in the sink. */
+    PAUDMIXSTREAM pStream;
+    RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
+    {
+        if (fOut)
+            audioMixBufSetVolume(&pStream->pOut->MixBuf, &pSink->Volume);
+        else
+            audioMixBufSetVolume(&pStream->pIn->MixBuf,  &pSink->Volume);
+    }
 
     return VINF_SUCCESS;
 }

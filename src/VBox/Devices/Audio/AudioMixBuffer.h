@@ -66,6 +66,7 @@ int audioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, uint3
 int audioMixBufReadCirc(PPDMAUDIOMIXBUF pMixBuf, void *pvBuf, size_t cbBuf, uint32_t *pcRead);
 int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt, void *pvBuf, size_t cbBuf, uint32_t *pcRead);
 void audioMixBufReset(PPDMAUDIOMIXBUF pMixBuf);
+void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol);
 uint32_t audioMixBufSize(PPDMAUDIOMIXBUF pMixBuf);
 size_t audioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf);
 void audioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf);

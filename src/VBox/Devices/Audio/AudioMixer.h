@@ -31,6 +31,8 @@ typedef struct AUDIOMIXER
      *  data to so that the underlying device emulation
      *  can work with it. */
     PDMAUDIOSTREAMCFG       devFmt;
+    /** The master volume of this mixer. */
+    PDMAUDIOVOLUME          VolMaster;
     /* List of audio mixer sinks. */
     RTLISTANCHOR            lstSinks;
     /** Number of used audio sinks. */
@@ -41,15 +43,20 @@ typedef struct AUDMIXSTREAM
 {
     RTLISTNODE              Node;
     PPDMIAUDIOCONNECTOR     pConn;
-    /** @todo Add support for output streams. */
-    PPDMAUDIOGSTSTRMIN      pStrm;
+    union
+    {
+        PPDMAUDIOGSTSTRMIN  pIn;
+        PPDMAUDIOGSTSTRMOUT pOut;
+    };
 } AUDMIXSTREAM, *PAUDMIXSTREAM;
 
 typedef enum AUDMIXSINKDIR
 {
     AUDMIXSINKDIR_UNKNOWN = 0,
     AUDMIXSINKDIR_INPUT,
-    AUDMIXSINKDIR_OUTPUT
+    AUDMIXSINKDIR_OUTPUT,
+    /** The usual 32-bit hack. */
+    AUDMIXSINKDIR_32BIT_HACK = 0x7fffffff
 } AUDMIXSINKDIR;
 
 typedef struct AUDMIXSINK
@@ -69,27 +76,35 @@ typedef struct AUDMIXSINK
     RTLISTANCHOR            lstStreams;
     /** This sink's mixing buffer. */
     PDMAUDIOMIXBUF          MixBuf;
+    /** The volume of this sink. The volume always will
+     *  be combined with the mixer's master volume. */
+    PDMAUDIOVOLUME          Volume;
 } AUDMIXSINK, *PAUDMIXSINK;
 
 typedef enum AUDMIXOP
 {
     AUDMIXOP_NONE = 0,
     AUDMIXOP_COPY,
-    AUDMIXOP_BLEND
+    AUDMIXOP_BLEND,
+    /** The usual 32-bit hack. */
+    AUDMIXOP_32BIT_HACK = 0x7fffffff
 } AUDMIXOP;
 
 
-int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, PAUDMIXSINK *ppSink);
+int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
 int audioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMIN pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
-int audioMixerControlStream(AUDMIXSTREAM pHandle); /** @todo */
+int audioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMOUT pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
+int audioMixerControlStream(AUDMIXSTREAM pHandle); /** @todo Implement me. */
 int audioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
 void audioMixerDestroy(PAUDIOMIXER pMixer);
-int audioMixerProcessSamples(AUDMIXOP enmOp, PPDMAUDIOSAMPLE pDst, uint32_t cToWrite, PPDMAUDIOSAMPLE pSrc, uint32_t cToRead, uint32_t *pcRead, uint32_t *pcWritten);
-int audioMixerProcessSamplesEx(AUDMIXOP enmOp, void *pvParms, size_t cbParms, PPDMAUDIOSAMPLE pDst, uint32_t cToWrite, PPDMAUDIOSAMPLE pSrc, uint32_t cToRead, uint32_t *pcRead, uint32_t *pcWritten);
 uint32_t audioMixerGetStreamCount(PAUDIOMIXER pMixer);
-int audioMixerProcessSinkIn(PAUDMIXSINK pSink, void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed);
+int audioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed);
+int audioMixerProcessSinkOut(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed);
 void audioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
 void audioMixerRemoveStream(PAUDMIXSINK pMixer, PAUDMIXSTREAM pStream);
 int audioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
+int audioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
+int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 
 #endif /* AUDIO_MIXER_H */
+

@@ -63,11 +63,16 @@
 
 #define AC97_SSM_VERSION 1
 
-#ifndef VBOX
-# define SOFT_VOLUME
+#ifdef VBOX
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#  define SOFT_VOLUME /** @todo Get rid of this crap. */
+# else
+#  undef  SOFT_VOLUME
+# endif
 #else
-# undef  SOFT_VOLUME
+# define  SOFT_VOLUME
 #endif
+
 #define SR_FIFOE RT_BIT(4)          /* rwc, fifo error */
 #define SR_BCIS  RT_BIT(3)          /* rwc, buffer completion interrupt status */
 #define SR_LVBCI RT_BIT(2)          /* rwc, last valid buffer completion interrupt */
@@ -150,7 +155,7 @@ enum
 {
     AC97_Reset                     = 0x00,
     AC97_Master_Volume_Mute        = 0x02,
-    AC97_Headphone_Volume_Mute     = 0x04,
+    AC97_Headphone_Volume_Mute     = 0x04, /** Also known as AUX, see table 16, section 5.7. */
     AC97_Master_Volume_Mono_Mute   = 0x06,
     AC97_Master_Tone_RL            = 0x08,
     AC97_PC_BEEP_Volume_Mute       = 0x0A,
@@ -223,6 +228,8 @@ typedef struct AC97OUTPUTSTREAM
 {
     /** PCM output stream. */
     R3PTRTYPE(PPDMAUDIOGSTSTRMOUT)     pStrmOut;
+    /** Mixer handle for output stream. */
+    R3PTRTYPE(PAUDMIXSTREAM)           phStrmOut;
 } AC97OUTPUTSTREAM, *PAC97OUTPUTSTREAM;
 
 /**
@@ -292,6 +299,8 @@ typedef struct AC97STATE
     RTLISTANCHOR            lstDrv;
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)  pMixer;
+    /** Audio sink for PCM output. */
+    R3PTRTYPE(PAUDMIXSINK)  pSinkOutput;
     /** Audio sink for line input. */
     R3PTRTYPE(PAUDMIXSINK)  pSinkLineIn;
     /** Audio sink for microphone input. */
@@ -602,6 +611,14 @@ static void ichac97OpenStream(PAC97STATE pThis, int index, uint16_t freq)
 
                     rc = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszDesc, &streamCfg, &pDrv->Out.pStrmOut);
                     LogFlowFunc(("LUN#%RU8: Opened output with rc=%Rrc\n", uLUN, rc));
+                    if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+                    {
+                        audioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
+                        rc = audioMixerAddStreamOut(pThis->pSinkOutput,
+                                                    pDrv->pConnector, pDrv->Out.pStrmOut,
+                                                    0 /* uFlags */,
+                                                    &pDrv->Out.phStrmOut);
+                    }
 
                     RTStrFree(pszDesc);
                     uLUN++;
@@ -652,9 +669,9 @@ static void ichac97OpenStream(PAC97STATE pThis, int index, uint16_t freq)
                 RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
                 {
                     pDrv->pConnector->pfnCloseIn(pDrv->pConnector, pDrv->LineIn.pStrmIn);
-                    audioMixerRemoveStream(pThis->pSinkLineIn,pDrv->LineIn.phStrmIn);
+                    audioMixerRemoveStream(pThis->pSinkLineIn, pDrv->LineIn.phStrmIn);
 
-                    pDrv->LineIn.pStrmIn = NULL;
+                    pDrv->LineIn.pStrmIn  = NULL;
                     pDrv->LineIn.phStrmIn = NULL;
                 }
 
@@ -667,7 +684,10 @@ static void ichac97OpenStream(PAC97STATE pThis, int index, uint16_t freq)
                 RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
                 {
                     pDrv->pConnector->pfnCloseOut(pDrv->pConnector, pDrv->Out.pStrmOut);
-                    pDrv->Out.pStrmOut = NULL;
+                    audioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
+
+                    pDrv->Out.pStrmOut  = NULL;
+                    pDrv->Out.phStrmOut = NULL;
                 }
 
                 LogFlowFunc(("Closed output\n"));
@@ -826,37 +846,45 @@ static void ichac97SetVolume(PAC97STATE pThis, int index, audmixerctl_t mt, uint
     rvol = 255 * rvol / VOL_MASK;
     lvol = 255 * lvol / VOL_MASK;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    PAC97DRIVER pDrv;
-#endif
+    LogFunc(("mt=%ld, val=%RU32\n", mt, val));
 
 #ifdef SOFT_VOLUME
+# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    if (pThis->pMixer) /* Device can be in reset state, so no mixer available. */
+    {
+        PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
+        PAC97DRIVER pDrv;
+        switch (mt)
+        {
+            case PDMAUDIOMIXERCTL_VOLUME:
+                audioMixerSetMasterVolume(pThis->pMixer, &vol);
+                break;
+
+            case PDMAUDIOMIXERCTL_PCM:
+                audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
+                break;
+
+            case PDMAUDIOMIXERCTL_MIC_IN:
+                audioMixerSetSinkVolume(pThis->pSinkMicIn, &vol);
+                break;
+
+            case PDMAUDIOMIXERCTL_LINE_IN:
+                audioMixerSetSinkVolume(pThis->pSinkLineIn, &vol);
+                break;
+
+            default:
+                break;
+        }
+    }
+# else /* !VBOX_WITH_PDM_AUDIO_DRIVER */
     if (index == AC97_Master_Volume_Mute)
-    {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-            pDrv->pConnector->pfnSetVolumeOut(pDrv->pConnector, pDrv->Out.pStrmOut, RT_BOOL(mute), lvol, rvol);
-#else
         AUD_set_volume_out(pThis->voice_po, mute, lvol, rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-    }
-    /** @todo Handle AC97_Mic_Volume_Mute + AC97_Line_In_Volume_Mute. */
     else
-    {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-            pDrv->pConnector->pfnSetVolume(pDrv->pConnector, RT_BOOL(mute), lvol, rvol);
-#else
         AUD_set_volume(mt, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-    }
+# endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+
 #else /* !SOFT_VOLUME */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
-        pDrv->pConnector->pfnSetVolume(pDrv->pConnector, RT_BOOL(mute), lvol, rvol);
-#else
     AUD_set_volume(mt, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 #endif /* SOFT_VOLUME */
 
     rvol = VOL_MASK - ((VOL_MASK * rvol) / 255);
@@ -939,12 +967,14 @@ static void ichac97MixerReset(PAC97STATE pThis)
 
     RTListForEach(&pThis->lstDrv, pDrv, AC97DRIVER, Node)
     {
+        pDrv->Out.phStrmOut   = NULL;
         pDrv->LineIn.phStrmIn = NULL;
         pDrv->MicIn.phStrmIn  = NULL;
     }
 
+    pThis->pSinkOutput = NULL;
     pThis->pSinkLineIn = NULL;
-    pThis->pSinkMicIn = NULL;
+    pThis->pSinkMicIn  = NULL;
 
     if (pThis->pMixer)
     {
@@ -999,12 +1029,12 @@ static void ichac97MixerReset(PAC97STATE pThis)
 #endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc2 = audioMixerCreate("AC'97 Mixer", 0 /* uFlags */,
-                               &pThis->pMixer);
+    int rc2 = audioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
     if (RT_SUCCESS(rc2))
     {
+        /* Set a default audio format for our mixer. */
         PDMAUDIOSTREAMCFG streamCfg;
-        streamCfg.uHz           = 48000;
+        streamCfg.uHz           = 41000;
         streamCfg.cChannels     = 2;
         streamCfg.enmFormat     = AUD_FMT_S16;
         streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
@@ -1013,12 +1043,16 @@ static void ichac97MixerReset(PAC97STATE pThis)
         AssertRC(rc2);
 
         /* Add all required audio sinks. */
+        rc2 = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
+                               AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
+        AssertRC(rc2);
+
         rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Line In",
-                                &pThis->pSinkLineIn);
+                                AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
         AssertRC(rc2);
 
         rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
-                                &pThis->pSinkMicIn);
+                                AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
         AssertRC(rc2);
     }
 #endif
@@ -1208,7 +1242,7 @@ static int ichac97ReadAudio(PAC97STATE pThis, PAC97BMREG pReg, uint32_t cbMax, u
     uint8_t *pvMixBuf = (uint8_t *)RTMemAlloc(cbMixBuf);
     if (pvMixBuf)
     {
-        rc = audioMixerProcessSinkIn(pSink, pvMixBuf, cbToRead, &cbRead);
+        rc = audioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pvMixBuf, cbToRead, &cbRead);
         if (   RT_SUCCESS(rc)
             && cbRead)
         {
