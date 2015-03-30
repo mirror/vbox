@@ -35,7 +35,11 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+#ifdef RT_OS_WINDOWS
+struct ISession;
+#else
 class ISession;
+#endif
 
 /** Pointer to the debugger GUI instance structure. */
 typedef struct DBGGUI *PDBGGUI;
