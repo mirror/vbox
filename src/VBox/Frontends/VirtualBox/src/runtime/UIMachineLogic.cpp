@@ -623,6 +623,10 @@ void UIMachineLogic::sltKeyboardLedsChanged()
     if (!isHidLedsSyncEnabled())
         return;
 
+    /* Check if we accidentally trying to manipulate LEDs when host LEDs state was deallocated. */
+    if (!m_pHostLedsState)
+        return;
+
 #if defined(Q_WS_MAC)
     DarwinHidDevicesBroadcastLeds(m_pHostLedsState, uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
 #elif defined(Q_WS_WIN)
