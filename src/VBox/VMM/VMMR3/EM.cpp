@@ -1854,8 +1854,21 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             }
         }
 
+        /*
+         * Forced unhalting of EMT.
+         */
+        if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_UNHALT))
+        {
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
+            if (rc == VINF_EM_HALT)
+            {
+                rc2 = VINF_EM_RESCHEDULE;
+                UPDATE_RC();
+            }
+        }
+
         /* check that we got them all  */
-        Assert(!(VMCPU_FF_NORMAL_PRIORITY_MASK & ~(VMCPU_FF_REQUEST)));
+        Assert(!(VMCPU_FF_NORMAL_PRIORITY_MASK & ~(VMCPU_FF_REQUEST | VMCPU_FF_UNHALT)));
     }
 
     /*
@@ -2550,7 +2563,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
                         if (   rc == VINF_SUCCESS
                             && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC
-                                                        | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI))
+                                                        | VMCPU_FF_INTERRUPT_NMI  | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                         {
                             Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
                             rc = VINF_EM_RESCHEDULE;
@@ -2560,9 +2573,9 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
                         if (   rc == VINF_SUCCESS
-                            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI))
+                            && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI | VMCPU_FF_INTERRUPT_SMI | VMCPU_FF_UNHALT))
                         {
-                            Log(("EMR3ExecuteVM: Triggering reschedule on pending NMI/SMI after HLT\n"));
+                            Log(("EMR3ExecuteVM: Triggering reschedule on pending NMI/SMI/UNHALT after HLT\n"));
                             rc = VINF_EM_RESCHEDULE;
                         }
                     }
