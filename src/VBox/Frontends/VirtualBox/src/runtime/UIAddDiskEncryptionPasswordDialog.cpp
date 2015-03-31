@@ -166,6 +166,9 @@ public:
     /** Returns whether the table is valid. */
     bool isValid() const;
 
+    /** Initiates the editor for the first index available. */
+    void editFirstIndex();
+
 private:
 
     /** Prepare routine. */
@@ -429,6 +432,19 @@ bool UIEncryptionDataTable::isValid() const
     return m_pModelEncryptionData->isValid();
 }
 
+void UIEncryptionDataTable::editFirstIndex()
+{
+    AssertPtrReturnVoid(m_pModelEncryptionData);
+    /* Compose the password field index of the first available table record: */
+    const QModelIndex index = m_pModelEncryptionData->index(0, UIEncryptionDataTableSection_Password);
+    /* Navigate table to the corresponding index: */
+    setCurrentIndex(index);
+    /* Compose the fake mouse-event which will trigger the embedded editor: */
+    QMouseEvent event(QEvent::MouseButtonPress, QPoint(), Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    /* Initiate the embedded editor for the corresponding index: */
+    edit(index, QAbstractItemView::SelectedClicked, &event);
+}
+
 void UIEncryptionDataTable::prepare()
 {
     /* Create encryption-data model: */
@@ -532,6 +548,8 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
                 /* Configure encryption-data table: */
                 connect(m_pTableEncryptionData, SIGNAL(sigDataChanged()),
                         this, SLOT(sltDataChanged()));
+                m_pTableEncryptionData->setFocus();
+                m_pTableEncryptionData->editFirstIndex();
                 /* Add label into layout: */
                 pInputLayout->addWidget(m_pTableEncryptionData);
             }
