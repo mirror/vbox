@@ -1908,10 +1908,11 @@ static bool supR3HardenedWinIsDesiredRootCA(PCRTCRX509CERTIFICATE pCert)
 /**
  * Loads a module in the system32 directory.
  *
- * @returns Module handle on success. Won't return on faliure.
+ * @returns Module handle on success. Won't return on failure if fMandatory = true.
  * @param   pszName             The name of the DLL to load.
+ * @param   fMandatory          Whether the library is mandatory.
  */
-DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName)
+DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName, bool fMandatory)
 {
     WCHAR wszName[200+60];
     UINT cwcDir = GetSystemDirectoryW(wszName, RT_ELEMENTS(wszName) - 60);
@@ -1930,7 +1931,8 @@ DECLHIDDEN(HMODULE) supR3HardenedWinLoadSystem32Dll(const char *pszName)
         fFlags = 0;
         hMod = LoadLibraryExW(wszName, NULL, fFlags);
     }
-    if (hMod == NULL)
+    if (   hMod == NULL
+        && fMandatory)
         supR3HardenedFatal("Error loading '%s': %u [%ls]", pszName, RtlGetLastWin32Error(), wszName);
     return hMod;
 }
@@ -1949,7 +1951,7 @@ static void supR3HardenedWinRetrieveTrustedRootCAs(void)
     /*
      * Load crypt32.dll and resolve the APIs we need.
      */
-    HMODULE hCrypt32 = supR3HardenedWinLoadSystem32Dll("crypt32.dll");
+    HMODULE hCrypt32 = supR3HardenedWinLoadSystem32Dll("crypt32.dll", true /*fMandatory*/);
 
 #define RESOLVE_CRYPT32_API(a_Name, a_pfnType) \
     a_pfnType pfn##a_Name = (a_pfnType)GetProcAddress(hCrypt32, #a_Name); \
@@ -2055,7 +2057,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
     /*
      * Resolve the imports we need.
      */
-    HMODULE hWintrust = supR3HardenedWinLoadSystem32Dll("Wintrust.dll");
+    HMODULE hWintrust = supR3HardenedWinLoadSystem32Dll("Wintrust.dll", true /*fMandatory*/);
 #define RESOLVE_CRYPT_API(a_Name, a_pfnType, a_uMinWinVer) \
     do { \
         g_pfn##a_Name = (a_pfnType)GetProcAddress(hWintrust, #a_Name); \
@@ -2082,7 +2084,7 @@ DECLHIDDEN(void) supR3HardenedWinResolveVerifyTrustApiAndHookThreadCreation(cons
      * Load bcrypt.dll and instantiate a few hashing and signing providers to
      * make sure the providers are cached for later us.  Avoid recursion issues.
      */
-    HMODULE hBCrypt = supR3HardenedWinLoadSystem32Dll("bcrypt.dll");
+    HMODULE hBCrypt = supR3HardenedWinLoadSystem32Dll("bcrypt.dll", false /*fMandatory*/);
     if (hBCrypt)
     {
         PFNBCRYPTOPENALGORTIHMPROVIDER pfnOpenAlgoProvider;
