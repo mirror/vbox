@@ -1659,7 +1659,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
         /*
          * Query the region again, redo the free operation if there's still memory there.
          */
-        if (!NT_SUCCESS(rcNt) || !(pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
+        if (!NT_SUCCESS(rcNt))
             break;
         SIZE_T                      cbActual = 0;
         MEMORY_BASIC_INFORMATION    MemInfo3 = { 0, 0, 0, 0, 0, 0, 0 };
@@ -1671,7 +1671,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
                      i, MemInfo3.AllocationBase, MemInfo3.BaseAddress, MemInfo3.RegionSize, MemInfo3.State,
                      MemInfo3.AllocationProtect, MemInfo3.Protect));
         supR3HardenedLogFlush();
-        if (pMemInfo->State == MEM_FREE)
+        if (MemInfo3.State == MEM_FREE || !(pThis->fFlags & SUPHARDNTVP_F_EXEC_ALLOC_REPLACE_WITH_RW))
             break;
         NtYieldExecution();
         SUP_DPRINTF(("supHardNtVpFreeOrReplacePrivateExecMemory: Retrying free...\n"));
