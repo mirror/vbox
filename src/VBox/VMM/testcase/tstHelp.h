@@ -37,7 +37,7 @@ RT_C_DECLS_END
         if (off != RT_OFFSETOF(type, m)) \
         { \
             printf("error! %#010x %s  Off by %d!! (expected off=%#x)\n", \
-                   RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), off); \
+                   RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), (int)off); \
             rc++; \
         } \
         /*else */ \
