@@ -548,7 +548,7 @@ static int vboxserviceVMInfoWriteUsers(void)
 
     /* Allocate a first array to hold 32 users max. */
     char **papszUsers = (char **)RTMemAllocZ(cListSize * sizeof(char *));
-    if (papszUsers == NULL)
+    if (!papszUsers)
         rc = VERR_NO_MEMORY;
 
     /* Process all entries in the utmp file.
@@ -567,7 +567,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         {
             cListSize += 32;
             void *pvNew = RTMemRealloc(papszUsers, cListSize * sizeof(char*));
-            AssertPtrBreakStmt(pvNew, cListSize -= 32);
+            AssertBreakStmt(pvNew, cListSize -= 32);
             papszUsers = (char **)pvNew;
         }
 
