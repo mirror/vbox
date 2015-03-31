@@ -589,7 +589,7 @@ typedef struct DISSTATE
     uint8_t         idxSegPrefix;
     /** Last prefix byte (for SSE2 extension tables). */
     uint8_t         bLastPrefix;
-    /** Last significan opcode byte of instruction. */
+    /** Last significant opcode byte of instruction. */
     uint8_t         bOpCode;
     /** The size of the prefix bytes. */
     uint8_t         cbPrefix;
