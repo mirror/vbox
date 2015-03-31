@@ -838,8 +838,8 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVM pVM, PVMCPU pVCpu)
      */
     uint32_t fUseFlags              =  pVCpu->cpum.s.fUseFlags & ~CPUM_USED_FPU_SINCE_REM;
 
-    AssertCompile(RT_OFFSETOF(CPUMCTX, pXStateR0) < RT_OFFSETOF(CPUMCTX, pXStateR3));
-    AssertCompile(RT_OFFSETOF(CPUMCTX, pXStateR0) < RT_OFFSETOF(CPUMCTX, pXStateRC));
+    AssertCompile(RTASSERT_OFFSET_OF(CPUMCTX, pXStateR0) < RTASSERT_OFFSET_OF(CPUMCTX, pXStateR3));
+    AssertCompile(RTASSERT_OFFSET_OF(CPUMCTX, pXStateR0) < RTASSERT_OFFSET_OF(CPUMCTX, pXStateRC));
     memset(pCtx, 0, RT_OFFSETOF(CPUMCTX, pXStateR0));
 
     pVCpu->cpum.s.fUseFlags         = fUseFlags;
