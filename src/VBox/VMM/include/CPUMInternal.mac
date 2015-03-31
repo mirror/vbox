@@ -331,7 +331,7 @@ struc CPUMCPU
     .Host.SysEnter.eip   resq    1
     .Host.SysEnter.esp   resq    1
     .Host.efer           resq    1
-    .Host.auPadding      resb    (16+12)
+    .Host.auPadding      resb    (16+20)
 
 %else ; 64-bit
 
