@@ -1861,6 +1861,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_UNHALT);
             if (rc == VINF_EM_HALT)
+                rc = VINF_EM_RESCHEDULE;
+            else
             {
                 rc2 = VINF_EM_RESCHEDULE;
                 UPDATE_RC();
