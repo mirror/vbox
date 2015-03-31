@@ -57,13 +57,15 @@ BEGINCODE
 ;
 ; @returns  0 if caller should continue execution.
 ; @returns  VINF_EM_RAW_GUEST_TRAP if a guest trap should be generated.
-; @param    pCPUMCPU  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    pCpumCpu    [ebp+8]     Pointer to the CPUMCPU.
 ;
 align 16
 BEGINPROC   cpumHandleLazyFPUAsm
+        push    ebp
+        mov     ebp, esp
         push    ebx
         push    esi
-        mov     ebx, [esp + 4]
+        mov     ebx, [ebp + 8]
 %define pCpumCpu ebx
 %define pXState  esi
 
@@ -167,6 +169,7 @@ hlfpua_guest_trap:
         pop     esi
         pop     ebx
         mov     eax, VINF_EM_RAW_GUEST_TRAP
+        leave
         ret
 ENDPROC     cpumHandleLazyFPUAsm
 

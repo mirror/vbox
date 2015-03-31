@@ -1,4 +1,4 @@
-; $Id$
+ ; $Id$
 ;; @file
 ; CPUM - Ring-0 Assembly Routines (supporting HM and IEM).
 ;
@@ -188,7 +188,7 @@ BEGINCODE
 ; Saves the host FPU/SSE/AVX state and restores the guest FPU/SSE/AVX state.
 ;
 ; @returns  0
-; @param    pCpumCpu  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveHostRestoreGuestFPUState
@@ -204,9 +204,11 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
  %define pCpumCpu   r11
  %define pXState    r10
 %else
+        push    ebp
+        mov     ebp, esp
         push    ebx
         push    esi
-        mov     ebx, dword [esp + 4]
+        mov     ebx, dword [ebp + 8]
  %define pCpumCpu ebx
  %define pXState  esi
 %endif
@@ -270,6 +272,7 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
+        leave
 %endif
         xor     eax, eax
         ret
@@ -305,7 +308,7 @@ ENDPROC   cpumR0SaveHostRestoreGuestFPUState
 ; Saves the host FPU/SSE/AVX state.
 ;
 ; @returns  VINF_SUCCESS (0) in EAX
-; @param    pCpumCpu  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveHostFPUState
@@ -321,9 +324,11 @@ BEGINPROC cpumR0SaveHostFPUState
  %define pCpumCpu   r11
  %define pXState    r10
 %else
+        push    ebp
+        mov     ebp, esp
         push    ebx
         push    esi
-        mov     ebx, dword [esp + 4]
+        mov     ebx, dword [ebp + 8]
  %define pCpumCpu ebx
  %define pXState  esi
 %endif
@@ -359,6 +364,7 @@ BEGINPROC cpumR0SaveHostFPUState
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
+        leave
 %endif
         xor     eax, eax
         ret
@@ -386,7 +392,7 @@ ENDPROC   cpumR0SaveHostFPUState
 ; Saves the guest FPU/SSE/AVX state and restores the host FPU/SSE/AVX state.
 ;
 ; @returns  VINF_SUCCESS (0) in eax.
-; @param    pCpumCpu  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0SaveGuestRestoreHostFPUState
@@ -402,9 +408,11 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
  %define pCpumCpu   r11
  %define pXState    r10
 %else
+        push    ebp
+        mov     ebp, esp
         push    ebx
         push    esi
-        mov     ebx, dword [esp + 4]
+        mov     ebx, dword [ebp + 8]
  %define pCpumCpu ebx
  %define pXState  esi
 %endif
@@ -456,6 +464,7 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
+        leave
 %endif
         xor     eax, eax
         ret
@@ -489,7 +498,7 @@ ENDPROC   cpumR0SaveGuestRestoreHostFPUState
 ; Restores the host's FPU/SSE/AVX state from pCpumCpu->Host.
 ;
 ; @returns  0
-; @param    pCpumCpu  x86:[esp+4] gcc:rdi msc:rcx     CPUMCPU pointer
+; @param    pCpumCpu  x86:[ebp+8] gcc:rdi msc:rcx     CPUMCPU pointer
 ;
 align 16
 BEGINPROC cpumR0RestoreHostFPUState
@@ -505,9 +514,11 @@ BEGINPROC cpumR0RestoreHostFPUState
  %define pCpumCpu   r11
  %define pXState    r10
 %else
+        push    ebp
+        mov     ebp, esp
         push    ebx
         push    esi
-        mov     ebx, dword [esp + 4]
+        mov     ebx, dword [ebp + 8]
  %define pCpumCpu ebx
  %define pXState  esi
 %endif
@@ -547,6 +558,7 @@ BEGINPROC cpumR0RestoreHostFPUState
 %ifdef RT_ARCH_X86
         pop     esi
         pop     ebx
+        leave
 %endif
         xor     eax, eax
         ret
