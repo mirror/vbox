@@ -762,7 +762,7 @@ if1of ($(SYSMODS),VMMRC)
  ifn1of ($(KBUILD_TARGET), linux solaris)
  else
 	$(call MSG_L1,VMM: Testing for undefined symbols in VMMRC using nm...)
-	$(QUIET)nm $^  2> /dev/null \
+	$(QUIET)$(VBOX_NM) $^  2> /dev/null \
 		| $(SED) -n \
 			-e '/^[0-9a-f][0-9a-f]* [^U] .*/d' \
 			-e 's/^[0-9a-f][0-9a-f]* //' \
