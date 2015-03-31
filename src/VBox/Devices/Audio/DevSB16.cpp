@@ -1686,7 +1686,7 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, int dma_pos,
         cbRead = DMA_read_memory (nchan, tmpbuf, dma_pos, cbToRead);
 #else
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevIns, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
-        AssertMsgRC (rc, ("DMAReadMemory -> %Rrc\n", rc));
+        AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
 #endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -1710,11 +1710,12 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, int dma_pos,
         cbWrittenMin = AUD_write (pThis->voice, tmpbuf, cbToRead);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
+        Assert(cbToWrite >= cbWrittenMin);
         cbToWrite      -= cbWrittenMin;
         dma_pos         = (dma_pos + cbWrittenMin) % dma_len;
         cbWrittenTotal += cbWrittenMin;
 
-        if (!cbRead)
+        if (!cbRead || !cbWrittenMin)
             break;
     }
 
