@@ -1896,6 +1896,15 @@ else
  VBOX_MKISOFS  ?= mkisofs
 endif
 
+ifeq ($(KBUILD_HOST),win)
+ ifndef TOOL_MINGW32
+  include $(KBUILD_PATH)/tools/MINGW32.kmk
+ endif
+ VBOX_NM ?= $(PATH_TOOL_MINGW32)/bin/nm.exe -p
+else
+ VBOX_NM ?= nm -p
+endif
+
 # Makeself for the linux installers.
 VBOX_MAKESELF  ?= $(KBUILD_DEVTOOLS)/common/makeself/v2.1.5/makeself.sh
 

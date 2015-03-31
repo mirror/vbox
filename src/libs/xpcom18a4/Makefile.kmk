@@ -31,7 +31,6 @@ endif
 # symbol namespace pollution, causing trouble with system libraries.
 XPCOM_C_NAMESPACE_MAP = $(VBOX_PATH_XPCOM_SRC)/xpcom-namespace-cleanup.map
 ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
- VBOX_NM = nm$(HOSTSUFF_EXE)
  # At the moment, only Solaris uses the generated map file. GNU ld is smart
  # enough to handle symbol wildcards itself.
  if1of ($(KBUILD_TARGET), solaris)
