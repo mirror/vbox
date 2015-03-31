@@ -54,7 +54,6 @@ VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn)
     return ((VBOXPtr)pScrn->driverPrivate);
 }
 
-/* TESTING: if this is broken, dynamic resizing will not work on old X servers (1.2 and older). */
 int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData)
 {
     Atom atom;
@@ -63,7 +62,7 @@ int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int3
     /* We can get called early, before the root window is created. */
     if (!ROOT_WINDOW(pScrn))
         return VERR_NOT_FOUND;
-    atom = MakeAtom(pszName, strlen(pszName), FALSE);
+    atom = MakeAtom(pszName, strlen(pszName), TRUE);
     if (atom == BAD_RESOURCE)
         return VERR_NOT_FOUND;
     for (prop = wUserProps(ROOT_WINDOW(pScrn));
@@ -75,6 +74,16 @@ int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int3
     *pcData = prop->size;
     *ppaData = (int32_t *)prop->data;
     return VINF_SUCCESS;
+}
+
+void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData, int32_t *paData, Bool fSendEvent)
+{
+    Atom property_name;
+    int i;
+
+    property_name = MakeAtom(pszName, strlen(pszName), TRUE);
+    VBVXASSERT(property_name != BAD_RESOURCE, ("Failed to set atom \"%s\"\n", pszName));
+    ChangeWindowProperty(ROOT_WINDOW(pScrn), property_name, XA_INTEGER, 32, PropModeReplace, cData, paData, fSendEvent);
 }
 
 void vbvxReprobeCursor(ScrnInfoPtr pScrn)

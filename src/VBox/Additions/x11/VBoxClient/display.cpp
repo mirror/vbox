@@ -85,7 +85,7 @@ struct DISPLAYSTATE
 
 /** Tell the VBoxGuest driver we no longer want any events and tell the host
  * we no longer support any capabilities. */
-static int disableEventsAndCaps()
+static int disableEventsAndCaps(bool fDisableEvents)
 {
     int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
     if (RT_FAILURE(rc))
@@ -93,8 +93,8 @@ static int disableEventsAndCaps()
     rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to unset mouse status, rc=%Rrc.\n", rc));
-    rc = VbglR3CtlFilterMask(0,  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
-                                | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+    if (fDisableEvents)
+        rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to unset filter mask, rc=%Rrc.\n", rc));
     return VINF_SUCCESS;
@@ -173,65 +173,45 @@ static void updateScreenInformation(struct DISPLAYSTATE *pState, unsigned cx, un
 
 static void updateSizeHintsProperty(struct DISPLAYSTATE *pState)
 {
-    long *paSizeHints = (long *)RTMemTmpAllocZ(pState->cScreensTracked * sizeof(long));
+    long *paSizeHints = (long *)RTMemTmpAllocZ(pState->cScreensTracked * sizeof(long) * 2);
     unsigned i;
 
     if (paSizeHints == NULL)
         VBClFatalError(("Failed to allocate size hint property memory.\n"));
     for (i = 0; i < pState->cScreensTracked; ++i)
     {
-        if (   pState->paScreenInformation[i].fEnabled
-            && pState->paScreenInformation[i].cx != 0 && pState->paScreenInformation[i].cy != 0)
-            paSizeHints[i] = (pState->paScreenInformation[i].cx & 0x8fff) << 16 | (pState->paScreenInformation[i].cy & 0x8fff);
+        if (pState->paScreenInformation[i].fEnabled)
+            paSizeHints[2 * i] =   (pState->paScreenInformation[i].cx & 0x8fff) << 16
+                                 | (pState->paScreenInformation[i].cy & 0x8fff);
         else if (pState->paScreenInformation[i].cx != 0 && pState->paScreenInformation[i].cy != 0)
-            paSizeHints[i] = -1;
+            paSizeHints[2 * i] = -1;
+        if (   pState->paScreenInformation[i].fEnabled
+            && pState->paScreenInformation[i].fUpdatePosition)
+            paSizeHints[2 * i + 1] =   (pState->paScreenInformation[i].x & 0x8fff) << 16
+                                     | (pState->paScreenInformation[i].y & 0x8fff);
+        else
+            paSizeHints[2 * i + 1] = -1;
     }
     XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay), XInternAtom(pState->pDisplay, "VBOX_SIZE_HINTS", 0),
-                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)paSizeHints, pState->cScreensTracked);
+                    XA_INTEGER, 32, PropModeReplace, (unsigned char *)paSizeHints, pState->cScreensTracked * 2);
     XFlush(pState->pDisplay);
     RTMemTmpFree(paSizeHints);
 }
 
-static void notifyXServer(struct DISPLAYSTATE *pState)
+static void notifyXServerRandR11(struct DISPLAYSTATE *pState)
 {
     char szCommand[256];
-    unsigned i;
-    bool fUpdateInformation = false;
 
     /** @note The xrandr command can fail if something else accesses RandR at
      *  the same time.  We just ignore failure for now and let the user try
      *  again as we do not know what someone else is doing. */
-    for (i = 0; i < pState->cScreensTracked; ++i)
-        if (pState->paScreenInformation[i].fUpdateSize)
-            fUpdateInformation = true;
-    if (   !pState->fHaveRandR12 && pState->paScreenInformation[0].fUpdateSize
+    if (   pState->paScreenInformation[0].fUpdateSize
         && pState->paScreenInformation[0].cx > 0 && pState->paScreenInformation[0].cy > 0)
     {
         RTStrPrintf(szCommand, sizeof(szCommand), "%s -s %ux%u",
                     pState->pcszXrandr, pState->paScreenInformation[0].cx, pState->paScreenInformation[0].cy);
         system(szCommand);
         pState->paScreenInformation[0].fUpdateSize = false;
-    }
-    else if (pState->fHaveRandR12 && fUpdateInformation)
-        for (i = 0; i < pState->cScreensTracked; ++i)
-        {
-            if (pState->paScreenInformation[i].fUpdateSize)
-            {
-                RTStrPrintf(szCommand, sizeof(szCommand), "%s --output VGA-%u --preferred", pState->pcszXrandr, i);
-                system(szCommand);
-            }
-            if (pState->paScreenInformation[i].fUpdatePosition)
-            {
-                RTStrPrintf(szCommand, sizeof(szCommand), "%s --output VGA-%u --auto --pos %ux%u",
-                            pState->pcszXrandr, i, pState->paScreenInformation[i].x, pState->paScreenInformation[i].y);
-                system(szCommand);
-            }
-            pState->paScreenInformation[i].fUpdateSize = pState->paScreenInformation[i].fUpdatePosition = false;
-        }
-    else
-    {
-        RTStrPrintf(szCommand, sizeof(szCommand), "%s", pState->pcszXrandr);
-        system(szCommand);
     }
 }
 
@@ -249,11 +229,6 @@ static void updateMouseCapabilities(struct DISPLAYSTATE *pState)
                     XInternAtom(pState->pDisplay, "VBOX_MOUSE_CAPABILITIES", 0), XA_INTEGER, 32, PropModeReplace,
                     (unsigned char *)&fFeatures, 1);
     XFlush(pState->pDisplay);
-    if (pState->fHaveRandR12)
-        for (i = 0; i < pState->cScreensTracked; ++i)
-            pState->paScreenInformation[i].fUpdateSize = true;
-    else
-        pState->paScreenInformation[0].fUpdateSize = true;
 }
 
 /**
@@ -293,7 +268,8 @@ static void runDisplay(struct DISPLAYSTATE *pState)
         uint32_t fEvents;
         updateMouseCapabilities(pState);
         updateSizeHintsProperty(pState);
-        notifyXServer(pState);
+        if (!pState->fHaveRandR12)
+            notifyXServerRandR11(pState);
         do
             rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
                                  | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
@@ -384,7 +360,7 @@ static int pause(struct VBCLSERVICE **ppInterface)
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
-    return disableEventsAndCaps();
+    return disableEventsAndCaps(false);
 }
 
 static int resume(struct VBCLSERVICE **ppInterface)
@@ -399,7 +375,7 @@ static int resume(struct VBCLSERVICE **ppInterface)
 static void cleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
-    disableEventsAndCaps();
+    disableEventsAndCaps(true);
     VbglR3Term();
 }
 
