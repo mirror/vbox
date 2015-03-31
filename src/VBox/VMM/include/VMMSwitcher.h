@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +42,7 @@
 #define FIX_HYPER_DS            19
 #define FIX_HYPER_TSS           20
 #define FIX_GC_TSS_GDTE_DW2     21
-#define FIX_NO_FXSAVE_JMP       24
+/*#define FIX_NO_FXSAVE_JMP       24 - reusable */
 #define FIX_NO_SYSENTER_JMP     25
 #define FIX_NO_SYSCALL_JMP      26
 #define FIX_HC_32BIT            27

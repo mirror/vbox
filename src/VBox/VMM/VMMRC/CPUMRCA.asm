@@ -143,11 +143,6 @@ hlfpua_switch_fpu_ctx:
         mov     cr0, edx                ; Clear flags so we don't trap here.
 
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
-        mov     eax, pCpumCpu           ; Calculate the PCPUM pointer
-        sub     eax, [pCpumCpu + CPUMCPU.offCPUM]
-        test    dword [eax + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
-        jz short hlfpua_no_fxsave
-
         fxsave  [pXState]
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
         fxrstor [pXState]
@@ -163,23 +158,6 @@ hlfpua_finished_switch:
         pop     ebx
         xor     eax, eax
         ret
-
-        ;
-        ; Legacy CPU support.
-        ;
-hlfpua_no_fxsave:
-        fnsave  [pXState]
-        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
-        mov     eax, [pXState]          ; control word
-        not     eax                     ; 1 means exception ignored (6 LS bits)
-        and     eax, byte 03Fh          ; 6 LS bits only
-        test    eax, [pXState + 4]      ; status word
-        jz short hlfpua_no_exceptions_pending
-        ; Technically incorrect, but we certainly don't want any exceptions now!!
-        and     dword [pXState + 4], ~03Fh
-hlfpua_no_exceptions_pending:
-        frstor  [pXState]
-        jmp near hlfpua_finished_switch
 
         ;
         ; Action - Generate Guest trap.

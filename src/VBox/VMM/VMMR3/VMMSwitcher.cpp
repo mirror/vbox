@@ -689,6 +689,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 break;
             }
 
+#if 0 /* Reusable for XSAVE. */
             /*
              * Insert relative jump to specified target it FXSAVE/FXRSTOR isn't supported by the cpu.
              */
@@ -708,6 +709,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
                 }
                 break;
             }
+#endif
 
             /*
              * Insert relative jump to specified target it SYSENTER isn't used by the host.

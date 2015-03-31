@@ -186,6 +186,10 @@ typedef struct CPUMFEATURES
     uint32_t        fPat : 1;
     /** Supports the FXSAVE and FXRSTOR instructions. */
     uint32_t        fFxSaveRstor : 1;
+    /** Supports MMX. */
+    uint32_t        fMmx : 1;
+    /** Supports RDTSC. */
+    uint32_t        fTsc : 1;
     /** Intel SYSENTER/SYSEXIT support */
     uint32_t        fSysEnter : 1;
     /** First generation APIC. */
@@ -216,7 +220,7 @@ typedef struct CPUMFEATURES
     uint32_t        fLeakyFxSR : 1;
 
     /** Alignment padding. */
-    uint32_t        fPadding : 8;
+    uint32_t        fPadding : 12;
 
     uint64_t        auPadding[2];
 } CPUMFEATURES;

@@ -611,48 +611,14 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     }
 
     /*
-     * Check that the CPU supports the minimum features we require.
+     * Gather info about the host CPU.
      */
     if (!ASMHasCpuId())
     {
         Log(("The CPU doesn't support CPUID!\n"));
         return VERR_UNSUPPORTED_CPU;
     }
-    ASMCpuId_ECX_EDX(1, &pVM->cpum.s.CPUFeatures.ecx, &pVM->cpum.s.CPUFeatures.edx);
-    ASMCpuId_ECX_EDX(0x80000001, &pVM->cpum.s.CPUFeaturesExt.ecx, &pVM->cpum.s.CPUFeaturesExt.edx);
 
-    /* Setup the CR4 AND and OR masks used in the switcher */
-    /* Depends on the presence of FXSAVE(SSE) support on the host CPU */
-    if (!pVM->cpum.s.CPUFeatures.edx.u1FXSR)
-    {
-        Log(("The CPU doesn't support FXSAVE/FXRSTOR!\n"));
-        /* No FXSAVE implies no SSE */
-        pVM->cpum.s.CR4.AndMask = X86_CR4_PVI | X86_CR4_VME;
-        pVM->cpum.s.CR4.OrMask  = 0;
-    }
-    else
-    {
-        pVM->cpum.s.CR4.AndMask = X86_CR4_OSXMMEEXCPT | X86_CR4_PVI | X86_CR4_VME;
-        pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFXSR;
-    }
-
-    if (!pVM->cpum.s.CPUFeatures.edx.u1MMX)
-    {
-        Log(("The CPU doesn't support MMX!\n"));
-        return VERR_UNSUPPORTED_CPU;
-    }
-    if (!pVM->cpum.s.CPUFeatures.edx.u1TSC)
-    {
-        Log(("The CPU doesn't support TSC!\n"));
-        return VERR_UNSUPPORTED_CPU;
-    }
-    /* Bogus on AMD? */
-    if (!pVM->cpum.s.CPUFeatures.edx.u1SEP)
-        Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
-
-    /*
-     * Gather info about the host CPU.
-     */
     PCPUMCPUIDLEAF  paLeaves;
     uint32_t        cLeaves;
     int rc = CPUMR3CpuIdCollectLeaves(&paLeaves, &cLeaves);
@@ -662,6 +628,26 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     RTMemFree(paLeaves);
     AssertLogRelRCReturn(rc, rc);
     pVM->cpum.s.GuestFeatures.enmCpuVendor = pVM->cpum.s.HostFeatures.enmCpuVendor;
+
+    /*
+     * Check that the CPU supports the minimum features we require.
+     */
+    if (!pVM->cpum.s.HostFeatures.fFxSaveRstor)
+        return VMSetError(pVM, VERR_UNSUPPORTED_CPU, RT_SRC_POS, "Host CPU does not support the FXSAVE/FXRSTOR instruction.");
+    if (!pVM->cpum.s.HostFeatures.fMmx)
+        return VMSetError(pVM, VERR_UNSUPPORTED_CPU, RT_SRC_POS, "Host CPU does not support MMX.");
+    if (!pVM->cpum.s.HostFeatures.fTsc)
+        return VMSetError(pVM, VERR_UNSUPPORTED_CPU, RT_SRC_POS, "Host CPU does not support RDTSC.");
+
+    /* Bogus on AMD? */
+    if (!pVM->cpum.s.CPUFeatures.edx.u1SEP)
+        Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
+
+    /*
+     * Setup the CR4 AND and OR masks used in the switcher
+     */
+    pVM->cpum.s.CR4.AndMask = X86_CR4_OSXMMEEXCPT | X86_CR4_PVI | X86_CR4_VME;
+    pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFXSR;
 
     /*
      * Allocate memory for the extended CPU state.
@@ -683,8 +669,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Host.pXStateR3  = (PX86XSAVEAREA)pbXStates;
-        pVCpu->cpum.s.Host.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
-        pVCpu->cpum.s.Host.pXStateRC = MMHyperR3ToR0(pVM, pbXStates);
+        pVCpu->cpum.s.Host.pXStateR0  = MMHyperR3ToR0(pVM, pbXStates);
+        pVCpu->cpum.s.Host.pXStateRC  = MMHyperR3ToR0(pVM, pbXStates);
         pbXStates += cbMaxXState;
 
         pVCpu->cpum.s.Hyper.pXStateR3 = (PX86XSAVEAREA)pbXStates;

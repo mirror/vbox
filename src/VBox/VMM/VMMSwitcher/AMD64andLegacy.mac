@@ -564,7 +564,7 @@ htg_debug_regs_no:
 
     ;
     ; CR4.AndMask and CR4.OrMask are set in CPUMR3Init based on the presence of
-    ; FXSAVE support on the host CPU
+    ; FXSAVE and XSAVE support on the host CPU
     ;
     and     ecx, [rdx + CPUM.CR4.AndMask]
     or      eax, ecx
