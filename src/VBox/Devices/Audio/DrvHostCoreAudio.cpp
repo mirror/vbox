@@ -1726,8 +1726,9 @@ static DECLCALLBACK(int) drvHostCoreAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMA
 
         if (pStreamIn->fDefDevChgListReg)
         {
-            err = AudioHardwareRemovePropertyListener(kAudioHardwarePropertyDefaultInputDevice,
-                                                      drvHostCoreAudioDefaultDeviceChanged);
+            propAdr.mSelector = kAudioHardwarePropertyDefaultInputDevice;
+            err = AudioObjectRemovePropertyListener(pStreamIn->deviceID, &propAdr,
+                                                    drvHostCoreAudioDefaultDeviceChanged, NULL);
             if (RT_LIKELY(err == noErr))
             {
                 pStreamIn->fDefDevChgListReg = false;
@@ -1804,8 +1805,10 @@ static DECLCALLBACK(int) drvHostCoreAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDM
         OSStatus err;
         if (pStreamOut->fDefDevChgListReg)
         {
-            err = AudioHardwareRemovePropertyListener(kAudioHardwarePropertyDefaultOutputDevice,
-                                                      drvHostCoreAudioDefaultDeviceChanged);
+            AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultOutputDevice, kAudioUnitScope_Global,
+                                                   kAudioObjectPropertyElementMaster };
+            err = AudioObjectRemovePropertyListener(pStreamOut->deviceID, &propAdr,
+                                                    drvHostCoreAudioDefaultDeviceChanged, NULL);
             if (RT_LIKELY(err == noErr))
             {
                 pStreamOut->fDefDevChgListReg = false;
