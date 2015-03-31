@@ -49,6 +49,7 @@
 #include <VBox/err.h>
 
 #include <VBox/log.h>
+#include <iprt/alloca.h>
 #include <iprt/semaphore.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -1388,7 +1389,12 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
 
     if (HMIsEnabled(env->pVM))
     {
+#ifdef RT_OS_WINDOWS
+        PCPUMCTX pCtx = alloca(sizeof(*pCtx));
+#else
         CPUMCTX Ctx;
+        PCPUMCTX pCtx = &Ctx;
+#endif
 
         env->state |= CPU_RAW_HM;
 
@@ -1401,84 +1407,84 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         /*
          * Create partial context for HMR3CanExecuteGuest
          */
-        Ctx.cr0            = env->cr[0];
-        Ctx.cr3            = env->cr[3];
-        Ctx.cr4            = env->cr[4];
+        pCtx->cr0            = env->cr[0];
+        pCtx->cr3            = env->cr[3];
+        pCtx->cr4            = env->cr[4];
 
-        Ctx.tr.Sel         = env->tr.selector;
-        Ctx.tr.ValidSel    = env->tr.selector;
-        Ctx.tr.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.tr.u64Base     = env->tr.base;
-        Ctx.tr.u32Limit    = env->tr.limit;
-        Ctx.tr.Attr.u      = (env->tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->tr.Sel         = env->tr.selector;
+        pCtx->tr.ValidSel    = env->tr.selector;
+        pCtx->tr.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->tr.u64Base     = env->tr.base;
+        pCtx->tr.u32Limit    = env->tr.limit;
+        pCtx->tr.Attr.u      = (env->tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.ldtr.Sel       = env->ldt.selector;
-        Ctx.ldtr.ValidSel  = env->ldt.selector;
-        Ctx.ldtr.fFlags    = CPUMSELREG_FLAGS_VALID;
-        Ctx.ldtr.u64Base   = env->ldt.base;
-        Ctx.ldtr.u32Limit  = env->ldt.limit;
-        Ctx.ldtr.Attr.u    = (env->ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->ldtr.Sel       = env->ldt.selector;
+        pCtx->ldtr.ValidSel  = env->ldt.selector;
+        pCtx->ldtr.fFlags    = CPUMSELREG_FLAGS_VALID;
+        pCtx->ldtr.u64Base   = env->ldt.base;
+        pCtx->ldtr.u32Limit  = env->ldt.limit;
+        pCtx->ldtr.Attr.u    = (env->ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.idtr.cbIdt     = env->idt.limit;
-        Ctx.idtr.pIdt      = env->idt.base;
+        pCtx->idtr.cbIdt     = env->idt.limit;
+        pCtx->idtr.pIdt      = env->idt.base;
 
-        Ctx.gdtr.cbGdt     = env->gdt.limit;
-        Ctx.gdtr.pGdt      = env->gdt.base;
+        pCtx->gdtr.cbGdt     = env->gdt.limit;
+        pCtx->gdtr.pGdt      = env->gdt.base;
 
-        Ctx.rsp            = env->regs[R_ESP];
-        Ctx.rip            = env->eip;
+        pCtx->rsp            = env->regs[R_ESP];
+        pCtx->rip            = env->eip;
 
-        Ctx.eflags.u32     = env->eflags;
+        pCtx->eflags.u32     = env->eflags;
 
-        Ctx.cs.Sel         = env->segs[R_CS].selector;
-        Ctx.cs.ValidSel    = env->segs[R_CS].selector;
-        Ctx.cs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.cs.u64Base     = env->segs[R_CS].base;
-        Ctx.cs.u32Limit    = env->segs[R_CS].limit;
-        Ctx.cs.Attr.u      = (env->segs[R_CS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->cs.Sel         = env->segs[R_CS].selector;
+        pCtx->cs.ValidSel    = env->segs[R_CS].selector;
+        pCtx->cs.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->cs.u64Base     = env->segs[R_CS].base;
+        pCtx->cs.u32Limit    = env->segs[R_CS].limit;
+        pCtx->cs.Attr.u      = (env->segs[R_CS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.ds.Sel         = env->segs[R_DS].selector;
-        Ctx.ds.ValidSel    = env->segs[R_DS].selector;
-        Ctx.ds.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.ds.u64Base     = env->segs[R_DS].base;
-        Ctx.ds.u32Limit    = env->segs[R_DS].limit;
-        Ctx.ds.Attr.u      = (env->segs[R_DS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->ds.Sel         = env->segs[R_DS].selector;
+        pCtx->ds.ValidSel    = env->segs[R_DS].selector;
+        pCtx->ds.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->ds.u64Base     = env->segs[R_DS].base;
+        pCtx->ds.u32Limit    = env->segs[R_DS].limit;
+        pCtx->ds.Attr.u      = (env->segs[R_DS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.es.Sel         = env->segs[R_ES].selector;
-        Ctx.es.ValidSel    = env->segs[R_ES].selector;
-        Ctx.es.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.es.u64Base     = env->segs[R_ES].base;
-        Ctx.es.u32Limit    = env->segs[R_ES].limit;
-        Ctx.es.Attr.u      = (env->segs[R_ES].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->es.Sel         = env->segs[R_ES].selector;
+        pCtx->es.ValidSel    = env->segs[R_ES].selector;
+        pCtx->es.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->es.u64Base     = env->segs[R_ES].base;
+        pCtx->es.u32Limit    = env->segs[R_ES].limit;
+        pCtx->es.Attr.u      = (env->segs[R_ES].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.fs.Sel         = env->segs[R_FS].selector;
-        Ctx.fs.ValidSel    = env->segs[R_FS].selector;
-        Ctx.fs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.fs.u64Base     = env->segs[R_FS].base;
-        Ctx.fs.u32Limit    = env->segs[R_FS].limit;
-        Ctx.fs.Attr.u      = (env->segs[R_FS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->fs.Sel         = env->segs[R_FS].selector;
+        pCtx->fs.ValidSel    = env->segs[R_FS].selector;
+        pCtx->fs.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->fs.u64Base     = env->segs[R_FS].base;
+        pCtx->fs.u32Limit    = env->segs[R_FS].limit;
+        pCtx->fs.Attr.u      = (env->segs[R_FS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.gs.Sel         = env->segs[R_GS].selector;
-        Ctx.gs.ValidSel    = env->segs[R_GS].selector;
-        Ctx.gs.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.gs.u64Base     = env->segs[R_GS].base;
-        Ctx.gs.u32Limit    = env->segs[R_GS].limit;
-        Ctx.gs.Attr.u      = (env->segs[R_GS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->gs.Sel         = env->segs[R_GS].selector;
+        pCtx->gs.ValidSel    = env->segs[R_GS].selector;
+        pCtx->gs.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->gs.u64Base     = env->segs[R_GS].base;
+        pCtx->gs.u32Limit    = env->segs[R_GS].limit;
+        pCtx->gs.Attr.u      = (env->segs[R_GS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.ss.Sel         = env->segs[R_SS].selector;
-        Ctx.ss.ValidSel    = env->segs[R_SS].selector;
-        Ctx.ss.fFlags      = CPUMSELREG_FLAGS_VALID;
-        Ctx.ss.u64Base     = env->segs[R_SS].base;
-        Ctx.ss.u32Limit    = env->segs[R_SS].limit;
-        Ctx.ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        pCtx->ss.Sel         = env->segs[R_SS].selector;
+        pCtx->ss.ValidSel    = env->segs[R_SS].selector;
+        pCtx->ss.fFlags      = CPUMSELREG_FLAGS_VALID;
+        pCtx->ss.u64Base     = env->segs[R_SS].base;
+        pCtx->ss.u32Limit    = env->segs[R_SS].limit;
+        pCtx->ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
-        Ctx.msrEFER        = env->efer;
+        pCtx->msrEFER        = env->efer;
 
         /* Hardware accelerated raw-mode:
          *
          * Typically only 32-bits protected mode, with paging enabled, code is allowed here.
          */
-        if (HMR3CanExecuteGuest(env->pVM, &Ctx) == true)
+        if (HMR3CanExecuteGuest(env->pVM, pCtx) == true)
         {
             *piException = EXCP_EXECUTE_HM;
             return true;
