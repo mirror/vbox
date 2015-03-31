@@ -1538,7 +1538,7 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         pFeatures->fPat                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PAT);
         pFeatures->fFxSaveRstor         = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_FXSR);
         pFeatures->fMmx                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_MMX);
-        pFeatures->fTsc                 = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_EDX_TSC);
+        pFeatures->fTsc                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_TSC);
         pFeatures->fSysEnter            = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SEP);
         pFeatures->fHypervisorPresent   = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_HVP);
         pFeatures->fMonitorMWait        = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_MONITOR);
