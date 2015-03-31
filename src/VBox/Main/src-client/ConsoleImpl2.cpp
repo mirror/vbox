@@ -5640,7 +5640,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         {
             for (unsigned i = 0; RT_SUCCESS(rc) && i < cProps; ++i)
             {
-                AssertPtrReturn(namesOut[i], VERR_INVALID_PARAMETER);
+                AssertPtrBreakStmt(namesOut[i], rc = VERR_INVALID_PARAMETER);
                 rc = RTUtf16ToUtf8(namesOut[i], &papszNames[i]);
                 if (RT_FAILURE(rc))
                     break;
