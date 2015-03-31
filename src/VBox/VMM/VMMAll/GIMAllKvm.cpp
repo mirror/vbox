@@ -351,20 +351,15 @@ VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx)
     {
         if (Dis.pCurInstr->uOpcode == OP_VMCALL)
         {
-            Assert(cbInstr == 3);        /* paranoia. */
-
             /*
              * Patch the instruction to so we don't have to spend time disassembling it each time.
              */
-            static uint8_t s_abHypercall[3];
-            size_t cbWritten;
-            rc = HMPatchHypercall(pVM, &s_abHypercall, sizeof(s_abHypercall), &cbWritten);
-            AssertRC(rc);
-
-            if (RT_LIKELY(cbWritten == cbInstr))
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &s_abHypercall, sizeof(s_abHypercall));
-            if (RT_SUCCESS(rc))
-                return gimKvmHypercall(pVCpu, pCtx);
+            static uint8_t s_abHypercall[3] = { 0x0F, 0x01, 0x00 };
+            Assert(sizeof(s_abHypercall) == cbInstr);
+            if (!s_abHypercall[2])
+                s_abHypercall[2] = ASMIsAmdCpu() ? 0xD9 /* VMMCALL */ : 0xC1 /* VMCALL */;
+            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &s_abHypercall, sizeof(s_abHypercall));
+            return VINF_SUCCESS;
         }
     }
 
