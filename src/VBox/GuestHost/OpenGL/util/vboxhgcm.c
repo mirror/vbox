@@ -2414,9 +2414,11 @@ void crVBoxHGCMBufferFree(void *data)
     switch (hgcm_buffer->kind)
     {
         case CR_VBOXHGCM_MEMORY:
+            crDebug("crVBoxHGCMBufferFree: CR_VBOXHGCM_MEMORY: %p", hgcm_buffer);
             crFree( hgcm_buffer );
             break;
         case CR_VBOXHGCM_MEMORY_BIG:
+            crDebug("crVBoxHGCMBufferFree: CR_VBOXHGCM_MEMORY_BIG: %p", hgcm_buffer);
             crFree( hgcm_buffer );
             break;
 
@@ -2449,15 +2451,15 @@ void crVBoxHGCMTearDown(void)
 
     g_crvboxhgcm.initialized = 0;
 
+    if (g_crvboxhgcm.bufpool)
+        crBufferPoolCallbackFree(g_crvboxhgcm.bufpool, crVBoxHGCMBufferFree);
+    g_crvboxhgcm.bufpool = NULL;
+
 #ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&g_crvboxhgcm.mutex);
     crFreeMutex(&g_crvboxhgcm.mutex);
     crFreeMutex(&g_crvboxhgcm.recvmutex);
 #endif
-
-    if (g_crvboxhgcm.bufpool)
-        crBufferPoolCallbackFree(g_crvboxhgcm.bufpool, crVBoxHGCMBufferFree);
-    g_crvboxhgcm.bufpool = NULL;
 
     crFree(g_crvboxhgcm.conns);
     g_crvboxhgcm.conns = NULL;
