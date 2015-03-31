@@ -31,6 +31,7 @@ __version__ = "$Revision$"
 # Standard Python imports.
 import re;
 import random;
+import socket;
 
 # Validation Kit imports.
 from testdriver import base;
@@ -263,6 +264,11 @@ class TestVm(object):
                 self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
             if self.sKind.find('_64') > 0:
                 self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
+            # TEMPORARY HACK - START
+            sHostName = socket.getfqdn();
+            if sHostName.startswith('testboxpile1'):
+                self.asVirtModesSup = [sVirtMode for sVirtMode in self.asVirtModesSup if sVirtMode != 'raw'];
+            # TEMPORARY HACK - END
 
         # Restrict the CPU count depending on the OS and/or percieved SMP readiness.
         if self.acCpusSup is None:
