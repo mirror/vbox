@@ -764,8 +764,7 @@ if1of ($(SYSMODS),VMMRC)
 	$(call MSG_L1,VMM: Testing for undefined symbols in VMMRC using nm...)
 	$(QUIET)$(VBOX_NM) $^  2> /dev/null \
 		| $(SED) -n \
-			-e '/^[0-9a-f][0-9a-f]* [^U] .*/d' \
-			-e 's/^[0-9a-f][0-9a-f]* //' \
+			-e '/^ *U .*/!d' \
 			-e 's/ *U //' \
 			\
 			-e '/^g_VM\>/d'\
