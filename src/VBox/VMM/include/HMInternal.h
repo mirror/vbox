@@ -342,7 +342,9 @@ typedef struct HM
     bool                        fGlobalInit;
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
-    bool                        u8Alignment[3];
+    /** Whether #UD needs to be intercepted (required by certain GIM providers). */
+    bool                        fTrapXcptUD;
+    bool                        u8Alignment[2];
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    uHostKernelFeatures;

@@ -23,12 +23,15 @@
 #include "GIMInternal.h"
 
 #include <VBox/err.h>
+#include <VBox/dis.h>
 #include <VBox/vmm/hm.h>
+#include <VBox/vmm/em.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmapi.h>
+#include <VBox/sup.h>
 
 #include <iprt/asm-amd64-x86.h>
 
@@ -42,9 +45,77 @@
  */
 VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    /** @todo Handle hypercalls. Fail for now */
-    return VERR_GIM_IPE_3;
+    /*
+     * Get the hypercall operation and arguments.
+     */
+    bool const fIs64BitMode = CPUMIsGuestIn64BitCodeEx(pCtx);
+    uint64_t uHyperOp       = pCtx->rax;
+    uint64_t uHyperArg0     = pCtx->rbx;
+    uint64_t uHyperArg1     = pCtx->rcx;
+    uint64_t uHyperArg2     = pCtx->rdi;
+    uint64_t uHyperArg3     = pCtx->rsi;
+    uint64_t uHyperRet      = KVM_HYPERCALL_RET_ENOSYS;
+    uint64_t uAndMask       = UINT64_C(0xffffffffffffffff);
+    if (!fIs64BitMode)
+    {
+        uAndMask    = UINT64_C(0xffffffff);
+        uHyperOp   &= UINT64_C(0xffffffff);
+        uHyperArg0 &= UINT64_C(0xffffffff);
+        uHyperArg1 &= UINT64_C(0xffffffff);
+        uHyperArg2 &= UINT64_C(0xffffffff);
+        uHyperArg3 &= UINT64_C(0xffffffff);
+        uHyperRet  &= UINT64_C(0xffffffff);
+    }
+
+    /*
+     * Verify that guest ring-0 is the one making the hypercall.
+     */
+    uint32_t uCpl = CPUMGetGuestCPL(pVCpu);
+    if (uCpl)
+    {
+        pCtx->rax = KVM_HYPERCALL_RET_EPERM & uAndMask;
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Do the work.
+     */
+    switch (uHyperOp)
+    {
+        case KVM_HYPERCALL_OP_KICK_CPU:
+        {
+            PVM pVM = pVCpu->CTX_SUFF(pVM);
+            if (uHyperArg1 < pVM->cCpus)
+            {
+                PVMCPU pVCpuTarget = &pVM->aCpus[uHyperArg1];   /** ASSUMES pVCpu index == ApicId of the VCPU. */
+                VMCPU_FF_SET(pVCpuTarget, VMCPU_FF_UNHALT);
+#ifdef IN_RING0
+                GVMMR0SchedWakeUp(pVM, pVCpuTarget->idCpu);
+#elif defined(IN_RING3)
+                int rc2 = SUPR3CallVMMR0(pVM->pVMR0, pVCpuTarget->idCpu, VMMR0_DO_GVMM_SCHED_WAKE_UP, NULL);
+                AssertRC(rc2);
+#endif
+                uHyperRet = KVM_HYPERCALL_RET_SUCCESS;
+            }
+            break;
+        }
+
+        case KVM_HYPERCALL_OP_VAPIC_POLL_IRQ:
+            uHyperRet = KVM_HYPERCALL_RET_SUCCESS;
+            break;
+
+        default:
+            break;
+    }
+
+    /*
+     * Place the result in rax/eax.
+     */
+    if (fIs64BitMode)
+        pCtx->rax = uHyperRet;
+    else
+        pCtx->eax = uHyperRet & uAndMask;
+    return VINF_SUCCESS;
 }
 
 
@@ -228,5 +299,75 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
     }
 
     return VERR_CPUM_RAISE_GP_0;
+}
+
+
+/**
+ * Whether we need to trap #UD exceptions in the guest.
+ *
+ * On AMD-V we need to trap them because paravirtualized Linux/KVM guests use
+ * the Intel VMCALL instruction to make hypercalls and we need to trap and
+ * optionally patch them to the AMD-V VMMCALL instruction and handle the
+ * hypercall.
+ *
+ * I guess this was done so that guest teleporation between an AMD and an Intel
+ * machine would working without any changes at the time of teleporation.
+ * However, this also means we -always- need to intercept #UD exceptions on one
+ * of the two CPU models (Intel or AMD). Hyper-V solves this problem more
+ * elegantly by letting the hypervisor supply an opaque hypercall page.
+ *
+ * @param   pVM         Pointer to the VM.
+ */
+VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVM pVM)
+{
+    pVM->gim.s.u.Kvm.fTrapXcptUD = ASMIsAmdCpu();
+    return pVM->gim.s.u.Kvm.fTrapXcptUD;
+}
+
+
+/**
+ * Exception handler for #UD.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    /*
+     * If we didn't ask for #UD to be trapped, bail.
+     */
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (RT_UNLIKELY(!pVM->gim.s.u.Kvm.fTrapXcptUD))
+        return VERR_GIM_OPERATION_FAILED;
+
+    /*
+     * Disassemble the instruction at RIP to figure out if it's the Intel
+     * VMCALL instruction and if so, handle it as a hypercall.
+     */
+    DISCPUSTATE Dis;
+    unsigned    cbInstr;
+    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbInstr);
+    if (RT_SUCCESS(rc))
+    {
+        if (Dis.pCurInstr->uOpcode == OP_VMCALL)
+        {
+            Assert(cbInstr == 3);        /* paranoia. */
+
+            /*
+             * Patch the instruction to so we don't have to spend time disassembling it each time.
+             */
+            static uint8_t s_abHypercall[3];
+            size_t cbWritten;
+            rc = HMPatchHypercall(pVM, &s_abHypercall, sizeof(s_abHypercall), &cbWritten);
+            AssertRC(rc);
+
+            if (RT_LIKELY(cbWritten == cbInstr))
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &s_abHypercall, sizeof(s_abHypercall));
+            if (RT_SUCCESS(rc))
+                return gimKvmHypercall(pVCpu, pCtx);
+        }
+    }
+
+    return VERR_GIM_OPERATION_FAILED;
 }
 

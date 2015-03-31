@@ -2621,8 +2621,6 @@
 #define VERR_GIM_HYPERCALLS_NOT_ENABLED             (-6309)
 /** The GIM device is not registered with GIM when it ought to be. */
 #define VERR_GIM_DEVICE_NOT_REGISTERED              (-6310)
-/** An invalid Guest OS identifier was specified for the GIM provider. */
-#define VERR_GIM_INVALID_GUESTOS_ID                 (-6311)
 /** @} */
 
 /** @name Main API Status Codes

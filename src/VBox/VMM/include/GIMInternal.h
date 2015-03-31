@@ -72,7 +72,7 @@ typedef struct GIM
 
     union
     {
-        GIMHV Hv;
+        GIMHV  Hv;
         GIMKVM Kvm;
     } u;
 } GIM;

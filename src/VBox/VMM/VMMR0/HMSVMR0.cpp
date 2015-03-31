@@ -295,6 +295,7 @@ static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
 static FNSVMEXITHANDLER hmR0SvmExitIret;
 static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptNM;
+static FNSVMEXITHANDLER hmR0SvmExitXcptUD;
 static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
 static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
 /** @} */
@@ -668,6 +669,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
+    pVM->hm.s.fTrapXcptUD             = GIMShouldTrapXcptUD(pVM);
+    uint32_t const fGimXcptIntercepts = pVM->hm.s.fTrapXcptUD ? RT_BIT(X86_XCPT_UD) : 0;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
@@ -782,6 +785,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 #ifdef HMSVM_ALWAYS_TRAP_TASK_SWITCH
         pVmcb->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_TASK_SWITCH;
 #endif
+
+        /* Apply the exceptions intercepts needed by the GIM provider. */
+        pVmcb->ctrl.u32InterceptException |= fGimXcptIntercepts;
 
         /*
          * The following MSRs are saved/restored automatically during the world-switch.
@@ -3475,6 +3481,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_EXCEPTION_7:   /* X86_XCPT_NM */
             return hmR0SvmExitXcptNM(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_EXCEPTION_6:  /* X86_XCPT_UD */
+            return hmR0SvmExitXcptUD(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_EXCEPTION_10:  /* X86_XCPT_MF */
             return hmR0SvmExitXcptMF(pVCpu, pCtx, pSvmTransient);
 
@@ -3581,7 +3590,7 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_3:             /* X86_XCPT_BP */
                 case SVM_EXIT_EXCEPTION_4:             /* X86_XCPT_OF */
                 case SVM_EXIT_EXCEPTION_5:             /* X86_XCPT_BR */
-                case SVM_EXIT_EXCEPTION_6:             /* X86_XCPT_UD */
+                /* case SVM_EXIT_EXCEPTION_6: */       /* X86_XCPT_UD - Handled above. */
                 /*   SVM_EXIT_EXCEPTION_7: */          /* X86_XCPT_NM - Handled above. */
                 case SVM_EXIT_EXCEPTION_8:             /* X86_XCPT_DF */
                 case SVM_EXIT_EXCEPTION_9:             /* X86_XCPT_CO_SEG_OVERRUN */
@@ -3618,10 +3627,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                              *  next instruction. */
                             /** @todo Investigate this later. */
                             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestBP);
-                            break;
-
-                        case X86_XCPT_UD:
-                            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
                             break;
 
                         case X86_XCPT_NP:
@@ -4151,6 +4156,7 @@ DECLINLINE(void) hmR0SvmUpdateRip(PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t cb)
     if (pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
     {
         PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        Assert(pVmcb->ctrl.u64NextRIP - pCtx->rip == cb);
         pCtx->rip = pVmcb->ctrl.u64NextRIP;
     }
     else
@@ -5002,9 +5008,14 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         rc = VERR_NOT_SUPPORTED;
         if (GIMAreHypercallsEnabled(pVCpu))
             rc = GIMHypercall(pVCpu, pCtx);
+
+        /* If the hypercall changes anything other than guest general-purpose registers,
+           we would need to reload the guest changed bits on VM-reentry. */
     }
 
-    if (rc != VINF_SUCCESS)
+    if (RT_SUCCESS(rc))
+        hmR0SvmUpdateRip(pVCpu, pCtx, 3);
+    else
         hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
 }
@@ -5196,6 +5207,37 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         hmR0SvmSetPendingXcptNM(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
     }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * #VMEXIT handler for undefined opcode (SVM_EXIT_EXCEPTION_6).
+ * Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
+
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
+
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (   pVM->hm.s.fTrapXcptUD
+        && GIMAreHypercallsEnabled(pVCpu))
+    {
+        int rc = GIMXcptUD(pVCpu, pCtx);
+        if (RT_SUCCESS(rc))
+        {
+            /* If the exception handler changes anything other than guest general-purpose registers,
+               we would need to reload the guest changed bits on VM-reentry. */
+            hmR0SvmUpdateRip(pVCpu, pCtx, 3);
+            return VINF_SUCCESS;
+        }
+    }
+
+    hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
 }
 

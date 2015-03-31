@@ -116,9 +116,27 @@ AssertCompile(MSR_GIM_KVM_RANGE1_START <= MSR_GIM_KVM_RANGE1_END);
  * @{
  */
 /** Guest-physical address of the wall-clock struct. */
-#define MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(a)      (a)
+#define MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(a)        (a)
 /** @} */
 
+
+/** @name KVM Hypercall operations.
+ *  @{ */
+#define KVM_HYPERCALL_OP_VAPIC_POLL_IRQ            1
+#define KVM_HYPERCALL_OP_MMU                       2
+#define KVM_HYPERCALL_OP_FEATURES                  3
+#define KVM_HYPERCALL_OP_KICK_CPU                  5
+/** @} */
+
+/** @name KVM Hypercall return values.
+ *  @{ */
+/* Return values for hypercalls */
+#define KVM_HYPERCALL_RET_SUCCESS                  0
+#define KVM_HYPERCALL_RET_ENOSYS                   (uint64_t)(-1000)
+#define KVM_HYPERCALL_RET_EFAULT                   (uint64_t)(-14)
+#define KVM_HYPERCALL_RET_E2BIG                    (uint64_t)(-7)
+#define KVM_HYPERCALL_RET_EPERM                    (uint64_t)(-1)
+/** @} */
 
 /**
  * KVM per-VCPU system-time structure.
@@ -183,6 +201,9 @@ typedef struct GIMKVM
     /** Basic features. */
     uint32_t                    uBaseFeat;
     /** @} */
+
+    /** Whether we need to trap #UD exceptions. */
+    bool                        fTrapXcptUD;
 } GIMKVM;
 /** Pointer to per-VM GIM KVM instance data. */
 typedef GIMKVM *PGIMKVM;
@@ -241,6 +262,9 @@ VMM_INT_DECL(bool)              gimKvmAreHypercallsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(int)               gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
+VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
+VMM_INT_DECL(int)               gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx);
+
 
 RT_C_DECLS_END
 

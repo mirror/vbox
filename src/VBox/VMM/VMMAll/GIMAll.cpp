@@ -72,6 +72,9 @@ VMM_INT_DECL(bool) GIMAreHypercallsEnabled(PVMCPU pVCpu)
         case GIMPROVIDERID_HYPERV:
             return gimHvAreHypercallsEnabled(pVCpu);
 
+        case GIMPROVIDERID_KVM:
+            return gimKvmAreHypercallsEnabled(pVCpu);
+
         default:
             return false;
     }
@@ -98,9 +101,12 @@ VMM_INT_DECL(int) GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
         case GIMPROVIDERID_HYPERV:
             return gimHvHypercall(pVCpu, pCtx);
 
+        case GIMPROVIDERID_KVM:
+            return gimKvmHypercall(pVCpu, pCtx);
+
         default:
-            AssertMsgFailed(("GIMHypercall: for unknown provider %u\n", pVM->gim.s.enmProviderId));
-            return VERR_GIM_IPE_3;
+            AssertMsgFailed(("GIMHypercall: for provider %u not available/implemented\n", pVM->gim.s.enmProviderId));
+            return VERR_GIM_HYPERCALLS_NOT_AVAILABLE;
     }
 }
 
@@ -126,6 +132,56 @@ VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
             break;
     }
     return false;
+}
+
+
+/**
+ * Whether #UD exceptions in the guest needs to be intercepted by the GIM
+ * provider.
+ *
+ * At the moment, the reason why this isn't a more generic interface wrt to
+ * exceptions is because of performance (each VM-exit would have to manually
+ * check whether or not GIM needs to be notified). Left as a todo for later if
+ * really required.
+ *
+ * @returns true if needed, false otherwise.
+ * @param   pVM         Pointer to the VM.
+ */
+VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVM pVM)
+{
+    if (!GIMIsEnabled(pVM))
+        return 0;
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_KVM:
+            return gimKvmShouldTrapXcptUD(pVM);
+
+        default:
+            return 0;
+    }
+}
+
+
+/**
+ * Exception handler for #UD when requested by the GIM provider.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+VMM_INT_DECL(int) GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    Assert(GIMIsEnabled(pVM));
+
+    switch (pVM->gim.s.enmProviderId)
+    {
+        case GIMPROVIDERID_KVM:
+            return gimKvmXcptUD(pVCpu, pCtx);
+
+        default:
+            return VERR_GIM_OPERATION_FAILED;
+    }
 }
 
 

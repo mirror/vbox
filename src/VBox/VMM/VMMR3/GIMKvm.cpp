@@ -97,7 +97,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
                         //| GIM_KVM_BASE_FEAT_ASYNC_PF
                         //| GIM_KVM_BASE_FEAT_STEAL_TIME
                         //| GIM_KVM_BASE_FEAT_PV_EOI
-                        //| GIM_KVM_BASE_FEAT_UNHALT
+                        | GIM_KVM_BASE_FEAT_PV_UNHALT
                         ;
         /* Rest of the features are determined in gimR3KvmInitCompleted(). */
     }
