@@ -285,10 +285,6 @@ typedef CPUMINFO const *CPCPUMINFO;
  */
 typedef struct CPUMHOSTCTX
 {
-    /** FPU state. (16-byte alignment)
-     * @remark On x86, the format isn't necessarily X86FXSTATE (not important). */
-    X86XSAVEAREA    XState;
-
     /** General purpose register, selectors, flags and more
      * @{ */
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -388,7 +384,7 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 64byte aligned size */
-    uint8_t         auPadding[16+32];
+    uint8_t         auPadding[16+12];
 
 #elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 
@@ -434,14 +430,21 @@ typedef struct CPUMHOSTCTX
 
     /* padding to get 32byte aligned size */
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    uint8_t         auPadding[16];
+    uint8_t         auPadding[4];
 # else
-    uint8_t         auPadding[8+32];
+    uint8_t         auPadding[8+12];
 # endif
 
 #else
 # error HC_ARCH_BITS not defined
 #endif
+
+    /** Pointer to the FPU/SSE/AVX/XXXX state raw-mode mapping. */
+    RCPTRTYPE(PX86XSAVEAREA)    pXStateRC;
+    /** Pointer to the FPU/SSE/AVX/XXXX state ring-0 mapping. */
+    R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
+    /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
+    R3PTRTYPE(PX86XSAVEAREA)    pXStateR3;
 } CPUMHOSTCTX;
 /** Pointer to the saved host CPU state. */
 typedef CPUMHOSTCTX *PCPUMHOSTCTX;

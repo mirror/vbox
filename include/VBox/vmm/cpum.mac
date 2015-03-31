@@ -135,7 +135,6 @@ endstruc
 %define XSTATE_SIZE             8192
 
 struc CPUMCTX
-    .XState             resb    XSTATE_SIZE
     .eax                resq    1
     .ecx                resq    1
     .edx                resq    1
@@ -234,7 +233,11 @@ struc CPUMCTX
     .msrSFMASK          resb    8
     .msrKERNELGSBASE    resb    8
     .msrApicBase        resb    8
-    .au32SizePadding    resb    24
+    alignb 8
+    .pXStateR0      RTR0PTR_RES 1
+    .pXStateR3      RTR3PTR_RES 1
+    .pXStateRC      RTRCPTR_RES 1
+    alignb 64
 endstruc
 
 

@@ -2456,7 +2456,8 @@ typedef const X86FXSTATE *PCX86FXSTATE;
  *  magic. Don't forget to update x86.mac if you change this! */
 #define X86_OFF_FXSTATE_RSVD            0x1d0
 /** The 32-bit magic used to recognize if this a 32-bit FPU state. Don't
- *  forget to update x86.mac if you change this! */
+ *  forget to update x86.mac if you change this!
+ * @todo r=bird: This has nothing what-so-ever to do here.... */
 #define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
 #ifndef VBOX_FOR_DTRACE_LIB
 AssertCompileSize(X86FXSTATE, 512);
@@ -2790,6 +2791,10 @@ AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.Opmask,     0x440 /* 1088 */);
 AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.ZmmHi256,   0x480 /* 1152 */);
 AssertCompileMemberOffset(X86XSAVEAREA, u.Intel.Zmm16Hi,    0x680 /* 1664 */);
 #endif
+/** Pointer to a XSAVE area. */
+typedef X86XSAVEAREA *PX86XSAVEAREA;
+/** Pointer to a const XSAVE area. */
+typedef X86XSAVEAREA const *PCX86XSAVEAREA;
 
 
 /** @name XSAVE_C_XXX - XSAVE State Components Bits.

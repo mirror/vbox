@@ -1143,8 +1143,10 @@ gth_sysenter_no:
     and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rcx
 
-    fxsave  [rdx + r8 + CPUMCPU.Guest.XState]
-    o64 fxrstor [rdx + r8 + CPUMCPU.Host.XState]    ; Restore 64-bit host FPU state. See @bugref{7138}
+    mov     rax, [rdx + r8 + CPUMCPU.Guest.pXStateR0]
+    fxsave  [rax]
+    mov     rax, [rdx + r8 + CPUMCPU.Host.pXStateR0]
+    fxrstor [rax]                       ; We saved 32-bit state, so only restore 32-bit.
     jmp short gth_fpu_no
 
 ALIGNCODE(16)

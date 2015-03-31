@@ -245,7 +245,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        uint8_t             padding[28672];      /* multiple of 4096 */
+        uint8_t             padding[4096];      /* multiple of 4096 */
     } cpum;
 
 } VMCPU;

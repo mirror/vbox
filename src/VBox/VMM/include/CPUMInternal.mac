@@ -125,8 +125,7 @@ struc CPUMCPU
     ; Guest context state
     ; (Identical to the .Hyper chunk below.)
     ;
-    alignb 64
-    .Guest.XState             resb    XSTATE_SIZE
+    .Guest                    resq    0
     .Guest.eax                resq    1
     .Guest.ecx                resq    1
     .Guest.edx                resq    1
@@ -225,9 +224,12 @@ struc CPUMCPU
     .Guest.msrSFMASK          resb    8
     .Guest.msrKERNELGSBASE    resb    8
     .Guest.msrApicBase        resb    8
-
+    .Guest.pXStateR0          RTR0PTR_RES 1
+    .Guest.pXStateR3          RTR3PTR_RES 1
+    .Guest.pXStateRC          RTRCPTR_RES 1
 
     alignb 64
+    .GuestMsrs                resq    0
     .GuestMsrs.au64           resq    64
 
     ;
@@ -255,8 +257,7 @@ struc CPUMCPU
     ; Host context state
     ;
     alignb 64
-    .Host.XState         resb    XSTATE_SIZE
-
+    .Host                resb    0
 %if HC_ARCH_BITS == 64 || fVBOX_WITH_HYBRID_32BIT_KERNEL
     ;.Host.rax            resq    1 - scratch
     .Host.rbx            resq    1
@@ -330,6 +331,7 @@ struc CPUMCPU
     .Host.SysEnter.eip   resq    1
     .Host.SysEnter.esp   resq    1
     .Host.efer           resq    1
+    .Host.auPadding      resb    (16+12)
 
 %else ; 64-bit
 
@@ -361,13 +363,22 @@ struc CPUMCPU
     .Host.FSbase         resq    1
     .Host.GSbase         resq    1
     .Host.efer           resq    1
+ %if fVBOX_WITH_HYBRID_32BIT_KERNEL
+    .Host.auPadding      resb    4
+ %else
+    .Host.auPadding      resb   (8+12)
+ %endif
 %endif ; 64-bit
+    .Host.pXStateRC RTRCPTR_RES  1
+    alignb RTR0PTR_CB
+    .Host.pXStateR0 RTR0PTR_RES  1
+    .Host.pXStateR3 RTR3PTR_RES  1
 
     ;
     ; Hypervisor Context (same as .Guest above).
     ;
     alignb 64
-    .Hyper.XState             resb    XSTATE_SIZE
+    .Hyper                    resq    0
     .Hyper.eax                resq    1
     .Hyper.ecx                resq    1
     .Hyper.edx                resq    1
@@ -466,6 +477,9 @@ struc CPUMCPU
     .Hyper.msrSFMASK          resb    8
     .Hyper.msrKERNELGSBASE    resb    8
     .Hyper.msrApicBase        resb    8
+    .Hyper.pXStateR0          RTR0PTR_RES 1
+    .Hyper.pXStateR3          RTR3PTR_RES 1
+    .Hyper.pXStateRC          RTRCPTR_RES 1
     alignb 64
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC

@@ -989,24 +989,26 @@ gth_syscall_no:
     and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, ecx
 
+    mov     eax, [edx + CPUMCPU.Guest.pXStateR0]
+    mov     ecx, [edx + CPUMCPU.Host.pXStateR0]
     FIXUP FIX_NO_FXSAVE_JMP, 0, gth_no_fxsave - NAME(Start) ; this will insert a jmp gth_no_fxsave if fxsave isn't supported.
-    fxsave  [edx + CPUMCPU.Guest.XState]
-    fxrstor [edx + CPUMCPU.Host.XState]
+    fxsave  [eax]
+    fxrstor [ecx]
     jmp near gth_fpu_no
 
 gth_no_fxsave:
-    fnsave  [edx + CPUMCPU.Guest.XState]
-    mov     eax, [edx + CPUMCPU.Host.XState] ; control word
-    not     eax                            ; 1 means exception ignored (6 LS bits)
-    and     eax, byte 03Fh                 ; 6 LS bits only
-    test    eax, [edx + CPUMCPU.Host.XState + 4] ; status word
+    fnsave  [eax]
+    mov     eax, [ecx]                  ; control word
+    not     eax                         ; 1 means exception ignored (6 LS bits)
+    and     eax, byte 03Fh              ; 6 LS bits only
+    test    eax, [ecx + 4]              ; status word
     jz      gth_no_exceptions_pending
 
     ; technically incorrect, but we certainly don't want any exceptions now!!
-    and     dword [edx + CPUMCPU.Host.XState + 4], ~03Fh
+    and     dword [ecx + 4], ~03Fh
 
 gth_no_exceptions_pending:
-    frstor  [edx + CPUMCPU.Host.XState]
+    frstor  [ecx]
     jmp short gth_fpu_no
 
 ALIGNCODE(16)

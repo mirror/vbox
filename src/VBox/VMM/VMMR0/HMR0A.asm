@@ -1185,23 +1185,23 @@ ALIGNCODE(8)
 
         ; Load the full guest XMM register state.
         mov     r10, [xBP + 018h]       ; pCtx
-        lea     r10, [r10 + XMM_OFF_IN_X86FXSTATE]
-        movdqa  xmm0,  [r10 + 000h]
-        movdqa  xmm1,  [r10 + 010h]
-        movdqa  xmm2,  [r10 + 020h]
-        movdqa  xmm3,  [r10 + 030h]
-        movdqa  xmm4,  [r10 + 040h]
-        movdqa  xmm5,  [r10 + 050h]
-        movdqa  xmm6,  [r10 + 060h]
-        movdqa  xmm7,  [r10 + 070h]
-        movdqa  xmm8,  [r10 + 080h]
-        movdqa  xmm9,  [r10 + 090h]
-        movdqa  xmm10, [r10 + 0a0h]
-        movdqa  xmm11, [r10 + 0b0h]
-        movdqa  xmm12, [r10 + 0c0h]
-        movdqa  xmm13, [r10 + 0d0h]
-        movdqa  xmm14, [r10 + 0e0h]
-        movdqa  xmm15, [r10 + 0f0h]
+        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        movdqa  xmm0,  [r10 + XMM_OFF_IN_X86FXSTATE + 000h]
+        movdqa  xmm1,  [r10 + XMM_OFF_IN_X86FXSTATE + 010h]
+        movdqa  xmm2,  [r10 + XMM_OFF_IN_X86FXSTATE + 020h]
+        movdqa  xmm3,  [r10 + XMM_OFF_IN_X86FXSTATE + 030h]
+        movdqa  xmm4,  [r10 + XMM_OFF_IN_X86FXSTATE + 040h]
+        movdqa  xmm5,  [r10 + XMM_OFF_IN_X86FXSTATE + 050h]
+        movdqa  xmm6,  [r10 + XMM_OFF_IN_X86FXSTATE + 060h]
+        movdqa  xmm7,  [r10 + XMM_OFF_IN_X86FXSTATE + 070h]
+        movdqa  xmm8,  [r10 + XMM_OFF_IN_X86FXSTATE + 080h]
+        movdqa  xmm9,  [r10 + XMM_OFF_IN_X86FXSTATE + 090h]
+        movdqa  xmm10, [r10 + XMM_OFF_IN_X86FXSTATE + 0a0h]
+        movdqa  xmm11, [r10 + XMM_OFF_IN_X86FXSTATE + 0b0h]
+        movdqa  xmm12, [r10 + XMM_OFF_IN_X86FXSTATE + 0c0h]
+        movdqa  xmm13, [r10 + XMM_OFF_IN_X86FXSTATE + 0d0h]
+        movdqa  xmm14, [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h]
+        movdqa  xmm15, [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h]
 
         ; Make the call (same as in the other case ).
         mov     r11, [xBP + 38h]        ; pfnStartVM
@@ -1215,23 +1215,23 @@ ALIGNCODE(8)
 
         ; Save the guest XMM registers.
         mov     r10, [xBP + 018h]       ; pCtx
-        lea     r10, [r10 + XMM_OFF_IN_X86FXSTATE]
-        movdqa  [r10 + 000h], xmm0
-        movdqa  [r10 + 010h], xmm1
-        movdqa  [r10 + 020h], xmm2
-        movdqa  [r10 + 030h], xmm3
-        movdqa  [r10 + 040h], xmm4
-        movdqa  [r10 + 050h], xmm5
-        movdqa  [r10 + 060h], xmm6
-        movdqa  [r10 + 070h], xmm7
-        movdqa  [r10 + 080h], xmm8
-        movdqa  [r10 + 090h], xmm9
-        movdqa  [r10 + 0a0h], xmm10
-        movdqa  [r10 + 0b0h], xmm11
-        movdqa  [r10 + 0c0h], xmm12
-        movdqa  [r10 + 0d0h], xmm13
-        movdqa  [r10 + 0e0h], xmm14
-        movdqa  [r10 + 0f0h], xmm15
+        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
 
         ; Load the host XMM registers.
         movdqa  xmm6,  [rsp + 040h + 000h]
@@ -1313,23 +1313,23 @@ ALIGNCODE(8)
 
         ; Load the full guest XMM register state.
         mov     r10, [xBP + 020h]       ; pCtx
-        lea     r10, [r10 + XMM_OFF_IN_X86FXSTATE]
-        movdqa  xmm0,  [r10 + 000h]
-        movdqa  xmm1,  [r10 + 010h]
-        movdqa  xmm2,  [r10 + 020h]
-        movdqa  xmm3,  [r10 + 030h]
-        movdqa  xmm4,  [r10 + 040h]
-        movdqa  xmm5,  [r10 + 050h]
-        movdqa  xmm6,  [r10 + 060h]
-        movdqa  xmm7,  [r10 + 070h]
-        movdqa  xmm8,  [r10 + 080h]
-        movdqa  xmm9,  [r10 + 090h]
-        movdqa  xmm10, [r10 + 0a0h]
-        movdqa  xmm11, [r10 + 0b0h]
-        movdqa  xmm12, [r10 + 0c0h]
-        movdqa  xmm13, [r10 + 0d0h]
-        movdqa  xmm14, [r10 + 0e0h]
-        movdqa  xmm15, [r10 + 0f0h]
+        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        movdqa  xmm0,  [r10 + XMM_OFF_IN_X86FXSTATE + 000h]
+        movdqa  xmm1,  [r10 + XMM_OFF_IN_X86FXSTATE + 010h]
+        movdqa  xmm2,  [r10 + XMM_OFF_IN_X86FXSTATE + 020h]
+        movdqa  xmm3,  [r10 + XMM_OFF_IN_X86FXSTATE + 030h]
+        movdqa  xmm4,  [r10 + XMM_OFF_IN_X86FXSTATE + 040h]
+        movdqa  xmm5,  [r10 + XMM_OFF_IN_X86FXSTATE + 050h]
+        movdqa  xmm6,  [r10 + XMM_OFF_IN_X86FXSTATE + 060h]
+        movdqa  xmm7,  [r10 + XMM_OFF_IN_X86FXSTATE + 070h]
+        movdqa  xmm8,  [r10 + XMM_OFF_IN_X86FXSTATE + 080h]
+        movdqa  xmm9,  [r10 + XMM_OFF_IN_X86FXSTATE + 090h]
+        movdqa  xmm10, [r10 + XMM_OFF_IN_X86FXSTATE + 0a0h]
+        movdqa  xmm11, [r10 + XMM_OFF_IN_X86FXSTATE + 0b0h]
+        movdqa  xmm12, [r10 + XMM_OFF_IN_X86FXSTATE + 0c0h]
+        movdqa  xmm13, [r10 + XMM_OFF_IN_X86FXSTATE + 0d0h]
+        movdqa  xmm14, [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h]
+        movdqa  xmm15, [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h]
 
         ; Make the call (same as in the other case ).
         mov     r11, [xBP + 38h]        ; pfnVMRun
@@ -1343,23 +1343,23 @@ ALIGNCODE(8)
 
         ; Save the guest XMM registers.
         mov     r10, [xBP + 020h]       ; pCtx
-        lea     r10, [r10 + XMM_OFF_IN_X86FXSTATE]
-        movdqa  [r10 + 000h], xmm0
-        movdqa  [r10 + 010h], xmm1
-        movdqa  [r10 + 020h], xmm2
-        movdqa  [r10 + 030h], xmm3
-        movdqa  [r10 + 040h], xmm4
-        movdqa  [r10 + 050h], xmm5
-        movdqa  [r10 + 060h], xmm6
-        movdqa  [r10 + 070h], xmm7
-        movdqa  [r10 + 080h], xmm8
-        movdqa  [r10 + 090h], xmm9
-        movdqa  [r10 + 0a0h], xmm10
-        movdqa  [r10 + 0b0h], xmm11
-        movdqa  [r10 + 0c0h], xmm12
-        movdqa  [r10 + 0d0h], xmm13
-        movdqa  [r10 + 0e0h], xmm14
-        movdqa  [r10 + 0f0h], xmm15
+        mov     r10, [r10 + CPUMCTX.pXStateR0]
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 000h], xmm0
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 010h], xmm1
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 020h], xmm2
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 030h], xmm3
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 040h], xmm4
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 050h], xmm5
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 060h], xmm6
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 070h], xmm7
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 080h], xmm8
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 090h], xmm9
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0a0h], xmm10
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0b0h], xmm11
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0c0h], xmm12
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0d0h], xmm13
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0e0h], xmm14
+        movdqa  [r10 + XMM_OFF_IN_X86FXSTATE + 0f0h], xmm15
 
         ; Load the host XMM registers.
         movdqa  xmm6,  [rsp + 040h + 000h]

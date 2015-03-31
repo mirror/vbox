@@ -2357,7 +2357,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
 
         /* Sync FPU state after CR4, CPUID and EFER (!). */
         if (fFlags & CPUM_CHANGED_FPU_REM)
-            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->XState.x87); /* 'save' is an excellent name. */
+            save_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->pXStateR3->x87); /* 'save' is an excellent name. */
     }
 
     /*
@@ -2550,7 +2550,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     /** @todo DS */
 
     /** @todo check if FPU/XMM was actually used in the recompiler */
-    restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->XState.x87);
+    restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->pXStateR3->x87);
 ////    dprintf2(("FPU state CW=%04X TT=%04X SW=%04X (%04X)\n", env->fpuc, env->fpstt, env->fpus, pVMCtx->fpu.FSW));
 
 #ifdef TARGET_X86_64
@@ -2815,17 +2815,18 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
      * This is done in the order they are declared in the CPUMCTX structure.
      */
 
+    PX86FXSTATE pFpuCtx = &pCtx->pXStateR3->x87;
     /** @todo FOP */
     /** @todo FPUIP */
     /** @todo CS */
     /** @todo FPUDP */
     /** @todo DS */
     /** @todo Fix MXCSR support in QEMU so we don't overwrite MXCSR with 0 when we shouldn't! */
-    pCtx->XState.x87.MXCSR       = 0;
-    pCtx->XState.x87.MXCSR_MASK  = 0;
+    pFpuCtx->MXCSR       = 0;
+    pFpuCtx->MXCSR_MASK  = 0;
 
     /** @todo check if FPU/XMM was actually used in the recompiler */
-    restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)&pCtx->XState.x87);
+    restore_raw_fp_state(&pVM->rem.s.Env, (uint8_t *)pFpuCtx);
 ////    dprintf2(("FPU state CW=%04X TT=%04X SW=%04X (%04X)\n", env->fpuc, env->fpstt, env->fpus, pVMCtx->fpu.FSW));
 
 #ifdef TARGET_X86_64

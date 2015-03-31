@@ -61,6 +61,12 @@ BEGINCODE
 ;
 align 16
 BEGINPROC   cpumHandleLazyFPUAsm
+        push    ebx
+        push    esi
+        mov     ebx, [esp + 4]
+%define pCpumCpu ebx
+%define pXState  esi
+
         ;
         ; Figure out what to do.
         ;
@@ -91,32 +97,18 @@ BEGINPROC   cpumHandleLazyFPUAsm
         ; Before taking any of these actions we're checking if we have already
         ; loaded the GC FPU. Because if we have, this is an trap for the guest - raw ring-3.
         ;
-%ifdef RT_ARCH_AMD64
- %ifdef RT_OS_WINDOWS
-        mov     xDX, rcx
- %else
-        mov     xDX, rdi
- %endif
-%else
-        mov     xDX, dword [esp + 4]
-%endif
-        test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USED_FPU
+        test    dword [pCpumCpu + CPUMCPU.fUseFlags], CPUM_USED_FPU
         jz      hlfpua_not_loaded
-        jmp     hlfpua_to_host
+        jmp     hlfpua_guest_trap
 
     ;
     ; Take action.
     ;
 align 16
 hlfpua_not_loaded:
-        mov     eax, [xDX + CPUMCPU.Guest.cr0]
+        mov     eax, [pCpumCpu + CPUMCPU.Guest.cr0]
         and     eax, X86_CR0_MP | X86_CR0_EM | X86_CR0_TS
-%ifdef RT_ARCH_AMD64
-        lea     r8, [hlfpuajmp1 wrt rip]
-        jmp     qword [rax*4 + r8]
-%else
         jmp     dword [eax*2 + hlfpuajmp1]
-%endif
 align 16
 ;; jump table using fpu related cr0 flags as index.
 hlfpuajmp1:
@@ -125,9 +117,9 @@ hlfpuajmp1:
         RTCCPTR_DEF hlfpua_switch_fpu_ctx
         RTCCPTR_DEF hlfpua_switch_fpu_ctx
         RTCCPTR_DEF hlfpua_switch_fpu_ctx
-        RTCCPTR_DEF hlfpua_to_host
+        RTCCPTR_DEF hlfpua_guest_trap
         RTCCPTR_DEF hlfpua_switch_fpu_ctx
-        RTCCPTR_DEF hlfpua_to_host
+        RTCCPTR_DEF hlfpua_guest_trap
 ;; and mask for cr0.
 hlfpu_afFlags:
         RTCCPTR_DEF ~(X86_CR0_TS | X86_CR0_MP)
@@ -144,73 +136,58 @@ hlfpu_afFlags:
         ;
 align 16
 hlfpua_switch_fpu_ctx:
-        ; Paranoia. This function was previously used in ring-0, not any longer.
-%ifdef IN_RING3
-%error "This function is not written for ring-3"
-%endif
-%ifdef IN_RING0
-%error "This function is not written for ring-0"
-%endif
+        mov     ecx, cr0
+        mov     edx, ecx
+        and     ecx, [eax*2 + hlfpu_afFlags] ; Calc the new cr0 flags. Do NOT use ECX until we restore it!
+        and     edx, ~(X86_CR0_TS | X86_CR0_EM)
+        mov     cr0, edx                ; Clear flags so we don't trap here.
 
-        mov     xCX, cr0
-%ifdef RT_ARCH_AMD64
-        lea     r8, [hlfpu_afFlags wrt rip]
-        and     rcx, [rax*4 + r8]       ; calc the new cr0 flags.
-%else
-        and     ecx, [eax*2 + hlfpu_afFlags] ; calc the new cr0 flags.
-%endif
-        mov     xAX, cr0
-        and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
-        mov     cr0, xAX                ; clear flags so we don't trap here.
-%ifndef RT_ARCH_AMD64
-        mov     eax, edx                ; Calculate the PCPUM pointer
-        sub     eax, [edx + CPUMCPU.offCPUM]
+        mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
+        mov     eax, pCpumCpu           ; Calculate the PCPUM pointer
+        sub     eax, [pCpumCpu + CPUMCPU.offCPUM]
         test    dword [eax + CPUM.CPUFeatures.edx], X86_CPUID_FEATURE_EDX_FXSR
         jz short hlfpua_no_fxsave
-%endif
 
-%ifdef RT_ARCH_AMD64
-        ; Use explicit REX prefix. See @bugref{6398}.
-        o64 fxsave  [xDX + CPUMCPU.Host.XState]
-%else
-        fxsave  [xDX + CPUMCPU.Host.XState]
-%endif
-        or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
-        fxrstor [xDX + CPUMCPU.Guest.XState] ; raw-mode guest is always 32-bit. See @bugref{7138}.
+        fxsave  [pXState]
+        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
+        fxrstor [pXState]
 
 hlfpua_finished_switch:
+        or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
 
         ; Load new CR0 value.
-        ;; @todo Optimize the many unconditional CR0 writes.
-        mov     cr0, xCX                ; load the new cr0 flags.
+        mov     cr0, ecx                ; load the new cr0 flags.
 
         ; return continue execution.
+        pop     esi
+        pop     ebx
         xor     eax, eax
         ret
 
-%ifndef RT_ARCH_AMD64
-; legacy support.
+        ;
+        ; Legacy CPU support.
+        ;
 hlfpua_no_fxsave:
-        fnsave  [xDX + CPUMCPU.Host.XState]
-        or      dword [xDX + CPUMCPU.fUseFlags], dword (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM) ; yasm / nasm
-        mov     eax, [xDX + CPUMCPU.Guest.XState]   ; control word
-        not     eax                                 ; 1 means exception ignored (6 LS bits)
-        and     eax, byte 03Fh                      ; 6 LS bits only
-        test    eax, [xDX + CPUMCPU.Guest.XState + 4] ; status word
+        fnsave  [pXState]
+        mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
+        mov     eax, [pXState]          ; control word
+        not     eax                     ; 1 means exception ignored (6 LS bits)
+        and     eax, byte 03Fh          ; 6 LS bits only
+        test    eax, [pXState + 4]      ; status word
         jz short hlfpua_no_exceptions_pending
-        ; technically incorrect, but we certainly don't want any exceptions now!!
-        and     dword [xDX + CPUMCPU.Guest.XState + 4], ~03Fh
+        ; Technically incorrect, but we certainly don't want any exceptions now!!
+        and     dword [pXState + 4], ~03Fh
 hlfpua_no_exceptions_pending:
-        frstor  [xDX + CPUMCPU.Guest.XState]
+        frstor  [pXState]
         jmp near hlfpua_finished_switch
-%endif ; !RT_ARCH_AMD64
-
 
         ;
         ; Action - Generate Guest trap.
         ;
 hlfpua_action_4:
-hlfpua_to_host:
+hlfpua_guest_trap:
+        pop     esi
+        pop     ebx
         mov     eax, VINF_EM_RAW_GUEST_TRAP
         ret
 ENDPROC     cpumHandleLazyFPUAsm
