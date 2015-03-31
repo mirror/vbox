@@ -993,6 +993,7 @@ gth_syscall_no:
     mov     ecx, [edx + CPUMCPU.Host.pXStateR0]
     fxsave  [eax]
     fxrstor [ecx]
+gth_fpu_no:
 
     ; Control registers.
     ; Would've liked to have these higher up in case of crashes, but
