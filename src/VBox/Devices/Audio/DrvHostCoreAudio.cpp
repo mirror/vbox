@@ -286,7 +286,7 @@ typedef struct COREAUDIOSTREAMOUT
      * or the device itself is changed during the runtime. */
     volatile uint32_t           status;
     /** Flag whether the "default device changed" listener was registered. */
- 	bool                        fDefDevChgListReg;
+    bool                        fDefDevChgListReg;
 } COREAUDIOSTREAMOUT, *PCOREAUDIOSTREAMOUT;
 
 typedef struct COREAUDIOSTREAMIN
@@ -315,7 +315,7 @@ typedef struct COREAUDIOSTREAMIN
      * or the device itself is changed during the runtime. */
     volatile uint32_t           status;
     /** Flag whether the "default device changed" listener was registered. */
- 	bool                        fDefDevChgListReg;
+    bool                        fDefDevChgListReg;
 } COREAUDIOSTREAMIN, *PCOREAUDIOSTREAMIN;
 
 static int drvHostCoreAudioControlIn(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMIN pHstStrmIn, PDMAUDIOSTREAMCMD enmStreamCmd);
