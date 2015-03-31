@@ -186,8 +186,6 @@ typedef struct _VBOXNETLWF_MODULE {
     ANSI_STRING strMiniportName;
     /** MAC address of underlying adapter */
     RTMAC MacAddr;
-    /** Packet filter of underlying miniport */
-    ULONG uPacketFilter;
     /** Saved offload configuration */
     NDIS_OFFLOAD SavedOffloadConfig;
     /** the cloned request we have passed down */
@@ -196,6 +194,8 @@ typedef struct _VBOXNETLWF_MODULE {
     bool fOffloadConfigValid;
     /** true if the trunk expects data from us */
     bool fActive;
+    /** true if the host wants the adapter to be in promisc mode */
+    bool fHostPromisc;
 } VBOXNETLWF_MODULE;
 typedef VBOXNETLWF_MODULE *PVBOXNETLWF_MODULE;
 
@@ -469,6 +469,12 @@ DECLINLINE(void) vboxNetLwfWinCopyOidRequestResults(PNDIS_OID_REQUEST pFrom, PND
     }
 }
 
+void inline vboxNetLwfWinOverridePacketFiltersUp(PVBOXNETLWF_MODULE pModuleCtx, ULONG *pFilters)
+{
+    if (ASMAtomicReadBool(&pModuleCtx->fActive) && !ASMAtomicReadBool(&pModuleCtx->fHostPromisc))
+        *pFilters &= ~NDIS_PACKET_TYPE_PROMISCUOUS;
+}
+
 NDIS_STATUS vboxNetLwfWinOidRequest(IN NDIS_HANDLE hModuleCtx,
                                     IN PNDIS_OID_REQUEST pOidRequest)
 {
@@ -493,8 +499,13 @@ NDIS_STATUS vboxNetLwfWinOidRequest(IN NDIS_HANDLE hModuleCtx,
         if (pOidRequest->RequestType == NdisRequestSetInformation
             && pOidRequest->DATA.SET_INFORMATION.Oid == OID_GEN_CURRENT_PACKET_FILTER)
         {
-            ASMAtomicWriteU32((uint32_t*)&pModuleCtx->uPacketFilter, *(ULONG*)pOidRequest->DATA.SET_INFORMATION.InformationBuffer);
-            Log((__FUNCTION__": updated cached packet filter value to:\n"));
+            ASMAtomicWriteBool(&pModuleCtx->fHostPromisc, !!(*(ULONG*)pOidRequest->DATA.SET_INFORMATION.InformationBuffer & NDIS_PACKET_TYPE_PROMISCUOUS));
+            Log((__FUNCTION__": host wanted to set packet filter value to:\n"));
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pOidRequest->DATA.SET_INFORMATION.InformationBuffer);
+            /* Keep adapter in promisc mode as long as we are active. */
+            if (ASMAtomicReadBool(&pModuleCtx->fActive))
+                *(ULONG*)pClone->DATA.SET_INFORMATION.InformationBuffer |= NDIS_PACKET_TYPE_PROMISCUOUS;
+            Log5((__FUNCTION__": pass the following packet filters to miniport:\n"));
             vboxNetLwfWinDumpFilterTypes(*(ULONG*)pOidRequest->DATA.SET_INFORMATION.InformationBuffer);
         }
         if (pOidRequest->RequestType == NdisRequestSetInformation
@@ -511,6 +522,17 @@ NDIS_STATUS vboxNetLwfWinOidRequest(IN NDIS_HANDLE hModuleCtx,
             /* Synchronous completion */
             pPrev = ASMAtomicXchgPtrT(&pModuleCtx->pPendingRequest, NULL, PNDIS_OID_REQUEST);
             Assert(pPrev == pClone);
+            Log5((__FUNCTION__": got the following packet filters from miniport:\n"));
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pOidRequest->DATA.QUERY_INFORMATION.InformationBuffer);
+            /*
+             * The host does not expect the adapter to be in promisc mode,
+             * unless it enabled the mode. Let's not disillusion it.
+             */
+            if (   pOidRequest->RequestType == NdisRequestQueryInformation
+                && pOidRequest->DATA.QUERY_INFORMATION.Oid == OID_GEN_CURRENT_PACKET_FILTER)
+                vboxNetLwfWinOverridePacketFiltersUp(pModuleCtx, (ULONG*)pOidRequest->DATA.QUERY_INFORMATION.InformationBuffer);
+            Log5((__FUNCTION__": reporting to the host the following packet filters:\n"));
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pOidRequest->DATA.QUERY_INFORMATION.InformationBuffer);
             vboxNetLwfWinCopyOidRequestResults(pClone, pOidRequest);
             NdisFreeCloneOidRequest(pModuleCtx->hFilter, pClone);
         }
@@ -537,7 +559,17 @@ VOID vboxNetLwfWinOidRequestComplete(IN NDIS_HANDLE hModuleCtx,
         PNDIS_OID_REQUEST pPrev = ASMAtomicXchgPtrT(&pModuleCtx->pPendingRequest, NULL, PNDIS_OID_REQUEST);
         Assert(pPrev == pRequest);
 
+        Log5((__FUNCTION__": completed rq type=%d oid=%x\n", pRequest->RequestType, pRequest->DATA.QUERY_INFORMATION.Oid));
         vboxNetLwfWinCopyOidRequestResults(pRequest, pOriginal);
+        if (   pRequest->RequestType == NdisRequestQueryInformation
+            && pRequest->DATA.QUERY_INFORMATION.Oid == OID_GEN_CURRENT_PACKET_FILTER)
+        {
+            Log5((__FUNCTION__": underlying miniport reports its packet filters:\n"));
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pRequest->DATA.QUERY_INFORMATION.InformationBuffer);
+            vboxNetLwfWinOverridePacketFiltersUp(pModuleCtx, (ULONG*)pRequest->DATA.QUERY_INFORMATION.InformationBuffer);
+            Log5((__FUNCTION__": reporting the following packet filters to upper protocol:\n"));
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pRequest->DATA.QUERY_INFORMATION.InformationBuffer);
+        }
         NdisFreeCloneOidRequest(pModuleCtx->hFilter, pRequest);
         NdisFOidRequestComplete(pModuleCtx->hFilter, pOriginal, Status);
     }
@@ -555,7 +587,7 @@ VOID vboxNetLwfWinOidRequestComplete(IN NDIS_HANDLE hModuleCtx,
 
 static bool vboxNetLwfWinIsPromiscuous(PVBOXNETLWF_MODULE pModuleCtx)
 {
-    return !!(pModuleCtx->uPacketFilter & NDIS_PACKET_TYPE_PROMISCUOUS);
+    return ASMAtomicReadBool(&pModuleCtx->fHostPromisc);
 }
 
 #if 0
@@ -590,16 +622,50 @@ static NDIS_STATUS vboxNetLwfWinGetPacketFilter(PVBOXNETLWF_MODULE pModuleCtx)
 static NDIS_STATUS vboxNetLwfWinSetPacketFilter(PVBOXNETLWF_MODULE pModuleCtx, bool fPromisc)
 {
     LogFlow(("==>"__FUNCTION__": module=%p %s\n", pModuleCtx, fPromisc ? "promiscuous" : "normal"));
+    ULONG uFilter = 0;
     VBOXNETLWF_OIDREQ Rq;
     vboxNetLwfWinInitOidRequest(&Rq);
-    ULONG uFilter = ASMAtomicReadU32((uint32_t*)&pModuleCtx->uPacketFilter);
+    Rq.Request.RequestType = NdisRequestQueryInformation;
+    Rq.Request.DATA.QUERY_INFORMATION.Oid = OID_GEN_CURRENT_PACKET_FILTER;
+    Rq.Request.DATA.QUERY_INFORMATION.InformationBuffer = &uFilter;
+    Rq.Request.DATA.QUERY_INFORMATION.InformationBufferLength = sizeof(uFilter);
+    NDIS_STATUS Status = vboxNetLwfWinSyncOidRequest(pModuleCtx, &Rq);
+    if (Status != NDIS_STATUS_SUCCESS)
+    {
+        Log((__FUNCTION__": vboxNetLwfWinSyncOidRequest(query, OID_GEN_CURRENT_PACKET_FILTER) failed with 0x%x\n", Status));
+        return Status;
+    }
+    if (Rq.Request.DATA.QUERY_INFORMATION.BytesWritten != sizeof(uFilter))
+    {
+        Log((__FUNCTION__": vboxNetLwfWinSyncOidRequest(query, OID_GEN_CURRENT_PACKET_FILTER) failed to write neccessary amount (%d bytes), actually written %d bytes\n", sizeof(uFilter), Rq.Request.DATA.QUERY_INFORMATION.BytesWritten));
+        return NDIS_STATUS_FAILURE;
+    }
+
+    Log5((__FUNCTION__": OID_GEN_CURRENT_PACKET_FILTER query returned the following filters:\n"));
+    vboxNetLwfWinDumpFilterTypes(uFilter);
+
     if (fPromisc)
+    {
+        /* If we about to go promiscuous, save the state before we change it. */
+        ASMAtomicWriteBool(&pModuleCtx->fHostPromisc, !!(uFilter & NDIS_PACKET_TYPE_PROMISCUOUS));
         uFilter |= NDIS_PACKET_TYPE_PROMISCUOUS;
+    }
+    else
+    {
+        /* Reset promisc only if it was not enabled before we had changed it. */
+        if (!ASMAtomicReadBool(&pModuleCtx->fHostPromisc))
+            uFilter &= ~NDIS_PACKET_TYPE_PROMISCUOUS;
+    }
+
+    Log5((__FUNCTION__": OID_GEN_CURRENT_PACKET_FILTER about to set the following filters:\n"));
+    vboxNetLwfWinDumpFilterTypes(uFilter);
+
+    NdisResetEvent(&Rq.Event); /* need to reset as it has been set by query op */
     Rq.Request.RequestType = NdisRequestSetInformation;
     Rq.Request.DATA.SET_INFORMATION.Oid = OID_GEN_CURRENT_PACKET_FILTER;
     Rq.Request.DATA.SET_INFORMATION.InformationBuffer = &uFilter;
     Rq.Request.DATA.SET_INFORMATION.InformationBufferLength = sizeof(uFilter);
-    NDIS_STATUS Status = vboxNetLwfWinSyncOidRequest(pModuleCtx, &Rq);
+    Status = vboxNetLwfWinSyncOidRequest(pModuleCtx, &Rq);
     if (Status != NDIS_STATUS_SUCCESS)
     {
         Log((__FUNCTION__": vboxNetLwfWinSyncOidRequest(set, OID_GEN_CURRENT_PACKET_FILTER, vvv below vvv) failed with 0x%x\n", Status));
@@ -1270,11 +1336,14 @@ static PINTNETSG vboxNetLwfWinNBtoSG(PVBOXNETLWF_MODULE pModule, PNET_BUFFER pNe
 VOID vboxNetLwfWinStatus(IN NDIS_HANDLE hModuleCtx, IN PNDIS_STATUS_INDICATION pIndication)
 {
     LogFlow(("==>"__FUNCTION__": module=%p\n", hModuleCtx));
-    PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
-    Log((__FUNCTION__"Status indication: %s\n", vboxNetLwfWinStatusToText(pIndication->StatusCode)));
+    PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)hModuleCtx;
+    Log((__FUNCTION__"Got status indication: %s\n", vboxNetLwfWinStatusToText(pIndication->StatusCode)));
     switch (pIndication->StatusCode)
     {
         case NDIS_STATUS_PACKET_FILTER:
+            vboxNetLwfWinDumpFilterTypes(*(ULONG*)pIndication->StatusBuffer);
+            vboxNetLwfWinOverridePacketFiltersUp(pModuleCtx, (ULONG*)pIndication->StatusBuffer);
+            Log((__FUNCTION__"Reporting status: %s\n", vboxNetLwfWinStatusToText(pIndication->StatusCode)));
             vboxNetLwfWinDumpFilterTypes(*(ULONG*)pIndication->StatusBuffer);
             break;
         case NDIS_STATUS_TASK_OFFLOAD_CURRENT_CONFIG:
@@ -1282,7 +1351,7 @@ VOID vboxNetLwfWinStatus(IN NDIS_HANDLE hModuleCtx, IN PNDIS_STATUS_INDICATION p
             vboxNetLwfWinDumpOffloadSettings((PNDIS_OFFLOAD)pIndication->StatusBuffer);
             break;
     }
-    NdisFIndicateStatus(pModule->hFilter, pIndication);
+    NdisFIndicateStatus(pModuleCtx->hFilter, pIndication);
     LogFlow(("<=="__FUNCTION__"\n"));
 }
 
