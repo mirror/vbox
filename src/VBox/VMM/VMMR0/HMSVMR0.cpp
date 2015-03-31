@@ -5001,22 +5001,27 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     /* First check if this is a patched VMMCALL for mov TPR */
     int rc = hmR0SvmEmulateMovTpr(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (rc == VINF_SUCCESS)
+    {
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        return VINF_SUCCESS;
+    }
     else if (rc == VERR_NOT_FOUND)
     {
         /* Handle GIM provider hypercalls. */
-        rc = VERR_NOT_SUPPORTED;
         if (GIMAreHypercallsEnabled(pVCpu))
+        {
             rc = GIMHypercall(pVCpu, pCtx);
-
-        /* If the hypercall changes anything other than guest general-purpose registers,
-           we would need to reload the guest changed bits on VM-reentry. */
+            /* If the hypercall changes anything other than guest general-purpose registers,
+               we would need to reload the guest changed bits on VM-reentry. */
+            if (RT_SUCCESS(rc))
+            {
+                hmR0SvmUpdateRip(pVCpu, pCtx, 3);
+                return VINF_SUCCESS;
+            }
+        }
     }
 
-    if (RT_SUCCESS(rc))
-        hmR0SvmUpdateRip(pVCpu, pCtx, 3);
-    else
-        hmR0SvmSetPendingXcptUD(pVCpu);
+    hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
 }
 
@@ -5221,8 +5226,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
-
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (   pVM->hm.s.fTrapXcptUD
         && GIMAreHypercallsEnabled(pVCpu))
@@ -5230,6 +5233,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     else
         hmR0SvmSetPendingXcptUD(pVCpu);
 
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestUD);
     return VINF_SUCCESS;
 }
 
