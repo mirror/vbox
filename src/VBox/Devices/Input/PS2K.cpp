@@ -551,6 +551,27 @@ static int ps2kLoadQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
     return rc;
 }
 
+/**
+ * Notify listener about LEDs state change.
+ *
+ * @param   pThis           The PS/2 keyboard instance data.
+ * @param   u8State         Bitfield which reflects LEDs state.
+ */
+static void ps2kNotifyLedsState(PPS2K pThis, uint8_t u8State)
+{
+
+    PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
+
+    if (u8State & 0x01)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
+    if (u8State & 0x02)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
+    if (u8State & 0x04)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
+
+    pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
+
+}
 #endif /* IN_RING3 */
 
 /**
@@ -609,30 +630,6 @@ static void ps2kSetDefaults(PPS2K pThis)
     ps2kSetupTypematic(pThis, KBD_DFL_RATE_DELAY);
     /* Clear last typematic key?? */
 }
-
-#ifdef IN_RING3
-/**
- * Notify listener about LEDs state change.
- *
- * @param   pThis           The PS/2 keyboard instance data.
- * @param   u8State         Bitfield which reflects LEDs state.
- */
-static void ps2kNotifyLedsState(PPS2K pThis, uint8_t u8State)
-{
-
-    PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
-
-    if (u8State & 0x01)
-        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
-    if (u8State & 0x02)
-        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
-    if (u8State & 0x04)
-        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
-
-    pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
-
-}
-#endif /* IN_RING3 */
 
 /**
  * Receive and process a byte sent by the keyboard controller.
