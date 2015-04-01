@@ -2920,6 +2920,70 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
     </sect2>
 
+    <sect2 id="mouse-capture">
+      <title>Configuring automatic mouse capturing</title>
+
+      <para>
+        By default, the mouse is captured if the user clicks on the guest window
+        and the guest expects relative mouse coordiantes at this time. This
+        happens if the pointing device is configured as PS/2 mouse and the guest did
+        not (yet) start the VirtualBox Guest Additions (for instance, the guest is
+        booting or no Guest Additions installed at all) or if the pointing device
+        is configured as USB tablet but the guest has no USB driver loaded yet.
+        Once the Guest Additions become active or the USB guest driver is started,
+        the mouse capture is automatically released.
+      </para>
+      <para>
+        The default behavior is sometimes not desired. Therefore it can be configured:
+      </para>
+      <para><screen>VBoxManage setextradata "VM name" GUI/MouseCapturePolicy MODE</screen></para>
+      
+      <para>where <computeroutput>MODE</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>Default</computeroutput></glossterm>
+          <glossdef>
+            <para>The default behavior as described above.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>HostComboOnly</computeroutput></glossterm>
+          <glossdef>
+            <para>The mouse is only captured if the Host Key is toggled.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>Disabled</computeroutput></glossterm>
+          <glossdef>
+            <para>The mouse is never captured, also not by toggling the Host Key</para>
+          </glossdef>
+        </glossentry>
+      </glosslist>
+
+      <para>This is a per-VM setting.</para>
+
+    </sect2>
+
+    <sect2 id="legacy-fullscreen-mode">
+      <title>Requesting legacy full-screen mode</title>
+
+      <para>
+        As of version 4.3.16, VirtualBox uses special window manager facilities to switch
+        a multi-screen machine to full-screen on a multi-monitor host system. However,
+        not all window managers provide these facilities correctly, so VirtualBox can be
+        told to use the old method of switching to full-screen mode instead using the command:
+      </para>
+      <para><screen>VBoxManage setextradata global GUI/Fullscreen/LegacyMode true</screen></para>
+
+      <para>
+        You can go back to the new method using the command:
+      </para>
+      <para><screen>VBoxManage setextradata global GUI/Fullscreen/LegacyMode</screen></para>
+
+      <para>This is a global setting.</para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="vboxwebsrv-daemon">
@@ -3542,5 +3606,37 @@ VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
      </para>
 
    </sect1>
+   
+   <sect1 id="sse412passthrough">
+     <title>Experimental support for passing through SSE4.1 / SSE4.2 instructions</title>
+     <para>
+       To provide SSE 4.1 / SSE 4.2 support to guests, the host CPU has to
+       implement these instruction sets. Starting with VirtualBox 4.3.8 it is
+       possible to enable these instructions for certain guests using the
+       following commands:</para><screen>VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.1 1
+VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
+     <para>
+       These are a per-VM settings and they are turned off by default.
+     </para>
+   </sect1>
+
+  <sect1 id="hidledssync">
+    <title>Support for keyboard indicators synchronization</title>
+
+    <para>
+      This feature makes the host keyboard lights match those of the virtual machine's virtual
+      keyboard when the machine window is selected. It is currently implemented for Mac OS X and
+      Windows hosts and available as of releases 4.2.24 and 4.3.8. The feature can be enabled using
+      the following command:
+    </para>
+
+    <screen>VBoxManage setextradata "VM name" GUI/HidLedsSync "1"</screen>
+
+    <para>
+      In order to disable it, use the same command but change "1" to "0", or use the VBoxManage
+      command to remove the extra data. This is a per-VM setting and it is disabled by default.
+    </para>
+
+  </sect1>
 
 </chapter>
