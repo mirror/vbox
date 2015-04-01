@@ -159,6 +159,7 @@ hlfpua_finished_switch:
         pop     esi
         pop     ebx
         xor     eax, eax
+        leave
         ret
 
         ;
