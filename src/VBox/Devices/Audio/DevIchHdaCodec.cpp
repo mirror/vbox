@@ -1347,6 +1347,13 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_LEFT, u8Index), cmd, 0);
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
+
+        /** @todo Fix ID of u8AdcVolsLineIn! */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
+#else
+        hdaCodecToAudVolume(pAmplifier, AUD_MIXER_LINE_IN);
+#endif
     }
     if (fIsOut)
     {
@@ -1354,20 +1361,14 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_LEFT, u8Index), cmd, 0);
         if (fIsRight)
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
-    }
-    if (CODEC_NID(cmd) == pThis->u8DacLineOut)
+
+        /** @todo Fix ID of u8DacLineOut! */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_VOLUME);
 #else
         hdaCodecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
 #endif
-
-    if (CODEC_NID(cmd) == pThis->u8AdcVolsLineIn) /* Microphone */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
-#else
-        hdaCodecToAudVolume(pAmplifier, AUD_MIXER_LINE_IN);
-#endif
+    }
 
     return VINF_SUCCESS;
 }

@@ -563,6 +563,8 @@ typedef struct HDAOUTPUTSTREAM
 {
     /** PCM output stream. */
     R3PTRTYPE(PPDMAUDIOGSTSTRMOUT)     pStrmOut;
+    /** Mixer handle for line output stream. */
+    R3PTRTYPE(PAUDMIXSTREAM)           phStrmOut;
 } HDAOUTPUTSTREAM, *PHDAOUTPUTSTREAM;
 
 /**
@@ -2456,7 +2458,7 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
             return VERR_NOT_SUPPORTED;
     }
 
-    int rc;
+    int rc = VINF_SUCCESS;
     char *pszDesc;
 
     PHDADRIVER pDrv;
@@ -2489,18 +2491,28 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
                                     const char *pszName, PPDMAUDIOSTREAMCFG pCfg)
 {
     int rc = VINF_SUCCESS;
+    char *pszDesc;
 
     PHDADRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
-        int rc2 = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszName, pCfg, &pDrv->Out.pStrmOut);
-        if (RT_FAILURE(rc2))
+        if (RTStrAPrintf(&pszDesc, "[LUN#%RU8] %s", pDrv->uLUN, pszName) <= 0)
         {
-            LogFunc(("LUN#%RU8: Opening stream \"%s\" failed, rc=%Rrc\n", pDrv->uLUN, pszName, rc2));
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-            /* Keep going. */
+            rc = VERR_NO_MEMORY;
+            break;
         }
+
+        rc = pDrv->pConnector->pfnOpenOut(pDrv->pConnector, pszDesc, pCfg, &pDrv->Out.pStrmOut);
+        LogFlowFunc(("LUN#%RU8: Opened output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
+        if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
+        {
+            audioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
+            rc = audioMixerAddStreamOut(pThis->pSinkOutput,
+                                        pDrv->pConnector, pDrv->Out.pStrmOut,
+                                        0 /* uFlags */, &pDrv->Out.phStrmOut);
+        }
+
+        RTStrFree(pszDesc);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2535,8 +2547,6 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
     PHDADRIVER pDrv;
 
-    LogFlowFuncEnter();
-
     uint32_t cbIn, cbOut, cSamplesLive;
     RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
     {
@@ -2544,8 +2554,9 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
                                               &cbIn, &cbOut, &cSamplesLive);
         if (RT_SUCCESS(rc))
         {
+#ifdef DEBUG_TIMER
             LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-
+#endif
             if (cSamplesLive)
             {
                 uint32_t cSamplesPlayed;
@@ -2556,8 +2567,10 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 
                 rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                                       &cbIn, &cbOut, &cSamplesLive);
+#ifdef DEBUG_TIMER
                 if (RT_SUCCESS(rc))
                     LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+#endif
             }
 
             cbInMax  = RT_MAX(cbInMax, cbIn);
@@ -2565,7 +2578,9 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         }
     }
 
+#ifdef DEBUG_TIMER
     LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
+#endif
 
     if (cbOutMin == UINT32_MAX)
         cbOutMin = 0;
@@ -2586,8 +2601,6 @@ static DECLCALLBACK(void) hdaTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
         hdaTransfer(pThis, PI_INDEX, cbInMax); /** @todo Add rc! */
 
     TMTimerSet(pThis->pTimer, TMTimerGet(pThis->pTimer) + pThis->uTicks);
-
-    LogFlowFuncLeave();
 
     STAM_PROFILE_STOP(&pThis->StatTimer, a);
 }

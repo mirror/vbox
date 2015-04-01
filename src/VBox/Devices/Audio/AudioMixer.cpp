@@ -36,6 +36,10 @@
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
 
+
+int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink);
+
+
 int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink)
 {
     AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
@@ -60,8 +64,8 @@ int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enm
 
             /* Set initial volume to max. */
             pSink->Volume.fMuted = false;
-            pSink->Volume.uLeft  = UINT32_MAX;
-            pSink->Volume.uRight = UINT32_MAX;
+            pSink->Volume.uLeft  = 0x7F;
+            pSink->Volume.uRight = 0x7F;
 
             RTListAppend(&pMixer->lstSinks, &pSink->Node);
             pMixer->cSinks++;
@@ -105,8 +109,8 @@ int audioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPD
         RTListAppend(&pSink->lstStreams, &pMixStream->Node);
         pSink->cStreams++;
 
-        LogFlowFunc(("pSink=%p, pStream=%p, cStreams=%RU8\n",
-                     pSink, pMixStream, pSink->cStreams));
+        LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
+                     pSink->pszName, pMixStream, pSink->cStreams));
 
         if (ppStream)
             *ppStream = pMixStream;
@@ -143,8 +147,8 @@ int audioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PP
         RTListAppend(&pSink->lstStreams, &pMixStream->Node);
         pSink->cStreams++;
 
-        LogFlowFunc(("pSink=%p, pStream=%p, cStreams=%RU8\n",
-                     pSink, pMixStream, pSink->cStreams));
+        LogFlowFunc(("%s: pStream=%p, cStreams=%RU8\n",
+                     pSink->pszName, pMixStream, pSink->cStreams));
 
         if (ppStream)
             *ppStream = pMixStream;
@@ -204,7 +208,7 @@ void audioMixerDestroy(PAUDIOMIXER pMixer)
 {
     if (pMixer)
     {
-        LogFlowFunc(("Destroying %p ...\n", pMixer));
+        LogFlowFunc(("Destroying %s ...\n", pMixer->pszName));
 
         PAUDMIXSINK pSink = RTListGetFirst(&pMixer->lstSinks, AUDMIXSINK, Node);
         while (pSink)
@@ -259,6 +263,21 @@ uint32_t audioMixerGetStreamCount(PAUDIOMIXER pMixer)
         cStreams += pSink->cStreams;
 
     return cStreams;
+}
+
+void audioMixerInvalidate(PAUDIOMIXER pMixer)
+{
+    AssertPtrReturnVoid(pMixer);
+
+    LogFlowFunc(("%s: Invalidating ...\n", pMixer->pszName));
+
+    /* Propagate new master volume to all connected sinks. */
+    PAUDMIXSINK pSink;
+    RTListForEach(&pMixer->lstSinks, pSink, AUDMIXSINK, Node)
+    {
+        int rc2 = audioMixerUpdateSinkVolume(pSink, &pMixer->VolMaster, &pSink->Volume);
+        AssertRC(rc2);
+    }
 }
 
 int audioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, size_t cbBuf, uint32_t *pcbProcessed)
@@ -355,8 +374,8 @@ void audioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink)
     Assert(pMixer->cSinks);
     pMixer->cSinks--;
 
-    LogFlowFunc(("pMixer=%p, pSink=%p, cSinks=%RU8\n",
-                 pMixer, pSink, pMixer->cSinks));
+    LogFlowFunc(("%s: pSink=%s, cSinks=%RU8\n",
+                 pMixer->pszName, pSink->pszName, pMixer->cSinks));
 
     audioMixerDestroySink(pSink);
 }
@@ -371,8 +390,11 @@ void audioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream)
     RTListNodeRemove(&pStream->Node);
     pSink->cStreams--;
 
-    LogFlowFunc(("pSink=%p, pStream=%p, cStreams=%RU8\n",
-                 pSink, pStream, pSink->cStreams));
+    const char *pszStream = pSink->enmDir == AUDMIXSINKDIR_INPUT
+                          ? pStream->pIn->MixBuf.pszName : pStream->pOut->MixBuf.pszName;
+
+    LogFlowFunc(("%s: pStream=%s, cStreams=%RU8\n",
+                 pSink->pszName, pszStream, pSink->cStreams));
 
     audioMixerDestroyStream(pStream);
 }
@@ -388,63 +410,59 @@ int audioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg)
     return VINF_SUCCESS;
 }
 
-static PDMAUDIOVOLUME audioMixerTranslateVolume(const PPDMAUDIOVOLUME pVolMaster, PPDMAUDIOVOLUME pVol)
+static inline PDMAUDIOVOLUME audioMixerVolCalc(PPDMAUDIOVOLUME pVol)
 {
-    PDMAUDIOVOLUME volMaster = *pVolMaster;
-
-    uint32_t u32VolumeLeft  = (uint32_t)pVol->uLeft;
-    uint32_t u32VolumeRight = (uint32_t)pVol->uRight;
+    uint32_t u32VolumeLeft  = pVol->uLeft;
+    uint32_t u32VolumeRight = pVol->uRight;
     /* 0x00..0xff => 0x01..0x100 */
     if (u32VolumeLeft)
         u32VolumeLeft++;
     if (u32VolumeRight)
         u32VolumeRight++;
 
-    volMaster.uLeft  = u32VolumeLeft  * 0x800000; /* Maximum is 0x80000000 */
-    volMaster.uRight = u32VolumeRight * 0x800000; /* Maximum is 0x80000000 */
-
     PDMAUDIOVOLUME volOut;
-    volOut.fMuted = volMaster.fMuted || pVol->fMuted;
-    volOut.uLeft  = ASMMultU64ByU32DivByU32(volMaster.uLeft,  pVol->uLeft,  0x80000000U); /* Maximum is 0x80000000U */
-    volOut.uRight = ASMMultU64ByU32DivByU32(volMaster.uRight, pVol->uRight, 0x80000000U); /* Maximum is 0x80000000U */
-
-    LogFlowFunc(("pMaster=%p, lVol=%RU32, rVol=%RU32\n",
-                 pVolMaster, pVolMaster->uLeft, pVolMaster->uRight));
-    LogFlowFunc(("pVol=%p, lVol=%RU32, rVol=%RU32 => lVol=%RU32, rVol=%RU32\n",
-                 pVol, pVol->uLeft, pVol->uRight, volOut.uLeft, volOut.uRight));
+    volOut.fMuted = pVol->fMuted;
+    volOut.uLeft  = u32VolumeLeft  * 0x80000000; /* Maximum is 0x80000000 */
+    volOut.uRight = u32VolumeRight * 0x80000000; /* Maximum is 0x80000000 */
 
     return volOut;
 }
 
-int audioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
+static inline PDMAUDIOVOLUME audioMixerVolMix(const PPDMAUDIOVOLUME pVolMaster, PPDMAUDIOVOLUME pVol)
 {
-    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVol, VERR_INVALID_POINTER);
+    PDMAUDIOVOLUME volOut;
+    volOut.fMuted = pVolMaster->fMuted || pVol->fMuted;
+    volOut.uLeft  = ASMMultU64ByU32DivByU32(pVolMaster->uLeft,  pVol->uLeft,  0x80000000U); /* Maximum is 0x80000000U */
+    volOut.uRight = ASMMultU64ByU32DivByU32(pVolMaster->uRight, pVol->uRight, 0x80000000U); /* Maximum is 0x80000000U */
 
-    pMixer->VolMaster = audioMixerTranslateVolume(&pMixer->VolMaster,  pVol);
-#if 0
-        .uLeft  = pVol->uLeft  * 0x800000; /* maximum is 0x80000000 */
-    pMixer->VolMaster.uRight = pVol->uRight * 0x800000; /* maximum is 0x80000000 */
-#endif
-    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32 => lVol=%RU32, rVol=%RU32\n",
-                  pVol->uLeft, pVol->uRight, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
+    LogFlowFunc(("pMaster=%p, fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                 pVolMaster, pVolMaster->fMuted, pVolMaster->uLeft, pVolMaster->uRight));
+    LogFlowFunc(("pVol=%p, fMuted=%RTbool, lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                 pVol, pVol->fMuted, pVol->uLeft, pVol->uRight, volOut.fMuted, volOut.uLeft, volOut.uRight));
 
-    return VINF_SUCCESS;
+    return volOut;
 }
 
-int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
+int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink)
 {
-    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVol, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSink,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pVolMaster, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVolSink,   VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pSink->pszName, pVol->uLeft, pVol->uRight));
-
-    pSink->Volume.uLeft  = pVol->uLeft  * 0x808080; /* Maximum is INT_MAX = 0x7fffffff */
-    pSink->Volume.uRight = pVol->uRight * 0x808080; /* Maximum is INT_MAX = 0x7fffffff */
-
-    /** @todo Apply the mixer's master volume to it. */
+    LogFlowFunc(("Master fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                  pVolMaster->fMuted, pVolMaster->uLeft, pVolMaster->uRight));
+    LogFlowFunc(("%s: fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                  pSink->pszName, pSink->Volume.fMuted, pSink->Volume.uLeft, pSink->Volume.uRight));
 
     /** @todo Very crude implementation for now -- needs more work! */
+
+    PDMAUDIOVOLUME volSink;
+    volSink.fMuted  = pVolMaster->fMuted || pVolSink->fMuted;
+    volSink.uLeft   = (pVolSink->uLeft  * pVolMaster->uLeft)  / UINT8_MAX;
+    volSink.uRight  = (pVolSink->uRight * pVolMaster->uRight) / UINT8_MAX;
+
+    LogFlowFunc(("\t-> fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                  volSink.fMuted, volSink.uLeft, volSink.uRight));
 
     bool fOut = pSink->enmDir == AUDMIXSINKDIR_OUTPUT;
 
@@ -453,11 +471,37 @@ int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
     RTListForEach(&pSink->lstStreams, pStream, AUDMIXSTREAM, Node)
     {
         if (fOut)
-            audioMixBufSetVolume(&pStream->pOut->MixBuf, &pSink->Volume);
+            audioMixBufSetVolume(&pStream->pOut->MixBuf, &volSink);
         else
-            audioMixBufSetVolume(&pStream->pIn->MixBuf,  &pSink->Volume);
+            audioMixBufSetVolume(&pStream->pIn->MixBuf,  &volSink);
     }
 
     return VINF_SUCCESS;
+}
+
+int audioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pMixer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol,   VERR_INVALID_POINTER);
+
+    pMixer->VolMaster = *pVol; //= audioMixerVolCalc(pVol);
+
+    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32 => fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n",
+                 pMixer->pszName, pVol->uLeft, pVol->uRight,
+                 pMixer->VolMaster.fMuted, pMixer->VolMaster.uLeft, pMixer->VolMaster.uRight));
+
+    audioMixerInvalidate(pMixer);
+    return VINF_SUCCESS;
+}
+
+int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol)
+{
+    AssertPtrReturn(pSink, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVol,  VERR_INVALID_POINTER);
+
+    LogFlowFunc(("%s: fMuted=%RTbool, lVol=%RU32, rVol=%RU32\n", pSink->pszName, pVol->fMuted, pVol->uLeft, pVol->uRight));
+
+    AssertPtr(pSink->pParent);
+    return audioMixerUpdateSinkVolume(pSink, &pSink->pParent->VolMaster, pVol);
 }
 

@@ -47,7 +47,7 @@
 
 #include "AudioMixBuffer.h"
 
-#if 1
+#if 0
 # define AUDMIXBUF_LOG(x) LogFlowFunc(x)
 #else
 # if defined(TESTCASE)
@@ -300,7 +300,8 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     { \
         _aType *pSrc = (_aType *)pvSrc; \
         uint32_t cSamples = (uint32_t)RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
-        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, sizeof(%zu)\n", pOpts->cSamples, sizeof(_aType))); \
+        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, sizeof(%zu), lVol=%RU32, rVol=%RU32\n", \
+                             pOpts->cSamples, sizeof(_aType), pOpts->Volume.uLeft, pOpts->Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: l=%RI16, r=%RI16\n", paDst, *pSrc, *(pSrc + 1))); \
@@ -362,17 +363,17 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         } \
     }
 
-/* audioMixBufConvToS8: 8 bit, signed. */
+/* audioMixBufConvXXXS8: 8 bit, signed. */
 AUDMIXBUF_CONVERT(S8 /* Name */,  int8_t,   INT8_MIN  /* Min */, INT8_MAX   /* Max */, true  /* fSigned */, 8  /* cShift */)
-/* audioMixBufConvToU8: 8 bit, unsigned. */
+/* audioMixBufConvXXXU8: 8 bit, unsigned. */
 AUDMIXBUF_CONVERT(U8 /* Name */,  uint8_t,  0         /* Min */, UINT8_MAX  /* Max */, false /* fSigned */, 8  /* cShift */)
-/* audioMixBufConvToS16: 16 bit, signed. */
+/* audioMixBufConvXXXS16: 16 bit, signed. */
 AUDMIXBUF_CONVERT(S16 /* Name */, int16_t,  INT16_MIN /* Min */, INT16_MAX  /* Max */, true  /* fSigned */, 16 /* cShift */)
-/* audioMixBufConvToU16: 16 bit, unsigned. */
+/* audioMixBufConvXXXU16: 16 bit, unsigned. */
 AUDMIXBUF_CONVERT(U16 /* Name */, uint16_t, 0         /* Min */, UINT16_MAX /* Max */, false /* fSigned */, 16 /* cShift */)
-/* audioMixBufConvToS32: 32 bit, signed. */
+/* audioMixBufConvXXXS32: 32 bit, signed. */
 AUDMIXBUF_CONVERT(S32 /* Name */, int32_t,  INT32_MIN /* Min */, INT32_MAX  /* Max */, true  /* fSigned */, 32 /* cShift */)
-/* audioMixBufConvToU32: 32 bit, unsigned. */
+/* audioMixBufConvXXXU32: 32 bit, unsigned. */
 AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* Max */, false /* fSigned */, 32 /* cShift */)
 
 #undef AUDMIXBUF_CONVERT
@@ -635,8 +636,8 @@ int audioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS p
 
     /* Set initial volume to max. */
     pMixBuf->Volume.fMuted = false;
-    pMixBuf->Volume.uLeft  = UINT32_MAX;
-    pMixBuf->Volume.uRight = UINT32_MAX;
+    pMixBuf->Volume.uLeft  = 0x7F;
+    pMixBuf->Volume.uRight = 0x7F;
 
     /* Prevent division by zero.
      * Do a 1:1 conversion according to AUDIOMIXBUF_S2B_RATIO. */
@@ -1119,9 +1120,13 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     AssertPtrReturnVoid(pMixBuf);
     AssertPtrReturnVoid(pVol);
 
-    AUDMIXBUF_LOG(("%s: lVol=%RU32, rVol=%RU32\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight));
+    LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight));
 
-    pMixBuf->Volume = *pVol;
+    pMixBuf->Volume.fMuted = pVol->fMuted;
+    pMixBuf->Volume.uLeft  = uint64_t(0x100000000 * pVol->uLeft ) / 255;
+    pMixBuf->Volume.uRight = uint64_t(0x100000000 * pVol->uRight) / 255;
+
+    LogFlowFunc(("\t-> lVol=%RU32, rVol=%RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }
 
 uint32_t audioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
@@ -1345,10 +1350,13 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 
     uint32_t cWrittenTotal = 0;
 
+    AUDMIXBUF_CONVOPTS convOpts;
+    convOpts.Volume = pMixBuf->Volume;
+
     /* Anything to do at all? */
     if (cLenDst1)
     {
-        AUDMIXBUF_CONVOPTS convOpts = { cLenDst1, pMixBuf->Volume };
+        convOpts.cSamples = cLenDst1;
         cWrittenTotal = pConv(pSamplesDst1, pvBuf, cbBuf, &convOpts);
     }
 
@@ -1358,7 +1366,7 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     {
         AssertPtr(pSamplesDst2);
 
-        AUDMIXBUF_CONVOPTS convOpts = { cLenDst2, pMixBuf->Volume };
+        convOpts.cSamples = cLenDst2;
         cWrittenTotal += pConv(pSamplesDst2, (uint8_t *)pvBuf + AUDIOMIXBUF_S2B(pMixBuf, cLenDst1), cbBuf, &convOpts);
     }
 

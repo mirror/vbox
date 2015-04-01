@@ -716,6 +716,8 @@ static void ichac97OpenStream(PAC97STATE pThis, int index, uint16_t freq)
 
         rc = VINF_SUCCESS;
     }
+
+    audioMixerInvalidate(pThis->pMixer);
 #else
     if (freq)
     {
@@ -846,7 +848,7 @@ static void ichac97SetVolume(PAC97STATE pThis, int index, audmixerctl_t mt, uint
     rvol = 255 * rvol / VOL_MASK;
     lvol = 255 * lvol / VOL_MASK;
 
-    LogFunc(("mt=%ld, val=%RU32\n", mt, val));
+    LogFunc(("mt=%ld, val=%RU32, mute=%RTbool\n", mt, val, RT_BOOL(mute)));
 
 #ifdef SOFT_VOLUME
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -981,6 +983,33 @@ static void ichac97MixerReset(PAC97STATE pThis)
         audioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
+
+    int rc2 = audioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
+    if (RT_SUCCESS(rc2))
+    {
+        /* Set a default audio format for our mixer. */
+        PDMAUDIOSTREAMCFG streamCfg;
+        streamCfg.uHz           = 41000;
+        streamCfg.cChannels     = 2;
+        streamCfg.enmFormat     = AUD_FMT_S16;
+        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+
+        rc2 = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
+        AssertRC(rc2);
+
+        /* Add all required audio sinks. */
+        rc2 = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
+                               AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
+        AssertRC(rc2);
+
+        rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Line In",
+                                AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
+        AssertRC(rc2);
+
+        rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
+                                AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
+        AssertRC(rc2);
+    }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     ichac97MixerStore(pThis, AC97_Reset                   , 0x0000); /* 6940 */
@@ -1026,35 +1055,6 @@ static void ichac97MixerReset(PAC97STATE pThis)
     ichac97MixerStore(pThis, AC97_Master_Volume_Mute,  0x8000);
     ichac97MixerStore(pThis, AC97_PCM_Out_Volume_Mute, 0x8808);
     ichac97MixerStore(pThis, AC97_Line_In_Volume_Mute, 0x8808);
-#endif
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc2 = audioMixerCreate("AC'97 Mixer", 0 /* uFlags */, &pThis->pMixer);
-    if (RT_SUCCESS(rc2))
-    {
-        /* Set a default audio format for our mixer. */
-        PDMAUDIOSTREAMCFG streamCfg;
-        streamCfg.uHz           = 41000;
-        streamCfg.cChannels     = 2;
-        streamCfg.enmFormat     = AUD_FMT_S16;
-        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
-
-        rc2 = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
-        AssertRC(rc2);
-
-        /* Add all required audio sinks. */
-        rc2 = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
-                               AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
-        AssertRC(rc2);
-
-        rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Line In",
-                                AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
-        AssertRC(rc2);
-
-        rc2 = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
-                                AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
-        AssertRC(rc2);
-    }
 #endif
 
     /* Reset all streams. */
@@ -1327,22 +1327,26 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
                                               &cbIn, &cbOut, &cSamplesLive);
         if (RT_SUCCESS(rc))
         {
+#ifdef DEBUG_TIMER
             LogFlowFunc(("\tLUN#%RU8: [1] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
-
+#endif
             if (cSamplesLive)
             {
                 uint32_t cSamplesPlayed;
                 int rc2 = pDrv->pConnector->pfnPlayOut(pDrv->pConnector, &cSamplesPlayed);
+#ifdef DEBUG_TIMER
                 if (RT_SUCCESS(rc2))
                     LogFlowFunc(("LUN#%RU8: cSamplesLive=%RU32, cSamplesPlayed=%RU32\n",
                                  pDrv->uLUN, cSamplesLive, cSamplesPlayed));
-
+#endif
                 if (cSamplesPlayed)
                 {
                     rc = pDrv->pConnector->pfnQueryStatus(pDrv->pConnector,
                                                           &cbIn, &cbOut, &cSamplesLive);
+#ifdef DEBUG_TIMER
                     if (RT_SUCCESS(rc))
                         LogFlowFunc(("\tLUN#%RU8: [2] cbIn=%RU32, cbOut=%RU32\n", pDrv->uLUN, cbIn, cbOut));
+#endif
                 }
             }
 
@@ -1351,7 +1355,9 @@ static DECLCALLBACK(void) ichac97Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void
         }
     }
 
+#ifdef DEBUG_TIMER
     LogFlowFunc(("cbInMax=%RU32, cbOutMin=%RU32\n", cbInMax, cbOutMin));
+#endif
 
     if (cbOutMin == UINT32_MAX)
         cbOutMin = 0;
