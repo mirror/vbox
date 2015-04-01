@@ -149,7 +149,7 @@ static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
 static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
 static void VBOXSaveMode(ScrnInfoPtr pScrn);
 static void VBOXRestoreMode(ScrnInfoPtr pScrn);
-static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fLimitedContext);
+static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime, bool fVTSwitchTime);
 
 #ifndef XF86_SCRN_INTERFACE
 # define xf86ScreenToScrn(pScreen) xf86Screens[(pScreen)->myNum]
@@ -1145,22 +1145,22 @@ static void setSizesRandR11(ScrnInfoPtr pScrn, bool fLimitedContext)
     pNewMode = pScrn->modes != pScrn->currentMode ? pScrn->modes : pScrn->modes->next;
     pNewMode->HDisplay = RT_CLAMP(pVBox->pScreens[0].aPreferredSize.cx, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL);
     pNewMode->VDisplay = RT_CLAMP(pVBox->pScreens[0].aPreferredSize.cy, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL);
-    setModeRandR11(pScrn, pScrn->currentMode, fLimitedContext);
+    setModeRandR11(pScrn, pNewMode, fLimitedContext);
 }
 
 #endif
 
-static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fLimitedContext)
+static void setSizesAndCursorIntegration(ScrnInfoPtr pScrn, bool fScreenInitTime, bool fVTSwitchTime)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     
-    TRACE_LOG("fLimitedContext=%d\n", fLimitedContext);
+    TRACE_LOG("fScreenInitTime=%d, fVTSwitchTime=%d\n", (int)fScreenInitTime, (int)fVTSwitchTime);
 #ifdef VBOXVIDEO_13
-    setSizesRandR12(pScrn, fLimitedContext);
+    setSizesRandR12(pScrn, fScreenInitTime);
 #else
-    setSizesRandR11(pScrn, fLimitedContext);
+    setSizesRandR11(pScrn, fScreenInitTime);
 #endif
-    if (!fLimitedContext)
+    if (!fVTSwitchTime)
         vbvxReprobeCursor(pScrn);
 }
 
@@ -1182,7 +1182,7 @@ static void updateSizeHintsBlockHandler(pointer pData, OSTimePtr pTimeout, point
     if (ROOT_WINDOW(pScrn) != NULL)
         vbvxReadSizesAndCursorIntegrationFromProperties(pScrn, &fNeedUpdate);
     if (fNeedUpdate)
-        setSizesAndCursorIntegration(pScrn, false);
+        setSizesAndCursorIntegration(pScrn, false, false);
 }
 
 /*
@@ -1331,7 +1331,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
 #endif
     /* set first video mode */
-    setSizesAndCursorIntegration(pScrn, true);
+    setSizesAndCursorIntegration(pScrn, true, false);
 
     /* Register block and wake-up handlers for getting new screen size hints. */
     RegisterBlockAndWakeupHandlers(updateSizeHintsBlockHandler, (WakeupHandlerProcPtr)NoopDDA, (pointer)pScrn);
@@ -1400,7 +1400,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     /* Re-set video mode */
     vbvxReadSizesAndCursorIntegrationFromHGSMI(pScrn, NULL);
     vbvxReadSizesAndCursorIntegrationFromProperties(pScrn, NULL);
-    setSizesAndCursorIntegration(pScrn, true);
+    setSizesAndCursorIntegration(pScrn, false, true);
 #ifdef SET_HAVE_VT_PROPERTY
     updateHasVTProperty(pScrn, TRUE);
 #endif
