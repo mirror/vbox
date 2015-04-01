@@ -585,9 +585,10 @@ class WuiMain(WuiDispatcherBase):
                            % (WuiMain.ksParamReportPeriodInHours,
                               webutils.encodeUrlParams(dParams),
                               WuiMain.ksParamReportPeriodInHours)
-        for cHours in [ 2, 3, 4, 5, 6, 7, 8, 9, 12, 18, 24, 48, 72, 96, 120, 144, 168 ]:
-            sHtmlPeriodLength += '    <option value="%d"%s>%d hours</option>\n' \
-                               % (cHours, 'selected="selected"' if cHours == cHoursPerPeriod else '', cHours);
+        for cHours in [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 18, 24, 48, 72, 96, 120, 144, 168 ]:
+            sHtmlPeriodLength += '    <option value="%d"%s>%d hour%s</option>\n' \
+                               % (cHours, 'selected="selected"' if cHours == cHoursPerPeriod else '', cHours,
+                                  's' if cHours > 1 else '');
         sHtmlPeriodLength += '  </select>\n' \
                              '</form>\n'
 
