@@ -971,6 +971,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
 
             tstVDIoTestDestroy(&IoTest);
         }
+        RTTestSubDone(pGlob->hTest);
     }
 
     return rc;
@@ -2693,9 +2694,10 @@ static int tstVDIoPatternGetBuffer(PVDPATTERN pPattern, void **ppv, size_t cb)
  * Executes the given script.
  *
  * @returns nothing.
+ * @param   pszName      The script name.
  * @param   pszScript    The script to execute.
  */
-static void tstVDIoScriptExec(const char *pszScript)
+static void tstVDIoScriptExec(const char *pszName, const char *pszScript)
 {
     int rc = VINF_SUCCESS;
     VDTESTGLOB GlobTest;   /**< Global test data. */
@@ -2738,7 +2740,7 @@ static void tstVDIoScriptExec(const char *pszScript)
                         &GlobTest, sizeof(VDINTERFACEIO), &GlobTest.pInterfacesImages);
     AssertRC(rc);
 
-    rc = RTTestCreate("tstVDIo", &GlobTest.hTest);
+    rc = RTTestCreate(pszName, &GlobTest.hTest);
     if (RT_SUCCESS(rc))
     {
         /* Init I/O backend. */
@@ -2795,7 +2797,7 @@ static void tstVDIoScriptRun(const char *pcszFilename)
         RTFileReadAllFree(pvFile, cbFile);
 
         AssertPtr(pszScript);
-        tstVDIoScriptExec(pszScript);
+        tstVDIoScriptExec(pcszFilename, pszScript);
         RTStrFree(pszScript);
     }
     else
@@ -2834,7 +2836,7 @@ static void tstVDIoRunBuiltinTests(void)
         char *pszScript = RTStrDupN((const char *)g_aVDIoTests[i].pch, g_aVDIoTests[i].cb);
 
         AssertPtr(pszScript);
-        tstVDIoScriptExec(pszScript);
+        tstVDIoScriptExec(g_aVDIoTests[i].pszName, pszScript);
     }
 #endif
 }

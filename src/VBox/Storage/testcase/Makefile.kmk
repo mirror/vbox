@@ -65,7 +65,7 @@ ifdef VBOX_WITH_TESTCASES
 
  # 1=name, 2=filter
  TSTVDIO_GEN_TEST_MACRO = 'TSTVDIOTESTENTRY const g_a$(1)[] =' '{' \
-	$(foreach testnm,$(filter $(2),$(TSTVDIO_BUILTIN_TEST_NAMES)), '    TSTVDIOTESTENTRY_GEN(g_ab$(testnm)),') \
+	$(foreach testnm,$(filter $(2),$(TSTVDIO_BUILTIN_TEST_NAMES)), '    TSTVDIOTESTENTRY_GEN($(testnm), g_ab$(testnm)),') \
 	'};' 'unsigned const g_c$(1) = RT_ELEMENTS(g_a$(1));' '' ''
 
  $$(TSTVDIO_BUILTIN_TESTS_FILE): $(MAKEFILE_CURRENT) \
