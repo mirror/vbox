@@ -69,15 +69,21 @@ static NTSTATUS vboxUsbPnPMnCancelStopDevice(PVBOXUSBDEV_EXT pDevExt, PIRP pIrp)
 {
     ENMVBOXUSB_PNPSTATE enmState = vboxUsbPnPStateGet(pDevExt);
     NTSTATUS Status = STATUS_SUCCESS;
-   
-    IoCopyCurrentIrpStackLocationToNext(pIrp);
-    Status = VBoxDrvToolIoPostSync(pDevExt->pLowerDO, pIrp);
-    if (NT_SUCCESS(Status) && enmState == ENMVBOXUSB_PNPSTATE_STOP_PENDING)
+    if (enmState == ENMVBOXUSB_PNPSTATE_STOP_PENDING)
     {
-        vboxUsbPnPStateRestore(pDevExt);
+        IoCopyCurrentIrpStackLocationToNext(pIrp);
+        Status = VBoxDrvToolIoPostSync(pDevExt->pLowerDO, pIrp);
+        if (NT_SUCCESS(Status))
+        {
+            vboxUsbPnPStateRestore(pDevExt);
+        }
     }
-   
-    Status = STATUS_SUCCESS;
+    else
+    {
+        Assert(0);
+        Assert(enmState == ENMVBOXUSB_PNPSTATE_STARTED);
+    }
+
     VBoxDrvToolIoComplete(pIrp, Status, 0);
     vboxUsbDdiStateRelease(pDevExt);
 
@@ -137,17 +143,21 @@ static NTSTATUS vboxUsbPnPMnCancelRemoveDevice(PVBOXUSBDEV_EXT pDevExt, PIRP pIr
 {
     ENMVBOXUSB_PNPSTATE enmState = vboxUsbPnPStateGet(pDevExt);
     NTSTATUS Status = STATUS_SUCCESS;
-    IoCopyCurrentIrpStackLocationToNext(pIrp);
-    
-    Status = VBoxDrvToolIoPostSync(pDevExt->pLowerDO, pIrp);
-
-    if (NT_SUCCESS(Status) &&
-        enmState == ENMVBOXUSB_PNPSTATE_REMOVE_PENDING)
+    if (enmState == ENMVBOXUSB_PNPSTATE_REMOVE_PENDING)
     {
-        vboxUsbPnPStateRestore(pDevExt);
+        IoCopyCurrentIrpStackLocationToNext(pIrp);
+        Status = VBoxDrvToolIoPostSync(pDevExt->pLowerDO, pIrp);
+        if (NT_SUCCESS(Status))
+        {
+            vboxUsbPnPStateRestore(pDevExt);
+        }
     }
-    
-    Status = STATUS_SUCCESS;
+    else
+    {
+        Assert(0);
+        Assert(enmState == ENMVBOXUSB_PNPSTATE_STARTED);
+    }
+
     VBoxDrvToolIoComplete(pIrp, Status, 0);
     vboxUsbDdiStateRelease(pDevExt);
 
