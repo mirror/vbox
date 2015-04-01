@@ -1500,6 +1500,27 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdFindLeaf(PCCPUMCPUIDLEAF paLeaves, uint32_t cL
 }
 
 
+static PCCPUMCPUIDLEAF cpumR3CpuIdFindLeafEx(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, uint32_t uLeaf, uint32_t uSubLeaf)
+{
+    PCCPUMCPUIDLEAF pLeaf = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, uLeaf);
+    if (   !pLeaf
+        || pLeaf->uSubLeaf != (uSubLeaf & pLeaf->fSubLeafMask))
+        return pLeaf;
+
+    /* Linear sub-leaf search. Lazy as usual. */
+    cLeaves = pLeaf - paLeaves;
+    while (   cLeaves-- > 0
+           && pLeaf->uLeaf == uLeaf)
+    {
+        if (pLeaf->uSubLeaf == (uSubLeaf & pLeaf->fSubLeafMask))
+            return pLeaf;
+        pLeaf++;
+    }
+
+    return NULL;
+}
+
+
 int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUMFEATURES pFeatures)
 {
     RT_ZERO(*pFeatures);
@@ -1537,11 +1558,27 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         pFeatures->fPae                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PAE);
         pFeatures->fPat                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PAT);
         pFeatures->fFxSaveRstor         = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_FXSR);
+        pFeatures->fXSaveRstor          = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_XSAVE);
         pFeatures->fMmx                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_MMX);
+        pFeatures->fSse                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SSE);
+        pFeatures->fSse2                = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SSE2);
+        pFeatures->fSse3                = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE3);
+        pFeatures->fSsse3               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSSE3);
+        pFeatures->fSse41               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE4_1);
+        pFeatures->fSse42               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE4_2);
+        pFeatures->fAvx                 = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_AVX);
         pFeatures->fTsc                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_TSC);
         pFeatures->fSysEnter            = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SEP);
         pFeatures->fHypervisorPresent   = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_HVP);
         pFeatures->fMonitorMWait        = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_MONITOR);
+
+        /* Structured extended features. */
+        PCCPUMCPUIDLEAF const pSxfLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 7, 0);
+        if (pSxfLeaf0)
+        {
+            pFeatures->fAvx2                = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX2);
+            pFeatures->fAvx512Foundation    = RT_BOOL(pSxfLeaf0->uEcx & X86_CPUID_STEXT_FEATURE_EBX_AVX512F);
+        }
 
         /* MWAIT/MONITOR leaf. */
         PCCPUMCPUIDLEAF const pMWaitLeaf = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, 5);
@@ -1584,6 +1621,33 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
                              && (pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
                              && pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
                              && pFeatures->uFamily >= 6 /* K7 and up */;
+
+        /*
+         * Max extended (/FPU) state.
+         */
+        pFeatures->cbMaxExtendedState = pFeatures->fFxSaveRstor ? sizeof(X86FXSTATE) : sizeof(X86FPUSTATE);
+        if (pFeatures->fXSaveRstor)
+        {
+            PCCPUMCPUIDLEAF const pXStateLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 13, 0);
+            if (pXStateLeaf0)
+            {
+                if (   pXStateLeaf0->uEcx >= sizeof(X86FXSTATE)
+                    && pXStateLeaf0->uEcx <= _8K
+                    && RT_ALIGN_32(pXStateLeaf0->uEcx, 8) == pXStateLeaf0->uEcx
+                    && pXStateLeaf0->uEbx >= sizeof(X86FXSTATE)
+                    && pXStateLeaf0->uEbx <= pXStateLeaf0->uEcx
+                    && RT_ALIGN_32(pXStateLeaf0->uEbx, 8) == pXStateLeaf0->uEbx)
+                {
+                    pFeatures->cbMaxExtendedState = pXStateLeaf0->uEcx;
+                }
+                else
+                    AssertLogRelMsgFailedStmt(("Unexpected max/cur XSAVE area sizes: %#x/%#x\n", pXStateLeaf0->uEcx, pXStateLeaf0->uEbx),
+                                              pFeatures->fXSaveRstor = 0);
+            }
+            else
+                AssertLogRelMsgFailedStmt(("Expected leaf eax=0xd/ecx=0 with the XSAVE/XRSTOR feature!\n"),
+                                          pFeatures->fXSaveRstor = 0);
+        }
     }
     else
         AssertLogRelReturn(cLeaves == 0, VERR_CPUM_IPE_1);

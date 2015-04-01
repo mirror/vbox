@@ -1218,7 +1218,7 @@ VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
 VMMDECL(void)           CPUMSetChangedFlags(PVMCPU pVCpu, uint32_t fChangedFlags);
 VMMR3DECL(uint32_t)     CPUMR3RemEnter(PVMCPU pVCpu, uint32_t *puCpl);
 VMMR3DECL(void)         CPUMR3RemLeave(PVMCPU pVCpu, bool fNoOutOfSyncSels);
-VMMDECL(bool)           CPUMSupportsFXSR(PVM pVM);
+VMMDECL(bool)           CPUMSupportsXSave(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysEnter(PVM pVM);
 VMMDECL(bool)           CPUMIsHostUsingSysCall(PVM pVM);
 VMMDECL(bool)           CPUMIsGuestFPUStateActive(PVMCPU pVCpu);

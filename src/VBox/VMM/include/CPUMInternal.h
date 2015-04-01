@@ -171,7 +171,9 @@ typedef struct CPUMFEATURES
     /** The maximum physical address with of the CPU. */
     uint8_t         cMaxPhysAddrWidth;
     /** Alignment padding. */
-    uint8_t         abPadding[3];
+    uint8_t         abPadding[1];
+    /** Max size of the extended state (or FPU state if no XSAVE). */
+    uint16_t        cbMaxExtendedState;
 
     /** Supports MSRs. */
     uint32_t        fMsr : 1;
@@ -186,8 +188,28 @@ typedef struct CPUMFEATURES
     uint32_t        fPat : 1;
     /** Supports the FXSAVE and FXRSTOR instructions. */
     uint32_t        fFxSaveRstor : 1;
+    /** Supports the XSAVE and XRSTOR instructions. */
+    uint32_t        fXSaveRstor : 1;
     /** Supports MMX. */
     uint32_t        fMmx : 1;
+    /** Supports SSE. */
+    uint32_t        fSse : 1;
+    /** Supports SSE2. */
+    uint32_t        fSse2 : 1;
+    /** Supports SSE3. */
+    uint32_t        fSse3 : 1;
+    /** Supports SSSE3. */
+    uint32_t        fSsse3 : 1;
+    /** Supports SSE4.1. */
+    uint32_t        fSse41 : 1;
+    /** Supports SSE4.2. */
+    uint32_t        fSse42 : 1;
+    /** Supports AVX. */
+    uint32_t        fAvx : 1;
+    /** Supports AVX2. */
+    uint32_t        fAvx2 : 1;
+    /** Supports AVX512 foundation. */
+    uint32_t        fAvx512Foundation : 1;
     /** Supports RDTSC. */
     uint32_t        fTsc : 1;
     /** Intel SYSENTER/SYSEXIT support */
@@ -219,9 +241,8 @@ typedef struct CPUMFEATURES
      * is only saved and restored if an exception is pending. */
     uint32_t        fLeakyFxSR : 1;
 
-    /** Alignment padding. */
-    uint32_t        fPadding : 12;
-
+    /** Alignment padding / reserved for future use. */
+    uint32_t        fPadding : 2;
     uint64_t        auPadding[2];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
@@ -467,23 +488,6 @@ typedef struct CPUM
      * These flags indicates which CPU features the host uses.
      */
     uint32_t                fHostUseFlags;
-
-    /** Host CPU Features - ECX */
-    struct
-    {
-        /** edx part */
-        X86CPUIDFEATEDX     edx;
-        /** ecx part */
-        X86CPUIDFEATECX     ecx;
-    } CPUFeatures;
-    /** Host extended CPU features. */
-    struct
-    {
-        /** edx part */
-        uint32_t            edx;
-        /** ecx part */
-        uint32_t            ecx;
-    } CPUFeaturesExt;
 
     /** CR4 mask */
     struct

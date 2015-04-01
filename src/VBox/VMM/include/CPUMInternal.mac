@@ -78,14 +78,6 @@ struc CPUM
     .offCPUMCPU0          resd    1
     .fHostUseFlags        resd    1
 
-    ; CPUID eax=1
-    .CPUFeatures.edx      resd    1
-    .CPUFeatures.ecx      resd    1
-
-    ; CPUID eax=0x80000001
-    .CPUFeaturesExt.edx   resd    1
-    .CPUFeaturesExt.ecx   resd    1
-
     ; CR4 masks
     .CR4.AndMask          resd    1
     .CR4.OrMask           resd    1

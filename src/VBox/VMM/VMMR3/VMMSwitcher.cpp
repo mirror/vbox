@@ -697,7 +697,7 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher,
             {
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg < pSwitcher->cbCode);
-                if (!CPUMSupportsFXSR(pVM))
+                if (!CPUMSupportsXSave(pVM))
                 {
                     *uSrc.pu8++ = 0xe9; /* jmp rel32 */
                     *uSrc.pu32++ = offTrg - (offSrc + 5);

@@ -238,23 +238,6 @@ static DECLCALLBACK(int) cpumR3RegSet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PC
 
 
 /**
- * Is the FPU state in FXSAVE format or not.
- *
- * @returns true if it is, false if it's in FNSAVE.
- * @param   pVCpu               Pointer to the VMCPU.
- */
-DECLINLINE(bool) cpumR3RegIsFxSaveFormat(PVMCPU pVCpu)
-{
-#ifdef RT_ARCH_AMD64
-    NOREF(pVCpu);
-    return true;
-#else
-    return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
-#endif
-}
-
-
-/**
  * Determins the tag register value for a CPU register when the FPU state
  * format is FXSAVE.
  *
@@ -299,20 +282,14 @@ static DECLCALLBACK(int) cpumR3RegGet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PDB
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pDesc->enmType == DBGFREGVALTYPE_U16);
 
-    if (cpumR3RegIsFxSaveFormat(pVCpu))
-        pValue->u16 =  cpumR3RegCalcFpuTagFromFxSave(pFpu, 0)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 1) <<  2)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 2) <<  4)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 3) <<  6)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 4) <<  8)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 5) << 10)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 6) << 12)
-                    | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 7) << 14);
-    else
-    {
-        PCX86FPUSTATE pOldFpu = (PCX86FPUSTATE)pFpu;
-        pValue->u16 = pOldFpu->FTW;
-    }
+    pValue->u16 =  cpumR3RegCalcFpuTagFromFxSave(pFpu, 0)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 1) <<  2)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 2) <<  4)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 3) <<  6)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 4) <<  8)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 5) << 10)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 6) << 12)
+                | (cpumR3RegCalcFpuTagFromFxSave(pFpu, 7) << 14);
     return VINF_SUCCESS;
 }
 
@@ -619,22 +596,10 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
     Assert(pDesc->enmType == DBGFREGVALTYPE_R80);
 
     PX86FXSTATE pFpuCtx = &pVCpu->cpum.s.Guest.CTX_SUFF(pXState)->x87;
-    if (cpumR3RegIsFxSaveFormat(pVCpu))
-    {
-        unsigned iReg = (pFpuCtx->FSW >> 11) & 7;
-        iReg += pDesc->offRegister;
-        iReg &= 7;
-        pValue->r80Ex = pFpuCtx->aRegs[iReg].r80Ex;
-    }
-    else
-    {
-        PCX86FPUSTATE pOldFpuCtx = (PCX86FPUSTATE)pFpuCtx;
-
-        unsigned iReg = (pOldFpuCtx->FSW >> 11) & 7;
-        iReg += pDesc->offRegister;
-        iReg &= 7;
-        pValue->r80Ex = pOldFpuCtx->regs[iReg].r80Ex;
-    }
+    unsigned iReg = (pFpuCtx->FSW >> 11) & 7;
+    iReg += pDesc->offRegister;
+    iReg &= 7;
+    pValue->r80Ex = pFpuCtx->aRegs[iReg].r80Ex;
 
     return VINF_SUCCESS;
 }

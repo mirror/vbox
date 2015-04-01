@@ -338,7 +338,7 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
  */
 VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+    Assert(pVM->cpum.s.HostFeatures.fFxSaveRstor);
     Assert(ASMGetCR4() & X86_CR4_OSFXSR);
 
     /* If the FPU state has already been loaded, then it's a guest trap. */
@@ -398,7 +398,6 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
@@ -422,7 +421,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
         uint64_t uHostEfer    = 0;
         bool     fRestoreEfer = false;
-        if (pVM->cpum.s.CPUFeaturesExt.edx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+        if (pVM->cpum.s.HostFeatures.fLeakyFxSR)
         {
             /** @todo r=ramshankar: Can't we used a cached value here
              *        instead of reading the MSR? host EFER doesn't usually
@@ -459,7 +458,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
+    Assert(pVM->cpum.s.HostFeatures.fFxSaveRstor);
     Assert(ASMGetCR4() & X86_CR4_OSFXSR);
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
     NOREF(pVM); NOREF(pCtx);

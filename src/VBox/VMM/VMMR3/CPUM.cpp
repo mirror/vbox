@@ -639,12 +639,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     if (!pVM->cpum.s.HostFeatures.fTsc)
         return VMSetError(pVM, VERR_UNSUPPORTED_CPU, RT_SRC_POS, "Host CPU does not support RDTSC.");
 
-    /* Bogus on AMD? */
-    if (!pVM->cpum.s.CPUFeatures.edx.u1SEP)
-        Log(("The CPU doesn't support SYSENTER/SYSEXIT!\n"));
-
     /*
-     * Setup the CR4 AND and OR masks used in the switcher
+     * Setup the CR4 AND and OR masks used in the raw-mode switcher.
      */
     pVM->cpum.s.CR4.AndMask = X86_CR4_OSXMMEEXCPT | X86_CR4_PVI | X86_CR4_VME;
     pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFXSR;
@@ -652,8 +648,10 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Allocate memory for the extended CPU state.
      */
-    uint32_t cbMaxXState = sizeof(X86FXSTATE);
+    uint32_t cbMaxXState = pVM->cpum.s.HostFeatures.cbMaxExtendedState;
     cbMaxXState = RT_ALIGN(cbMaxXState, 128);
+    AssertLogRelReturn(cbMaxXState >= sizeof(X86FXSTATE) && cbMaxXState <= _8K, VERR_CPUM_IPE_2);
+
     uint8_t *pbXStates;
     rc = MMR3HyperAllocOnceNoRelEx(pVM, cbMaxXState * 3 * pVM->cCpus, PAGE_SIZE, MM_TAG_CPUM_CTX,
                                    MMHYPER_AONR_FLAGS_KERNEL_MAPPING, (void **)&pbXStates);
