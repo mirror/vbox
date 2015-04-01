@@ -610,6 +610,30 @@ static void ps2kSetDefaults(PPS2K pThis)
     /* Clear last typematic key?? */
 }
 
+#ifdef IN_RING3
+/**
+ * Notify listener about LEDs state change.
+ *
+ * @param   pThis           The PS/2 keyboard instance data.
+ * @param   u8State         Bitfield which reflects LEDs state.
+ */
+static void PS2KNotifyLedsState(PPS2K pThis, uint8_t u8State)
+{
+
+    PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
+
+    if (u8State & 0x01)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
+    if (u8State & 0x02)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
+    if (u8State & 0x04)
+        enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
+
+    pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
+
+}
+#endif /* IN_RING3 */
+
 /**
  * Receive and process a byte sent by the keyboard controller.
  *
@@ -695,15 +719,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
                     return VINF_IOM_R3_IOPORT_WRITE;
 #else
                     {
-                        PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
-
-                        if (cmd & 0x01)
-                            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
-                        if (cmd & 0x02)
-                            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
-                        if (cmd & 0x04)
-                            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
-                        pThis->Keyboard.pDrv->pfnLedStatusChange(pThis->Keyboard.pDrv, enmLeds);
+                        PS2KNotifyLedsState(pThis, cmd);
                         pThis->fNumLockOn = !!(cmd & 0x02); /* Sync internal Num Lock state. */
                         ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
                         pThis->u8LEDs = cmd;
@@ -1334,6 +1350,9 @@ int PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM)
      * interrupts and change the interrupt controller state.
      */
     ps2kReleaseKeys(pThis);
+#ifdef IN_RING3
+    PS2KNotifyLedsState(pThis, pThis->u8LEDs);
+#endif
     return VINF_SUCCESS;
 }
 
