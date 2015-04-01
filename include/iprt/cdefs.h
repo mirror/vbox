@@ -1533,13 +1533,13 @@
  * This differs from the usual offsetof() in that it's not relying on builtin
  * compiler stuff and thus can use variables in arrays the structure may
  * contain. This is useful to determine the sizes of structures ending
- * with a variable length field.
+ * with a variable length field. For gcc >= 4.4 see @bugref{7775}.
  *
  * @returns offset into the structure of the specified member. signed.
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
+#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
 # define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
 #else
 # define RT_OFFSETOF(type, member)              ( (int)(uintptr_t)&( ((type *)(void *)0)->member) )
@@ -1551,13 +1551,13 @@
  * This differs from the usual offsetof() in that it's not relying on builtin
  * compiler stuff and thus can use variables in arrays the structure may
  * contain. This is useful to determine the sizes of structures ending
- * with a variable length field.
+ * with a variable length field. For gcc >= 4.4 see @bugref{7775}.
  *
  * @returns offset into the structure of the specified member. unsigned.
  * @param   type    Structure type.
  * @param   member  Member.
  */
-#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))
+#if defined(__GNUC__) && defined(__cplusplus) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
 # define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0x1000)->member) - 0x1000 )
 #else
 # define RT_UOFFSETOF(type, member)             ( (uintptr_t)&( ((type *)(void *)0)->member) )
