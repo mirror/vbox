@@ -209,8 +209,6 @@ static VOID vboxUsbPwrIoWaitCompletionAndPostAsyncWorker(IN PDEVICE_OBJECT pDevi
     PVBOXUSB_IOASYNC_CTX pCtx = (PVBOXUSB_IOASYNC_CTX)pvContext;
     PIRP pIrp = pCtx->pIrp;
 
-    vboxUsbDdiStateWaitOtherCompleted(pDevExt);
-
     vboxUsbPwrIoPostDev(pDevExt, pIrp);
 
     IoFreeWorkItem(pCtx->pWrkItem);
