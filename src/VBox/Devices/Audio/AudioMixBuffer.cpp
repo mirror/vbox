@@ -1123,8 +1123,8 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight));
 
     pMixBuf->Volume.fMuted = pVol->fMuted;
-    pMixBuf->Volume.uLeft  = (uint64_t(0x100000000 * pVol->uLeft)) / 255;
-    pMixBuf->Volume.uRight = (uint64_t(0x100000000 * pVol->uRight)) / 255;
+    pMixBuf->Volume.uLeft  = (UINT64_C(0x100000000) * pVol->uLeft) / 255;
+    pMixBuf->Volume.uRight = (UINT64_C(0x100000000) * pVol->uRight) / 255;
 
     LogFlowFunc(("\t-> lVol=%RU32, rVol=%RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }
