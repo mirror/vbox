@@ -3702,7 +3702,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
     /*
      * Begin marker.
      */
-    if (!(fFlags & SSMSTRUCT_FLAGS_NO_MARKERS))
+    if (!(fFlags & (SSMSTRUCT_FLAGS_NO_MARKERS | SSMSTRUCT_FLAGS_NO_LEAD_MARKER)))
     {
         rc = SSMR3PutU32(pSSM, SSMR3STRUCT_BEGIN);
         if (RT_FAILURE(rc))
@@ -3935,7 +3935,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
     /*
      * End marker
      */
-    if (!(fFlags & SSMSTRUCT_FLAGS_NO_MARKERS))
+    if (!(fFlags & (SSMSTRUCT_FLAGS_NO_MARKERS | SSMSTRUCT_FLAGS_NO_TAIL_MARKER)))
     {
         rc = SSMR3PutU32(pSSM, SSMR3STRUCT_END);
         if (RT_FAILURE(rc))
