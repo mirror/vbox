@@ -850,7 +850,7 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
 
             case 0xe3:
             {
-                for (size_t i = sizeof (e3) - 1; i >= 0; --i)
+                for (int i = sizeof (e3) - 1; i >= 0; --i)
                     dsp_out_data(pThis, e3[i]);
 
                 break;
