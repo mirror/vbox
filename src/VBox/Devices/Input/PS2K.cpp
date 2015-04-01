@@ -1350,9 +1350,7 @@ int PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM)
      * interrupts and change the interrupt controller state.
      */
     ps2kReleaseKeys(pThis);
-#ifdef IN_RING3
     ps2kNotifyLedsState(pThis, pThis->u8LEDs);
-#endif
     return VINF_SUCCESS;
 }
 
