@@ -353,7 +353,7 @@ class tdStorageStress(vbox.TestDriver):                                      # p
                 listNames.append('TargetName');
                 listNames.append('LUN');
 
-                if self.fpApiVer >= 4.4:
+                if self.fpApiVer >= 5.0:
                     oHd = oSession.oVBox.createMedium(sDiskFormat, sDiskPath1, vboxcon.AccessMode_ReadWrite, \
                                                       vboxcon.DeviceType_HardDisk);
                 else:

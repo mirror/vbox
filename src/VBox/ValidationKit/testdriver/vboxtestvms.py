@@ -316,7 +316,7 @@ class TestVm(object):
                         fRc = fRc and oSession.enableNestedPaging(sVirtMode == 'hwvirt-np');
                         fRc = fRc and oSession.setCpuCount(cCpus);
 
-                        if sParavirtMode is not None and oSession.fpApiVer >= 4.4:
+                        if sParavirtMode is not None and oSession.fpApiVer >= 5.0:
                             adParavirtProviders = {
                                 g_ksParavirtProviderNone   : vboxcon.ParavirtProvider_None,
                                 g_ksParavirtProviderDefault: vboxcon.ParavirtProvider_Default,
@@ -707,10 +707,10 @@ class TestVmSet(object):
             acCpusSup      = [cCpus for cCpus in oTestVm.acCpusSup      if cCpus in self.acCpus];
 
             # Ditto for paravirtualization modes, except if not specified we got a less obvious default.
-            if self.asParavirtModes is not None  and  oTestDrv.fpApiVer >= 4.4:
+            if self.asParavirtModes is not None  and  oTestDrv.fpApiVer >= 5.0:
                 asParavirtModes = [sPvMode for sPvMode in oTestVm.asParavirtModesSup if sPvMode in self.asParavirtModes];
                 assert None not in asParavirtModes;
-            elif oTestDrv.fpApiVer >= 4.4:
+            elif oTestDrv.fpApiVer >= 5.0:
                 asParavirtModes = (oTestVm.asParavirtModesSup[0],);
                 assert asParavirtModes[0] is not None;
             else:
@@ -734,7 +734,7 @@ class TestVmSet(object):
 
                     for sParavirtMode in asParavirtModes:
                         if sParavirtMode is not None:
-                            assert oTestDrv.fpApiVer >= 4.4;
+                            assert oTestDrv.fpApiVer >= 5.0;
                             reporter.testStart('%s' % ( sParavirtMode, ) );
 
                         # Reconfigure the VM.

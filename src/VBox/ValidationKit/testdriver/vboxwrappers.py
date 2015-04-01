@@ -1711,7 +1711,7 @@ class SessionWrapper(TdTaskBase):
         Returns Medium object on success and None on failure.  Error information is logged.
         """
         try:
-            if self.fpApiVer >= 4.4:
+            if self.fpApiVer >= 5.0:
                 oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
             else:
                 oHd = self.oVBox.createHardDisk(sFmt, sHd);
@@ -1731,7 +1731,7 @@ class SessionWrapper(TdTaskBase):
         Returns Medium object on success and None on failure.  Error information is logged.
         """
         try:
-            if self.fpApiVer >= 4.4:
+            if self.fpApiVer >= 5.0:
                 oHd = self.oVBox.createMedium(sFmt, sHd, vboxcon.AccessMode_ReadWrite, vboxcon.DeviceType_HardDisk);
             else:
                 oHd = self.oVBox.createHardDisk(sFmt, sHd);
@@ -2277,7 +2277,7 @@ class SessionWrapper(TdTaskBase):
         Returns False on failure.
         """
         try:
-            if self.fpApiVer >= 4.4:
+            if self.fpApiVer >= 5.0:
                 iWidth, iHeight, _, _, _, _ = self.o.console.display.getScreenResolution(iScreenId)
                 aPngData = self.o.console.display.takeScreenShotToArray(iScreenId, iWidth, iHeight,
                                                                         vboxcon.BitmapFormat_PNG)
