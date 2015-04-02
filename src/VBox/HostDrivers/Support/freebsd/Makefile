@@ -82,6 +82,7 @@ SRCS += \
 	handletable.c \
 	handletablectx.c \
 	once.c \
+	term.c \
 	thread.c
 
 .PATH:	${.CURDIR}/common/string
@@ -89,6 +90,7 @@ SRCS += \
 	RTStrNCmp.c \
 	RTStrNLen.c \
 	RTStrCopy.c \
+	RTStrCopyEx.c \
 	RTStrCopyP.c \
 	strformat.c \
 	strformatrt.c \
@@ -172,6 +174,7 @@ SRCS += \
 SRCS += \
 	semspinmutex-r0drv-generic.c \
 	mpnotification-r0drv-generic.c \
+	threadctxhooks-r0drv-generic.c \
 	RTMpIsCpuWorkPending-r0drv-generic.c
 
 .PATH:	${.CURDIR}/VBox

@@ -726,7 +726,7 @@ endif
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
 # Set this to indicate that the host ships with DTrace.
-if1of ($(KBUILD_TARGET), darwin solaris freebsd)
+if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NATIVE_DTRACE = 1
 endif
 ## @}
@@ -3696,7 +3696,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS              =  \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline $(VBOX_GCC_Wno-pointer-sign) $(VBOX_GCC_fdiagnostics-show-option) \
 	-Wstrict-prototypes -Wmissing-prototypes -Wstrict-prototypes \
 	-Wimplicit-function-declaration -Werror-implicit-function-declaration \
-	-O2 -fformat-extensions -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	-O2 -ffreestanding -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc -std=c99
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-align-long-strings -mpreferred-stack-boundary=2 -mno-mmx -mno-3dnow -mno-sse -mno-sse2
@@ -3705,7 +3705,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 --param inline-unit-growth=100 --p
 	-mno-3dnow -msoft-float -fno-asynchronous-unwind-tables -Wundef
 TEMPLATE_VBOXR0DRV_CXXFLAGS            = -fno-exceptions -fno-rtti \
 	$(VBOX_GCC_WARN) -Wpointer-arith -Winline \
-	-O2 -fno-format-extensions -fno-strict-aliasing -fno-common -finline-limit=8000 \
+	-O2 -fno-strict-aliasing -fno-common -finline-limit=8000 \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
 	-nostdinc
 TEMPLATE_VBOXR0DRV_CXXFLAGS.x86        = $(TEMPLATE_VBOXR0DRV_CFLAGS.x86)

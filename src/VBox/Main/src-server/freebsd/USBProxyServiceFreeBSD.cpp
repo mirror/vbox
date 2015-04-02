@@ -114,12 +114,12 @@ int USBProxyServiceFreeBSD::captureDevice(HostUSBDevice *aDevice)
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
     /*
      * Don't think we need to do anything when the device is held... fake it.
      */
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_Capturing);
+    Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_Capturing);
     devLock.release();
     interruptWait();
 
@@ -133,12 +133,12 @@ int USBProxyServiceFreeBSD::releaseDevice(HostUSBDevice *aDevice)
     AssertReturn(!aDevice->isWriteLockOnCurrentThread(), VERR_GENERAL_FAILURE);
 
     AutoReadLock devLock(aDevice COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aDevice=%s\n", aDevice->getName().c_str()));
+    LogFlowThisFunc(("aDevice=%s\n", aDevice->i_getName().c_str()));
 
     /*
      * We're not really holding it atm., just fake it.
      */
-    Assert(aDevice->getUnistate() == kHostUSBDeviceState_ReleasingToHost);
+    Assert(aDevice->i_getUnistate() == kHostUSBDeviceState_ReleasingToHost);
     devLock.release();
     interruptWait();
 

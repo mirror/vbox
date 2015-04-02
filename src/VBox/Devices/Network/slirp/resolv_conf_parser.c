@@ -22,6 +22,10 @@
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 
+#ifdef RT_OS_FREEBSD
+# include <sys/socket.h>
+#endif
+
 #include <arpa/inet.h>
 
 #include <ctype.h>

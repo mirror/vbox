@@ -1025,6 +1025,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	r3/freebsd/mp-freebsd.cpp \
+	r3/freebsd/systemmem-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1032,7 +1033,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \

@@ -439,7 +439,8 @@ VBoxSVC_SOURCES.os2 = \
 	src-server/HostDnsServiceResolvConf.cpp
 
 VBoxSVC_SOURCES.freebsd = \
-	src-server/freebsd/HostHardwareFreeBSD.cpp
+	src-server/freebsd/HostHardwareFreeBSD.cpp \
+	src-server/HostDnsServiceResolvConf.cpp
 
 
 ifdef VBOX_WITH_USB

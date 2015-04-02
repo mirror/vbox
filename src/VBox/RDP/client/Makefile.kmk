@@ -121,6 +121,8 @@ rdesktop-vrdp_LIBS = \
 	$(LIB_RUNTIME)
 rdesktop-vrdp_LIBS.solaris = \
 	nsl
+rdesktop-vrdp_LIBS.freebsd = \
+	iconv
 
 #
 # The keymaps.

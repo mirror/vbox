@@ -1308,7 +1308,11 @@ int main(int argc, char **argv)
 # else
     g_AltStack.ss_size  = _128K;
 # endif
+#ifdef RT_OS_FREEBSD
+    g_AltStack.ss_sp    = (char *)RTMemPageAlloc(g_AltStack.ss_size);
+#else
     g_AltStack.ss_sp    = RTMemPageAlloc(g_AltStack.ss_size);
+#endif
     RTTESTI_CHECK_RET(g_AltStack.ss_sp != NULL, RTEXITCODE_FAILURE);
     RTTESTI_CHECK_RC_RET(sigaltstack(&g_AltStack, NULL), 0, RTEXITCODE_FAILURE);
 
