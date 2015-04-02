@@ -9,7 +9,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>Drag'n drop support (bidirectional) for Windows, Linux and Solaris guests</para>
+        <para>Drag and drop support (bidirectional) for Windows, Linux and Solaris guests</para>
       </listitem>
 
       <listitem>
@@ -2894,7 +2894,7 @@
 
       <listitem>
         <para>X11 Additions: reduced the CPU load of VBoxClient in
-          drag'and'drop mode</para>
+          drag and drop mode</para>
       </listitem>
 
       <listitem>
@@ -3590,7 +3590,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: added menu for runtime drag-and-drop option change</para>
+        <para>GUI: added menu for runtime drag and drop option change</para>
       </listitem>
 
       <listitem>
@@ -3773,7 +3773,7 @@
       </listitem>
 
       <listitem>
-        <para>Added experimental support for drag'n'drop from the host to
+        <para>Added experimental support for drag and drop from the host to
           Linux guests. Support for more guests and for guest-to-host is
           planned. (bug #81)</para>
       </listitem>
