@@ -563,7 +563,6 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
     AssertPtrReturnVoid(m_pEditorEncryptionPassword);
     {
         /* Configure Encryption Password editor: */
-        m_pEditorEncryptionPassword->setAlignment(Qt::AlignCenter);
         m_pEditorEncryptionPassword->setEchoMode(QLineEdit::Password);
         connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
                 this, SLOT(sltMarkEncryptionPasswordChanged()));
@@ -574,7 +573,6 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
     AssertPtrReturnVoid(m_pEditorEncryptionPasswordConfirm);
     {
         /* Configure Encryption Password Confirmation editor: */
-        m_pEditorEncryptionPasswordConfirm->setAlignment(Qt::AlignCenter);
         m_pEditorEncryptionPasswordConfirm->setEchoMode(QLineEdit::Password);
         connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
                 this, SLOT(sltMarkEncryptionPasswordChanged()));

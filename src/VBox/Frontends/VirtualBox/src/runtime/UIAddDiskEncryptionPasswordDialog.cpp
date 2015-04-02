@@ -197,8 +197,6 @@ void UIPasswordEditor::sltPasswordChanged(const QString &strPassword)
 
 void UIPasswordEditor::prepare()
 {
-    /* Set alignment: */
-    setAlignment(Qt::AlignCenter);
     /* Set echo mode: */
     setEchoMode(QLineEdit::Password);
     /* Listen for the text changes: */
@@ -330,17 +328,6 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
                       "and doesn't need to be told).",
                       encryptedMediums.size())
                       .arg(encryptedMediums.join("<br>"));
-        }
-        case Qt::TextAlignmentRole:
-        {
-            /* Depending on column index: */
-            switch (index.column())
-            {
-                case UIEncryptionDataTableSection_Password:
-                    return Qt::AlignCenter;
-                default: return QVariant();
-            }
-            break;
         }
         default:
             break;
