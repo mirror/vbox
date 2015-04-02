@@ -72,6 +72,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>GUI: improved HID LEDs synchronization for Mac and Windows hosts.
+          Phisical LEDs state now restored together with VM state restore</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: improved timing on Solaris hosts with older VT-x hosts
           without preemption timers</para>
       </listitem>
