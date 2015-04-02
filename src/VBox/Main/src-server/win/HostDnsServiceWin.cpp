@@ -34,15 +34,18 @@
 struct HostDnsServiceWin::Data
 {
     HKEY hKeyTcpipParameters;
+    bool fTimerArmed;
 
 #define DATA_SHUTDOWN_EVENT   0
 #define DATA_DNS_UPDATE_EVENT 1
-#define DATA_MAX_EVENT        2
+#define DATA_TIMER            2
+#define DATA_MAX_EVENT        3
     HANDLE haDataEvent[DATA_MAX_EVENT];
 
     Data()
     {
         hKeyTcpipParameters = NULL;
+        fTimerArmed = false;
 
         for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
             haDataEvent[i] = NULL;
@@ -80,12 +83,20 @@ HostDnsServiceWin::HostDnsServiceWin()
 
     for (size_t i = 0; i < DATA_MAX_EVENT; ++i)
     {
-        data->haDataEvent[i] = CreateEvent(NULL, TRUE, FALSE, NULL);
-        if (data->haDataEvent[i] == NULL)
+        HANDLE h;
+
+        if (i ==  DATA_TIMER)
+            h = CreateWaitableTimer(NULL, FALSE, NULL);
+        else
+            h = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+        if (h == NULL)
         {
             LogRel(("HostDnsServiceWin: failed to create event (error %d)\n", GetLastError()));
             return;
         }
+
+        data->haDataEvent[i] = h;
     }
 
     m = data.release();
@@ -155,19 +166,45 @@ int HostDnsServiceWin::monitorWorker()
 
         if (dwReady == WAIT_OBJECT_0 + DATA_DNS_UPDATE_EVENT)
         {
-            updateInfo();
+            /*
+             * Registry updates for multiple values are not atomic, so
+             * wait a bit to avoid racing and reading partial update.
+             */
+            if (!m->fTimerArmed)
+            {
+                LARGE_INTEGER delay; /* in 100ns units */
+                delay.QuadPart = -2 * 1000 * 1000 * 10LL; /* relative: 2s */
+
+                BOOL ok = SetWaitableTimer(m->haDataEvent[DATA_TIMER], &delay,
+                                           0, NULL, NULL, TRUE);
+                if (ok)
+                {
+                    m->fTimerArmed = true;
+                }
+                else
+                {
+                    LogRel(("HostDnsServiceWin: failed to arm timer (error %d)\n", GetLastError()));
+                    updateInfo();
+                }
+            }
 
             ResetEvent(m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
             registerNotification(m->hKeyTcpipParameters,
                                  m->haDataEvent[DATA_DNS_UPDATE_EVENT]);
-
+        }
+        else if (dwReady == WAIT_OBJECT_0 + DATA_TIMER)
+        {
+            m->fTimerArmed = false;
+            updateInfo();
+        }
+        else if (dwReady == WAIT_FAILED)
+        {
+            LogRel(("HostDnsServiceWin: WaitForMultipleObjects failed: error %d\n", GetLastError()));
+            return VERR_INTERNAL_ERROR;
         }
         else
         {
-            if (dwReady == WAIT_FAILED)
-                LogRel(("HostDnsServiceWin: WaitForMultipleObjects failed: error %d\n", GetLastError()));
-            else
-                LogRel(("HostDnsServiceWin: WaitForMultipleObjects unexpected return value %d\n", dwReady));
+            LogRel(("HostDnsServiceWin: WaitForMultipleObjects unexpected return value %d\n", dwReady));
             return VERR_INTERNAL_ERROR;
         }
     }
