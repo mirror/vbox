@@ -5467,7 +5467,7 @@ HRESULT Machine::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     ComObjPtr<SharedFolder> sharedFolder;
@@ -5501,7 +5501,7 @@ HRESULT Machine::removeSharedFolder(const com::Utf8Str &aName)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
     if (FAILED(rc)) return rc;
 
     ComObjPtr<SharedFolder> sharedFolder;
