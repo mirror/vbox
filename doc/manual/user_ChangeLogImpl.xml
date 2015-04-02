@@ -9,16 +9,60 @@
     <itemizedlist>
 
       <listitem>
+        <para>Paravirtualization support for Windows and Linux guests to improve
+          time-keeping accuracy and performance</para>
+      </listitem>
+
+      <listitem>
+        <para>Make more instruction set extensions available to the guest when
+          running with hardware-assisted virtualization and nested paging. Among
+          others this includes: SSE 4.1, SSE4.2, AES-NI, <emphasis>POPCNT</emphasis>,
+          <emphasis>RDRAND</emphasis> and <emphasis>RDSEED</emphasis></para>
+      </listitem>
+
+      <listitem>
+        <para>xHCI Controller to support USB 3 devices</para>
+      </listitem>
+
+      <listitem>
         <para>Drag and drop support (bidirectional) for Windows, Linux and Solaris guests</para>
       </listitem>
 
       <listitem>
-        <para>GUI: Support hotplugging for SATA disks</para>
+        <para>Disk image encryption</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: VM guest-content scaling support (including 3D acceleration)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: New User Interface settings page for customizing status-bar,
+          menu-bar and guest-content scaling</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: New Encryption settings tab for customizing encryption options for
+          disk images</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: HiDPI support including application icons and optional unscaled HiDPI
+          output on Mac OS X (including 3D acceleration)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: Hotplugging support for SATA disks</para>
       </listitem>
 
       <listitem>
         <para>New, modular audio architecture for providing a better abstraction of the host
           audio backends</para>
+      </listitem>
+
+      <listitem>
+        <para>Support for the NDIS6 networking framework on Windows (default on Vista
+          and later)</para>
       </listitem>
 
     </itemizedlist>
@@ -34,21 +78,29 @@
 
       <listitem>
         <para>VBoxManage: when exporting an appliance, support the suppression
-           of MAC addresses, which means they will be always recreated on
-           import, avoiding duplicate MAC addresses for VMs which are imported
-           several times</para>
+          of MAC addresses, which means they will be always recreated on
+          import, avoiding duplicate MAC addresses for VMs which are imported
+          several times</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: added USB traffic capturing</para>
+      </listitem>
+
+      <listitem>
+        <para>Made resizing X11 guests work more reliably</para>
       </listitem>
 
       <listitem>
         <para>API: block the removal of the current snapshot if it has child
-           snapshots (only relevant for VMs without snapshottable hard disks,
-           their presence always prevented removal), which resulted in VM
-           config corruption</para>
+          snapshots (only relevant for VMs without snapshottable hard disks,
+          their presence always prevented removal), which resulted in VM
+          config corruption</para>
       </listitem>
 
       <listitem>
         <para>API: mark VM configs with snapshots but without current snapshot
-           as inaccessible, as this combination is nonsense</para>
+          as inaccessible, as this combination is nonsense</para>
       </listitem>
 
       <listitem>
