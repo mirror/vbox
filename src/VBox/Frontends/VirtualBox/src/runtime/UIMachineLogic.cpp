@@ -2439,28 +2439,47 @@ void UIMachineLogic::askUserForTheDiskEncryptionPasswords()
     EncryptionPasswordMap encryptionPasswords;
     if (!encryptedMediums.isEmpty())
     {
-        /* Create corresponding dialog: */
+        /* Create the dialog for acquiring encryption passwords: */
         QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
         QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
              new UIAddDiskEncryptionPasswordDialog(pDlgParent,
                                                    machineName(),
                                                    encryptedMediums);
-        /* Execute it and acquire the result: */
+        /* Execute the dialog: */
         if (pDlg->exec() == QDialog::Accepted)
-            encryptionPasswords = pDlg->encryptionPasswords();
-        /* Delete dialog if still valid: */
-        if (pDlg)
-            delete pDlg;
-    }
-
-    /* Add the disk encryption passwords if necessary: */
-    if (!encryptionPasswords.isEmpty())
-    {
-        foreach (const QString &strKey, encryptionPasswords.keys())
         {
-            console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
-            if (!console().isOk())
-                msgCenter().cannotAddDiskEncryptionPassword(console());
+            /* Acquire the passwords provided: */
+            encryptionPasswords = pDlg->encryptionPasswords();
+
+            /* Delete the dialog: */
+            delete pDlg;
+
+            /* Make sure the passwords were really provided: */
+            AssertReturnVoid(!encryptionPasswords.isEmpty());
+
+            /* Apply the disk encryption passwords: */
+            foreach (const QString &strKey, encryptionPasswords.keys())
+            {
+                console().AddDiskEncryptionPassword(strKey, encryptionPasswords.value(strKey), false);
+                if (!console().isOk())
+                    msgCenter().cannotAddDiskEncryptionPassword(console());
+            }
+        }
+        else
+        {
+            /* Any modal dialog can be destroyed in own event-loop
+             * as a part of VM power-off procedure which closes GUI.
+             * So we have to check if the dialog still valid.. */
+
+            /* If dialog still valid: */
+            if (pDlg)
+            {
+                /* Delete the dialog: */
+                delete pDlg;
+
+                /* Propose the user to close VM: */
+                QMetaObject::invokeMethod(this, "sltClose", Qt::QueuedConnection);
+            }
         }
     }
 }
