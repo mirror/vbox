@@ -77,9 +77,13 @@ VBoxDnDWnd::VBoxDnDWnd(void)
 {
     RT_ZERO(startupInfo);
 
+    LogFlowFunc(("Supported formats:\n"));
     const RTCString arrEntries[] = { VBOX_DND_FORMATS_DEFAULT };
     for (size_t i = 0; i < RT_ELEMENTS(arrEntries); i++)
+    {
+        LogFlowFunc(("\t%s\n", arrEntries[i].c_str()));
         this->lstAllowedFormats.append(arrEntries[i]);
+    }
 }
 
 VBoxDnDWnd::~VBoxDnDWnd(void)
@@ -754,11 +758,26 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     LogFlowThisFunc(("Supported formats:\n"));
     for (size_t i = 0; i < lstFormats.size(); i++)
     {
-        bool fSupported = this->lstAllowedFormats.contains(lstFormats.at(i));
-        if (fSupported)
-            this->lstFormats.append(lstFormats.at(i));
+        bool fSupported = false;
+        for (size_t a = 0; a < this->lstAllowedFormats.size(); a++)
+        {
+            LogFlowThisFunc(("\t\"%s\" <=> \"%s\"\n", this->lstAllowedFormats.at(a).c_str(), lstFormats.at(i).c_str()));
+            fSupported = RTStrICmp(this->lstAllowedFormats.at(a).c_str(), lstFormats.at(i).c_str()) == 0;
+            if (fSupported)
+            {
+                this->lstFormats.append(lstFormats.at(i));
+                break;
+            }
+        }
+
         LogFlowThisFunc(("\t%s: %RTbool\n", lstFormats.at(i).c_str(), fSupported));
     }
+
+    /*
+     * Warn in the log if this guest does not accept anything.
+     */
+    if (!this->lstFormats.size())
+        LogRel(("DnD: Warning: No supported drag'n drop formats on the guest found!\n"));
 
     /*
      * Prepare the startup info for DoDragDrop().
@@ -766,8 +785,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
     int rc = VINF_SUCCESS;
     try
     {
-        /* Translate our drop actions into
-         * allowed Windows drop effects. */
+        /* Translate our drop actions into allowed Windows drop effects. */
         startupInfo.dwOKEffects = DROPEFFECT_NONE;
         if (uAllActions)
         {
@@ -885,29 +903,32 @@ int VBoxDnDWnd::OnHgDrop(void)
     int rc = VINF_SUCCESS;
     if (mState == Dragging)
     {
-        Assert(lstFormats.size() >= 1);
-
-        /** @todo What to do when multiple formats are available? */
-        mFormatRequested = lstFormats.at(0);
-
-        rc = RTCritSectEnter(&mCritSect);
-        if (RT_SUCCESS(rc))
+        if (lstFormats.size() >= 1)
         {
-            if (startupInfo.pDataObject)
-                startupInfo.pDataObject->SetStatus(VBoxDnDDataObject::Dropping);
-            else
-                rc = VERR_NOT_FOUND;
+            /** @todo What to do when multiple formats are available? */
+            mFormatRequested = lstFormats.at(0);
 
-            RTCritSectLeave(&mCritSect);
-        }
+            rc = RTCritSectEnter(&mCritSect);
+            if (RT_SUCCESS(rc))
+            {
+                if (startupInfo.pDataObject)
+                    startupInfo.pDataObject->SetStatus(VBoxDnDDataObject::Dropping);
+                else
+                    rc = VERR_NOT_FOUND;
 
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("DnD: Requesting data as '%s' ...\n", mFormatRequested.c_str()));
-            rc = VbglR3DnDHGRequestData(mClientID, mFormatRequested.c_str());
-            if (RT_FAILURE(rc))
-                LogFlowThisFunc(("Requesting data failed with rc=%Rrc\n", rc));
+                RTCritSectLeave(&mCritSect);
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("DnD: Requesting data as '%s' ...\n", mFormatRequested.c_str()));
+                rc = VbglR3DnDHGRequestData(mClientID, mFormatRequested.c_str());
+                if (RT_FAILURE(rc))
+                    LogFlowThisFunc(("Requesting data failed with rc=%Rrc\n", rc));
+            }
         }
+        else /* Should never happen. */
+            LogRel(("DnD: Error: Host did not specify a data format for drop data\n"));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1403,9 +1424,14 @@ void VBoxDnDWnd::reset(void)
     LogFlowThisFunc(("Resetting, old mMode=%ld, mState=%ld\n",
                      mMode, mState));
 
-    lstAllowedFormats.clear();
-    lstFormats.clear();
-    uAllActions = DND_IGNORE_ACTION;
+    /*
+     * Note: Don't clear this->lstAllowedFormats at the moment, as this value is initialized
+     *       on class creation. We might later want to modify the allowed formats in runtime,
+     *       so keep this in mind when implementing this.
+     */
+
+    this->lstFormats.clear();
+    this->uAllActions = DND_IGNORE_ACTION;
 
     int rc2 = setMode(Unknown);
     AssertRC(rc2);

@@ -69,7 +69,7 @@
     "STRING",                                                                                   \
     /* OpenOffice formats. */                                                                   \
     /* See: https://wiki.openoffice.org/wiki/Documentation/DevGuide/OfficeDev/Common_Application_Features#OpenOffice.org_Clipboard_Data_Formats */ \
-    "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\""  \
+    "application/x-openoffice-embed-source-xml;windows_formatname=\"Star Embed Source (XML)\"", \
     "application/x-openoffice;windows_formatname=\"Bitmap\""
 
 namespace DragAndDropSvc {
