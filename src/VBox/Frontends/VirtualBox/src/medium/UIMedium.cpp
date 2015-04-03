@@ -337,6 +337,18 @@ void UIMedium::refresh()
     m_noDiffs.isSet = false;
 }
 
+UIMedium UIMedium::root() const
+{
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strRootId);
+}
+
+UIMedium UIMedium::parent() const
+{
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strParentId);
+}
+
 void UIMedium::updateParentID()
 {
     m_strParentId = nullID();
@@ -346,18 +358,6 @@ void UIMedium::updateParentID()
         if (!parentMedium.isNull())
             m_strParentId = parentMedium.GetId();
     }
-}
-
-UIMedium UIMedium::parent() const
-{
-    /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strParentId);
-}
-
-UIMedium UIMedium::root() const
-{
-    /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strRootId);
 }
 
 QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false */, bool fNullAllowed /* = false */) const
