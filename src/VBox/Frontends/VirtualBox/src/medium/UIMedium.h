@@ -252,9 +252,9 @@ public:
     const NoDiffsCache& cache() const { return m_noDiffs; }
 
     /** Returns whether this medium is hidden.
-      * @note The medium is considered hidden if it has corresponding
-      *       medium property or is connected to hidden VMs only. */
-    bool isHidden() const { return m_fHidden | m_fAttachedToHiddenMachinesOnly; }
+      * @note The medium is considered 'hidden' if it has corresponding
+      *       medium property or is connected to 'hidden' VMs only. */
+    bool isHidden() const { return m_fHidden | m_fUsedByHiddenMachinesOnly; }
 
     /** Returns whether this medium is read-only
       * (either because it is Immutable or because it has child hard drives).
@@ -345,16 +345,16 @@ private:
     /** Holds the medium cache for "don't show diffs" mode. */
     NoDiffsCache m_noDiffs;
 
-    /** Holds whether this medium is hidden by the corresponding medium property. */
-    bool m_fHidden                       : 1;
-    /** Holds whether this medium is hidden because it's connected to hidden VMs only. */
-    bool m_fAttachedToHiddenMachinesOnly : 1;
+    /** Holds whether this medium is 'hidden' by the corresponding medium property. */
+    bool m_fHidden                   : 1;
+    /** Holds whether this medium is 'hidden' because it's used by 'hidden' VMs only. */
+    bool m_fUsedByHiddenMachinesOnly : 1;
     /** Holds whether this medium is read-only. */
-    bool m_fReadOnly                     : 1;
+    bool m_fReadOnly                 : 1;
     /** Holds whether this medium is attached to any VM in any snapshot. */
-    bool m_fUsedInSnapshots              : 1;
+    bool m_fUsedInSnapshots          : 1;
     /** Holds whether this medium corresponds to real host drive. */
-    bool m_fHostDrive                    : 1;
+    bool m_fHostDrive                : 1;
 
     /** Holds the NULL medium ID. */
     static QString m_sstrNullID;

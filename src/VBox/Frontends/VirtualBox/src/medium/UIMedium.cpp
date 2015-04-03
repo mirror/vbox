@@ -99,7 +99,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_noDiffs = other.cache();
 
     m_fHidden = other.m_fHidden;
-    m_fAttachedToHiddenMachinesOnly = other.m_fAttachedToHiddenMachinesOnly;
+    m_fUsedByHiddenMachinesOnly = other.m_fUsedByHiddenMachinesOnly;
     m_fReadOnly = other.isReadOnly();
     m_fUsedInSnapshots = other.isUsedInSnapshots();
     m_fHostDrive = other.isHostDrive();
@@ -109,9 +109,11 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
 
 void UIMedium::blockAndQueryState()
 {
+    /* Ignore for NULL medium: */
     if (m_medium.isNull())
         return;
 
+    /* Acquire actual medium state: */
     m_state = m_medium.RefreshState();
 
     /* Save the result to distinguish between
@@ -125,134 +127,166 @@ void UIMedium::blockAndQueryState()
     else
         m_strLastAccessError = m_medium.GetLastAccessError();
 
+    /* Refresh finally: */
     refresh();
 }
 
 void UIMedium::refresh()
 {
-    /* Flags are 'false' by default: */
+    /* Reset ID parameters: */
+    m_strId = nullID();
+    m_strRootId = nullID();
+    m_strParentId = nullID();
+
+    /* Reset cache parameters: */
+    //m_strKey = nullID();
+
+    /* Reset name/location parameters: */
+    m_strName = VBoxGlobal::tr("Empty", "medium");
+    m_strLocation = m_strSize = m_strLogicalSize = QString("--");
+
+    /* Reset size parameters: */
+    m_strSize = QString();
+    m_strLogicalSize = QString();
+
+    /* Reset hard drive related parameters: */
+    m_strHardDiskType = QString();
+    m_strHardDiskFormat = QString();
+    m_strStorageDetails = QString();
+
+    /* Reset data parameters: */
+    m_strUsage = QString();
+    m_strToolTip = QString();
+    m_machineIds.clear();
+    m_curStateMachineIds.clear();
+
+    /* Reset m_noDiffs: */
+    m_noDiffs.isSet = false;
+
+    /* Reset flags: */
     m_fHidden = false;
-    m_fAttachedToHiddenMachinesOnly = false;
+    m_fUsedByHiddenMachinesOnly = false;
     m_fReadOnly = false;
     m_fUsedInSnapshots = false;
     m_fHostDrive = false;
 
-    /* Detect basic parameters... */
-
-    m_strId = m_medium.isNull() ? nullID() : m_medium.GetId();
-
-    if (m_strKey.isNull() && !m_strId.isNull())
-        m_strKey = m_strId;
-
-    m_fHostDrive = m_medium.isNull() ? false : m_medium.GetHostDrive();
-
-    if (m_medium.isNull())
-        m_strName = VBoxGlobal::tr("Empty", "medium");
-    else if (!m_fHostDrive)
-        m_strName = m_medium.GetName();
-    else if (m_medium.GetDescription().isEmpty())
-        m_strName = VBoxGlobal::tr("Host Drive '%1'", "medium").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
-    else
-        m_strName = VBoxGlobal::tr("Host Drive %1 (%2)", "medium").arg(m_medium.GetDescription(), m_medium.GetName());
-
-    m_strLocation = m_medium.isNull() || m_fHostDrive ? QString("--") :
-                    QDir::toNativeSeparators(m_medium.GetLocation());
-
-    QString tmp;
+    /* For non NULL medium: */
     if (!m_medium.isNull())
-        tmp = m_medium.GetProperty("Special/GUI/Hints");
-    if (!tmp.isEmpty())
     {
-        QStringList tmpList(tmp.split(','));
-        if (tmpList.contains("Hide", Qt::CaseInsensitive))
-            m_fHidden = true;
-    }
+        /* Refresh medium ID: */
+        m_strId = m_medium.GetId();
+        /* Refresh root medium ID: */
+        m_strRootId = m_strId;
 
-    /* Initialize parent/root IDs: */
-    m_strParentId = nullID();
-    m_strRootId = m_strId;
-    if (m_type == UIMediumType_HardDisk)
-    {
-        m_strHardDiskFormat = m_medium.GetFormat();
-        m_strHardDiskType = vboxGlobal().mediumTypeString(m_medium);
+        /* Init medium key if necessary: */
+        if (m_strKey.isNull())
+            m_strKey = m_strId;
 
-        QVector<KMediumVariant> mediumVariants = m_medium.GetVariant();
-        qlonglong mediumVariant = 0;
-        for (int i = 0; i < mediumVariants.size(); ++i)
-            mediumVariant |= mediumVariants[i];
+        /* Check whether this is host-drive medium: */
+        m_fHostDrive = m_medium.GetHostDrive();
 
-        m_strStorageDetails = gpConverter->toString((KMediumVariant)mediumVariant);
-        m_fReadOnly = m_medium.GetReadOnly();
-
-        /* Adjust parent/root IDs: */
-        CMedium parentMedium = m_medium.GetParent();
-        if (!parentMedium.isNull())
-            m_strParentId = parentMedium.GetId();
-        while (!parentMedium.isNull())
-        {
-            m_strRootId = parentMedium.GetId();
-            parentMedium = parentMedium.GetParent();
-        }
-    }
-    else
-    {
-        m_strHardDiskFormat = QString();
-        m_strHardDiskType = QString();
-        m_fReadOnly = false;
-    }
-
-    /* Detect sizes */
-    if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated && !m_fHostDrive)
-    {
-        m_strSize = vboxGlobal().formatSize(m_medium.GetSize());
-        if (m_type == UIMediumType_HardDisk)
-            m_strLogicalSize = vboxGlobal().formatSize(m_medium.GetLogicalSize());
+        /* Refresh medium name: */
+        if (!m_fHostDrive)
+            m_strName = m_medium.GetName();
+        else if (m_medium.GetDescription().isEmpty())
+            m_strName = VBoxGlobal::tr("Host Drive '%1'", "medium").arg(QDir::toNativeSeparators(m_medium.GetLocation()));
         else
-            m_strLogicalSize = m_strSize;
-    }
-    else
-    {
-        m_strSize = m_strLogicalSize = QString("--");
-    }
+            m_strName = VBoxGlobal::tr("Host Drive %1 (%2)", "medium").arg(m_medium.GetDescription(), m_medium.GetName());
+        /* Refresh medium location: */
+        if (!m_fHostDrive)
+            m_strLocation = QDir::toNativeSeparators(m_medium.GetLocation());
 
-    /* Detect usage */
-    m_strUsage = QString();
-    if (!m_medium.isNull())
-    {
+        /* Refresh medium size and logical size: */
+        if (!m_fHostDrive)
+        {
+            /* Only for created and accessible mediums: */
+            if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
+            {
+                m_strSize = vboxGlobal().formatSize(m_medium.GetSize());
+                if (m_type == UIMediumType_HardDisk)
+                    m_strLogicalSize = vboxGlobal().formatSize(m_medium.GetLogicalSize());
+                else
+                    m_strLogicalSize = m_strSize;
+            }
+        }
+
+        /* For hard drive medium: */
+        if (m_type == UIMediumType_HardDisk)
+        {
+            /* Refresh hard drive disk type: */
+            m_strHardDiskType = vboxGlobal().mediumTypeString(m_medium);
+            /* Refresh hard drive format: */
+            m_strHardDiskFormat = m_medium.GetFormat();
+
+            /* Refresh hard drive storage details: */
+            qlonglong iMediumVariant = 0;
+            foreach (const KMediumVariant &enmVariant, m_medium.GetVariant())
+                iMediumVariant |= enmVariant;
+            m_strStorageDetails = gpConverter->toString((KMediumVariant)iMediumVariant);
+
+            /* Check whether this is read-only hard drive: */
+            m_fReadOnly = m_medium.GetReadOnly();
+
+            /* Refresh parent hard drive ID: */
+            CMedium parentMedium = m_medium.GetParent();
+            if (!parentMedium.isNull())
+                m_strParentId = parentMedium.GetId();
+
+            /* Refresh hard drive ID: */
+            while (!parentMedium.isNull())
+            {
+                m_strRootId = parentMedium.GetId();
+                parentMedium = parentMedium.GetParent();
+            }
+        }
+
+        /* Check whether this is hidden medium: */
+        QString strHints = m_medium.GetProperty("Special/GUI/Hints");
+        if (!strHints.isEmpty())
+        {
+            QStringList hints(strHints.split(','));
+            if (hints.contains("Hide", Qt::CaseInsensitive))
+                m_fHidden = true;
+        }
+
+        /* Refresh usage data: */
         m_curStateMachineIds.clear();
         m_machineIds = m_medium.GetMachineIds().toList();
         if (m_machineIds.size() > 0)
         {
-            /* We assume this flag is 'true' if at least one machine present: */
-            m_fAttachedToHiddenMachinesOnly = true;
-
-            QString strUsage;
-
+            /* Get CVirtualBox object: */
             CVirtualBox vbox = vboxGlobal().virtualBox();
 
+            /* By default we assuming that this medium is attached
+             * to 'hidden' machines only, if at least one machine present: */
+            m_fUsedByHiddenMachinesOnly = true;
+
+            /* Prepare machine usage: */
+            QString strMachineUsage;
+            /* Walk through all the machines this medium attached to: */
             foreach (const QString &strMachineID, m_machineIds)
             {
+                /* Look for the corresponding machine: */
                 CMachine machine = vbox.FindMachine(strMachineID);
 
-                /* UIMedium object can wrap newly created CMedium object which belongs to
-                 * not yet registered machine, like while creating VM clone.
-                 * We can skip such a machines in usage string.
-                 * CVirtualBox::FindMachine() will return null machine for such case. */
+                /* UIMedium object can wrap newly created CMedium object
+                 * which belongs to not yet registered machine, like while creating VM clone.
+                 * We can skip such a machines in usage string. */
                 if (machine.isNull())
                 {
-                    /* We can't decide for that medium yet,
-                     * assume this flag is 'false' for now: */
-                    m_fAttachedToHiddenMachinesOnly = false;
+                    /* Since we can't precisely check 'hidden' status for that machine in such case,
+                     * we have to assume that medium attached not only to 'hidden' machines: */
+                    m_fUsedByHiddenMachinesOnly = false;
                     continue;
                 }
 
-                /* Finally, we are checking if current machine overrides this flag: */
-                if (m_fAttachedToHiddenMachinesOnly && gEDataManager->showMachineInSelectorChooser(strMachineID))
-                    m_fAttachedToHiddenMachinesOnly = false;
+                /* Finally we can precisely check if current machine is 'hidden': */
+                if (gEDataManager->showMachineInSelectorChooser(strMachineID))
+                    m_fUsedByHiddenMachinesOnly = false;
 
-                QString strName = machine.GetName();
-                QString strSnapshots;
-
+                /* Prepare snapshot usage: */
+                QString strSnapshotUsage;
+                /* Walk through all the snapshots this medium attached to: */
                 foreach (const QString &strSnapshotID, m_medium.GetSnapshotIds(strMachineID))
                 {
                     if (strSnapshotID == strMachineID)
@@ -264,48 +298,46 @@ void UIMedium::refresh()
                         continue;
                     }
 
+                    /* Look for the corresponding snapshot: */
                     CSnapshot snapshot = machine.FindSnapshot(strSnapshotID);
-                    if (!snapshot.isNull()) // can be NULL while takeSnaphot is in progress
-                    {
-                        if (!strSnapshots.isNull())
-                            strSnapshots += ", ";
-                        strSnapshots += snapshot.GetName();
-                    }
-                }
 
-                if (!strUsage.isNull())
-                    strUsage += ", ";
+                    /* Snapshot can be NULL while takeSnaphot is in progress: */
+                    if (snapshot.isNull())
+                        continue;
 
-                strUsage += strName;
-
-                if (!strSnapshots.isNull())
-                {
-                    strUsage += QString(" (%2)").arg(strSnapshots);
+                    /* Refresh snapshot usage flag: */
                     m_fUsedInSnapshots = true;
+
+                    /* Append snapshot usage: */
+                    if (!strSnapshotUsage.isNull())
+                        strSnapshotUsage += ", ";
+                    strSnapshotUsage += snapshot.GetName();
                 }
-                else
-                    m_fUsedInSnapshots = false;
+
+                /* Append machine usage: */
+                if (!strMachineUsage.isNull())
+                    strMachineUsage += ", ";
+                strMachineUsage += machine.GetName();
+
+                /* Append snapshot usage: */
+                if (!strSnapshotUsage.isNull())
+                    strMachineUsage += QString(" (%2)").arg(strSnapshotUsage);
             }
 
-            if (!strUsage.isEmpty())
-                m_strUsage = strUsage;
+            /* Append machine usage: */
+            if (!strMachineUsage.isEmpty())
+                m_strUsage += strMachineUsage;
         }
-    }
 
-    /* Compose the tooltip */
-    if (!m_medium.isNull())
-    {
+        /* Refresh tool-tip: */
         m_strToolTip = m_sstrRow.arg(QString("<p style=white-space:pre><b>%1</b></p>").arg(m_fHostDrive ? m_strName : m_strLocation));
-
         if (m_type == UIMediumType_HardDisk)
         {
             m_strToolTip += m_sstrRow.arg(VBoxGlobal::tr("<p style=white-space:pre>Type (Format):  %1 (%2)</p>", "medium")
                                                          .arg(m_strHardDiskType).arg(m_strHardDiskFormat));
         }
-
         m_strToolTip += m_sstrRow.arg(VBoxGlobal::tr("<p>Attached to:  %1</p>", "image")
                                                      .arg(m_strUsage.isNull() ? VBoxGlobal::tr("<i>Not Attached</i>", "image") : m_strUsage));
-
         switch (m_state)
         {
             case KMediumState_NotCreated:
@@ -317,7 +349,7 @@ void UIMedium::refresh()
             {
                 if (m_result.isOk())
                 {
-                    /* Not Accessible */
+                    /* Not Accessible: */
                     m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(VBoxGlobal::highlight(m_strLastAccessError, true /* aToolTip */));
                 }
                 else
@@ -332,9 +364,6 @@ void UIMedium::refresh()
                 break;
         }
     }
-
-    /* Reset m_noDiffs */
-    m_noDiffs.isSet = false;
 }
 
 UIMedium UIMedium::root() const
