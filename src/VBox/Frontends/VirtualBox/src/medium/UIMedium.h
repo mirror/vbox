@@ -113,16 +113,14 @@ public:
       *       KMediumState_NotCreated (i.e. the medium has not yet been checked for accessibility). */
     void refresh();
 
-    /** Returns whether this medium is hidden.
-      * @note The medium is considered hidden if it has corresponding
-      *       medium property or is connected to hidden VMs only. */
-    bool isHidden() const { return m_fHidden | m_fAttachedToHiddenMachinesOnly; }
+    /** Returns the type of UIMedium object. */
+    UIMediumType type() const { return m_type; }
 
     /** Returns the CMedium wrapped by this UIMedium object. */
     const CMedium &medium() const { return m_medium; }
 
-    /** Returns the type of UIMedium object. */
-    UIMediumType type() const { return m_type; }
+    /** Returns @c true if CMedium wrapped by this UIMedium object is a NULL object. */
+    bool isNull() const { return m_medium.isNull(); }
 
     /** Returns the medium state.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -133,9 +131,6 @@ public:
         unconst (this)->checkNoDiffs(fNoDiffs);
         return fNoDiffs ? m_noDiffs.state : m_state;
     }
-
-    /** Returns the error result of the last blockAndQueryState() call. */
-    QString lastAccessError() const { return m_strLastAccessError; }
 
     /** Returns the result of the last blockAndQueryState() call.
       * Indicates an error and contain a proper error info if the last state check fails.
@@ -148,13 +143,29 @@ public:
         return fNoDiffs ? m_noDiffs.result : m_result;
     }
 
+    /** Returns the error result of the last blockAndQueryState() call. */
+    QString lastAccessError() const { return m_strLastAccessError; }
+
+    /** Returns the medium ID. */
+    QString id() const { return m_strId; }
+
+    /** Returns the medium root ID. */
+    QString rootID() const { return m_strRootID; }
+    /** Returns the medium parent ID. */
+    QString parentID() const { return m_strParentID; }
+
+    /** Returns medium root. */
+    UIMedium root() const;
+    /** Returns medium parent. */
+    UIMedium parent() const;
+
+    /** Updates medium parent. */
+    void updateParentID();
+
     /** Returns the medium cache key. */
     QString key() const { return m_strKey; }
     /** Defines the medium cache @a strKey. */
     void setKey(const QString &strKey) { m_strKey = strKey; }
-
-    /** Returns the medium ID. */
-    QString id() const { return m_strId; }
 
     /** Returns the medium name.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -174,14 +185,14 @@ public:
       * @note  In "don't show diffs" mode, this method returns the logical size of root in the given hard drive chain. */
     QString logicalSize(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strLogicalSize : m_strLogicalSize; }
 
-    /** Returns the hard drive medium disk format.
-      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
-      * @note  In "don't show diffs" mode, this method returns the disk format of root in the given hard drive chain. */
-    QString hardDiskFormat(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strHardDiskFormat : m_strHardDiskFormat; }
     /** Returns the hard drive medium disk type.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the disk type of root in the given hard drive chain. */
     QString hardDiskType(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strHardDiskType : m_strHardDiskType; }
+    /** Returns the hard drive medium disk format.
+      * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
+      * @note  In "don't show diffs" mode, this method returns the disk format of root in the given hard drive chain. */
+    QString hardDiskFormat(bool fNoDiffs = false) const { return fNoDiffs ? root().m_strHardDiskFormat : m_strHardDiskFormat; }
 
     /** Returns the hard drive medium storage details. */
     QString storageDetails() const { return m_strStorageDetails; }
@@ -194,46 +205,6 @@ public:
     /** Returns the short version of medium tool-tip. */
     QString tip() const { return m_strToolTip; }
 
-    /** Returns the medium cache for "don't show diffs" mode. */
-    const NoDiffsCache& cache() const { return m_noDiffs; }
-
-    /** Returns whether this medium is read-only
-      * (either because it is Immutable or because it has child hard drives).
-      * @note Read-only medium can only be attached indirectly. */
-    bool isReadOnly() const { return m_fReadOnly; }
-
-    /** Returns whether this medium is attached to any VM (in the current state or in a snapshot) in which case
-      * #usage() will contain a string with comma-separated VM names (with snapshot names, if any, in parenthesis). */
-    bool isUsed() const { return !m_strUsage.isNull(); }
-
-    /** Returns whether this medium is attached to any VM in any snapshot. */
-    bool isUsedInSnapshots() const { return m_fUsedInSnapshots; }
-
-    /** Returns whether this medium corresponds to real host drive. */
-    bool isHostDrive() const { return m_fHostDrive; }
-
-    /** Returns a vector of IDs of all machines this medium is attached to. */
-    const QList <QString> &machineIds() const { return m_machineIds; }
-
-    /** Returns whether this medium is attached to the given machine in the current state. */
-    bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
-
-    /** Returns a vector of IDs of all machines this medium is attached to
-      * in their current state (i.e. excluding snapshots). */
-    const QList <QString> &curStateMachineIds() const { return m_curStateMachineIds; }
-
-    /** Updates medium parent. */
-    void updateParentID();
-    /** Returns the medium parent ID. */
-    QString parentID() const { return m_strParentID; }
-    /** Returns the medium root ID. */
-    QString rootID() const { return m_strRootID; }
-    /** Returns medium parent. */
-    UIMedium parent() const;
-    /** Returns medium root. */
-    UIMedium root() const;
-
-
     /** Returns the full version of medium tool-tip.
       * @param fNoDiffs     @c true to enable user-friendly "don't show diffs" mode.
       * @param fCheckRO     @c true to perform the #readOnly() check and add a notice accordingly.
@@ -243,6 +214,9 @@ public:
       *        tooltip to give the user a hint that the medium is actually a differencing hard drive. */
     QString toolTip(bool fNoDiffs = false, bool fCheckRO = false, bool fNullAllowed = false) const;
 
+    /** Shortcut to <tt>#toolTip(fNoDiffs, true, fNullAllowed)</tt>. */
+    QString toolTipCheckRO(bool fNoDiffs = false, bool fNullAllowed = false) const { return toolTip(fNoDiffs, true, fNullAllowed); }
+
     /** Returns an icon corresponding to the medium state.
       * Distinguishes between the Inaccessible state and the situation when querying the state itself failed.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -251,9 +225,6 @@ public:
       *        of the attributes of the differencing hard drive), the most worst medium state on the given
       *        hard drive chain will be used to select the medium icon. */
     QPixmap icon(bool fNoDiffs = false, bool fCheckRO = false) const;
-
-    /** Shortcut to <tt>#toolTip(fNoDiffs, true, fNullAllowed)</tt>. */
-    QString toolTipCheckRO(bool fNoDiffs = false, bool fNullAllowed = false) const { return toolTip(fNoDiffs, true, fNullAllowed); }
 
     /** Shortcut to <tt>#icon(fNoDiffs, true)</tt>. */
     QPixmap iconCheckRO(bool fNoDiffs = false) const { return icon(fNoDiffs, true); }
@@ -277,8 +248,37 @@ public:
     /** Shortcut to <tt>#details(fNoDiffs, fPredictDiff, true)</tt>. */
     QString detailsHTML(bool fNoDiffs = false, bool fPredictDiff = false) const { return details(fNoDiffs, fPredictDiff, true); }
 
-    /** Returns @c true if CMedium wrapped by this UIMedium object is a NULL object. */
-    bool isNull() const { return m_medium.isNull(); }
+    /** Returns the medium cache for "don't show diffs" mode. */
+    const NoDiffsCache& cache() const { return m_noDiffs; }
+
+    /** Returns whether this medium is hidden.
+      * @note The medium is considered hidden if it has corresponding
+      *       medium property or is connected to hidden VMs only. */
+    bool isHidden() const { return m_fHidden | m_fAttachedToHiddenMachinesOnly; }
+
+    /** Returns whether this medium is read-only
+      * (either because it is Immutable or because it has child hard drives).
+      * @note Read-only medium can only be attached indirectly. */
+    bool isReadOnly() const { return m_fReadOnly; }
+
+    /** Returns whether this medium is attached to any VM in any snapshot. */
+    bool isUsedInSnapshots() const { return m_fUsedInSnapshots; }
+
+    /** Returns whether this medium corresponds to real host drive. */
+    bool isHostDrive() const { return m_fHostDrive; }
+
+    /** Returns whether this medium is attached to any VM (in the current state or in a snapshot) in which case
+      * #usage() will contain a string with comma-separated VM names (with snapshot names, if any, in parenthesis). */
+    bool isUsed() const { return !m_strUsage.isNull(); }
+
+    /** Returns whether this medium is attached to the given machine in the current state. */
+    bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
+
+    /** Returns a vector of IDs of all machines this medium is attached to. */
+    const QList <QString> &machineIds() const { return m_machineIds; }
+    /** Returns a vector of IDs of all machines this medium is attached to
+      * in their current state (i.e. excluding snapshots). */
+    const QList <QString> &curStateMachineIds() const { return m_curStateMachineIds; }
 
     /** Returns NULL medium ID. */
     static QString nullID();
@@ -292,23 +292,28 @@ private:
       * @param fNoDiffs @if false, this method immediately returns. */
     void checkNoDiffs(bool fNoDiffs);
 
-    /** Holds the CMedium wrapped by this UIMedium object. */
-    CMedium m_medium;
-
     /** Holds the type of UIMedium object. */
     UIMediumType m_type;
 
+    /** Holds the CMedium wrapped by this UIMedium object. */
+    CMedium m_medium;
+
     /** Holds the medium state. */
     KMediumState m_state;
-    /** Holds the error result of the last blockAndQueryState() call. */
-    QString m_strLastAccessError;
     /** Holds the result of the last blockAndQueryState() call. */
     COMResult m_result;
+    /** Holds the error result of the last blockAndQueryState() call. */
+    QString m_strLastAccessError;
+
+    /** Holds the medium ID. */
+    QString m_strId;
+    /** Holds the medium root ID. */
+    QString m_strRootID;
+    /** Holds the medium parent ID. */
+    QString m_strParentID;
 
     /** Holds the medium cache key. */
     QString m_strKey;
-    /** Holds the medium ID. */
-    QString m_strId;
 
     /** Holds the medium name. */
     QString m_strName;
@@ -320,10 +325,10 @@ private:
     /** Holds the medium logical size. */
     QString m_strLogicalSize;
 
-    /** Holds the hard drive medium disk format. */
-    QString m_strHardDiskFormat;
     /** Holds the hard drive medium disk type. */
     QString m_strHardDiskType;
+    /** Holds the hard drive medium disk format. */
+    QString m_strHardDiskFormat;
     /** Holds the hard drive medium storage details. */
     QString m_strStorageDetails;
 
@@ -331,6 +336,14 @@ private:
     QString m_strUsage;
     /** Holds the medium tool-tip. */
     QString m_strToolTip;
+    /** Holds the vector of IDs of all machines this medium is attached to. */
+    QList<QString> m_machineIds;
+    /** Hodls the vector of IDs of all machines this medium is attached to
+      * in their current state (i.e. excluding snapshots). */
+    QList<QString> m_curStateMachineIds;
+
+    /** Holds the medium cache for "don't show diffs" mode. */
+    NoDiffsCache m_noDiffs;
 
     /** Holds whether this medium is hidden by the corresponding medium property. */
     bool m_fHidden                       : 1;
@@ -342,20 +355,6 @@ private:
     bool m_fUsedInSnapshots              : 1;
     /** Holds whether this medium corresponds to real host drive. */
     bool m_fHostDrive                    : 1;
-
-    /** Holds the vector of IDs of all machines this medium is attached to. */
-    QList<QString> m_machineIds;
-    /** Hodls the vector of IDs of all machines this medium is attached to
-      * in their current state (i.e. excluding snapshots). */
-    QList<QString> m_curStateMachineIds;
-
-    /** Holds the medium parent ID. */
-    QString m_strParentID;
-    /** Holds the medium root ID. */
-    QString m_strRootID;
-
-    /** Holds the medium cache for "don't show diffs" mode. */
-    NoDiffsCache m_noDiffs;
 
     /** Holds the NULL medium ID. */
     static QString m_sstrNullID;
