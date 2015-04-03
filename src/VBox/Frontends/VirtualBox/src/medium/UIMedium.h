@@ -117,7 +117,7 @@ public:
     UIMediumType type() const { return m_type; }
 
     /** Returns the CMedium wrapped by this UIMedium object. */
-    const CMedium &medium() const { return m_medium; }
+    const CMedium& medium() const { return m_medium; }
 
     /** Returns @c true if CMedium wrapped by this UIMedium object is a NULL object. */
     bool isNull() const { return m_medium.isNull(); }
@@ -128,7 +128,7 @@ public:
       *        (in terms of inaccessibility) detected on the given hard drive chain. */
     KMediumState state(bool fNoDiffs = false) const
     {
-        unconst (this)->checkNoDiffs(fNoDiffs);
+        unconst(this)->checkNoDiffs(fNoDiffs);
         return fNoDiffs ? m_noDiffs.state : m_state;
     }
 
@@ -137,7 +137,7 @@ public:
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
       * @note  In "don't show diffs" mode, this method returns the worst result
       *        (in terms of inaccessibility) detected on the given hard drive chain. */
-    const COMResult &result(bool fNoDiffs = false) const
+    const COMResult& result(bool fNoDiffs = false) const
     {
         unconst(this)->checkNoDiffs(fNoDiffs);
         return fNoDiffs ? m_noDiffs.result : m_result;
@@ -275,10 +275,10 @@ public:
     bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
 
     /** Returns a vector of IDs of all machines this medium is attached to. */
-    const QList <QString> &machineIds() const { return m_machineIds; }
+    const QList<QString>& machineIds() const { return m_machineIds; }
     /** Returns a vector of IDs of all machines this medium is attached to
       * in their current state (i.e. excluding snapshots). */
-    const QList <QString> &curStateMachineIds() const { return m_curStateMachineIds; }
+    const QList<QString>& curStateMachineIds() const { return m_curStateMachineIds; }
 
     /** Returns NULL medium ID. */
     static QString nullID();
