@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2013 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,10 +18,8 @@
 #ifdef VBOX_WITH_PRECOMPILED_HEADERS
 # include <precomp.h>
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 /* Qt includes: */
 # include <QDir>
-
 /* GUI includes: */
 # include "UIMedium.h"
 # include "VBoxGlobal.h"
@@ -29,13 +27,10 @@
 # include "UIMessageCenter.h"
 # include "UIExtraDataManager.h"
 # include "UIIconPool.h"
-
 /* COM includes: */
 # include "CMachine.h"
 # include "CSnapshot.h"
-
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 QString UIMedium::m_sstrNullID = QUuid().toString().remove('{').remove('}');
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");
@@ -43,28 +38,26 @@ QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
 
 UIMedium::UIMedium()
     : m_type(UIMediumType_Invalid)
+    , m_medium(CMedium())
     , m_state(KMediumState_NotCreated)
 {
     refresh();
-//    printf("UIMedium: New NULL medium created.\n");
 }
 
 UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
-    : m_medium(medium)
-    , m_type(type)
+    : m_type(type)
+    , m_medium(medium)
     , m_state(KMediumState_NotCreated)
 {
     refresh();
-//    printf("UIMedium: New medium with ID={%s} created.\n", id().toAscii().constData());
 }
 
 UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
-    : m_medium(medium)
-    , m_type(type)
+    : m_type(type)
+    , m_medium(medium)
     , m_state(state)
 {
     refresh();
-//    printf("UIMedium: New medium with ID={%s} created (with known state).\n", id().toAscii().constData());
 }
 
 UIMedium::UIMedium(const UIMedium &other)
@@ -74,27 +67,36 @@ UIMedium::UIMedium(const UIMedium &other)
 
 UIMedium& UIMedium::operator=(const UIMedium &other)
 {
-    m_medium = other.medium();
     m_type = other.type();
+
+    m_medium = other.medium();
+
     m_state = other.state();
-    m_strLastAccessError = other.lastAccessError();
     m_result = other.result();
+    m_strLastAccessError = other.lastAccessError();
+
+    m_strId = other.id();
+    m_strRootId = other.rootID();
+    m_strParentId = other.parentID();
 
     m_strKey = other.key();
-    m_strId = other.id();
+
     m_strName = other.name();
     m_strLocation = other.location();
 
     m_strSize = other.size();
     m_strLogicalSize = other.logicalSize();
 
-    m_strHardDiskFormat = other.hardDiskFormat();
     m_strHardDiskType = other.hardDiskType();
-
+    m_strHardDiskFormat = other.hardDiskFormat();
     m_strStorageDetails = other.storageDetails();
 
     m_strUsage = other.usage();
     m_strToolTip = other.tip();
+    m_machineIds = other.machineIds();
+    m_curStateMachineIds = other.curStateMachineIds();
+
+    m_noDiffs = other.cache();
 
     m_fHidden = other.m_fHidden;
     m_fAttachedToHiddenMachinesOnly = other.m_fAttachedToHiddenMachinesOnly;
@@ -102,31 +104,9 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_fUsedInSnapshots = other.isUsedInSnapshots();
     m_fHostDrive = other.isHostDrive();
 
-    m_machineIds = other.machineIds();
-    m_curStateMachineIds = other.curStateMachineIds();
-
-    m_strParentID = other.parentID();
-    m_strRootID = other.rootID();
-
-    m_noDiffs = other.cache();
-
     return *this;
 }
 
-/**
- * Queries the medium state. Call this and then read the state field instead
- * of calling GetState() on medium directly as it will properly handle the
- * situation when GetState() itself fails by setting state to Inaccessible
- * and memorizing the error info describing why GetState() failed.
- *
- * As the last step, this method calls #refresh() to refresh all precomposed
- * strings.
- *
- * @note This method blocks for the duration of the state check. Since this
- *       check may take quite a while (e.g. for a medium located on a
- *       network share), the calling thread must not be the UI thread. You
- *       have been warned.
- */
 void UIMedium::blockAndQueryState()
 {
     if (m_medium.isNull())
@@ -148,15 +128,6 @@ void UIMedium::blockAndQueryState()
     refresh();
 }
 
-/**
- * Refreshes the precomposed strings containing such media parameters as
- * location, size by querying the respective data from the associated
- * media object.
- *
- * Note that some string such as #size() are meaningless if the media state is
- * KMediumState_NotCreated (i.e. the medium has not yet been checked for
- * accessibility).
- */
 void UIMedium::refresh()
 {
     /* Flags are 'false' by default: */
@@ -198,8 +169,8 @@ void UIMedium::refresh()
     }
 
     /* Initialize parent/root IDs: */
-    m_strParentID = nullID();
-    m_strRootID = m_strId;
+    m_strParentId = nullID();
+    m_strRootId = m_strId;
     if (m_type == UIMediumType_HardDisk)
     {
         m_strHardDiskFormat = m_medium.GetFormat();
@@ -216,10 +187,10 @@ void UIMedium::refresh()
         /* Adjust parent/root IDs: */
         CMedium parentMedium = m_medium.GetParent();
         if (!parentMedium.isNull())
-            m_strParentID = parentMedium.GetId();
+            m_strParentId = parentMedium.GetId();
         while (!parentMedium.isNull())
         {
-            m_strRootID = parentMedium.GetId();
+            m_strRootId = parentMedium.GetId();
             parentMedium = parentMedium.GetParent();
         }
     }
@@ -368,40 +339,28 @@ void UIMedium::refresh()
 
 void UIMedium::updateParentID()
 {
-    m_strParentID = nullID();
+    m_strParentId = nullID();
     if (m_type == UIMediumType_HardDisk)
     {
         CMedium parentMedium = m_medium.GetParent();
         if (!parentMedium.isNull())
-            m_strParentID = parentMedium.GetId();
+            m_strParentId = parentMedium.GetId();
     }
 }
 
 UIMedium UIMedium::parent() const
 {
     /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strParentID);
+    return vboxGlobal().medium(m_strParentId);
 }
 
 UIMedium UIMedium::root() const
 {
     /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strRootID);
+    return vboxGlobal().medium(m_strRootId);
 }
 
-/**
- * Returns generated tooltip for this medium.
- *
- * In "don't show diffs" mode (where the attributes of the base hard disk are
- * shown instead of the attributes of the differencing hard disk), extra
- * information will be added to the tooltip to give the user a hint that the
- * medium is actually a differencing hard disk.
- *
- * @param fNoDiffs  @c true to enable user-friendly "don't show diffs" mode.
- * @param fCheckRO  @c true to perform the #readOnly() check and add a notice
- *                  accordingly.
- */
-QString UIMedium::toolTip (bool fNoDiffs /* = false */, bool fCheckRO /* = false */, bool fNullAllowed /* = false */) const
+QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false */, bool fNullAllowed /* = false */) const
 {
     QString strTip;
 
@@ -427,20 +386,6 @@ QString UIMedium::toolTip (bool fNoDiffs /* = false */, bool fCheckRO /* = false
     return m_sstrTable.arg(strTip);
 }
 
-/**
- * Returns an icon corresponding to the media state. Distinguishes between
- * the Inaccessible state and the situation when querying the state itself
- * failed.
- *
- * In "don't show diffs" mode (where the attributes of the base hard disk are
- * shown instead of the attributes of the differencing hard disk), the most
- * worst media state on the given hard disk chain will be used to select the
- * media icon.
- *
- * @param fNoDiffs  @c true to enable user-friendly "don't show diffs" mode.
- * @param fCheckRO  @c true to perform the #readOnly() check and change the icon
- *                  accordingly.
- */
 QPixmap UIMedium::icon(bool fNoDiffs /* = false */, bool fCheckRO /* = false */) const
 {
     QPixmap pixmap;
@@ -457,30 +402,6 @@ QPixmap UIMedium::icon(bool fNoDiffs /* = false */, bool fCheckRO /* = false */)
     return pixmap;
 }
 
-/**
- * Returns the details of this medium as a single-line string
- *
- * For hard disks, the details include the location, type and the logical size
- * of the hard disk. Note that if @a fNoDiffs is @c true, these properties are
- * queried on the root hard disk of the given hard disk because the primary
- * purpose of the returned string is to be human readable (so that seeing a
- * complex diff hard disk name is usually not desirable).
- *
- * For other media types, the location and the actual size are returned.
- * Arguments @a fPredictDiff and @a aNoRoot are ignored in this case.
- *
- * @param fNoDiffs      @c true to enable user-friendly "don't show diffs" mode.
- * @param fPredictDiff  @c true to mark the hard disk as differencing if
- *                      attaching it would create a differencing hard disk (not
- *                      used when @a aNoRoot is true).
- * @param fUseHTML      @c true to allow for emphasizing using bold and italics.
- *
- * @note Use #detailsHTML() instead of passing @c true for @a fUseHTML.
- *
- * @note The media object may become uninitialized by a third party while this
- *       method is reading its properties. In this case, the method will return
- *       an empty string.
- */
 QString UIMedium::details(bool fNoDiffs /* = false */,
                           bool fPredictDiff /* = false */,
                           bool fUseHTML /* = false */) const
@@ -582,11 +503,6 @@ bool UIMedium::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
     return false;
 }
 
-/**
- * Checks if m_noDiffs is filled in and does it if not.
- *
- * @param fNoDiffs  @if false, this method immediately returns.
- */
 void UIMedium::checkNoDiffs(bool fNoDiffs)
 {
     if (!fNoDiffs || m_noDiffs.isSet)

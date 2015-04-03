@@ -150,9 +150,9 @@ public:
     QString id() const { return m_strId; }
 
     /** Returns the medium root ID. */
-    QString rootID() const { return m_strRootID; }
+    QString rootID() const { return m_strRootId; }
     /** Returns the medium parent ID. */
-    QString parentID() const { return m_strParentID; }
+    QString parentID() const { return m_strParentId; }
 
     /** Returns medium root. */
     UIMedium root() const;
@@ -308,9 +308,9 @@ private:
     /** Holds the medium ID. */
     QString m_strId;
     /** Holds the medium root ID. */
-    QString m_strRootID;
+    QString m_strRootId;
     /** Holds the medium parent ID. */
-    QString m_strParentID;
+    QString m_strParentId;
 
     /** Holds the medium cache key. */
     QString m_strKey;
