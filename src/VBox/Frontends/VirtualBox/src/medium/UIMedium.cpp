@@ -366,18 +366,6 @@ void UIMedium::refresh()
     }
 }
 
-UIMedium UIMedium::root() const
-{
-    /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strRootId);
-}
-
-UIMedium UIMedium::parent() const
-{
-    /* Redirect call to VBoxGlobal: */
-    return vboxGlobal().medium(m_strParentId);
-}
-
 void UIMedium::updateParentID()
 {
     m_strParentId = nullID();
@@ -408,8 +396,8 @@ QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false 
 
         if (fCheckRO && m_fReadOnly)
             strTip += m_sstrRow.arg("<hr>") +
-                      m_sstrRow.arg(VBoxGlobal::tr("Attaching this hard disk will be performed indirectly using "
-                                                   "a newly created differencing hard disk.", "medium"));
+                      m_sstrRow.arg(VBoxGlobal::tr("Attaching this hard drive will be performed indirectly using "
+                                                   "a newly created differencing hard drive.", "medium"));
     }
 
     return m_sstrTable.arg(strTip);
@@ -437,14 +425,14 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 {
     // @todo the below check is rough; if m_medium becomes uninitialized, any
     // of getters called afterwards will also fail. The same relates to the
-    // root hard disk object (that will be the hard disk itself in case of
+    // root hard drive object (that will be the hard drive itself in case of
     // non-differencing disks). However, this check was added to fix a
-    // particular use case: when the hard disk is a differencing hard disk and
+    // particular use case: when the hard drive is a differencing hard drive and
     // it happens to be discarded (and uninitialized) after this method is
     // called but before we read all its properties (yes, it's possible!), the
     // root object will be null and calling methods on it will assert in the
     // debug builds. This check seems to be enough as a quick solution (fresh
-    // hard disk attachments will be re-read by a machine state change signal
+    // hard drive attachments will be re-read by a machine state change signal
     // after the discard operation is finished, so the user will eventually see
     // correct data), but in order to solve the problem properly we need to use
     // exceptions everywhere (or check the result after every method call). See
@@ -532,6 +520,18 @@ bool UIMedium::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
     return false;
 }
 
+UIMedium UIMedium::root() const
+{
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strRootId);
+}
+
+UIMedium UIMedium::parent() const
+{
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strParentId);
+}
+
 void UIMedium::checkNoDiffs(bool fNoDiffs)
 {
     if (!fNoDiffs || m_noDiffs.isSet)
@@ -547,10 +547,9 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
             m_noDiffs.state = parentMedium.m_state;
 
             if (m_noDiffs.toolTip.isNull())
-                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the files in this hard disk chain "
-                                                                 "are inaccessible. Please use the Virtual Media "
-                                                                 "Manager in <b>Show Differencing Hard Disks</b> "
-                                                                 "mode to inspect these files.", "medium"));
+                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the files in this hard drive chain "
+                                                                 "are inaccessible. Please use the Virtual Medium "
+                                                                 "Manager to inspect these files.", "medium"));
 
             if (!parentMedium.m_result.isOk())
             {
@@ -564,8 +563,8 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
     {
         m_noDiffs.toolTip = root().tip() +
                             m_sstrRow.arg("<hr>") +
-                            m_sstrRow.arg(VBoxGlobal::tr("This base hard disk is indirectly attached using "
-                                                         "the following differencing hard disk:", "medium")) +
+                            m_sstrRow.arg(VBoxGlobal::tr("This base hard drive is indirectly attached using "
+                                                         "the following differencing hard drive:", "medium")) +
                             m_strToolTip + m_noDiffs.toolTip;
     }
 

@@ -154,11 +154,6 @@ public:
     /** Returns the medium parent ID. */
     QString parentID() const { return m_strParentId; }
 
-    /** Returns medium root. */
-    UIMedium root() const;
-    /** Returns medium parent. */
-    UIMedium parent() const;
-
     /** Updates medium parent. */
     void updateParentID();
 
@@ -287,6 +282,11 @@ public:
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
 
 private:
+
+    /** Returns medium root. */
+    UIMedium root() const;
+    /** Returns medium parent. */
+    UIMedium parent() const;
 
     /** Checks if m_noDiffs is filled in and does it if not.
       * @param fNoDiffs @if false, this method immediately returns. */
