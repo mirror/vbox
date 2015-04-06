@@ -4632,24 +4632,6 @@ static uint64_t iemGRegFetchU64(PIEMCPU pIemCpu, uint8_t iReg)
 
 
 /**
- * Is the FPU state in FXSAVE format or not.
- *
- * @returns true if it is, false if it's in FNSAVE.
- * @param   pVCpu               Pointer to the VMCPU.
- */
-DECLINLINE(bool) iemFRegIsFxSaveFormat(PIEMCPU pIemCpu)
-{
-#ifdef RT_ARCH_AMD64
-    NOREF(pIemCpu);
-    return true;
-#else
-    NOREF(pIemCpu); /// @todo return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
-    return true;
-#endif
-}
-
-
-/**
  * Adds a 8-bit signed jump offset to RIP/EIP/IP.
  *
  * May raise a \#GP(0) if the new RIP is non-canonical or outside the code

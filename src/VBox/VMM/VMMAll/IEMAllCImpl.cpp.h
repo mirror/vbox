@@ -6043,31 +6043,16 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
      */
 
     PX86XSAVEAREA pXState = pCtx->CTX_SUFF(pXState);
-    if (iemFRegIsFxSaveFormat(pIemCpu))
-    {
-        pXState->x87.FCW   = 0x37f;
-        pXState->x87.FSW   = 0;
-        pXState->x87.FTW   = 0x00;         /* 0 - empty. */
-        pXState->x87.FPUDP = 0;
-        pXState->x87.DS    = 0; //??
-        pXState->x87.Rsrvd2= 0;
-        pXState->x87.FPUIP = 0;
-        pXState->x87.CS    = 0; //??
-        pXState->x87.Rsrvd1= 0;
-        pXState->x87.FOP   = 0;
-    }
-    else
-    {
-        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pXState->x87;
-        pFpu->FCW       = 0x37f;
-        pFpu->FSW       = 0;
-        pFpu->FTW       = 0xffff;       /* 11 - empty */
-        pFpu->FPUOO     = 0; //??
-        pFpu->FPUOS     = 0; //??
-        pFpu->FPUIP     = 0;
-        pFpu->CS        = 0; //??
-        pFpu->FOP       = 0;
-    }
+    pXState->x87.FCW   = 0x37f;
+    pXState->x87.FSW   = 0;
+    pXState->x87.FTW   = 0x00;         /* 0 - empty. */
+    pXState->x87.FPUDP = 0;
+    pXState->x87.DS    = 0; //??
+    pXState->x87.Rsrvd2= 0;
+    pXState->x87.FPUIP = 0;
+    pXState->x87.CS    = 0; //??
+    pXState->x87.Rsrvd1= 0;
+    pXState->x87.FOP   = 0;
 
     iemHlpUsedFpu(pIemCpu);
     iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
@@ -6103,7 +6088,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
             return iemRaiseAlignmentCheckException(pIemCpu);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
-    AssertReturn(iemFRegIsFxSaveFormat(pIemCpu), VERR_IEM_IPE_2);
 
     /*
      * Access the memory.
@@ -6208,7 +6192,6 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
             return iemRaiseAlignmentCheckException(pIemCpu);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
-    AssertReturn(iemFRegIsFxSaveFormat(pIemCpu), VERR_IEM_IPE_2);
 
     /*
      * Access the memory.
