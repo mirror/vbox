@@ -1138,16 +1138,37 @@ gth_sysenter_no:
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.
     mov     esi, [rdx + r8 + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_USED_FPU
-    jz short gth_fpu_no
+    jz      gth_fpu_no
     mov     rcx, cr0
     and     rcx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rcx
 
-    mov     rax, [rdx + r8 + CPUMCPU.Guest.pXStateR0]
-    fxsave  [rax]
-    mov     rax, [rdx + r8 + CPUMCPU.Host.pXStateR0]
-    fxrstor [rax]                       ; We saved 32-bit state, so only restore 32-bit.
-    jmp short gth_fpu_no
+    mov     r10, rdx                    ; Save rdx.
+
+    mov     eax, [r10 + r8 + CPUMCPU.Guest.fXStateMask]
+    mov     r9, [r10 + r8 + CPUMCPU.Guest.pXStateR0]
+    or      eax, eax
+    jz      gth_fpu_guest_fxsave
+    mov     edx, [r10 + r8 + CPUMCPU.Guest.fXStateMask + 4]
+    xsave   [r9]
+    jmp     gth_fpu_host
+gth_fpu_guest_fxsave:
+    fxsave  [r9]
+
+gth_fpu_host:
+    mov     eax, [r10 + r8 + CPUMCPU.Host.fXStateMask]
+    mov     r9, [r10 + r8 + CPUMCPU.Host.pXStateR0]
+    or      eax, eax
+    jz      gth_fpu_host_fxrstor
+    mov     edx, [r10 + r8 + CPUMCPU.Host.fXStateMask + 4]
+    xrstor  [r9]                        ; We saved 32-bit state, so only restore 32-bit.
+    jmp     gth_fpu_done
+gth_fpu_host_fxrstor:
+    fxrstor [r9]                        ; We saved 32-bit state, so only restore 32-bit.
+
+gth_fpu_done:
+    mov     rdx, r10                    ; Restore rdx.
+    jmp     gth_fpu_no
 
 ALIGNCODE(16)
 gth_fpu_no:

@@ -409,7 +409,7 @@ typedef struct CPUMHOSTCTX
     /** @} */
 
     /* padding to get 64byte aligned size */
-    uint8_t         auPadding[16+20];
+    uint8_t         auPadding[20];
 
 #elif HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 
@@ -455,9 +455,9 @@ typedef struct CPUMHOSTCTX
 
     /* padding to get 32byte aligned size */
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    uint8_t         auPadding[4];
+    uint8_t         auPadding[52];
 # else
-    uint8_t         auPadding[8+12];
+    uint8_t         auPadding[4];
 # endif
 
 #else
@@ -470,6 +470,11 @@ typedef struct CPUMHOSTCTX
     R0PTRTYPE(PX86XSAVEAREA)    pXStateR0;
     /** Pointer to the FPU/SSE/AVX/XXXX state ring-3 mapping. */
     R3PTRTYPE(PX86XSAVEAREA)    pXStateR3;
+    /** The XCR0 register. */
+    uint64_t                    xcr0;
+    /** The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
+     *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
+    uint64_t                    fXStateMask;
 } CPUMHOSTCTX;
 AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
 /** Pointer to the saved host CPU state. */

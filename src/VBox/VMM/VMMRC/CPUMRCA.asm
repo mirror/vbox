@@ -144,10 +144,27 @@ hlfpua_switch_fpu_ctx:
         and     edx, ~(X86_CR0_TS | X86_CR0_EM)
         mov     cr0, edx                ; Clear flags so we don't trap here.
 
+        mov     eax, [pCpumCpu + CPUMCPU.Host.fXStateMask]
         mov     pXState, [pCpumCpu + CPUMCPU.Host.pXStateRC]
+        or      eax, eax
+        jz      hlfpua_host_fxsave
+        mov     edx, [pCpumCpu + CPUMCPU.Host.fXStateMask + 4]
+        xsave   [pXState]
+        jmp     hlfpua_host_done
+hlfpua_host_fxsave:
         fxsave  [pXState]
+hlfpua_host_done:
+
+        mov     eax, [pCpumCpu + CPUMCPU.Guest.fXStateMask]
         mov     pXState, [pCpumCpu + CPUMCPU.Guest.pXStateRC]
+        or      eax, eax
+        jz      hlfpua_guest_fxrstor
+        mov     edx, [pCpumCpu + CPUMCPU.Guest.fXStateMask + 4]
+        xrstor  [pXState]
+        jmp     hlfpua_guest_done
+hlfpua_guest_fxrstor:
         fxrstor [pXState]
+hlfpua_guest_done:
 
 hlfpua_finished_switch:
         or      dword [pCpumCpu + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)

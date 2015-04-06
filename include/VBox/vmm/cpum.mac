@@ -234,9 +234,12 @@ struc CPUMCTX
     .msrKERNELGSBASE    resb    8
     .msrApicBase        resb    8
     alignb 8
+    .xcr0               resq    1
+    .fXStateMask        resq    1
     .pXStateR0      RTR0PTR_RES 1
     .pXStateR3      RTR3PTR_RES 1
     .pXStateRC      RTRCPTR_RES 1
+    .aoffXState         resw    64
     alignb 64
 endstruc
 

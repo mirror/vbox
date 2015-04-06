@@ -663,8 +663,19 @@ GLOBALNAME ICEnterTarget
     mov     rcx, rax                    ; save old CR0
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rax
-    mov     eax, [rdx + CPUMCPU.Guest.pXStateRC]
-    o64 fxrstor [rax]                   ; (use explicit REX prefix, see @bugref{6398})
+
+    mov     eax, [rdx + CPUMCPU.Guest.fXStateMask]
+    mov     ebx, [rdx + CPUMCPU.Guest.pXStateRC]
+    or      eax, eax
+    jz      htg_fpu_fxrstor
+    mov     r9, rdx
+    mov     edx, [rdx + CPUMCPU.Guest.fXStateMask + 4]
+    o64 xsave [rbx]
+    mov     rdx, r9
+    jmp     htg_fpu_done
+htg_fpu_fxrstor:
+    o64 fxrstor [rbx]                   ; (use explicit REX prefix, see @bugref{6398})
+htg_fpu_done:
     mov     cr0, rcx                    ; and restore old CR0 again
 
     and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
@@ -1257,9 +1268,18 @@ BEGINPROC HMRCSaveGuestFPU64
     and     rax, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, rax
 
-    mov     eax, [rsi + CPUMCTX.pXStateRC]
-    o64 fxsave  [rax]                   ; (use explicit REX prefix, see @bugref{6398})
+    mov     eax, [rsi + CPUMCTX.fXStateMask]
+    mov     ecx, [rsi + CPUMCTX.pXStateRC]
+    test    eax, eax
+    jz      .use_fxsave
+    mov     edx, [rsi + CPUMCTX.fXStateMask + 4]
+    o64 xsave [rcx]
+    jmp     .done
 
+.use_fxsave:
+    o64 fxsave  [rcx]                   ; (use explicit REX prefix, see @bugref{6398})
+
+.done:
     mov     cr0, rcx                    ; and restore old CR0 again
 
     mov     eax, VINF_SUCCESS

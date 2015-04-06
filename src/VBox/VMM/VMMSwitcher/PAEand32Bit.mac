@@ -989,10 +989,31 @@ gth_syscall_no:
     and     ecx, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, ecx
 
-    mov     eax, [edx + CPUMCPU.Guest.pXStateR0]
-    mov     ecx, [edx + CPUMCPU.Host.pXStateR0]
-    fxsave  [eax]
+    mov     ebx, edx                    ; save edx
+
+    mov     eax, [ebx + CPUMCPU.Guest.fXStateMask]
+    mov     ecx, [ebx + CPUMCPU.Guest.pXStateR0]
+    test    eax, eax
+    jz      gth_fpu_guest_fxsave
+    mov     edx, [ebx + CPUMCPU.Guest.fXStateMask + 4]
+    xsave   [ecx]
+    jmp     gth_fpu_host
+gth_fpu_guest_fxsave:
+    fxsave  [ecx]
+
+gth_fpu_host:
+    mov     eax, [ebx + CPUMCPU.Host.fXStateMask]
+    mov     ecx, [ebx + CPUMCPU.Host.pXStateR0]
+    test    eax, eax
+    jz      gth_fpu_host_fxrstor
+    mov     edx, [ebx + CPUMCPU.Host.fXStateMask + 4]
+    xrstor  [ecx]
+    jmp     gth_fpu_done
+gth_fpu_host_fxrstor:
     fxrstor [ecx]
+
+gth_fpu_done:
+    mov     edx, ebx                    ; restore edx
 gth_fpu_no:
 
     ; Control registers.
@@ -1002,7 +1023,7 @@ gth_fpu_no:
     mov     cr4, ecx
     mov     ecx, [edx + CPUMCPU.Host.cr0]
     mov     cr0, ecx
-    ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is waste of time.
+    ;mov     ecx, [edx + CPUMCPU.Host.cr2] ; assumes this is a waste of time.
     ;mov     cr2, ecx
 
     ; restore debug registers (if modified) (esi must still be fUseFlags!)
