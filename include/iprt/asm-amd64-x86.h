@@ -1726,6 +1726,20 @@ DECLINLINE(RTCCUINTREG) ASMGetCR8(void)
 
 
 /**
+ * Get XCR0 (eXtended feature Control Register 0).
+ * @returns xcr0.
+ */
+DECLASM(uint64_t) ASMGetXcr0(void);
+
+
+/**
+ * Sets the XCR0 register.
+ * @param   uXcr0   The new XCR0 value.
+ */
+DECLASM(void) ASMSetXcr0(uint64_t uXcr0);
+
+
+/**
  * Enables interrupts (EFLAGS.IF).
  */
 #if RT_INLINE_ASM_EXTERNAL && !RT_INLINE_ASM_USES_INTRIN
