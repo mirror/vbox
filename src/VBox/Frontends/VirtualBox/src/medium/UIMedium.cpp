@@ -232,11 +232,15 @@ void UIMedium::refresh()
             if (!parentMedium.isNull())
                 m_strParentId = parentMedium.GetId();
 
-            /* Refresh hard drive ID: */
-            while (!parentMedium.isNull())
+            /* Only for created and accessible mediums: */
+            if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
             {
-                m_strRootId = parentMedium.GetId();
-                parentMedium = parentMedium.GetParent();
+                /* Refresh root hard drive ID: */
+                while (!parentMedium.isNull())
+                {
+                    m_strRootId = parentMedium.GetId();
+                    parentMedium = parentMedium.GetParent();
+                }
             }
         }
 
