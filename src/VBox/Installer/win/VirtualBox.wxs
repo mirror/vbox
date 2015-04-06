@@ -107,6 +107,7 @@
         NOT VBOXINNOTEK
     </Condition>
 
+    
     <!-- *************************** Upgrade packages only ******************************* -->
     <!-- Minimum and Maximum specify the range of versions we are supposed to update with this upgrade.
          IncludeMaximum and IncludeMinimum specify whether the bound value is actually included in the range or not
@@ -163,6 +164,26 @@
     <CustomAction Id="ca_UninstallTAPInstances" BinaryKey="VBoxInstallHelper"
                   DllEntry="UninstallTAPInstances" Execute="deferred" Return="check" Impersonate="no"/>
 
+    <Property Id="VBOXDEPENDENCY" Secure="yes">
+        <DirectorySearch Id="VBoxInstallDir" Path="[EXISTINGINSTALLDIR]">
+            <FileSearch Name="dependency.dep"/>
+        </DirectorySearch>
+    </Property>
+    
+    <!--
+                            install upgrade uninstall
+    VBOXDEPENDENCY             0      1/0      1/0
+    UPGRADINGPRODUCTCODE       0       1        0
+    final                      0       1        0
+    not final                  1       0        1
+    -->
+
+    <Condition Message="It was detected an application which has been using currently installed VirtualBox version. 
+    You must remove this application before continuing installation. 
+    See the file dependency.dep in the VirtualBox installation directory for details. ">
+        NOT (VBOXDEPENDENCY AND UPGRADINGPRODUCTCODE)
+    </Condition>
+    
     <!-- Detect old Sun installation -->
     <!-- Force a manual uninstall of an already installed Sun VirtualBox version first -->
     <!--<Property Id="VBOXSUN">
