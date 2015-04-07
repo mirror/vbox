@@ -774,10 +774,11 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth
     /* Make sure frame-buffer is used: */
     if (m_fUnused)
     {
+#ifndef DEBUG_andy
         LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Ignored!\n",
                  (unsigned long)uX, (unsigned long)uY,
                  (unsigned long)uWidth, (unsigned long)uHeight));
-
+#endif
         /* Unlock access to frame-buffer: */
         unlock();
 
@@ -785,11 +786,13 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdate(ULONG uX, ULONG uY, ULONG uWidth
         return E_FAIL;
     }
 
+#ifndef DEBUG_andy
     /* Widget update is NOT thread-safe and *seems* never will be,
      * We have to notify machine-view with the async-signal to perform update operation. */
     LogRel2(("GUI: UIFrameBufferPrivate::NotifyUpdate: Origin=%lux%lu, Size=%lux%lu, Sending to async-handler\n",
              (unsigned long)uX, (unsigned long)uY,
              (unsigned long)uWidth, (unsigned long)uHeight));
+#endif
     emit sigNotifyUpdate(uX, uY, uWidth, uHeight);
 
     /* Unlock access to frame-buffer: */
@@ -1081,9 +1084,11 @@ void UIFrameBufferPrivate::handleNotifyChange(int iWidth, int iHeight)
 
 void UIFrameBufferPrivate::handlePaintEvent(QPaintEvent *pEvent)
 {
+#ifndef DEBUG_andy
     LogRel2(("GUI: UIFrameBufferPrivate::handlePaintEvent: Origin=%lux%lu, Size=%dx%d\n",
              pEvent->rect().x(), pEvent->rect().y(),
              pEvent->rect().width(), pEvent->rect().height()));
+#endif
 
     /* On mode switch the enqueued paint-event may still come
      * while the machine-view is already null (before the new machine-view set),
