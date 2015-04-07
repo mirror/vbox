@@ -33,6 +33,7 @@
 #include <VBox/log.h>
 
 #define DSLOG(a) do { LogRel2(a); } while(0)
+#define DSLOGF(a) do { LogRel3(a); } while(0)
 #define DSLOGREL(a)                 \
     do {                            \
         static int8_t scLogged = 0; \
@@ -1183,10 +1184,10 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     pDSoundStrmOut->cbPlayWritePos = (cbPlayWritePos + (cReadTotal << cShift)) % cbBuffer;
 
-    LogFlow(("DSound: PlayOut %RU32 (%RU32 samples) out of %d%s, ds write pos %d -> %d, rc=%Rrc\n",
-             AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal), cReadTotal, cbLive,
-             cbLive != AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal) ? " !!!": "",
-             cbPlayWritePos, pDSoundStrmOut->cbPlayWritePos, rc));
+    DSLOGF(("DSound: PlayOut %RU32 (%RU32 samples) out of %d%s, ds write pos %d -> %d, rc=%Rrc\n",
+            AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal), cReadTotal, cbLive,
+            cbLive != AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cReadTotal) ? " !!!": "",
+            cbPlayWritePos, pDSoundStrmOut->cbPlayWritePos, rc));
 
     if (cReadTotal)
     {
@@ -1362,8 +1363,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         return VINF_SUCCESS;
     }
 
-    LogFlow(("DSound: CaptureIn csMixFree = %u, csReadPos = %d, csCaptureReadPos = %d, csCaptured = %u\n",
-             csMixFree, csReadPos, pDSoundStrmIn->csCaptureReadPos, csCaptured));
+    DSLOGF(("DSound: CaptureIn csMixFree = %u, csReadPos = %d, csCaptureReadPos = %d, csCaptured = %u\n",
+            csMixFree, csReadPos, pDSoundStrmIn->csCaptureReadPos, csCaptured));
 
     /* No need to fetch more samples than mix buffer can receive. */
     csCaptured = RT_MIN(csCaptured, csMixFree);
@@ -1419,8 +1420,8 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     if (RT_SUCCESS(rc))
     {
         pDSoundStrmIn->csCaptureReadPos = (pDSoundStrmIn->csCaptureReadPos + csProcessed) % pDSoundStrmIn->csCaptureBufferSize;
-        LogFlow(("DSound: CaptureIn %d (%d+%d), processed %d/%d\n",
-                 csCaptured, len1, len2, csProcessed, csWrittenTotal));
+        DSLOGF(("DSound: CaptureIn %d (%d+%d), processed %d/%d\n",
+                csCaptured, len1, len2, csProcessed, csWrittenTotal));
     }
 
     if (pcSamplesCaptured)
