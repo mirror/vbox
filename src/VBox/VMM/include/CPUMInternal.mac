@@ -102,6 +102,7 @@ struc CPUM
     .GuestInfo            resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
     .GuestFeatures        resb    32
     .HostFeatures         resb    32
+    .fXStateHostMask      resq    1
 
     .cMsrWrites                 resq  1
     .cMsrWritesToIgnoredBits    resq  1

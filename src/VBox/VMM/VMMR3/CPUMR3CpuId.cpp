@@ -1508,7 +1508,7 @@ static PCCPUMCPUIDLEAF cpumR3CpuIdFindLeafEx(PCCPUMCPUIDLEAF paLeaves, uint32_t 
         return pLeaf;
 
     /* Linear sub-leaf search. Lazy as usual. */
-    cLeaves = pLeaf - paLeaves;
+    cLeaves -= pLeaf - paLeaves;
     while (   cLeaves-- > 0
            && pLeaf->uLeaf == uLeaf)
     {
@@ -1528,14 +1528,18 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
     {
         AssertLogRelReturn(paLeaves[0].uLeaf == 0, VERR_CPUM_IPE_1);
         AssertLogRelReturn(paLeaves[1].uLeaf == 1, VERR_CPUM_IPE_1);
+        PCCPUMCPUIDLEAF const pStd0Leaf = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 0, 0);
+        AssertLogRelReturn(pStd0Leaf, VERR_CPUM_IPE_1);
+        PCCPUMCPUIDLEAF const pStd1Leaf = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 1, 0);
+        AssertLogRelReturn(pStd1Leaf, VERR_CPUM_IPE_1);
 
-        pFeatures->enmCpuVendor = CPUMR3CpuIdDetectVendorEx(paLeaves[0].uEax,
-                                                            paLeaves[0].uEbx,
-                                                            paLeaves[0].uEcx,
-                                                            paLeaves[0].uEdx);
-        pFeatures->uFamily      = ASMGetCpuFamily(paLeaves[1].uEax);
-        pFeatures->uModel       = ASMGetCpuModel(paLeaves[1].uEax, pFeatures->enmCpuVendor == CPUMCPUVENDOR_INTEL);
-        pFeatures->uStepping    = ASMGetCpuStepping(paLeaves[1].uEax);
+        pFeatures->enmCpuVendor = CPUMR3CpuIdDetectVendorEx(pStd0Leaf->uEax,
+                                                            pStd0Leaf->uEbx,
+                                                            pStd0Leaf->uEcx,
+                                                            pStd0Leaf->uEdx);
+        pFeatures->uFamily      = ASMGetCpuFamily(pStd1Leaf->uEax);
+        pFeatures->uModel       = ASMGetCpuModel(pStd1Leaf->uEax, pFeatures->enmCpuVendor == CPUMCPUVENDOR_INTEL);
+        pFeatures->uStepping    = ASMGetCpuStepping(pStd1Leaf->uEax);
         pFeatures->enmMicroarch = CPUMR3CpuIdDetermineMicroarchEx((CPUMCPUVENDOR)pFeatures->enmCpuVendor,
                                                                   pFeatures->uFamily,
                                                                   pFeatures->uModel,
@@ -1544,33 +1548,34 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
         PCCPUMCPUIDLEAF pLeaf = cpumR3CpuIdFindLeaf(paLeaves, cLeaves, 0x80000008);
         if (pLeaf)
             pFeatures->cMaxPhysAddrWidth = pLeaf->uEax & 0xff;
-        else if (paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PSE36)
+        else if (pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PSE36)
             pFeatures->cMaxPhysAddrWidth = 36;
         else
             pFeatures->cMaxPhysAddrWidth = 32;
 
         /* Standard features. */
-        pFeatures->fMsr                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_MSR);
-        pFeatures->fApic                = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_APIC);
-        pFeatures->fX2Apic              = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_X2APIC);
-        pFeatures->fPse                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PSE);
-        pFeatures->fPse36               = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PSE36);
-        pFeatures->fPae                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PAE);
-        pFeatures->fPat                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_PAT);
-        pFeatures->fFxSaveRstor         = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_FXSR);
-        pFeatures->fXSaveRstor          = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_XSAVE);
-        pFeatures->fMmx                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_MMX);
-        pFeatures->fSse                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SSE);
-        pFeatures->fSse2                = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SSE2);
-        pFeatures->fSse3                = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE3);
-        pFeatures->fSsse3               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSSE3);
-        pFeatures->fSse41               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE4_1);
-        pFeatures->fSse42               = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_SSE4_2);
-        pFeatures->fAvx                 = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_AVX);
-        pFeatures->fTsc                 = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_TSC);
-        pFeatures->fSysEnter            = RT_BOOL(paLeaves[1].uEdx & X86_CPUID_FEATURE_EDX_SEP);
-        pFeatures->fHypervisorPresent   = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_HVP);
-        pFeatures->fMonitorMWait        = RT_BOOL(paLeaves[1].uEcx & X86_CPUID_FEATURE_ECX_MONITOR);
+        pFeatures->fMsr                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_MSR);
+        pFeatures->fApic                = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_APIC);
+        pFeatures->fX2Apic              = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_X2APIC);
+        pFeatures->fPse                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PSE);
+        pFeatures->fPse36               = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PSE36);
+        pFeatures->fPae                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PAE);
+        pFeatures->fPat                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_PAT);
+        pFeatures->fFxSaveRstor         = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_FXSR);
+        pFeatures->fXSaveRstor          = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_XSAVE);
+        pFeatures->fOpSysXSaveRstor     = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_OSXSAVE);
+        pFeatures->fMmx                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_MMX);
+        pFeatures->fSse                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_SSE);
+        pFeatures->fSse2                = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_SSE2);
+        pFeatures->fSse3                = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_SSE3);
+        pFeatures->fSsse3               = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_SSSE3);
+        pFeatures->fSse41               = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_SSE4_1);
+        pFeatures->fSse42               = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_SSE4_2);
+        pFeatures->fAvx                 = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_AVX);
+        pFeatures->fTsc                 = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_TSC);
+        pFeatures->fSysEnter            = RT_BOOL(pStd1Leaf->uEdx & X86_CPUID_FEATURE_EDX_SEP);
+        pFeatures->fHypervisorPresent   = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_HVP);
+        pFeatures->fMonitorMWait        = RT_BOOL(pStd1Leaf->uEcx & X86_CPUID_FEATURE_ECX_MONITOR);
 
         /* Structured extended features. */
         PCCPUMCPUIDLEAF const pSxfLeaf0 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 7, 0);

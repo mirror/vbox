@@ -190,6 +190,8 @@ typedef struct CPUMFEATURES
     uint32_t        fFxSaveRstor : 1;
     /** Supports the XSAVE and XRSTOR instructions. */
     uint32_t        fXSaveRstor : 1;
+    /** The XSAVE/XRSTOR bit in CR4 has been set (only applicable for host!). */
+    uint32_t        fOpSysXSaveRstor : 1;
     /** Supports MMX. */
     uint32_t        fMmx : 1;
     /** Supports SSE. */
@@ -242,7 +244,7 @@ typedef struct CPUMFEATURES
     uint32_t        fLeakyFxSR : 1;
 
     /** Alignment padding / reserved for future use. */
-    uint32_t        fPadding : 2;
+    uint32_t        fPadding : 1;
     uint64_t        auPadding[2];
 } CPUMFEATURES;
 #ifndef VBOX_FOR_DTRACE_LIB
@@ -525,6 +527,9 @@ typedef struct CPUM
     CPUMFEATURES            GuestFeatures;
     /** Host CPU feature information. */
     CPUMFEATURES            HostFeatures;
+    /** XSAVE/XRSTOR host mask.  Only state components in this mask can be exposed
+     * to the guest.  This is 0 if no XSAVE/XRSTOR bits can be exposed. */
+    uint64_t                fXStateHostMask;
 
     /** @name MSR statistics.
      * @{ */

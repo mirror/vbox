@@ -646,7 +646,24 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     pVM->cpum.s.CR4.OrMask  = X86_CR4_OSFXSR;
 
     /*
-     * Allocate memory for the extended CPU state.
+     * Figure out which XSAVE/XRSTOR features are available on the host.
+     */
+    uint64_t fXStateHostMask = 0;
+    if (   pVM->cpum.s.HostFeatures.fXSaveRstor
+        && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor)
+    {
+        fXStateHostMask = ASMGetXcr0() & (  XSAVE_C_X87 | XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK
+                                          | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI);
+        AssertLogRelMsgStmt((fXStateHostMask & (XSAVE_C_X87 | XSAVE_C_SSE)) == (XSAVE_C_X87 | XSAVE_C_SSE),
+                            ("%#llx\n", fXStateHostMask), fXStateHostMask = 0);
+    }
+    pVM->cpum.s.fXStateHostMask = fXStateHostMask;
+    if (!HMIsEnabled(pVM)) /* For raw-mode, we only use XSAVE/XRSTOR when the guest starts using it (CPUID/CR4 visibility). */
+        fXStateHostMask = 0;
+    LogRel(("CPUML: fXStateHostMask=%#llx; initial: %#llx\n", pVM->cpum.s.fXStateHostMask, fXStateHostMask));
+
+    /*
+     * Allocate memory for the extended CPU state and initialize the host XSAVE/XRSTOR mask.
      */
     uint32_t cbMaxXState = pVM->cpum.s.HostFeatures.cbMaxExtendedState;
     cbMaxXState = RT_ALIGN(cbMaxXState, 128);
@@ -675,6 +692,8 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         pVCpu->cpum.s.Hyper.pXStateR0 = MMHyperR3ToR0(pVM, pbXStates);
         pVCpu->cpum.s.Hyper.pXStateRC = MMHyperR3ToR0(pVM, pbXStates);
         pbXStates += cbMaxXState;
+
+        pVCpu->cpum.s.Host.fXStateMask = fXStateHostMask;
     }
 
     /*
