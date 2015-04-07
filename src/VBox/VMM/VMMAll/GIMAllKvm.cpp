@@ -111,10 +111,7 @@ VMM_INT_DECL(int) gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx)
     /*
      * Place the result in rax/eax.
      */
-    if (fIs64BitMode)
-        pCtx->rax = uHyperRet;
-    else
-        pCtx->eax = uHyperRet & uAndMask;
+    pCtx->rax = uHyperRet & uAndMask;
     return VINF_SUCCESS;
 }
 
@@ -143,7 +140,15 @@ VMM_INT_DECL(bool) gimKvmAreHypercallsEnabled(PVMCPU pVCpu)
  */
 VMM_INT_DECL(bool) gimKvmIsParavirtTscEnabled(PVM pVM)
 {
-    return false;   /** @todo implement this! */
+    uint32_t cCpus = pVM->cCpus;
+    for (uint32_t i = 0; i < cCpus; i++)
+    {
+        PVMCPU     pVCpu      = &pVM->aCpus[i];
+        PGIMKVMCPU pGimKvmCpu = &pVCpu->gim.s.u.KvmCpu;
+        if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pGimKvmCpu->u64SystemTimeMsr))
+            return true;
+    }
+    return false;
 }
 
 
@@ -222,7 +227,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
 #ifndef IN_RING3
             if (fEnable)
             {
-                RTCCUINTREG fEFlags = ASMIntDisableFlags();
+                RTCCUINTREG fEFlags  = ASMIntDisableFlags();
                 pKvmCpu->uTsc        = TMCpuTickGetNoCheck(pVCpu);
                 pKvmCpu->uVirtNanoTS = TMVirtualGetNoCheck(pVM);
                 ASMSetFlags(fEFlags);
@@ -316,11 +321,12 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
  * of the two CPU models (Intel or AMD). Hyper-V solves this problem more
  * elegantly by letting the hypervisor supply an opaque hypercall page.
  *
+ * For raw-mode VMs, this function will always return true. See gimR3KvmInit().
+ *
  * @param   pVM         Pointer to the VM.
  */
 VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVM pVM)
 {
-    pVM->gim.s.u.Kvm.fTrapXcptUD = ASMIsAmdCpu();
     return pVM->gim.s.u.Kvm.fTrapXcptUD;
 }
 
@@ -330,36 +336,75 @@ VMM_INT_DECL(bool) gimKvmShouldTrapXcptUD(PVM pVM)
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pDis        Pointer to the disassembled instruction state at RIP.
+ *                      Optional, can be NULL.
  */
-VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
 {
     /*
      * If we didn't ask for #UD to be trapped, bail.
      */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM     pVM  = pVCpu->CTX_SUFF(pVM);
+    PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
     if (RT_UNLIKELY(!pVM->gim.s.u.Kvm.fTrapXcptUD))
         return VERR_GIM_OPERATION_FAILED;
 
     /*
-     * Disassemble the instruction at RIP to figure out if it's the Intel
-     * VMCALL instruction and if so, handle it as a hypercall.
+     * Make sure guest ring-0 is the one making the hypercall.
      */
-    DISCPUSTATE Dis;
-    unsigned    cbInstr;
-    int rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, &cbInstr);
+    if (CPUMGetGuestCPL(pVCpu))
+        return VERR_GIM_HYPERCALL_ACCESS_DENIED;
+
+    int rc = VINF_SUCCESS;
+    if (!pDis)
+    {
+        /*
+         * Disassemble the instruction at RIP to figure out if it's the Intel
+         * VMCALL instruction and if so, handle it as a hypercall.
+         */
+        DISCPUSTATE Dis;
+        rc = EMInterpretDisasCurrent(pVM, pVCpu, &Dis, NULL /* pcbInstr */);
+        pDis = &Dis;
+    }
+
     if (RT_SUCCESS(rc))
     {
-        if (Dis.pCurInstr->uOpcode == OP_VMCALL)
+        /*
+         * Patch the instruction to so we don't have to spend time disassembling it each time.
+         * Makes sense only for HM as with raw-mode we will be getting a #UD regardless.
+         */
+        if (   pDis->pCurInstr->uOpcode == OP_VMCALL
+            || pDis->pCurInstr->uOpcode == OP_VMMCALL)
         {
+            uint8_t abHypercall[3];
+            if (   pDis->pCurInstr->uOpcode != pKvm->uOpCodeNative
+                && HMIsEnabled(pVM))
+            {
+                size_t  cbWritten = 0;
+                rc = VMMPatchHypercall(pVM, &abHypercall, sizeof(abHypercall), &cbWritten);
+                AssertRC(rc);
+                Assert(sizeof(abHypercall) == pDis->cbInstr);
+                Assert(sizeof(abHypercall) == cbWritten);
+
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &abHypercall, sizeof(abHypercall));
+            }
+
             /*
-             * Patch the instruction to so we don't have to spend time disassembling it each time.
+             * Perform the hypercall and update RIP.
+             *
+             * For HM, we can simply resume guest execution without perform the hypercall now and
+             * do it on the next VMCALL/VMMCALL exit handler on the patched instruction.
+             *
+             * For raw-mode we need to do this now anyway. So we do it here regardless with an added
+             * advantage is that it saves one world-switch for the HM case.
              */
-            static uint8_t s_abHypercall[3] = { 0x0F, 0x01, 0x00 };
-            Assert(sizeof(s_abHypercall) == cbInstr);
-            if (!s_abHypercall[2])
-                s_abHypercall[2] = ASMIsAmdCpu() ? 0xD9 /* VMMCALL */ : 0xC1 /* VMCALL */;
-            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, &s_abHypercall, sizeof(s_abHypercall));
-            return VINF_SUCCESS;
+            if (RT_SUCCESS(rc))
+            {
+                int rc2 = gimKvmHypercall(pVCpu, pCtx);
+                AssertRC(rc2);
+                pCtx->rip += pDis->cbInstr;
+            }
+            return rc;
         }
     }
 

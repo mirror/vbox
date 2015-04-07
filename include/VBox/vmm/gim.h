@@ -173,7 +173,7 @@ VMMDECL(GIMPROVIDERID)      GIMGetProvider(PVM pVM);
 VMM_INT_DECL(bool)          GIMIsParavirtTscEnabled(PVM pVM);
 VMM_INT_DECL(bool)          GIMAreHypercallsEnabled(PVMCPU pVCpu);
 VMM_INT_DECL(int)           GIMHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
-VMM_INT_DECL(int)           GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)           GIMXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis);
 VMM_INT_DECL(bool)          GIMShouldTrapXcptUD(PVM pVM);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)  GIMWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uValue, uint64_t uRawValue);

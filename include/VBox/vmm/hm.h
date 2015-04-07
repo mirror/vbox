@@ -143,7 +143,8 @@ VMM_INT_DECL(bool)              HMHasPendingIrq(PVM pVM);
 VMM_INT_DECL(PX86PDPE)          HMGetPaePdpes(PVMCPU pVCpu);
 VMM_INT_DECL(int)               HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu32Model, uint32_t *pu32Stepping);
 VMM_INT_DECL(bool)              HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable);
-VMM_INT_DECL(int)               HMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten);
+VMM_INT_DECL(void)              HMHypercallsEnable(PVM pVM);
+VMM_INT_DECL(void)              HMHypercallsDisable(PVM pVM);
 
 #ifndef IN_RC
 VMM_INT_DECL(int)               HMFlushTLB(PVMCPU pVCpu);

@@ -632,6 +632,7 @@ VMMR3_INT_DECL(int) gimR3HvDisableHypercallPage(PVM pVM)
     {
         GIMR3Mmio2Unmap(pVM, pRegion);
         Assert(!pRegion->fMapped);
+        VMMHypercallsDisable(pVM);
         LogRel(("GIM: HyperV: Disabled Hypercall-page\n"));
         return VINF_SUCCESS;
     }
@@ -679,36 +680,33 @@ VMMR3_INT_DECL(int) gimR3HvEnableHypercallPage(PVM pVM, RTGCPHYS GCPhysHypercall
         /*
          * Patch the hypercall-page.
          */
-        if (HMIsEnabled(pVM))
+        size_t cbWritten = 0;
+        rc = VMMPatchHypercall(pVM, pRegion->pvPageR3, PAGE_SIZE, &cbWritten);
+        if (   RT_SUCCESS(rc)
+            && cbWritten < PAGE_SIZE)
         {
-            size_t cbWritten = 0;
-            rc = HMPatchHypercall(pVM, pRegion->pvPageR3, PAGE_SIZE, &cbWritten);
-            if (   RT_SUCCESS(rc)
-                && cbWritten < PAGE_SIZE)
-            {
-                uint8_t *pbLast = (uint8_t *)pRegion->pvPageR3 + cbWritten;
-                *pbLast = 0xc3;  /* RET */
+            uint8_t *pbLast = (uint8_t *)pRegion->pvPageR3 + cbWritten;
+            *pbLast = 0xc3;  /* RET */
 
-                LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
-                return VINF_SUCCESS;
-            }
-            else
-            {
-                if (rc == VINF_SUCCESS)
-                    rc = VERR_GIM_OPERATION_FAILED;
-                LogRelFunc(("HMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
-            }
+            /*
+             * Notify VMM that hypercalls are now enabled.
+             */
+            VMMHypercallsEnable(pVM);
+
+            LogRel(("GIM: HyperV: Enabled hypercalls at %#RGp\n", GCPhysHypercallPage));
+            return VINF_SUCCESS;
         }
         else
         {
-            /** @todo Handle raw-mode hypercall page patching. */
-            LogRel(("GIM: HyperV: Raw-mode hypercalls not yet implemented!\n"));
+            if (rc == VINF_SUCCESS)
+                rc = VERR_GIM_OPERATION_FAILED;
+            LogRel(("GIM: HyperV: VMMPatchHypercall failed. rc=%Rrc cbWritten=%u\n", rc, cbWritten));
         }
+
         GIMR3Mmio2Unmap(pVM, pRegion);
     }
-    else
-        LogRelFunc(("GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
 
+    LogRel(("GIM: HyperV: GIMR3Mmio2Map failed. rc=%Rrc\n", rc));
     return rc;
 }
 

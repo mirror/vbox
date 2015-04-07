@@ -10240,32 +10240,33 @@ HMVMX_EXIT_DECL hmR0VmxExitRdpmc(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
-    int rc = VERR_NOT_SUPPORTED;
-    if (GIMAreHypercallsEnabled(pVCpu))
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    if (pVM->hm.s.fHypercallsEnabled)
     {
-        rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+#if 0
+        int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+        AssertRCReturn(rc, rc);
+#else
+        /* Aggressive state sync. for now. */
+        int rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+        rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* For long-mode checks in gimKvmHypercall(). */
+#endif
         AssertRCReturn(rc, rc);
 
         rc = GIMHypercall(pVCpu, pMixedCtx);
+        if (RT_SUCCESS(rc))
+        {
+            /* If the hypercall changes anything other than guest general-purpose registers,
+               we would need to reload the guest changed bits here before VM-reentry. */
+            hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
+            return VINF_SUCCESS;
+        }
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        rc = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-        Assert(pVmxTransient->cbInstr == 3);
-
-        /* If the hypercall changes anything other than guest general-purpose registers,
-           we would need to reload the guest changed bits on VM-reentry. */
-    }
-    else
-    {
-        hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
-        rc = VINF_SUCCESS;
-    }
-
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
-    return rc;
+    hmR0VmxSetPendingXcptUD(pVCpu, pMixedCtx);
+    return VINF_SUCCESS;
 }
 
 

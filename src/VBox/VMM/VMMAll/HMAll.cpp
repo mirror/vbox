@@ -507,45 +507,23 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
 
 
 /**
- * Patches the instructions necessary for making a hypercall to the hypervisor.
- * Used by GIM.
+ * Notifies HM that paravirtualized hypercalls are now enabled.
  *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pvBuf       The buffer in the hypercall page(s) to be patched.
- * @param   cbBuf       The size of the buffer.
- * @param   pcbWritten  Where to store the number of bytes patched. This
- *                      is reliably updated only when this function returns
- *                      VINF_SUCCESS.
+ * @param   pVM     Pointer to the VM.
  */
-VMM_INT_DECL(int) HMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten)
+VMM_INT_DECL(void) HMHypercallsEnable(PVM pVM)
 {
-    AssertReturn(pvBuf, VERR_INVALID_POINTER);
-    AssertReturn(pcbWritten, VERR_INVALID_POINTER);
-    AssertReturn(HMIsEnabled(pVM), VERR_HM_IPE_5);
+    pVM->hm.s.fHypercallsEnabled = true;
+}
 
-    if (pVM->hm.s.vmx.fSupported)
-    {
-        uint8_t abHypercall[] = { 0x0F, 0x01, 0xC1 };   /* VMCALL */
-        if (RT_LIKELY(cbBuf >= sizeof(abHypercall)))
-        {
-            memcpy(pvBuf, abHypercall, sizeof(abHypercall));
-            *pcbWritten = sizeof(abHypercall);
-            return VINF_SUCCESS;
-        }
-        return VERR_BUFFER_OVERFLOW;
-    }
-    else
-    {
-        Assert(pVM->hm.s.svm.fSupported);
-        uint8_t abHypercall[] = { 0x0F, 0x01, 0xD9 };   /* VMMCALL */
-        if (RT_LIKELY(cbBuf >= sizeof(abHypercall)))
-        {
-            memcpy(pvBuf, abHypercall, sizeof(abHypercall));
-            *pcbWritten = sizeof(abHypercall);
-            return VINF_SUCCESS;
-        }
-        return VERR_BUFFER_OVERFLOW;
-    }
+
+/**
+ * Notifies HM that paravirtualized hypercalls are now disabled.
+ *
+ * @param   pVM     Pointer to the VM.
+ */
+VMM_INT_DECL(void) HMHypercallsDisable(PVM pVM)
+{
+    pVM->hm.s.fHypercallsEnabled = false;
 }
 

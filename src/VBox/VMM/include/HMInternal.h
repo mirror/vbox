@@ -343,8 +343,10 @@ typedef struct HM
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
     /** Whether #UD needs to be intercepted (required by certain GIM providers). */
-    bool                        fTrapXcptUD;
-    bool                        u8Alignment[2];
+    bool                        fGIMTrapXcptUD;
+    /** Whether paravirt. hypercalls are enabled. */
+    bool                        fHypercallsEnabled;
+    bool                        u8Alignment[1];
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    uHostKernelFeatures;

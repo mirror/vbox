@@ -192,18 +192,16 @@ AssertCompileSize(GIMKVMWALLCLOCK, 12);
  */
 typedef struct GIMKVM
 {
-    /** @name MSRs. */
     /** Wall-clock MSR. */
     uint64_t                    u64WallClockMsr;
-    /** @} */
 
-    /** @name CPUID features. */
-    /** Basic features. */
+    /**  CPUID features: Basic. */
     uint32_t                    uBaseFeat;
-    /** @} */
 
-    /** Whether we need to trap #UD exceptions. */
+    /** Whether GIM needs to trap #UD exceptions. */
     bool                        fTrapXcptUD;
+    /** Disassembler opcode of hypercall instruction native for this host CPU. */
+    uint16_t                    uOpCodeNative;
 } GIMKVM;
 /** Pointer to per-VM GIM KVM instance data. */
 typedef GIMKVM *PGIMKVM;
@@ -263,7 +261,7 @@ VMM_INT_DECL(int)               gimKvmHypercall(PVMCPU pVCpu, PCPUMCTX pCtx);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmReadMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t *puValue);
 VMM_INT_DECL(VBOXSTRICTRC)      gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMSRRANGE pRange, uint64_t uRawValue);
 VMM_INT_DECL(bool)              gimKvmShouldTrapXcptUD(PVM pVM);
-VMM_INT_DECL(int)               gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)               gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis);
 
 
 RT_C_DECLS_END

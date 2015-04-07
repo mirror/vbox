@@ -669,8 +669,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
-    pVM->hm.s.fTrapXcptUD             = GIMShouldTrapXcptUD(pVM);
-    uint32_t const fGimXcptIntercepts = pVM->hm.s.fTrapXcptUD ? RT_BIT(X86_XCPT_UD) : 0;
+    uint32_t const fGimXcptIntercepts = pVM->hm.s.fGIMTrapXcptUD ? RT_BIT(X86_XCPT_UD) : 0;
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
@@ -3510,6 +3509,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         case SVM_EXIT_WRITE_CR8:
             return hmR0SvmExitWriteCRx(pVCpu, pCtx, pSvmTransient);
 
+        case SVM_EXIT_VMMCALL:
+            return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
+
         case SVM_EXIT_VINTR:
             return hmR0SvmExitVIntr(pVCpu, pCtx, pSvmTransient);
 
@@ -3551,9 +3553,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
                 case SVM_EXIT_TASK_SWITCH:
                     return hmR0SvmExitTaskSwitch(pVCpu, pCtx, pSvmTransient);
-
-                case SVM_EXIT_VMMCALL:
-                    return hmR0SvmExitVmmCall(pVCpu, pCtx, pSvmTransient);
 
                 case SVM_EXIT_IRET:
                     return hmR0SvmExitIret(pVCpu, pCtx, pSvmTransient);
@@ -3898,7 +3897,7 @@ DECLINLINE(void) hmR0SvmSetPendingXcptDF(PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @retval VINF_SUCCESS if the access was handled successfully.
- * @retval VERR_NOT_FOUND if no patch record for this eip could be found.
+ * @retval VERR_NOT_FOUND if no patch record for this RIP could be found.
  * @retval VERR_SVM_UNEXPECTED_PATCH_TYPE if the found patch type is invalid.
  *
  * @param   pVM         Pointer to the VM.
@@ -4997,6 +4996,7 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
 HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
     /* First check if this is a patched VMMCALL for mov TPR */
     int rc = hmR0SvmEmulateMovTpr(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
@@ -5007,14 +5007,14 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     }
     else if (rc == VERR_NOT_FOUND)
     {
-        /* Handle GIM provider hypercalls. */
-        if (GIMAreHypercallsEnabled(pVCpu))
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        if (pVM->hm.s.fHypercallsEnabled)
         {
             rc = GIMHypercall(pVCpu, pCtx);
-            /* If the hypercall changes anything other than guest general-purpose registers,
-               we would need to reload the guest changed bits on VM-reentry. */
             if (RT_SUCCESS(rc))
             {
+                /* If the hypercall changes anything other than guest general-purpose registers,
+                   we would need to reload the guest changed bits here before VM-reentry. */
                 hmR0SvmUpdateRip(pVCpu, pCtx, 3);
                 return VINF_SUCCESS;
             }
@@ -5227,9 +5227,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (   pVM->hm.s.fTrapXcptUD
-        && GIMAreHypercallsEnabled(pVCpu))
-        GIMXcptUD(pVCpu, pCtx);
+    if (pVM->hm.s.fGIMTrapXcptUD)
+        GIMXcptUD(pVCpu, pCtx, NULL /* pDis */);
     else
         hmR0SvmSetPendingXcptUD(pVCpu);
 

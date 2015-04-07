@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/em.h>
+#include <VBox/vmm/gim.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/mm.h>
@@ -594,7 +595,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->uOpcode));
 #ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
             Assert(!PATMIsPatchGCAddr(pVM, pRegFrame->eip));
-            rc = TRPMForwardTrap(pVCpu, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
+            rc = TRPMForwardTrap(pVCpu, pRegFrame, X86_XCPT_UD, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, X86_XCPT_UD);
             Assert(rc == VINF_EM_RAW_GUEST_TRAP);
 #else
             rc = VINF_EM_RAW_EMULATE_INSTR;
@@ -608,6 +609,16 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             LogFlow(("TRPMGCTrap06Handler: -> EMInterpretInstructionCPU\n"));
             rc = EMInterpretInstructionDisasState(pVCpu, &Cpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
         }
+        else if (GIMShouldTrapXcptUD(pVM))
+        {
+            LogFlow(("TRPMGCTrap06Handler: -> GIMXcptUD\n"));
+            rc = GIMXcptUD(pVCpu, CPUMCTX_FROM_CORE(pRegFrame), &Cpu);
+            if (RT_FAILURE(rc))
+            {
+                LogFlow(("TRPMGCTrap06Handler: -> GIMXcptUD -> VINF_EM_RAW_EMULATE_INSTR\n"));
+                rc = VINF_EM_RAW_EMULATE_INSTR;
+            }
+        }
         /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         else
         {
@@ -618,7 +629,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     else
     {
         LogFlow(("TRPMGCTrap06Handler: -> TRPMForwardTrap\n"));
-        rc = TRPMForwardTrap(pVCpu, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
+        rc = TRPMForwardTrap(pVCpu, pRegFrame, X86_XCPT_UD, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, X86_XCPT_UD);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
     }
 

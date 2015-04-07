@@ -29,6 +29,7 @@
 #include <iprt/spinlock.h>
 
 #include <VBox/vmm/cpum.h>
+#include <VBox/disopcode.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm.h>
@@ -139,6 +140,25 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
         rc = CPUMR3MsrRangesInsert(pVM, &g_aMsrRanges_Kvm[i]);
         AssertLogRelRCReturn(rc, rc);
     }
+
+    /*
+     * Setup #UD and hypercall behaviour.
+     */
+    VMMHypercallsEnable(pVM);
+    if (ASMIsAmdCpu())
+    {
+        pKvm->fTrapXcptUD   = true;
+        pKvm->uOpCodeNative = OP_VMMCALL;
+    }
+    else
+    {
+        Assert(ASMIsIntelCpu() || ASMIsViaCentaurCpu());
+        pKvm->fTrapXcptUD   = false;
+        pKvm->uOpCodeNative = OP_VMCALL;
+    }
+    /* We always need to trap VMCALL/VMMCALL hypercall using #UDs for raw-mode VMs. */
+    if (!HMIsEnabled(pVM))
+        pKvm->fTrapXcptUD = true;
 
     return VINF_SUCCESS;
 }
@@ -367,8 +387,8 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
      *     tsc >>= -i8TscShift;
      * time = ((tsc * SysTime.u32TscScale) >> 32) + SysTime.u64NanoTS
      */
-    uint64_t u64TscFreq = TMCpuTicksPerSecond(pVM);
-    SystemTime.i8TscShift  = 0;
+    uint64_t u64TscFreq   = TMCpuTicksPerSecond(pVM);
+    SystemTime.i8TscShift = 0;
     while (u64TscFreq > 2 * RT_NS_1SEC_64)
     {
         u64TscFreq >>= 1;
