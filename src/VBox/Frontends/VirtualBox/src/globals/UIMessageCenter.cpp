@@ -336,7 +336,7 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
                                               int cMinDuration /* = 2000 */)
 {
     /* Prepare pixmap: */
-    QPixmap *pPixmap = 0;
+    QPixmap *pPixmap = NULL;
     if (!strImage.isEmpty())
         pPixmap = new QPixmap(strImage);
 
@@ -349,17 +349,22 @@ bool UIMessageCenter::showModalProgressDialog(CProgress &progress,
     pProgressDlg->run(350);
 
     /* Make sure progress-dialog still valid: */
-    if (!pProgressDlg)
-        return false;
+    bool fRc;
+    if (pProgressDlg)
+    {
+        /* Delete progress-dialog: */
+        delete pProgressDlg;
 
-    /* Delete progress-dialog: */
-    delete pProgressDlg;
+        fRc = true;
+    }
+    else
+        fRc = false;
 
     /* Cleanup pixmap: */
     if (pPixmap)
         delete pPixmap;
 
-    return true;
+    return fRc;
 }
 
 #ifdef RT_OS_LINUX
