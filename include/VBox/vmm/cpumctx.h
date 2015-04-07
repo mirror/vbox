@@ -427,7 +427,7 @@ AssertCompileSizeAlignment(CPUMCTX, 64);
 # define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->rax)
 
 /**
- * Gets the CPUMCTXCORE part of a CPUMCTX.
+ * Gets the CPUMCTX part from a CPUMCTXCORE.
  */
 # define CPUMCTX_FROM_CORE(a_pCtxCore) RT_FROM_MEMBER(a_pCtxCore, CPUMCTX, rax)
 
