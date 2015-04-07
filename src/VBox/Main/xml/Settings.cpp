@@ -5530,7 +5530,19 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 
                 /* Abort early if possible. */
                 if (fSettingsBumped)
+                    return;
+            }
+
+            for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
+                 it != hardwareMachine.usbSettings.llUSBControllers.end();
+                 ++it)
+            {
+                const USBController &ctrl = *it;
+                if (ctrl.enmType == USBControllerType_XHCI)
+                {
+                    m->sv = SettingsVersion_v1_15;
                     break;
+                }
             }
         }
     }
