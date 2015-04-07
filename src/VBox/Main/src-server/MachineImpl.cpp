@@ -4924,7 +4924,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
                             tr("Cannot set extradata for a snapshot"));
 
         // check if the right IMachine instance is used
-        if (!i_isSessionMachine())
+        if (mData->mRegistered && !i_isSessionMachine())
             return setError(VBOX_E_INVALID_VM_STATE,
                             tr("Cannot set extradata for an immutable machine"));
 
