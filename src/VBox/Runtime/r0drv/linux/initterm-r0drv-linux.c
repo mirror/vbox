@@ -95,7 +95,11 @@ DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void)
 DECLHIDDEN(int) rtR0InitNative(void)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
     g_prtR0LnxWorkQueue = create_workqueue("iprt-VBoxWQueue");
+ #else
+    g_prtR0LnxWorkQueue = create_workqueue("iprt-VBoxQ");
+ #endif
     if (!g_prtR0LnxWorkQueue)
         return VERR_NO_MEMORY;
 #endif
