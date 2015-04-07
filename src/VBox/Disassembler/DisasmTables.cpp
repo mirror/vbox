@@ -3016,8 +3016,8 @@ const DISOPCODE g_aMapX86_Group7_mod11_rm001[8] =
     /* 0F 01 MOD=11b */
     OP("vmcall",             0,                  0,          0,          OP_VMCALL,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     OP("mwait %eAX,%eCX",    IDX_ParseFixedReg,  IDX_ParseFixedReg, 0,   OP_MWAIT,   OP_PARM_REG_EAX,    OP_PARM_REG_ECX,OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
-    INVALID_OPCODE,
-    INVALID_OPCODE,
+    INVALID_OPCODE, /* xsetbv */
+    OP("vmmcall",            0,                  0,          0,          OP_VMMCALL, OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS ),
     OP("smsw %Ew",           IDX_ParseModRM,     0,          0,          OP_SMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP),
     INVALID_OPCODE,
     OP("lmsw %Ew",           IDX_ParseModRM,     0,          0,          OP_LMSW,    OP_PARM_Ew,         OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED),

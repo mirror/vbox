@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -741,10 +741,21 @@ enum OPCODES
     OP_INVEPT,
     OP_INVVPID,
     OP_INVPCID,
+    OP_VMFUNC,
+/** @}  */
+/** @name AMD-V instructions
+ * @{ */
+    OP_VMMCALL,
+    OP_VMRUN,
+    OP_VMLOAD,
+    OP_VMSAVE,
+    OP_CLGI,
+    OP_STGI,
+    OP_INVLPGA,
+    OP_SKINIT,
 /** @}  */
 /** @name 64 bits instruction
  * @{ */
-
     OP_MOVSXD
 /** @} */
 };
