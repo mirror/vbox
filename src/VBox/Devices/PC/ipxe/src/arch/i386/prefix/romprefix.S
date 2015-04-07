@@ -418,8 +418,12 @@ no_pmm:
 	movl	$0xa0000, %ebp	/* Inhibit relocation during POST */
 	pushw	%cs
 	call	exec
-#endif
 2:
+#else
+	xorw	%di, %di
+	movw	$init_message_done, %si
+	call	print_message
+#endif
 	/* Restore registers */
 	popw	%gs
 	popw	%fs
