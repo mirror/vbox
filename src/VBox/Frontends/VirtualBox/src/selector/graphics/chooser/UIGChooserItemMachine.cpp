@@ -240,6 +240,7 @@ void UIGChooserItemMachine::updateStatePixmap()
 {
     /* Get new state-pixmap and state-pixmap size: */
     const QIcon stateIcon = machineStateIcon();
+    AssertReturnVoid(!stateIcon.isNull());
     const QSize statePixmapSize = stateIcon.availableSizes().first();
     const QPixmap statePixmap = stateIcon.pixmap(statePixmapSize);
     /* Update linked values: */
