@@ -90,6 +90,7 @@
 
 /* Other VBox includes: */
 # include <iprt/path.h>
+# include <iprt/thread.h>
 # ifdef VBOX_WITH_DEBUGGER_GUI
 #  include <VBox/dbggui.h>
 #  include <iprt/ldr.h>
@@ -558,6 +559,25 @@ void UIMachineLogic::sltMachineStateChanged()
             {
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
+                if (vboxGlobal().isSeparateProcess())
+                {
+                    /* Hack: The VM process is terminating, so wait a bit to make sure that
+                     * the session is unlocked and the GUI process can save extradata
+                     * in UIMachine::cleanupMachineLogic.
+                     */
+                    /** @todo Probably should wait for the session state change event. */
+                    KSessionState sessionState = uisession()->session().GetState();
+                    int c = 0;
+                    while (   sessionState == KSessionState_Locked
+                           || sessionState == KSessionState_Unlocking)
+                    {
+                         if (++c > 50) break;
+
+                         RTThreadSleep(100);
+                         sessionState = uisession()->session().GetState();
+                    }
+                }
+
                 uisession()->closeRuntimeUI();
                 return;
             }
