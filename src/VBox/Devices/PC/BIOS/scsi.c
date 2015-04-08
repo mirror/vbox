@@ -398,6 +398,8 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
         if (rc != 0)
             BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
 
+        devcount_scsi = bios_dsk->scsi_devcount;
+
         /* Check the attached device. */
         if (   ((buffer[0] & 0xe0) == 0)
             && ((buffer[0] & 0x1f) == 0x00))
@@ -405,7 +407,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
             DBG_SCSI("%s: Disk detected at %d\n", __func__, i);
 
             /* We add the disk only if the maximum is not reached yet. */
-            if (bios_dsk->scsi_devcount < BX_MAX_SCSI_DEVICES)
+            if (devcount_scsi < BX_MAX_SCSI_DEVICES)
             {
                 uint32_t    sectors, sector_size, cylinders;
                 uint16_t    heads, sectors_per_track;
@@ -439,8 +441,6 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                     BX_INFO("Disk %d has an unsupported sector size of %u\n", i, sector_size);
                     continue;
                 }
-
-                devcount_scsi = bios_dsk->scsi_devcount;
 
                 /* Get logical CHS geometry. */
                 switch (devcount_scsi)
@@ -536,7 +536,6 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 write_byte(0x40, 0x75, hdcount);
 
                 devcount_scsi++;
-                bios_dsk->scsi_devcount = devcount_scsi;
             }
             else
             {
@@ -571,10 +570,11 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
             bios_dsk->cdcount = cdcount;
 
             devcount_scsi++;
-            bios_dsk->scsi_devcount = devcount_scsi;
         }
         else
             DBG_SCSI("%s: No supported device detected at %d\n", __func__, i);
+
+        bios_dsk->scsi_devcount = devcount_scsi;
     }
 }
 
