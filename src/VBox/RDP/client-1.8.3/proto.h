@@ -16,6 +16,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #ifndef RDESKTOP_PROTO_H
 #define RDESKTOP_PROTO_H
 
@@ -354,6 +363,11 @@ void scard_unlock(int lock);
 int scard_enum_devices(uint32 * id, char *optarg);
 void scardSetInfo(uint32 epoch, uint32 device, uint32 id, uint32 bytes_out);
 void scard_reset_state();
+/* vrdp/rdpusb.c */
+RD_BOOL rdpusb_init(void);
+void rdpusb_close (void);
+void rdpusb_add_fds(int *n, fd_set * rfds, fd_set * wfds);
+void rdpusb_check_fds(fd_set * rfds, fd_set * wfds);
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus

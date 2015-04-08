@@ -20,6 +20,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #ifdef RDP2VNC
 #include "vnc/x11stubs.h"
 #else
@@ -649,6 +658,7 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, RD_BOOL p
 			break;
 
 		case XK_Break:
+#ifdef RDESKTOP_KBD_CODE
 			/* Send Break sequence E0 46 E0 C6 */
 			if (pressed)
 			{
@@ -659,9 +669,22 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, RD_BOOL p
 			}
 			/* No release sequence */
 			return True;
+#else
+			/* Send Break sequence E0 46 E0 C6 */
+			if (pressed)
+			{
+				/* VirtualBox code begin */
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT, 0x46, 0);
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT | KBD_FLAG_UP, 0x46, 0);
+				/* VirtualBox code end */
+			}
+			/* No release sequence */
+			return True;
+#endif /* RDESKTOP_KBD_CODE */
 			break;
 
 		case XK_Pause:
+#ifdef RDESKTOP_KBD_CODE
 			/* According to MS Keyboard Scan Code
 			   Specification, pressing Pause should result
 			   in E1 1D 45 E1 9D C5. I'm not exactly sure
@@ -686,6 +709,20 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, RD_BOOL p
 					       0x1d, 0);
 			}
 			return True;
+#else
+			/* Send Break sequence E1 1D 45 E1 9D C5 */
+			if (pressed)
+			{
+				/* VirtualBox code begin */
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT2, 0x1d, 0);
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, RDP_KEYPRESS,  0x45, 0);
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_EXT2 | KBD_FLAG_UP, 0x1d, 0);
+				rdp_send_input(ev_time, RDP_INPUT_SCANCODE, KBD_FLAG_UP,  0x45, 0);
+				/* VirtualBox code end */
+			}
+			/* No release sequence */
+			return True;
+#endif /* RDESKTOP_KBD_CODE */
 			break;
 
 		case XK_Meta_L:	/* Windows keys */
@@ -723,7 +760,31 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, RD_BOOL p
 			if (pressed)
 				ui_seamless_toggle();
 			break;
-
+#ifdef WITH_BIRD_VD_HACKS
+		case XK_Left:
+		case XK_Right:
+		{
+			/* Check for typical virtual desktop switching hotkeys:
+			       Ctrl-Alt-Left and Ctrl-Alt-Right.
+			   Needs to be pressed twice to have any effect... */
+			extern RD_BOOL g_keep_virtual_desktop_shortcuts;
+			extern RD_BOOL g_fullscreen;
+			if (   g_keep_virtual_desktop_shortcuts
+			    && (   (   get_key_state(state, XK_Alt_L)
+			            || get_key_state(state, XK_Alt_R))
+			        && (   get_key_state(state, XK_Control_L)
+			            || get_key_state(state, XK_Control_R))
+			       )
+			   )
+			{
+				if (g_fullscreen)
+					xwin_toggle_fullscreen();
+				XUngrabKeyboard(g_display, CurrentTime);
+				return True;
+			}
+			break;
+		}
+#endif
 	}
 	return False;
 }

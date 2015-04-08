@@ -19,6 +19,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 #include "rdesktop.h"
@@ -36,7 +45,25 @@
 #ifdef HAVE_LANGINFO_H
 #ifdef HAVE_ICONV_H
 #include <langinfo.h>
+
+#if defined(RT_OS_SOLARIS) && !defined(_XPG6)
+# define VBOX_XPG6_TMP_DEF
+# define _XPG6
+#endif
+#if defined(RT_OS_SOLARIS) && defined(__USE_LEGACY_PROTOTYPES__)
+# define VBOX_LEGACY_PROTO_TMP_DEF
+# undef __USE_LEGACY_PROTOTYPES__
+# endif
 #include <iconv.h>
+#if defined(VBOX_XPG6_TMP_DEF)
+# undef _XPG6
+# undef VBOX_XPG6_TMP_DEF
+#endif
+#if defined(VBOX_LEGACY_PROTO_TMP_DEF)
+# define  __USE_LEGACY_PROTOTYPES__
+# undef VBOX_LEGACY_PROTO_TMP_DEF
+#endif
+
 #define USE_UNICODE_CLIPBOARD
 #endif
 #endif

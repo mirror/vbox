@@ -8,6 +8,7 @@ AC_PROG_CC
 if test "$GCC" = yes; then
     CFLAGS="$CFLAGS -Wall"
 fi
+AC_PROG_CXX
 
 AC_PROG_INSTALL
 AC_LANG_C
@@ -31,6 +32,7 @@ AC_PATH_TOOL(PKG_CONFIG, pkg-config)
 
 AC_SEARCH_LIBS(socket, socket)
 AC_SEARCH_LIBS(inet_aton, resolv)
+AC_SEARCH_LIBS(clock_gettime, rt)
 
 AC_CHECK_HEADER(sys/select.h, AC_DEFINE(HAVE_SYS_SELECT_H))
 AC_CHECK_HEADER(sys/modem.h, AC_DEFINE(HAVE_SYS_MODEM_H))
@@ -222,12 +224,23 @@ int main(int argc, char **argv)
 		return 1;
 	}
 	return 0;
-}], 
- [AC_MSG_RESULT(no)], 
- [AC_MSG_RESULT(yes) 
-  AC_DEFINE(NEED_ALIGN)], 
- [AC_MSG_RESULT(assuming yes) 
+}],
+ [AC_MSG_RESULT(no)],
+ [AC_MSG_RESULT(yes)
+  AC_DEFINE(NEED_ALIGN)],
+ [AC_MSG_RESULT(assuming yes)
   AC_DEFINE(NEED_ALIGN)])
+
+#
+# linux/compiler.h
+#
+AC_MSG_CHECKING([if linux/compiler.h is required])
+AC_TRY_COMPILE([
+#include <linux/compiler.h>
+],[],
+[AC_MSG_RESULT(yes)
+ AC_DEFINE(VBOX_WITH_LINUX_COMPILER_H)],
+[AC_MSG_RESULT(no)])
 
 
 #
@@ -251,7 +264,7 @@ AC_ARG_WITH(libvncserver-config,
 )
 AC_ARG_WITH(libvncserver,
     [  --with-libvncserver     make rdp2vnc],
-    [ 
+    [
     VNCINC=`$vncserverconfig --cflags`
     AC_SUBST(VNCINC)
     LDVNC=`$vncserverconfig --libs`
@@ -270,17 +283,17 @@ AC_ARG_WITH(libvncserver,
 sound="yes"
 AC_ARG_WITH(sound,
     [  --with-sound            select sound system ("oss", "sgi", "sun", "alsa" or "libao") ],
-    [ 
-    sound="$withval" 
+    [
+    sound="$withval"
     ])
 
 AC_CHECK_HEADER(sys/soundcard.h, [HAVE_OSS=1], [HAVE_OSS=0])
 AC_CHECK_HEADER(dmedia/audio.h, [HAVE_SGI=1], [HAVE_SGI=0])
 AC_CHECK_HEADER(sys/audioio.h, [HAVE_SUN=1], [HAVE_SUN=0])
 
-AC_ARG_ENABLE(static-libsamplerate, 
-    [  --enable-static-libsamplerate link libsamplerate statically], 
-    [static_libsamplerate=yes], 
+AC_ARG_ENABLE(static-libsamplerate,
+    [  --enable-static-libsamplerate link libsamplerate statically],
+    [static_libsamplerate=yes],
     [static_libsamplerate=no])
 
 if test -n "$PKG_CONFIG"; then
@@ -853,7 +866,7 @@ AC_CHECK_FUNCS(setmntent)
 #
 AC_ARG_WITH(ipv6,
     [  --with-ipv6             enable IPv6-support],
-    [ 
+    [
         if test $withval != "no";
         then
 	    AC_DEFINE(IPv6,1)
@@ -868,7 +881,7 @@ AC_ARG_WITH(debug,
     [  --with-debug            enable protocol debugging output],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG,1)
 	fi
     ])
@@ -877,7 +890,7 @@ AC_ARG_WITH(debug-kbd,
     [  --with-debug-kbd        enable debugging of keyboard handling],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_KBD,1)
 	fi
     ])
@@ -886,7 +899,7 @@ AC_ARG_WITH(debug-rdp5,
     [  --with-debug-rdp5       enable debugging of RDP5 code],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_RDP5,1)
 	fi
     ])
@@ -895,7 +908,7 @@ AC_ARG_WITH(debug-clipboard,
     [  --with-debug-clipboard  enable debugging of clipboard code],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_CLIPBOARD,1)
 	fi
     ])
@@ -904,7 +917,7 @@ AC_ARG_WITH(debug-sound,
     [  --with-debug-sound  enable debugging of sound code],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_SOUND,1)
 	fi
     ])
@@ -913,7 +926,7 @@ AC_ARG_WITH(debug-channel,
     [  --with-debug-channel  enable debugging of virtual channel code],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_CHANNEL,1)
 	fi
     ])
@@ -922,7 +935,7 @@ AC_ARG_WITH(debug-seamless,
     [  --with-debug-seamless  enable debugging of SeamlessRDP code],
     [
         if test $withval != "no";
-        then 
+        then
             AC_DEFINE(WITH_DEBUG_SEAMLESS,1)
 	fi
     ])

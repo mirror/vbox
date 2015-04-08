@@ -20,6 +20,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xproto.h>
@@ -646,13 +655,13 @@ sw_window_is_behind(Window wnd, Window behind)
 	XQueryTree(g_display, RootWindowOfScreen(g_screen), &dummy1, &dummy2, &child_list,
 		   &num_children);
 
-	for (i = num_children - 1; i >= 0; i--)
+	for (i = num_children; i > 0; i--)
 	{
-		if (child_list[i] == behind)
+		if (child_list[i-1] == behind)
 		{
 			found_behind = True;
 		}
-		else if (child_list[i] == wnd)
+		else if (child_list[i-1] == wnd)
 		{
 			found_wnd = True;
 			break;
@@ -2514,6 +2523,16 @@ xwin_process_events(void)
 				/* we only register for this event when grab_keyboard */
 				g_mouse_in_wnd = False;
 				XUngrabKeyboard(g_display, CurrentTime);
+				/* VirtualBox code begin */
+				if (g_fullscreen)
+				{
+					/* If mouse pointer is outside the fullscreen client window,
+					 * release it to let the client on the other screen to continue
+					 * with the mouse processing.
+					 */
+					XUngrabPointer(g_display, CurrentTime);
+				}
+				/* VirtualBox code end */
 				break;
 
 			case Expose:
@@ -2682,6 +2701,10 @@ ui_select(int rdp_socket)
 		rdpsnd_add_fds(&n, &rfds, &wfds, &tv);
 #endif
 
+#ifdef WITH_RDPUSB
+		rdpusb_add_fds (&n, &rfds, &wfds);
+#endif
+
 		/* add redirection handles */
 		rdpdr_add_fds(&n, &rfds, &wfds, &tv, &s_timeout);
 		seamless_select_timeout(&tv);
@@ -2706,6 +2729,10 @@ ui_select(int rdp_socket)
 					rdpdr_check_fds(&rfds, &wfds, (RD_BOOL) True);
 				continue;
 		}
+
+#ifdef WITH_RDPUSB
+		rdpusb_check_fds (&rfds, &wfds);
+#endif
 
 #ifdef WITH_RDPSND
 		rdpsnd_check_fds(&rfds, &wfds);

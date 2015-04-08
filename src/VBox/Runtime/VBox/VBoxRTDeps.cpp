@@ -69,6 +69,7 @@ PFNRT g_VBoxRTDeps[] =
     (PFNRT)X509_verify_cert_error_string,
     (PFNRT)i2d_X509,
     (PFNRT)i2d_X509,
+    (PFNRT)i2d_PublicKey,
     (PFNRT)RSA_generate_key,
     (PFNRT)RSA_generate_key_ex,
     (PFNRT)DH_generate_parameters,

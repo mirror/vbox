@@ -17,6 +17,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 /* TCP port for Remote Desktop Protocol */
 #define TCP_PORT_RDP 3389
 
@@ -226,6 +235,7 @@ enum RDP_INPUT_DEVICE
 /* Device flags */
 #define KBD_FLAG_RIGHT          0x0001
 #define KBD_FLAG_EXT            0x0100
+#define KBD_FLAG_EXT2           0x0200
 #define KBD_FLAG_QUIET          0x1000
 #define KBD_FLAG_DOWN           0x4000
 #define KBD_FLAG_UP             0x8000

@@ -19,6 +19,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #include <stdarg.h>		/* va_list va_start va_end */
 #include <unistd.h>		/* read close getuid getgid getpid getppid gethostname */
 #include <fcntl.h>		/* open */
@@ -32,6 +41,11 @@
 #include <errno.h>
 #include <signal.h>
 #include "rdesktop.h"
+
+#ifdef VBOX
+# include <VBox/version.h>
+# include <iprt/log.h>
+#endif
 
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
@@ -101,7 +115,12 @@ RD_BOOL g_hide_decorations = False;
 RDP_VERSION g_rdp_version = RDP_V5;	/* Default to version 5 */
 RD_BOOL g_rdpclip = True;
 RD_BOOL g_console_session = False;
+#ifndef VBOX
 RD_BOOL g_numlock_sync = False;
+#else /* VBOX */
+/* Always use numlock synchronization with VRDP. */
+RD_BOOL g_numlock_sync = True;
+#endif /* VBOX */
 RD_BOOL g_lspci_enabled = False;
 RD_BOOL g_owncolmap = False;
 RD_BOOL g_ownbackstore = True;	/* We can't rely on external BackingStore */
@@ -141,6 +160,14 @@ RD_BOOL g_pending_resize = False;
 RD_BOOL g_rdpsnd = False;
 #endif
 
+#ifdef WITH_RDPUSB
+RD_BOOL g_rdpusb = False;
+#endif
+
+#ifdef WITH_BIRD_VD_HACKS
+RD_BOOL g_keep_virtual_desktop_shortcuts = False;
+#endif
+
 #ifdef HAVE_ICONV
 char g_codepage[16] = "";
 #endif
@@ -168,6 +195,9 @@ usage(char *program)
 	fprintf(stderr, "rdesktop: A Remote Desktop Protocol client.\n");
 	fprintf(stderr,
 		"Version " PACKAGE_VERSION ". Copyright (C) 1999-2011 Matthew Chapman et al.\n");
+#ifdef VBOX
+        fprintf(stderr, "Modified for VirtualBox by " VBOX_VENDOR "\n");
+#endif
 	fprintf(stderr, "See http://www.rdesktop.org/ for more information.\n\n");
 
 	fprintf(stderr, "Usage: %s [options] server[:port]\n", program);
@@ -230,6 +260,10 @@ usage(char *program)
 	fprintf(stderr, "                     available drivers for 'local':\n");
 	rdpsnd_show_help();
 #endif
+#ifdef WITH_RDPUSB
+        fprintf(stderr, 
+                "         '-r usb': enable USB redirection\n");
+#endif
 	fprintf(stderr,
 		"         '-r clipboard:[off|PRIMARYCLIPBOARD|CLIPBOARD]': enable clipboard\n");
 	fprintf(stderr, "                      redirection.\n");
@@ -255,6 +289,10 @@ usage(char *program)
 	fprintf(stderr, "   -0: attach to console\n");
 	fprintf(stderr, "   -4: use RDP version 4\n");
 	fprintf(stderr, "   -5: use RDP version 5 (default)\n");
+#ifdef WITH_BIRD_VD_HACKS
+    fprintf(stderr, "   -H keep-virtual-desktop-shortcuts: Keep keyboard shortcuts typical\n"
+                    "      for switching virtual desktops (C-A-Left/Right). \n");
+#endif
 #ifdef WITH_SCARD
 	fprintf(stderr, "   -o: name=value: Adds an additional option to rdesktop.\n");
 	fprintf(stderr,
@@ -516,6 +554,14 @@ parse_server_and_port(char *server)
 
 }
 
+#ifdef VBOX
+/* This disables iprt logging */
+DECLEXPORT(PRTLOGGER) RTLogDefaultInit(void)
+{
+    return NULL;
+}
+#endif
+
 /* Client program */
 int
 main(int argc, char *argv[])
@@ -570,8 +616,14 @@ main(int argc, char *argv[])
 #else
 #define VNCOPT
 #endif
+#ifdef WITH_BIRD_VD_HACKS
+#define VDHOPT "H:"
+#else
+#define VDHOPT
+#endif
+
 	while ((c = getopt(argc, argv,
-			   VNCOPT "A:u:L:d:s:c:p:n:k:g:o:fbBeEitmzCDKS:T:NX:a:x:Pr:045h?")) != -1)
+			   VNCOPT VDHOPT "A:u:L:d:s:c:p:n:k:g:o:fbBeEitmzCDKS:T:NX:a:x:Pr:045h?")) != -1)
 	{
 		switch (c)
 		{
@@ -853,6 +905,14 @@ main(int argc, char *argv[])
 #endif
 					}
 				}
+				else if (str_startswith(optarg, "usb"))
+ 				{
+#ifdef WITH_RDPUSB
+					g_rdpusb = True;
+#else
+					warning("Not compiled with USB support\n");
+#endif
+				}
 				else if (str_startswith(optarg, "disk"))
 				{
 					/* -r disk:h:=/mnt/floppy */
@@ -949,6 +1009,16 @@ main(int argc, char *argv[])
 				}
 				break;
 #endif
+
+#ifdef WITH_BIRD_VD_HACKS
+			case 'H': /* hacks */
+				if (!strcmp(optarg, "keep-virtual-desktop-shortcuts"))
+					g_keep_virtual_desktop_shortcuts = True;
+				else
+					error("Unknown -H argument\n\n\tPossible argument is: keep-virtual-desktop-shortcuts\n");
+				break;
+#endif
+
 			case 'h':
 			case '?':
 			default:
@@ -1110,7 +1180,12 @@ main(int argc, char *argv[])
 		warning("Initializing sound-support failed!\n");
 #endif
 
-	if (g_lspci_enabled)
+#ifdef WITH_RDPUSB
+	if (g_rdpusb)
+		rdpusb_init();
+#endif
+
+        if (g_lspci_enabled)
 		lspci_init();
 
 	rdpdr_init();
@@ -1214,6 +1289,11 @@ main(int argc, char *argv[])
 
 	cache_save_state();
 	ui_deinit();
+
+#ifdef WITH_RDPUSB
+        if (g_rdpusb)
+                rdpusb_close();
+#endif
 
 	if (g_user_quit)
 		return EXRD_WINDOW_CLOSED;
@@ -1793,7 +1873,11 @@ rd_pstcache_mkdir(void)
 	if (home == NULL)
 		return False;
 
+#ifdef VBOX
+	snprintf(bmpcache_dir, sizeof(bmpcache_dir), "%s/%s", home, ".rdesktop");
+#else
 	sprintf(bmpcache_dir, "%s/%s", home, ".rdesktop");
+#endif
 
 	if ((mkdir(bmpcache_dir, S_IRWXU) == -1) && errno != EEXIST)
 	{
@@ -1801,7 +1885,11 @@ rd_pstcache_mkdir(void)
 		return False;
 	}
 
+#ifdef VBOX
+	snprintf(bmpcache_dir, sizeof(bmpcache_dir), "%s/%s", home, ".rdesktop/cache");
+#else
 	sprintf(bmpcache_dir, "%s/%s", home, ".rdesktop/cache");
+#endif
 
 	if ((mkdir(bmpcache_dir, S_IRWXU) == -1) && errno != EEXIST)
 	{
@@ -1823,7 +1911,11 @@ rd_open_file(char *filename)
 	home = getenv("HOME");
 	if (home == NULL)
 		return -1;
+#ifdef VBOX
+	snprintf(fn, sizeof(fn), "%s/.rdesktop/%s", home, filename);
+#else
 	sprintf(fn, "%s/.rdesktop/%s", home, filename);
+#endif
 	fd = open(fn, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	if (fd == -1)
 		perror(fn);

@@ -19,6 +19,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #include <time.h>
 #ifndef _WIN32
 #include <errno.h>
@@ -29,11 +38,28 @@
 
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
+
+#if defined(RT_OS_SOLARIS) && !defined(_XPG6)
+# define VBOX_XPG6_TMP_DEF
+# define _XPG6
+#endif
+#if defined(RT_OS_SOLARIS) && defined(__USE_LEGACY_PROTOTYPES__)
+# define VBOX_LEGACY_PROTO_TMP_DEF
+# undef __USE_LEGACY_PROTOTYPES__
+#endif
 #include <iconv.h>
+#if defined(VBOX_XPG6_TMP_DEF)
+# undef _XPG6
+# undef VBOX_XPG6_TMP_DEF
+#endif
+#if defined(VBOX_LEGACY_PROTO_TMP_DEF)
+# define  __USE_LEGACY_PROTOTYPES__
+# undef VBOX_LEGACY_PROTO_TMP_DEF
 #endif
 
 #ifndef ICONV_CONST
 #define ICONV_CONST ""
+#endif
 #endif
 #endif
 
@@ -844,6 +870,7 @@ rdp_out_pointer_caps(STREAM s)
 	out_uint16_le(s, 20);	/* Cache size */
 }
 
+#ifndef VBOX
 /* Output new pointer capability set */
 static void
 rdp_out_newpointer_caps(STREAM s)
@@ -855,6 +882,7 @@ rdp_out_newpointer_caps(STREAM s)
 	out_uint16_le(s, 20);	/* Cache size */
 	out_uint16_le(s, 20);	/* Cache size for new pointers */
 }
+#endif
 
 /* Output share capability set */
 static void
@@ -942,7 +970,11 @@ rdp_send_confirm_active(void)
 	if (g_rdp_version >= RDP_V5)
 	{
 		caplen += RDP_CAPLEN_BMPCACHE2;
+#ifdef VBOX
+		caplen += RDP_CAPLEN_POINTER;
+#else
 		caplen += RDP_CAPLEN_NEWPOINTER;
+#endif
 	}
 	else
 	{
@@ -971,7 +1003,11 @@ rdp_send_confirm_active(void)
 	if (g_rdp_version >= RDP_V5)
 	{
 		rdp_out_bmpcache2_caps(s);
+#ifdef VBOX
+		rdp_out_pointer_caps(s);
+#else
 		rdp_out_newpointer_caps(s);
+#endif
 	}
 	else
 	{

@@ -18,6 +18,15 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Oracle GPL Disclaimer: For the avoidance of doubt, except that if any license choice
+ * other than GPL or LGPL is available it will apply instead, Oracle elects to use only
+ * the General Public License version 2 (GPLv2) at this time for any software where
+ * a choice of GPL license versions is made available with the language indicating
+ * that GPLv2 or any later version may be used, or where a choice of which version
+ * of the GPL is applied is otherwise unspecified.
+ */
+
 #include "disk.h"
 
 #include <sys/types.h>
@@ -357,7 +366,11 @@ disk_create(uint32 device_id, uint32 accessmask, uint32 sharemode, uint32 create
 	if (filename && *filename && filename[strlen(filename) - 1] == '/')
 		filename[strlen(filename) - 1] = 0;
 
+#ifdef VBOX
+	snprintf(path, sizeof(path),  "%s%s", g_rdpdr_device[device_id].local_path, filename);
+#else
 	sprintf(path, "%s%s", g_rdpdr_device[device_id].local_path, filename ? filename : "");
+#endif
 
 	/* Protect against mailicous servers:
 	   somelongpath/..     not allowed
@@ -826,8 +839,13 @@ disk_set_information(RD_NTHANDLE handle, uint32 info_class, STREAM in, STREAM ou
 
 			convert_to_unix_filename(newname);
 
+#ifdef VBOX
+			snprintf(fullpath, sizeof(fullpath), "%s%s", g_rdpdr_device[pfinfo->device_id].local_path,
+				newname);
+#else
 			sprintf(fullpath, "%s%s", g_rdpdr_device[pfinfo->device_id].local_path,
 				newname);
+#endif
 
 			free(newname);
 
@@ -1212,7 +1230,11 @@ disk_query_directory(RD_NTHANDLE handle, uint32 info_class, char *pattern, STREA
 				return RD_STATUS_NO_MORE_FILES;
 
 			/* Get information for directory entry */
+#ifdef VBOX
+			snprintf(fullpath, sizeof(fullpath), "%s/%s", dirname, pdirent->d_name);
+#else
 			sprintf(fullpath, "%s/%s", dirname, pdirent->d_name);
+#endif
 
 			if (stat(fullpath, &filestat))
 			{
@@ -1369,8 +1391,13 @@ disk_query_directory(RD_NTHANDLE handle, uint32 info_class, char *pattern, STREA
 static RD_NTSTATUS
 disk_device_control(RD_NTHANDLE handle, uint32 request, STREAM in, STREAM out)
 {
+#ifdef VBOX
+	if (((request >> 16) != 20) && ((request >> 16) != 9))
+		return RD_STATUS_INVALID_PARAMETER;
+#else
 	if (((request >> 16) != 20) || ((request >> 16) != 9))
 		return RD_STATUS_INVALID_PARAMETER;
+#endif
 
 	/* extract operation */
 	request >>= 2;
