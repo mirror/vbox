@@ -81,17 +81,14 @@ extern  int     diskette_param_table;   /* At a fixed location. */
  */
 uint8_t floppy_wait_for_interrupt(void)
 {
-    uint32_t    retries = 18;
-
     int_disable();
-    for (;retries;--retries)
+    for (;;)
     {
         uint8_t val8 = read_byte(0x0040, 0x003e);
         if (val8 & 0x80)
             return val8 & ~0x7f;
         int_enable_hlt_disable();
     }
-    return 0;
 }
 
 /**
@@ -177,9 +174,8 @@ void floppy_prepare_controller(uint16_t drive)
         int_enable();
         // wait on 40:3e bit 7 to become 1
         do {
-            val8 = inb(0x80);
             val8 = read_byte(0x0040, 0x003e);
-        } while ( (val8 & 0x80) == 0 && --retries);
+        } while ( (val8 & 0x80) == 0 );
         val8 &= 0x7f;
         int_disable();
 #else

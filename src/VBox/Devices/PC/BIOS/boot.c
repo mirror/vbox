@@ -254,11 +254,6 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
 
 #endif // BX_ELTORITO_BOOT
 
-// Sanity check on the LAN boot seg macro
-//#if VBOX_LANBOOT_SEG == 0
-//#error Invalid VBOX_LANBOOT_SEG definition!
-//#endif
-
     // Check for boot from LAN first
     if (bootlan == 1) {
         uint8_t __far   *fplan;
