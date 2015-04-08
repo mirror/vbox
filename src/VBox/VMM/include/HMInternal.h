@@ -163,18 +163,19 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_SYSENTER_ESP_MSR        RT_BIT(15)
 #define HM_CHANGED_GUEST_EFER_MSR                RT_BIT(16)
 #define HM_CHANGED_GUEST_LAZY_MSRS               RT_BIT(17)     /* Shared */
+#define HM_CHANGED_GUEST_XCPT_INTERCEPTS         RT_BIT(18)
 /* VT-x specific state. */
-#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(18)
-#define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE      RT_BIT(19)
-#define HM_CHANGED_VMX_GUEST_APIC_STATE          RT_BIT(20)
-#define HM_CHANGED_VMX_ENTRY_CTLS                RT_BIT(21)
-#define HM_CHANGED_VMX_EXIT_CTLS                 RT_BIT(22)
+#define HM_CHANGED_VMX_GUEST_AUTO_MSRS           RT_BIT(19)
+#define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE      RT_BIT(20)
+#define HM_CHANGED_VMX_GUEST_APIC_STATE          RT_BIT(21)
+#define HM_CHANGED_VMX_ENTRY_CTLS                RT_BIT(22)
+#define HM_CHANGED_VMX_EXIT_CTLS                 RT_BIT(23)
 /* AMD-V specific state. */
-#define HM_CHANGED_SVM_GUEST_APIC_STATE          RT_BIT(18)
-#define HM_CHANGED_SVM_RESERVED1                 RT_BIT(19)
-#define HM_CHANGED_SVM_RESERVED2                 RT_BIT(20)
-#define HM_CHANGED_SVM_RESERVED3                 RT_BIT(21)
-#define HM_CHANGED_SVM_RESERVED4                 RT_BIT(22)
+#define HM_CHANGED_SVM_GUEST_APIC_STATE          RT_BIT(19)
+#define HM_CHANGED_SVM_RESERVED1                 RT_BIT(20)
+#define HM_CHANGED_SVM_RESERVED2                 RT_BIT(21)
+#define HM_CHANGED_SVM_RESERVED3                 RT_BIT(22)
+#define HM_CHANGED_SVM_RESERVED4                 RT_BIT(23)
 
 #define HM_CHANGED_ALL_GUEST                     (  HM_CHANGED_GUEST_CR0                \
                                                   | HM_CHANGED_GUEST_CR3                \
@@ -194,13 +195,14 @@ RT_C_DECLS_BEGIN
                                                   | HM_CHANGED_GUEST_SYSENTER_ESP_MSR   \
                                                   | HM_CHANGED_GUEST_EFER_MSR           \
                                                   | HM_CHANGED_GUEST_LAZY_MSRS          \
+                                                  | HM_CHANGED_GUEST_XCPT_INTERCEPTS    \
                                                   | HM_CHANGED_VMX_GUEST_AUTO_MSRS      \
                                                   | HM_CHANGED_VMX_GUEST_ACTIVITY_STATE \
                                                   | HM_CHANGED_VMX_GUEST_APIC_STATE     \
                                                   | HM_CHANGED_VMX_ENTRY_CTLS           \
                                                   | HM_CHANGED_VMX_EXIT_CTLS)
 
-#define HM_CHANGED_HOST_CONTEXT                  RT_BIT(23)
+#define HM_CHANGED_HOST_CONTEXT                  RT_BIT(24)
 
 /* Bits shared between host and guest. */
 #define HM_CHANGED_HOST_GUEST_SHARED_STATE       (  HM_CHANGED_GUEST_CR0                \
@@ -342,11 +344,7 @@ typedef struct HM
     bool                        fGlobalInit;
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
-    /** Whether #UD needs to be intercepted (required by certain GIM providers). */
-    bool                        fGIMTrapXcptUD;
-    /** Whether paravirt. hypercalls are enabled. */
-    bool                        fHypercallsEnabled;
-    bool                        u8Alignment[1];
+    bool                        u8Alignment[3];
 
     /** Host kernel flags that HM might need to know (SUPKERNELFEATURES_XXX). */
     uint32_t                    uHostKernelFeatures;
@@ -583,6 +581,12 @@ typedef struct HMCPU
     bool                        fUsingHyperDR7;
     /** Whether to preload the guest-FPU state to avoid #NM VM-exit overhead. */
     bool                        fPreloadGuestFpu;
+
+    /** Whether #UD needs to be intercepted (required by certain GIM providers). */
+    bool                        fGIMTrapXcptUD;
+    /** Whether paravirt. hypercalls are enabled. */
+    bool                        fHypercallsEnabled;
+    uint8_t                     u8Alignment0[6];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;

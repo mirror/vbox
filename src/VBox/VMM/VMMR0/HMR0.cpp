@@ -1213,8 +1213,6 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.lLastError                = g_HvmR0.lLastError;
     pVM->hm.s.uMaxAsid                  = g_HvmR0.uMaxAsid;
 
-    pVM->hm.s.fGIMTrapXcptUD            = GIMShouldTrapXcptUD(pVM);
-
     if (!pVM->hm.s.cMaxResumeLoops) /* allow ring-3 overrides */
     {
         pVM->hm.s.cMaxResumeLoops       = 1024;
@@ -1228,8 +1226,9 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
-        pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
+        pVCpu->hm.s.idEnteredCpu   = NIL_RTCPUID;
+        pVCpu->hm.s.idLastCpu      = NIL_RTCPUID;
+        pVCpu->hm.s.fGIMTrapXcptUD = GIMShouldTrapXcptUD(pVCpu);
 
         /* We'll aways increment this the first time (host uses ASID 0). */
         AssertReturn(!pVCpu->hm.s.uCurrentAsid, VERR_HM_IPE_3);

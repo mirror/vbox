@@ -2634,7 +2634,7 @@ static int hmR0VmxInitXcptBitmap(PVM pVM, PVMCPU pVCpu)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
-    uint32_t u32XcptBitmap = 0;
+    uint32_t u32XcptBitmap = pVCpu->hm.s.fGIMTrapXcptUD ? RT_BIT(X86_XCPT_UD) : 0;
 
     /* Without Nested Paging, #PF must cause a VM-exit so we can sync our shadow page tables. */
     if (!pVM->hm.s.fNestedPaging)
@@ -3553,6 +3553,42 @@ static int hmR0VmxLoadGuestIntrState(PVMCPU pVCpu, uint32_t uIntrState)
 
 
 /**
+ * Loads the exception intercepts required for guest execution in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ */
+static int hmR0VmxLoadGuestXcptIntercepts(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    NOREF(pMixedCtx);
+    int rc = VINF_SUCCESS;
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
+    {
+        /* The remaining exception intercepts are handled elsewhere, e.g. in hmR0VmxLoadSharedCR0(). */
+        if (pVCpu->hm.s.fGIMTrapXcptUD)
+            pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_UD);
+        else
+        {
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+            pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_UD);
+#endif
+        }
+
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+        AssertRCReturn(rc, rc);
+
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+        Log4(("Load[%RU32]: VMX_VMCS32_CTRL_EXCEPTION_BITMAP=%#RX64 fContextUseFlags=%#RX32\n", pVCpu->idCpu,
+              pVCpu->hm.s.vmx.u32XcptBitmap, HMCPU_CF_VALUE(pVCpu)));
+    }
+    return rc;
+}
+
+
+/**
  * Loads the guest's RIP into the guest-state area in the VMCS.
  *
  * @returns VBox status code.
@@ -3778,6 +3814,7 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             /* For now, cleared here as mode-switches can happen outside HM/VT-x. See @bugref{7626} comment #11. */
             pVCpu->hm.s.vmx.u32XcptBitmap &= ~HMVMX_REAL_MODE_XCPT_MASK;
         }
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
 
         if (fInterceptNM)
             pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_NM);
@@ -3822,10 +3859,8 @@ static int hmR0VmxLoadSharedCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         u32GuestCR0 &= uZapCR0;
         u32GuestCR0 &= ~(X86_CR0_CD | X86_CR0_NW);          /* Always enable caching. */
 
-        /* Write VT-x's view of the guest CR0 into the VMCS and update the exception bitmap. */
+        /* Write VT-x's view of the guest CR0 into the VMCS. */
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_CR0, u32GuestCR0);
-        AssertRCReturn(rc, rc);
-        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
         AssertRCReturn(rc, rc);
         Log4(("Load[%RU32]: VMX_VMCS_GUEST_CR0=%#RX32 (uSetCR0=%#RX32 uZapCR0=%#RX32)\n", pVCpu->idCpu, u32GuestCR0, uSetCR0,
               uZapCR0));
@@ -4219,15 +4254,17 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (   fInterceptDB
         || pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+    {
         pVCpu->hm.s.vmx.u32XcptBitmap |= RT_BIT(X86_XCPT_DB);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+    }
     else
     {
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
 #endif
     }
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-    AssertRCReturn(rc, rc);
 
     /*
      * Update the processor-based VM-execution controls regarding intercepting MOV DRx instructions.
@@ -8294,6 +8331,9 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxLoadGuestApicState(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    rc = hmR0VmxLoadGuestXcptIntercepts(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestXcptIntercepts! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+
     /*
      * Loading Rflags here is fine, even though Rflags.TF might depend on guest debug state (which is not loaded here).
      * It is re-evaluated and updated if necessary in hmR0VmxLoadSharedState().
@@ -8353,6 +8393,14 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             hmR0VmxLazyLoadGuestMsrs(pVCpu, pCtx);
 #endif
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_LAZY_MSRS);
+    }
+
+    /* Loading CR0, debug state might have changed intercepts, update VMCS. */
+    if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS))
+    {
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+        AssertRC(rc);
+        HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
     }
 
     AssertMsg(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_GUEST_SHARED_STATE),
@@ -10242,8 +10290,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVmcall(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitVmcall);
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (pVM->hm.s.fHypercallsEnabled)
+    if (pVCpu->hm.s.fHypercallsEnabled)
     {
 #if 0
         int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
@@ -11404,8 +11451,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         {
 #ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
             pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
-            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
-            AssertRCReturn(rc, rc);
+            HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
 #endif
         }
 

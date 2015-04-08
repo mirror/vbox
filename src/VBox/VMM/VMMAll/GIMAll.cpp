@@ -148,17 +148,18 @@ VMM_INT_DECL(bool) GIMIsParavirtTscEnabled(PVM pVM)
  * really required.
  *
  * @returns true if needed, false otherwise.
- * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
  */
-VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVM pVM)
+VMM_INT_DECL(bool) GIMShouldTrapXcptUD(PVMCPU pVCpu)
 {
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
     if (!GIMIsEnabled(pVM))
         return false;
 
     switch (pVM->gim.s.enmProviderId)
     {
         case GIMPROVIDERID_KVM:
-            return gimKvmShouldTrapXcptUD(pVM);
+            return gimKvmShouldTrapXcptUD(pVCpu);
 
         default:
             return false;

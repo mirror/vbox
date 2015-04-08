@@ -142,9 +142,11 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
     }
 
     /*
-     * Setup #UD and hypercall behaviour.
+     * Setup hypercall and #UD handling.
      */
-    VMMHypercallsEnable(pVM);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        VMMHypercallsEnable(&pVM->aCpus[i]);
+
     if (ASMIsAmdCpu())
     {
         pKvm->fTrapXcptUD   = true;
@@ -156,6 +158,7 @@ VMMR3_INT_DECL(int) gimR3KvmInit(PVM pVM)
         pKvm->fTrapXcptUD   = false;
         pKvm->uOpCodeNative = OP_VMCALL;
     }
+
     /* We always need to trap VMCALL/VMMCALL hypercall using #UDs for raw-mode VMs. */
     if (!HMIsEnabled(pVM))
         pKvm->fTrapXcptUD = true;

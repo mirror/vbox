@@ -438,14 +438,14 @@ VMM_INT_DECL(int) VMMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *
 /**
  * Notifies VMM that paravirtualized hypercalls are now enabled.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
-VMM_INT_DECL(void) VMMHypercallsEnable(PVM pVM)
+VMM_INT_DECL(void) VMMHypercallsEnable(PVMCPU pVCpu)
 {
     /* If there is anything to do for raw-mode, do it here. */
 #ifndef IN_RC
-    if (HMIsEnabled(pVM))
-        HMHypercallsEnable(pVM);
+    if (HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        HMHypercallsEnable(pVCpu);
 #endif
 }
 
@@ -453,14 +453,14 @@ VMM_INT_DECL(void) VMMHypercallsEnable(PVM pVM)
 /**
  * Notifies VMM that paravirtualized hypercalls are now disabled.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
-VMM_INT_DECL(void) VMMHypercallsDisable(PVM pVM)
+VMM_INT_DECL(void) VMMHypercallsDisable(PVMCPU pVCpu)
 {
     /* If there is anything to do for raw-mode, do it here. */
 #ifndef IN_RC
-    if (HMIsEnabled(pVM))
-        HMHypercallsDisable(pVM);
+    if (HMIsEnabled(pVCpu->CTX_SUFF(pVM)))
+        HMHypercallsDisable(pVCpu);
 #endif
 }
 

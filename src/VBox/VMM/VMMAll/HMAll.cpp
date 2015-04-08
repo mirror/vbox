@@ -509,21 +509,45 @@ VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
 /**
  * Notifies HM that paravirtualized hypercalls are now enabled.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
-VMM_INT_DECL(void) HMHypercallsEnable(PVM pVM)
+VMM_INT_DECL(void) HMHypercallsEnable(PVMCPU pVCpu)
 {
-    pVM->hm.s.fHypercallsEnabled = true;
+    pVCpu->hm.s.fHypercallsEnabled = true;
 }
 
 
 /**
  * Notifies HM that paravirtualized hypercalls are now disabled.
  *
- * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
  */
-VMM_INT_DECL(void) HMHypercallsDisable(PVM pVM)
+VMM_INT_DECL(void) HMHypercallsDisable(PVMCPU pVCpu)
 {
-    pVM->hm.s.fHypercallsEnabled = false;
+    pVCpu->hm.s.fHypercallsEnabled = false;
+}
+
+
+/**
+ * Notifies HM that GIM provider wants to trap #UD.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ */
+VMM_INT_DECL(void) HMTrapXcptUDForGIMEnable(PVMCPU pVCpu)
+{
+    pVCpu->hm.s.fGIMTrapXcptUD = true;
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
+}
+
+
+/**
+ * Notifies HM that GIM provider no longer wants to trap #UD.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ */
+VMM_INT_DECL(void) HMTrapXcptUDForGIMDisable(PVMCPU pVCpu)
+{
+    pVCpu->hm.s.fGIMTrapXcptUD = false;
+    HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_XCPT_INTERCEPTS);
 }
 

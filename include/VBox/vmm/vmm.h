@@ -268,8 +268,8 @@ VMM_INT_DECL(VMMSWITCHER)   VMMGetSwitcher(PVM pVM);
 VMM_INT_DECL(bool)          VMMIsInRing3Call(PVMCPU pVCpu);
 VMM_INT_DECL(void)          VMMTrashVolatileXMMRegs(void);
 VMM_INT_DECL(int)           VMMPatchHypercall(PVM pVM, void *pvBuf, size_t cbBuf, size_t *pcbWritten);
-VMM_INT_DECL(void)          VMMHypercallsEnable(PVM pVM);
-VMM_INT_DECL(void)          VMMHypercallsDisable(PVM pVM);
+VMM_INT_DECL(void)          VMMHypercallsEnable(PVMCPU pVCpu);
+VMM_INT_DECL(void)          VMMHypercallsDisable(PVMCPU pVCpu);
 
 
 #if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
