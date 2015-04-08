@@ -1269,15 +1269,15 @@ BEGINPROC HMRCSaveGuestFPU64
     mov     cr0, rax
 
     mov     eax, [rsi + CPUMCTX.fXStateMask]
-    mov     ecx, [rsi + CPUMCTX.pXStateRC]
+    mov     ebx, [rsi + CPUMCTX.pXStateRC]
     test    eax, eax
     jz      .use_fxsave
     mov     edx, [rsi + CPUMCTX.fXStateMask + 4]
-    o64 xsave [rcx]
+    o64 xsave [rbx]
     jmp     .done
 
 .use_fxsave:
-    o64 fxsave  [rcx]                   ; (use explicit REX prefix, see @bugref{6398})
+    o64 fxsave  [rbx]                   ; (use explicit REX prefix, see @bugref{6398})
 
 .done:
     mov     cr0, rcx                    ; and restore old CR0 again
