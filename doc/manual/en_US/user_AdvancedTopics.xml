@@ -1790,9 +1790,9 @@ VBoxManage setextradata "VM name"
       </footnote> A VirtualBox VNIC template is a VNIC whose name starts with
     "vboxvnic_template" (case-sensitive).</para>
  
-    <para>On Solaris 11 hosts<footnote><para>When the default Crossbow based
-    bridged networking driver is used</para></footnote>, a VNIC template may
-    be used to specify the VLAN ID to use while bridging over a network link.</para>
+    <para>On Solaris 11 hosts<footnote><para>When Crossbow based bridged
+    networking is used.</para></footnote>, a VNIC template may be used to
+    specify the VLAN ID to use while bridging over a network link.</para>
 
     <para>Here is an example of how to use a VNIC template to configure a VM
     over a VLAN. Create a VirtualBox VNIC template, by executing as root:</para>
