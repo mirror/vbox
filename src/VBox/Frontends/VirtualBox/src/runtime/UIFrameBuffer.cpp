@@ -519,7 +519,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_fPendingSourceBitmap(false)
     , m_pMachineView(NULL)
     , m_iWinId(0)
-    , m_fUpdatesAllowed(true)
+    , m_fUpdatesAllowed(false)
     , m_fUnused(false)
     , m_fAutoEnabled(false)
     , m_dScaleFactor(1.0)
@@ -830,9 +830,10 @@ STDMETHODIMP UIFrameBufferPrivate::NotifyUpdateImage(ULONG uX, ULONG uY,
         /* Ignore NotifyUpdate: */
         return E_FAIL;
     }
-
-    /* Directly update m_image: */
-    if (m_fUpdatesAllowed)
+    /* Directly update m_image if update fits: */
+    if (   m_fUpdatesAllowed
+        && uX + uWidth <= (ULONG)m_image.width()
+        && uY + uHeight <= (ULONG)m_image.height())
     {
         /* Copy to m_image: */
         uchar *pu8Dst = m_image.bits() + uY * m_image.bytesPerLine() + uX * 4;
