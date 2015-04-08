@@ -99,4 +99,5 @@ void rom_scan(uint16_t start_seg, uint16_t end_seg)
             start_seg += 2048 >> 4;
         }
     }
+    outb_cmos(0x12, 0x20);
 }
