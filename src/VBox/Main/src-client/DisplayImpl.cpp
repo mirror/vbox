@@ -1601,7 +1601,7 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
 }
 
 
-HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &aFramebuffer)
+HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &aFramebuffer, com::Guid &aId)
 {
     LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
 
@@ -1617,6 +1617,8 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
                         aScreenId);
 
     pFBInfo->pFramebuffer = aFramebuffer;
+    pFBInfo->framebufferId.create();
+    aId = pFBInfo->framebufferId;
 
     SafeArray<FramebufferCapabilities_T> caps;
     pFBInfo->pFramebuffer->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(caps));
@@ -1662,13 +1664,13 @@ HRESULT Display::attachFramebuffer(ULONG aScreenId, const ComPtr<IFramebuffer> &
                            3, this, aScreenId, false);
     }
 
-    LogRelFlowFunc(("Attached to %d\n", aScreenId));
+    LogRelFlowFunc(("Attached to %d %RTuuid\n", aScreenId, aId.raw()));
     return S_OK;
 }
 
-HRESULT Display::detachFramebuffer(ULONG aScreenId)
+HRESULT Display::detachFramebuffer(ULONG aScreenId, const com::Guid &aId)
 {
-    LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc(("aScreenId = %d %RTuuid\n", aScreenId, aId.raw()));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1678,7 +1680,14 @@ HRESULT Display::detachFramebuffer(ULONG aScreenId)
 
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
 
+    if (pFBInfo->framebufferId != aId)
+    {
+        LogRelFlowFunc(("Invalid framebuffer aScreenId = %d, attached %p\n", aScreenId, pFBInfo->framebufferId.raw()));
+        return setError(E_FAIL, tr("DetachFramebuffer: Invalid framebuffer object"));
+    }
+
     pFBInfo->pFramebuffer.setNull();
+    pFBInfo->framebufferId.clear();
 
     alock.release();
 

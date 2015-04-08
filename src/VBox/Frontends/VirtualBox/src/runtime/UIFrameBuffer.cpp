@@ -380,6 +380,8 @@ private:
 #ifdef Q_OS_WIN
      CComPtr <IUnknown> m_pUnkMarshaler;
 #endif /* Q_OS_WIN */
+     /** Identifier returned by AttachFramebuffer. Used in DetachFramebuffer. */
+     QString m_strFramebufferId;
 };
 
 
@@ -598,14 +600,17 @@ void UIFrameBufferPrivate::setView(UIMachineView *pMachineView)
 
 void UIFrameBufferPrivate::attach()
 {
-    display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
+    m_strFramebufferId = display().AttachFramebuffer(m_uScreenId, CFramebuffer(this));
 }
 
 void UIFrameBufferPrivate::detach()
 {
     CFramebuffer frameBuffer = display().QueryFramebuffer(m_uScreenId);
     if (!frameBuffer.isNull())
-        display().DetachFramebuffer(m_uScreenId);
+    {
+        display().DetachFramebuffer(m_uScreenId, m_strFramebufferId);
+        m_strFramebufferId.clear();
+    }
 }
 
 void UIFrameBufferPrivate::setMarkAsUnused(bool fUnused)

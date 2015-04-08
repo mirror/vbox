@@ -15937,7 +15937,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="04AA5E91-3816-4990-8C52-59939307E5EF"
+    uuid="94a7faa2-7792-42a3-8535-00770eca1f53"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
     >
@@ -15977,6 +15977,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
       <param name="framebuffer" type="IFramebuffer" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="return"/>
     </method>
 
     <method name="detachFramebuffer">
@@ -15984,6 +15985,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Removes the graphics updates target for a screen.
       </desc>
       <param name="screenId" type="unsigned long" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="in"/>
     </method>
 
     <method name="queryFramebuffer">

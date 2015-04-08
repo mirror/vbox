@@ -207,6 +207,7 @@ static ComPtr<IProgress> gpProgress;
 
 static ULONG       gcMonitors = 1;
 static ComObjPtr<VBoxSDLFB> gpFramebuffer[64];
+static Bstr gaFramebufferId[64];
 static SDL_Cursor *gpDefaultCursor = NULL;
 #ifdef VBOXSDL_WITH_X11
 static Cursor      gpDefaultOrigX11Cursor;
@@ -2007,7 +2008,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
-        rc = gpDisplay->AttachFramebuffer(i, gpFramebuffer[i]);
+        rc = gpDisplay->AttachFramebuffer(i, gpFramebuffer[i], gaFramebufferId[i].asOutParam());
         if (FAILED(rc))
         {
             RTPrintf("Error: could not register framebuffer object!\n");
@@ -3027,7 +3028,7 @@ leave:
     if (gpDisplay)
     {
         for (unsigned i = 0; i < gcMonitors; i++)
-            gpDisplay->DetachFramebuffer(i);
+            gpDisplay->DetachFramebuffer(i, gaFramebufferId[i].raw());
     }
 
     gpMouse = NULL;
