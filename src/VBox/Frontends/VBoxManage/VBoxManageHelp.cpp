@@ -346,6 +346,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
         RTStrmPrintf(pStrm,
                      "                            [--usb on|off]\n"
                      "                            [--usbehci on|off]\n"
+                     "                            [--usbxhci on|off]\n"
                      "                            [--snapshotfolder default|<path>]\n"
                      "                            [--teleporter on|off]\n"
                      "                            [--teleporterport <port>]\n"
