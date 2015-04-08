@@ -67,6 +67,9 @@ signals:
     /** Notifies listeners about data should be committed. */
     void sigCommitData(QWidget *pThis);
 
+    /** Notifies listeners about Enter/Return key triggering. */
+    void sigEnterKeyTriggered();
+
 public:
 
     /** Constructor.
@@ -82,6 +85,9 @@ private:
 
     /** Prepare routine. */
     void prepare();
+
+    /** Key press @a pEvent handler. */
+    void keyPressEvent(QKeyEvent *pEvent);
 
     /** Property: Returns the current password of the editor. */
     QString password() const { return QLineEdit::text(); }
@@ -153,6 +159,9 @@ signals:
     /** Notifies listeners about data change. */
     void sigDataChanged();
 
+    /** Notifies listeners about editor's Enter/Return key triggering. */
+    void sigEditorEnterKeyTriggered();
+
 public:
 
     /** Constructor.
@@ -202,6 +211,23 @@ void UIPasswordEditor::prepare()
     /* Listen for the text changes: */
     connect(this, SIGNAL(textChanged(const QString&)),
             this, SLOT(sltPasswordChanged(const QString&)));
+}
+
+void UIPasswordEditor::keyPressEvent(QKeyEvent *pEvent)
+{
+    /* Call to base-class: */
+    QLineEdit::keyPressEvent(pEvent);
+
+    /* Broadcast Enter/Return key press: */
+    switch (pEvent->key())
+    {
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+            emit sigEnterKeyTriggered();
+            break;
+        default:
+            break;
+    }
 }
 
 UIEncryptionDataModel::UIEncryptionDataModel(QObject *pParent, const EncryptedMediumMap &encryptedMediums)
@@ -466,6 +492,10 @@ void UIEncryptionDataTable::prepare()
         /* Assign configured item delegate to table: */
         delete itemDelegate();
         setItemDelegate(pStyledItemDelegate);
+        /* Configure item delegate: */
+        pStyledItemDelegate->setWatchForEditorEnterKeyTriggering(true);
+        connect(pStyledItemDelegate, SIGNAL(sigEditorEnterKeyTriggered()),
+                this, SIGNAL(sigEditorEnterKeyTriggered()));
     }
 
     /* Configure table: */
@@ -508,6 +538,12 @@ EncryptionPasswordMap UIAddDiskEncryptionPasswordDialog::encryptionPasswords() c
     return m_pTableEncryptionData->encryptionPasswords();
 }
 
+void UIAddDiskEncryptionPasswordDialog::sltEditorEnterKeyTriggered()
+{
+    if (m_pButtonBox->button(QDialogButtonBox::Ok)->isEnabled())
+        accept();
+}
+
 void UIAddDiskEncryptionPasswordDialog::prepare()
 {
     /* Configure self: */
@@ -535,6 +571,8 @@ void UIAddDiskEncryptionPasswordDialog::prepare()
                 /* Configure encryption-data table: */
                 connect(m_pTableEncryptionData, SIGNAL(sigDataChanged()),
                         this, SLOT(sltDataChanged()));
+                connect(m_pTableEncryptionData, SIGNAL(sigEditorEnterKeyTriggered()),
+                        this, SLOT(sltEditorEnterKeyTriggered()));
                 m_pTableEncryptionData->setFocus();
                 m_pTableEncryptionData->editFirstIndex();
                 /* Add label into layout: */

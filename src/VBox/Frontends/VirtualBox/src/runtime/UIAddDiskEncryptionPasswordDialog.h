@@ -58,6 +58,9 @@ private slots:
     /** Handles the data change. */
     void sltDataChanged() { revalidate(); }
 
+    /** Handles editor's Enter/Return key triggering. */
+    void sltEditorEnterKeyTriggered();
+
 private:
 
     /** Prepare routine. */
