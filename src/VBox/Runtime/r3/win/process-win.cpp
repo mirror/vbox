@@ -845,13 +845,13 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                 dwErr = NO_ERROR;
 
                 PSID pSid = (PSID)RTMemAlloc(cbSid * sizeof(wchar_t)); /** @todo r=bird: What's the relationship between wchar_t and PSID? */
-                AssertPtrReturn(pSid, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
+                AssertReturn(pSid, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
 
                 PRTUTF16 pwszDomain = NULL;
                 if (cchDomain > 0)
                 {
                     pwszDomain = (PRTUTF16)RTMemAlloc(cchDomain * sizeof(RTUTF16));
-                    AssertPtrReturn(pwszDomain, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
+                    AssertReturn(pwszDomain, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
                 }
 
                 /* Note: Also supports FQDNs! */
