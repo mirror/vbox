@@ -48,6 +48,7 @@ template<> bool canConvert<KNetworkAttachmentType>() { return true; }
 template<> bool canConvert<KNetworkAdapterType>() { return true; }
 template<> bool canConvert<KNetworkAdapterPromiscModePolicy>() { return true; }
 template<> bool canConvert<KPortMode>() { return true; }
+template<> bool canConvert<KUSBControllerType>() { return true; }
 template<> bool canConvert<KUSBDeviceState>() { return true; }
 template<> bool canConvert<KUSBDeviceFilterAction>() { return true; }
 template<> bool canConvert<KAudioDriverType>() { return true; }
@@ -365,6 +366,19 @@ template<> QString toString(const KPortMode &mode)
         case KPortMode_HostDevice:   return QApplication::translate("VBoxGlobal", "Host Device", "PortMode");
         case KPortMode_RawFile:      return QApplication::translate("VBoxGlobal", "Raw File", "PortMode");
         AssertMsgFailed(("No text for %d", mode)); break;
+    }
+    return QString();
+}
+
+/* QString <= KUSBControllerType: */
+template<> QString toString(const KUSBControllerType &type)
+{
+    switch (type)
+    {
+        case KUSBControllerType_OHCI: return QApplication::translate("VBoxGlobal", "OHCI", "USBControllerType");
+        case KUSBControllerType_EHCI: return QApplication::translate("VBoxGlobal", "EHCI", "USBControllerType");
+        case KUSBControllerType_XHCI: return QApplication::translate("VBoxGlobal", "xHCI", "USBControllerType");
+        AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
