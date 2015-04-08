@@ -1184,10 +1184,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /*
          * Paravirt. provider.
-         * Currently only enabled for HM VMs as raw-mode GIM still needs work.
          */
-        if (!fHMEnabled)
-            paravirtProvider = ParavirtProvider_None;
         PCFGMNODE pParavirtNode;
         InsertConfigNode(pRoot, "GIM", &pParavirtNode);
         const char *pcszParavirtProvider;
