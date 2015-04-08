@@ -3497,7 +3497,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
     Linux guests by dragging files, directories or text from the host into the
     guest's screen. This is called <emphasis>drag'n drop (DnD)</emphasis>.</para>
 
-    <para>In version 4.4 support for Windows guests has been added, as well as
+    <para>In version 5.0 support for Windows guests has been added, as well as
     the ability to transfer data the other way around, that is, from the guest
     to the host.</para>
 
@@ -3852,7 +3852,7 @@ AuthResult AUTHCALL AuthEntry(
     existing client code.</para>
 
     <sect1>
-      <title>Incompatible API changes with version 4.4</title>
+      <title>Incompatible API changes with version 5.0</title>
 
       <itemizedlist>
         <listitem>

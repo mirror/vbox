@@ -1250,7 +1250,7 @@ $</screen>
   <sect1 id="guestadd-dnd">
     <title>Drag'n Drop</title>
 
-    <para>Starting with version 4.4, VirtualBox supports to drag'n drop content
+    <para>Starting with version 5.0, VirtualBox supports to drag'n drop content
     from the host to the guest and vice versa. For this to work the latest Guest
     Additions must be installed on the guest.</para>
 
