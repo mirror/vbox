@@ -222,7 +222,7 @@
 
 /** @name Useful macros
  * @{ */
-/** Indicates that we're targetting native NT in the current source. */
+/** Indicates that we're targeting native NT in the current source. */
 #define RTNT_USE_NATIVE_NT              1
 /** Initializes a IO_STATUS_BLOCK. */
 #define RTNT_IO_STATUS_BLOCK_INITIALIZER  { STATUS_FAILED_DRIVER_ENTRY, ~(uintptr_t)42 }

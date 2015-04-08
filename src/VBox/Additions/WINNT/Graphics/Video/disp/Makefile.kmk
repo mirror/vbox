@@ -21,7 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # VBoxDisp - Windows Guest Additions XPDM Display Driver
 #
-# Note. This has to run on NT4! (*_NT4 => *_W2K3 when targetting 64-bit.)
+# Note. This has to run on NT4! (*_NT4 => *_W2K3 when targeting 64-bit.)
 #
 SYSMODS += VBoxDisp
 VBoxDisp_TEMPLATE      = VBOXGUESTR0

@@ -28,7 +28,7 @@
 %define ___bootsector2_first_mac
 
 ;
-; Undefine thing that shouldn't be defined if we're targetting the
+; Undefine thing that shouldn't be defined if we're targeting the
 ; binary format directly. These macros comes from DEFS in Config.kmk.
 ;
 %ifdef ASM_FORMAT_BIN

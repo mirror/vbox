@@ -1446,7 +1446,7 @@ sub CheckForMinGW32(strOptMinGW32, strOptW32API)
    ' Success?
    if strPathMingW32 = "" then
       if g_strTargetArch = "amd64" then
-         MsgWarning "Can't locate a suitable MinGW32 installation, ignoring since we're targetting AMD64 and won't need it."
+         MsgWarning "Can't locate a suitable MinGW32 installation, ignoring since we're targeting AMD64 and won't need it."
       elseif strOptMinGW32 = "" then
          MsgError "Can't locate a suitable MinGW32 installation. Try specify the path with " _
             & "the --with-MinGW32=<path> argument. If still no luck, consult the configure.log and the build requirements."
@@ -1583,7 +1583,7 @@ sub CheckForMinGWw64(strOptMinGWw64)
    ' Success?
    if strPathMinGWw64 = "" then
       if g_strTargetArch = "x86" then
-         MsgWarning "Can't locate a suitable MinGW-w64 installation, ignoring since we're targetting x86 and won't need it."
+         MsgWarning "Can't locate a suitable MinGW-w64 installation, ignoring since we're targeting x86 and won't need it."
       elseif strOptMinGWw64 = "" then
          MsgError "Can't locate a suitable MinGW-w64 installation. Try specify the path with " _
             & "the --with-MinGW-w64=<path> argument. If still no luck, consult the configure.log and the build requirements."

@@ -320,7 +320,7 @@
 /** @} */
 
 /** @def RT_OPSYS
- * Indicates which OS we're targetting. It's a \#define with is
+ * Indicates which OS we're targeting. It's a \#define with is
  * assigned one of the RT_OPSYS_XXX defines above.
  *
  * So to test if we're on FreeBSD do the following:
