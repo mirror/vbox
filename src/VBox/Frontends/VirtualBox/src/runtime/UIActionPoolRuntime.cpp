@@ -341,46 +341,6 @@ protected:
     }
 };
 
-#ifndef RT_OS_DARWIN
-class UIActionSimplePerformClose : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimplePerformClose(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/exit_16px.png")
-    {
-        setMenuRole(QAction::QuitRole);
-    }
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;}
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);}
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuMachine(UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("Close");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("Q");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Close..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Close the virtual machine"));
-    }
-};
-#endif /* !RT_OS_DARWIN */
-
 class UIActionMenuView : public UIActionMenu
 {
     Q_OBJECT;
@@ -2063,9 +2023,6 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_Machine_S_SaveState] = new UIActionSimplePerformSaveState(this);
     m_pool[UIActionIndexRT_M_Machine_S_Shutdown] = new UIActionSimplePerformShutdown(this);
     m_pool[UIActionIndexRT_M_Machine_S_PowerOff] = new UIActionSimplePerformPowerOff(this);
-#ifndef RT_OS_DARWIN
-    m_pool[UIActionIndexRT_M_Machine_S_Close] = new UIActionSimplePerformClose(this);
-#endif /* !RT_OS_DARWIN */
 
     /* 'View' actions: */
     m_pool[UIActionIndexRT_M_View] = new UIActionMenuView(this);
@@ -2181,9 +2138,7 @@ void UIActionPoolRuntime::updateConfiguration()
 
     /* Recache common action restrictions: */
     m_restrictedMenus[UIActionRestrictionLevel_Base] =                  gEDataManager->restrictedRuntimeMenuTypes(strMachineID);
-#ifdef Q_WS_MAC
     m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = gEDataManager->restrictedRuntimeMenuApplicationActionTypes(strMachineID);
-#endif /* Q_WS_MAC */
     m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] =     gEDataManager->restrictedRuntimeMenuMachineActionTypes(strMachineID);
     m_restrictedActionsMenuView[UIActionRestrictionLevel_Base] =        gEDataManager->restrictedRuntimeMenuViewActionTypes(strMachineID);
     m_restrictedActionsMenuInput[UIActionRestrictionLevel_Base] =       gEDataManager->restrictedRuntimeMenuInputActionTypes(strMachineID);
@@ -2257,13 +2212,8 @@ void UIActionPoolRuntime::updateConfiguration()
                                       // && (m_restrictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
     if (fAllCloseActionsRestricted)
     {
-#ifdef Q_WS_MAC
         m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuApplicationActionType)
             (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::MenuApplicationActionType_Close);
-#else /* !Q_WS_MAC */
-        m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::RuntimeMenuMachineActionType)
-            (m_restrictedActionsMenuMachine[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close);
-#endif /* !Q_WS_MAC */
     }
 
     /* Call to base-class: */
@@ -2286,11 +2236,9 @@ void UIActionPoolRuntime::updateMenus()
     /* Clear menu list: */
     m_mainMenus.clear();
 
-#ifdef RT_OS_DARWIN
     /* 'Application' menu: */
     addMenu(m_mainMenus, action(UIActionIndex_M_Application));
     updateMenuApplication();
-#endif /* RT_OS_DARWIN */
 
     /* 'Machine' menu: */
     addMenu(m_mainMenus, action(UIActionIndexRT_M_Machine));
@@ -2363,18 +2311,6 @@ void UIActionPoolRuntime::updateMenuMachine()
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Shutdown)) || fSeparator;
     /* 'PowerOff' action: */
     fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_PowerOff)) || fSeparator;
-
-#ifndef Q_WS_MAC
-    /* Separator: */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-    /* 'Close' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndexRT_M_Machine_S_Close)) || fSeparator;
-#endif /* !Q_WS_MAC */
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndexRT_M_Machine);

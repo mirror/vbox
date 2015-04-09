@@ -118,10 +118,8 @@ private:
 
     /** Prepare menus routine. */
     void prepareMenus();
-#ifdef Q_WS_MAC
-    /** Mac OS X: Prepare 'Application' menu routine. */
+    /** Prepare 'Application' menu routine. */
     void prepareMenuApplication();
-#endif /* Q_WS_MAC */
     /** Prepare 'Machine' menu routine. */
     void prepareMenuMachine();
     /** Prepare 'View' menu routine. */
@@ -147,10 +145,8 @@ private:
 #endif /* !Q_WS_MAC */
     /** Update menus routine. */
     void updateMenus();
-#ifdef Q_WS_MAC
-    /** Mac OS X: Update 'Application' menu routine. */
+    /** Update 'Application' menu routine. */
     void updateMenuApplication();
-#endif /* Q_WS_MAC */
     /** Update 'Machine' menu routine. */
     void updateMenuMachine();
     /** Update 'View' menu routine. */

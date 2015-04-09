@@ -311,12 +311,10 @@ public:
         /** Defines restricted Runtime UI menu types. */
         void setRestrictedRuntimeMenuTypes(UIExtraDataMetaDefs::MenuType types, const QString &strID);
 
-#ifdef Q_WS_MAC
-        /** Mac OS X: Returns restricted Runtime UI action types for Application menu. */
+        /** Returns restricted Runtime UI action types for Application menu. */
         UIExtraDataMetaDefs::MenuApplicationActionType restrictedRuntimeMenuApplicationActionTypes(const QString &strID);
-        /** Mac OS X: Defines restricted Runtime UI action types for Application menu. */
+        /** Defines restricted Runtime UI action types for Application menu. */
         void setRestrictedRuntimeMenuApplicationActionTypes(UIExtraDataMetaDefs::MenuApplicationActionType types, const QString &strID);
-#endif /* Q_WS_MAC */
 
         /** Returns restricted Runtime UI action types for Machine menu. */
         UIExtraDataMetaDefs::RuntimeMenuMachineActionType restrictedRuntimeMenuMachineActionTypes(const QString &strID);

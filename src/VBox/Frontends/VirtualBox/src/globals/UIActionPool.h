@@ -51,13 +51,20 @@ enum UIActionType
 /** Action indexes. */
 enum UIActionIndex
 {
-#ifdef RT_OS_DARWIN
     /* 'Application' menu actions: */
     UIActionIndex_M_Application,
+#ifdef RT_OS_DARWIN
     UIActionIndex_M_Application_S_About,
+#endif /* RT_OS_DARWIN */
     UIActionIndex_M_Application_S_Preferences,
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    UIActionIndex_M_Application_S_NetworkAccessManager,
+    UIActionIndex_M_Application_S_CheckForUpdates,
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    UIActionIndex_M_Application_S_ResetWarnings,
     UIActionIndex_M_Application_S_Close,
 
+#ifdef RT_OS_DARWIN
     /* 'Window' menu actions: */
     UIActionIndex_M_Window,
     UIActionIndex_M_Window_S_Minimize,
@@ -67,14 +74,8 @@ enum UIActionIndex
     UIActionIndex_Menu_Help,
     UIActionIndex_Simple_Contents,
     UIActionIndex_Simple_WebSite,
-    UIActionIndex_Simple_ResetWarnings,
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    UIActionIndex_Simple_NetworkAccessManager,
-    UIActionIndex_Simple_CheckForUpdates,
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef RT_OS_DARWIN
     UIActionIndex_Simple_About,
-    UIActionIndex_Simple_Preferences,
 #endif /* !RT_OS_DARWIN */
 
     /* Maximum index: */
@@ -365,15 +366,15 @@ public:
     /** Defines menu-bar @a restriction for passed @a level. */
     void setRestrictionForMenuBar(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuType restriction);
 
-#ifdef Q_WS_MAC
     /** Returns whether the action with passed @a type is allowed in the 'Application' menu. */
     bool isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const;
     /** Defines 'Application' menu @a restriction for passed @a level. */
     void setRestrictionForMenuApplication(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuApplicationActionType restriction);
 
-    /** Returns whether the action with passed @a type is allowed in the 'Window' menu. */
+#ifdef Q_WS_MAC
+    /** Mac OS X: Returns whether the action with passed @a type is allowed in the 'Window' menu. */
     bool isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const;
-    /** Defines 'Window' menu @a restriction for passed @a level. */
+    /** Mac OS X: Defines 'Window' menu @a restriction for passed @a level. */
     void setRestrictionForMenuWindow(UIActionRestrictionLevel level, UIExtraDataMetaDefs::MenuWindowActionType restriction);
 #endif /* Q_WS_MAC */
 
@@ -424,10 +425,10 @@ protected:
     virtual void updateMenu(int iIndex);
     /** Update menus routine. */
     virtual void updateMenus() = 0;
-#ifdef RT_OS_DARWIN
     /** Update 'Application' menu routine. */
     virtual void updateMenuApplication();
-    /** Update 'Window' menu routine. */
+#ifdef RT_OS_DARWIN
+    /** Mac OS X: Update 'Window' menu routine. */
     virtual void updateMenuWindow();
 #endif /* RT_OS_DARWIN */
     /** Update 'Help' menu routine. */
@@ -461,10 +462,10 @@ protected:
 
     /** Holds restricted menu types. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuType> m_restrictedMenus;
-#ifdef Q_WS_MAC
     /** Holds restricted action types of the 'Application' menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuApplicationActionType> m_restrictedActionsMenuApplication;
-    /** Holds restricted action types of the 'Window' menu. */
+#ifdef Q_WS_MAC
+    /** Mac OS X: Holds restricted action types of the 'Window' menu. */
     QMap<UIActionRestrictionLevel, UIExtraDataMetaDefs::MenuWindowActionType> m_restrictedActionsMenuWindow;
 #endif /* Q_WS_MAC */
     /** Holds restricted action types of the Help menu. */

@@ -71,9 +71,7 @@ template<class X> X fromInternalInteger(const int & /* iData */) { Assert(0); re
 template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<UIExtraDataMetaDefs::MenuType>();
-#ifdef Q_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>();
-#endif /* Q_WS_MAC */
 template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>();
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>();
@@ -132,10 +130,8 @@ template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuType);
 template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs::MenuType>(const QString &strMenuType);
-#ifdef Q_WS_MAC
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &menuApplicationActionType);
 template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIExtraDataMetaDefs::MenuApplicationActionType>(const QString &strMenuApplicationActionType);
-#endif /* Q_WS_MAC */
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionType &menuHelpActionType);
 template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDataMetaDefs::MenuHelpActionType>(const QString &strMenuHelpActionType);
 template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachineActionType &runtimeMenuMachineActionType);

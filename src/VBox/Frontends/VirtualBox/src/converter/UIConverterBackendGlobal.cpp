@@ -39,9 +39,7 @@
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuType>() { return true; }
-#ifdef Q_WS_MAC
 template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { return true; }
-#endif /* Q_WS_MAC */
 template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuMachineActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::RuntimeMenuViewActionType>() { return true; }
@@ -373,9 +371,7 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuTyp
     QString strResult;
     switch (menuType)
     {
-#ifdef RT_OS_DARWIN
         case UIExtraDataMetaDefs::MenuType_Application: strResult = "Application"; break;
-#endif /* RT_OS_DARWIN */
         case UIExtraDataMetaDefs::MenuType_Machine:     strResult = "Machine"; break;
         case UIExtraDataMetaDefs::MenuType_View:        strResult = "View"; break;
         case UIExtraDataMetaDefs::MenuType_Input:       strResult = "Input"; break;
@@ -403,9 +399,7 @@ template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs:
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
     QStringList keys;      QList<UIExtraDataMetaDefs::MenuType> values;
-#ifdef RT_OS_DARWIN
     keys << "Application"; values << UIExtraDataMetaDefs::MenuType_Application;
-#endif /* RT_OS_DARWIN */
     keys << "Machine";     values << UIExtraDataMetaDefs::MenuType_Machine;
     keys << "View";        values << UIExtraDataMetaDefs::MenuType_View;
     keys << "Input";       values << UIExtraDataMetaDefs::MenuType_Input;
@@ -425,17 +419,23 @@ template<> UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs:
     return values.at(keys.indexOf(QRegExp(strMenuType, Qt::CaseInsensitive)));
 }
 
-#ifdef Q_WS_MAC
 /* QString <= UIExtraDataMetaDefs::MenuApplicationActionType: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &menuApplicationActionType)
 {
     QString strResult;
     switch (menuApplicationActionType)
     {
-        case UIExtraDataMetaDefs::MenuApplicationActionType_About:       strResult = "About"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences: strResult = "Preferences"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_Close:       strResult = "Close"; break;
-        case UIExtraDataMetaDefs::MenuApplicationActionType_All:         strResult = "All"; break;
+#ifdef Q_WS_MAC
+        case UIExtraDataMetaDefs::MenuApplicationActionType_About:                strResult = "About"; break;
+#endif /* Q_WS_MAC */
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Preferences:          strResult = "Preferences"; break;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        case UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates:      strResult = "CheckForUpdates"; break;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+        case UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings:        strResult = "ResetWarnings"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_Close:                strResult = "Close"; break;
+        case UIExtraDataMetaDefs::MenuApplicationActionType_All:                  strResult = "All"; break;
         default:
         {
             AssertMsgFailed(("No text for action type=%d", menuApplicationActionType));
@@ -450,18 +450,24 @@ template<> UIExtraDataMetaDefs::MenuApplicationActionType fromInternalString<UIE
 {
     /* Here we have some fancy stuff allowing us
      * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;      QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
-    keys << "About";       values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
-    keys << "Preferences"; values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
-    keys << "Close";       values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
-    keys << "All";         values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
+    QStringList keys;               QList<UIExtraDataMetaDefs::MenuApplicationActionType> values;
+#ifdef Q_WS_MAC
+    keys << "About";                values << UIExtraDataMetaDefs::MenuApplicationActionType_About;
+#endif /* Q_WS_MAC */
+    keys << "Preferences";          values << UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    keys << "NetworkAccessManager"; values << UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager;
+    keys << "CheckForUpdates";      values << UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    keys << "ResetWarnings";        values << UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings;
+    keys << "Close";                values << UIExtraDataMetaDefs::MenuApplicationActionType_Close;
+    keys << "All";                  values << UIExtraDataMetaDefs::MenuApplicationActionType_All;
     /* Invalid type for unknown words: */
     if (!keys.contains(strMenuApplicationActionType, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::MenuApplicationActionType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMenuApplicationActionType, Qt::CaseInsensitive)));
 }
-#endif /* Q_WS_MAC */
 
 /* QString <= UIExtraDataMetaDefs::MenuHelpActionType: */
 template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionType &menuHelpActionType)
@@ -471,14 +477,8 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::MenuHelpActionTyp
     {
         case UIExtraDataMetaDefs::MenuHelpActionType_Contents:             strResult = "Contents"; break;
         case UIExtraDataMetaDefs::MenuHelpActionType_WebSite:              strResult = "WebSite"; break;
-        case UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings:        strResult = "ResetWarnings"; break;
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        case UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager: strResult = "NetworkAccessManager"; break;
-        case UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates:      strResult = "CheckForUpdates"; break;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
         case UIExtraDataMetaDefs::MenuHelpActionType_About:                strResult = "About"; break;
-        case UIExtraDataMetaDefs::MenuHelpActionType_Preferences:          strResult = "Preferences"; break;
 #endif /* !Q_WS_MAC */
         case UIExtraDataMetaDefs::MenuHelpActionType_All:                  strResult = "All"; break;
         default:
@@ -498,14 +498,8 @@ template<> UIExtraDataMetaDefs::MenuHelpActionType fromInternalString<UIExtraDat
     QStringList keys;               QList<UIExtraDataMetaDefs::MenuHelpActionType> values;
     keys << "Contents";             values << UIExtraDataMetaDefs::MenuHelpActionType_Contents;
     keys << "WebSite";              values << UIExtraDataMetaDefs::MenuHelpActionType_WebSite;
-    keys << "ResetWarnings";        values << UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings;
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    keys << "NetworkAccessManager"; values << UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager;
-    keys << "CheckForUpdates";      values << UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates;
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
     keys << "About";                values << UIExtraDataMetaDefs::MenuHelpActionType_About;
-    keys << "Preferences";          values << UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
 #endif /* !Q_WS_MAC */
     keys << "All";                  values << UIExtraDataMetaDefs::MenuHelpActionType_All;
     /* Invalid type for unknown words: */
@@ -529,9 +523,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::RuntimeMenuMachin
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState:         strResult = "SaveState"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown:          strResult = "Shutdown"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff:          strResult = "PowerOff"; break;
-#ifndef Q_WS_MAC
-        case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close:             strResult = "Close"; break;
-#endif /* !Q_WS_MAC */
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing:           strResult = "Nothing"; break;
         case UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All:               strResult = "All"; break;
         default:
@@ -557,9 +548,6 @@ template<> UIExtraDataMetaDefs::RuntimeMenuMachineActionType fromInternalString<
     keys << "SaveState";         values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_SaveState;
     keys << "Shutdown";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Shutdown;
     keys << "PowerOff";          values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_PowerOff;
-#ifndef Q_WS_MAC
-    keys << "Close";             values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Close;
-#endif /* !Q_WS_MAC */
     keys << "Nothing";           values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_Nothing;
     keys << "All";               values << UIExtraDataMetaDefs::RuntimeMenuMachineActionType_All;
     /* Invalid type for unknown words: */

@@ -134,7 +134,6 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuTypes(restrictions, machineID());
             break;
         }
-#ifdef Q_WS_MAC
         case UIExtraDataMetaDefs::MenuType_Application:
         {
             /* Get sender type: */
@@ -148,7 +147,6 @@ void UIMenuBarEditorWidget::sltHandleMenuBarMenuClick()
             gEDataManager->setRestrictedRuntimeMenuApplicationActionTypes(restrictions, machineID());
             break;
         }
-#endif /* Q_WS_MAC */
         case UIExtraDataMetaDefs::MenuType_Machine:
         {
             /* Get sender type: */
@@ -336,9 +334,7 @@ void UIMenuBarEditorWidget::prepare()
 void UIMenuBarEditorWidget::prepareMenus()
 {
     /* Create menus: */
-#ifdef Q_WS_MAC
     prepareMenuApplication();
-#endif /* Q_WS_MAC */
     prepareMenuMachine();
     prepareMenuView();
     prepareMenuInput();
@@ -502,18 +498,29 @@ QAction* UIMenuBarEditorWidget::prepareCopiedAction(QMenu *pMenu, const UIAction
     return pCopiedAction;
 }
 
-#ifdef Q_WS_MAC
 void UIMenuBarEditorWidget::prepareMenuApplication()
 {
     /* Copy menu: */
-    QMenu *pMenu = prepareNamedMenu("VirtualBox");
+#ifdef Q_WS_MAC
+    QMenu *pMenu = prepareNamedMenu("Application");
+#else /* !Q_WS_MAC */
+    QMenu *pMenu = prepareCopiedMenu(actionPool()->action(UIActionIndex_M_Application));
+#endif /* !Q_WS_MAC */
     AssertPtrReturnVoid(pMenu);
     {
+#ifdef Q_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_About));
+#endif /* Q_WS_MAC */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+#ifndef Q_WS_MAC
+        pMenu->addSeparator();
+#endif /* !Q_WS_MAC */
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
     }
 }
-#endif /* Q_WS_MAC */
 
 void UIMenuBarEditorWidget::prepareMenuMachine()
 {
@@ -636,15 +643,8 @@ void UIMenuBarEditorWidget::prepareMenuHelp()
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_Contents));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_WebSite));
         pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_ResetWarnings));
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-        pMenu->addSeparator();
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_NetworkAccessManager));
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef Q_WS_MAC
-        pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_About));
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_Simple_Preferences));
 #endif /* !Q_WS_MAC */
     }
 }
@@ -691,9 +691,7 @@ void UIMenuBarEditorWidget::updateMenus()
     }
 
     /* Update known menu-bar menus: */
-#ifdef Q_WS_MAC
     updateMenuApplication();
-#endif /* Q_WS_MAC */
     updateMenuMachine();
     updateMenuView();
     updateMenuInput();
@@ -707,7 +705,6 @@ void UIMenuBarEditorWidget::updateMenus()
     updateMenuHelp();
 }
 
-#ifdef Q_WS_MAC
 void UIMenuBarEditorWidget::updateMenuApplication()
 {
     /* Recache menu-bar configuration: */
@@ -736,7 +733,6 @@ void UIMenuBarEditorWidget::updateMenuApplication()
         m_actions.value(strKey)->setChecked(!(restrictionsMenuApplication & enumValue));
     }
 }
-#endif /* Q_WS_MAC */
 
 void UIMenuBarEditorWidget::updateMenuMachine()
 {

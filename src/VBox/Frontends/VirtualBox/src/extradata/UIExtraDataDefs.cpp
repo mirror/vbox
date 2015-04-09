@@ -91,9 +91,7 @@ const char* UIExtraDataDefs::GUI_Geometry_State_Max = "max";
 const char* UIExtraDataDefs::GUI_MenuBar_Enabled = "GUI/MenuBar/Enabled";
 #endif /* !Q_WS_MAC */
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMenus = "GUI/RestrictedRuntimeMenus";
-#ifdef Q_WS_MAC
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeApplicationMenuActions = "GUI/RestrictedRuntimeApplicationMenuActions";
-#endif /* Q_WS_MAC */
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeMachineMenuActions = "GUI/RestrictedRuntimeMachineMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeViewMenuActions = "GUI/RestrictedRuntimeViewMenuActions";
 const char* UIExtraDataDefs::GUI_RestrictedRuntimeInputMenuActions = "GUI/RestrictedRuntimeInputMenuActions";

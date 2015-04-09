@@ -1012,6 +1012,12 @@ void UIMachineLogic::prepareActionGroups()
 
 void UIMachineLogic::prepareActionConnections()
 {
+    /* 'Application' actions connection: */
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()),
+            this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Close), SIGNAL(triggered()),
+            this, SLOT(sltClose()), Qt::QueuedConnection);
+
     /* 'Machine' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), SIGNAL(triggered()),
             this, SLOT(sltOpenVMSettingsDialog()));
@@ -1029,13 +1035,6 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltShutdown()));
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff), SIGNAL(triggered()),
             this, SLOT(sltPowerOff()), Qt::QueuedConnection);
-#ifdef RT_OS_DARWIN
-    connect(actionPool()->action(UIActionIndex_M_Application_S_Close), SIGNAL(triggered()),
-            this, SLOT(sltClose()), Qt::QueuedConnection);
-#else /* !RT_OS_DARWIN */
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Close), SIGNAL(triggered()),
-            this, SLOT(sltClose()), Qt::QueuedConnection);
-#endif /* !RT_OS_DARWIN */
 
     /* 'View' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
@@ -1097,15 +1096,6 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionPool()->action(UIActionIndex_M_Window_S_Minimize), SIGNAL(triggered()),
             this, SLOT(sltMinimizeActiveMachineWindow()));
 #endif /* Q_WS_MAC */
-
-    /* 'Help' actions connections: */
-#ifdef RT_OS_DARWIN
-    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()),
-            this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
-#else /* !RT_OS_DARWIN */
-    connect(actionPool()->action(UIActionIndex_Simple_Preferences), SIGNAL(triggered()),
-            this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
-#endif /* !RT_OS_DARWIN */
 }
 
 void UIMachineLogic::prepareHandlers()
@@ -2406,19 +2396,11 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
     if (!isMachineWindowsCreated())
         return;
 
-#ifdef RT_OS_DARWIN
     /* Check that we do NOT handling that already: */
     if (actionPool()->action(UIActionIndex_M_Application_S_Preferences)->data().toBool())
         return;
     /* Remember that we handling that already: */
     actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(true);
-#else /* !RT_OS_DARWIN */
-    /* Check that we do NOT handling that already: */
-    if (actionPool()->action(UIActionIndex_Simple_Preferences)->data().toBool())
-        return;
-    /* Remember that we handling that already: */
-    actionPool()->action(UIActionIndex_Simple_Preferences)->setData(true);
-#endif /* !RT_OS_DARWIN */
 
     /* Create and execute global settings window: */
     QPointer<UISettingsDialogGlobal> pDialog = new UISettingsDialogGlobal(activeMachineWindow(),
@@ -2427,13 +2409,8 @@ void UIMachineLogic::showGlobalPreferences(const QString &strCategory /* = QStri
     if (pDialog)
         delete pDialog;
 
-#ifdef RT_OS_DARWIN
     /* Remember that we do NOT handling that already: */
     actionPool()->action(UIActionIndex_M_Application_S_Preferences)->setData(false);
-#else /* !RT_OS_DARWIN */
-    /* Remember that we do NOT handling that already: */
-    actionPool()->action(UIActionIndex_Simple_Preferences)->setData(false);
-#endif /* !RT_OS_DARWIN */
 }
 
 void UIMachineLogic::askUserForTheDiskEncryptionPasswords()

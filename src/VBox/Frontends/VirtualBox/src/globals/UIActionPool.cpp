@@ -315,7 +315,6 @@ UIActionPolymorphic::UIActionPolymorphic(UIActionPool *pParent,
 }
 
 
-#ifdef RT_OS_DARWIN
 class UIActionMenuApplication : public UIActionMenu
 {
     Q_OBJECT;
@@ -325,7 +324,9 @@ public:
     UIActionMenuApplication(UIActionPool *pParent)
         : UIActionMenu(pParent)
     {
+#ifdef RT_OS_DARWIN
         menu()->setConsumable(true);
+#endif /* RT_OS_DARWIN */
         retranslateUi();
     }
 
@@ -340,7 +341,11 @@ protected:
 
     void retranslateUi()
     {
+#ifdef RT_OS_DARWIN
         setName(QApplication::translate("UIActionPool", "&VirtualBox"));
+#else /* !RT_OS_DARWIN */
+        setName(QApplication::translate("UIActionPool", "&File"));
+#endif /* !RT_OS_DARWIN */
     }
 };
 
@@ -382,6 +387,7 @@ protected:
     }
 };
 
+#ifdef RT_OS_DARWIN
 class UIActionMenuWindow : public UIActionMenu
 {
     Q_OBJECT;
@@ -549,17 +555,18 @@ public:
     UIActionSimpleResetWarnings(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/reset_warnings_16px.png")
     {
+        setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
     }
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings); }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_ResetWarnings); }
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_ResetWarnings); }
 
     QString shortcutExtraDataID() const
     {
@@ -583,17 +590,18 @@ public:
     UIActionSimpleNetworkAccessManager(UIActionPool *pParent)
         : UIActionSimple(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
     {
+        setMenuRole(QAction::ApplicationSpecificRole);
         retranslateUi();
     }
 
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager); }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_NetworkAccessManager); }
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_NetworkAccessManager); }
 
     QString shortcutExtraDataID() const
     {
@@ -623,11 +631,11 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates; }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates); }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates); }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates); }
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates); }
 
     QString shortcutExtraDataID() const
     {
@@ -660,29 +668,29 @@ protected:
     /** Returns action extra-data ID. */
     virtual int extraDataID() const
     {
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
         return UIExtraDataMetaDefs::MenuApplicationActionType_About;
-#else /* !Q_WS_MAC */
+#else /* !RT_OS_DARWIN */
         return UIExtraDataMetaDefs::MenuHelpActionType_About;
-#endif /* !Q_WS_MAC */
+#endif /* !RT_OS_DARWIN */
     }
     /** Returns action extra-data key. */
     virtual QString extraDataKey() const
     {
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-#else /* !Q_WS_MAC */
+#else /* !RT_OS_DARWIN */
         return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_About);
-#endif /* !Q_WS_MAC */
+#endif /* !RT_OS_DARWIN */
     }
     /** Returns whether action is allowed. */
     virtual bool isAllowed() const
     {
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN
         return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_About);
-#else /* !Q_WS_MAC */
+#else /* !RT_OS_DARWIN */
         return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_About);
-#endif /* !Q_WS_MAC */
+#endif /* !RT_OS_DARWIN */
     }
 
     QString shortcutExtraDataID() const
@@ -713,32 +721,11 @@ public:
 protected:
 
     /** Returns action extra-data ID. */
-    virtual int extraDataID() const
-    {
-#ifdef Q_WS_MAC
-        return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences;
-#else /* !Q_WS_MAC */
-        return UIExtraDataMetaDefs::MenuHelpActionType_Preferences;
-#endif /* !Q_WS_MAC */
-    }
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::MenuApplicationActionType_Preferences; }
     /** Returns action extra-data key. */
-    virtual QString extraDataKey() const
-    {
-#ifdef Q_WS_MAC
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
-#else /* !Q_WS_MAC */
-        return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
-#endif /* !Q_WS_MAC */
-    }
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences); }
     /** Returns whether action is allowed. */
-    virtual bool isAllowed() const
-    {
-#ifdef Q_WS_MAC
-        return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences);
-#else /* !Q_WS_MAC */
-        return actionPool()->isAllowedInMenuHelp(UIExtraDataMetaDefs::MenuHelpActionType_Preferences);
-#endif /* !Q_WS_MAC */
-    }
+    virtual bool isAllowed() const { return actionPool()->isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType_Preferences); }
 
     QString shortcutExtraDataID() const
     {
@@ -832,7 +819,6 @@ void UIActionPool::setRestrictionForMenuBar(UIActionRestrictionLevel level, UIEx
     updateMenus();
 }
 
-#ifdef Q_WS_MAC
 bool UIActionPool::isAllowedInMenuApplication(UIExtraDataMetaDefs::MenuApplicationActionType type) const
 {
     foreach (const UIExtraDataMetaDefs::MenuApplicationActionType &restriction, m_restrictedActionsMenuApplication.values())
@@ -847,6 +833,7 @@ void UIActionPool::setRestrictionForMenuApplication(UIActionRestrictionLevel lev
     m_invalidations << UIActionIndex_M_Application;
 }
 
+#ifdef Q_WS_MAC
 bool UIActionPool::isAllowedInMenuWindow(UIExtraDataMetaDefs::MenuWindowActionType type) const
 {
     foreach (const UIExtraDataMetaDefs::MenuWindowActionType &restriction, m_restrictedActionsMenuWindow.values())
@@ -909,13 +896,20 @@ void UIActionPool::prepare()
 
 void UIActionPool::preparePool()
 {
-#ifdef RT_OS_DARWIN
     /* Create 'Application' actions: */
     m_pool[UIActionIndex_M_Application] = new UIActionMenuApplication(this);
+#ifdef RT_OS_DARWIN
     m_pool[UIActionIndex_M_Application_S_About] = new UIActionSimpleAbout(this);
+#endif /* RT_OS_DARWIN */
     m_pool[UIActionIndex_M_Application_S_Preferences] = new UIActionSimplePreferences(this);
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    m_pool[UIActionIndex_M_Application_S_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
+    m_pool[UIActionIndex_M_Application_S_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    m_pool[UIActionIndex_M_Application_S_ResetWarnings] = new UIActionSimpleResetWarnings(this);
     m_pool[UIActionIndex_M_Application_S_Close] = new UIActionSimplePerformClose(this);
 
+#ifdef RT_OS_DARWIN
     /* Create 'Window' actions: */
     m_pool[UIActionIndex_M_Window] = new UIActionMenuWindow(this);
     m_pool[UIActionIndex_M_Window_S_Minimize] = new UIActionSimpleMinimize(this);
@@ -925,14 +919,8 @@ void UIActionPool::preparePool()
     m_pool[UIActionIndex_Menu_Help] = new UIActionMenuHelp(this);
     m_pool[UIActionIndex_Simple_Contents] = new UIActionSimpleContents(this);
     m_pool[UIActionIndex_Simple_WebSite] = new UIActionSimpleWebSite(this);
-    m_pool[UIActionIndex_Simple_ResetWarnings] = new UIActionSimpleResetWarnings(this);
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new UIActionSimpleNetworkAccessManager(this);
-    m_pool[UIActionIndex_Simple_CheckForUpdates] = new UIActionSimpleCheckForUpdates(this);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 #ifndef RT_OS_DARWIN
     m_pool[UIActionIndex_Simple_About] = new UIActionSimpleAbout(this);
-    m_pool[UIActionIndex_Simple_Preferences] = new UIActionSimplePreferences(this);
 #endif /* !RT_OS_DARWIN */
 
     /* Prepare update-handlers for known menus: */
@@ -951,23 +939,26 @@ void UIActionPool::preparePool()
 
 void UIActionPool::prepareConnections()
 {
+    /* 'Application' menu connections: */
+#ifdef RT_OS_DARWIN
+    connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
+#endif /* RT_OS_DARWIN */
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    connect(action(UIActionIndex_M_Application_S_NetworkAccessManager), SIGNAL(triggered()),
+            gNetworkManager, SLOT(show()), Qt::UniqueConnection);
+    connect(action(UIActionIndex_M_Application_S_CheckForUpdates), SIGNAL(triggered()),
+            gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    connect(action(UIActionIndex_M_Application_S_ResetWarnings), SIGNAL(triggered()),
+            &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
+
     /* 'Help' menu connections: */
     connect(action(UIActionIndex_Simple_Contents), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpHelpDialog()), Qt::UniqueConnection);
     connect(action(UIActionIndex_Simple_WebSite), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpWebDialog()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltResetSuppressedMessages()), Qt::UniqueConnection);
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    connect(action(UIActionIndex_Simple_NetworkAccessManager), SIGNAL(triggered()),
-            gNetworkManager, SLOT(show()), Qt::UniqueConnection);
-    connect(action(UIActionIndex_Simple_CheckForUpdates), SIGNAL(triggered()),
-            gUpdateManager, SLOT(sltForceCheck()), Qt::UniqueConnection);
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
-#ifdef RT_OS_DARWIN
-    connect(action(UIActionIndex_M_Application_S_About), SIGNAL(triggered()),
-            &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
-#else /* !RT_OS_DARWIN */
+#ifndef RT_OS_DARWIN
     connect(action(UIActionIndex_Simple_About), SIGNAL(triggered()),
             &msgCenter(), SLOT(sltShowHelpAboutDialog()), Qt::UniqueConnection);
 #endif /* !RT_OS_DARWIN */
@@ -1031,8 +1022,8 @@ void UIActionPool::updateConfiguration()
     bool fUpdateAllowed = gEDataManager->applicationUpdateEnabled();
     if (!fUpdateAllowed)
     {
-        m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuHelpActionType)
-            (m_restrictedActionsMenuHelp[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::MenuHelpActionType_CheckForUpdates);
+        m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] = (UIExtraDataMetaDefs::MenuApplicationActionType)
+            (m_restrictedActionsMenuApplication[UIActionRestrictionLevel_Base] | UIExtraDataMetaDefs::MenuApplicationActionType_CheckForUpdates);
     }
 #endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
@@ -1047,27 +1038,64 @@ void UIActionPool::updateMenu(int iIndex)
         (this->*(m_menuUpdateHandlers.value(iIndex).ptf))();
 }
 
-#ifdef RT_OS_DARWIN
 void UIActionPool::updateMenuApplication()
 {
     /* Get corresponding menu: */
     UIMenu *pMenu = action(UIActionIndex_M_Application)->menu();
-    AssertReturnVoid(pMenu && pMenu->isConsumable());
+    AssertPtrReturnVoid(pMenu);
+#ifdef RT_OS_DARWIN
+    AssertReturnVoid(pMenu->isConsumable());
+#endif /* RT_OS_DARWIN */
     /* Clear contents: */
+#ifdef RT_OS_DARWIN
     if (!pMenu->isConsumed())
+#endif /* RT_OS_DARWIN */
         pMenu->clear();
 
+    /* Separator: */
+    bool fSeparator = false;
+
+#ifdef RT_OS_DARWIN
     /* 'About' action: */
-    addAction(pMenu, action(UIActionIndex_M_Application_S_About));
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_About)) || fSeparator;
+#endif /* RT_OS_DARWIN */
+
     /* 'Preferences' action: */
-    addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences));
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_Preferences)) || fSeparator;
+
+#ifndef RT_OS_DARWIN
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+#endif /* !RT_OS_DARWIN */
+
+#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* 'Network Manager' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_NetworkAccessManager)) || fSeparator;
+#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    /* 'Reset Warnings' action: */
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_ResetWarnings)) || fSeparator;
+
+#ifndef RT_OS_DARWIN
+    /* Separator: */
+    if (fSeparator)
+    {
+        pMenu->addSeparator();
+        fSeparator = false;
+    }
+#endif /* !RT_OS_DARWIN */
+
     /* 'Close' action: */
-    addAction(pMenu, action(UIActionIndex_M_Application_S_Close));
+    fSeparator = addAction(pMenu, action(UIActionIndex_M_Application_S_Close)) || fSeparator;
 
     /* Mark menu as valid: */
     m_invalidations.remove(UIActionIndex_M_Application);
 }
 
+#ifdef RT_OS_DARWIN
 void UIActionPool::updateMenuWindow()
 {
     /* Get corresponding menu: */
@@ -1105,9 +1133,9 @@ void UIActionPool::updateMenuHelp()
     bool fSeparator = false;
 
     /* 'Contents' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents));
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Contents)) || fSeparator;;
     /* 'Web Site' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite));
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_WebSite)) || fSeparator;;
 
     /* Separator? */
     if (fSeparator)
@@ -1115,38 +1143,10 @@ void UIActionPool::updateMenuHelp()
         pMenu->addSeparator();
         fSeparator = false;
     }
-
-    /* 'Reset Warnings' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_ResetWarnings));
-
-    /* Separator? */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    /* 'Network Manager' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_NetworkAccessManager));
-    /* 'Check for Updates' action (only for Selector pool): */
-    if (type() == UIActionPoolType_Selector)
-        fSeparator = addAction(pMenu, action(UIActionIndex_Simple_CheckForUpdates));
-
-    /* Separator? */
-    if (fSeparator)
-    {
-        pMenu->addSeparator();
-        fSeparator = false;
-    }
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
 
 #ifndef RT_OS_DARWIN
     /* 'About' action: */
-    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About));
-    /* 'Preferences' action (only for Runtime pool): */
-    if (type() == UIActionPoolType_Runtime)
-        fSeparator = addAction(pMenu, action(UIActionIndex_Simple_Preferences));
+    fSeparator = addAction(pMenu, action(UIActionIndex_Simple_About)) || fSeparator;;
 #endif /* !RT_OS_DARWIN */
 
     /* Mark menu as valid: */
