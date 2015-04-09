@@ -510,15 +510,20 @@ void UIMenuBarEditorWidget::prepareMenuApplication()
     {
 #ifdef Q_WS_MAC
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_About));
-#endif /* Q_WS_MAC */
-        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-#ifndef Q_WS_MAC
-        pMenu->addSeparator();
-#endif /* !Q_WS_MAC */
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
+        pMenu->addSeparator();
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+#else /* !Q_WS_MAC */
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+        pMenu->addSeparator();
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+        prepareCopiedAction(pMenu, actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
+#endif /* !Q_WS_MAC */
     }
 }
 
