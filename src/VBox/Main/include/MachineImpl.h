@@ -146,7 +146,7 @@ public:
             SessionState_T mState;
 
             /** Session type string (for indirect sessions) */
-            Bstr mType;
+            Utf8Str mType;
 
             /** Session machine object */
             ComObjPtr<SessionMachine> mMachine;
