@@ -411,6 +411,9 @@ int AudioVRDE::onVRDEControl(bool fEnable, uint32_t uFlags)
 {
     LogFlowThisFunc(("fEnable=%RTbool, uFlags=0x%x\n", fEnable, uFlags));
 
+    if (mpDrv == NULL)
+        return VERR_INVALID_STATE;
+
     mpDrv->fEnabled = fEnable;
 
     return VINF_SUCCESS; /* Never veto. */
