@@ -585,6 +585,47 @@
     </warning>
   </sect1>
 
+  <sect1 id="gimproviders">
+    <title>Paravirtualization providers</title>
+
+    <para>VirtualBox allows exposing a paravirtualization interface to
+    facilitate accurate and efficient execution of software within a
+    virtual machine. These interfaces require the guest operating system
+    to recognize their presence and make use of them in order to leverage
+    the benefits of communicating with the VirtualBox hypervisor.</para>
+    
+    <para>Most mainstream, modern operating systems, including Windows and
+    Linux, support one or more paravirtualization interfaces without
+    needing the installation of additional software.</para>
+
+    <para>VirtualBox provides the following interfaces:</para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis role="bold">Minimal</emphasis>: Announces the
+          presence of a virtualized environment, additionally reports the
+          TSC and APIC frequency to the guest operating system. This provider
+          is mandatory for running any Mac OS X guests.</para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold">KVM</emphasis>: Presents a Linux KVM
+          hypervisor interface which is recognized by Linux kernels starting
+          with version 2.6.25. VirtualBox's implementation currently supports
+          paravirtualized clocks and SMP spinlocks. This provider is
+          recommended for Linux guests.</para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold">Hyper-V</emphasis>: Presents a Microsoft
+          Hyper-V hypervisor interface which is recognized by Windows 7 and newer
+          operating systems. VirtualBox's implementation currently supports
+          paravirtualized clocks, APIC frequency reporting and relaxed timer
+          checks. This provider is recommended for Windows and FreeBSD guests.
+          </para>
+        </listitem>
+     </itemizedlist>
+  </sect1>
+
   <sect1>
     <title>Details about software virtualization</title>
 

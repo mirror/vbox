@@ -603,6 +603,26 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <listitem>
+            <para><computeroutput>--paravirtprovider
+            none|default|legacy|minimal|hyperv|kvm</computeroutput>: This
+            setting specifies which paravirtualization interface to provide to
+            the guest operating system. Specifying
+            <computeroutput>none</computeroutput> explicitly turns off exposing
+            any paravirtualization interface. The option
+            <computeroutput>default</computeroutput>, will pick an appropriate
+            interface depending on the guest OS type while starting the VM.
+            This is the default option chosen while creating new VMs. The
+            <computeroutput>legacy</computeroutput> option is chosen for VMs
+            which were created with older VirtualBox versions and will pick a
+            paravirtualization interface while starting the VM. The
+            <computeroutput>minimal</computeroutput> provider is mandatory for
+            Mac OS X guests, while <computeroutput>kvm</computeroutput> and
+            <computeroutput>hyperv</computeroutput> are recommended for Linux
+            and Windows guests respectively. These options are explained in
+            detail under <xref linkend="gimproviders" />.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--nestedpaging on|off</computeroutput>: If
             hardware virtualization is enabled, this additional setting
             enables or disables the use of the nested paging feature in the
