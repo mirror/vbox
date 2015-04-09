@@ -712,7 +712,7 @@
       interfaces to improve time-keeping accuracy and performance of guest
       operating systems. The options available are documented under the
       <computeroutput>paravirtprovider</computeroutput> option
-      in <xref linkend="vboxmanage-modifyvm">. For futher details on
+      in <xref linkend="vboxmanage-modifyvm" />. For futher details on
       the paravirtualization providers, please refer to
       <xref linkend="gimproviders" />.</para>
     </sect2>
