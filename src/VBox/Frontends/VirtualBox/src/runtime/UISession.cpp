@@ -104,13 +104,13 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
 
     /* Handle 'display-add' case: */
     if (flags & kCGDisplayAddFlag)
-        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display added.\n"));
+        LogRelFlow(("GUI: UISession::cgDisplayReconfigurationCallback: Display added.\n"));
     /* Handle 'display-remove' case: */
     else if (flags & kCGDisplayRemoveFlag)
-        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display removed.\n"));
+        LogRelFlow(("GUI: UISession::cgDisplayReconfigurationCallback: Display removed.\n"));
     /* Handle 'mode-set' case: */
     else if (flags & kCGDisplaySetModeFlag)
-        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display mode changed.\n"));
+        LogRelFlow(("GUI: UISession::cgDisplayReconfigurationCallback: Display mode changed.\n"));
 
     /* Ask handler to process our callback: */
     if (flags & iHandledFlags)
@@ -673,7 +673,7 @@ void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint ho
 
 void UISession::sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor)
 {
-    LogRelFlow(("UISession::sltMouseCapabilityChange: "
+    LogRelFlow(("GUI: UISession::sltMouseCapabilityChange: "
                 "Supports absolute: %s, Supports relative: %s, "
                 "Supports multi-touch: %s, Needs host cursor: %s\n",
                 fSupportsAbsolute ? "TRUE" : "FALSE", fSupportsRelative ? "TRUE" : "FALSE",
@@ -800,7 +800,7 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
  */
 void UISession::sltHandleHostDisplayAboutToChange()
 {
-    LogRelFlow(("UISession::sltHandleHostDisplayAboutToChange()\n"));
+    LogRelFlow(("GUI: UISession::sltHandleHostDisplayAboutToChange()\n"));
 
     if (m_pWatchdogDisplayChange->isActive())
         m_pWatchdogDisplayChange->stop();
@@ -815,7 +815,7 @@ void UISession::sltHandleHostDisplayAboutToChange()
  */
 void UISession::sltCheckIfHostDisplayChanged()
 {
-    LogRelFlow(("UISession::sltCheckIfHostDisplayChanged()\n"));
+    LogRelFlow(("GUI: UISession::sltCheckIfHostDisplayChanged()\n"));
 
     /* Acquire desktop wrapper: */
     QDesktopWidget *pDesktop = QApplication::desktop();
@@ -861,7 +861,7 @@ void UISession::sltCheckIfHostDisplayChanged()
 
 void UISession::sltHandleHostScreenCountChange()
 {
-    LogRelFlow(("UISession: Host-screen count changed.\n"));
+    LogRelFlow(("GUI: UISession: Host-screen count changed.\n"));
 
     /* Recache display data: */
     updateHostScreenData();
@@ -872,7 +872,7 @@ void UISession::sltHandleHostScreenCountChange()
 
 void UISession::sltHandleHostScreenGeometryChange()
 {
-    LogRelFlow(("UISession: Host-screen geometry changed.\n"));
+    LogRelFlow(("GUI: UISession: Host-screen geometry changed.\n"));
 
     /* Recache display data: */
     updateHostScreenData();
@@ -883,7 +883,7 @@ void UISession::sltHandleHostScreenGeometryChange()
 
 void UISession::sltHandleHostScreenAvailableAreaChange()
 {
-    LogRelFlow(("UISession: Host-screen available-area changed.\n"));
+    LogRelFlow(("GUI: UISession: Host-screen available-area changed.\n"));
 
     /* Notify current machine-logic: */
     emit sigHostScreenAvailableAreaChange();
