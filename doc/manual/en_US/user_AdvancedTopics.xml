@@ -3630,7 +3630,7 @@ VBoxManage setextradata "foo" "VBoxInternal2/SavestateOnBatteryLow" 0</screen>
      </para>
 
    </sect1>
-   
+
    <sect1 id="sse412passthrough">
      <title>Experimental support for passing through SSE4.1 / SSE4.2 instructions</title>
      <para>
@@ -3660,6 +3660,33 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       In order to disable it, use the same command but change "1" to "0", or use the VBoxManage
       command to remove the extra data. This is a per-VM setting and it is disabled by default.
     </para>
+
+  </sect1>
+
+  <sect1 id="usbtrafficcapturing">
+    <title>Capturing USB traffic for selected devices</title>
+
+    <para>
+      Starting with VirtualBox 5.0 it is possible to capture USB traffic for
+      single USB devices or on the root hub level which captures the traffic of
+      all USB devices attached to the root hub. VirtualBox stores the traffic
+      in a format which is compatible with Wireshark. To capture the traffic
+      of a specific USB device it must be attached to the VM with VBoxManage
+      using the following command:
+    </para>
+
+    <screen>VBoxManage controlvm "VM name" usbattach "device uuid|address" --capturefile "filename"</screen>
+
+    <para>
+      In order to enable capturing on the root hub use the following command
+      while the VM is not running:
+    </para>
+
+    <screen>VBoxManage setextradata "VM name" VBoxInternal/Devices/usb-ehci/LUN#0/Config/CaptureFilename "filename"</screen>
+
+    The command above enables capturing on the root hub attached to the EHCI controller.
+    To enable it for the OHCI or XHCI controller replace <computeroutput>usb-ehci</computeroutput>
+    with <computeroutput>usb-ohci</computeroutput> or <computeroutput>usb-xhci</computeroutput> respectively.
 
   </sect1>
 
