@@ -7365,15 +7365,29 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
 
     LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
-    if (    mData->mSession.mState == SessionState_Locked
-         || mData->mSession.mState == SessionState_Spawning
-         || mData->mSession.mState == SessionState_Unlocking)
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("The machine '%s' is already locked by a session (or being locked or unlocked)"),
-                        mUserData->s.strName.c_str());
+    /* The process started when launching a VM with separate UI/VM processes is always
+     * the UI process, i.e. needs special handling as it won't claim the session. */
+    bool fSeparate = strFrontend.endsWith("separate", Utf8Str::CaseInsensitive);
 
-    /* may not be busy */
-    AssertReturn(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
+    if (fSeparate)
+    {
+        if (mData->mSession.mState != SessionState_Unlocked && mData->mSession.mType != "headless")
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("The machine '%s' is in a state which is incompatible with launching a separate UI process"),
+                            mUserData->s.strName.c_str());
+    }
+    else
+    {
+        if (    mData->mSession.mState == SessionState_Locked
+             || mData->mSession.mState == SessionState_Spawning
+             || mData->mSession.mState == SessionState_Unlocking)
+            return setError(VBOX_E_INVALID_OBJECT_STATE,
+                            tr("The machine '%s' is already locked by a session (or being locked or unlocked)"),
+                            mUserData->s.strName.c_str());
+
+        /* may not be busy */
+        AssertReturn(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
+    }
 
     /* get the path to the executable */
     char szPath[RTPATH_MAX];
@@ -7460,7 +7474,11 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
 
 
 #ifdef VBOX_WITH_QTGUI
-    if (strFrontend == "gui" || strFrontend == "GUI/Qt")
+    if (   !strFrontend.compare("gui", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("GUI/Qt", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("separate", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("gui/separate", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("GUI/Qt/separate", Utf8Str::CaseInsensitive))
     {
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
         /* Modify the base path so that we don't need to use ".." below. */
@@ -7506,9 +7524,15 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
             "--comment", mUserData->s.strName.c_str(),
             "--startvm", idStr.c_str(),
             "--no-startvm-errormsgbox",
-            pszSupStartupLogArg,
+            NULL, /* For "--separate". */
+            NULL, /* For "--sup-startup-log". */
             NULL
         };
+        unsigned iArg = 6;
+        if (fSeparate)
+            apszArgs[iArg++] = "--separate";
+        apszArgs[iArg++] = pszSupStartupLogArg;
+
         vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
     }
 #else /* !VBOX_WITH_QTGUI */
@@ -7519,7 +7543,10 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     else
 
 #ifdef VBOX_WITH_VBOXSDL
-    if (strFrontend == "sdl" || strFrontend == "GUI/SDL")
+    if (   !strFrontend.compare("sdl", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("GUI/SDL", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("sdl/separate", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("GUI/SDL/separate", Utf8Str::CaseInsensitive))
     {
         static const char s_szVBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
         Assert(cchBufLeft >= sizeof(s_szVBoxSDL_exe));
@@ -7531,9 +7558,15 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
             szPath,
             "--comment", mUserData->s.strName.c_str(),
             "--startvm", idStr.c_str(),
-            pszSupStartupLogArg,
+            NULL, /* For "--separate". */
+            NULL, /* For "--sup-startup-log". */
             NULL
         };
+        unsigned iArg = 5;
+        if (fSeparate)
+            apszArgs[iArg++] = "--separate";
+        apszArgs[iArg++] = pszSupStartupLogArg;
+
         vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
     }
 #else /* !VBOX_WITH_VBOXSDL */
@@ -7544,9 +7577,9 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     else
 
 #ifdef VBOX_WITH_HEADLESS
-    if (   strFrontend == "headless"
-        || strFrontend == "capture"
-        || strFrontend == "vrdp" /* Deprecated. Same as headless. */
+    if (   !strFrontend.compare("headless", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("capture", Utf8Str::CaseInsensitive)
+        || !strFrontend.compare("vrdp", Utf8Str::CaseInsensitive) /* Deprecated. Same as headless. */
        )
     {
         /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
@@ -7567,12 +7600,12 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
             "--comment", mUserData->s.strName.c_str(),
             "--startvm", idStr.c_str(),
             "--vrde", "config",
-            0, /* For "--capture". */
-            0, /* For "--sup-startup-log". */
-            0
+            NULL, /* For "--capture". */
+            NULL, /* For "--sup-startup-log". */
+            NULL
         };
         unsigned iArg = 7;
-        if (strFrontend == "capture")
+        if (!strFrontend.compare("capture", Utf8Str::CaseInsensitive))
             apszArgs[iArg++] = "--capture";
         apszArgs[iArg++] = pszSupStartupLogArg;
 
@@ -7603,42 +7636,52 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
 
     LogFlowThisFunc(("launched.pid=%d(0x%x)\n", pid, pid));
 
-    /*
-     *  Note that we don't release the lock here before calling the client,
-     *  because it doesn't need to call us back if called with a NULL argument.
-     *  Releasing the lock here is dangerous because we didn't prepare the
-     *  launch data yet, but the client we've just started may happen to be
-     *  too fast and call LockMachine() that will fail (because of PID, etc.),
-     *  so that the Machine will never get out of the Spawning session state.
-     */
-
-    /* inform the session that it will be a remote one */
-    LogFlowThisFunc(("Calling AssignMachine (NULL)...\n"));
-#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
-    HRESULT rc = aControl->AssignMachine(NULL, LockType_Write, Bstr::Empty.raw());
-#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-    HRESULT rc = aControl->AssignMachine(NULL, LockType_Write, NULL);
-#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
-    LogFlowThisFunc(("AssignMachine (NULL) returned %08X\n", rc));
-
-    if (FAILED(rc))
+    if (!fSeparate)
     {
-        /* restore the session state */
-        mData->mSession.mState = SessionState_Unlocked;
-        alock.release();
-        mParent->i_addProcessToReap(pid);
-        /* The failure may occur w/o any error info (from RPC), so provide one */
-        return setError(VBOX_E_VM_ERROR,
-                        tr("Failed to assign the machine to the session (%Rhrc)"), rc);
-    }
+        /*
+         *  Note that we don't release the lock here before calling the client,
+         *  because it doesn't need to call us back if called with a NULL argument.
+         *  Releasing the lock here is dangerous because we didn't prepare the
+         *  launch data yet, but the client we've just started may happen to be
+         *  too fast and call LockMachine() that will fail (because of PID, etc.),
+         *  so that the Machine will never get out of the Spawning session state.
+         */
 
-    /* attach launch data to the machine */
-    Assert(mData->mSession.mPID == NIL_RTPROCESS);
-    mData->mSession.mRemoteControls.push_back(aControl);
-    mData->mSession.mProgress = aProgress;
-    mData->mSession.mPID = pid;
-    mData->mSession.mState = SessionState_Spawning;
-    mData->mSession.mType = strFrontend;
+        /* inform the session that it will be a remote one */
+        LogFlowThisFunc(("Calling AssignMachine (NULL)...\n"));
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
+        HRESULT rc = aControl->AssignMachine(NULL, LockType_Write, Bstr::Empty.raw());
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+        HRESULT rc = aControl->AssignMachine(NULL, LockType_Write, NULL);
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+        LogFlowThisFunc(("AssignMachine (NULL) returned %08X\n", rc));
+
+        if (FAILED(rc))
+        {
+            /* restore the session state */
+            mData->mSession.mState = SessionState_Unlocked;
+            alock.release();
+            mParent->i_addProcessToReap(pid);
+            /* The failure may occur w/o any error info (from RPC), so provide one */
+            return setError(VBOX_E_VM_ERROR,
+                            tr("Failed to assign the machine to the session (%Rhrc)"), rc);
+        }
+
+        /* attach launch data to the machine */
+        Assert(mData->mSession.mPID == NIL_RTPROCESS);
+        mData->mSession.mRemoteControls.push_back(aControl);
+        mData->mSession.mProgress = aProgress;
+        mData->mSession.mPID = pid;
+        mData->mSession.mState = SessionState_Spawning;
+        mData->mSession.mType = strFrontend;
+    }
+    else
+    {
+        /* For separate UI process we declare the launch as completed instantly, as the
+         * actual headless VM start may or may not come. No point in remembering anything
+         * yet, as what matters for us is when the headless VM gets started. */
+        aProgress->i_notifyComplete(S_OK);
+    }
 
     alock.release();
     mParent->i_addProcessToReap(pid);
