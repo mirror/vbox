@@ -1469,6 +1469,17 @@ Virtual system 0:
           <para>Starts a VM with a minimal GUI and limited features.</para>
         </glossdef>
       </glossentry>
+
+      <glossentry>
+        <glossterm><computeroutput>separate</computeroutput></glossterm>
+
+        <glossdef>
+          <para>Starts a VM with detachable UI (technically it is a headless VM
+            with user interface in a separate process). This is an experimental
+            feature as it lacks certain functionality at the moment (e.g. 3D
+            acceleration will not work).</para>
+        </glossdef>
+      </glossentry>
     </glosslist>
 
     <note>

@@ -439,7 +439,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--type gui", SEP);
         if (fVBoxSDL)
             RTStrmPrintf(pStrm, "|sdl");
-        RTStrmPrintf(pStrm, "|headless]\n");
+        RTStrmPrintf(pStrm, "|headless|separate]\n");
         RTStrmPrintf(pStrm,
                      "\n");
     }
