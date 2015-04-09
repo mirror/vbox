@@ -543,7 +543,7 @@ static void ps2mReportAccumulatedEvents(PPS2M pThis, GeneriQ *pQueue, bool fAccu
             /* Z value uses 4 bits; buttons 4/5 in bits 4 and 5. */
             val  = dZ & 0x0f;
             val |= (fBtnState << 1) & (RT_BIT(4) | RT_BIT(5));
-            ps2kInsertQueue(pQueue, dZ);
+            ps2kInsertQueue(pQueue, val);
         }
     }
 
