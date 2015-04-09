@@ -512,6 +512,7 @@ static SHFLROOT initWithWritableMapping(RTTEST hTest,
     AssertReleaseRC(VBoxHGCMSvcLoad(psvcTable));
     AssertRelease(  psvcTable->pvService
                   = RTTestGuardedAllocTail(hTest, psvcTable->cbClient));
+    RT_BZERO(psvcTable->pvService, psvcTable->cbClient);
     fillTestShflString(&FolderName, pcszFolderName);
     fillTestShflString(&Mapping, pcszMapping);
     aParms[0].setPointer(&FolderName,   RT_UOFFSETOF(SHFLSTRING, String)
