@@ -35,30 +35,31 @@
   section.</para>
 
   <sect1 id="harddiskcontrollers">
-    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS</title>
+    <title>Hard disk controllers: IDE, SATA (AHCI), SCSI, SAS, USB MSC</title>
 
     <para>In a real PC, hard disks and CD/DVD drives are connected to a device
     called hard disk controller which drives hard disk operation and data
-    transfers. VirtualBox can emulate the four most common types of hard disk
-    controllers typically found in today's PCs: IDE, SATA (AHCI), SCSI and
-    SAS.<footnote>
+    transfers. VirtualBox can emulate the five most common types of hard disk
+    controllers typically found in today's PCs: IDE, SATA (AHCI), SCSI,
+    SAS and USB based mass storage devices.<footnote>
         <para>SATA support was added with VirtualBox 1.6; experimental SCSI
         support was added with 2.1 and fully implemented with 2.2. Generally,
         storage attachments were made much more flexible with VirtualBox 3.1;
         see below. Support for the LSI Logic SAS controller was added with
-        VirtualBox 3.2.</para>
+        VirtualBox 3.2; USB mass storage devices are supported since
+        VirtualBox 5.0.</para>
       </footnote><itemizedlist>
         <listitem>
           <para><emphasis role="bold">IDE (ATA)</emphasis> controllers are a
           backwards compatible yet very advanced extension of the disk
-	  controller in the IBM PC/AT (1984). Initially, this interface
+          controller in the IBM PC/AT (1984). Initially, this interface
           worked only with hard disks, but was later extended to also support
           CD-ROM drives and other types of removable media. In physical PCs,
           this standard uses flat ribbon parallel cables with 40 or 80 wires.
           Each such cable can connect two devices to a controller, which have
           traditionally been called "master" and "slave". Typical PCs had
           two connectors for such cables; as a result, support for up to four
-	  IDE devices was most common.</para>
+          IDE devices was most common.</para>
 
           <para>In VirtualBox, each virtual machine may have one IDE
           contoller enabled, which gives you up to four virtual storage
@@ -189,6 +190,25 @@
             see such disks unless you install additional drivers.</para>
           </warning>
         </listitem>
+
+        <listitem>
+          <para>The <emphasis role="bold">USB mass storage device class</emphasis>
+          is a standard to connect external storage devices like hard or flash
+          drives to a host through USB. All major operating systems support
+          these devices for a long time and ship with a generic driver which
+          makes third party drivers unnecessary.
+          The virtual USB storage controller offered by VirtualBox works
+          different than the other storage controller types. Unlike the
+          controllers which appear as a single PCI device to the guest with
+          multiple disks attached to it, the USB based storage controller does
+          not appear directly in the guest. Each disk attached to the controller
+          appears as a different USB device to the guest.</para>
+
+          <warning>
+            <para>As of version 5.0 VirtualBox does not support booting from
+            drives attached via USB.</para>
+          </warning>
+        </listitem>
       </itemizedlist></para>
 
     <para>In summary, VirtualBox gives you the following categories of virtual
@@ -211,6 +231,11 @@
 
         <listitem>
           <para>eight slots attached to the SAS controller, if enabled and
+          supported by the guest operating system.</para>
+        </listitem>
+
+        <listitem>
+          <para>eight slots attached to the virtual USB controller, if enabled and
           supported by the guest operating system.</para>
         </listitem>
       </orderedlist></para>

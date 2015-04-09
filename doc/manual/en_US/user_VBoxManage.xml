@@ -2172,7 +2172,7 @@ Virtual system 0:
                             --name &lt;name&gt;
                             [--add &lt;ide/sata/scsi/floppy&gt;]
                             [--controller &lt;LsiLogic|LSILogicSAS|BusLogic|
-                                          IntelAhci|PIIX3|PIIX4|ICH6|I82078&gt;]
+                                          IntelAhci|PIIX3|PIIX4|ICH6|I82078|usb&gt;]
                             [--sataportcount &lt;1-30&gt;]
                             [--hostiocache on|off]
                             [--bootable on|off]
