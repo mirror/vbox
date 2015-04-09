@@ -742,7 +742,7 @@
         <listitem>
           <para>There are certain flaws in the implementation of ring 1 in the
           x86 architecture that were never fixed. Certain instructions that
-          <emphasis>should</emphasis> trap in ring 1 don't. This affect, for
+          <emphasis>should</emphasis> trap in ring 1 don't. This affects, for
           example, the LGDT/SGDT, LIDT/SIDT, or POPF/PUSHF instruction pairs.
           Whereas the "load" operation is privileged and can therefore be
           trapped, the "store" instruction always succeed. If the guest is
