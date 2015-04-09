@@ -1049,7 +1049,7 @@ VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
      * GIM is now initialized. Determine if TSC mode switching is allowed (respecting CFGM override).
      */
     pVM->tm.s.fTSCModeSwitchAllowed &= tmR3HasFixedTSC(pVM) && GIMIsEnabled(pVM) && HMIsEnabled(pVM);
-    LogRel(("TM: fTSCModeSwitchAllowed=%RTbool\n", pVM->tm.s.fTSCModeSwitchAllowed));
+    LogRel(("TM: TMR3InitFinalize: fTSCModeSwitchAllowed=%RTbool\n", pVM->tm.s.fTSCModeSwitchAllowed));
     return rc;
 }
 
