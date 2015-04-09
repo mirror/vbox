@@ -732,9 +732,10 @@ Statistics update:  disabled</screen></para>
             &lt;size&gt;</computeroutput> sets the default size of the guest
             memory balloon, that is, memory allocated by the VirtualBox Guest
             Additions from the guest operating system and returned to the
-            hypervisor for re-use by other virtual machines. &lt;size&gt; must
-            be specified in megabytes. The default size is 0 megabytes. For
-            details, see <xref linkend="guestadd-balloon" />.</para>
+            hypervisor for re-use by other virtual machines.
+            <computeroutput>&lt;size&gt;</computeroutput> must be specified in
+            megabytes. The default size is 0 megabytes. For details,
+            see <xref linkend="guestadd-balloon" />.</para>
           </listitem>
 
           <listitem>
