@@ -695,6 +695,27 @@ DECLINLINE(const char *) SUPGetGIPModeName(PSUPGLOBALINFOPAGE pGip)
 
 
 /**
+ * Gets the descriptive TSC-delta enum name.
+ *
+ * @returns The name.
+ * @param   pGip      Pointer to the GIP.
+ */
+DECLINLINE(const char *) SUPGetGIPTscDeltaModeName(PSUPGLOBALINFOPAGE pGip)
+{
+    AssertReturn(pGip, NULL);
+    switch (pGip->enmUseTscDelta)
+    {
+        case SUPGIPUSETSCDELTA_NOT_APPLICABLE:   return "Not Applicable";
+        case SUPGIPUSETSCDELTA_ZERO_CLAIMED:     return "Zero Claimed";
+        case SUPGIPUSETSCDELTA_PRACTICALLY_ZERO: return "Pratically Zero";
+        case SUPGIPUSETSCDELTA_ROUGHLY_ZERO:     return "Roughly Zero";
+        case SUPGIPUSETSCDELTA_NOT_ZERO:         return "Not Zero";
+        default:                                 return "???";
+    }
+}
+
+
+/**
  * Request for generic VMMR0Entry calls.
  */
 typedef struct SUPVMMR0REQHDR

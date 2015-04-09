@@ -264,9 +264,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
                           pGip->u32UpdateIntervalNS, pGip->u32UpdateHz);
 
     /* Log GIP info that may come in handy. */
-    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u enmUseTscDelta=%d fGetGipCpu=%#x cCpus=%d\n",
+    LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u u32UpdateIntervalNS=%u enmUseTscDelta=%d (%s) fGetGipCpu=%#x cCpus=%d\n",
             pGip->u32Mode, SUPGetGIPModeName(pGip), pGip->u32UpdateHz, pGip->u32UpdateIntervalNS,
-            pGip->enmUseTscDelta, pGip->fGetGipCpu, pGip->cCpus));
+            pGip->enmUseTscDelta, SUPGetGIPTscDeltaModeName(pGip), pGip->fGetGipCpu, pGip->cCpus));
     LogRel(("TM: GIP - u64CpuHz=%'RU64 (%#RX64)  SUPGetCpuHzFromGip => %'RU64\n",
             pGip->u64CpuHz, pGip->u64CpuHz, SUPGetCpuHzFromGip(pGip)));
     for (uint32_t iCpuSet = 0; iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); iCpuSet++)
@@ -289,7 +289,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.VirtualGetRawDataRC.pu64Prev       = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev       = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
-    /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
+    /* The rest is done in TMR3InitFinalize() since it's too early to call PDM. */
 
     /*
      * Init the locks.
