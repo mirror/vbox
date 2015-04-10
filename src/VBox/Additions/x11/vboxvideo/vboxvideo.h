@@ -271,11 +271,6 @@ extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
 
-/* EDID generation */
-#ifdef VBOXVIDEO_13
-extern Bool VBOXEDIDSet(struct _xf86Output *output, DisplayModePtr pmode);
-#endif
-
 /* Utilities */
 
 /** Calculate the BPP from the screen depth */

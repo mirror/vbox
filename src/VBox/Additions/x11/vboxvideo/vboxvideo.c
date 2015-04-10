@@ -500,7 +500,6 @@ vbox_output_get_modes (xf86OutputPtr output)
     VBoxUpdateSizeHints(pScrn);
     pMode = vbox_output_add_mode(pVBox, &pModes, NULL, pVBox->pScreens[iScreen].aPreferredSize.cx,
                                  pVBox->pScreens[iScreen].aPreferredSize.cy, TRUE, FALSE);
-    VBOXEDIDSet(output, pMode);
     TRACE_EXIT();
     return pModes;
 }
