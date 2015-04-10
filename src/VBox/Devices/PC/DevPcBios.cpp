@@ -267,7 +267,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pThis->iShutdown == 8)
             {
                 pThis->iShutdown = 0;
-                LogRel(("DevPcBios: 8900h shutdown request.\n"));
+                LogRel(("DevPcBios: 8900h shutdown request\n"));
                 return PDMDevHlpVMPowerOff(pDevIns);
             }
         }
