@@ -355,7 +355,7 @@ void Progress::uninit()
 HRESULT Progress::i_notifyComplete(HRESULT aResultCode)
 {
     HRESULT rc;
-    ComPtr<VirtualBoxErrorInfo> errorInfo;
+    ComPtr<IVirtualBoxErrorInfo> errorInfo;
     if (FAILED(aResultCode))
     {
         /* try to import error info from the current thread */
@@ -363,7 +363,7 @@ HRESULT Progress::i_notifyComplete(HRESULT aResultCode)
         ComPtr<IErrorInfo> err;
         rc = ::GetErrorInfo(0, err.asOutParam());
         if (rc == S_OK && err)
-            rc = err.queryInterfaceTo(mErrorInfo.asOutParam());
+            rc = err.queryInterfaceTo(errorInfo.asOutParam());
 #else /* !defined(VBOX_WITH_XPCOM) */
         nsCOMPtr<nsIExceptionService> es;
         es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
