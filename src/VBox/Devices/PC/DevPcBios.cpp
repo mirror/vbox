@@ -1106,7 +1106,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"McfgLength\" as integer failed"));
 
 
-    LogRel(("[SMP] BIOS with %u CPUs\n", pThis->cCpus));
+    LogRel(("DevPcBios: [SMP] BIOS with %u CPUs\n", pThis->cCpus));
 
     rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
@@ -1399,7 +1399,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
                               _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
-        LogRel(("MPS table at %08x\n", VBOX_DMI_TABLE_BASE + VBOX_DMI_TABLE_SIZE));
+        LogRel(("DevPcBios: MPS table at %08x\n", VBOX_DMI_TABLE_BASE + VBOX_DMI_TABLE_SIZE));
     }
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
