@@ -3558,8 +3558,6 @@ const char *Console::i_convertControllerTypeToDev(StorageControllerType_T enmCtr
             return "i82078";
         case StorageControllerType_USB:
             return "Msd";
-        case StorageControllerType_NVMe:
-            return "nvme";
         default:
             return NULL;
     }
