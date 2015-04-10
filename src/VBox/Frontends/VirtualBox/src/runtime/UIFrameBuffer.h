@@ -114,10 +114,15 @@ public:
     /** Defines whether frame-buffer should use unscaled HiDPI output. */
     void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput);
 
-    /** Return HiDPI frame-buffer optimization type. */
+    /** Returns the frame-buffer scaling optimization type. */
+    ScalingOptimizationType scalingOptimizationType() const;
+    /** Defines the frame-buffer scaling optimization type. */
+    void setScalingOptimizationType(ScalingOptimizationType type);
+
+    /** Returns HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const;
-    /** Define HiDPI frame-buffer optimization type: */
-    void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType);
+    /** Defines HiDPI frame-buffer optimization type: */
+    void setHiDPIOptimizationType(HiDPIOptimizationType type);
 
     /** Handles frame-buffer notify-change-event. */
     void handleNotifyChange(int iWidth, int iHeight);

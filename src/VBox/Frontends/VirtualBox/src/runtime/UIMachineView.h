@@ -122,6 +122,9 @@ protected slots:
     /** Handles the scale-factor change. */
     void sltHandleScaleFactorChange(const QString &strMachineID);
 
+    /** Handles the scaling-optimization change. */
+    void sltHandleScalingOptimizationChange(const QString &strMachineID);
+
     /** Handles the unscaled HiDPI output mode change. */
     void sltHandleUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 

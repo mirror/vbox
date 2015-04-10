@@ -1795,7 +1795,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_MouseCapturePolicy
            << GUI_GuruMeditationHandler
            << GUI_HidLedsSync
-           << GUI_ScaleFactor
+           << GUI_ScaleFactor << GUI_Scaling_Optimization
            << GUI_InformationWindowGeometry
            << GUI_DefaultCloseAction << GUI_RestrictedCloseActions
            << GUI_LastCloseAction << GUI_CloseActionHook
@@ -3391,6 +3391,11 @@ void UIExtraDataManager::setScaleFactor(double dScaleFactor, const QString &strI
     setExtraDataString(GUI_ScaleFactor, QString::number(dScaleFactor), strID);
 }
 
+ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QString &strID)
+{
+    return gpConverter->fromInternalString<ScalingOptimizationType>(extraDataString(GUI_Scaling_Optimization, strID));
+}
+
 QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QString &strID)
 {
     /* Get corresponding extra-data: */
@@ -3691,6 +3696,10 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         /* Scale-factor change: */
         else if (strKey == GUI_ScaleFactor)
             emit sigScaleFactorChange(strMachineID);
+        /* Scaling optimization type change: */
+        else if (strKey == GUI_Scaling_Optimization)
+            emit sigScalingOptimizationTypeChange(strMachineID);
+        /* Unscaled HiDPI Output mode change: */
         else if (strKey == GUI_HiDPI_UnscaledOutput)
             emit sigUnscaledHiDPIOutputModeChange(strMachineID);
     }

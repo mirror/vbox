@@ -158,10 +158,15 @@ public:
     /** Defines whether frame-buffer should use unscaled HiDPI output. */
     void setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput) { m_fUseUnscaledHiDPIOutput = fUseUnscaledHiDPIOutput; }
 
-    /** Return HiDPI frame-buffer optimization type. */
+    /** Returns frame-buffer scaling optimization type. */
+    ScalingOptimizationType scalingOptimizationType() const { return m_enmScalingOptimizationType; }
+    /** Defines frame-buffer scaling optimization type: */
+    void setScalingOptimizationType(ScalingOptimizationType type) { m_enmScalingOptimizationType = type; }
+
+    /** Returns HiDPI frame-buffer optimization type. */
     HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
-    /** Define HiDPI frame-buffer optimization type: */
-    void setHiDPIOptimizationType(HiDPIOptimizationType optimizationType) { m_hiDPIOptimizationType = optimizationType; }
+    /** Defines HiDPI frame-buffer optimization type: */
+    void setHiDPIOptimizationType(HiDPIOptimizationType type) { m_hiDPIOptimizationType = type; }
 
     DECLARE_NOT_AGGREGATABLE(UIFrameBufferPrivate)
 
@@ -284,6 +289,9 @@ protected:
     /** Paint routine for seamless mode. */
     void paintSeamless(QPaintEvent *pEvent);
 
+    /** Returns the transformation mode corresponding to the passed ScalingOptimizationType. */
+    static Qt::TransformationMode transformationMode(ScalingOptimizationType type);
+
     /** Erases corresponding @a rect with @a painter. */
     static void eraseImageRect(QPainter &painter, const QRect &rect,
                                bool fUseUnscaledHiDPIOutput,
@@ -292,6 +300,7 @@ protected:
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
+                              ScalingOptimizationType enmScalingOptimizationType,
                               bool fUseUnscaledHiDPIOutput,
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
@@ -341,6 +350,8 @@ protected:
      * @{ */
     /** Holds the scale-factor used by the scaled-size. */
     double m_dScaleFactor;
+    /** Holds the scaling optimization type used by the scaling mechanism. */
+    ScalingOptimizationType m_enmScalingOptimizationType;
     /** Holds the coordinate-system for the scale-factor above. */
     QTransform m_transform;
     /** Holds the frame-buffer's scaled-size. */
@@ -523,6 +534,7 @@ UIFrameBufferPrivate::UIFrameBufferPrivate()
     , m_fUnused(false)
     , m_fAutoEnabled(false)
     , m_dScaleFactor(1.0)
+    , m_enmScalingOptimizationType(ScalingOptimizationType_None)
     , m_dBackingScaleFactor(1.0)
     , m_fUseUnscaledHiDPIOutput(false)
     , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
@@ -1327,7 +1339,8 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
         /* And scaling the image to predefined scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                         transformationMode(scalingOptimizationType()));
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
@@ -1353,7 +1366,8 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
+                  scalingOptimizationType(), useUnscaledHiDPIOutput(),
+                  hiDPIOptimizationType(), backingScaleFactor());
 }
 
 void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
@@ -1367,7 +1381,8 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
          * detached during scale process, otherwise we can get a frozen frame-buffer. */
         scaledImage = m_image.copy();
         /* And scaling the image to predefined scaled-factor: */
-        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+        scaledImage = scaledImage.scaled(m_scaledSize, Qt::IgnoreAspectRatio,
+                                         transformationMode(scalingOptimizationType()));
     }
     /* Finally we are choosing image to paint from: */
     const QImage &sourceImage = scaledImage.isNull() ? m_image : scaledImage;
@@ -1419,7 +1434,19 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Paint rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
+                  scalingOptimizationType(), useUnscaledHiDPIOutput(),
+                  hiDPIOptimizationType(), backingScaleFactor());
+}
+
+/* static */
+Qt::TransformationMode UIFrameBufferPrivate::transformationMode(ScalingOptimizationType type)
+{
+    switch (type)
+    {
+        case ScalingOptimizationType_Performance: return Qt::FastTransformation;
+        default: break;
+    }
+    return Qt::SmoothTransformation;
 }
 
 /* static */
@@ -1471,6 +1498,7 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
 /* static */
 void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                          int iContentsShiftX, int iContentsShiftY,
+                                         ScalingOptimizationType enmScalingOptimizationType,
                                          bool fUseUnscaledHiDPIOutput,
                                          HiDPIOptimizationType hiDPIOptimizationType,
                                          double dBackingScaleFactor)
@@ -1500,7 +1528,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
             subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
-                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
+                                         Qt::IgnoreAspectRatio, transformationMode(enmScalingOptimizationType));
         }
 
 #ifdef Q_WS_MAC
@@ -1670,14 +1698,24 @@ void UIFrameBuffer::setUseUnscaledHiDPIOutput(bool fUseUnscaledHiDPIOutput)
     m_pFrameBuffer->setUseUnscaledHiDPIOutput(fUseUnscaledHiDPIOutput);
 }
 
+ScalingOptimizationType UIFrameBuffer::scalingOptimizationType() const
+{
+    return m_pFrameBuffer->scalingOptimizationType();
+}
+
+void UIFrameBuffer::setScalingOptimizationType(ScalingOptimizationType type)
+{
+    m_pFrameBuffer->setScalingOptimizationType(type);
+}
+
 HiDPIOptimizationType UIFrameBuffer::hiDPIOptimizationType() const
 {
     return m_pFrameBuffer->hiDPIOptimizationType();
 }
 
-void UIFrameBuffer::setHiDPIOptimizationType(HiDPIOptimizationType optimizationType)
+void UIFrameBuffer::setHiDPIOptimizationType(HiDPIOptimizationType type)
 {
-    m_pFrameBuffer->setHiDPIOptimizationType(optimizationType);
+    m_pFrameBuffer->setHiDPIOptimizationType(type);
 }
 
 void UIFrameBuffer::handleNotifyChange(int iWidth, int iHeight)

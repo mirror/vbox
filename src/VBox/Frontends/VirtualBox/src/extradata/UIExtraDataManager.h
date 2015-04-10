@@ -78,6 +78,9 @@ signals:
     /** Notifies about the scale-factor change. */
     void sigScaleFactorChange(const QString &strMachineID);
 
+    /** Notifies about the scaling optimization type change. */
+    void sigScalingOptimizationTypeChange(const QString &strMachineID);
+
     /** Notifies about unscaled HiDPI output mode change. */
     void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 
@@ -474,6 +477,9 @@ public:
         double scaleFactor(const QString &strID);
         /** Defines the @a dScaleFactor. */
         void setScaleFactor(double dScaleFactor, const QString &strID);
+
+        /** Returns the scaling optimization type. */
+        ScalingOptimizationType scalingOptimizationType(const QString &strID);
     /** @} */
 
     /** @name Virtual Machine: Information dialog

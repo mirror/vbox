@@ -61,6 +61,7 @@ template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
 template<> bool canConvert<MouseCapturePolicy>() { return true; }
 template<> bool canConvert<GuruMeditationHandlerType>() { return true; }
+template<> bool canConvert<ScalingOptimizationType>() { return true; }
 template<> bool canConvert<HiDPIOptimizationType>() { return true; }
 #ifndef Q_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>() { return true; }
@@ -1408,6 +1409,38 @@ template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerTyp
         return GuruMeditationHandlerType_Default;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strGuruMeditationHandlerType, Qt::CaseInsensitive)));
+}
+
+/* QString <= ScalingOptimizationType: */
+template<> QString toInternalString(const ScalingOptimizationType &optimizationType)
+{
+    QString strResult;
+    switch (optimizationType)
+    {
+        case ScalingOptimizationType_None:        strResult = "None"; break;
+        case ScalingOptimizationType_Performance: strResult = "Performance"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for type=%d", optimizationType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* ScalingOptimizationType <= QString: */
+template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(const QString &strOptimizationType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<ScalingOptimizationType> values;
+    keys << "None";        values << ScalingOptimizationType_None;
+    keys << "Performance"; values << ScalingOptimizationType_Performance;
+    /* 'None' type for empty/unknown words: */
+    if (!keys.contains(strOptimizationType, Qt::CaseInsensitive))
+        return ScalingOptimizationType_None;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strOptimizationType, Qt::CaseInsensitive)));
 }
 
 /* QString <= HiDPIOptimizationType: */

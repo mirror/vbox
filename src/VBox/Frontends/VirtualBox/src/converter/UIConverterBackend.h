@@ -93,6 +93,7 @@ template<> bool canConvert<IndicatorType>();
 template<> bool canConvert<MachineCloseAction>();
 template<> bool canConvert<MouseCapturePolicy>();
 template<> bool canConvert<GuruMeditationHandlerType>();
+template<> bool canConvert<ScalingOptimizationType>();
 template<> bool canConvert<HiDPIOptimizationType>();
 #ifndef Q_WS_MAC
 template<> bool canConvert<MiniToolbarAlignment>();
@@ -177,6 +178,8 @@ template<> QString toInternalString(const MouseCapturePolicy &mouseCapturePolicy
 template<> MouseCapturePolicy fromInternalString<MouseCapturePolicy>(const QString &strMouseCapturePolicy);
 template<> QString toInternalString(const GuruMeditationHandlerType &guruMeditationHandlerType);
 template<> GuruMeditationHandlerType fromInternalString<GuruMeditationHandlerType>(const QString &strGuruMeditationHandlerType);
+template<> QString toInternalString(const ScalingOptimizationType &optimizationType);
+template<> ScalingOptimizationType fromInternalString<ScalingOptimizationType>(const QString &strOptimizationType);
 template<> QString toInternalString(const HiDPIOptimizationType &optimizationType);
 template<> HiDPIOptimizationType fromInternalString<HiDPIOptimizationType>(const QString &strOptimizationType);
 #ifndef Q_WS_MAC

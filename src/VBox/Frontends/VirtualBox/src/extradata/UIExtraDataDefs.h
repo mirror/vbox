@@ -246,6 +246,8 @@ namespace UIExtraDataDefs
         extern const char* GUI_HidLedsSync;
         /** Holds the scale-factor. */
         extern const char* GUI_ScaleFactor;
+        /** Holds the scaling optimization type. */
+        extern const char* GUI_Scaling_Optimization;
     /** @} */
 
     /** @name Virtual Machine: Information dialog
@@ -619,6 +621,13 @@ enum GuruMeditationHandlerType
     GuruMeditationHandlerType_Default,
     GuruMeditationHandlerType_PowerOff,
     GuruMeditationHandlerType_Ignore
+};
+
+/** Runtime UI: Scaling optimization types. */
+enum ScalingOptimizationType
+{
+    ScalingOptimizationType_None,
+    ScalingOptimizationType_Performance
 };
 
 /** Runtime UI: HiDPI optimization types. */
