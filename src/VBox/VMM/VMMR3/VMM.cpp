@@ -543,7 +543,7 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
     if (pVM->aCpus[0].vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX)
         LogRel(("VMM: Thread-context hooks enabled!\n"));
     else
-        LogRel(("VMM: Thread-context hooks unavailable.\n"));
+        LogRel(("VMM: Thread-context hooks unavailable\n"));
 
     return rc;
 }
