@@ -282,11 +282,11 @@ int vmmR3SwitcherInit(PVM pVM)
                 paBadTries[i].HCPhys = pVM->vmm.s.HCPhysCoreCode;
                 paBadTries[i].cb     = pVM->vmm.s.cbCoreCode;
                 i++;
-                LogRel(("Failed to allocated and map core code: rc=%Rrc\n", rc));
+                LogRel(("VMM: Failed to allocated and map core code: rc=%Rrc\n", rc));
             }
             while (i-- > 0)
             {
-                LogRel(("Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%RHp\n",
+                LogRel(("VMM: Core code alloc attempt #%d: pvR3=%p pvR0=%p HCPhys=%RHp\n",
                         i, paBadTries[i].pvR3, paBadTries[i].pvR0, paBadTries[i].HCPhys));
                 SUPR3ContFree(paBadTries[i].pvR3, paBadTries[i].cb >> PAGE_SHIFT);
             }
@@ -324,7 +324,7 @@ int vmmR3SwitcherInit(PVM pVM)
         {
             pVM->vmm.s.pvCoreCodeRC = GCPtr;
             MMR3HyperReserve(pVM, PAGE_SIZE, "fence", NULL);
-            LogRel(("CoreCode: R3=%RHv R0=%RHv RC=%RRv Phys=%RHp cb=%#x\n",
+            LogRel(("VMM: CoreCode: R3=%RHv R0=%RHv RC=%RRv Phys=%RHp cb=%#x\n",
                     pVM->vmm.s.pvCoreCodeR3, pVM->vmm.s.pvCoreCodeR0, pVM->vmm.s.pvCoreCodeRC, pVM->vmm.s.HCPhysCoreCode, pVM->vmm.s.cbCoreCode));
 
             /*
