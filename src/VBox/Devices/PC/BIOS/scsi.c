@@ -108,6 +108,15 @@ int scsi_cmd_data_in(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
 
+    /* If any error occurred, inform the caller and don't bother reading the data. */
+    if (status & VBSCSI_ERROR) {
+        outb(io_base + VBSCSI_REGISTER_RESET, 0);
+
+        status = inb(io_base + VBSCSI_REGISTER_DEVSTAT);
+        DBG_SCSI("%s: read failed, device status %02X\n", __func__, status);
+        return 4;   /* Sector not found */
+    }
+
     /* Read in the data. The transfer length may be exactly 64K or more,
      * which needs a bit of care when we're using 16-bit 'rep ins'.
      */
@@ -162,6 +171,15 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
     do
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
+
+    /* If any error occurred, inform the caller. */
+    if (status & VBSCSI_ERROR) {
+        outb(io_base + VBSCSI_REGISTER_RESET, 0);
+
+        status = inb(io_base + VBSCSI_REGISTER_DEVSTAT);
+        DBG_SCSI("%s: write failed, device status %02X\n", __func__, status);
+        return 4;   /* Sector not found */
+    }
 
     return 0;
 }
