@@ -60,7 +60,7 @@ DECLNORETURN(static void) panic (char *fmt, ...)
     AssertFatalFailed();
 }
 /* for non-gnu compilers */
-# define __func__ __FUNCTION__
+# define __func__ RT_GCC_EXTENSION __FUNCTION__
 # ifndef __inline
 #  define __inline
 # endif

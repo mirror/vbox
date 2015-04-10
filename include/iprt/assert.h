@@ -1613,7 +1613,7 @@ RT_C_DECLS_END
     do { \
         if (RT_UNLIKELY(!(expr))) \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertReleasePanic(); \
         } \
     } while (0)
@@ -1828,7 +1828,7 @@ RT_C_DECLS_END
  */
 #define AssertReleaseMsgFailed(a)  \
     do { \
-        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
         RTAssertReleasePanic(); \
     } while (0)
@@ -1939,7 +1939,7 @@ RT_C_DECLS_END
     do { \
         for (;;) \
         { \
-            RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertReleasePanic(); \
         } \
     } while (0)
@@ -1953,7 +1953,7 @@ RT_C_DECLS_END
     do { \
         for (;;) \
         { \
-            RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertMsg2Weak a; \
             RTAssertReleasePanic(); \
         } \

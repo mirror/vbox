@@ -2637,7 +2637,7 @@
 
 
 /** Source position. */
-#define RT_SRC_POS         __FILE__, __LINE__, __PRETTY_FUNCTION__
+#define RT_SRC_POS         __FILE__, __LINE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__
 
 /** Source position declaration. */
 #define RT_SRC_POS_DECL    const char *pszFile, unsigned iLine, const char *pszFunction

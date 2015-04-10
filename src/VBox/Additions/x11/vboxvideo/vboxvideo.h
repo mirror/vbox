@@ -90,7 +90,7 @@ if (!(expr)) \
 { \
     vbvxMsg("\nAssertion failed!\n\n"); \
     vbvxMsg("%s\n", #expr); \
-    vbvxMsg("at %s (%s:%d)\n", __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+    vbvxMsg("at %s (%s:%d)\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, __FILE__, __LINE__); \
     vbvxMsg out; \
     vbvxAbortServer(); \
 }

@@ -181,7 +181,7 @@ Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
         || (pVBox->cbFBMax == 0))
     {
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "%s: preconditions failed\n",
-                   __PRETTY_FUNCTION__);
+                   RT_GCC_EXTENSION __PRETTY_FUNCTION__);
         rc = FALSE;
     }
     /* Check that the GLX, DRI, and DRM modules have been loaded by testing for
