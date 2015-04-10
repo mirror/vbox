@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Console COM Class implementation - Guest drag'n drop source.
+ * VBox Console COM Class implementation - Guest drag and drop source.
  */
 
 /*
@@ -260,7 +260,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat,
             LogFlowFunc(("rc=%Rrc, szDropDir=%s\n", rc, szDropDir));
             if (RT_FAILURE(rc))
                 return setError(VBOX_E_IPRT_ERROR,
-                                tr("Unable to create the temporary drag'n drop directory \"%s\" (%Rrc)\n"),
+                                tr("Unable to create the temporary drag and drop directory \"%s\" (%Rrc)\n"),
                                 szDropDir, rc);
 
             pResp->setDropDir(szDropDir);

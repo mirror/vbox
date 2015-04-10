@@ -196,7 +196,7 @@ int handleControlVM(HandlerArg *a)
         {
             if (a->argc <= 1 + 1)
             {
-                errorArgument("Missing argument to '%s'. Expected drag'n'drop mode.", a->argv[1]);
+                errorArgument("Missing argument to '%s'. Expected drag and drop mode.", a->argv[1]);
                 rc = E_FAIL;
                 break;
             }

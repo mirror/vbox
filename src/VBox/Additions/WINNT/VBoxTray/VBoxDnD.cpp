@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDnD.cpp - Windows-specific bits of the drag'n drop service.
+ * VBoxDnD.cpp - Windows-specific bits of the drag and drop service.
  */
 
 /*
@@ -412,7 +412,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 #endif
                     hide();
 
-                    LogFlowThisFunc(("Starting drag'n drop: uAllActions=0x%x, dwOKEffects=0x%x ...\n",
+                    LogFlowThisFunc(("Starting drag and drop: uAllActions=0x%x, dwOKEffects=0x%x ...\n",
                                      uAllActions, startupInfo.dwOKEffects));
 
                     AssertPtr(startupInfo.pDataObject);
@@ -432,7 +432,7 @@ LRESULT CALLBACK VBoxDnDWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
                             break;
 
                         default:
-                            LogFlowThisFunc(("Drag'n drop failed with %Rhrc\n", hr));
+                            LogFlowThisFunc(("Drag and drop failed with %Rhrc\n", hr));
                             mState = Canceled;
                             rc = VERR_GENERAL_FAILURE; /** @todo Find a better status code. */
                             break;
@@ -777,7 +777,7 @@ int VBoxDnDWnd::OnHgEnter(const RTCList<RTCString> &lstFormats, uint32_t uAllAct
      * Warn in the log if this guest does not accept anything.
      */
     if (!this->lstFormats.size())
-        LogRel(("DnD: Warning: No supported drag'n drop formats on the guest found!\n"));
+        LogRel(("DnD: Warning: No supported drag and drop formats on the guest found!\n"));
 
     /*
      * Prepare the startup info for DoDragDrop().
@@ -873,14 +873,14 @@ int VBoxDnDWnd::OnHgLeave(void)
         return VERR_WRONG_ORDER;
 
     LogFlowThisFunc(("mMode=%ld, mState=%RU32\n", mMode, mState));
-    LogRel(("DnD: Drag'n drop operation aborted\n"));
+    LogRel(("DnD: Drag and drop operation aborted\n"));
 
     reset();
 
     int rc = VINF_SUCCESS;
 
     /* Post ESC to our window to officially abort the
-     * drag'n drop operation. */
+     * drag and drop operation. */
     PostMessage(hWnd, WM_KEYDOWN, VK_ESCAPE, 0 /* lParam */);
 
     LogFlowFuncLeaveRC(rc);
@@ -1129,9 +1129,9 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
             char szTitle[64];
 
             /** @todo Add some i18l tr() macros here. */
-            RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions Drag'n Drop");
-            RTStrPrintf(szMsg, sizeof(szMsg), "Drag'n drop to the host either is not supported or disabled. "
-                                              "Please enable Guest to Host or Bidirectional drag'n drop mode "
+            RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions Drag and Drop");
+            RTStrPrintf(szMsg, sizeof(szMsg), "Drag and drop to the host either is not supported or disabled. "
+                                              "Please enable Guest to Host or Bidirectional drag and drop mode "
                                               "or re-install the VirtualBox Guest Additions.");
             switch (rc)
             {
@@ -1497,7 +1497,7 @@ static LRESULT CALLBACK vboxDnDWndProc(HWND hWnd, UINT uMsg,
 }
 
 /**
- * Initializes drag'n drop.
+ * Initializes drag and drop.
  *
  * @return  IPRT status code.
  * @param   pEnv                        The DnD service's environment.
@@ -1528,7 +1528,7 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
     if (!fSupportedOS)
     {
-        LogRel(("DnD: Not supported Windows version, disabling drag'n drop support\n"));
+        LogRel(("DnD: Not supported Windows version, disabling drag and drop support\n"));
         rc = VERR_NOT_SUPPORTED;
     }
     else
@@ -1564,11 +1564,11 @@ int VBoxDnDInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
         *ppInstance = pCtx;
         *pfStartThread = true;
 
-        LogRel(("DnD: Drag'n drop service successfully started\n"));
+        LogRel(("DnD: Drag and drop service successfully started\n"));
         return VINF_SUCCESS;
     }
 
-    LogRel(("DnD: Initializing drag'n drop service failed with rc=%Rrc\n", rc));
+    LogRel(("DnD: Initializing drag and drop service failed with rc=%Rrc\n", rc));
     return rc;
 }
 

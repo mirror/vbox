@@ -179,7 +179,7 @@ STDMETHODIMP VBoxDnDDropTarget::DragEnter(IDataObject *pDataObject, DWORD grfKey
         {
             case ERROR_INVALID_FUNCTION:
             {
-                LogRel(("DnD: Drag'n drop format is not supported by VBoxTray\n"));
+                LogRel(("DnD: Drag and drop format is not supported by VBoxTray\n"));
 
                 /* Enumerate supported source formats. This shouldn't happen too often
                  * on day to day use, but still keep it in here. */

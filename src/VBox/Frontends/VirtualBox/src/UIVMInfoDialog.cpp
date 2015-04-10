@@ -670,7 +670,7 @@ void UIVMInfoDialog::refreshStatistics()
         }
         strResult += formatValue(tr("VM Uptime"), strUptime, iMaxLength);
         strResult += formatValue(tr("Clipboard Mode"), strClipboardMode, iMaxLength);
-        strResult += formatValue(tr("Drag'n'Drop Mode"), strDnDMode, iMaxLength);
+        strResult += formatValue(tr("Drag and Drop Mode"), strDnDMode, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("VT-x/AMD-V", "details report"), strVirtualization, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Nested Paging", "details report"), strNestedPaging, iMaxLength);
         strResult += formatValue(VBoxGlobal::tr("Unrestricted Execution", "details report"), strUnrestrictedExecution, iMaxLength);

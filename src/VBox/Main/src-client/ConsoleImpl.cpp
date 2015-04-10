@@ -5479,7 +5479,7 @@ HRESULT Console::i_onDnDModeChange(DnDMode_T aDnDMode)
 
     HRESULT rc = S_OK;
 
-    /* don't trigger the drag'n'drop mode change if the VM isn't running */
+    /* don't trigger the drag and drop mode change if the VM isn't running */
     SafeVMPtrQuiet ptrVM(this);
     if (ptrVM.isOk())
     {
@@ -8747,9 +8747,9 @@ void Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
 }
 
 /**
- * Changes the drag'n_drop mode.
+ * Changes the drag and drop mode.
  *
- * @param aDnDMode  new drag'n'drop mode.
+ * @param aDnDMode  new drag and drop mode.
  */
 int Console::i_changeDnDMode(DnDMode_T aDnDMode)
 {
@@ -8764,19 +8764,19 @@ int Console::i_changeDnDMode(DnDMode_T aDnDMode)
     {
         default:
         case DnDMode_Disabled:
-            LogRel(("Changed drag'n drop mode to: Off\n"));
+            LogRel(("Changed drag and drop mode to: Off\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_OFF;
             break;
         case DnDMode_GuestToHost:
-            LogRel(("Changed drag'n drop mode to: Guest to Host\n"));
+            LogRel(("Changed drag and drop mode to: Guest to Host\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST;
             break;
         case DnDMode_HostToGuest:
-            LogRel(("Changed drag'n drop mode to: Host to Guest\n"));
+            LogRel(("Changed drag and drop mode to: Host to Guest\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST;
             break;
         case DnDMode_Bidirectional:
-            LogRel(("Changed drag'n drop mode to: Bidirectional\n"));
+            LogRel(("Changed drag and drop mode to: Bidirectional\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL;
             break;
     }

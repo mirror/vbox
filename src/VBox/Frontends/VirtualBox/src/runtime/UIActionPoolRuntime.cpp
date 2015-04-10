@@ -1506,7 +1506,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Drag'n'Drop"));
+        setName(QApplication::translate("UIActionPool", "Drag and Drop"));
     }
 };
 

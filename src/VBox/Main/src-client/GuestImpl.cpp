@@ -130,7 +130,7 @@ HRESULT Guest::init(Console *aParent)
                 hr = mDnDTarget->init(this /* pGuest */);
         }
 
-        LogFlowFunc(("Drag'n drop initializied with hr=%Rhrc\n", hr));
+        LogFlowFunc(("Drag and drop initializied with hr=%Rhrc\n", hr));
     }
     catch (std::bad_alloc &)
     {

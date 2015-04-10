@@ -1617,7 +1617,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("Clipboard Mode:  %s\n", psz);
     }
 
-    /* Drag'n'drop */
+    /* Drag and drop */
     {
         const char *psz = "Unknown";
         DnDMode_T enmMode;
@@ -1656,7 +1656,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("draganddrop=\"%s\"\n", psz);
         else
-            RTPrintf("Drag'n'drop Mode: %s\n", psz);
+            RTPrintf("Drag and drop Mode: %s\n", psz);
     }
 
     {

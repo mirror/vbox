@@ -222,7 +222,7 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
                 /* ESC pressed? */
                 if (static_cast<QKeyEvent*>(pEvent)->key() == Qt::Key_Escape)
                 {
-                    LogFlowFunc(("ESC pressed, cancelling drag'n drop operation\n"));
+                    LogFlowFunc(("ESC pressed, cancelling drag and drop operation\n"));
                     m_enmState = Canceled;
                 }
 
