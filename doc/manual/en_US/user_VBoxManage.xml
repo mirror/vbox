@@ -614,9 +614,10 @@ Statistics update:  disabled</screen></para>
             This is the default option chosen while creating new VMs. The
             <computeroutput>legacy</computeroutput> option is chosen for VMs
             which were created with older VirtualBox versions and will pick a
-            paravirtualization interface while starting the VM. The
-            <computeroutput>minimal</computeroutput> provider is mandatory for
-            Mac OS X guests, while <computeroutput>kvm</computeroutput> and
+            paravirtualization interface while starting the VM with VirtualBox
+            5.0 and newer. The <computeroutput>minimal</computeroutput> provider
+            is mandatory for Mac OS X guests, while
+            <computeroutput>kvm</computeroutput> and
             <computeroutput>hyperv</computeroutput> are recommended for Linux
             and Windows guests respectively. These options are explained in
             detail under <xref linkend="gimproviders" />.</para>
