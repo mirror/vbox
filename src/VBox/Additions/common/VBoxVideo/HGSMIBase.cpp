@@ -465,26 +465,6 @@ RTDECL(int) VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
-/** Sanity test on first call.  We do not worry about concurrency issues. */
-static int testQueryConf(PHGSMIGUESTCOMMANDCONTEXT pCtx)
-{
-    static bool cOnce = false;
-    uint32_t ulValue = 0;
-    int rc;
-
-    if (cOnce)
-        return VINF_SUCCESS;
-    cOnce = true;
-    rc = VBoxQueryConfHGSMI(pCtx, UINT32_MAX, &ulValue);
-    if (RT_SUCCESS(rc) && ulValue == UINT32_MAX)
-        return VINF_SUCCESS;
-    cOnce = false;
-    if (RT_FAILURE(rc))
-        return rc;
-    return VERR_INTERNAL_ERROR;
-}
-
-
 /**
  * Query the host for an HGSMI configuration parameter via an HGSMI command.
  * @returns iprt status value
@@ -500,9 +480,6 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     VBVACONF32 *p;
     LogFunc(("u32Index = %d\n", u32Index));
 
-    rc = testQueryConf(pCtx);
-    if (RT_FAILURE(rc))
-        return rc;
     /* Allocate the IO buffer. */
     p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx,
                                      sizeof(VBVACONF32), HGSMI_CH_VBVA,
@@ -511,7 +488,7 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     {
         /* Prepare data to be sent to the host. */
         p->u32Index = u32Index;
-        p->u32Value = UINT32_MAX;
+        p->u32Value = 0;
         rc = VBoxHGSMIBufferSubmit(pCtx, p);
         if (RT_SUCCESS(rc))
         {
