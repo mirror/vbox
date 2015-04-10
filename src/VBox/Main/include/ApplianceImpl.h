@@ -104,6 +104,9 @@ private:
                   const com::Utf8Str &aPath,
                   ComPtr<IProgress> &aProgress);
     HRESULT getWarnings(std::vector<com::Utf8Str> &aWarnings);
+    HRESULT getPasswordIds(std::vector<com::Utf8Str> &aIdentifiers);
+    HRESULT addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
+                         const std::vector<com::Utf8Str> &aPasswords);
 
     /** weak VirtualBox parent */
     VirtualBox* const mVirtualBox;

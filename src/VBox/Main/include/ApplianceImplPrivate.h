@@ -20,7 +20,9 @@
 class VirtualSystemDescription;
 
 #include "ovfreader.h"
+#include "SecretKeyStore.h"
 #include <map>
+#include <vector>
 #include <iprt/vfs.h>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,6 +62,7 @@ struct Appliance::Data
       , ulWeightForManifestOperation(0)
       , ulTotalDisksMB(0)
       , cDisks(0)
+      , m_cPwProvided(0)
     {
     }
 
@@ -98,6 +101,13 @@ struct Appliance::Data
     ULONG               cDisks;
 
     std::list<Guid>     llGuidsMachinesCreated;
+
+    /** Sequence of password identifiers to encrypt disk images during export. */
+    std::vector<com::Utf8Str> m_vecPasswordIdentifiers;
+    /** Secret key store used to hold the passwords during export. */
+    SecretKeyStore            *m_pSecretKeyStore;
+    /** Number of passwords provided. */
+    uint32_t                  m_cPwProvided;
 };
 
 struct Appliance::XMLStack

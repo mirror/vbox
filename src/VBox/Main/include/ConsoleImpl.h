@@ -21,6 +21,7 @@
 #include "VirtualBoxBase.h"
 #include "VBox/com/array.h"
 #include "EventImpl.h"
+#include "SecretKeyStore.h"
 #include "ConsoleWrap.h"
 
 class Guest;
@@ -581,50 +582,10 @@ public:
         LONG     iPort;
     };
 
-    /**
-     * Class for managing cryptographic keys.
-     * @todo: Replace with a keystore implementation once it is ready.
-     */
-    class SecretKey
-    {
-        public:
-            SecretKey() { }
-
-            SecretKey(uint8_t *pbKey, size_t cbKey, bool fRemoveOnSuspend)
-               : m_cRefs(0),
-                 m_pbKey(pbKey),
-                 m_cbKey(cbKey),
-                 m_fRemoveOnSuspend(fRemoveOnSuspend),
-                 m_cDisks(0)
-            { }
-
-            ~SecretKey()
-            {
-                RTMemSaferFree(m_pbKey, m_cbKey);
-                m_cRefs = 0;
-                m_pbKey = NULL;
-                m_cbKey = 0;
-                m_fRemoveOnSuspend = false;
-                m_cDisks = 0;
-            }
-
-            /** Reference counter of the key. */
-            volatile uint32_t m_cRefs;
-            /** Key material. */
-            uint8_t          *m_pbKey;
-            /** Size of the key in bytes. */
-            size_t            m_cbKey;
-            /** Flag whether to remove the key on suspend. */
-            bool              m_fRemoveOnSuspend;
-            /** Number of disks using this key. */
-            uint32_t          m_cDisks;
-    };
-
     typedef std::map<Utf8Str, ComObjPtr<SharedFolder> > SharedFolderMap;
     typedef std::map<Utf8Str, SharedFolderData> SharedFolderDataMap;
     typedef std::map<Utf8Str, ComPtr<IMediumAttachment> > MediumAttachmentMap;
     typedef std::list <USBStorageDevice> USBStorageDeviceList;
-    typedef std::map<Utf8Str, SecretKey *> SecretKeyMap;
 
 private:
 
@@ -996,12 +957,12 @@ private:
     /** List of attached USB storage devices. */
     USBStorageDeviceList mUSBStorageDevices;
 
-    /** Map of secret keys used for disk encryption. */
-    SecretKeyMap         m_mapSecretKeys;
+    /** Store for secret keys. */
+    SecretKeyStore * const m_pKeyStore;
     /** Number of disks configured for encryption. */
-    unsigned             m_cDisksEncrypted;
+    unsigned               m_cDisksEncrypted;
     /** Number of disks which have the key in the map. */
-    unsigned             m_cDisksPwProvided;
+    unsigned               m_cDisksPwProvided;
 
     /** Pointer to the key consumer -> provider (that's us) callbacks. */
     struct MYPDMISECKEY : public PDMISECKEY
