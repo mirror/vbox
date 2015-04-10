@@ -187,6 +187,7 @@ void showLogo(PRTSTREAM pStrm);
 
 #ifndef VBOX_ONLY_DOCS
 RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd);
+RTEXITCODE readPasswordFromConsole(com::Utf8Str *pPassword, const char *pszPrompt, ...);
 
 int handleInternalCommands(HandlerArg *a);
 #endif /* !VBOX_ONLY_DOCS */

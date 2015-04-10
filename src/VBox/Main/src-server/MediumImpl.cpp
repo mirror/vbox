@@ -571,6 +571,7 @@ public:
                const char *aFilename,
                MediumFormat *aFormat,
                MediumVariant_T aVariant,
+               SecretKeyStore *pSecretKeyStore,
                VDINTERFACEIO *aVDImageIOIf,
                void *aVDImageIOUser,
                MediumLockList *aSourceMediumLockList,
@@ -580,6 +581,7 @@ public:
           mFilename(aFilename),
           mFormat(aFormat),
           mVariant(aVariant),
+          m_pSecretKeyStore(pSecretKeyStore),
           mfKeepSourceMediumLockList(fKeepSourceMediumLockList)
     {
         AssertReturnVoidStmt(aSourceMediumLockList != NULL, mRC = E_FAIL);
@@ -605,6 +607,7 @@ public:
     ComObjPtr<MediumFormat> mFormat;
     MediumVariant_T mVariant;
     PVDINTERFACE mVDImageIfaces;
+    SecretKeyStore *m_pSecretKeyStore;
 
 private:
     virtual HRESULT handler();
@@ -5586,6 +5589,8 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
  * @param aFormat               Medium format for creating @a aFilename.
  * @param aVariant              Which exact image format variant to use
  *                              for the destination image.
+ * @param pKeyStore             The optional key store for decrypting the data
+ *                              for encrypted media during the export.
  * @param aVDImageIOCallbacks   Pointer to the callback table for a
  *                              VDINTERFACEIO interface. May be NULL.
  * @param aVDImageIOUser        Opaque data for the callbacks.
@@ -5596,6 +5601,7 @@ HRESULT Medium::i_fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 HRESULT Medium::i_exportFile(const char *aFilename,
                              const ComObjPtr<MediumFormat> &aFormat,
                              MediumVariant_T aVariant,
+                             SecretKeyStore *pKeyStore,
                              PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                              const ComObjPtr<Progress> &aProgress)
 {
@@ -5637,7 +5643,7 @@ HRESULT Medium::i_exportFile(const char *aFilename,
 
         /* setup task object to carry out the operation asynchronously */
         pTask = new Medium::ExportTask(this, aProgress, aFilename, aFormat,
-                                       aVariant, aVDImageIOIf,
+                                       aVariant, pKeyStore, aVDImageIOIf,
                                        aVDImageIOUser, pSourceMediumLockList);
         rc = pTask->rc();
         AssertComRC(rc);
@@ -5897,6 +5903,24 @@ HRESULT Medium::i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
         delete pTask;
 
     return rc;
+}
+
+/**
+ * Returns the key identifier for this medium if encryption is configured.
+ *
+ * @returns Key identifier or empty string if no encryption is configured.
+ */
+const Utf8Str& Medium::i_getKeyId()
+{
+    ComObjPtr<Medium> pBase = i_getBase();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    settings::StringsMap::const_iterator it = pBase->m->mapProperties.find("CRYPT/KeyId");
+    if (it == pBase->m->mapProperties.end())
+        return Utf8Str::Empty;
+
+    return it->second;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -8727,6 +8751,7 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
         /* Lock all in {parent,child} order. The lock is also used as a
          * signal from the task initiator (which releases it only after
          * RTThreadCreate()) that we can start the job. */
+        ComObjPtr<Medium> pBase = i_getBase();
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
         PVBOXHDD hdd;
@@ -8735,6 +8760,81 @@ HRESULT Medium::i_taskExportHandler(Medium::ExportTask &task)
 
         try
         {
+            settings::StringsMap::iterator itKeyStore = pBase->m->mapProperties.find("CRYPT/KeyStore");
+            if (itKeyStore != pBase->m->mapProperties.end())
+            {
+                settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
+
+#ifdef VBOX_WITH_EXTPACK
+                static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+                static const char *s_pszVDPlugin = "VDPluginCrypt";
+                ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
+                if (pExtPackManager->i_isExtPackUsable(strExtPackPuel.c_str()))
+                {
+                    /* Load the plugin */
+                    Utf8Str strPlugin;
+                    rc = pExtPackManager->i_getLibraryPathForExtPack(s_pszVDPlugin, &strExtPackPuel, &strPlugin);
+                    if (SUCCEEDED(rc))
+                    {
+                        vrc = VDPluginLoadFromFilename(strPlugin.c_str());
+                        if (RT_FAILURE(vrc))
+                            throw setError(VBOX_E_NOT_SUPPORTED,
+                                           tr("Retrieving encryption settings of the image failed because the encryption plugin could not be loaded (%s)"),
+                                           i_vdError(vrc).c_str());
+                    }
+                    else
+                        throw setError(VBOX_E_NOT_SUPPORTED,
+                                       tr("Encryption is not supported because the extension pack '%s' is missing the encryption plugin (old extension pack installed?)"),
+                                       strExtPackPuel.c_str());
+                }
+                else
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Encryption is not supported because the extension pack '%s' is missing"),
+                                   strExtPackPuel.c_str());
+#else
+                throw setError(VBOX_E_NOT_SUPPORTED,
+                               tr("Encryption is not supported because extension pack support is not built in"));
+#endif
+
+                if (itKeyId == pBase->m->mapProperties.end())
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Image '%s' is configured for encryption but doesn't has a key identifier set"),
+                                   pBase->m->strLocationFull.c_str());
+
+                /* Find the proper secret key in the key store. */
+                if (!task.m_pSecretKeyStore)
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Image '%s' is configured for encryption but there is no key store to retrieve the password from"),
+                                   pBase->m->strLocationFull.c_str());
+
+                SecretKey *pKey = NULL;
+                vrc = task.m_pSecretKeyStore->retainSecretKey(itKeyId->second, &pKey);
+                if (RT_FAILURE(vrc))
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Failed to retrieve the secret key with ID \"%s\" from the store (%Rrc)"),
+                                   itKeyId->second.c_str(), vrc);
+
+                Medium::CryptoFilterSettings CryptoSettingsRead;
+                i_taskEncryptSettingsSetup(&CryptoSettingsRead, NULL, itKeyStore->second.c_str(), (const char *)pKey->getKeyBuffer(),
+                                           false /* fCreateKeyStore */);
+                vrc = VDFilterAdd(hdd, "CRYPT", VD_FILTER_FLAGS_READ, CryptoSettingsRead.vdFilterIfaces);
+                if (vrc == VERR_VD_PASSWORD_INCORRECT)
+                {
+                    task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
+                    throw setError(VBOX_E_PASSWORD_INCORRECT,
+                                   tr("The password to decrypt the image is incorrect"));
+                }
+                else if (RT_FAILURE(vrc))
+                {
+                    task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
+                    throw setError(VBOX_E_INVALID_OBJECT_STATE,
+                                   tr("Failed to load the decryption filter: %s"),
+                                   i_vdError(vrc).c_str());
+                }
+
+                task.m_pSecretKeyStore->releaseSecretKey(itKeyId->second);
+            }
+
             /* Open all media in the source chain. */
             MediumLockList::Base::const_iterator sourceListBegin =
                 task.mpSourceMediumLockList->GetBegin();

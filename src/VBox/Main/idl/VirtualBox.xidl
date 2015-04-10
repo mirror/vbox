@@ -2986,7 +2986,7 @@
 
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="3059cf9e-25c7-4f0b-9fa5-3c42e441670b"
+    uuid="d9432012-2740-499f-b3b3-0991da3679f3"
     wsmap="managed"
     >
     <desc>
@@ -3239,6 +3239,32 @@
 
       <param name="warnings" type="wstring" dir="return" safearray="yes">
         <desc></desc>
+      </param>
+    </method>
+
+    <method name="getPasswordIds">
+      <desc>
+        Returns a list of password identifiers which must be supplied to import or export
+        encrypted virtual machines.
+      </desc>
+
+      <param name="identifiers" type="wstring" dir="return" safearray="yes">
+        The list of password identifiers required on success.
+      </param>
+    </method>
+
+    <method name="addPasswords">
+      <desc>
+        Adds a list of passwords required to import or export encrypted virtual
+        machines.
+      </desc>
+
+      <param name="identifiers" type="wstring" dir="in" safearray="yes">
+        <desc>List of identifiers.</desc>
+      </param>
+
+      <param name="passwords" type="wstring" dir="in" safearray="yes">
+        <desc>List of matching passwords.</desc>
       </param>
     </method>
 

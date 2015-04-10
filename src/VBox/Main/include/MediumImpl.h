@@ -23,6 +23,7 @@
 #include "MediumWrap.h"
 #include "VirtualBoxBase.h"
 #include "AutoCaller.h"
+#include "SecretKeyStore.h"
 class Progress;
 class MediumFormat;
 class MediumLockList;
@@ -203,6 +204,7 @@ public:
     HRESULT i_exportFile(const char *aFilename,
                          const ComObjPtr<MediumFormat> &aFormat,
                          MediumVariant_T aVariant,
+                         SecretKeyStore *pKeyStore,
                          PVDINTERFACEIO aVDImageIOIf, void *aVDImageIOUser,
                          const ComObjPtr<Progress> &aProgress);
     HRESULT i_importFile(const char *aFilename,
@@ -215,6 +217,8 @@ public:
     HRESULT i_cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
                         const ComObjPtr<Medium> &aParent, IProgress **aProgress,
                         uint32_t idxSrcImageSame, uint32_t idxDstImageSame);
+
+    const Utf8Str& i_getKeyId();
 
 private:
 

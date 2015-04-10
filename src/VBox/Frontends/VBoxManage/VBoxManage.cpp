@@ -300,6 +300,48 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
 
     return rcExit;
 }
+
+RTEXITCODE readPasswordFromConsole(com::Utf8Str *pPassword, const char *pszPrompt, ...)
+{
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    char aszPwdInput[_1K] = { 0 };
+    va_list vaArgs;
+
+    va_start(vaArgs, pszPrompt);
+    int vrc = RTStrmPrintfV(g_pStdOut, pszPrompt, vaArgs);
+    if (RT_SUCCESS(vrc))
+    {
+        bool fEchoOld = false;
+        vrc = RTStrmInputGetEchoChars(g_pStdIn, &fEchoOld);
+        if (RT_SUCCESS(vrc))
+        {
+            vrc = RTStrmInputSetEchoChars(g_pStdIn, false);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = RTStrmGetLine(g_pStdIn, &aszPwdInput[0], sizeof(aszPwdInput));
+                if (RT_SUCCESS(vrc))
+                    *pPassword = aszPwdInput;
+                else
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed read password from command line (%Rrc)", vrc);
+
+                int vrc2 = RTStrmInputSetEchoChars(g_pStdIn, fEchoOld);
+                AssertRC(vrc2);
+            }
+            else
+                rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to disable echoing typed characters (%Rrc)", vrc);
+        }
+        else
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to retrieve echo setting (%Rrc)", vrc);
+
+        RTStrmPutStr(g_pStdOut, "\n");
+    }
+    else
+        rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to print prompt (%Rrc)", vrc);
+    va_end(vaArgs);
+
+    return rcExit;
+}
+
 #endif
 
 int main(int argc, char *argv[])

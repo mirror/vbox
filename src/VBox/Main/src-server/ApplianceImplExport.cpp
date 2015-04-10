@@ -357,6 +357,28 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
 
                 rc = pBaseMedium->COMGETTER(Size)(&llSize);
                 if (FAILED(rc)) throw rc;
+
+                /* If the medium is encrypted add the key identifier to the */
+                IMedium *iBaseMedium = pBaseMedium;
+                Medium *pBase = static_cast<Medium*>(iBaseMedium);
+                const com::Utf8Str strKeyId = pBase->i_getKeyId();
+                if (!strKeyId.isEmpty())
+                {
+                    bool fKnown = false;
+
+                    /* Check whether the ID is already in our sequence, add it otherwise. */
+                    for (unsigned i = 0; i < pAppliance->m->m_vecPasswordIdentifiers.size(); i++)
+                    {
+                        if (strKeyId.equals(pAppliance->m->m_vecPasswordIdentifiers[i]))
+                        {
+                            fKnown = true;
+                            break;
+                        }
+                    }
+
+                    if (!fKnown)
+                        pAppliance->m->m_vecPasswordIdentifiers.push_back(strKeyId);
+                }
             }
             else if (   deviceType == DeviceType_DVD
                      && pMedium)
@@ -648,6 +670,11 @@ HRESULT Appliance::write(const com::Utf8Str &aFormat,
     else
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid format \"%s\" specified"), aFormat.c_str());
+
+    /* Check whether all passwords are supplied or error out. */
+    if (m->m_cPwProvided < m->m_vecPasswordIdentifiers.size())
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Appliance export failed because not all passwords were provided for all encrypted media"));
 
     /* as of OVF 2.0 we have to use SHA256 */
     m->fSha256 = ovfF >= ovf::OVFVersion_2_0;
@@ -2167,6 +2194,7 @@ HRESULT Appliance::i_writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, P
                     rc = pSourceDisk->i_exportFile(strTargetFilePath.c_str(),
                                                    format,
                                                    MediumVariant_VmdkStreamOptimized,
+                                                   m->m_pSecretKeyStore,
                                                    pIfIo,
                                                    pStorage,
                                                    pProgress2);

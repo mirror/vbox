@@ -51,34 +51,6 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
     RTMsgError("Error code %Rrc at %s(%u) in function %s", rc, RT_SRC_POS_ARGS);
 }
 
-static int getPassword(const char *pszPrompt, Utf8Str *pPassword)
-{
-    char aszPwdInput[_1K] = { 0 };
-
-    int vrc = RTStrmPutStr(g_pStdOut, pszPrompt);
-    if (RT_SUCCESS(vrc))
-    {
-        bool fEchoOld = false;
-        vrc = RTStrmInputGetEchoChars(g_pStdIn, &fEchoOld);
-        if (RT_SUCCESS(vrc))
-        {
-            vrc = RTStrmInputSetEchoChars(g_pStdIn, false);
-            if (RT_SUCCESS(vrc))
-            {
-                vrc = RTStrmGetLine(g_pStdIn, &aszPwdInput[0], sizeof(aszPwdInput));
-                if (RT_SUCCESS(vrc))
-                    *pPassword = aszPwdInput;
-
-                int vrc2 = RTStrmInputSetEchoChars(g_pStdIn, fEchoOld);
-                AssertRC(vrc2);
-            }
-        }
-        RTStrmPutStr(g_pStdOut, "\n");
-    }
-
-    return vrc;
-}
-
 static int parseMediumVariant(const char *psz, MediumVariant_T *pMediumVariant)
 {
     int rc = VINF_SUCCESS;
@@ -1766,12 +1738,9 @@ int handleEncryptMedium(HandlerArg *a)
         if (!RTStrCmp(pszPasswordNew, "-"))
         {
             /* Get password from console. */
-            vrc = getPassword("Enter new password:", &strPasswordNew);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError("Failed to read new password from standard input");
-                return 1;
-            }
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordNew, "Enter new password:");
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
         }
         else
         {
@@ -1789,12 +1758,9 @@ int handleEncryptMedium(HandlerArg *a)
         if (!RTStrCmp(pszPasswordOld, "-"))
         {
             /* Get password from console. */
-            vrc = getPassword("Enter old password:", &strPasswordOld);
-            if (RT_FAILURE(vrc))
-            {
-                RTMsgError("Failed to read old password from standard input");
-                return 1;
-            }
+            RTEXITCODE rcExit = readPasswordFromConsole(&strPasswordOld, "Enter old password:");
+            if (rcExit == RTEXITCODE_FAILURE)
+                return rcExit;
         }
         else
         {
@@ -1856,12 +1822,9 @@ int handleCheckMediumPassword(HandlerArg *a)
     if (!RTStrCmp(a->argv[1], "-"))
     {
         /* Get password from console. */
-        vrc = getPassword("Enter password:", &strPassword);
-        if (RT_FAILURE(vrc))
-        {
-            RTMsgError("Failed to read password from standard input");
-            return 1;
-        }
+        RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter password:");
+        if (rcExit == RTEXITCODE_FAILURE)
+            return rcExit;
     }
     else
     {

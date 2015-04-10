@@ -429,6 +429,7 @@ Console::Console()
     , mUsbCardReader(NULL)
 #endif
     , mBusMgr(NULL)
+    , m_pKeyStore(NULL)
     , mpIfSecKey(NULL)
     , mpIfSecKeyHlp(NULL)
     , mVMStateChangeCallbackDisabled(false)
@@ -626,6 +627,9 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         AssertReturn(mUsbCardReader, E_FAIL);
 #endif
 
+        unconst(m_pKeyStore) = new SecretKeyStore(true /* fKeyBufNonPageable */);
+        AssertReturn(m_pKeyStore, E_FAIL);
+
         /* VirtualBox events registration. */
         {
             ComPtr<IEventSource> pES;
@@ -767,18 +771,18 @@ void Console::uninit()
         mBusMgr = NULL;
     }
 
+    if (m_pKeyStore)
+    {
+        delete m_pKeyStore;
+        unconst(m_pKeyStore) = NULL;
+    }
+
     m_mapGlobalSharedFolders.clear();
     m_mapMachineSharedFolders.clear();
     m_mapSharedFolders.clear();             // console instances
 
     mRemoteUSBDevices.clear();
     mUSBDevices.clear();
-
-    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-         it != m_mapSecretKeys.end();
-         it++)
-        delete it->second;
-    m_mapSecretKeys.clear();
 
     if (mVRDEServerInfo)
     {
@@ -3367,30 +3371,25 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Check that the ID is not existing already. */
-    SecretKeyMap::const_iterator it = m_mapSecretKeys.find(aId);
-    if (it != m_mapSecretKeys.end())
-        return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
-
     HRESULT hrc = S_OK;
     size_t cbKey = aPassword.length() + 1; /* Include terminator */
-    uint8_t *pbKey = NULL;
-    int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
+    const uint8_t *pbKey = (const uint8_t *)aPassword.c_str();
+
+    int rc = m_pKeyStore->addSecretKey(aId, pbKey, cbKey);
     if (RT_SUCCESS(rc))
     {
         unsigned cDisksConfigured = 0;
-        memcpy(pbKey, aPassword.c_str(), cbKey);
 
-        /* Scramble content to make retrieving the key more difficult. */
-        rc = RTMemSaferScramble(pbKey, cbKey);
-        AssertRC(rc);
-        SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
-        /* Add the key to the map */
-        m_mapSecretKeys.insert(std::make_pair(aId, pKey));
         hrc = i_configureEncryptionForDisk(aId, &cDisksConfigured);
         if (SUCCEEDED(hrc))
         {
-            pKey->m_cDisks = cDisksConfigured;
+            SecretKey *pKey = NULL;
+            rc = m_pKeyStore->retainSecretKey(aId, &pKey);
+            AssertRCReturn(rc, E_FAIL);
+
+            pKey->setUsers(cDisksConfigured);
+            pKey->setRemoveOnSuspend(!!aClearOnSuspend);
+            m_pKeyStore->releaseSecretKey(aId);
             m_cDisksPwProvided += cDisksConfigured;
 
             if (   m_cDisksPwProvided == m_cDisksEncrypted
@@ -3410,11 +3409,13 @@ HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::U
                              vrc);
             }
         }
-        else
-            m_mapSecretKeys.erase(aId);
     }
+    else if (rc == VERR_ALREADY_EXISTS)
+        hrc = setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
+    else if (rc == VERR_NO_MEMORY)
+        hrc = setError(E_FAIL, tr("Failed to allocate enough secure memory for the key"));
     else
-        return setError(E_FAIL, tr("Failed to allocate secure memory for the password (%Rrc)"), rc);
+        hrc = setError(E_FAIL, tr("Unknown error happened while adding a password (%Rrc)"), rc);
 
     return hrc;
 }
@@ -3436,36 +3437,20 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
     /* Check that the IDs do not exist already before changing anything. */
     for (unsigned i = 0; i < aIds.size(); i++)
     {
-        SecretKeyMap::const_iterator it = m_mapSecretKeys.find(aIds[i]);
-        if (it != m_mapSecretKeys.end())
+        SecretKey *pKey = NULL;
+        int rc = m_pKeyStore->retainSecretKey(aIds[i], &pKey);
+        if (rc != VERR_NOT_FOUND)
+        {
+            AssertPtr(pKey);
+            if (pKey)
+                pKey->release();
             return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
+        }
     }
 
     for (unsigned i = 0; i < aIds.size(); i++)
     {
-        size_t cbKey = aPasswords[i].length() + 1; /* Include terminator */
-        uint8_t *pbKey = NULL;
-        int rc = RTMemSaferAllocZEx((void **)&pbKey, cbKey, RTMEMSAFER_F_REQUIRE_NOT_PAGABLE);
-        if (RT_SUCCESS(rc))
-        {
-            unsigned cDisksConfigured = 0;
-            memcpy(pbKey, aPasswords[i].c_str(), cbKey);
-
-            /* Scramble content to make retrieving the key more difficult. */
-            rc = RTMemSaferScramble(pbKey, cbKey);
-            AssertRC(rc);
-            SecretKey *pKey = new SecretKey(pbKey, cbKey, !!aClearOnSuspend);
-            /* Add the key to the map */
-            m_mapSecretKeys.insert(std::make_pair(aIds[i], pKey));
-            hrc = i_configureEncryptionForDisk(aIds[i], &cDisksConfigured);
-            if (FAILED(hrc))
-                m_mapSecretKeys.erase(aIds[i]);
-            else
-                pKey->m_cDisks = cDisksConfigured;
-        }
-        else
-            hrc = setError(E_FAIL, tr("Failed to allocate secure memory for the password (%Rrc)"), rc);
-
+        hrc = addDiskEncryptionPassword(aIds[i], aPasswords[i], aClearOnSuspend);
         if (FAILED(hrc))
         {
             /*
@@ -3483,23 +3468,6 @@ HRESULT Console::addDiskEncryptionPasswords(const std::vector<com::Utf8Str> &aId
         }
     }
 
-    if (   SUCCEEDED(hrc)
-        && m_cDisksPwProvided == m_cDisksEncrypted
-        && mMachineState == MachineState_Paused)
-    {
-        /* get the VM handle. */
-        SafeVMPtr ptrVM(this);
-        if (!ptrVM.isOk())
-            return ptrVM.rc();
-
-        alock.release();
-        int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
-
-        hrc = RT_SUCCESS(vrc) ? S_OK :
-                setError(VBOX_E_VM_ERROR,
-                         tr("Could not resume the machine execution (%Rrc)"), vrc);
-    }
-
     return hrc;
 }
 
@@ -3510,17 +3478,21 @@ HRESULT Console::removeDiskEncryptionPassword(const com::Utf8Str &aId)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SecretKeyMap::iterator it = m_mapSecretKeys.find(aId);
-    if (it == m_mapSecretKeys.end())
-        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("A password with the given ID does not exist"));
-
-    SecretKey *pKey = it->second;
-    if (pKey->m_cRefs)
-        return setError(VBOX_E_OBJECT_IN_USE, tr("The password is still in use by the VM"));
-
-    m_cDisksPwProvided -= pKey->m_cDisks;
-    m_mapSecretKeys.erase(it);
-    delete pKey;
+    SecretKey *pKey = NULL;
+    int rc = m_pKeyStore->retainSecretKey(aId, &pKey);
+    if (RT_SUCCESS(rc))
+    {
+        m_cDisksPwProvided -= pKey->getUsers();
+        m_pKeyStore->releaseSecretKey(aId);
+        rc = m_pKeyStore->deleteSecretKey(aId);
+        AssertRCReturn(rc, E_FAIL);
+    }
+    else if (rc == VERR_NOT_FOUND)
+        return setError(VBOX_E_OBJECT_NOT_FOUND, tr("A password with the ID \"%s\" does not exist"),
+                                                 aId.c_str());
+    else
+        return setError(E_FAIL, tr("Failed to remove password with ID \"%s\" (%Rrc)"),
+                                aId.c_str(), rc);
 
     return S_OK;
 }
@@ -3529,24 +3501,13 @@ HRESULT Console::clearAllDiskEncryptionPasswords()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* First check whether a password is still in use. */
-    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-        it != m_mapSecretKeys.end();
-        it++)
-    {
-        SecretKey *pKey = it->second;
-        if (pKey->m_cRefs)
-            return setError(VBOX_E_OBJECT_IN_USE, tr("The password with ID \"%s\" is still in use by the VM"),
-                            it->first.c_str());
-    }
+    int rc = m_pKeyStore->deleteAllSecretKeys(false /* fSuspend */, false /* fForce */);
+    if (rc == VERR_RESOURCE_IN_USE)
+        return setError(VBOX_E_OBJECT_IN_USE, tr("A password is still in use by the VM"));
+    else if (RT_FAILURE(rc))
+        return setError(E_FAIL, tr("Deleting all passwords failed (%Rrc)"));
 
-    for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-        it != m_mapSecretKeys.end();
-        it++)
-        delete it->second;
-    m_mapSecretKeys.clear();
     m_cDisksPwProvided = 0;
-
     return S_OK;
 }
 
@@ -3597,6 +3558,8 @@ const char *Console::i_convertControllerTypeToDev(StorageControllerType_T enmCtr
             return "i82078";
         case StorageControllerType_USB:
             return "Msd";
+        case StorageControllerType_NVMe:
+            return "nvme";
         default:
             return NULL;
     }
@@ -5072,20 +5035,24 @@ HRESULT Console::i_consoleParseDiskEncryption(const char *psz, const char **ppsz
                 rc = RTBase64Decode(pszKeyEnc, pbKey, cbKey, NULL, NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    SecretKey *pKey = new SecretKey(pbKey, cbKey, true /* fRemoveOnSuspend */);
-                    /* Add the key to the map */
-                    m_mapSecretKeys.insert(std::make_pair(Utf8Str(pszUuid), pKey));
-                    hrc = i_configureEncryptionForDisk(Utf8Str(pszUuid), NULL);
-                    if (FAILED(hrc))
+                    rc = m_pKeyStore->addSecretKey(Utf8Str(pszUuid), pbKey, cbKey);
+                    if (RT_SUCCESS(rc))
                     {
-                        /* Delete the key from the map. */
-                        m_mapSecretKeys.erase(Utf8Str(pszUuid));
+                        hrc = i_configureEncryptionForDisk(Utf8Str(pszUuid), NULL);
+                        if (FAILED(hrc))
+                        {
+                            /* Delete the key from the map. */
+                            rc = m_pKeyStore->deleteSecretKey(Utf8Str(pszUuid));
+                            AssertRC(rc);
+                        }
                     }
                 }
                 else
                     hrc = setError(E_FAIL,
                                    tr("Failed to decode the key (%Rrc)"),
                                    rc);
+
+                RTMemSaferFree(pbKey, cbKey);
             }
             else
                 hrc = setError(E_FAIL,
@@ -5132,23 +5099,7 @@ HRESULT Console::i_setDiskEncryptionKeys(const Utf8Str &strCfg)
 void Console::i_removeSecretKeysOnSuspend()
 {
     /* Remove keys which are supposed to be removed on a suspend. */
-    SecretKeyMap::iterator it = m_mapSecretKeys.begin();
-    while (it != m_mapSecretKeys.end())
-    {
-        SecretKey *pKey = it->second;
-        if (pKey->m_fRemoveOnSuspend)
-        {
-            /* Unconfigure disk encryption from all attachments associated with this key. */
-            i_clearDiskEncryptionKeysOnAllAttachmentsWithKeyId(it->first);
-
-            AssertMsg(!pKey->m_cRefs, ("No one should access the stored key at this point anymore!\n"));
-            m_cDisksPwProvided -= pKey->m_cDisks;
-            delete pKey;
-            m_mapSecretKeys.erase(it++);
-        }
-        else
-            it++;
-    }
+    int rc = m_pKeyStore->deleteAllSecretKeys(true /* fSuspend */, true /* fForce */);
 }
 
 /**
@@ -10681,18 +10632,16 @@ Console::i_pdmIfSecKey_KeyRetain(PPDMISECKEY pInterface, const char *pszId, cons
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
 
     AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
-    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
-    if (it != pConsole->m_mapSecretKeys.end())
-    {
-        SecretKey *pKey = (*it).second;
+    SecretKey *pKey = NULL;
 
-        ASMAtomicIncU32(&pKey->m_cRefs);
-        *ppbKey = pKey->m_pbKey;
-        *pcbKey = pKey->m_cbKey;
-        return VINF_SUCCESS;
+    int rc = pConsole->m_pKeyStore->retainSecretKey(Utf8Str(pszId), &pKey);
+    if (RT_SUCCESS(rc))
+    {
+        *ppbKey = (const uint8_t *)pKey->getKeyBuffer();
+        *pcbKey = pKey->getKeySize();
     }
 
-    return VERR_NOT_FOUND;
+    return rc;
 }
 
 /**
@@ -10704,15 +10653,7 @@ Console::i_pdmIfSecKey_KeyRelease(PPDMISECKEY pInterface, const char *pszId)
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
 
     AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
-    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
-    if (it != pConsole->m_mapSecretKeys.end())
-    {
-        SecretKey *pKey = (*it).second;
-        ASMAtomicDecU32(&pKey->m_cRefs);
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NOT_FOUND;
+    return pConsole->m_pKeyStore->releaseSecretKey(Utf8Str(pszId));
 }
 
 /**
@@ -10724,22 +10665,13 @@ Console::i_pdmIfSecKey_PasswordRetain(PPDMISECKEY pInterface, const char *pszId,
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
 
     AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
-    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
-    if (it != pConsole->m_mapSecretKeys.end())
-    {
-        SecretKey *pKey = (*it).second;
+    SecretKey *pKey = NULL;
 
-        uint32_t cRefs = ASMAtomicIncU32(&pKey->m_cRefs);
-        if (cRefs == 1)
-        {
-            int rc = RTMemSaferUnscramble(pKey->m_pbKey, pKey->m_cbKey);
-            AssertRC(rc);
-        }
-        *ppszPassword = (const char *)pKey->m_pbKey;
-        return VINF_SUCCESS;
-    }
+    int rc = pConsole->m_pKeyStore->retainSecretKey(Utf8Str(pszId), &pKey);
+    if (RT_SUCCESS(rc))
+        *ppszPassword = (const char *)pKey->getKeyBuffer();
 
-    return VERR_NOT_FOUND;
+    return rc;
 }
 
 /**
@@ -10751,20 +10683,7 @@ Console::i_pdmIfSecKey_PasswordRelease(PPDMISECKEY pInterface, const char *pszId
     Console *pConsole = ((MYPDMISECKEY *)pInterface)->pConsole;
 
     AutoReadLock thatLock(pConsole COMMA_LOCKVAL_SRC_POS);
-    SecretKeyMap::const_iterator it = pConsole->m_mapSecretKeys.find(Utf8Str(pszId));
-    if (it != pConsole->m_mapSecretKeys.end())
-    {
-        SecretKey *pKey = (*it).second;
-        uint32_t cRefs = ASMAtomicDecU32(&pKey->m_cRefs);
-        if (!cRefs)
-        {
-            int rc = RTMemSaferScramble(pKey->m_pbKey, pKey->m_cbKey);
-            AssertRC(rc);
-        }
-        return VINF_SUCCESS;
-    }
-
-    return VERR_NOT_FOUND;
+    return pConsole->m_pKeyStore->releaseSecretKey(Utf8Str(pszId));
 }
 
 /**

@@ -403,6 +403,8 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
 
     // initialize data
     m = new Data;
+    m->m_pSecretKeyStore = new SecretKeyStore(false /* fRequireNonPageable*/);
+    AssertReturn(m->m_pSecretKeyStore, E_FAIL);
 
     i_initApplianceIONameMap();
 
@@ -424,6 +426,9 @@ void Appliance::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    if (m->m_pSecretKeyStore)
+        delete m->m_pSecretKeyStore;
 
     delete m;
     m = NULL;
@@ -598,6 +603,52 @@ HRESULT Appliance::getWarnings(std::vector<com::Utf8Str> &aWarnings)
     }
 
     return S_OK;
+}
+
+HRESULT Appliance::getPasswordIds(std::vector<com::Utf8Str> &aIdentifiers)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aIdentifiers = m->m_vecPasswordIdentifiers;
+    return S_OK;
+}
+
+HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
+                                const std::vector<com::Utf8Str> &aPasswords)
+{
+    HRESULT hrc = S_OK;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Check that the IDs do not exist already before changing anything. */
+    for (unsigned i = 0; i < aIdentifiers.size(); i++)
+    {
+        SecretKey *pKey = NULL;
+        int rc = m->m_pSecretKeyStore->retainSecretKey(aIdentifiers[i], &pKey);
+        if (rc != VERR_NOT_FOUND)
+        {
+            AssertPtr(pKey);
+            if (pKey)
+                pKey->release();
+            return setError(VBOX_E_OBJECT_IN_USE, tr("A password with the given ID already exists"));
+        }
+    }
+
+    for (unsigned i = 0; i < aIdentifiers.size() && SUCCEEDED(hrc); i++)
+    {
+        size_t cbKey = aPasswords[i].length() + 1; /* Include terminator */
+        const uint8_t *pbKey = (const uint8_t *)aPasswords[i].c_str();
+
+        int rc = m->m_pSecretKeyStore->addSecretKey(aIdentifiers[i], pbKey, cbKey);
+        if (RT_SUCCESS(rc))
+            m->m_cPwProvided++;
+        else if (rc == VERR_NO_MEMORY)
+            hrc = setError(E_OUTOFMEMORY, tr("Failed to allocate enough secure memory for the key"));
+        else
+            hrc = setError(E_FAIL, tr("Unknown error happened while adding a password (%Rrc)"), rc);
+    }
+
+    return hrc;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
