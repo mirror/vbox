@@ -98,65 +98,6 @@ static void vboxFillDisplayMode(ScrnInfoPtr pScrn, DisplayModePtr m,
     m->name      = xnfstrdup(pszName);
 }
 
-/** vboxvideo's list of standard video modes */
-struct
-{
-    /** mode width */
-    uint32_t cx;
-    /** mode height */
-    uint32_t cy;
-} vboxStandardModes[] =
-{
-    { 1600, 1200 },
-    { 1440, 1050 },
-    { 1280, 960 },
-    { 1024, 768 },
-    { 800, 600 },
-    { 640, 480 },
-    { 0, 0 }
-};
-enum
-{
-    vboxNumStdModes = sizeof(vboxStandardModes) / sizeof(vboxStandardModes[0])
-};
-
-/**
- * Returns a standard mode which the host likes.  Can be called multiple
- * times with the index returned by the previous call to get a list of modes.
- * @returns  the index of the mode in the list, or 0 if no more modes are
- *           available
- * @param    pScrn   the screen information structure
- * @param    pScrn->bitsPerPixel
- *                   if this is non-null, only modes with this BPP will be
- *                   returned
- * @param    cIndex  the index of the last mode queried, or 0 to query the
- *                   first mode available.  Note: the first index is 1
- * @param    pcx     where to store the mode's width
- * @param    pcy     where to store the mode's height
- * @param    pcBits  where to store the mode's BPP
- */
-unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
-                              uint32_t *pcx, uint32_t *pcy)
-{
-    unsigned i;
-
-    VBVXASSERT(cIndex < vboxNumStdModes,
-               ("cIndex = %d, vboxNumStdModes = %d\n", cIndex,
-                vboxNumStdModes));
-    for (i = cIndex; i < vboxNumStdModes - 1; ++i)
-    {
-        uint32_t cx = vboxStandardModes[i].cx;
-        uint32_t cy = vboxStandardModes[i].cy;
-
-        if (pcx)
-            *pcx = cx;
-        if (pcy)
-            *pcy = cy;
-        return i + 1;
-    }
-    return 0;
-}
-
 /**
  * Allocates an empty display mode and links it into the doubly linked list of
  * modes pointed to by pScrn->modes.  Returns a pointer to the newly allocated
@@ -187,7 +128,6 @@ static DisplayModePtr vboxAddEmptyScreenMode(ScrnInfoPtr pScrn)
  * Create display mode entries in the screen information structure for each
  * of the graphics modes that we wish to support, that is:
  *  - A dynamic mode in first place which will be updated by the RandR code.
- *  - Several standard modes.
  *  - Any modes that the user requested in xorg.conf/XFree86Config.
  */
 void vboxAddModes(ScrnInfoPtr pScrn)
@@ -202,17 +142,8 @@ void vboxAddModes(ScrnInfoPtr pScrn)
     vboxFillDisplayMode(pScrn, pMode, NULL, 1024, 768);
     pMode = vboxAddEmptyScreenMode(pScrn);
     vboxFillDisplayMode(pScrn, pMode, NULL, 1024, 768);
-    /* Add standard modes supported by the host */
-    for ( ; ; )
-    {
-        cIndex = vboxNextStandardMode(pScrn, cIndex, &cx, &cy);
-        if (cIndex == 0)
-            break;
-        pMode = vboxAddEmptyScreenMode(pScrn);
-        vboxFillDisplayMode(pScrn, pMode, NULL, cx, cy);
-    }
-    /* And finally any modes specified by the user.  We assume here that
-     * the mode names reflect the mode sizes. */
+    /* Add any modes specified by the user.  We assume here that the mode names
+     * reflect the mode sizes. */
     for (i = 0; pScrn->display->modes && pScrn->display->modes[i]; i++)
     {
         if (sscanf(pScrn->display->modes[i], "%ux%u", &cx, &cy) == 2)
