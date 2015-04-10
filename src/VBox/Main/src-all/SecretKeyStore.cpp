@@ -151,7 +151,7 @@ int SecretKeyStore::addSecretKey(const com::Utf8Str &strKeyId, const uint8_t *pb
 
 int SecretKeyStore::deleteSecretKey(const com::Utf8Str &strKeyId)
 {
-    SecretKeyMap::const_iterator it = m_mapSecretKeys.find(strKeyId);
+    SecretKeyMap::iterator it = m_mapSecretKeys.find(strKeyId);
     if (it == m_mapSecretKeys.end())
         return VERR_NOT_FOUND;
 
