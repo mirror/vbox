@@ -217,7 +217,7 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
         }
 
         pDomain->dd_pszDomain = RTStrDup(st.rcps_domain);
-        LogRel(("NAT: adding domain name %s\n", pDomain->dd_pszDomain));
+        LogRel(("NAT: Adding domain name %s\n", pDomain->dd_pszDomain));
         LIST_INSERT_HEAD(&pData->pDomainList, pDomain, dd_list);
     }
 
