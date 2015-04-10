@@ -41,7 +41,7 @@
     called hard disk controller which drives hard disk operation and data
     transfers. VirtualBox can emulate the five most common types of hard disk
     controllers typically found in today's PCs: IDE, SATA (AHCI), SCSI,
-    SAS and USB based mass storage devices.<footnote>
+    SAS and USB-based mass storage devices.<footnote>
         <para>SATA support was added with VirtualBox 1.6; experimental SCSI
         support was added with 2.1 and fully implemented with 2.2. Generally,
         storage attachments were made much more flexible with VirtualBox 3.1;
@@ -193,20 +193,20 @@
 
         <listitem>
           <para>The <emphasis role="bold">USB mass storage device class</emphasis>
-          is a standard to connect external storage devices like hard or flash
-          drives to a host through USB. All major operating systems support
-          these devices for a long time and ship with a generic driver which
-          makes third party drivers unnecessary.
-          The virtual USB storage controller offered by VirtualBox works
-          different than the other storage controller types. Unlike the
-          controllers which appear as a single PCI device to the guest with
-          multiple disks attached to it, the USB based storage controller does
-          not appear directly in the guest. Each disk attached to the controller
-          appears as a different USB device to the guest.</para>
-
+          is a standard to connect external storage devices like hard disksor flash
+          drives to a host through USB. All major operating systems support these
+          devices for a long time and ship generic drivers making third-party
+          drivers superfluous. In particular legacy operating systems without
+          support for SATA controllers may benefit from USB mass storage devices.</para>
+          <para>The virtual USB storage controller offered by VirtualBox works
+          different than the other storage controller types: When storage
+          controllers appear as a single PCI device to the guest with multiple
+          disks attached to it, the USB-based storage controller does not appear
+          as virtual storage controller. Each disk attached to the controller
+          appears as a dedicated USB device to the guest.</para>
           <warning>
-            <para>As of version 5.0 VirtualBox does not support booting from
-            drives attached via USB.</para>
+            <para>Booting from drives attached via USB is not supported as the
+              BIOS lacks USB support.</para>
           </warning>
         </listitem>
       </itemizedlist></para>
