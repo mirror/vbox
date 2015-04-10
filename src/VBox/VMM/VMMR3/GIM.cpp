@@ -141,7 +141,6 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
             pVM->gim.s.enmProviderId = GIMPROVIDERID_KVM;
             rc = gimR3KvmInit(pVM);
         }
-        /** @todo KVM and others. */
         else
             rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider \"%s\" unknown.", szProvider);
     }
