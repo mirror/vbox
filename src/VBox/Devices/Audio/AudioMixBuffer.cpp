@@ -413,7 +413,7 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
         PDMAUDIOSAMPLE  samCur = { 0 }; \
         PDMAUDIOSAMPLE  samOut; \
         PDMAUDIOSAMPLE  samLast    = pRate->srcSampleLast; \
-        uint64_t        lDelta; \
+        uint64_t        lDelta = 0; \
         \
         AUDMIXBUF_MACRO_LOG(("Start: paDstEnd=%p - paDstStart=%p -> %zu\n", paDstEnd, paDst, paDstEnd - paDstStart)); \
         AUDMIXBUF_MACRO_LOG(("Start: paSrcEnd=%p - paSrcStart=%p -> %zu\n", paSrcEnd, paSrc, paSrcEnd - paSrcStart)); \
