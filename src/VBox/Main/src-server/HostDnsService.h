@@ -108,7 +108,7 @@ class HostDnsMonitorProxy : public Lockee
     public:
     HostDnsMonitorProxy();
     ~HostDnsMonitorProxy();
-    void init(const HostDnsMonitor *aMonitor, const VirtualBox *aParent);
+    void init(const HostDnsMonitor *aMonitor, VirtualBox *aParent);
     void notify() const;
 
     HRESULT GetNameServers(std::vector<com::Utf8Str> &aNameServers);

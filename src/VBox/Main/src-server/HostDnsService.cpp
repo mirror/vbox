@@ -98,7 +98,7 @@ struct HostDnsMonitor::Data
 
 struct HostDnsMonitorProxy::Data
 {
-    Data(const HostDnsMonitor *aMonitor, const VirtualBox *aParent)
+    Data(const HostDnsMonitor *aMonitor, VirtualBox *aParent)
       : info(NULL)
       , virtualbox(aParent)
       , monitor(aMonitor)
@@ -115,7 +115,7 @@ struct HostDnsMonitorProxy::Data
     }
 
     HostDnsInformation *info;
-    const VirtualBox *virtualbox;
+    VirtualBox *virtualbox;
     const HostDnsMonitor *monitor;
     bool fModified;
 };
@@ -261,7 +261,7 @@ HostDnsMonitorProxy::~HostDnsMonitorProxy()
     }
 }
 
-void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, const VirtualBox* aParent)
+void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, VirtualBox* aParent)
 {
     m = new HostDnsMonitorProxy::Data(mon, aParent);
     m->monitor->addMonitorProxy(this);
