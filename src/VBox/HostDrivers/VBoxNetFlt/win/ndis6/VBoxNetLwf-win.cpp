@@ -16,6 +16,7 @@
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 
 //#define VBOXNETLWF_SYNC_SEND
+#define VBOXNETLWF_NO_BYPASS
 
 #include <VBox/version.h>
 #include <VBox/err.h>
@@ -1417,6 +1418,17 @@ VOID vboxNetLwfWinSendNetBufferLists(IN NDIS_HANDLE hModuleCtx, IN PNET_BUFFER_L
     size_t cb = 0;
     LogFlow(("==>"__FUNCTION__": module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
+#ifdef VBOXNETLWF_NO_BYPASS
+    if (!ASMAtomicReadBool(&pModule->fActive))
+    {
+        /*
+         * The trunk is inactive, jusp pass along all packets to the next
+         * underlying driver.
+         */
+        NdisFSendNetBufferLists(pModule->hFilter, pBufLists, nPort, fFlags);
+        return;
+    }
+#endif
     if (vboxNetLwfWinIsRunning(pModule))
     {
         PNET_BUFFER_LIST pNext     = NULL;
@@ -1541,6 +1553,17 @@ VOID vboxNetLwfWinReceiveNetBufferLists(IN NDIS_HANDLE hModuleCtx,
     /// @todo Do we need loopback handling?
     LogFlow(("==>"__FUNCTION__": module=%p\n", hModuleCtx));
     PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)hModuleCtx;
+#ifdef VBOXNETLWF_NO_BYPASS
+    if (!ASMAtomicReadBool(&pModule->fActive))
+    {
+        /*
+         * The trunk is inactive, jusp pass along all packets to the next
+         * overlying driver.
+         */
+        NdisFIndicateReceiveNetBufferLists(pModule->hFilter, pBufLists, nPort, nBufLists, fFlags);
+        return;
+    }
+#endif
     if (vboxNetLwfWinIsRunning(pModule))
     {
         if (NDIS_TEST_RECEIVE_CANNOT_PEND(fFlags))
@@ -1698,7 +1721,9 @@ NDIS_STATUS vboxNetLwfWinSetModuleOptions(IN NDIS_HANDLE hModuleCtx)
     PChars.Header.Size = NDIS_SIZEOF_FILTER_PARTIAL_CHARACTERISTICS_REVISION_1;
     PChars.Header.Revision = NDIS_FILTER_PARTIAL_CHARACTERISTICS_REVISION_1;
 
+#ifndef VBOXNETLWF_NO_BYPASS
     if (ASMAtomicReadBool(&pModuleCtx->fActive))
+#endif
     {
         Log((__FUNCTION__": active mode\n"));
         PChars.SendNetBufferListsHandler = vboxNetLwfWinSendNetBufferLists;
@@ -1706,10 +1731,12 @@ NDIS_STATUS vboxNetLwfWinSetModuleOptions(IN NDIS_HANDLE hModuleCtx)
         PChars.ReceiveNetBufferListsHandler = vboxNetLwfWinReceiveNetBufferLists;
         PChars.ReturnNetBufferListsHandler = vboxNetLwfWinReturnNetBufferLists;
     }
+#ifndef VBOXNETLWF_NO_BYPASS
     else
     {
         Log((__FUNCTION__": bypass mode\n"));
     }
+#endif
     NDIS_STATUS Status = NdisSetOptionalHandlers(pModuleCtx->hFilter,
                                                  (PNDIS_DRIVER_OPTIONAL_HANDLERS)&PChars);
     LogFlow(("<=="__FUNCTION__": status=0x%x\n", Status));
