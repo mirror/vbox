@@ -2250,7 +2250,7 @@ class SessionWrapper(TdTaskBase):
                 self.o.console.pause();
             if self.fpApiVer >= 5.0:
                 oProgressCom = self.o.machine.takeSnapshot(sName, sDescription);
-            else
+            else:
                 oProgressCom = self.o.console.takeSnapshot(sName, sDescription);
             oProgress = ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oTstDrv, 'Take Snapshot %s' % (sName));
             oProgress.wait(cMsTimeout);
