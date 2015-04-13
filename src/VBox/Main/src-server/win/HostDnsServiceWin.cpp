@@ -110,12 +110,12 @@ HostDnsServiceWin::~HostDnsServiceWin()
 }
 
 
-HRESULT HostDnsServiceWin::init()
+HRESULT HostDnsServiceWin::init(VirtualBox *virtualbox)
 {
     if (m == NULL)
         return E_FAIL;
 
-    HRESULT hrc = HostDnsMonitor::init();
+    HRESULT hrc = HostDnsMonitor::init(virtualbox);
     if (FAILED(hrc))
         return hrc;
 
