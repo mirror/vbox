@@ -1871,7 +1871,10 @@ HRESULT VirtualBox::openMedium(const com::Utf8Str &aLocation,
             }
         }
         else
-            rc = VBOX_E_OBJECT_NOT_FOUND;
+        {
+            if (rc != VBOX_E_INVALID_OBJECT_STATE)
+                rc = VBOX_E_OBJECT_NOT_FOUND;
+        }
     }
 
     if (SUCCEEDED(rc))
