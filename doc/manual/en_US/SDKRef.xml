@@ -3896,12 +3896,12 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>Two new machine states have been introduced to allow proper
           distinction between saving state and taking a snapshot.
-          <xref linkend="MachineState__Saving" xreflabel="MachineState_Saving" />
+          <xref linkend="MachineState__Saving" xreflabel="MachineState::Saving" />
           now is used exclusively while the VM's state is being saved, without
           any overlaps with snapshot functionality. The new state
-          <xref linkend="MachineState__Snapshotting" xreflabel="MachineState_Snapshotting" />
+          <xref linkend="MachineState__Snapshotting" xreflabel="MachineState::Snapshotting" />
           is used when an offline snapshot is taken and likewise the new state
-          <xref linkend="MachineState__OnlineSnapshotting" xreflabel="MachineState_OnlineSnapshotting" />
+          <xref linkend="MachineState__OnlineSnapshotting" xreflabel="MachineState::OnlineSnapshotting" />
           is used when an online snapshot is taken.</para>
         </listitem>
 
@@ -4752,9 +4752,7 @@ AuthResult AUTHCALL AuthEntry(
 
               <listitem>
                 <para><computeroutput>IConsole::forgetSavedState</computeroutput>
-                has been renamed to <xref
-                linkend="IConsole__discardSavedState"
-                xreflabel="IConsole::discardSavedState()" />.</para>
+                has been renamed to <computeroutput>IConsole::discardSavedState()</computeroutput>.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -5015,12 +5013,12 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>Deleting snapshots via <xref
-          linkend="IConsole__deleteSnapshot"
-          xreflabel="IConsole::deleteSnapshot()" /> is now possible while the
-          associated VM is running in almost all cases. The API is unchanged,
-          but client code that verifies machine states to determine whether
-          snapshots can be deleted may need to be adjusted.</para>
+          <para>Deleting snapshots via
+          <computeroutput>IConsole::deleteSnapshot()</computeroutput> is now
+          possible while the associated VM is running in almost all cases.
+          The API is unchanged, but client code that verifies machine states
+          to determine whether snapshots can be deleted may need to be
+          adjusted.</para>
         </listitem>
 
         <listitem>
@@ -5130,18 +5128,15 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>There were substantial changes related to snapshots, triggered
           by the "branched snapshots" functionality introduced with version
-          3.1. IConsole::discardSnapshot was renamed to <xref
-          linkend="IConsole__deleteSnapshot"
-          xreflabel="IConsole::deleteSnapshot()" />.
+          3.1. IConsole::discardSnapshot was renamed to
+          <computeroutput>IConsole::deleteSnapshot()</computeroutput>.
           IConsole::discardCurrentState and
           IConsole::discardCurrentSnapshotAndState were removed; corresponding
-          new functionality is in <xref linkend="IConsole__restoreSnapshot"
-          xreflabel="IConsole::restoreSnapshot()" />. Also, when <xref
-          linkend="IConsole__takeSnapshot"
-          xreflabel="IConsole::takeSnapshot()" /> is called on a running
-          virtual machine, a live snapshot will be created. The old behavior
-          was to temporarily pause the virtual machine while creating an
-          online snapshot.</para>
+          new functionality is in <computeroutput>IConsole::restoreSnapshot()</computeroutput>.
+          Also, when <computeroutput>IConsole::takeSnapshot()</computeroutput>
+          is called on a running virtual machine, a live snapshot will be
+          created. The old behavior was to temporarily pause the virtual
+          machine while creating an online snapshot.</para>
         </listitem>
 
         <listitem>
