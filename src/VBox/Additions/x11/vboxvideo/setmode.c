@@ -200,20 +200,26 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     if (RT_FAILURE(rc))
         FatalError("Failed to update the input mapping.\n");
 #endif
-#ifdef RT_OS_SOLARIS
-    /* Tell the virtual mouse device about the new virtual desktop size. */
-    {
-        int rc;
-        int hMouse = open("/dev/mouse", O_RDWR);
-        if (hMouse >= 0)
-        {
-            do {
-                Ms_screen_resolution Res = { height, width };
-                rc = ioctl(hMouse, MSIOSRESOLUTION, &Res);
-            } while ((rc != 0) && (errno == EINTR));
-            close(hMouse);
-        }
-    }
-#endif
+    vbvxSetSolarisMouseRange(width, height);
     return TRUE;
+}
+
+/** Tell the virtual mouse device about the new virtual desktop size. */
+void vbvxSetSolarisMouseRange(int width, int height)
+{
+#ifdef RT_OS_SOLARIS
+    int rc;
+    int hMouse = open("/dev/mouse", O_RDWR);
+
+    if (hMouse >= 0)
+    {
+        do {
+            Ms_screen_resolution Res = { height, width };
+            rc = ioctl(hMouse, MSIOSRESOLUTION, &Res);
+        } while ((rc != 0) && (errno == EINTR));
+        close(hMouse);
+    }
+#else
+    (void)width; (void)height;
+#endif
 }
