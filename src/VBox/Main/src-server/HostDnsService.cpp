@@ -28,6 +28,7 @@
 #include <iprt/critsect.h>
 
 #include <algorithm>
+#include <set>
 #include <string>
 #include "HostDnsService.h"
 
@@ -38,11 +39,23 @@ static void dumpHostDnsInformation(const HostDnsInformation&);
 static void dumpHostDnsStrVector(const std::string&, const std::vector<std::string>&);
 
 
-bool HostDnsInformation::equals(const HostDnsInformation &info) const
+bool HostDnsInformation::equals(const HostDnsInformation &info, bool fDNSOrderIgnore) const
 {
-    return    (servers == info.servers)
-           && (domain == info.domain)
-           && (searchList == info.searchList);
+    if (fDNSOrderIgnore)
+    {
+        std::set<std::string> l(servers.begin(), servers.end());
+        std::set<std::string> r(info.servers.begin(), info.servers.end());
+
+        return (l == r)
+            && (domain == info.domain)
+            && (searchList == info.searchList); // XXX: also ignore order?
+    }
+    else
+    {
+        return (servers == info.servers)
+            && (domain == info.domain)
+            && (searchList == info.searchList);
+    }
 }
 
 inline static void detachVectorOfString(const std::vector<std::string>& v,
@@ -56,12 +69,14 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 
 struct HostDnsMonitor::Data
 {
-    Data(bool aThreaded) :
+    Data(bool aThreaded)
+      : fDNSOrderIgnore(false),
         fThreaded(aThreaded)
     {}
 
     std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
+    bool fDNSOrderIgnore;
     const bool fThreaded;
     RTTHREAD hMonitoringThread;
     RTSEMEVENT hDnsInitEvent;
@@ -107,7 +122,7 @@ HostDnsMonitor::~HostDnsMonitor()
     }
 }
 
-const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor()
+const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor(VirtualBox *aParent)
 {
     /* XXX: Moved initialization from HostImpl.cpp */
     if (!g_monitor)
@@ -127,7 +142,7 @@ const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor()
 # else
         g_monitor = new HostDnsService();
 # endif
-        g_monitor->init();
+        g_monitor->init(aParent);
     }
 
     return g_monitor;
@@ -178,15 +193,37 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
     LogRel(("HostDnsMonitor: new information\n"));
     dumpHostDnsInformation(info);
 
+    bool fIgnore = m->fDNSOrderIgnore && info.equals(m->info, m->fDNSOrderIgnore);
     m->info = info;
+
+    if (fIgnore)
+    {
+        LogRel(("HostDnsMonitor: order change only, not notifying\n"));
+        return;
+    }
 
     std::vector<PCHostDnsMonitorProxy>::const_iterator it;
     for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
         (*it)->notify();
 }
 
-HRESULT HostDnsMonitor::init()
+HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
 {
+    const com::Bstr bstrHostDNSOrderIgnoreKey("VBoxInternal2/HostDNSOrderIgnore");
+    com::Bstr bstrHostDNSOrderIgnore;
+    virtualbox->GetExtraData(bstrHostDNSOrderIgnoreKey.raw(),
+                             bstrHostDNSOrderIgnore.asOutParam());
+
+    if (bstrHostDNSOrderIgnore.isNotEmpty())
+    {
+        LogRel(("HostDnsMonitor: %ls=%ls\n",
+                bstrHostDNSOrderIgnoreKey.raw(),
+                bstrHostDNSOrderIgnore.raw()));
+
+        if (bstrHostDNSOrderIgnore != "0")
+            m->fDNSOrderIgnore = true;
+    }
+
     if (m->fThreaded)
     {
         int rc = RTSemEventCreate(&m->hDnsInitEvent);
