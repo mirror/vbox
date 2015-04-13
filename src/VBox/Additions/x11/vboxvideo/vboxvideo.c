@@ -967,6 +967,8 @@ static void updateHasVTProperty(ScrnInfoPtr pScrn, Bool hasVT)
                              FALSE);
     if (property_name == BAD_RESOURCE)
         FatalError("Failed to retrieve \"HAS_VT\" atom\n");
+    if (ROOT_WINDOW(pScrn) == NULL)
+        return;
     ChangeWindowProperty(ROOT_WINDOW(pScrn), property_name, XA_INTEGER, 32,
                          PropModeReplace, 1, &value, TRUE);
 }
