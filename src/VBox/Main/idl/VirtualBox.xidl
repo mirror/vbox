@@ -12576,7 +12576,7 @@
         An instance of this is returned every time VirtualBox starts
         an asynchronous task (in other words, a separate thread) which
         continues to run after a method call returns. For example,
-        <link to="IConsole::saveState" />, which saves the state of
+        <link to="IMachine::saveState" />, which saves the state of
         a running virtual machine, can take a long time to complete.
         To be able to display a progress bar, a user interface such as
         the VirtualBox graphical user interface can use the IProgress
@@ -12848,7 +12848,7 @@
               snapshots tree.
           </li>
 
-          <li><link to="IConsole::restoreSnapshot"/> resets a machine to
+          <li><link to="IMachine::restoreSnapshot"/> resets a machine to
               the state of a previous snapshot by deleting the differencing
               image of each of the machine's media and setting the machine's
               settings and state to the state that was saved in the snapshot (if any).
@@ -21889,7 +21889,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       to @c true. In case of fatal errors, the virtual machine
       execution is always paused before calling this notification, and
       the notification handler is supposed either to immediately save
-      the virtual machine state using <link to="IConsole::saveState"/>
+      the virtual machine state using <link to="IMachine::saveState"/>
       or power it off using <link to="IConsole::powerDown"/>.
       Resuming the execution can lead to unpredictable results.
 
