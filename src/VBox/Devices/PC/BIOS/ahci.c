@@ -45,6 +45,30 @@ typedef struct
 } ahci_prdt;
 
 /**
+ * SATA D2H FIS (Device to Host Frame Information Structure).
+ */
+typedef struct {
+    uint8_t     fis_type;   /* 34h */
+    uint8_t     intr;       /* Bit 6 indicates interrupt status. */
+    uint8_t     status;     /* Status register. */
+    uint8_t     error;      /* Error register. */
+    uint8_t     sec_no;     /* Sector number register. */
+    uint8_t     cyl_lo;     /* Cylinder low register. */
+    uint8_t     cyl_hi;     /* Cylinder high register. */
+    uint8_t     dev_hd;     /* Device/head register. */
+    uint8_t     sec_no_exp; /* Expanded sector number register. */
+    uint8_t     cyl_lo_exp; /* Expanded cylinder low register. */
+    uint8_t     cyl_hi_exp; /* Expanded cylinder high register. */
+    uint8_t     resvd0;
+    uint8_t     sec_cn;     /* Sector count register. */
+    uint8_t     sec_cn_exp; /* Expanded sector count register. */
+    uint16_t    resvd1;
+    uint32_t    resvd2;
+} fis_d2h;
+
+ct_assert(sizeof(fis_d2h) == 20);
+
+/**
  * AHCI controller data.
  */
 typedef struct
@@ -304,8 +328,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val)
         /* Disable command engine. */
         ahci_ctrl_clear_bits(io_base, AHCI_PORT_REG(port, AHCI_REG_PORT_CMD),
                              AHCI_REG_PORT_CMD_ST);
-
-        /** @todo: Examine status. */
+        /* Caller must examine status. */
     }
     else
         DBG_AHCI("AHCI: Invalid port given\n");
@@ -314,12 +337,13 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val)
 /**
  * Issue command to device.
  */
-static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
+static uint16_t ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 {
     ahci_t __far    *ahci  = bios_dsk->ahci_seg :> 0;
     uint16_t        n_sect = bios_dsk->drqp.nsect;
     uint16_t        sectsz = bios_dsk->drqp.sect_sz;
     uint16_t        prdt_idx;
+    fis_d2h __far   *d2h;
 
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
 
@@ -383,8 +407,13 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     ahci_port_cmd_sync(ahci, cmd);
 
+    /* Examine operation status. */
+    d2h = (void __far *)&ahci->abFisRecv[0x40];
+    DBG_AHCI("AHCI: ERR=%02x, STAT=%02x, SCNT=%02x\n", d2h->error, d2h->status, d2h->sec_cn);
+
     /* Unlock the buffer again. */
     vds_free_sg_list(&ahci->edds);
+    return d2h->error ? 4 : 0;
 }
 
 /**
@@ -489,6 +518,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
 int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
+    uint16_t        rc;
 
     device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
@@ -500,14 +530,14 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 
     high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
-    ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
+    rc = ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
     bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 512 / 2);
 #endif
     high_bits_restore(bios_dsk->ahci_seg :> 0);
-    return 0;   //@todo!!
+    return rc;
 }
 
 /**
@@ -520,6 +550,7 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint16_t        device_id;
+    uint16_t        rc;
 
     device_id = VBOX_GET_AHCI_DEVICE(bios_dsk->drqp.dev_id);
     if (device_id > BX_MAX_AHCI_DEVICES)
@@ -531,11 +562,11 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 
     high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
-    ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
+    rc = ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ((ahci_t __far *)(bios_dsk->ahci_seg :> 0))->aCmdHdr[1]);
     bios_dsk->drqp.trsfsectors = bios_dsk->drqp.nsect;
     high_bits_restore(bios_dsk->ahci_seg :> 0);
-    return 0;   //@todo!!
+    return rc;
 }
 
 //@todo: move
@@ -604,7 +635,6 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     high_bits_restore(ahci);
 
     return ahci->aCmdHdr[1] == 0 ? 4 : 0;
-//    return 0;   //@todo!!
 }
 
 void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
