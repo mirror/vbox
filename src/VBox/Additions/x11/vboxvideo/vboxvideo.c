@@ -1169,7 +1169,6 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    vboxClearVRAM(pScrn, 0, 0);
 #ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRIUnlock(xf86ScrnToScreen(pScrn));
