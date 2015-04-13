@@ -7572,7 +7572,7 @@
         <note>
           If the machine state is <link to="MachineState_Saved">Saved</link>
           prior to this operation, the saved state file will be implicitly
-          deleted (as if <link to="IConsole::discardSavedState"/> were
+          deleted (as if <link to="IMachine::discardSavedState"/> were
           called).
         </note>
 
