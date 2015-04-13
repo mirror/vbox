@@ -3856,6 +3856,56 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The methods for saving state, adopting a saved state file,
+          discarding saved state, taking a snapshot, restoring
+          a snapshot and deleting a snapshot have been moved from
+          <computeroutput>IConsole</computeroutput> to
+          <computeroutput>IMachine</computeroutput>. This straightens out the
+          logical placement of methods and was necessary to resolve a
+          long-standing issue, preventing 32 bit API clients from invokingi
+          those operations in the case where no VM is running.
+          Method
+          <xref linkend="IMachine__saveState"
+          xreflabel="IMachine::saveState()" /> replaces
+          <computeroutput>IConsole::saveState()</computeroutput>,
+          <xref linkend="IMachine__adoptSavedState"
+          xreflabel="IMachine::adoptSavedState()" /> replaces
+          <computeroutput>IConsole::adoptSavedState()</computeroutput>,
+          <xref linkend="IMachine__discardSavedState"
+          xreflabel="IMachine::discardSavedState()" /> replaces
+          <computeroutput>IConsole::discardSavedState()</computeroutput>,
+          <xref linkend="IMachine__takeSnapshot"
+          xreflabel="IMachine::takeSnapshot()" /> replaces
+          <computeroutput>IConsole::takeSnapshot()</computeroutput>,
+          <xref linkend="IMachine__deleteSnapshot"
+          xreflabel="IMachine::deleteSnapshot()" /> replaces
+          <computeroutput>IConsole::deleteSnapshot()</computeroutput>,
+          <xref linkend="IMachine__deleteSnapshotAndAllChildren"
+          xreflabel="IMachine::deleteSnapshotAndAllChildren()" /> replaces
+          <computeroutput>IConsole::deleteSnapshotAndAllChildren()</computeroutput>,
+          <xref linkend="IMachine__deleteSnapshotRange"
+          xreflabel="IMachine::deleteSnapshotRange()" /> replaces
+          <computeroutput>IConsole::deleteSnapshotRange()</computeroutput> and
+          <xref linkend="IMachine__restoreSnapshot"
+          xreflabel="IMachine::restoreSnapshot()" /> replaces
+          <computeroutput>IConsole::restoreSnapshot()</computeroutput>.
+          Small adjustments to the parameter lists have been made to reduce
+          the number of API calls when taking online snapshots etc.</para>
+        </listitem>
+
+        <listitem>
+          <para>Two new machine states have been introduced to allow proper
+          distinction between saving state and taking a snapshot.
+          <xref linkend="MachineState__Saving" xreflabel="MachineState_Saving" />
+          now is used exclusively while the VM's state is being saved, without
+          any overlaps with snapshot functionality. The new state
+          <xref linkend="MachineState__Snapshotting" xreflabel="MachineState_Snapshotting" />
+          is used when an offline snapshot is taken and likewise the new state
+          <xref linkend="MachineState__OnlineSnapshotting" xreflabel="MachineState_OnlineSnapshotting" />
+          is used when an online snapshot is taken.</para>
+        </listitem>
+
+        <listitem>
           <para>The method <xref linkend="IVirtualBox__createMedium"
           xreflabel="IVirtualBox::createMedium()" /> replaces
           <computeroutput>VirtualBox::createHardDisk()</computeroutput>.

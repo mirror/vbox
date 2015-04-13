@@ -163,7 +163,6 @@ struct VMTask
           mConsoleCaller(aConsole),
           mProgress(aProgress),
           mServerProgress(aServerProgress),
-          mpUVM(NULL),
           mRC(E_FAIL),
           mpSafeVMPtr(NULL)
     {
@@ -174,9 +173,7 @@ struct VMTask
         if (aUsesVMPtr)
         {
             mpSafeVMPtr = new Console::SafeVMPtr(aConsole);
-            if (mpSafeVMPtr->isOk())
-                mpUVM = mpSafeVMPtr->rawUVM();
-            else
+            if (!mpSafeVMPtr->isOk())
                 mRC = mpSafeVMPtr->rc();
         }
     }
@@ -204,33 +201,12 @@ struct VMTask
     const ComObjPtr<Progress>   mProgress;
     Utf8Str                     mErrorMsg;
     const ComPtr<IProgress>     mServerProgress;
-    PUVM                        mpUVM;
 
 private:
     HRESULT                     mRC;
     Console::SafeVMPtr         *mpSafeVMPtr;
 };
 
-struct VMTakeSnapshotTask : public VMTask
-{
-    VMTakeSnapshotTask(Console *aConsole,
-                       Progress *aProgress,
-                       IN_BSTR aName,
-                       IN_BSTR aDescription)
-        : VMTask(aConsole, aProgress, NULL /* aServerProgress */,
-                 false /* aUsesVMPtr */),
-          bstrName(aName),
-          bstrDescription(aDescription),
-          lastMachineState(MachineState_Null)
-    {}
-
-    Bstr                    bstrName,
-                            bstrDescription;
-    Bstr                    bstrSavedStateFile;         // received from BeginTakeSnapshot()
-    MachineState_T          lastMachineState;
-    bool                    fTakingSnapshotOnline;
-    ULONG                   ulMemSize;
-};
 
 struct VMPowerUpTask : public VMTask
 {
@@ -263,27 +239,6 @@ struct VMPowerDownTask : public VMTask
         : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
                  true /* aUsesVMPtr */)
     {}
-};
-
-struct VMSaveTask : public VMTask
-{
-    VMSaveTask(Console *aConsole,
-               const ComPtr<IProgress> &aServerProgress,
-               const Utf8Str &aSavedStateFile,
-               MachineState_T aMachineStateBefore,
-               Reason_T aReason)
-        : VMTask(aConsole, NULL /* aProgress */, aServerProgress,
-                 true /* aUsesVMPtr */),
-          mSavedStateFile(aSavedStateFile),
-          mMachineStateBefore(aMachineStateBefore),
-          mReason(aReason)
-    {}
-
-    Utf8Str mSavedStateFile;
-    /* The local machine state we had before. Required if something fails */
-    MachineState_T mMachineStateBefore;
-    /* The reason for saving state */
-    Reason_T mReason;
 };
 
 // Handler for global events
@@ -595,14 +550,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         meAttachmentType.resize(maxNetworkAdapters);
         for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
             meAttachmentType[slot] = NetworkAttachmentType_Null;
-
-        // VirtualBox 4.0: We no longer initialize the VMMDev instance here,
-        // which starts the HGCM thread. Instead, this is now done in the
-        // power-up thread when a VM is actually being powered up to avoid
-        // having HGCM threads all over the place every time a session is
-        // opened, even if that session will not run a VM.
-        //     unconst(m_pVMMDev) = new VMMDev(this);
-        //     AssertReturn(mVMMDev, E_FAIL);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         unconst(mAudioVRDE) = new AudioVRDE(this);
@@ -2105,17 +2052,13 @@ HRESULT Console::setUseHostClipboard(BOOL aUseHostClipboard)
 
 HRESULT Console::powerUp(ComPtr<IProgress> &aProgress)
 {
-    ComObjPtr<IProgress> pProgress;
-    i_powerUp(pProgress.asOutParam(), false /* aPaused */);
-    pProgress.queryInterfaceTo(aProgress.asOutParam());
+    i_powerUp(aProgress.asOutParam(), false /* aPaused */);
     return S_OK;
 }
 
 HRESULT Console::powerUpPaused(ComPtr<IProgress> &aProgress)
 {
-    ComObjPtr<IProgress> pProgress;
-    i_powerUp(pProgress.asOutParam(), true /* aPaused */);
-    pProgress.queryInterfaceTo(aProgress.asOutParam());
+    i_powerUp(aProgress.asOutParam(), true /* aPaused */);
     return S_OK;
 }
 
@@ -2133,6 +2076,16 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
         case MachineState_Stuck:
             break;
 
+        /* Try cancel the save state. */
+        case MachineState_Saving:
+            if (!mptrCancelableProgress.isNull())
+            {
+                HRESULT hrc = mptrCancelableProgress->Cancel();
+                if (SUCCEEDED(hrc))
+                    break;
+            }
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point during a save state"));
+
         /* Try cancel the teleportation. */
         case MachineState_Teleporting:
         case MachineState_TeleportingPausedVM:
@@ -2143,6 +2096,16 @@ HRESULT Console::powerDown(ComPtr<IProgress> &aProgress)
                     break;
             }
             return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in a teleportation"));
+
+        /* Try cancel the online snapshot. */
+        case MachineState_OnlineSnapshotting:
+            if (!mptrCancelableProgress.isNull())
+            {
+                HRESULT hrc = mptrCancelableProgress->Cancel();
+                if (SUCCEEDED(hrc))
+                    break;
+            }
+            return setError(VBOX_E_INVALID_VM_STATE, tr("Cannot power down at this point in an online snapshot"));
 
         /* Try cancel the live snapshot. */
         case MachineState_LiveSnapshotting:
@@ -2538,7 +2501,14 @@ HRESULT Console::resume()
 {
     LogFlowThisFuncEnter();
 
-    HRESULT rc = i_resume(Reason_Unspecified);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mMachineState != MachineState_Paused)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot resume the machine as it is not paused (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
+
+    HRESULT rc = i_resume(Reason_Unspecified, alock);
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
@@ -2719,55 +2689,6 @@ HRESULT Console::sleepButton()
 
     LogFlowThisFunc(("rc=%Rhrc\n", rc));
     LogFlowThisFuncLeave();
-    return rc;
-}
-
-HRESULT Console::saveState(ComPtr<IProgress> &aProgress)
-{
-    LogFlowThisFuncEnter();
-    ComObjPtr<IProgress> pProgress;
-
-    HRESULT rc = i_saveState(Reason_Unspecified, pProgress.asOutParam());
-    pProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-    return rc;
-}
-
-HRESULT Console::adoptSavedState(const com::Utf8Str &aSavedStateFile)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (   mMachineState != MachineState_PoweredOff
-        && mMachineState != MachineState_Teleported
-        && mMachineState != MachineState_Aborted
-       )
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot adopt the saved machine state as the machine is not in Powered Off, Teleported or Aborted state (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
-
-    return mControl->AdoptSavedState(Bstr(aSavedStateFile.c_str()).raw());
-}
-
-HRESULT Console::discardSavedState(BOOL aFRemoveFile)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mMachineState != MachineState_Saved)
-        return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot delete the machine state as the machine is not in the saved state (machine state: %s)"),
-            Global::stringifyMachineState(mMachineState));
-
-    HRESULT rc = mControl->SetRemoveSavedStateFile(aFRemoveFile);
-    if (FAILED(rc)) return rc;
-
-    /*
-     * Saved -> PoweredOff transition will be detected in the SessionMachine
-     * and properly handled.
-     */
-    rc = i_setMachineState(MachineState_PoweredOff);
-
     return rc;
 }
 
@@ -3156,212 +3077,6 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
     return rc;
 }
 
-HRESULT Console::takeSnapshot(const com::Utf8Str &aName,
-                              const com::Utf8Str &aDescription,
-                              ComPtr<IProgress> &aProgress)
-{
-    LogFlowThisFuncEnter();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogFlowThisFunc(("aName='%s' mMachineState=%d\n", aName.c_str(), mMachineState));
-
-    if (Global::IsTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
-
-    HRESULT rc = S_OK;
-
-    /* prepare the progress object:
-       a) count the no. of hard disk attachments to get a matching no. of progress sub-operations */
-    ULONG cOperations = 2;              // always at least setting up + finishing up
-    ULONG ulTotalOperationsWeight = 2;  // one each for setting up + finishing up
-    SafeIfaceArray<IMediumAttachment> aMediumAttachments;
-    rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aMediumAttachments));
-    if (FAILED(rc))
-        return setError(rc, tr("Cannot get medium attachments of the machine"));
-
-    ULONG ulMemSize;
-    rc = mMachine->COMGETTER(MemorySize)(&ulMemSize);
-    if (FAILED(rc))
-        return rc;
-
-    for (size_t i = 0;
-         i < aMediumAttachments.size();
-         ++i)
-    {
-        DeviceType_T type;
-        rc = aMediumAttachments[i]->COMGETTER(Type)(&type);
-        if (FAILED(rc))
-            return rc;
-
-        if (type == DeviceType_HardDisk)
-        {
-            ++cOperations;
-
-            // assume that creating a diff image takes as long as saving a 1MB state
-            // (note, the same value must be used in SessionMachine::BeginTakingSnapshot() on the server!)
-            ulTotalOperationsWeight += 1;
-        }
-    }
-
-    // b) one extra sub-operations for online snapshots OR offline snapshots that have a saved state (needs to be copied)
-    bool const fTakingSnapshotOnline = Global::IsOnline(mMachineState);
-
-    LogFlowFunc(("fTakingSnapshotOnline = %d, mMachineState = %d\n", fTakingSnapshotOnline, mMachineState));
-
-    if (fTakingSnapshotOnline)
-    {
-        ++cOperations;
-        ulTotalOperationsWeight += ulMemSize;
-    }
-
-    // finally, create the progress object
-    ComObjPtr<Progress> pProgress;
-    pProgress.createObject();
-    rc = pProgress->init(static_cast<IConsole *>(this),
-                         Bstr(tr("Taking a snapshot of the virtual machine")).raw(),
-                            (mMachineState >= MachineState_FirstOnline)
-                         && (mMachineState <= MachineState_LastOnline) /* aCancelable */,
-                         cOperations,
-                         ulTotalOperationsWeight,
-                         Bstr(tr("Setting up snapshot operation")).raw(),      // first sub-op description
-                         1);        // ulFirstOperationWeight
-
-    if (FAILED(rc))
-        return rc;
-
-    VMTakeSnapshotTask *pTask;
-    if (!(pTask = new VMTakeSnapshotTask(this, pProgress, Bstr(aName).raw(), Bstr(aDescription).raw())))
-        return E_OUTOFMEMORY;
-
-    Assert(pTask->mProgress);
-
-    try
-    {
-        mptrCancelableProgress = pProgress;
-
-        /*
-         * If we fail here it means a PowerDown() call happened on another
-         * thread while we were doing Pause() (which releases the Console lock).
-         * We assign PowerDown() a higher precedence than TakeSnapshot(),
-         * therefore just return the error to the caller.
-         */
-        rc = pTask->rc();
-        if (FAILED(rc)) throw rc;
-
-        pTask->ulMemSize = ulMemSize;
-
-        /* memorize the current machine state */
-        pTask->lastMachineState = mMachineState;
-        pTask->fTakingSnapshotOnline = fTakingSnapshotOnline;
-
-        int vrc = RTThreadCreate(NULL,
-                                 Console::i_fntTakeSnapshotWorker,
-                                 (void *)pTask,
-                                 0,
-                                 RTTHREADTYPE_MAIN_WORKER,
-                                 0,
-                                 "TakeSnap");
-        if (FAILED(vrc))
-            throw setError(E_FAIL,
-                           tr("Could not create VMTakeSnap thread (%Rrc)"),
-                           vrc);
-
-        pTask->mProgress.queryInterfaceTo(aProgress.asOutParam());
-    }
-    catch (HRESULT erc)
-    {
-        delete pTask;
-        rc = erc;
-        mptrCancelableProgress.setNull();
-    }
-
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-    return rc;
-}
-
-HRESULT Console::deleteSnapshot(const com::Guid &aId, ComPtr<IProgress> &aProgress)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (Global::IsTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
-    ComObjPtr<IProgress> iProgress;
-    MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(),
-                                          FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
-    if (FAILED(rc)) return rc;
-    iProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    i_setMachineStateLocally(machineState);
-    return S_OK;
-}
-
-HRESULT Console::deleteSnapshotAndAllChildren(const com::Guid &aId, ComPtr<IProgress> &aProgress)
-
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (Global::IsTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
-
-    ComObjPtr<IProgress> iProgress;
-    MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aId.toString()).raw(), Bstr(aId.toString()).raw(),
-                                          TRUE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
-    if (FAILED(rc)) return rc;
-    iProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    i_setMachineStateLocally(machineState);
-    return S_OK;
-}
-
-HRESULT Console::deleteSnapshotRange(const com::Guid &aStartId, const com::Guid &aEndId, ComPtr<IProgress> &aProgress)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (Global::IsTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot delete a snapshot of the machine while it is changing the state (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
-
-    ComObjPtr<IProgress> iProgress;
-    MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->DeleteSnapshot((IConsole *)this, Bstr(aStartId.toString()).raw(), Bstr(aEndId.toString()).raw(),
-                                          FALSE /* fDeleteAllChildren */, &machineState, iProgress.asOutParam());
-    if (FAILED(rc)) return rc;
-    iProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    i_setMachineStateLocally(machineState);
-    return S_OK;
-}
-
-HRESULT Console::restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot, ComPtr<IProgress> &aProgress)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (Global::IsOnlineOrTransient(mMachineState))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot delete the current state of the running machine (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
-
-    ISnapshot* iSnapshot = aSnapshot;
-    ComObjPtr<IProgress> iProgress;
-    MachineState_T machineState = MachineState_Null;
-    HRESULT rc = mControl->RestoreSnapshot((IConsole*)this, iSnapshot, &machineState, iProgress.asOutParam());
-    if (FAILED(rc)) return rc;
-    iProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    i_setMachineStateLocally(machineState);
-    return S_OK;
-}
-
 HRESULT Console::addDiskEncryptionPassword(const com::Utf8Str &aId, const com::Utf8Str &aPassword,
                                            BOOL aClearOnSuspend)
 {
@@ -3644,7 +3359,7 @@ HRESULT Console::i_suspendBeforeConfigChange(PUVM pUVM, AutoWriteLock *pAlock, b
                                     COM_IIDOF(IConsole),
                                     getStaticComponentName(),
                                     Utf8StrFmt("Invalid state '%s' for changing medium",
-                                        VMR3GetStateName(enmVMState)),
+                                               VMR3GetStateName(enmVMState)),
                                     false /*aWarning*/,
                                     true /*aLogIt*/);
     }
@@ -6218,7 +5933,7 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
         return ptrVM.rc();
 
     /* We will need to release the lock before doing the actual merge */
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* paranoia - we don't want merges to happen while teleporting etc. */
     switch (mMachineState)
@@ -6294,20 +6009,15 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     rc = Console::i_convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);
     AssertComRCReturnRC(rc);
 
-    alock.release();
+    Assert(mMachineState == MachineState_DeletingSnapshotOnline);
 
     /* Pause the VM, as it might have pending IO on this drive */
-    VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
-    if (mMachineState == MachineState_DeletingSnapshotOnline)
-    {
-        LogFlowFunc(("Suspending the VM...\n"));
-        /* disable the callback to prevent Console-level state change */
-        mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_RECONFIG);
-        mVMStateChangeCallbackDisabled = false;
-        AssertRCReturn(vrc2, E_FAIL);
-    }
+    bool fResume = false;
+    rc = i_suspendBeforeConfigChange(ptrVM.rawUVM(), &alock, &fResume);
+    if (FAILED(rc))
+        return rc;
 
+    alock.release();
     vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                            (PFNRT)i_reconfigureMediumAttachment, 13,
                            this, ptrVM.rawUVM(), pcszDevice, uInstance, enmBus, fUseHostIOCache,
@@ -6315,20 +6025,8 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                            aMediumAttachment, mMachineState, &rc);
     /* error handling is after resuming the VM */
 
-    if (mMachineState == MachineState_DeletingSnapshotOnline)
-    {
-        LogFlowFunc(("Resuming the VM...\n"));
-        /* disable the callback to prevent Console-level state change */
-        mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
-        mVMStateChangeCallbackDisabled = false;
-        if (RT_FAILURE(vrc2))
-        {
-            /* too bad, we failed. try to sync the console state with the VMM state */
-            AssertLogRelRC(vrc2);
-            i_vmstateChangeCallback(ptrVM.rawUVM(), VMSTATE_SUSPENDED, enmVMState, this);
-        }
-    }
+    if (fResume)
+        i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("%Rrc"), vrc);
@@ -6355,17 +6053,12 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed to perform an online medium merge (%Rrc)"), vrc);
 
+    alock.acquire();
     /* Pause the VM, as it might have pending IO on this drive */
-    enmVMState = VMR3GetStateU(ptrVM.rawUVM());
-    if (mMachineState == MachineState_DeletingSnapshotOnline)
-    {
-        LogFlowFunc(("Suspending the VM...\n"));
-        /* disable the callback to prevent Console-level state change */
-        mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Suspend(ptrVM.rawUVM(), VMSUSPENDREASON_RECONFIG);
-        mVMStateChangeCallbackDisabled = false;
-        AssertRCReturn(vrc2, E_FAIL);
-    }
+    rc = i_suspendBeforeConfigChange(ptrVM.rawUVM(), &alock, &fResume);
+    if (FAILED(rc))
+        return rc;
+    alock.release();
 
     /* Update medium chain and state now, so that the VM can continue. */
     rc = mControl->FinishOnlineMergeMedium();
@@ -6377,25 +6070,88 @@ HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                            0 /* uMergeTarget */, aMediumAttachment, mMachineState, &rc);
     /* error handling is after resuming the VM */
 
-    if (mMachineState == MachineState_DeletingSnapshotOnline)
-    {
-        LogFlowFunc(("Resuming the VM...\n"));
-        /* disable the callback to prevent Console-level state change */
-        mVMStateChangeCallbackDisabled = true;
-        int vrc2 = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_RECONFIG);
-        mVMStateChangeCallbackDisabled = false;
-        AssertRC(vrc2);
-        if (RT_FAILURE(vrc2))
-        {
-            /* too bad, we failed. try to sync the console state with the VMM state */
-            i_vmstateChangeCallback(ptrVM.rawUVM(), VMSTATE_SUSPENDED, enmVMState, this);
-        }
-    }
+    if (fResume)
+        i_resumeAfterConfigChange(ptrVM.rawUVM());
 
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("%Rrc"), vrc);
     if (FAILED(rc))
         return rc;
+
+    return rc;
+}
+
+HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments)
+{
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* get the VM handle. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    for (size_t i = 0; i < aAttachments.size(); ++i)
+    {
+        ComPtr<IStorageController> pStorageController;
+        Bstr controllerName;
+        ULONG lInstance;
+        StorageControllerType_T enmController;
+        StorageBus_T enmBus;
+        BOOL fUseHostIOCache;
+
+        /*
+         * We could pass the objects, but then EMT would have to do lots of
+         * IPC (to VBoxSVC) which takes a significant amount of time.
+         * Better query needed values here and pass them.
+         */
+        rc = aAttachments[i]->COMGETTER(Controller)(controllerName.asOutParam());
+        if (FAILED(rc))
+            throw rc;
+
+        rc = mMachine->GetStorageControllerByName(controllerName.raw(),
+                                                  pStorageController.asOutParam());
+        if (FAILED(rc))
+            throw rc;
+
+        rc = pStorageController->COMGETTER(ControllerType)(&enmController);
+        if (FAILED(rc))
+            throw rc;
+        rc = pStorageController->COMGETTER(Instance)(&lInstance);
+        if (FAILED(rc))
+            throw rc;
+        rc = pStorageController->COMGETTER(Bus)(&enmBus);
+        if (FAILED(rc))
+            throw rc;
+        rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
+        if (FAILED(rc))
+            throw rc;
+
+        const char *pcszDevice = i_convertControllerTypeToDev(enmController);
+
+        BOOL fBuiltinIOCache;
+        rc = mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
+        if (FAILED(rc))
+            throw rc;
+
+        alock.release();
+
+        int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
+                                   (PFNRT)i_reconfigureMediumAttachment, 13,
+                                   this, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
+                                   fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
+                                   0 /* uMergeTarget */, aAttachments[i], mMachineState, &rc);
+        if (RT_FAILURE(vrc))
+            throw setError(E_FAIL, tr("%Rrc"), vrc);
+        if (FAILED(rc))
+            throw rc;
+
+        alock.acquire();
+    }
 
     return rc;
 }
@@ -6449,7 +6205,7 @@ HRESULT Console::i_pause(Reason_T aReason)
 
         case MachineState_Paused:
         case MachineState_TeleportingPausedVM:
-        case MachineState_Saving:
+        case MachineState_OnlineSnapshotting:
 
         /* Remove any keys which are supposed to be removed on a suspend. */
         if (   aReason == Reason_HostSuspend
@@ -6501,19 +6257,12 @@ HRESULT Console::i_pause(Reason_T aReason)
  * Worker for Console::Resume and internal entry point for resuming a VM for
  * a specific reason.
  */
-HRESULT Console::i_resume(Reason_T aReason)
+HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
 {
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mMachineState != MachineState_Paused)
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot resume the machine as it is not paused (machine state: %s)"),
-                        Global::stringifyMachineState(mMachineState));
 
     /* get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -6543,7 +6292,15 @@ HRESULT Console::i_resume(Reason_T aReason)
         VMRESUMEREASON enmReason = VMRESUMEREASON_USER;
         if (aReason == Reason_HostResume)
             enmReason = VMRESUMEREASON_HOST_RESUME;
+        else if (aReason == Reason_Snapshot)
+            enmReason = VMRESUMEREASON_STATE_SAVED;
+
+        // for snapshots: no state change callback, VBoxSVC does everything
+        if (aReason == Reason_Snapshot)
+            mVMStateChangeCallbackDisabled = true;
         vrc = VMR3Resume(ptrVM.rawUVM(), enmReason);
+        if (aReason == Reason_Snapshot)
+            mVMStateChangeCallbackDisabled = false;
     }
 
     HRESULT rc = RT_SUCCESS(vrc) ? S_OK :
@@ -6557,14 +6314,22 @@ HRESULT Console::i_resume(Reason_T aReason)
 }
 
 /**
- * Worker for Console::SaveState and internal entry point for saving state of
- * a VM for a specific reason.
+ * Internal entry point for saving state of a VM for a specific reason. This
+ * method is completely synchronous.
+ *
+ * The machine state is already set appropriately. It is only changed when
+ * saving state actually paused the VM (happens with live snapshots and
+ * teleportation), and in this case reflects the now paused variant.
+ *
+ * @note Locks this object for writing.
  */
-HRESULT Console::i_saveState(Reason_T aReason, IProgress **aProgress)
+HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, bool aPauseVM, bool &aLeftPaused)
 {
     LogFlowThisFuncEnter();
+    aLeftPaused = false;
 
-    CheckComArgOutPointerValid(aProgress);
+    AssertReturn(!aProgress.isNull(), E_INVALIDARG);
+    AssertReturn(!aStateFilePath.isEmpty(), E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -6572,13 +6337,17 @@ HRESULT Console::i_saveState(Reason_T aReason, IProgress **aProgress)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("mMachineState=%d\n", mMachineState));
-    if (   mMachineState != MachineState_Running
-        && mMachineState != MachineState_Paused)
+    if (   mMachineState != MachineState_Saving
+        && mMachineState != MachineState_LiveSnapshotting
+        && mMachineState != MachineState_OnlineSnapshotting
+        && mMachineState != MachineState_Teleporting
+        && mMachineState != MachineState_TeleportingPausedVM)
     {
         return setError(VBOX_E_INVALID_VM_STATE,
             tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
             Global::stringifyMachineState(mMachineState));
     }
+    bool fContinueAfterwards = mMachineState != MachineState_Saving;
 
     Bstr strDisableSaveState;
     mMachine->GetExtraData(Bstr("VBoxInternal2/DisableSaveState").raw(), strDisableSaveState.asOutParam());
@@ -6589,16 +6358,28 @@ HRESULT Console::i_saveState(Reason_T aReason, IProgress **aProgress)
     if (aReason != Reason_Unspecified)
         LogRel(("Saving state of VM, reason \"%s\"\n", Global::stringifyReason(aReason)));
 
-    /* memorize the current machine state */
-    MachineState_T lastMachineState = mMachineState;
-
-    if (mMachineState == MachineState_Running)
+    /* ensure the directory for the saved state file exists */
     {
-        /* get the VM handle. */
-        SafeVMPtr ptrVM(this);
-        if (!ptrVM.isOk())
-            return ptrVM.rc();
+        Utf8Str dir = aStateFilePath;
+        dir.stripFilename();
+        if (!RTDirExists(dir.c_str()))
+        {
+            int vrc = RTDirCreateFullPath(dir.c_str(), 0700);
+            if (RT_FAILURE(vrc))
+                return setError(VBOX_E_FILE_ERROR,
+                                tr("Could not create a directory '%s' to save the state to (%Rrc)"),
+                                dir.c_str(), vrc);
+        }
+    }
 
+    /* Get the VM handle early, we need it in several places. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    bool fPaused = false;
+    if (aPauseVM)
+    {
         /* release the lock before a VMR3* call (EMT might wait for it, @bugref{7648})! */
         alock.release();
         VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
@@ -6609,123 +6390,84 @@ HRESULT Console::i_saveState(Reason_T aReason, IProgress **aProgress)
         int vrc = VMR3Suspend(ptrVM.rawUVM(), enmReason);
         alock.acquire();
 
-        HRESULT hrc = S_OK;
         if (RT_FAILURE(vrc))
-            hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
-        if (FAILED(hrc))
-            return hrc;
+            return setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
+        fPaused = true;
     }
 
-    HRESULT rc = S_OK;
-    bool fBeganSavingState = false;
-    bool fTaskCreationFailed = false;
+    LogFlowFunc(("Saving the state to '%s'...\n", aStateFilePath.c_str()));
 
-    do
+    mptrCancelableProgress = aProgress;
+    alock.release();
+    int vrc = VMR3Save(ptrVM.rawUVM(),
+                       aStateFilePath.c_str(),
+                       fContinueAfterwards,
+                       Console::i_stateProgressCallback,
+                       static_cast<IProgress *>(aProgress),
+                       &aLeftPaused);
+    alock.acquire();
+    mptrCancelableProgress.setNull();
+    if (RT_FAILURE(vrc))
     {
-        ComPtr<IProgress> pProgress;
-        Bstr stateFilePath;
-
-        /*
-         * request a saved state file path from the server
-         * (this will set the machine state to Saving on the server to block
-         * others from accessing this machine)
-         */
-        rc = mControl->BeginSavingState(pProgress.asOutParam(),
-                                        stateFilePath.asOutParam());
-        if (FAILED(rc))
-            break;
-
-        fBeganSavingState = true;
-
-        /* sync the state with the server */
-        i_setMachineStateLocally(MachineState_Saving);
-
-        /* ensure the directory for the saved state file exists */
+        if (fPaused)
         {
-            Utf8Str dir = stateFilePath;
-            dir.stripFilename();
-            if (!RTDirExists(dir.c_str()))
-            {
-                int vrc = RTDirCreateFullPath(dir.c_str(), 0700);
-                if (RT_FAILURE(vrc))
-                {
-                    rc = setError(VBOX_E_FILE_ERROR,
-                        tr("Could not create a directory '%s' to save the state to (%Rrc)"),
-                        dir.c_str(), vrc);
-                    break;
-                }
-            }
+            alock.release();
+            VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_RESTORED);
+            alock.acquire();
         }
+        return setError(E_FAIL, tr("Failed to save the machine state to '%s' (%Rrc)"),
+                        aStateFilePath.c_str(), vrc);
+    }
+    Assert(fContinueAfterwards || !aLeftPaused);
 
-        /* Create a task object early to ensure mpUVM protection is successful. */
-        std::auto_ptr<VMSaveTask> task(new VMSaveTask(this, pProgress,
-                                                      stateFilePath,
-                                                      lastMachineState,
-                                                      aReason));
-        rc = task->rc();
-        /*
-         * If we fail here it means a PowerDown() call happened on another
-         * thread while we were doing Pause() (which releases the Console lock).
-         * We assign PowerDown() a higher precedence than SaveState(),
-         * therefore just return the error to the caller.
-         */
-        if (FAILED(rc))
-        {
-            fTaskCreationFailed = true;
-            break;
-        }
-
-        /* create a thread to wait until the VM state is saved */
-        int vrc = RTThreadCreate(NULL, Console::i_saveStateThread, (void *)task.get(),
-                                 0, RTTHREADTYPE_MAIN_WORKER, 0, "VMSave");
-        if (RT_FAILURE(vrc))
-        {
-            rc = setError(E_FAIL, "Could not create VMSave thread (%Rrc)", vrc);
-            break;
-        }
-
-        /* task is now owned by saveStateThread(), so release it */
-        task.release();
-
-        /* return the progress to the caller */
-        pProgress.queryInterfaceTo(aProgress);
-    } while (0);
-
-    if (FAILED(rc) && !fTaskCreationFailed)
+    if (!fContinueAfterwards)
     {
-        /* preserve existing error info */
-        ErrorInfoKeeper eik;
-
-        if (fBeganSavingState)
-        {
-            /*
-             * cancel the requested save state procedure.
-             * This will reset the machine state to the state it had right
-             * before calling mControl->BeginSavingState().
-             */
-            mControl->EndSavingState(eik.getResultCode(), eik.getText().raw());
-        }
-
-        if (lastMachineState == MachineState_Running)
-        {
-            /* restore the paused state if appropriate */
-            i_setMachineStateLocally(MachineState_Paused);
-            /* restore the running state if appropriate */
-            SafeVMPtr ptrVM(this);
-            if (ptrVM.isOk())
-            {
-                alock.release();
-                VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_RESTORED);
-                alock.acquire();
-            }
-        }
-        else
-            i_setMachineStateLocally(lastMachineState);
+        /*
+         * The machine has been successfully saved, so power it down
+         * (vmstateChangeCallback() will set state to Saved on success).
+         * Note: we release the VM caller, otherwise it will deadlock.
+         */
+        ptrVM.release();
+        alock.release();
+        autoCaller.release();
+        HRESULT rc = i_powerDown();
+        AssertComRC(rc);
+        autoCaller.add();
+        alock.acquire();
+    }
+    else
+    {
+        if (fPaused)
+            aLeftPaused = true;
     }
 
-    LogFlowThisFunc(("rc=%Rhrc\n", rc));
-    LogFlowThisFuncLeave();
-    return rc;
+    LogFlowFuncLeave();
+    return S_OK;
+}
+
+/**
+ * Internal entry point for cancelling a VM save state.
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_cancelSaveState()
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Get the VM handle. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    SSMR3Cancel(ptrVM.rawUVM());
+
+    LogFlowFuncLeave();
+    return S_OK;
 }
 
 /**
@@ -6744,14 +6486,98 @@ HRESULT Console::i_updateMachineState(MachineState_T aMachineState)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   mMachineState == MachineState_Saving
+                 || mMachineState == MachineState_OnlineSnapshotting
                  || mMachineState == MachineState_LiveSnapshotting
-                 || mMachineState == MachineState_RestoringSnapshot
-                 || mMachineState == MachineState_DeletingSnapshot
                  || mMachineState == MachineState_DeletingSnapshotOnline
                  || mMachineState == MachineState_DeletingSnapshotPaused
+                 || aMachineState == MachineState_Saving
+                 || aMachineState == MachineState_OnlineSnapshotting
+                 || aMachineState == MachineState_LiveSnapshotting
+                 || aMachineState == MachineState_DeletingSnapshotOnline
+                 || aMachineState == MachineState_DeletingSnapshotPaused
                  , E_FAIL);
 
     return i_setMachineStateLocally(aMachineState);
+}
+
+/**
+ * Gets called by Session::COMGETTER(NominalState)()
+ * (IInternalSessionControl::getNominalState()).
+ *
+ * @note Locks this object for reading.
+ */
+HRESULT Console::i_getNominalState(MachineState_T &aNominalState)
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    /* Get the VM handle. */
+    SafeVMPtr ptrVM(this);
+    if (!ptrVM.isOk())
+        return ptrVM.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    MachineState_T enmMachineState = MachineState_Null;
+    VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
+    switch (enmVMState)
+    {
+        case VMSTATE_CREATING:
+        case VMSTATE_CREATED:
+        case VMSTATE_POWERING_ON:
+            enmMachineState = MachineState_Starting;
+            break;
+        case VMSTATE_LOADING:
+            enmMachineState = MachineState_Restoring;
+            break;
+        case VMSTATE_RESUMING:
+        case VMSTATE_SUSPENDING:
+        case VMSTATE_SUSPENDING_LS:
+        case VMSTATE_SUSPENDING_EXT_LS:
+        case VMSTATE_SUSPENDED:
+        case VMSTATE_SUSPENDED_LS:
+        case VMSTATE_SUSPENDED_EXT_LS:
+            enmMachineState = MachineState_Paused;
+            break;
+        case VMSTATE_RUNNING:
+        case VMSTATE_RUNNING_LS:
+        case VMSTATE_RUNNING_FT:
+        case VMSTATE_RESETTING:
+        case VMSTATE_RESETTING_LS:
+        case VMSTATE_DEBUGGING:
+        case VMSTATE_DEBUGGING_LS:
+            enmMachineState = MachineState_Running;
+            break;
+        case VMSTATE_SAVING:
+            enmMachineState = MachineState_Saving;
+            break;
+        case VMSTATE_POWERING_OFF:
+        case VMSTATE_POWERING_OFF_LS:
+        case VMSTATE_DESTROYING:
+            enmMachineState = MachineState_Stopping;
+            break;
+        case VMSTATE_OFF:
+        case VMSTATE_OFF_LS:
+        case VMSTATE_FATAL_ERROR:
+        case VMSTATE_FATAL_ERROR_LS:
+        case VMSTATE_LOAD_FAILURE:
+        case VMSTATE_TERMINATED:
+            enmMachineState = MachineState_PoweredOff;
+            break;
+        case VMSTATE_GURU_MEDITATION:
+        case VMSTATE_GURU_MEDITATION_LS:
+            enmMachineState = MachineState_Stuck;
+            break;
+        default:
+            AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
+            enmMachineState = MachineState_PoweredOff;
+    }
+    aNominalState = enmMachineState;
+
+    LogFlowFuncLeave();
+    return S_OK;
 }
 
 void Console::i_onMousePointerShapeChange(bool fVisible, bool fAlpha,
@@ -7159,7 +6985,6 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
     try
     {
-
         if (Global::IsOnlineOrTransient(mMachineState))
             throw setError(VBOX_E_INVALID_VM_STATE,
                 tr("The virtual machine is already running or busy (machine state: %s)"),
@@ -7272,8 +7097,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
             }
         }
 
-        /* Setup task object and thread to carry out the operaton
-         * Asycnhronously */
+        /* Setup task object and thread to carry out the operation
+         * asynchronously */
         std::auto_ptr<VMPowerUpTask> task(new VMPowerUpTask(this, pPowerupProgress));
         ComAssertComRCRetRC(task->rc());
 
@@ -7891,7 +7716,7 @@ HRESULT Console::i_powerDown(IProgress *aProgress /*= NULL*/)
  * @note Locks this object for writing.
  */
 HRESULT Console::i_setMachineState(MachineState_T aMachineState,
-                                 bool aUpdateServer /* = true */)
+                                   bool aUpdateServer /* = true */)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -7904,6 +7729,7 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
     {
         LogThisFunc(("machineState=%s -> %s aUpdateServer=%RTbool\n",
                      Global::stringifyMachineState(mMachineState), Global::stringifyMachineState(aMachineState), aUpdateServer));
+        LogRel(("Console: machine state changed to %s\n", Global::stringifyMachineState(aMachineState)));
         mMachineState = aMachineState;
 
         /// @todo (dmik)
@@ -8514,7 +8340,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     break;
 
                 case MachineState_LiveSnapshotting:
-                    that->i_setMachineState(MachineState_Saving);
+                    that->i_setMachineState(MachineState_OnlineSnapshotting);
                     break;
 
                 case MachineState_TeleportingPausedVM:
@@ -8523,11 +8349,10 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 case MachineState_Stopping:
                 case MachineState_TeleportingIn:
                 case MachineState_FaultTolerantSyncing:
+                case MachineState_OnlineSnapshotting:
                     /* The worker thread handles the transition. */
                     break;
 
-                default:
-                    AssertMsgFailed(("%s\n", Global::stringifyMachineState(that->mMachineState)));
                 case MachineState_Running:
                     that->i_setMachineState(MachineState_Paused);
                     break;
@@ -8535,6 +8360,9 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                 case MachineState_Paused:
                     /* Nothing to do. */
                     break;
+
+                default:
+                    AssertMsgFailed(("%s\n", Global::stringifyMachineState(that->mMachineState)));
             }
             break;
         }
@@ -8552,7 +8380,7 @@ DECLCALLBACK(void) Console::i_vmstateChangeCallback(PUVM pUVM, VMSTATE enmState,
                     break;
 
                 case MachineState_LiveSnapshotting:
-                    that->i_setMachineState(MachineState_Saving);
+                    that->i_setMachineState(MachineState_OnlineSnapshotting);
                     break;
 
                 case MachineState_TeleportingPausedVM:
@@ -9612,8 +9440,7 @@ DECLCALLBACK(int) Console::i_powerUpThread(RTTHREAD Thread, void *pvUser)
     {
         // Create the VMM device object, which starts the HGCM thread; do this only
         // once for the console, for the pathological case that the same console
-        // object is used to power up a VM twice. VirtualBox 4.0: we now do that
-        // here instead of the Console constructor (see Console::init())
+        // object is used to power up a VM twice.
         if (!pConsole->m_pVMMDev)
         {
             pConsole->m_pVMMDev = new VMMDev(pConsole);
@@ -10101,410 +9928,6 @@ DECLCALLBACK(int) Console::i_reconfigureMediumAttachment(Console *pThis,
 }
 
 /**
- * Progress cancelation callback employed by Console::fntTakeSnapshotWorker.
- */
-static void takesnapshotProgressCancelCallback(void *pvUser)
-{
-    PUVM pUVM = (PUVM)pvUser;
-    SSMR3Cancel(pUVM);
-}
-
-/**
- * Worker thread created by Console::TakeSnapshot.
- * @param Thread The current thread (ignored).
- * @param pvUser The task.
- * @return VINF_SUCCESS (ignored).
- */
-/*static*/
-DECLCALLBACK(int) Console::i_fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
-{
-    VMTakeSnapshotTask *pTask = (VMTakeSnapshotTask*)pvUser;
-
-    // taking a snapshot consists of the following:
-
-    // 1) creating a diff image for each virtual hard disk, into which write operations go after
-    //    the snapshot has been created (done in VBoxSVC, in SessionMachine::BeginTakingSnapshot)
-    // 2) creating a Snapshot object with the state of the machine (hardware + storage,
-    //    done in VBoxSVC, also in SessionMachine::BeginTakingSnapshot)
-    // 3) saving the state of the virtual machine (here, in the VM process, if the machine is online)
-
-    Console    *that                 = pTask->mConsole;
-    bool        fBeganTakingSnapshot = false;
-    bool        fSuspenededBySave    = false;
-
-    AutoCaller autoCaller(that);
-    if (FAILED(autoCaller.rc()))
-    {
-        that->mptrCancelableProgress.setNull();
-        return autoCaller.rc();
-    }
-
-    AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-
-    try
-    {
-        /* STEP 1 + 2:
-         * request creating the diff images on the server and create the snapshot object
-         * (this will set the machine state to Saving on the server to block
-         * others from accessing this machine)
-         */
-        rc = that->mControl->BeginTakingSnapshot(that,
-                                                 pTask->bstrName.raw(),
-                                                 pTask->bstrDescription.raw(),
-                                                 pTask->mProgress,
-                                                 pTask->fTakingSnapshotOnline,
-                                                 pTask->bstrSavedStateFile.asOutParam());
-        if (FAILED(rc))
-            throw rc;
-
-        fBeganTakingSnapshot = true;
-
-        /* Check sanity: for offline snapshots there must not be a saved state
-         * file name. All other combinations are valid (even though online
-         * snapshots without saved state file seems inconsistent - there are
-         * some exotic use cases, which need to be explicitly enabled, see the
-         * code of SessionMachine::BeginTakingSnapshot. */
-        if (   !pTask->fTakingSnapshotOnline
-            && !pTask->bstrSavedStateFile.isEmpty())
-            throw i_setErrorStatic(E_FAIL, "Invalid state of saved state file");
-
-        /* sync the state with the server */
-        if (pTask->lastMachineState == MachineState_Running)
-            that->i_setMachineStateLocally(MachineState_LiveSnapshotting);
-        else
-            that->i_setMachineStateLocally(MachineState_Saving);
-
-        // STEP 3: save the VM state (if online)
-        if (pTask->fTakingSnapshotOnline)
-        {
-            int vrc;
-            SafeVMPtr ptrVM(that);
-            if (!ptrVM.isOk())
-                throw ptrVM.rc();
-
-            pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")).raw(),
-                                               pTask->ulMemSize);       // operation weight, same as computed
-                                                                        // when setting up progress object
-            if (!pTask->bstrSavedStateFile.isEmpty())
-            {
-                Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
-
-                pTask->mProgress->i_setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
-
-                alock.release();
-                LogFlowFunc(("VMR3Save...\n"));
-                vrc = VMR3Save(ptrVM.rawUVM(),
-                               strSavedStateFile.c_str(),
-                               true /*fContinueAfterwards*/,
-                               Console::i_stateProgressCallback,
-                               static_cast<IProgress *>(pTask->mProgress),
-                               &fSuspenededBySave);
-                alock.acquire();
-                if (RT_FAILURE(vrc))
-                    throw i_setErrorStatic(E_FAIL,
-                                         tr("Failed to save the machine state to '%s' (%Rrc)"),
-                                         strSavedStateFile.c_str(), vrc);
-
-                pTask->mProgress->i_setCancelCallback(NULL, NULL);
-            }
-            else
-                LogRel(("Console: skipped saving state as part of online snapshot\n"));
-
-            if (!pTask->mProgress->i_notifyPointOfNoReturn())
-                throw i_setErrorStatic(E_FAIL, tr("Canceled"));
-            that->mptrCancelableProgress.setNull();
-
-            // STEP 4: reattach hard disks
-            LogFlowFunc(("Reattaching new differencing hard disks...\n"));
-
-            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring medium attachments")).raw(),
-                                               1);       // operation weight, same as computed when setting up progress object
-
-            com::SafeIfaceArray<IMediumAttachment> atts;
-            rc = that->mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
-            if (FAILED(rc))
-                throw rc;
-
-            for (size_t i = 0;
-                i < atts.size();
-                ++i)
-            {
-                ComPtr<IStorageController> pStorageController;
-                Bstr controllerName;
-                ULONG lInstance;
-                StorageControllerType_T enmController;
-                StorageBus_T enmBus;
-                BOOL fUseHostIOCache;
-
-                /*
-                * We can't pass a storage controller object directly
-                * (g++ complains about not being able to pass non POD types through '...')
-                * so we have to query needed values here and pass them.
-                */
-                rc = atts[i]->COMGETTER(Controller)(controllerName.asOutParam());
-                if (FAILED(rc))
-                    throw rc;
-
-                rc = that->mMachine->GetStorageControllerByName(controllerName.raw(),
-                                                                pStorageController.asOutParam());
-                if (FAILED(rc))
-                    throw rc;
-
-                rc = pStorageController->COMGETTER(ControllerType)(&enmController);
-                if (FAILED(rc))
-                    throw rc;
-                rc = pStorageController->COMGETTER(Instance)(&lInstance);
-                if (FAILED(rc))
-                    throw rc;
-                rc = pStorageController->COMGETTER(Bus)(&enmBus);
-                if (FAILED(rc))
-                    throw rc;
-                rc = pStorageController->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
-                if (FAILED(rc))
-                    throw rc;
-
-                const char *pcszDevice = Console::i_convertControllerTypeToDev(enmController);
-
-                BOOL fBuiltinIOCache;
-                rc = that->mMachine->COMGETTER(IOCacheEnabled)(&fBuiltinIOCache);
-                if (FAILED(rc))
-                    throw rc;
-
-                alock.release();
-                vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
-                                       (PFNRT)i_reconfigureMediumAttachment, 13,
-                                       that, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
-                                       fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
-                                       0 /* uMergeTarget */, atts[i], that->mMachineState, &rc);
-                alock.acquire();
-                if (RT_FAILURE(vrc))
-                    throw i_setErrorStatic(E_FAIL, Console::tr("%Rrc"), vrc);
-                if (FAILED(rc))
-                    throw rc;
-            }
-        }
-
-        /*
-         * finalize the requested snapshot object.
-         * This will reset the machine state to the state it had right
-         * before calling mControl->BeginTakingSnapshot().
-         */
-        rc = that->mControl->EndTakingSnapshot(TRUE /*aSuccess*/);
-        // do not throw rc here because we can't call EndTakingSnapshot() twice
-        LogFlowFunc(("EndTakingSnapshot -> %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(that->mMachineState)));
-    }
-    catch (HRESULT rcThrown)
-    {
-        /* preserve existing error info */
-        ErrorInfoKeeper eik;
-
-        if (fBeganTakingSnapshot)
-            that->mControl->EndTakingSnapshot(FALSE /*aSuccess*/);
-
-        rc = rcThrown;
-        LogFunc(("Caught %Rhrc [mMachineState=%s]\n", rc, Global::stringifyMachineState(that->mMachineState)));
-    }
-    Assert(alock.isWriteLockOnCurrentThread());
-
-    if (FAILED(rc)) /* Must come before calling setMachineState. */
-        pTask->mProgress->i_notifyComplete(rc);
-
-    /*
-     * Fix up the machine state.
-     *
-     * For live snapshots we do all the work, for the two other variations we
-     * just update the local copy.
-     */
-    MachineState_T enmMachineState;
-    that->mMachine->COMGETTER(State)(&enmMachineState);
-    if (   that->mMachineState == MachineState_LiveSnapshotting
-        || that->mMachineState == MachineState_Saving)
-    {
-
-        if (!pTask->fTakingSnapshotOnline)
-            that->i_setMachineStateLocally(pTask->lastMachineState);
-        else if (SUCCEEDED(rc))
-        {
-            Assert(   pTask->lastMachineState == MachineState_Running
-                   || pTask->lastMachineState == MachineState_Paused);
-            Assert(that->mMachineState == MachineState_Saving);
-            if (pTask->lastMachineState == MachineState_Running)
-            {
-                LogFlowFunc(("VMR3Resume...\n"));
-                SafeVMPtr ptrVM(that);
-                alock.release();
-                int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_SAVED);
-                alock.acquire();
-                if (RT_FAILURE(vrc))
-                {
-                    rc = i_setErrorStatic(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
-                    pTask->mProgress->i_notifyComplete(rc);
-                    if (that->mMachineState == MachineState_Saving)
-                        that->i_setMachineStateLocally(MachineState_Paused);
-                }
-            }
-            else
-                that->i_setMachineStateLocally(MachineState_Paused);
-        }
-        else
-        {
-            /** @todo this could probably be made more generic and reused elsewhere. */
-            /* paranoid cleanup on for a failed online snapshot. */
-            VMSTATE enmVMState = VMR3GetStateU(that->mpUVM);
-            switch (enmVMState)
-            {
-                case VMSTATE_RUNNING:
-                case VMSTATE_RUNNING_LS:
-                case VMSTATE_DEBUGGING:
-                case VMSTATE_DEBUGGING_LS:
-                case VMSTATE_POWERING_OFF:
-                case VMSTATE_POWERING_OFF_LS:
-                case VMSTATE_RESETTING:
-                case VMSTATE_RESETTING_LS:
-                    Assert(!fSuspenededBySave);
-                    that->i_setMachineState(MachineState_Running);
-                    break;
-
-                case VMSTATE_GURU_MEDITATION:
-                case VMSTATE_GURU_MEDITATION_LS:
-                    that->i_setMachineState(MachineState_Stuck);
-                    break;
-
-                case VMSTATE_FATAL_ERROR:
-                case VMSTATE_FATAL_ERROR_LS:
-                    if (pTask->lastMachineState == MachineState_Paused)
-                        that->i_setMachineStateLocally(pTask->lastMachineState);
-                    else
-                        that->i_setMachineState(MachineState_Paused);
-                    break;
-
-                default:
-                    AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
-                case VMSTATE_SUSPENDED:
-                case VMSTATE_SUSPENDED_LS:
-                case VMSTATE_SUSPENDING:
-                case VMSTATE_SUSPENDING_LS:
-                case VMSTATE_SUSPENDING_EXT_LS:
-                    if (fSuspenededBySave)
-                    {
-                        Assert(pTask->lastMachineState == MachineState_Running);
-                        LogFlowFunc(("VMR3Resume (on failure)...\n"));
-                        SafeVMPtr ptrVM(that);
-                        alock.release();
-                        int vrc = VMR3Resume(ptrVM.rawUVM(), VMRESUMEREASON_STATE_SAVED); AssertLogRelRC(vrc);
-                        alock.acquire();
-                        if (RT_FAILURE(vrc))
-                            that->i_setMachineState(MachineState_Paused);
-                    }
-                    else if (pTask->lastMachineState == MachineState_Paused)
-                        that->i_setMachineStateLocally(pTask->lastMachineState);
-                    else
-                        that->i_setMachineState(MachineState_Paused);
-                    break;
-            }
-
-        }
-    }
-    /*else: somebody else has change the state... Leave it. */
-
-    /* check the remote state to see that we got it right. */
-    that->mMachine->COMGETTER(State)(&enmMachineState);
-    AssertLogRelMsg(that->mMachineState == enmMachineState,
-                    ("mMachineState=%s enmMachineState=%s\n", Global::stringifyMachineState(that->mMachineState),
-                     Global::stringifyMachineState(enmMachineState) ));
-
-
-    if (SUCCEEDED(rc)) /* The failure cases are handled above. */
-        pTask->mProgress->i_notifyComplete(rc);
-
-    delete pTask;
-
-    LogFlowFuncLeave();
-    return VINF_SUCCESS;
-}
-
-/**
- * Thread for executing the saved state operation.
- *
- * @param   Thread      The thread handle.
- * @param   pvUser      Pointer to a VMSaveTask structure.
- * @return  VINF_SUCCESS (ignored).
- *
- * @note Locks the Console object for writing.
- */
-/*static*/
-DECLCALLBACK(int) Console::i_saveStateThread(RTTHREAD Thread, void *pvUser)
-{
-    LogFlowFuncEnter();
-
-    std::auto_ptr<VMSaveTask> task(static_cast<VMSaveTask*>(pvUser));
-    AssertReturn(task.get(), VERR_INVALID_PARAMETER);
-
-    Assert(task->mSavedStateFile.length());
-    Assert(task->mProgress.isNull());
-    Assert(!task->mServerProgress.isNull());
-
-    const ComObjPtr<Console> &that = task->mConsole;
-    Utf8Str errMsg;
-    HRESULT rc = S_OK;
-
-    LogFlowFunc(("Saving the state to '%s'...\n", task->mSavedStateFile.c_str()));
-
-    bool fSuspenededBySave;
-    int vrc = VMR3Save(task->mpUVM,
-                       task->mSavedStateFile.c_str(),
-                       false, /*fContinueAfterwards*/
-                       Console::i_stateProgressCallback,
-                       static_cast<IProgress *>(task->mServerProgress),
-                       &fSuspenededBySave);
-    if (RT_FAILURE(vrc))
-    {
-        errMsg = Utf8StrFmt(Console::tr("Failed to save the machine state to '%s' (%Rrc)"),
-                            task->mSavedStateFile.c_str(), vrc);
-        rc = E_FAIL;
-    }
-    Assert(!fSuspenededBySave);
-
-    /* lock the console once we're going to access it */
-    AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-
-    /* synchronize the state with the server */
-    if (SUCCEEDED(rc))
-    {
-        /*
-         * The machine has been successfully saved, so power it down
-         * (vmstateChangeCallback() will set state to Saved on success).
-         * Note: we release the task's VM caller, otherwise it will
-         * deadlock.
-         */
-        task->releaseVMCaller();
-        thatLock.release();
-        rc = that->i_powerDown();
-        thatLock.acquire();
-    }
-
-    /*
-     * If we failed, reset the local machine state.
-     */
-    if (FAILED(rc))
-        that->i_setMachineStateLocally(task->mMachineStateBefore);
-
-    /*
-     * Finalize the requested save state procedure. In case of failure it will
-     * reset the machine state to the state it had right before calling
-     * mControl->BeginSavingState(). This must be the last thing because it
-     * will set the progress to completed, and that means that the frontend
-     * can immediately uninit the associated console object.
-     */
-    that->mControl->EndSavingState(rc, Bstr(errMsg).raw());
-
-    LogFlowFuncLeave();
-    return VINF_SUCCESS;
-}
-
-/**
  * Thread for powering down the Console.
  *
  * @param   Thread      The thread handle.
@@ -10559,9 +9982,12 @@ Console::i_vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM)
 
     /*
      * For now, just call SaveState.  We should probably try notify the GUI so
-     * it can pop up a progress object and stuff.
+     * it can pop up a progress object and stuff. The progress object created
+     * by the call isn't returned to anyone and thus gets updated without
+     * anyone noticing it.
      */
-    HRESULT hrc = pConsole->SaveState(NULL);
+    ComPtr<IProgress> pProgress;
+    HRESULT hrc = pConsole->mMachine->SaveState(pProgress.asOutParam());
     return SUCCEEDED(hrc) ? VINF_SUCCESS : Global::vboxStatusCodeFromCOM(hrc);
 }
 

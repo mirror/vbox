@@ -1390,16 +1390,6 @@ void UIMachineLogic::sltTakeSnapshot()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Remember the paused state: */
-    bool fWasPaused = uisession()->isPaused();
-    if (!fWasPaused)
-    {
-        /* Suspend the VM and ignore the close event if failed to do so.
-         * pause() will show the error message to the user. */
-        if (!uisession()->pause())
-            return;
-    }
-
     /* Create take-snapshot dialog: */
     QWidget *pDlgParent = windowManager().realParentWindow(activeMachineWindow());
     QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, machine());
@@ -1432,8 +1422,8 @@ void UIMachineLogic::sltTakeSnapshot()
     if (fDialogAccepted)
     {
         /* Prepare the take-snapshot progress: */
-        CProgress progress = console().TakeSnapshot(strSnapshotName, strSnapshotDescription);
-        if (console().isOk())
+        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true);
+        if (machine().isOk())
         {
             /* Show the take-snapshot progress: */
             msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_create_90px.png");
@@ -1441,16 +1431,7 @@ void UIMachineLogic::sltTakeSnapshot()
                 msgCenter().cannotTakeSnapshot(progress, machineName());
         }
         else
-            msgCenter().cannotTakeSnapshot(console(), machineName());
-    }
-
-    /* Restore the running state if needed: */
-    if (!fWasPaused)
-    {
-        /* Make sure machine-state-change callback is processed: */
-        QApplication::sendPostedEvents(uisession(), UIConsoleEventType_StateChange);
-        /* Unpause VM: */
-        uisession()->unpause();
+            msgCenter().cannotTakeSnapshot(machine(), machineName());
     }
 }
 

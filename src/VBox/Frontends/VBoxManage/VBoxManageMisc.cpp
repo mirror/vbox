@@ -649,8 +649,8 @@ int handleDiscardState(HandlerArg *a)
             CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
-                ComPtr<IConsole> console;
-                CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+                ComPtr<IMachine> console;
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(machine.asOutParam()));
                 CHECK_ERROR_BREAK(console, DiscardSavedState(true /* fDeleteFile */));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
@@ -686,9 +686,9 @@ int handleAdoptState(HandlerArg *a)
             CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
-                ComPtr<IConsole> console;
-                CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-                CHECK_ERROR_BREAK(console, AdoptSavedState(Bstr(szStateFileAbs).raw()));
+                ComPtr<IMachine> machine;
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(machine.asOutParam()));
+                CHECK_ERROR_BREAK(machine, AdoptSavedState(Bstr(szStateFileAbs).raw()));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);

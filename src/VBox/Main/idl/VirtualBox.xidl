@@ -586,7 +586,7 @@
 
   <enum
     name="MachineState"
-    uuid="ec6c6a9e-113d-4ff4-b44f-0b69f21c97fe"
+    uuid="87f085c3-ca67-4e45-9225-6057f32e9e8e"
     >
     <desc>
       Virtual machine execution state.
@@ -596,7 +596,7 @@
 
       Below is the basic virtual machine state diagram. It shows how the state
       changes during virtual machine execution. The text in square braces shows
-      a method of the IConsole interface that performs the given state
+      a method of the IConsole or IMachine interface that performs the given state
       transition.
 
       <pre>
@@ -610,7 +610,7 @@
     |     ^                                               | |                   | |
     |     |     +-----------------------------------------+-|-------------------+ +
     |     |     |                                           |                     |
-    |     |     +-- Saving &lt;--------[takeSnapshot()]&lt;-------+---------------------+
+    |     |     +- OnlineSnapshotting &lt;--[takeSnapshot()]&lt;--+---------------------+
     |     |                                                 |                     |
     |     +-------- Saving &lt;--------[saveState()]&lt;----------+---------------------+
     |                                                       |                     |
@@ -682,7 +682,7 @@
     +----------------------------------(same state as before the call)------+
     |                                                                       |
     +-&gt; PoweredOff --+                                                      |
-    |                +--&gt;[takeSnapshot()] -------------------&gt; Saving ------+
+    |                +--&gt;[takeSnapshot()] ------------------&gt; Snapshotting -+
     +-&gt; Aborted -----+
 
     +-&gt; PoweredOff --+
@@ -693,13 +693,6 @@
     |                                                                       |
     +---(Saved if restored from an online snapshot, PoweredOff otherwise)---+
       </pre>
-
-      Note that the Saving state is present in both the offline state group and
-      online state group. Currently, the only way to determine what group is
-      assumed in a particular case is to remember the previous machine state: if
-      it was Running or Paused, then Saving is an online state, otherwise it is
-      an offline state. This inconsistency may be removed in one of the future
-      versions of VirtualBox by adding a new state.
 
       <note internal="yes">
         For whoever decides to touch this enum: In order to keep the
@@ -791,7 +784,7 @@
         A live snapshot is being taken. The machine is running normally, but
         some of the runtime configuration options are inaccessible. Also, if
         paused while in this state it will transition to
-        @c Saving and it will not be resume the
+        @c OnlineSnapshotting and it will not be resume the
         execution until the snapshot operation has completed.
       </desc>
     </const>
@@ -809,8 +802,7 @@
     </const>
     <const name="Saving"                    value="12">
       <desc>
-        Machine is saving its execution state to a file, or an online
-        snapshot of the machine is being taken.
+        Machine is saving its execution state to a file.
       </desc>
     </const>
     <const name="Restoring"                 value="13">
@@ -823,7 +815,7 @@
       <desc>
         The machine is being teleported to another host or process, but it is
         not running. This is the paused variant of the
-        @c state.
+        @c Teleporting state.
       </desc>
     </const>
     <const name="TeleportingIn"             value="15">
@@ -848,21 +840,32 @@
         merging of differencing media was started.
       </desc>
     </const>
-    <const name="RestoringSnapshot"         value="19">
+    <const name="OnlineSnapshotting"        value="19">
+      <desc>
+        Like @c LiveSnapshotting, but the machine was paused when the
+        merging of differencing media was started.
+      </desc>
+    </const>
+    <const name="RestoringSnapshot"         value="20">
       <desc>
         A machine snapshot is being restored; this typically does not take long.
       </desc>
     </const>
-    <const name="DeletingSnapshot"          value="20">
+    <const name="DeletingSnapshot"          value="21">
       <desc>
         A machine snapshot is being deleted; this can take a long time since this
         may require merging differencing media. This value indicates that the
         machine is not running while the snapshot is being deleted.
       </desc>
     </const>
-    <const name="SettingUp"                 value="21">
+    <const name="SettingUp"                 value="22">
       <desc>
         Lengthy setup operation is in progress.
+      </desc>
+    </const>
+    <const name="Snapshotting"              value="23">
+      <desc>
+        Taking an (offline) snapshot.
       </desc>
     </const>
 
@@ -871,7 +874,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline" value="18" wsmap="suppress"> <!-- DeletingSnapshotPaused -->
+    <const name="LastOnline" value="19" wsmap="suppress"> <!-- OnlineSnapshotting -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
@@ -882,7 +885,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient" value="21" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient" value="23" wsmap="suppress"> <!-- Snapshotting -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
@@ -1073,22 +1076,25 @@
 
   <enum
     name="LockType"
-    uuid="168a6a8e-12fd-4878-a1f9-38a750a56089"
+    uuid="678aaf14-2815-4c3e-b20a-e86ed0216498"
     >
     <desc>
       Used with <link to="IMachine::lockMachine" />.
     </desc>
+    <const name="Null" value="0">
+      <desc>Placeholder value, do not use when obtaining a lock.</desc>
+    </const>
+    <const name="Shared" value="1">
+      <desc>Request only a shared lock for remote-controlling the machine.
+        Such a lock allows changing certain VM settings which can be safely
+        modified for a running VM.</desc>
+    </const>
     <const name="Write" value="2">
       <desc>Lock the machine for writing. This requests an exclusive lock, i.e.
         there cannot be any other API client holding any type of lock for this
         VM concurrently. Remember that a VM process counts as an API client
         which implicitly holds the equivalent of a shared lock during the
         entire VM runtime.</desc>
-    </const>
-    <const name="Shared" value="1">
-      <desc>Request only a shared lock for remote-controlling the machine.
-        Such a lock allows changing certain VM settings which can be safely
-        modified for a running VM.</desc>
     </const>
     <const name="VM" value="3">
       <desc>Lock the machine for writing, and create objects necessary for
@@ -3585,17 +3591,10 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="1470ff16-d7fa-448e-9c38-0352a36053bf"
+    uuid="f0b3bf6e-c609-4d5e-9fd7-77537a52c31b"
     internal="yes"
     wsmap="suppress"
     >
-    <method name="setRemoveSavedStateFile">
-      <desc>
-        Updates the flag whether the saved state file is removed on a
-        machine state change from Saved to PoweredOff.
-      </desc>
-      <param name="remove" type="boolean" dir="in"/>
-    </method>
 
     <method name="updateState">
       <desc>
@@ -3757,174 +3756,11 @@
       </param>
     </method>
 
-    <method name="beginSavingState">
-      <desc>
-        Called by the VM process to inform the server it wants to
-        save the current state and stop the VM execution.
-      </desc>
-      <param name="progress" type="IProgress" dir="out">
-        <desc>
-          Progress object created by VBoxSVC to wait until
-          the state is saved.
-        </desc>
-      </param>
-      <param name="stateFilePath" type="wstring" dir="out">
-        <desc>
-          File path the VM process must save the execution state to.
-        </desc>
-      </param>
-    </method>
-
-    <method name="endSavingState">
-      <desc>
-        Called by the VM process to inform the server that saving
-        the state previously requested by #beginSavingState is either
-        successfully finished or there was a failure.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Settings file not accessible.
-        </result>
-        <result name="VBOX_E_XML_ERROR">
-          Could not parse the settings file.
-        </result>
-
-      </desc>
-
-      <param name="result" type="long" dir="in">
-        <desc>@c S_OK to indicate success.
-        </desc>
-      </param>
-      <param name="errMsg" type="wstring" dir="in">
-        <desc>@c human readable error message in case of failure.
-        </desc>
-      </param>
-    </method>
-
-    <method name="adoptSavedState">
-      <desc>
-        Gets called by <link to="IConsole::adoptSavedState"/>.
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid saved state file path.
-        </result>
-      </desc>
-      <param name="savedStateFile" type="wstring" dir="in">
-        <desc>Path to the saved state file to adopt.</desc>
-      </param>
-    </method>
-
-    <method name="beginTakingSnapshot">
-      <desc>
-        Called from the VM process to request from the server to perform the
-        server-side actions of creating a snapshot (creating differencing images
-        and the snapshot object).
-
-        <result name="VBOX_E_FILE_ERROR">
-          Settings file not accessible.
-        </result>
-        <result name="VBOX_E_XML_ERROR">
-          Could not parse the settings file.
-        </result>
-      </desc>
-      <param name="initiator" type="IConsole" dir="in">
-        <desc>The console object that initiated this call.</desc>
-      </param>
-      <param name="name" type="wstring" dir="in">
-        <desc>Snapshot name.</desc>
-      </param>
-      <param name="description" type="wstring" dir="in">
-        <desc>Snapshot description.</desc>
-      </param>
-      <param name="consoleProgress" type="IProgress" dir="in">
-        <desc>
-          Progress object created by the VM process tracking the
-          snapshot's progress. This has the following sub-operations:
-          <ul>
-            <li>setting up (weight 1);</li>
-            <li>one for each medium attachment that needs a differencing image (weight 1 each);</li>
-            <li>another one to copy the VM state (if offline with saved state, weight is VM memory size in MB);</li>
-            <li>another one to save the VM state (if online, weight is VM memory size in MB);</li>
-            <li>finishing up (weight 1)</li>
-          </ul>
-        </desc>
-      </param>
-      <param name="fTakingSnapshotOnline" type="boolean" dir="in">
-        <desc>
-          Whether this is an online snapshot (i.e. the machine is running).
-        </desc>
-      </param>
-      <param name="stateFilePath" type="wstring" dir="out">
-        <desc>
-          File path the VM process must save the execution state to.
-        </desc>
-      </param>
-    </method>
-
-    <method name="endTakingSnapshot">
-      <desc>
-        Called by the VM process to inform the server that the snapshot
-        previously requested by #beginTakingSnapshot is either
-        successfully taken or there was a failure.
-      </desc>
-
-      <param name="success" type="boolean" dir="in">
-        <desc>@c true to indicate success and @c false otherwise</desc>
-      </param>
-    </method>
-
-    <method name="deleteSnapshot">
-      <desc>
-        Gets called by <link to="IConsole::deleteSnapshot"/>,
-        <link to="IConsole::deleteSnapshotAndAllChildren"/> and
-        <link to="IConsole::deleteSnapshotRange"/>.
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Snapshot has more than one child snapshot. Only possible if the
-          delete operation does not delete all children or the range does
-          not meet the linearity condition.
-        </result>
-      </desc>
-      <param name="initiator" type="IConsole" dir="in">
-        <desc>The console object that initiated this call.</desc>
-      </param>
-      <param name="startId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the first snapshot to delete.</desc>
-      </param>
-      <param name="endId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the last snapshot to delete.</desc>
-      </param>
-      <param name="deleteAllChildren" type="boolean" dir="in">
-        <desc>Whether all children should be deleted.</desc>
-      </param>
-      <param name="machineState" type="MachineState" dir="out">
-        <desc>New machine state after this operation is started.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
     <method name="finishOnlineMergeMedium">
       <desc>
         Gets called by <link to="IInternalSessionControl::onlineMergeMedium"/>.
         All necessary state information is available at the called object.
       </desc>
-    </method>
-
-    <method name="restoreSnapshot">
-      <desc>
-        Gets called by <link to="IConsole::restoreSnapshot"/>.
-      </desc>
-      <param name="initiator" type="IConsole" dir="in">
-        <desc>The console object that initiated this call.</desc>
-      </param>
-      <param name="snapshot" type="ISnapshot" dir="in">
-        <desc>The snapshot to restore the VM state from.</desc>
-      </param>
-      <param name="machineState" type="MachineState" dir="out">
-        <desc>New machine state after this operation is started.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
     </method>
 
     <method name="pullGuestProperties">
@@ -4340,7 +4176,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="2280b3f8-0c33-4641-8bd5-ccecd1071b49"
+    uuid="bfe5287a-5fbc-4ceb-9f0e-7fb317e78681"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -4887,10 +4723,9 @@
       <desc>
         Current snapshot of this machine. This is @c null if the machine
         currently has no snapshots. If it is not @c null, then it was
-        set by one of <link to="IConsole::takeSnapshot" />,
-        <link to="IConsole::deleteSnapshot" />
-        or <link to="IConsole::restoreSnapshot" />, depending on which
-        was called last. See <link to="ISnapshot"/> for details.
+        set by one of <link to="#takeSnapshot" />, <link to="#deleteSnapshot" />
+        or <link to="#restoreSnapshot" />, depending on which was called last.
+       See <link to="ISnapshot"/> for details.
       </desc>
     </attribute>
 
@@ -4910,11 +4745,10 @@
         directly after one of the following calls are made:
 
         <ul>
-          <li><link to="IConsole::restoreSnapshot"/>
+          <li><link to="#restoreSnapshot"/>
           </li>
-          <li><link to="IConsole::takeSnapshot"/> (issued on a
-            "powered off" or "saved" machine, for which
-            <link to="#settingsModified"/> returns @c false)
+          <li><link to="#takeSnapshot"/> (issued on a "powered off" or "saved"
+            machine, for which <link to="#settingsModified"/> returns @c false)
           </li>
         </ul>
 
@@ -7431,6 +7265,329 @@
       </param>
     </method>
 
+    <method name="saveState">
+      <desc>
+        Saves the current execution state of a running virtual machine
+        and stops its execution.
+
+        After this operation completes, the machine will go to the
+        Saved state. Next time it is powered up, this state will
+        be restored and the machine will continue its execution from
+        the place where it was saved.
+
+        This operation differs from taking a snapshot to the effect
+        that it doesn't create new differencing media. Also, once
+        the machine is powered up from the state saved using this method,
+        the saved state is deleted, so it will be impossible to return
+        to this state later.
+
+        <note>
+          On success, this method implicitly calls
+          <link to="#saveSettings"/> to save all current machine
+          settings (including runtime changes to the DVD medium, etc.).
+          Together with the impossibility to change any VM settings when it is
+          in the Saved state, this guarantees adequate hardware
+          configuration of the machine when it is restored from the saved
+          state file.
+        </note>
+
+        <note>
+          The machine must be in the Running or Paused state, otherwise
+          the operation will fail.
+        </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither Running nor Paused.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Failed to create directory for saved state file.
+        </result>
+
+        <see><link to="#takeSnapshot"/></see>
+      </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="adoptSavedState">
+      <desc>
+        Associates the given saved state file to the virtual machine.
+
+        On success, the machine will go to the Saved state. Next time it is
+        powered up, it will be restored from the adopted saved state and
+        continue execution from the place where the saved state file was
+        created.
+
+        The specified saved state file path may be absolute or relative to the
+        folder the VM normally saves the state to (usually,
+        <link to="#snapshotFolder"/>).
+
+        <note>
+          It's a caller's responsibility to make sure the given saved state
+          file is compatible with the settings of this virtual machine that
+          represent its virtual hardware (memory size, storage disk configuration
+          etc.). If there is a mismatch, the behavior of the virtual machine
+          is undefined.
+        </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine state neither PoweredOff nor Aborted.
+        </result>
+      </desc>
+      <param name="savedStateFile" type="wstring" dir="in">
+        <desc>Path to the saved state file to adopt.</desc>
+      </param>
+    </method>
+
+    <method name="discardSavedState">
+      <desc>
+        Forcibly resets the machine to "Powered Off" state if it is
+        currently in the "Saved" state (previously created by <link to="#saveState"/>).
+        Next time the machine is powered up, a clean boot will occur.
+        <note>
+          This operation is equivalent to resetting or powering off
+          the machine without doing a proper shutdown of the guest
+          operating system; as with resetting a running phyiscal
+          computer, it can can lead to data loss.
+        </note>
+        If @a fRemoveFile is @c true, the file in the machine directory
+        into which the machine state was saved is also deleted. If
+        this is @c false, then the state can be recovered and later
+        re-inserted into a machine using <link to="#adoptSavedState" />.
+        The location of the file can be found in the
+        <link to="#stateFilePath" /> attribute.
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not in state Saved.
+        </result>
+      </desc>
+      <param name="fRemoveFile" type="boolean" dir="in" >
+        <desc>Whether to also remove the saved state file.</desc>
+      </param>
+    </method>
+
+    <method name="takeSnapshot">
+      <desc>
+        Saves the current execution state
+        and all settings of the machine and creates differencing images
+        for all normal (non-independent) media.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
+
+        This method can be called for a PoweredOff, Saved (see
+        <link to="#saveState"/>), Running or
+        Paused virtual machine. When the machine is PoweredOff, an
+        offline snapshot is created. When the machine is Running a live
+        snapshot is created, and an online snapshot is created when Paused.
+
+        The taken snapshot is always based on the
+        <link to="#currentSnapshot">current snapshot</link>
+        of the associated virtual machine and becomes a new current snapshot.
+
+        <note>
+          This method implicitly calls <link to="#saveSettings"/> to
+          save all current machine settings before taking an offline snapshot.
+        </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine currently changing state.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Short name for the snapshot.</desc>
+      </param>
+      <param name="description" type="wstring" dir="in">
+        <desc>Optional description of the snapshot.</desc>
+      </param>
+      <param name="pause" type="boolean" dir="in">
+        <desc>Whether the VM should be paused while taking the snapshot. Only
+          relevant when the VM is running, and distinguishes between online
+          (@c true) and live (@c false) snapshots. When the VM is not running
+          the result is always an offline snapshot.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteSnapshot">
+      <desc>
+        Starts deleting the specified snapshot asynchronously.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
+
+        The execution state and settings of the associated machine stored in
+        the snapshot will be deleted. The contents of all differencing media of
+        this snapshot will be merged with the contents of their dependent child
+        media to keep the medium chain valid (in other words, all changes
+        represented by media being deleted will be propagated to their child
+        medium). After that, this snapshot's differencing medium will be
+        deleted. The parent of this snapshot will become a new parent for all
+        its child snapshots.
+
+        If the deleted snapshot is the current one, its parent snapshot will
+        become a new current snapshot. The current machine state is not directly
+        affected in this case, except that currently attached differencing
+        media based on media of the deleted snapshot will be also merged as
+        described above.
+
+        If the deleted snapshot is the first or current snapshot, then the
+        respective IMachine attributes will be adjusted. Deleting the current
+        snapshot will also implicitly call <link to="#saveSettings"/>
+        to make all current machine settings permanent.
+
+        Deleting a snapshot has the following preconditions:
+
+        <ul>
+          <li>Child media of all normal media of the deleted snapshot
+          must be accessible (see <link to="IMedium::state"/>) for this
+          operation to succeed. If only one running VM refers to all images
+          which participates in merging the operation can be performed while
+          the VM is running. Otherwise all virtual machines whose media are
+          directly or indirectly based on the media of deleted snapshot must
+          be powered off. In any case, online snapshot deleting usually is
+          slower than the same operation without any running VM.</li>
+
+          <li>You cannot delete the snapshot if a medium attached to it has
+          more than one child medium (differencing images) because otherwise
+          merging would be impossible. This might be the case if there is
+          more than one child snapshot or differencing images were created
+          for other reason (e.g. implicitly because of multiple machine
+          attachments).</li>
+        </ul>
+
+        The virtual machine's <link to="#state">state</link> is
+        changed to "DeletingSnapshot", "DeletingSnapshotOnline" or
+        "DeletingSnapshotPaused" while this operation is in progress.
+
+        <note>
+          Merging medium contents can be very time and disk space
+          consuming, if these media are big in size and have many
+          children. However, if the snapshot being deleted is the last
+          (head) snapshot on the branch, the operation will be rather
+          quick.
+        </note>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
+        </result>
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the snapshot to delete.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteSnapshotAndAllChildren">
+      <desc>
+        Starts deleting the specified snapshot and all its children
+        asynchronously. See <link to="ISnapshot" /> for an introduction to
+        snapshots. The conditions and many details are the same as with
+        <link to="#deleteSnapshot"/>.
+
+        This operation is very fast if the snapshot subtree does not include
+        the current state. It is still significantly faster than deleting the
+        snapshots one by one if the current state is in the subtree and there
+        are more than one snapshots from current state to the snapshot which
+        marks the subtree, since it eliminates the incremental image merging.
+
+        <note>This API method is right now not implemented!</note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
+        </result>
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the snapshot to delete, including all its children.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="deleteSnapshotRange">
+      <desc>
+        Starts deleting the specified snapshot range. This is limited to
+        linear snapshot lists, which means there may not be any other child
+        snapshots other than the direct sequence between the start and end
+        snapshot. If the start and end snapshot point to the same snapshot this
+        method is completely equivalent to <link to="#deleteSnapshot"/>. See
+        <link to="ISnapshot" /> for an introduction to snapshots. The
+        conditions and many details are the same as with
+        <link to="#deleteSnapshot"/>.
+
+        This operation is generally faster than deleting snapshots one by one
+        and often also needs less extra disk space before freeing up disk space
+        by deleting the removed disk images corresponding to the snapshot.
+
+        <note>This API method is right now not implemented!</note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          The running virtual machine prevents deleting this snapshot. This
+          happens only in very specific situations, usually snapshots can be
+          deleted without trouble while a VM is running. The error message
+          text explains the reason for the failure.
+        </result>
+        <result name="E_NOTIMPL">
+          The method is not implemented yet.
+        </result>
+      </desc>
+      <param name="startId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the first snapshot to delete.</desc>
+      </param>
+      <param name="endId" type="uuid" mod="string" dir="in">
+        <desc>UUID of the last snapshot to delete.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="restoreSnapshot">
+      <desc>
+        Starts resetting the machine's current state to the state contained
+        in the given snapshot, asynchronously. All current settings of the
+        machine will be reset and changes stored in differencing media
+        will be lost.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
+
+        After this operation is successfully completed, new empty differencing
+        media are created for all normal media of the machine.
+
+        If the given snapshot is an online snapshot, the machine will go to
+        the <link to="MachineState_Saved"> saved state</link>, so that the
+        next time it is powered on, the execution state will be restored
+        from the state of the snapshot.
+
+        <note>
+          The machine must not be running, otherwise the operation will fail.
+        </note>
+
+        <note>
+          If the machine state is <link to="MachineState_Saved">Saved</link>
+          prior to this operation, the saved state file will be implicitly
+          deleted (as if <link to="IConsole::discardSavedState"/> were
+          called).
+        </note>
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine is running.
+        </result>
+      </desc>
+      <param name="snapshot" type="ISnapshot" dir="in">
+        <desc>The snapshot to restore the VM state from.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <interface
@@ -7583,7 +7740,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="080505f4-bca9-45aa-ab95-030036b665e6"
+    uuid="650b5f05-8258-4ee9-b518-89c515ca5dd9"
     wsmap="managed"
     >
     <desc>
@@ -7764,7 +7921,7 @@
         last three operations of the progress objected returned by
         <link to="IMachine::launchVMProcess"/> as well.
 
-        <see><link to="#saveState"/></see>
+        <see><link to="IMachine::saveState"/></see>
 
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine already running.
@@ -7893,105 +8050,6 @@
         </result>
       </desc>
       <param name="entered" type="boolean" dir="return"/>
-    </method>
-
-    <method name="saveState">
-      <desc>
-        Saves the current execution state of a running virtual machine
-        and stops its execution.
-
-        After this operation completes, the machine will go to the
-        Saved state. Next time it is powered up, this state will
-        be restored and the machine will continue its execution from
-        the place where it was saved.
-
-        This operation differs from taking a snapshot to the effect
-        that it doesn't create new differencing media. Also, once
-        the machine is powered up from the state saved using this method,
-        the saved state is deleted, so it will be impossible to return
-        to this state later.
-
-        <note>
-          On success, this method implicitly calls
-          <link to="IMachine::saveSettings"/> to save all current machine
-          settings (including runtime changes to the DVD medium, etc.).
-          Together with the impossibility to change any VM settings when it is
-          in the Saved state, this guarantees adequate hardware
-          configuration of the machine when it is restored from the saved
-          state file.
-        </note>
-
-        <note>
-          The machine must be in the Running or Paused state, otherwise
-          the operation will fail.
-        </note>
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine state neither Running nor Paused.
-        </result>
-        <result name="VBOX_E_FILE_ERROR">
-          Failed to create directory for saved state file.
-        </result>
-
-        <see><link to="#takeSnapshot"/></see>
-      </desc>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="adoptSavedState">
-      <desc>
-        Associates the given saved state file to the virtual machine.
-
-        On success, the machine will go to the Saved state. Next time it is
-        powered up, it will be restored from the adopted saved state and
-        continue execution from the place where the saved state file was
-        created.
-
-        The specified saved state file path may be absolute or relative to the
-        folder the VM normally saves the state to (usually,
-        <link to="IMachine::snapshotFolder"/>).
-
-        <note>
-          It's a caller's responsibility to make sure the given saved state
-          file is compatible with the settings of this virtual machine that
-          represent its virtual hardware (memory size, storage disk configuration
-          etc.). If there is a mismatch, the behavior of the virtual machine
-          is undefined.
-        </note>
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine state neither PoweredOff nor Aborted.
-        </result>
-      </desc>
-      <param name="savedStateFile" type="wstring" dir="in">
-        <desc>Path to the saved state file to adopt.</desc>
-      </param>
-    </method>
-
-    <method name="discardSavedState">
-      <desc>
-        Forcibly resets the machine to "Powered Off" state if it is
-        currently in the "Saved" state (previously created by <link to="#saveState"/>).
-        Next time the machine is powered up, a clean boot will occur.
-        <note>
-          This operation is equivalent to resetting or powering off
-          the machine without doing a proper shutdown of the guest
-          operating system; as with resetting a running phyiscal
-          computer, it can can lead to data loss.
-        </note>
-        If @a fRemoveFile is @c true, the file in the machine directory
-        into which the machine state was saved is also deleted. If
-        this is @c false, then the state can be recovered and later
-        re-inserted into a machine using <link to="#adoptSavedState" />.
-        The location of the file can be found in the
-        <link to="IMachine::stateFilePath" /> attribute.
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine not in state Saved.
-        </result>
-      </desc>
-      <param name="fRemoveFile" type="boolean" dir="in" >
-        <desc>Whether to also remove the saved state file.</desc>
-      </param>
     </method>
 
     <method name="getDeviceActivity">
@@ -8147,224 +8205,6 @@
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Logical name of the shared folder to remove.</desc>
-      </param>
-    </method>
-
-    <method name="takeSnapshot">
-      <desc>
-        Saves the current execution state
-        and all settings of the machine and creates differencing images
-        for all normal (non-independent) media.
-        See <link to="ISnapshot" /> for an introduction to snapshots.
-
-        This method can be called for a PoweredOff, Saved (see
-        <link to="#saveState"/>), Running or
-        Paused virtual machine. When the machine is PoweredOff, an
-        offline snapshot is created. When the machine is Running a live
-        snapshot is created, and an online snapshot is created when Paused.
-
-        The taken snapshot is always based on the
-        <link to="IMachine::currentSnapshot">current snapshot</link>
-        of the associated virtual machine and becomes a new current snapshot.
-
-        <note>
-          This method implicitly calls <link to="IMachine::saveSettings"/> to
-          save all current machine settings before taking an offline snapshot.
-        </note>
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine currently changing state.
-        </result>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Short name for the snapshot.</desc>
-      </param>
-      <param name="description" type="wstring" dir="in">
-        <desc>Optional description of the snapshot.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="deleteSnapshot">
-      <desc>
-        Starts deleting the specified snapshot asynchronously.
-        See <link to="ISnapshot" /> for an introduction to snapshots.
-
-        The execution state and settings of the associated machine stored in
-        the snapshot will be deleted. The contents of all differencing media of
-        this snapshot will be merged with the contents of their dependent child
-        media to keep the medium chain valid (in other words, all changes
-        represented by media being deleted will be propagated to their child
-        medium). After that, this snapshot's differencing medium will be
-        deleted. The parent of this snapshot will become a new parent for all
-        its child snapshots.
-
-        If the deleted snapshot is the current one, its parent snapshot will
-        become a new current snapshot. The current machine state is not directly
-        affected in this case, except that currently attached differencing
-        media based on media of the deleted snapshot will be also merged as
-        described above.
-
-        If the deleted snapshot is the first or current snapshot, then the
-        respective IMachine attributes will be adjusted. Deleting the current
-        snapshot will also implicitly call <link to="IMachine::saveSettings"/>
-        to make all current machine settings permanent.
-
-        Deleting a snapshot has the following preconditions:
-
-        <ul>
-          <li>Child media of all normal media of the deleted snapshot
-          must be accessible (see <link to="IMedium::state"/>) for this
-          operation to succeed. If only one running VM refers to all images
-          which participates in merging the operation can be performed while
-          the VM is running. Otherwise all virtual machines whose media are
-          directly or indirectly based on the media of deleted snapshot must
-          be powered off. In any case, online snapshot deleting usually is
-          slower than the same operation without any running VM.</li>
-
-          <li>You cannot delete the snapshot if a medium attached to it has
-          more than one child medium (differencing images) because otherwise
-          merging would be impossible. This might be the case if there is
-          more than one child snapshot or differencing images were created
-          for other reason (e.g. implicitly because of multiple machine
-          attachments).</li>
-        </ul>
-
-        The virtual machine's <link to="IMachine::state">state</link> is
-        changed to "DeletingSnapshot", "DeletingSnapshotOnline" or
-        "DeletingSnapshotPaused" while this operation is in progress.
-
-        <note>
-          Merging medium contents can be very time and disk space
-          consuming, if these media are big in size and have many
-          children. However, if the snapshot being deleted is the last
-          (head) snapshot on the branch, the operation will be rather
-          quick.
-        </note>
-        <result name="VBOX_E_INVALID_VM_STATE">
-          The running virtual machine prevents deleting this snapshot. This
-          happens only in very specific situations, usually snapshots can be
-          deleted without trouble while a VM is running. The error message
-          text explains the reason for the failure.
-        </result>
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to delete.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="deleteSnapshotAndAllChildren">
-      <desc>
-        Starts deleting the specified snapshot and all its children
-        asynchronously. See <link to="ISnapshot" /> for an introduction to
-        snapshots. The conditions and many details are the same as with
-        <link to="#deleteSnapshot"/>.
-
-        This operation is very fast if the snapshot subtree does not include
-        the current state. It is still significantly faster than deleting the
-        snapshots one by one if the current state is in the subtree and there
-        are more than one snapshots from current state to the snapshot which
-        marks the subtree, since it eliminates the incremental image merging.
-
-        <note>This API method is right now not implemented!</note>
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          The running virtual machine prevents deleting this snapshot. This
-          happens only in very specific situations, usually snapshots can be
-          deleted without trouble while a VM is running. The error message
-          text explains the reason for the failure.
-        </result>
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
-      </desc>
-      <param name="id" type="uuid" mod="string" dir="in">
-        <desc>UUID of the snapshot to delete, including all its children.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="deleteSnapshotRange">
-      <desc>
-        Starts deleting the specified snapshot range. This is limited to
-        linear snapshot lists, which means there may not be any other child
-        snapshots other than the direct sequence between the start and end
-        snapshot. If the start and end snapshot point to the same snapshot this
-        method is completely equivalent to <link to="#deleteSnapshot"/>. See
-        <link to="ISnapshot" /> for an introduction to snapshots. The
-        conditions and many details are the same as with
-        <link to="#deleteSnapshot"/>.
-
-        This operation is generally faster than deleting snapshots one by one
-        and often also needs less extra disk space before freeing up disk space
-        by deleting the removed disk images corresponding to the snapshot.
-
-        <note>This API method is right now not implemented!</note>
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          The running virtual machine prevents deleting this snapshot. This
-          happens only in very specific situations, usually snapshots can be
-          deleted without trouble while a VM is running. The error message
-          text explains the reason for the failure.
-        </result>
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
-      </desc>
-      <param name="startId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the first snapshot to delete.</desc>
-      </param>
-      <param name="endId" type="uuid" mod="string" dir="in">
-        <desc>UUID of the last snapshot to delete.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
-      </param>
-    </method>
-
-    <method name="restoreSnapshot">
-      <desc>
-        Starts resetting the machine's current state to the state contained
-        in the given snapshot, asynchronously. All current settings of the
-        machine will be reset and changes stored in differencing media
-        will be lost.
-        See <link to="ISnapshot" /> for an introduction to snapshots.
-
-        After this operation is successfully completed, new empty differencing
-        media are created for all normal media of the machine.
-
-        If the given snapshot is an online snapshot, the machine will go to
-        the <link to="MachineState_Saved"> saved state</link>, so that the
-        next time it is powered on, the execution state will be restored
-        from the state of the snapshot.
-
-        <note>
-          The machine must not be running, otherwise the operation will fail.
-        </note>
-
-        <note>
-          If the machine state is <link to="MachineState_Saved">Saved</link>
-          prior to this operation, the saved state file will be implicitly
-          deleted (as if <link to="IConsole::discardSavedState"/> were
-          called).
-        </note>
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine is running.
-        </result>
-      </desc>
-      <param name="snapshot" type="ISnapshot" dir="in">
-        <desc>The snapshot to restore the VM state from.</desc>
-      </param>
-      <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -12985,12 +12825,12 @@
       the exact state it was in when the snapshot was taken.
 
       The ISnapshot interface has no methods, only attributes; snapshots
-      are controlled through methods of the <link to="IConsole" /> interface
+      are controlled through methods of the <link to="IMachine" /> interface
       which also manage the media associated with the snapshot.
       The following operations exist:
 
       <ul>
-          <li><link to="IConsole::takeSnapshot"/> creates a new snapshot
+          <li><link to="IMachine::takeSnapshot"/> creates a new snapshot
               by creating new, empty differencing images for the machine's
               media and saving the VM settings and (if the VM is running)
               the current VM state in the snapshot.
@@ -18191,21 +18031,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="HostBatteryLow"    value="3">
       <desc>Host is running low on battery (power management event).</desc>
     </const>
+    <const name="Snapshot"          value="4">
+      <desc>A snapshot of the VM is being taken.</desc>
+    </const>
   </enum>
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="fdb5fa71-eddb-4e06-9844-277d22270fe0"
+    uuid="747e397e-69c8-45a0-88d9-f7f070960718"
     internal="yes"
     wsmap="suppress"
     >
-    <method name="getPID">
+    <attribute name="PID" type="unsigned long" readonly="yes">
       <desc>PID of the process that has created this Session object.
       </desc>
-      <param name="pid" type="unsigned long" dir="return"/>
-    </method>
+    </attribute>
 
-    <method name="getRemoteConsole">
+    <attribute name="remoteConsole" type="IConsole" readonly="yes">
       <desc>
         Returns the console object suitable for remote control.
 
@@ -18217,8 +18059,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="console" type="IConsole" dir="return"/>
-    </method>
+    </attribute>
+
+    <attribute name="nominalState" type="MachineState" readonly="yes">
+      <desc>Returns suitable machine state for the VM execution state. Useful
+        for choosing a sensible machine state after a complex operation which
+        failed or otherwise resulted in an unclear situation.
+      </desc>
+    </attribute>
 
 <if target="midl">
     <method name="assignMachine">
@@ -18687,6 +18535,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="reconfigureMediumAttachments">
+      <desc>
+        Reconfigure all specified medium attachments in one go, making sure
+        the current state corresponds to the specified medium.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type is not direct.
+        </result>
+      </desc>
+      <param name="attachments" type="IMediumAttachment" dir="in" safearray="yes">
+        <desc>Array containing the medium attachments which need to be
+          reconfigured.</desc>
+      </param>
+    </method>
+
     <method name="enableVMMStatistics">
       <desc>
         Enables or disables collection of VMM RAM statistics.
@@ -18750,21 +18616,43 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         code. The reason code can be interpreted by device/drivers and thus it
         might behave slightly differently than a normal VM save state.
 
+        This call is fully synchronous, and the caller is expected to have set
+        the machine state appropriately (and has to set the follow-up machine
+        state if this call failed).
+
         <result name="VBOX_E_INVALID_VM_STATE">
-          Virtual machine state neither Running nor Paused.
+          Virtual machine state is not one of the expected values.
         </result>
         <result name="VBOX_E_FILE_ERROR">
           Failed to create directory for saved state file.
         </result>
-        <see><link to="IConsole::saveState"/></see>
+        <see><link to="IMachine::saveState"/></see>
       </desc>
 
       <param name="reason" type="Reason" dir="in">
         <desc>Specify the best matching reason code please.</desc>
       </param>
-      <param name="progress" type="IProgress" dir="return">
+      <param name="progress" type="IProgress" dir="in">
         <desc>Progress object to track the operation completion.</desc>
       </param>
+      <param name="stateFilePath" type="wstring" dir="in">
+        <desc>File path the VM process must save the execution state to.</desc>
+      </param>
+      <param name="pauseVM" type="boolean" dir="in">
+        <desc>The VM should be paused before saving state. It is automatically
+        unpaused on error in the "vanilla save state" case.</desc>
+      </param>
+      <param name="leftPaused" type="boolean" dir="return">
+        <desc>Returns if the VM was left in paused state, which is necessary
+        in many situations (snapshots, teleportation).</desc>
+      </param>
+    </method>
+
+    <method name="cancelSaveStateWithReason">
+      <desc>
+        Internal method for cancelling a VM save state.
+        <see><link to="IInternalSessionControl::saveStateWithReason"/></see>
+      </desc>
     </method>
 
   </interface>

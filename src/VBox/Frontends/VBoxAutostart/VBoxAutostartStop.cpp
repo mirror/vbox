@@ -50,6 +50,7 @@ typedef struct AUTOSTOPVM
 static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
 {
     HRESULT rc = S_OK;
+    ComPtr<IMachine> machine;
     ComPtr<IProgress> progress;
 
     do
@@ -82,7 +83,8 @@ static HRESULT autostartSaveVMState(ComPtr<IConsole> &console)
                 break;
         }
 
-        CHECK_ERROR(console, SaveState(progress.asOutParam()));
+        CHECK_ERROR(console, COMGETTER(Machine)(machine.asOutParam()));
+        CHECK_ERROR(machine, SaveState(progress.asOutParam()));
         if (FAILED(rc))
         {
             if (!fPaused)

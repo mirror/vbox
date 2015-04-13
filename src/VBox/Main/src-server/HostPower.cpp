@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -138,12 +138,11 @@ void HostPowerService::notify(Reason_T aReason)
             size_t saved = 0;
 
             /* save running VMs */
-            SessionMachinesList::const_iterator it2 = machines.begin();
-            for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
-                 it != controls.end() && it2 != machines.end();
-                 ++it, ++it2)
+            for (SessionMachinesList::const_iterator it = machines.begin();
+                 it != machines.end();
+                 ++it)
             {
-                ComPtr<SessionMachine> pMachine = *it2;
+                ComPtr<SessionMachine> pMachine = *it;
                 rc = pMachine->GetExtraData(Bstr("VBoxInternal2/SavestateOnBatteryLow").raw(),
                                             value.asOutParam());
                 int fPerVM = 0;
@@ -159,12 +158,11 @@ void HostPowerService::notify(Reason_T aReason)
                 /* default is true */
                 if (fGlobal + fPerVM >= 0)
                 {
-                    ComPtr<IInternalSessionControl> pControl = *it;
                     ComPtr<IProgress> progress;
 
-                    /* note that SaveStateWithReason() will simply return a failure
-                     * if the VM is in an inappropriate state */
-                    rc = pControl->SaveStateWithReason(Reason_HostBatteryLow, progress.asOutParam());
+                    /* SessionMachine::i_saveStateWithReason() will return
+                     * a failure if the VM is in an inappropriate state */
+                    rc = pMachine->i_saveStateWithReason(Reason_HostBatteryLow, progress);
                     if (FAILED(rc))
                     {
                         LogRel(("SaveState '%s' failed with %Rhrc\n", pMachine->i_getName().c_str(), rc));

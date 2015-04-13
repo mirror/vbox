@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -190,8 +190,8 @@ public:
     bool confirmPowerOffMachine(const QString &strNames) const;
     void cannotPauseMachine(const CConsole &console) const;
     void cannotResumeMachine(const CConsole &console) const;
-    void cannotDiscardSavedState(const CConsole &console) const;
-    void cannotSaveMachineState(const CConsole &console);
+    void cannotDiscardSavedState(const CMachine &machine) const;
+    void cannotSaveMachineState(const CMachine &machine);
     void cannotSaveMachineState(const CProgress &progress, const QString &strMachineName);
     void cannotACPIShutdownMachine(const CConsole &console) const;
     void cannotPowerDownMachine(const CConsole &console) const;
@@ -202,11 +202,11 @@ public:
     bool confirmSnapshotRemoval(const QString &strSnapshotName) const;
     bool warnAboutSnapshotRemovalFreeSpace(const QString &strSnapshotName, const QString &strTargetImageName,
                                            const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
-    void cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent = 0) const;
+    void cannotTakeSnapshot(const CMachine &machine, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-    bool cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
+    bool cannotRestoreSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
     bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
+    void cannotRemoveSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
     /* API: Global settings warnings: */

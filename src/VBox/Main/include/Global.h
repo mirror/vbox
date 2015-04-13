@@ -96,34 +96,11 @@ public:
      * recommended way to detect if the VM is online (being executed in a
      * dedicated process) or not. Note that some online states are also
      * transitional states (see #IsTransitional()).
-     *
-     * @remarks Saving may actually be an offline state according to the
-     *          documentation (offline snapshot).
      */
     static bool IsOnline(MachineState_T aState)
     {
-#if 0
         return aState >= MachineState_FirstOnline &&
                aState <= MachineState_LastOnline;
-#else
-        switch (aState)
-        {
-            case MachineState_Running:
-            case MachineState_Paused:
-            case MachineState_Teleporting:
-            case MachineState_LiveSnapshotting:
-            case MachineState_Stuck:
-            case MachineState_Starting:
-            case MachineState_Stopping:
-            case MachineState_Saving:
-            case MachineState_Restoring:
-            case MachineState_TeleportingPausedVM:
-            case MachineState_TeleportingIn:
-                return true;
-            default:
-                return false;
-        }
-#endif
     }
 
     /**
@@ -135,28 +112,8 @@ public:
      */
     static bool IsTransient(MachineState_T aState)
     {
-#if 0
         return aState >= MachineState_FirstTransient &&
                aState <= MachineState_LastTransient;
-#else
-        switch (aState)
-        {
-            case MachineState_Teleporting:
-            case MachineState_LiveSnapshotting:
-            case MachineState_Starting:
-            case MachineState_Stopping:
-            case MachineState_Saving:
-            case MachineState_Restoring:
-            case MachineState_TeleportingPausedVM:
-            case MachineState_TeleportingIn:
-            case MachineState_RestoringSnapshot:
-            case MachineState_DeletingSnapshot:
-            case MachineState_SettingUp:
-                return true;
-            default:
-                return false;
-        }
-#endif
     }
 
     /**

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -996,7 +996,7 @@ HRESULT Console::teleport(const com::Utf8Str &aHostname, ULONG aTcpport, const c
         if (SUCCEEDED(hrc))
         {
             ptrProgress.queryInterfaceTo(aProgress.asOutParam());
-            mptrCancelableProgress = ptrProgress;
+            mptrCancelableProgress = aProgress;
         }
         else
             ptrProgress->Cancel();

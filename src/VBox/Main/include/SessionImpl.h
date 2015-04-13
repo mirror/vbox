@@ -52,16 +52,21 @@ public:
 
 private:
 
-    // Wrapped Isession properties
+    // Wrapped ISession properties
     HRESULT getState(SessionState_T *aState);
     HRESULT getType(SessionType_T *aType);
     HRESULT getMachine(ComPtr<IMachine> &aMachine);
     HRESULT getConsole(ComPtr<IConsole> &aConsole);
 
-    // Wrapped Isession methods
+    // Wrapped ISession methods
     HRESULT unlockMachine();
+
+    // Wrapped IInternalSessionControl properties
     HRESULT getPID(ULONG *aPid);
-    HRESULT getRemoteConsole(ComPtr<IConsole> &aConsole);
+    HRESULT getRemoteConsole(ComPtr<IConsole> &aRemoteConsole);
+    HRESULT getNominalState(MachineState_T *aNominalState);
+
+    // Wrapped IInternalSessionControl methods
 #ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     HRESULT assignMachine(const ComPtr<IMachine> &aMachine,
                           LockType_T aLockType,
@@ -120,12 +125,19 @@ private:
                               ULONG aSourceIdx,
                               ULONG aTargetIdx,
                               const ComPtr<IProgress> &aProgress);
+    HRESULT reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments);
     HRESULT enableVMMStatistics(BOOL aEnable);
     HRESULT pauseWithReason(Reason_T aReason);
     HRESULT resumeWithReason(Reason_T aReason);
     HRESULT saveStateWithReason(Reason_T aReason,
-                                ComPtr<IProgress> &aProgress);
-    HRESULT unlockMachine(bool aFinalRelease, bool aFromServer);
+                                const ComPtr<IProgress> &aProgress,
+                                const Utf8Str &aStateFilePath,
+                                BOOL aPauseVM,
+                                BOOL *aLeftPaused);
+    HRESULT cancelSaveStateWithReason();
+
+
+    HRESULT i_unlockMachine(bool aFinalRelease, bool aFromServer);
 
     SessionState_T mState;
     SessionType_T mType;

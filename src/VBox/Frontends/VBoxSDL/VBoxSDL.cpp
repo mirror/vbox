@@ -1837,7 +1837,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gpMachine->COMGETTER(State)(&machineState);
         if (machineState == MachineState_Saved)
         {
-            CHECK_ERROR(gpConsole, DiscardSavedState(true /* fDeleteFile */));
+            CHECK_ERROR(gpMachine, DiscardSavedState(true /* fDeleteFile */));
         }
         /*
          * If there are snapshots, discard the current state,
@@ -1854,7 +1854,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             if (FAILED(rc))
                 goto leave;
 
-            CHECK_ERROR(gpConsole, RestoreSnapshot(pCurrentSnapshot, gpProgress.asOutParam()));
+            CHECK_ERROR(gpMachine, RestoreSnapshot(pCurrentSnapshot, gpProgress.asOutParam()));
             rc = gpProgress->WaitForCompletion(-1);
         }
     }
@@ -4199,7 +4199,7 @@ void SaveState(void)
     RTThreadYield();
     UpdateTitlebar(TITLEBAR_SAVE);
     gpProgress = NULL;
-    HRESULT rc = gpConsole->SaveState(gpProgress.asOutParam());
+    HRESULT rc = gpMachine->SaveState(gpProgress.asOutParam());
     if (FAILED(rc))
     {
         RTPrintf("Error saving state! rc = 0x%x\n", rc);
@@ -4949,8 +4949,9 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             RTStrPrintf(pszSnapshotName, sizeof(pszSnapshotName), "Snapshot %d", cSnapshots + 1);
             gpProgress = NULL;
             HRESULT rc;
-            CHECK_ERROR(gpConsole, TakeSnapshot(Bstr(pszSnapshotName).raw(),
+            CHECK_ERROR(gpMachine, TakeSnapshot(Bstr(pszSnapshotName).raw(),
                                                 Bstr("Taken by VBoxSDL").raw(),
+						TRUE,
                                                 gpProgress.asOutParam()));
             if (FAILED(rc))
             {

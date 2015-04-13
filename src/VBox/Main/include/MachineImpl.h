@@ -124,6 +124,9 @@ public:
          */
         struct Session
         {
+            /** Type of lock which created this session */
+            LockType_T mLockType;
+
             /** Control of the direct session opened by lockMachine() */
             ComPtr<IInternalSessionControl> mDirectControl;
 
@@ -596,7 +599,7 @@ public:
                                                             fSetError);
     }
 
-
+    static HRESULT i_setErrorStatic(HRESULT aResultCode, const char *pcszMsg, ...);
 
 protected:
 
@@ -711,9 +714,6 @@ protected:
     void i_copyFrom(Machine *aThat);
     bool i_isControllerHotplugCapable(StorageControllerType_T enmCtrlType);
 
-    struct DeleteTask;
-    static DECLCALLBACK(int) deleteThread(RTTHREAD Thread, void *pvUser);
-    HRESULT i_deleteTaskWorker(DeleteTask &task);
     Utf8Str i_getExtraData(const Utf8Str &strKey);
 
 #ifdef VBOX_WITH_GUEST_PROPS
@@ -777,6 +777,60 @@ protected:
     Backupable<USBControllerList>      mUSBControllers;
 
     uint64_t                        uRegistryNeedsSaving;
+
+    /**
+     * Abstract base class for all Machine or SessionMachine related
+     * asynchronous tasks. This is necessary since RTThreadCreate cannot call
+     * a (non-static) method as its thread function, so instead we have it call
+     * the static Machine::taskHandler, which then calls the handler() method
+     * in here (implemented by the subclasses).
+     */
+    struct Task
+    {
+        Task(Machine *m, Progress *p, const Utf8Str &t)
+            : m_pMachine(m),
+              m_machineCaller(m),
+              m_pProgress(p),
+              m_strTaskName(t),
+              m_machineStateBackup(m->mData->mMachineState) // save the current machine state
+        {}
+
+        HRESULT createThread()
+        {
+            int vrc = RTThreadCreate(NULL,
+                                     taskHandler,
+                                     (void *)this,
+                                     0,
+                                     RTTHREADTYPE_MAIN_WORKER,
+                                     0,
+                                     m_strTaskName.c_str());
+            if (RT_FAILURE(vrc))
+            {
+                HRESULT rc = Machine::i_setErrorStatic(E_FAIL, Machine::tr("Could not create thread \"%s\" (%Rrc)"), m_strTaskName.c_str(), vrc);
+                delete this;
+                return rc;
+            }
+            return S_OK;
+        }
+
+        void modifyBackedUpState(MachineState_T s)
+        {
+            *const_cast<MachineState_T *>(&m_machineStateBackup) = s;
+        }
+
+        virtual void handler() = 0;
+
+        ComObjPtr<Machine>       m_pMachine;
+        AutoCaller                      m_machineCaller;
+        ComObjPtr<Progress>             m_pProgress;
+        Utf8Str                         m_strTaskName;
+        const MachineState_T            m_machineStateBackup;
+    };
+
+    struct DeleteConfigTask;
+    void i_deleteConfigHandler(DeleteConfigTask &task);
+
+    static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 
     friend class SessionMachine;
     friend class SnapshotMachine;
@@ -1130,11 +1184,26 @@ private:
                     CloneMode_T aMode,
                     const std::vector<CloneOptions_T> &aOptions,
                     ComPtr<IProgress> &aProgress);
+    HRESULT saveState(ComPtr<IProgress> &aProgress);
+    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
+    HRESULT discardSavedState(BOOL aFRemoveFile);
+    HRESULT takeSnapshot(const com::Utf8Str &aName,
+                         const com::Utf8Str &aDescription,
+                         BOOL aPause,
+                         ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshot(const com::Guid &aId,
+                           ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshotAndAllChildren(const com::Guid &aId,
+                                         ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshotRange(const com::Guid &aStartId,
+                                const com::Guid &aEndId,
+                                ComPtr<IProgress> &aProgress);
+    HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
+                            ComPtr<IProgress> &aProgress);
 
     // wrapped IInternalMachineControl properties
 
     // wrapped IInternalMachineControl methods
-    HRESULT setRemoveSavedStateFile(BOOL aRemove);
     HRESULT updateState(MachineState_T aState);
     HRESULT beginPowerUp(const ComPtr<IProgress> &aProgress);
     HRESULT endPowerUp(LONG aResult);
@@ -1144,36 +1213,15 @@ private:
     HRESULT runUSBDeviceFilters(const ComPtr<IUSBDevice> &aDevice,
                                 BOOL *aMatched,
                                 ULONG *aMaskedInterfaces);
-    HRESULT captureUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
+    HRESULT captureUSBDevice(const com::Guid &aId,
+                             const com::Utf8Str &aCaptureFilename);
     HRESULT detachUSBDevice(const com::Guid &aId,
                             BOOL aDone);
     HRESULT autoCaptureUSBDevices();
     HRESULT detachAllUSBDevices(BOOL aDone);
     HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
                          ComPtr<IProgress> &aProgress);
-    HRESULT beginSavingState(ComPtr<IProgress> &aProgress,
-                             com::Utf8Str &aStateFilePath);
-    HRESULT endSavingState(LONG aResult,
-                           const com::Utf8Str &aErrMsg);
-    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
-    HRESULT beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
-                                const com::Utf8Str &aName,
-                                const com::Utf8Str &aDescription,
-                                const ComPtr<IProgress> &aConsoleProgress,
-                                BOOL aFTakingSnapshotOnline,
-                                com::Utf8Str &aStateFilePath);
-    HRESULT endTakingSnapshot(BOOL aSuccess);
-    HRESULT deleteSnapshot(const ComPtr<IConsole> &aInitiator,
-                           const com::Guid &aStartId,
-                           const com::Guid &aEndId,
-                           BOOL aDeleteAllChildren,
-                           MachineState_T *aMachineState,
-                           ComPtr<IProgress> &aProgress);
     HRESULT finishOnlineMergeMedium();
-    HRESULT restoreSnapshot(const ComPtr<IConsole> &aInitiator,
-                            const ComPtr<ISnapshot> &aSnapshot,
-                            MachineState_T *aMachineState,
-                            ComPtr<IProgress> &aProgress);
     HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                 std::vector<com::Utf8Str> &aValues,
                                 std::vector<LONG64> &aTimestamps,
@@ -1202,10 +1250,6 @@ private:
                                ULONG aMemSharedTotal,
                                ULONG aVmNetRx,
                                ULONG aVmNetTx);
-
-
-
-
 };
 
 // SessionMachine class
@@ -1301,6 +1345,8 @@ public:
     HRESULT i_lockMedia();
     HRESULT i_unlockMedia();
 
+    HRESULT i_saveStateWithReason(Reason_T aReason, ComPtr<IProgress> &aProgress);
+
 private:
 
     // wrapped IInternalMachineControl properties
@@ -1323,29 +1369,7 @@ private:
     HRESULT detachAllUSBDevices(BOOL aDone);
     HRESULT onSessionEnd(const ComPtr<ISession> &aSession,
                          ComPtr<IProgress> &aProgress);
-    HRESULT beginSavingState(ComPtr<IProgress> &aProgress,
-                             com::Utf8Str &aStateFilePath);
-    HRESULT endSavingState(LONG aResult,
-                           const com::Utf8Str &aErrMsg);
-    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
-    HRESULT beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
-                                const com::Utf8Str &aName,
-                                const com::Utf8Str &aDescription,
-                                const ComPtr<IProgress> &aConsoleProgress,
-                                BOOL aFTakingSnapshotOnline,
-                                com::Utf8Str &aStateFilePath);
-    HRESULT endTakingSnapshot(BOOL aSuccess);
-    HRESULT deleteSnapshot(const ComPtr<IConsole> &aInitiator,
-                           const com::Guid &aStartId,
-                           const com::Guid &aEndId,
-                           BOOL aDeleteAllChildren,
-                           MachineState_T *aMachineState,
-                           ComPtr<IProgress> &aProgress);
     HRESULT finishOnlineMergeMedium();
-    HRESULT restoreSnapshot(const ComPtr<IConsole> &aInitiator,
-                            const ComPtr<ISnapshot> &aSnapshot,
-                            MachineState_T *aMachineState,
-                            ComPtr<IProgress> &aProgress);
     HRESULT pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                 std::vector<com::Utf8Str> &aValues,
                                 std::vector<LONG64> &aTimestamps,
@@ -1379,32 +1403,57 @@ private:
     struct ConsoleTaskData
     {
         ConsoleTaskData()
-            : mLastState(MachineState_Null), mDeleteSnapshotInfo(NULL)
+            : mLastState(MachineState_Null),
+              mDeleteSnapshotInfo(NULL)
         { }
 
         MachineState_T mLastState;
         ComObjPtr<Progress> mProgress;
 
-        // used when taking snapshot
-        ComObjPtr<Snapshot> mSnapshot;
-
-        // used when deleting online snapshot
+        // used when deleting online snaphshot
         void *mDeleteSnapshotInfo;
-
-        // used when saving state (either as part of a snapshot or separate)
-        Utf8Str strStateFilePath;
     };
 
+    struct SaveStateTask;
     struct SnapshotTask;
+    struct TakeSnapshotTask;
     struct DeleteSnapshotTask;
     struct RestoreSnapshotTask;
 
+    friend struct TakeSnapshotTask;
     friend struct DeleteSnapshotTask;
     friend struct RestoreSnapshotTask;
 
-    HRESULT i_endSavingState(HRESULT aRC, const Utf8Str &aErrMsg);
+    void i_saveStateHandler(SaveStateTask &aTask);
+
+    // Override some functionality for SessionMachine, this is where the
+    // real action happens (the Machine methods are just dummies).
+    HRESULT saveState(ComPtr<IProgress> &aProgress);
+    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
+    HRESULT discardSavedState(BOOL aFRemoveFile);
+    HRESULT takeSnapshot(const com::Utf8Str &aName,
+                         const com::Utf8Str &aDescription,
+                         BOOL aPause,
+                         ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshot(const com::Guid &aId,
+                           ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshotAndAllChildren(const com::Guid &aId,
+                                         ComPtr<IProgress> &aProgress);
+    HRESULT deleteSnapshotRange(const com::Guid &aStartId,
+                                const com::Guid &aEndId,
+                                ComPtr<IProgress> &aProgress);
+    HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
+                            ComPtr<IProgress> &aProgress);
+
     void i_releaseSavedStateFile(const Utf8Str &strSavedStateFile, Snapshot *pSnapshotToIgnore);
 
+    void i_takeSnapshotHandler(TakeSnapshotTask &aTask);
+    static void i_takeSnapshotProgressCancelCallback(void *pvUser);
+    HRESULT i_finishTakingSnapshot(TakeSnapshotTask &aTask, AutoWriteLock &alock, bool aSuccess);
+    HRESULT i_deleteSnapshot(const com::Guid &aStartId,
+                             const com::Guid &aEndId,
+                             BOOL aDeleteAllChildren,
+                             ComPtr<IProgress> &aProgress);
     void i_deleteSnapshotHandler(DeleteSnapshotTask &aTask);
     void i_restoreSnapshotHandler(RestoreSnapshotTask &aTask);
 
@@ -1450,8 +1499,6 @@ private:
     ClientToken *mClientToken;
 
     int miNATNetworksStarted;
-
-    static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 };
 
 // SnapshotMachine class

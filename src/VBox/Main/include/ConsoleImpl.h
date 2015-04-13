@@ -154,6 +154,7 @@ public:
     ConsoleVRDPServer *i_consoleVRDPServer() const { return mConsoleVRDPServer; }
 
     HRESULT i_updateMachineState(MachineState_T aMachineState);
+    HRESULT i_getNominalState(MachineState_T &aNominalState);
 
     // events from IInternalSessionControl
     HRESULT i_onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
@@ -187,6 +188,7 @@ public:
     HRESULT i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                 ULONG aSourceIdx, ULONG aTargetIdx,
                                 IProgress *aProgress);
+    HRESULT i_reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments);
     int i_hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName);
     VMMDev *i_getVMMDev() { return m_pVMMDev; }
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -229,8 +231,9 @@ public:
     void i_enableVMMStatistics(BOOL aEnable);
 
     HRESULT i_pause(Reason_T aReason);
-    HRESULT i_resume(Reason_T aReason);
-    HRESULT i_saveState(Reason_T aReason, IProgress **aProgress);
+    HRESULT i_resume(Reason_T aReason, AutoWriteLock &alock);
+    HRESULT i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, bool fPauseVM, bool &fLeftPaused);
+    HRESULT i_cancelSaveState();
 
     // callback callers (partly; for some events console callbacks are notified
     // directly from IInternalSessionControl event handlers declared above)
@@ -317,9 +320,6 @@ private:
     HRESULT sleepButton();
     HRESULT getPowerButtonHandled(BOOL *aHandled);
     HRESULT getGuestEnteredACPIMode(BOOL *aEntered);
-    HRESULT saveState(ComPtr<IProgress> &aProgress);
-    HRESULT adoptSavedState(const com::Utf8Str &aSavedStateFile);
-    HRESULT discardSavedState(BOOL aFRemoveFile);
     HRESULT getDeviceActivity(const std::vector<DeviceType_T> &aType,
                               std::vector<DeviceActivity_T> &aActivity);
     HRESULT attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCaptureFilename);
@@ -334,18 +334,6 @@ private:
                                BOOL aWritable,
                                BOOL aAutomount);
     HRESULT removeSharedFolder(const com::Utf8Str &aName);
-    HRESULT takeSnapshot(const com::Utf8Str &aName,
-                         const com::Utf8Str &aDescription,
-                         ComPtr<IProgress> &aProgress);
-    HRESULT deleteSnapshot(const com::Guid &aId,
-                           ComPtr<IProgress> &aProgress);
-    HRESULT deleteSnapshotAndAllChildren(const com::Guid &aId,
-                                         ComPtr<IProgress> &aProgress);
-    HRESULT deleteSnapshotRange(const com::Guid &aStartId,
-                                const com::Guid &aEndId,
-                                ComPtr<IProgress> &aProgress);
-    HRESULT restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
-                            ComPtr<IProgress> &aProgress);
     HRESULT teleport(const com::Utf8Str &aHostname,
                      ULONG aTcpport,
                      const com::Utf8Str &aPassword,
@@ -750,8 +738,6 @@ private:
     HRESULT i_doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent);
     HRESULT i_doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PUVM pUVM, bool fSilent);
 
-    static DECLCALLBACK(int)    i_fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
-
     static DECLCALLBACK(int)    i_stateProgressCallback(PUVM pUVM, unsigned uPercent, void *pvUser);
 
     static DECLCALLBACK(void)   i_genericVMSetErrorCallback(PUVM pUVM, void *pvUser, int rc, RT_SRC_POS_DECL,
@@ -765,7 +751,6 @@ private:
     void                        i_detachAllUSBDevices(bool aDone);
 
     static DECLCALLBACK(int)    i_powerUpThread(RTTHREAD Thread, void *pvUser);
-    static DECLCALLBACK(int)    i_saveStateThread(RTTHREAD Thread, void *pvUser);
     static DECLCALLBACK(int)    i_powerDownThread(RTTHREAD Thread, void *pvUser);
 
     static DECLCALLBACK(int)    i_vmm2User_SaveState(PCVMM2USERMETHODS pThis, PUVM pUVM);
@@ -996,7 +981,7 @@ private:
      * Console::PowerDown, which automatically cancels out the running snapshot /
      * teleportation operation, will cancel the teleportation / live snapshot
      * operation before starting. */
-    ComObjPtr<Progress> mptrCancelableProgress;
+    ComPtr<IProgress> mptrCancelableProgress;
 
     ComPtr<IEventListener> mVmListener;
 

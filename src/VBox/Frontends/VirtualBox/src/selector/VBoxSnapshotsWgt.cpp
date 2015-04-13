@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -640,16 +640,16 @@ void VBoxSnapshotsWgt::sltRestoreSnapshot(bool fSuppressNonCriticalWarnings /* =
         return;
 
     /* Restore chosen snapshot: */
-    CConsole console = session.GetConsole();
-    CProgress progress = console.RestoreSnapshot(snapshot);
-    if (console.isOk())
+    CMachine machine = session.GetMachine();
+    CProgress progress = machine.RestoreSnapshot(snapshot);
+    if (machine.isOk())
     {
         msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_restore_90px.png");
         if (progress.GetResultCode() != 0)
             msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), mMachine.GetName());
     }
     else
-        msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), mMachine.GetName());
+        msgCenter().cannotRestoreSnapshot(machine, snapshot.GetName(), mMachine.GetName());
 
     /* Unlock machine finally: */
     session.UnlockMachine();
@@ -687,9 +687,10 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
     if (session.isNull())
         return;
 
-    CConsole console = session.GetConsole();
-    CProgress progress = console.DeleteSnapshot (snapId);
-    if (console.isOk())
+    /* Remove chosen snapshot: */
+    CMachine machine = session.GetMachine();
+    CProgress progress = machine.DeleteSnapshot(snapId);
+    if (machine.isOk())
     {
         /* Show the progress dialog */
         msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_discard_90px.png");
@@ -698,7 +699,7 @@ void VBoxSnapshotsWgt::sltDeleteSnapshot()
             msgCenter().cannotRemoveSnapshot(progress,  snapshot.GetName(), mMachine.GetName());
     }
     else
-        msgCenter().cannotRemoveSnapshot(console,  snapshot.GetName(), mMachine.GetName());
+        msgCenter().cannotRemoveSnapshot(machine,  snapshot.GetName(), mMachine.GetName());
 
     session.UnlockMachine();
 }
@@ -828,103 +829,71 @@ bool VBoxSnapshotsWgt::takeSnapshot()
 
     if (fIsValid)
     {
-        /* Get corresponding console object also: */
-        CConsole console = session.GetConsole();
-        /* Remember runtime state: */
-        bool fAtRuntime = mMachine.GetState() == KMachineState_Running;
-        /* Remember paused state: */
-        bool fWasPaused = mMachine.GetState() == KMachineState_Paused ||
-                          mMachine.GetState() == KMachineState_TeleportingPausedVM;
+        /* Get corresponding machine object also: */
+        CMachine machine = session.GetMachine();
 
-        /* Pause VM if necessary: */
-        if (fIsValid && fAtRuntime && !fWasPaused)
+        /* Create take-snapshot dialog: */
+        QWidget *pDlgParent = windowManager().realParentWindow(this);
+        QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, mMachine);
+        windowManager().registerNewParent(pDlg, pDlgParent);
+
+        /* Assign corresponding icon: */
+        pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));
+
+        /* Search for the max available snapshot index: */
+        int iMaxSnapShotIndex = 0;
+        QString snapShotName = tr("Snapshot %1");
+        QRegExp regExp(QString("^") + snapShotName.arg("([0-9]+)") + QString("$"));
+        QTreeWidgetItemIterator iterator(mTreeWidget);
+        while (*iterator)
         {
-            /* Pausing VM: */
-            console.Pause();
-            if (!console.isOk())
-            {
-                msgCenter().cannotPauseMachine(console);
-                fIsValid = false;
-            }
+            QString snapShot = static_cast<SnapshotWgtItem*>(*iterator)->text(0);
+            int pos = regExp.indexIn(snapShot);
+            if (pos != -1)
+                iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
+            ++iterator;
         }
+        pDlg->mLeName->setText(snapShotName.arg(iMaxSnapShotIndex + 1));
 
-        if (fIsValid)
+        /* Exec the dialog: */
+        bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
+
+        /* Is the dialog still valid? */
+        if (pDlg)
         {
-            /* Create take-snapshot dialog: */
-            QWidget *pDlgParent = windowManager().realParentWindow(this);
-            QPointer<VBoxTakeSnapshotDlg> pDlg = new VBoxTakeSnapshotDlg(pDlgParent, mMachine);
-            windowManager().registerNewParent(pDlg, pDlgParent);
+            /* Acquire variables: */
+            QString strSnapshotName = pDlg->mLeName->text().trimmed();
+            QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
 
-            /* Assign corresponding icon: */
-            pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(mMachine.GetOSTypeId()));
+            /* Destroy dialog early: */
+            delete pDlg;
 
-            /* Search for the max available snapshot index: */
-            int iMaxSnapShotIndex = 0;
-            QString snapShotName = tr("Snapshot %1");
-            QRegExp regExp(QString("^") + snapShotName.arg("([0-9]+)") + QString("$"));
-            QTreeWidgetItemIterator iterator(mTreeWidget);
-            while (*iterator)
+            /* Was the dialog accepted? */
+            if (fDialogAccepted)
             {
-                QString snapShot = static_cast<SnapshotWgtItem*>(*iterator)->text(0);
-                int pos = regExp.indexIn(snapShot);
-                if (pos != -1)
-                    iMaxSnapShotIndex = regExp.cap(1).toInt() > iMaxSnapShotIndex ? regExp.cap(1).toInt() : iMaxSnapShotIndex;
-                ++iterator;
-            }
-            pDlg->mLeName->setText(snapShotName.arg(iMaxSnapShotIndex + 1));
-
-            /* Exec the dialog: */
-            bool fDialogAccepted = pDlg->exec() == QDialog::Accepted;
-
-            /* Is the dialog still valid? */
-            if (pDlg)
-            {
-                /* Acquire variables: */
-                QString strSnapshotName = pDlg->mLeName->text().trimmed();
-                QString strSnapshotDescription = pDlg->mTeDescription->toPlainText();
-
-                /* Destroy dialog early: */
-                delete pDlg;
-
-                /* Was the dialog accepted? */
-                if (fDialogAccepted)
+                /* Prepare the take-snapshot progress: */
+                CProgress progress = machine.TakeSnapshot(strSnapshotName, strSnapshotDescription, true);
+                if (machine.isOk())
                 {
-                    /* Prepare the take-snapshot progress: */
-                    CProgress progress = console.TakeSnapshot(strSnapshotName, strSnapshotDescription);
-                    if (console.isOk())
+                    /* Show the take-snapshot progress: */
+                    msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png");
+                    if (!progress.isOk() || progress.GetResultCode() != 0)
                     {
-                        /* Show the take-snapshot progress: */
-                        msgCenter().showModalProgressDialog(progress, mMachine.GetName(), ":/progress_snapshot_create_90px.png");
-                        if (!progress.isOk() || progress.GetResultCode() != 0)
-                        {
-                            msgCenter().cannotTakeSnapshot(progress, mMachine.GetName());
-                            fIsValid = false;
-                        }
-                    }
-                    else
-                    {
-                        msgCenter().cannotTakeSnapshot(console, mMachine.GetName());
+                        msgCenter().cannotTakeSnapshot(progress, mMachine.GetName());
                         fIsValid = false;
                     }
                 }
                 else
+                {
+                    msgCenter().cannotTakeSnapshot(machine, mMachine.GetName());
                     fIsValid = false;
+                }
             }
             else
                 fIsValid = false;
         }
-
-        /* Resume VM if necessary: */
-        if (fIsValid && fAtRuntime && !fWasPaused)
-        {
-            /* Resuming VM: */
-            console.Resume();
-            if (!console.isOk())
-            {
-                msgCenter().cannotResumeMachine(console);
-                fIsValid = false;
-            }
-        }
+        else
+            fIsValid = false;
 
         /* Unlock machine finally: */
         session.UnlockMachine();

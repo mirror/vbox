@@ -249,9 +249,13 @@ def removeVm(ctx, mach):
     uuid = mach.id
     print "removing machine ", mach.name, "with UUID", uuid
     cmdClosedVm(ctx, mach, detachVmDevice, ["ALL"])
-    mach = mach.unregister(ctx['global'].constants.CleanupMode_Full)
+    disks = mach.unregister(ctx['global'].constants.CleanupMode_Full)
     if mach:
-        mach.deleteSettings()
+        progress = mach.deleteConfig(disks)
+        if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
+            print "Success!"
+        else:
+            reportError(ctx, progress)
     # update cache
     getMachines(ctx, True)
 
@@ -717,7 +721,7 @@ def cmdExistingVm(ctx, mach, cmd, args):
            'guest':           lambda: guestExec(ctx, mach, console, args),
            'ginfo':           lambda: ginfo(ctx, console, args),
            'guestlambda':     lambda: args[0](ctx, mach, console, args[1:]),
-           'save':            lambda: progressBar(ctx, console.saveState()),
+           'save':            lambda: progressBar(ctx, session.machine.saveState()),
            'screenshot':      lambda: takeScreenshot(ctx, console, args),
            'teleport':        lambda: teleport(ctx, session, console, args),
            'gueststats':      lambda: guestStats(ctx, console, args),
@@ -2630,7 +2634,7 @@ def snapshotCmd(ctx, args):
             desc = args[4]
         else:
             desc = ""
-        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, console.takeSnapshot(name, desc)))
+        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.takeSnapshot(name, desc, true)))
         return 0
 
     if cmd == 'restore':
@@ -2639,7 +2643,7 @@ def snapshotCmd(ctx, args):
             return 0
         name = args[3]
         snap = mach.findSnapshot(name)
-        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, console.restoreSnapshot(snap)))
+        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.restoreSnapshot(snap)))
         return 0
 
     if cmd == 'restorecurrent':
@@ -2647,7 +2651,7 @@ def snapshotCmd(ctx, args):
             print "usage: snapshot vm restorecurrent"
             return 0
         snap = mach.currentSnapshot()
-        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, console.restoreSnapshot(snap)))
+        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.restoreSnapshot(snap)))
         return 0
 
     if cmd == 'delete':
@@ -2656,7 +2660,7 @@ def snapshotCmd(ctx, args):
             return 0
         name = args[3]
         snap = mach.findSnapshot(name)
-        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, console.deleteSnapshot(snap.id)))
+        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.deleteSnapshot(snap.id)))
         return 0
 
     print "Command '%s' is unknown" % (cmd)

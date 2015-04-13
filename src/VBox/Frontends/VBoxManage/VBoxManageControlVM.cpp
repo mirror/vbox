@@ -261,7 +261,7 @@ int handleControlVM(HandlerArg *a)
             }
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR(console, SaveState(progress.asOutParam()));
+            CHECK_ERROR(sessionMachine, SaveState(progress.asOutParam()));
             if (FAILED(rc))
             {
                 if (!fPaused)

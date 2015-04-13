@@ -122,7 +122,7 @@ void Session::uninit()
         Assert(mState == SessionState_Locked ||
                mState == SessionState_Spawning);
 
-        HRESULT rc = unlockMachine(true /* aFinalRelease */, false /* aFromServer */);
+        HRESULT rc = i_unlockMachine(true /* aFinalRelease */, false /* aFromServer */);
         AssertComRC(rc);
     }
 
@@ -166,16 +166,15 @@ HRESULT Session::getMachine(ComPtr<IMachine> &aMachine)
         rc = mRemoteMachine.queryInterfaceTo(aMachine.asOutParam());
     if (FAILED(rc))
     {
-        /** @todo VBox 3.3: replace E_FAIL with rc here. */
 #ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
-            setError(E_FAIL, tr("Failed to query the session machine (%Rhrc)"), rc);
+            setError(rc, tr("Failed to query the session machine"));
         else
 #endif
         if (FAILED_DEAD_INTERFACE(rc))
-            setError(E_FAIL, tr("Peer process crashed"));
+            setError(rc, tr("Peer process crashed"));
         else
-            setError(E_FAIL, tr("Failed to query the remote session machine (%Rhrc)"), rc);
+            setError(rc, tr("Failed to query the remote session machine"));
     }
 
     return rc;
@@ -197,16 +196,15 @@ HRESULT Session::getConsole(ComPtr<IConsole> &aConsole)
 
     if (FAILED(rc))
     {
-        /** @todo VBox 3.3: replace E_FAIL with rc here. */
 #ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
-            setError(E_FAIL, tr("Failed to query the console (%Rhrc)"), rc);
+            setError(rc, tr("Failed to query the console"));
         else
 #endif
         if (FAILED_DEAD_INTERFACE(rc))
-            setError(E_FAIL, tr("Peer process crashed"));
+            setError(rc, tr("Peer process crashed"));
         else
-            setError(E_FAIL, tr("Failed to query the remote console (%Rhrc)"), rc);
+            setError(rc, tr("Failed to query the remote console"));
     }
 
     return rc;
@@ -223,7 +221,7 @@ HRESULT Session::unlockMachine()
 
     CHECK_OPEN();
 
-    return unlockMachine(false /* aFinalRelease */, false /* aFromServer */);
+    return i_unlockMachine(false /* aFinalRelease */, false /* aFromServer */);
 }
 
 // IInternalSessionControl methods
@@ -266,6 +264,21 @@ HRESULT Session::getRemoteConsole(ComPtr<IConsole> &aConsole)
 #endif /* VBOX_COM_INPROC_API_CLIENT */
 }
 
+HRESULT Session::getNominalState(MachineState_T *aNominalState)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_getNominalState(*aNominalState);
+#else
+    AssertFailed();
+    return E_NOTIMPL;
+#endif
+}
+
 #ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
                                LockType_T aLockType,
@@ -299,14 +312,21 @@ HRESULT Session::assignMachine(const ComPtr<IMachine> &aMachine,
     mControl = aMachine;
     AssertReturn(!!mControl, E_FAIL);
 
-#ifndef VBOX_COM_INPROC_API_CLIENT
-    HRESULT rc = mConsole.createObject();
-    AssertComRCReturn(rc, rc);
-
-    rc = mConsole->init(aMachine, mControl, aLockType);
-    AssertComRCReturn(rc, rc);
-#else
     HRESULT rc = S_OK;
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    if (aLockType == LockType_VM)
+    {
+        /* This is what is special about VM processes: they have a Console
+         * object which is the root of all VM related activity. */
+        rc = mConsole.createObject();
+        AssertComRCReturn(rc, rc);
+
+        rc = mConsole->init(aMachine, mControl, aLockType);
+        AssertComRCReturn(rc, rc);
+    }
+    else
+        mRemoteMachine = aMachine;
+#else
     mRemoteMachine = aMachine;
 #endif
 
@@ -368,7 +388,7 @@ HRESULT Session::assignRemoteMachine(const ComPtr<IMachine> &aMachine,
                                      const ComPtr<IConsole> &aConsole)
 
 {
-    AssertReturn(aMachine && aConsole, E_INVALIDARG);
+    AssertReturn(aMachine, E_INVALIDARG);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -495,7 +515,7 @@ HRESULT Session::uninitialize()
                         VBOX_E_INVALID_VM_STATE);
 
         /* close ourselves */
-        rc = unlockMachine(false /* aFinalRelease */, true /* aFromServer */);
+        rc = i_unlockMachine(false /* aFinalRelease */, true /* aFromServer */);
     }
     else if (getObjectState().getState() == ObjectState::InUninit)
     {
@@ -720,6 +740,7 @@ HRESULT Session::onDnDModeChange(DnDMode_T aDndMode)
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->i_onDnDModeChange(aDndMode);
 #else
@@ -910,6 +931,23 @@ HRESULT Session::onlineMergeMedium(const ComPtr<IMediumAttachment> &aMediumAttac
 #endif
 }
 
+HRESULT Session::reconfigureMediumAttachments(const std::vector<ComPtr<IMediumAttachment> > &aAttachments)
+{
+    if (mState != SessionState_Locked)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Machine is not locked by session (session state: %s)."),
+                        Global::stringifySessionState(mState));
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_reconfigureMediumAttachments(aAttachments);
+#else
+    AssertFailed();
+    return E_NOTIMPL;
+#endif
+}
+
 HRESULT Session::enableVMMStatistics(BOOL aEnable)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -950,14 +988,15 @@ HRESULT Session::resumeWithReason(Reason_T aReason)
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->i_resume(aReason);
+    AutoWriteLock dummyLock(mConsole COMMA_LOCKVAL_SRC_POS);
+    return mConsole->i_resume(aReason, dummyLock);
 #else
     AssertFailed();
     return E_NOTIMPL;
 #endif
 }
 
-HRESULT Session::saveStateWithReason(Reason_T aReason, ComPtr<IProgress> &aProgress)
+HRESULT Session::saveStateWithReason(Reason_T aReason, const ComPtr<IProgress> &aProgress, const Utf8Str &aStateFilePath, BOOL aPauseVM, BOOL *aLeftPaused)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
@@ -965,7 +1004,26 @@ HRESULT Session::saveStateWithReason(Reason_T aReason, ComPtr<IProgress> &aProgr
 #ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->i_saveState(aReason, aProgress.asOutParam());
+    bool fLeftPaused = false;
+    HRESULT rc = mConsole->i_saveState(aReason, aProgress, aStateFilePath, !!aPauseVM, fLeftPaused);
+    if (aLeftPaused)
+        *aLeftPaused = fLeftPaused;
+    return rc;
+#else
+    AssertFailed();
+    return E_NOTIMPL;
+#endif
+}
+
+HRESULT Session::cancelSaveStateWithReason()
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
+    AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->i_cancelSaveState();
 #else
     AssertFailed();
     return E_NOTIMPL;
@@ -984,7 +1042,7 @@ HRESULT Session::saveStateWithReason(Reason_T aReason, ComPtr<IProgress> &aProgr
  *  @note To be called only from #uninit(), #UnlockMachine() or #Uninitialize().
  *  @note Locks this object for writing.
  */
-HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
+HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aFinalRelease=%d, isFromServer=%d\n",

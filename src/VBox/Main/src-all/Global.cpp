@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2013 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -447,9 +447,11 @@ Global::stringifyMachineState(MachineState_T aState)
         case MachineState_FaultTolerantSyncing: return "FaultTolerantSyncing";
         case MachineState_DeletingSnapshotOnline: return "DeletingSnapshotOnline";
         case MachineState_DeletingSnapshotPaused: return "DeletingSnapshotPaused";
+        case MachineState_OnlineSnapshotting:   return "OnlineSnapshotting";
         case MachineState_RestoringSnapshot:    return "RestoringSnapshot";
         case MachineState_DeletingSnapshot:     return "DeletingSnapshot";
         case MachineState_SettingUp:            return "SettingUp";
+        case MachineState_Snapshotting:         return "Snapshotting";
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aState, aState));
@@ -512,6 +514,7 @@ Global::stringifyReason(Reason_T aReason)
         case Reason_HostSuspend:      return "host suspend";
         case Reason_HostResume:       return "host resume";
         case Reason_HostBatteryLow:   return "host battery low";
+        case Reason_Snapshot:         return "snapshot";
         default:
         {
             AssertMsgFailed(("%d (%#x)\n", aReason, aReason));

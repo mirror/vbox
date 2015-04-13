@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2014 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -299,8 +299,8 @@ bool UISession::powerUp()
 bool UISession::saveState()
 {
     /* Prepare the saving progress: */
-    CProgress progress = console().SaveState();
-    if (console().isOk())
+    CProgress progress = machine().SaveState();
+    if (machine().isOk())
     {
         /* Show the saving progress: */
         msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_state_save_90px.png");
@@ -314,7 +314,7 @@ bool UISession::saveState()
     else
     {
         /* Failed in console: */
-        msgCenter().cannotSaveMachineState(console());
+        msgCenter().cannotSaveMachineState(machine());
         return false;
     }
     /* Passed: */
@@ -407,30 +407,30 @@ bool UISession::restoreCurrentSnapshot()
         /* Simulate try-catch block: */
         do
         {
-            /* Acquire console for this session: */
-            CConsole cons = sess.GetConsole();
-            if (cons.isNull())
+            /* Acquire machine for this session: */
+            CMachine machine = sess.GetMachine();
+            if (machine.isNull())
             {
-                /* Unable to acquire console: */
+                /* Unable to acquire machine: */
                 break;
             }
 
             /* Prepare the snapshot-discard progress: */
-            const CSnapshot snap = mach.GetCurrentSnapshot();
-            CProgress prog = cons.RestoreSnapshot(snap);
-            if (!cons.isOk() || prog.isNull())
+            const CSnapshot snap = machine.GetCurrentSnapshot();
+            CProgress prog = machine.RestoreSnapshot(snap);
+            if (!machine.isOk() || prog.isNull())
             {
                 /* Unable to restore snapshot: */
-                msgCenter().cannotRestoreSnapshot(cons, snap.GetName(), machineName());
+                msgCenter().cannotRestoreSnapshot(machine, snap.GetName(), machineName());
                 break;
             }
 
             /* Show the snapshot-discard progress: */
-            msgCenter().showModalProgressDialog(prog, mach.GetName(), ":/progress_snapshot_discard_90px.png");
+            msgCenter().showModalProgressDialog(prog, machine.GetName(), ":/progress_snapshot_discard_90px.png");
             if (prog.GetResultCode() != 0)
             {
                 /* Unable to restore snapshot: */
-                msgCenter().cannotRestoreSnapshot(prog, snap.GetName(), mach.GetName());
+                msgCenter().cannotRestoreSnapshot(prog, snap.GetName(), machine.GetName());
                 break;
             }
 

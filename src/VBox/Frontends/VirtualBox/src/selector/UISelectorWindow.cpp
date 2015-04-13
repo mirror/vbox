@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -497,11 +497,11 @@ void UISelectorWindow::sltPerformDiscardAction()
         if (session.isNull())
             return;
 
-        /* Get session console: */
-        CConsole console = session.GetConsole();
-        console.DiscardSavedState(true);
-        if (!console.isOk())
-            msgCenter().cannotDiscardSavedState(console);
+        /* Get session machine: */
+        CMachine machine = session.GetMachine();
+        machine.DiscardSavedState(true);
+        if (!machine.isOk())
+            msgCenter().cannotDiscardSavedState(machine);
 
         /* Unlock machine finally: */
         session.UnlockMachine();
@@ -622,22 +622,23 @@ void UISelectorWindow::sltPerformSaveAction()
 
         /* Get session console: */
         CConsole console = session.GetConsole();
+        /* Get session machine: */
+        CMachine machine = session.GetMachine();
         /* Pause VM first: */
         console.Pause();
         if (console.isOk())
         {
             /* Prepare machine state saving: */
-            CProgress progress = console.SaveState();
-            if (console.isOk())
+            CProgress progress = machine.SaveState();
+            if (machine.isOk())
             {
                 /* Show machine state saving progress: */
-                CMachine machine = session.GetMachine();
                 msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_save_90px.png");
                 if (!progress.isOk() || progress.GetResultCode() != 0)
                     msgCenter().cannotSaveMachineState(progress, machine.GetName());
             }
             else
-                msgCenter().cannotSaveMachineState(console);
+                msgCenter().cannotSaveMachineState(machine);
         }
         else
             msgCenter().cannotPauseMachine(console);

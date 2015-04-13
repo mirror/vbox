@@ -130,6 +130,7 @@ Machine::Data::Data()
     mGuestPropertiesModified   = FALSE;
 
     mSession.mPID              = NIL_RTPROCESS;
+    mSession.mLockType         = LockType_Null;
     mSession.mState            = SessionState_Unlocked;
 }
 
@@ -2693,6 +2694,7 @@ HRESULT Machine::getState(MachineState_T *aState)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aState = mData->mMachineState;
+    Assert(mData->mMachineState != MachineState_Null);
 
     return S_OK;
 }
@@ -3247,6 +3249,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         // 3) process W: the process which already holds the write lock on the machine (write-locking session)
 
         // copy pointers to W (the write-locking session) before leaving lock (these must not be NULL)
+        ComAssertRet(mData->mSession.mLockType == LockType_Write || mData->mSession.mLockType == LockType_VM, E_FAIL);
         ComPtr<IInternalSessionControl> pSessionW = mData->mSession.mDirectControl;
         ComAssertRet(!pSessionW.isNull(), E_FAIL);
         ComObjPtr<SessionMachine> pSessionMachine = mData->mSession.mMachine;
@@ -3262,15 +3265,17 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 
         // get the console of the session holding the write lock (this is a remote call)
         ComPtr<IConsole> pConsoleW;
-        LogFlowThisFunc(("Calling GetRemoteConsole()...\n"));
-        rc = pSessionW->GetRemoteConsole(pConsoleW.asOutParam());
-        LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
-        if (FAILED(rc))
-            // the failure may occur w/o any error info (from RPC), so provide one
-            return setError(VBOX_E_VM_ERROR,
-                            tr("Failed to get a console object from the direct session (%Rhrc)"), rc);
-
-        ComAssertRet(!pConsoleW.isNull(), E_FAIL);
+        if (mData->mSession.mLockType == LockType_VM)
+        {
+            LogFlowThisFunc(("Calling GetRemoteConsole()...\n"));
+            rc = pSessionW->COMGETTER(RemoteConsole)(pConsoleW.asOutParam());
+            LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
+            if (FAILED(rc))
+                // the failure may occur w/o any error info (from RPC), so provide one
+                return setError(VBOX_E_VM_ERROR,
+                                tr("Failed to get a console object from the direct session (%Rhrc)"), rc);
+            ComAssertRet(!pConsoleW.isNull(), E_FAIL);
+        }
 
         // share the session machine and W's console with the caller's session
         LogFlowThisFunc(("Calling AssignRemoteMachine()...\n"));
@@ -3314,7 +3319,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         // get the caller's session PID
         RTPROCESS pid = NIL_RTPROCESS;
         AssertCompile(sizeof(ULONG) == sizeof(RTPROCESS));
-        pSessionControl->GetPID((ULONG*)&pid);
+        pSessionControl->COMGETTER(PID)((ULONG*)&pid);
         Assert(pid != NIL_RTPROCESS);
 
         bool fLaunchingVMProcess = (mData->mSession.mState == SessionState_Spawning);
@@ -3431,7 +3436,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 
                 /* get the console from the direct session */
                 ComPtr<IConsole> console;
-                rc = pSessionControl->GetRemoteConsole(console.asOutParam());
+                rc = pSessionControl->COMGETTER(RemoteConsole)(console.asOutParam());
                 ComAssertComRC(rc);
 
                 if (SUCCEEDED(rc) && !console)
@@ -3504,6 +3509,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
 
         if (SUCCEEDED(rc))
         {
+            mData->mSession.mLockType = aLockType;
             /* memorize the direct session control and cache IUnknown for it */
             mData->mSession.mDirectControl = pSessionControl;
             mData->mSession.mState = SessionState_Locked;
@@ -3524,7 +3530,6 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         /* uninitialize the created session machine on failure */
         if (FAILED(rc))
             sessionMachine->uninit();
-
     }
 
     if (SUCCEEDED(rc))
@@ -5171,116 +5176,56 @@ HRESULT Machine::unregister(CleanupMode_T aCleanupMode,
     return S_OK;
 }
 
-struct Machine::DeleteTask
+/**
+ * Task record for deleting a machine config.
+ */
+struct Machine::DeleteConfigTask
+    : public Machine::Task
 {
-    ComObjPtr<Machine>          pMachine;
-    RTCList<ComPtr<IMedium> >   llMediums;
-    StringsList                 llFilesToDelete;
-    ComObjPtr<Progress>         pProgress;
+    DeleteConfigTask(Machine *m,
+                     Progress *p,
+                     const Utf8Str &t,
+                     const RTCList<ComPtr<IMedium> > &llMediums,
+                     const StringsList &llFilesToDelete)
+        : Task(m, p, t),
+          m_llMediums(llMediums),
+          m_llFilesToDelete(llFilesToDelete)
+    {}
+
+    void handler()
+    {
+        m_pMachine->i_deleteConfigHandler(*this);
+    }
+
+    RTCList<ComPtr<IMedium> >   m_llMediums;
+    StringsList                 m_llFilesToDelete;
 };
 
-HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPtr<IProgress> &aProgress)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
-    if (FAILED(rc)) return rc;
-
-    if (mData->mRegistered)
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot delete settings of a registered machine"));
-
-    DeleteTask *pTask = new DeleteTask;
-    pTask->pMachine = this;
-
-    // collect files to delete
-    pTask->llFilesToDelete = mData->llFilesToDelete;            // saved states pushed here by Unregister()
-
-    for (size_t i = 0; i < aMedia.size(); ++i)
-    {
-        IMedium *pIMedium(aMedia[i]);
-        ComObjPtr<Medium> pMedium = static_cast<Medium*>(pIMedium);
-        if (pMedium.isNull())
-            return setError(E_INVALIDARG, "The given medium pointer with index %d is invalid", i);
-        SafeArray<BSTR> ids;
-        rc = pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(ids));
-        if (FAILED(rc)) return rc;
-        /* At this point the medium should not have any back references
-         * anymore. If it has it is attached to another VM and *must* not
-         * deleted. */
-        if (ids.size() < 1)
-            pTask->llMediums.append(pMedium);
-    }
-    if (mData->pMachineConfigFile->fileExists())
-        pTask->llFilesToDelete.push_back(mData->m_strConfigFileFull);
-
-    pTask->pProgress.createObject();
-    pTask->pProgress->init(i_getVirtualBox(),
-                           static_cast<IMachine*>(this) /* aInitiator */,
-                           Bstr(tr("Deleting files")).raw(),
-                           true /* fCancellable */,
-                           (ULONG)(pTask->llFilesToDelete.size() + pTask->llMediums.size() + 1),   // cOperations
-                           BstrFmt(tr("Deleting '%s'"), pTask->llFilesToDelete.front().c_str()).raw());
-
-    int vrc = RTThreadCreate(NULL,
-                             Machine::deleteThread,
-                             (void*)pTask,
-                             0,
-                             RTTHREADTYPE_MAIN_WORKER,
-                             0,
-                             "MachineDelete");
-
-    pTask->pProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    if (RT_FAILURE(vrc))
-    {
-        delete pTask;
-        return setError(E_FAIL, "Could not create MachineDelete thread (%Rrc)", vrc);
-    }
-
-    LogFlowFuncLeave();
-
-    return S_OK;
-}
-
 /**
- * Static task wrapper passed to RTThreadCreate() in Machine::Delete() which then
- * calls Machine::deleteTaskWorker() on the actual machine object.
- * @param Thread
- * @param pvUser
- * @return
- */
-/*static*/
-DECLCALLBACK(int) Machine::deleteThread(RTTHREAD Thread, void *pvUser)
-{
-    LogFlowFuncEnter();
-
-    DeleteTask *pTask = (DeleteTask*)pvUser;
-    Assert(pTask);
-    Assert(pTask->pMachine);
-    Assert(pTask->pProgress);
-
-    HRESULT rc = pTask->pMachine->i_deleteTaskWorker(*pTask);
-    pTask->pProgress->i_notifyComplete(rc);
-
-    delete pTask;
-
-    LogFlowFuncLeave();
-
-    NOREF(Thread);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Task thread implementation for Machine::Delete(), called from Machine::deleteThread().
+ * Task thread implementation for SessionMachine::DeleteConfig(), called from
+ * SessionMachine::taskHandler().
+ *
+ * @note Locks this object for writing.
+ *
  * @param task
  * @return
  */
-HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
+void Machine::i_deleteConfigHandler(DeleteConfigTask &task)
 {
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
+    if (FAILED(autoCaller.rc()))
+    {
+        /* we might have been uninitialized because the session was accidentally
+         * closed by the client, so don't assert */
+        HRESULT rc = setError(E_FAIL,
+                              tr("The session has been accidentally closed"));
+        task.m_pProgress->i_notifyComplete(rc);
+        LogFlowThisFuncLeave();
+        return;
+    }
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -5302,14 +5247,14 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
         MachineState_T oldState = mData->mMachineState;
         i_setMachineState(MachineState_SettingUp);
         alock.release();
-        for (size_t i = 0; i < task.llMediums.size(); ++i)
+        for (size_t i = 0; i < task.m_llMediums.size(); ++i)
         {
-            ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)task.llMediums.at(i);
+            ComObjPtr<Medium> pMedium = (Medium*)(IMedium*)(task.m_llMediums.at(i));
             {
                 AutoCaller mac(pMedium);
                 if (FAILED(mac.rc())) throw mac.rc();
                 Utf8Str strLocation = pMedium->i_getLocationFull();
-                rc = task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
+                rc = task.m_pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), strLocation.c_str()).raw(), 1);
                 if (FAILED(rc)) throw rc;
                 LogFunc(("Deleting file %s\n", strLocation.c_str()));
             }
@@ -5318,7 +5263,7 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
                 ComPtr<IProgress> pProgress2;
                 rc = pMedium->DeleteStorage(pProgress2.asOutParam());
                 if (FAILED(rc)) throw rc;
-                rc = task.pProgress->WaitForAsyncProgressCompletion(pProgress2);
+                rc = task.m_pProgress->WaitForAsyncProgressCompletion(pProgress2);
                 if (FAILED(rc)) throw rc;
                 /* Check the result of the asynchronous process. */
                 LONG iRc;
@@ -5346,8 +5291,8 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
         // (this includes saved states of the machine and snapshots and
         // medium storage files from the IMedium list passed in, and the
         // machine XML file)
-        StringsList::const_iterator it = task.llFilesToDelete.begin();
-        while (it != task.llFilesToDelete.end())
+        StringsList::const_iterator it = task.m_llFilesToDelete.begin();
+        while (it != task.m_llFilesToDelete.end())
         {
             const Utf8Str &strFile = *it;
             LogFunc(("Deleting file %s\n", strFile.c_str()));
@@ -5357,14 +5302,14 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
                                tr("Could not delete file '%s' (%Rrc)"), strFile.c_str(), vrc);
 
             ++it;
-            if (it == task.llFilesToDelete.end())
+            if (it == task.m_llFilesToDelete.end())
             {
-                rc = task.pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
+                rc = task.m_pProgress->SetNextOperation(Bstr(tr("Cleaning up machine directory")).raw(), 1);
                 if (FAILED(rc)) throw rc;
                 break;
             }
 
-            rc = task.pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
+            rc = task.m_pProgress->SetNextOperation(BstrFmt(tr("Deleting '%s'"), it->c_str()).raw(), 1);
             if (FAILED(rc)) throw rc;
         }
 
@@ -5437,7 +5382,67 @@ HRESULT Machine::i_deleteTaskWorker(DeleteTask &task)
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-    return rc;
+    task.m_pProgress->i_notifyComplete(rc);
+
+    LogFlowThisFuncLeave();
+}
+
+HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPtr<IProgress> &aProgress)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (mData->mRegistered)
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot delete settings of a registered machine"));
+
+    // collect files to delete
+    StringsList llFilesToDelete(mData->llFilesToDelete);    // saved states pushed here by Unregister()
+    if (mData->pMachineConfigFile->fileExists())
+        llFilesToDelete.push_back(mData->m_strConfigFileFull);
+
+    RTCList<ComPtr<IMedium> > llMediums;
+    for (size_t i = 0; i < aMedia.size(); ++i)
+    {
+        IMedium *pIMedium(aMedia[i]);
+        ComObjPtr<Medium> pMedium = static_cast<Medium*>(pIMedium);
+        if (pMedium.isNull())
+            return setError(E_INVALIDARG, "The given medium pointer with index %d is invalid", i);
+        SafeArray<BSTR> ids;
+        rc = pMedium->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(ids));
+        if (FAILED(rc)) return rc;
+        /* At this point the medium should not have any back references
+         * anymore. If it has it is attached to another VM and *must* not
+         * deleted. */
+        if (ids.size() < 1)
+            llMediums.append(pMedium);
+    }
+
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    rc = pProgress->init(i_getVirtualBox(),
+                         static_cast<IMachine*>(this) /* aInitiator */,
+                         Bstr(tr("Deleting files")).raw(),
+                         true /* fCancellable */,
+                         (ULONG)(llFilesToDelete.size() + llMediums.size() + 1),   // cOperations
+                         BstrFmt(tr("Deleting '%s'"), llFilesToDelete.front().c_str()).raw());
+    if (FAILED(rc))
+        return rc;
+
+    /* create and start the task on a separate thread (note that it will not
+     * start working until we release alock) */
+    DeleteConfigTask *pTask = new DeleteConfigTask(this, pProgress, "DeleteVM", llMediums, llFilesToDelete);
+    rc = pTask->createThread();
+    if (FAILED(rc))
+        return rc;
+
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
+
+    LogFlowFuncLeave();
+
+    return S_OK;
 }
 
 HRESULT Machine::findSnapshot(const com::Utf8Str &aNameOrId, ComPtr<ISnapshot> &aSnapshot)
@@ -5533,7 +5538,8 @@ HRESULT Machine::canShowConsoleWindow(BOOL *aCanShow)
                             tr("Machine is not locked for session (session state: %s)"),
                             Global::stringifySessionState(mData->mSession.mState));
 
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore calls made after #OnSessionEnd() is called */
@@ -5555,7 +5561,8 @@ HRESULT Machine::showConsoleWindow(LONG64 *aWinId)
                             tr("Machine is not locked for session (session state: %s)"),
                             Global::stringifySessionState(mData->mSession.mState));
 
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore calls made after #OnSessionEnd() is called */
@@ -5608,14 +5615,13 @@ HRESULT Machine::i_getGuestPropertyFromVM(const com::Utf8Str &aName,
     BSTR bFlags = NULL;
 
     ComPtr<IInternalSessionControl> directControl;
-    directControl = mData->mSession.mDirectControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
 
-    /* fail if we were called after #OnSessionEnd() is called.  This is a
-     * silly race condition. */
-
-    /** @todo This code is bothering API clients (like python script clients) with
-     *        the AccessGuestProperty call, creating unncessary IPC.  Need to
-     *        have a way of figuring out which kind of direct session it is... */
+    /* ignore calls made after #OnSessionEnd() is called */
     if (!directControl)
         rc = E_ACCESSDENIED;
     else
@@ -5768,7 +5774,12 @@ HRESULT Machine::i_setGuestPropertyToVM(const com::Utf8Str &aName, const com::Ut
 
     try
     {
-        ComPtr<IInternalSessionControl> directControl = mData->mSession.mDirectControl;
+        ComPtr<IInternalSessionControl> directControl;
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (mData->mSession.mLockType == LockType_VM)
+                directControl = mData->mSession.mDirectControl;
+        }
 
         BSTR dummy = NULL; /* will not be changed (setter) */
         LONG64 dummy64;
@@ -5895,8 +5906,11 @@ HRESULT Machine::i_enumerateGuestPropertiesOnVM(const com::Utf8Str &aPatterns,
 {
     HRESULT rc;
     ComPtr<IInternalSessionControl> directControl;
-    directControl = mData->mSession.mDirectControl;
-
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
 
     com::SafeArray<BSTR> bNames;
     com::SafeArray<BSTR> bValues;
@@ -7087,6 +7101,42 @@ HRESULT Machine::cloneTo(const ComPtr<IMachine> &aTarget, CloneMode_T aMode, con
 
 }
 
+HRESULT Machine::saveState(ComPtr<IProgress> &aProgress)
+{
+    NOREF(aProgress);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    // This check should always fail.
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertFailedReturn(E_NOTIMPL);
+}
+
+HRESULT Machine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
+{
+    NOREF(aSavedStateFile);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    // This check should always fail.
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertFailedReturn(E_NOTIMPL);
+}
+
+HRESULT Machine::discardSavedState(BOOL aFRemoveFile)
+{
+    NOREF(aFRemoveFile);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    // This check should always fail.
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertFailedReturn(E_NOTIMPL);
+}
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
@@ -7717,7 +7767,8 @@ bool Machine::i_isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (    mData->mSession.mState == SessionState_Locked
+    if (    (   mData->mSession.mState == SessionState_Locked
+             && mData->mSession.mLockType == LockType_VM)
          || (aAllowClosing && mData->mSession.mState == SessionState_Unlocking)
        )
     {
@@ -8418,6 +8469,7 @@ HRESULT Machine::i_setMachineState(MachineState_T aMachineState)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aMachineState=%s\n", Global::stringifyMachineState(aMachineState) ));
+    Assert(aMachineState != MachineState_Null);
 
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -10580,7 +10632,8 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
                               &mParent->i_getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     /* must be in a protective state because we release the lock below */
-    AssertReturn(   mData->mMachineState == MachineState_Saving
+    AssertReturn(   mData->mMachineState == MachineState_Snapshotting
+                 || mData->mMachineState == MachineState_OnlineSnapshotting
                  || mData->mMachineState == MachineState_LiveSnapshotting
                  || mData->mMachineState == MachineState_RestoringSnapshot
                  || mData->mMachineState == MachineState_DeletingSnapshot
@@ -10669,7 +10722,7 @@ HRESULT Machine::i_createImplicitDiffs(IProgress *aProgress,
             {
                 /* copy the attachment as is */
 
-                /** @todo the progress object created in Console::TakeSnaphot
+                /** @todo the progress object created in SessionMachine::TakeSnaphot
                  * only expects operations for hard disks. Later other
                  * device types need to show up in the progress as well. */
                 if (devType == DeviceType_HardDisk)
@@ -10831,7 +10884,8 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
 
     /* will release the lock before the potentially lengthy operation,
      * so protect with the special state (unless already protected) */
-    if (   oldState != MachineState_Saving
+    if (   oldState != MachineState_Snapshotting
+        && oldState != MachineState_OnlineSnapshotting
         && oldState != MachineState_LiveSnapshotting
         && oldState != MachineState_RestoringSnapshot
         && oldState != MachineState_DeletingSnapshot
@@ -10968,6 +11022,10 @@ HRESULT Machine::i_deleteImplicitDiffs(bool aOnline)
                                           pMedium->i_getLocationFull().c_str() ));
                 mrc = rc;
             }
+            // Clear the list of deleted implicit attachments now, while not
+            // holding the lock, as it will ultimately trigger Medium::uninit()
+            // calls which assume that the media tree lock isn't held.
+            implicitAtts.clear();
 
             alock.acquire();
 
@@ -12489,29 +12547,6 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         i_rollback(false /* aNotify */);
     }
 
-    Assert(    mConsoleTaskData.strStateFilePath.isEmpty()
-            || !mConsoleTaskData.mSnapshot);
-    if (!mConsoleTaskData.strStateFilePath.isEmpty())
-    {
-        LogWarningThisFunc(("canceling failed save state request!\n"));
-        endSavingState(E_FAIL, tr("Machine terminated with pending save state!"));
-    }
-    else if (!mConsoleTaskData.mSnapshot.isNull())
-    {
-        LogWarningThisFunc(("canceling untaken snapshot!\n"));
-
-        /* delete all differencing hard disks created (this will also attach
-         * their parents back by rolling back mMediaData) */
-        i_rollbackMedia();
-
-        // delete the saved state file (it might have been already created)
-        // AFTER killing the snapshot so that releaseSavedStateFile() won't
-        // think it's still in use
-        Utf8Str strStateFile = mConsoleTaskData.mSnapshot->i_getStateFilePath();
-        mConsoleTaskData.mSnapshot->uninit();
-        i_releaseSavedStateFile(strStateFile, NULL /* pSnapshotToIgnore */ );
-    }
-
     mData->mSession.mPID = NIL_RTPROCESS;
 
     if (aReason == Uninit::Unexpected)
@@ -12612,6 +12647,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
             || aReason == Uninit::Unexpected);
 
     /* reset the rest of session data */
+    mData->mSession.mLockType = LockType_Null;
     mData->mSession.mMachine.setNull();
     mData->mSession.mState = SessionState_Unlocked;
     mData->mSession.mType.setNull();
@@ -12697,17 +12733,222 @@ HRESULT SessionMachine::reportVmStatistics(ULONG aValidStats, ULONG aCpuUser,
 #endif
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// SessionMachine task records
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Task record for saving the machine state.
+ */
+struct SessionMachine::SaveStateTask
+    : public Machine::Task
+{
+    SaveStateTask(SessionMachine *m,
+                  Progress *p,
+                  const Utf8Str &t,
+                  Reason_T enmReason,
+                  const Utf8Str &strStateFilePath)
+        : Task(m, p, t),
+          m_enmReason(enmReason),
+          m_strStateFilePath(strStateFilePath)
+    {}
+
+    void handler()
+    {
+        ((SessionMachine *)(Machine *)m_pMachine)->i_saveStateHandler(*this);
+    }
+
+    Reason_T m_enmReason;
+    Utf8Str m_strStateFilePath;
+};
+
+/**
+ * Task thread implementation for SessionMachine::SaveState(), called from
+ * SessionMachine::taskHandler().
+ *
+ * @note Locks this object for writing.
+ *
+ * @param task
+ * @return
+ */
+void SessionMachine::i_saveStateHandler(SaveStateTask &task)
+{
+    LogFlowThisFuncEnter();
+
+    AutoCaller autoCaller(this);
+    LogFlowThisFunc(("state=%d\n", getObjectState().getState()));
+    if (FAILED(autoCaller.rc()))
+    {
+        /* we might have been uninitialized because the session was accidentally
+         * closed by the client, so don't assert */
+        HRESULT rc = setError(E_FAIL,
+                              tr("The session has been accidentally closed"));
+        task.m_pProgress->i_notifyComplete(rc);
+        LogFlowThisFuncLeave();
+        return;
+    }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    try
+    {
+        ComPtr<IInternalSessionControl> directControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+        if (directControl.isNull())
+            throw setError(VBOX_E_INVALID_VM_STATE,
+                           tr("Trying to save state without a running VM"));
+        alock.release();
+        BOOL fSuspendedBySave;
+        rc = directControl->SaveStateWithReason(task.m_enmReason, task.m_pProgress, Bstr(task.m_strStateFilePath).raw(), task.m_machineStateBackup != MachineState_Paused, &fSuspendedBySave);
+        Assert(!fSuspendedBySave);
+        alock.acquire();
+
+        AssertStmt(   (SUCCEEDED(rc) && mData->mMachineState == MachineState_Saved)
+                   || (FAILED(rc) && mData->mMachineState == MachineState_Saving),
+                   throw E_FAIL);
+
+        if (SUCCEEDED(rc))
+        {
+            mSSData->strStateFilePath = task.m_strStateFilePath;
+
+            /* save all VM settings */
+            rc = i_saveSettings(NULL);
+                    // no need to check whether VirtualBox.xml needs saving also since
+                    // we can't have a name change pending at this point
+        }
+        else
+        {
+            // On failure, set the state to the state we had at the beginning.
+            i_setMachineState(task.m_machineStateBackup);
+            i_updateMachineStateOnClient();
+
+            // Delete the saved state file (might have been already created).
+            // No need to check whether this is shared with a snapshot here
+            // because we certainly created a fresh saved state file here.
+            RTFileDelete(task.m_strStateFilePath.c_str());
+        }
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    task.m_pProgress->i_notifyComplete(rc);
+
+    LogFlowThisFuncLeave();
+}
+
 /**
  *  @note Locks this object for writing.
  */
-HRESULT SessionMachine::setRemoveSavedStateFile(BOOL aRemove)
+HRESULT SessionMachine::saveState(ComPtr<IProgress> &aProgress)
+{
+    return i_saveStateWithReason(Reason_Unspecified, aProgress);
+}
+
+HRESULT SessionMachine::i_saveStateWithReason(Reason_T aReason, ComPtr<IProgress> &aProgress)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mRemoveSavedState = RT_BOOL(aRemove);
+    HRESULT rc = i_checkStateDependency(MutableOrRunningStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (   mData->mMachineState != MachineState_Running
+        && mData->mMachineState != MachineState_Paused
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
+            Global::stringifyMachineState(mData->mMachineState));
+
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    rc = pProgress->init(i_getVirtualBox(),
+                         static_cast<IMachine *>(this) /* aInitiator */,
+                         Bstr(tr("Saving the execution state of the virtual machine")).raw(),
+                         FALSE /* aCancelable */);
+    if (FAILED(rc))
+        return rc;
+
+    Utf8Str strStateFilePath;
+    i_composeSavedStateFilename(strStateFilePath);
+
+    /* create and start the task on a separate thread (note that it will not
+     * start working until we release alock) */
+    SaveStateTask *pTask = new SaveStateTask(this, pProgress, "SaveState", aReason, strStateFilePath);
+    rc = pTask->createThread();
+    if (FAILED(rc))
+        return rc;
+
+    /* set the state to Saving (expected by Session::SaveStateWithReason()) */
+    i_setMachineState(MachineState_Saving);
+    i_updateMachineStateOnClient();
+
+    pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return S_OK;
 }
+
+/**
+ *  @note Locks this object for writing.
+ */
+HRESULT SessionMachine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (   mData->mMachineState != MachineState_PoweredOff
+        && mData->mMachineState != MachineState_Teleported
+        && mData->mMachineState != MachineState_Aborted
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr("Cannot adopt the saved machine state as the machine is not in Powered Off, Teleported or Aborted state (machine state: %s)"),
+            Global::stringifyMachineState(mData->mMachineState));
+
+    com::Utf8Str stateFilePathFull;
+    int vrc = i_calculateFullPath(aSavedStateFile, stateFilePathFull);
+    if (RT_FAILURE(vrc))
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Invalid saved state file path '%s' (%Rrc)"),
+                        aSavedStateFile.c_str(),
+                        vrc);
+
+    mSSData->strStateFilePath = stateFilePathFull;
+
+    /* The below i_setMachineState() will detect the state transition and will
+     * update the settings file */
+
+    return i_setMachineState(MachineState_Saved);
+}
+
+/**
+ *  @note Locks this object for writing.
+ */
+HRESULT SessionMachine::discardSavedState(BOOL aFRemoveFile)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    if (mData->mMachineState != MachineState_Saved)
+        return setError(VBOX_E_INVALID_VM_STATE,
+            tr("Cannot delete the machine state as the machine is not in the saved state (machine state: %s)"),
+            Global::stringifyMachineState(mData->mMachineState));
+
+    mRemoveSavedState = RT_BOOL(aFRemoveFile);
+
+    /*
+     * Saved -> PoweredOff transition will be detected in the SessionMachine
+     * and properly handled.
+     */
+    rc = i_setMachineState(MachineState_PoweredOff);
+    return rc;
+}
+
 
 /**
  *  @note Locks the same as #i_setMachineState() does.
@@ -13086,105 +13327,6 @@ HRESULT SessionMachine::onSessionEnd(const ComPtr<ISession> &aSession,
     return S_OK;
 }
 
-/**
- *  @note Locks this object for writing.
- */
-HRESULT SessionMachine::beginSavingState(ComPtr<IProgress> &aProgress,
-                                         com::Utf8Str &aStateFilePath)
-{
-    LogFlowThisFuncEnter();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturn(    mData->mMachineState == MachineState_Paused
-                  && mConsoleTaskData.mLastState == MachineState_Null
-                  && mConsoleTaskData.strStateFilePath.isEmpty(),
-                 E_FAIL);
-
-    /* create a progress object to track operation completion */
-    ComObjPtr<Progress> pProgress;
-    pProgress.createObject();
-    pProgress->init(i_getVirtualBox(),
-                    static_cast<IMachine *>(this) /* aInitiator */,
-                    Bstr(tr("Saving the execution state of the virtual machine")).raw(),
-                    FALSE /* aCancelable */);
-
-    /* stateFilePath is null when the machine is not running */
-    if (mData->mMachineState == MachineState_Paused)
-        i_composeSavedStateFilename(aStateFilePath);
-
-    /* fill in the console task data */
-    mConsoleTaskData.mLastState = mData->mMachineState;
-    mConsoleTaskData.strStateFilePath = aStateFilePath;
-    mConsoleTaskData.mProgress = pProgress;
-
-    /* set the state to Saving (this is expected by Console::SaveState()) */
-    i_setMachineState(MachineState_Saving);
-
-    pProgress.queryInterfaceTo(aProgress.asOutParam());
-
-    return S_OK;
-}
-
-/**
- *  @note Locks mParent + this object for writing.
- */
-HRESULT SessionMachine::endSavingState(LONG aResult,
-                                       const com::Utf8Str &aErrMsg)
-{
-    LogFlowThisFunc(("\n"));
-
-    /* endSavingState() need mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturn(    (   (SUCCEEDED(aResult) && mData->mMachineState == MachineState_Saved)
-                      || (FAILED(aResult) && mData->mMachineState == MachineState_Saving))
-                  && mConsoleTaskData.mLastState != MachineState_Null
-                  && !mConsoleTaskData.strStateFilePath.isEmpty(),
-                 E_FAIL);
-
-    /*
-     * On failure, set the state to the state we had when BeginSavingState()
-     * was called (this is expected by Console::SaveState() and the associated
-     * task). On success the VM process already changed the state to
-     * MachineState_Saved, so no need to do anything.
-     */
-    if (FAILED(aResult))
-        i_setMachineState(mConsoleTaskData.mLastState);
-
-    return i_endSavingState(aResult, aErrMsg);
-}
-
-/**
- *  @note Locks this object for writing.
- */
-HRESULT SessionMachine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
-{
-    LogFlowThisFunc(("\n"));
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturn(   mData->mMachineState == MachineState_PoweredOff
-                 || mData->mMachineState == MachineState_Teleported
-                 || mData->mMachineState == MachineState_Aborted
-                 , E_FAIL); /** @todo setError. */
-
-    com::Utf8Str stateFilePathFull;
-    int vrc = i_calculateFullPath(aSavedStateFile, stateFilePathFull);
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid saved state file path '%s' (%Rrc)"),
-                        aSavedStateFile.c_str(),
-                        vrc);
-
-    mSSData->strStateFilePath = stateFilePathFull;
-
-    /* The below i_setMachineState() will detect the state transition and will
-     * update the settings file */
-
-    return i_setMachineState(MachineState_Saved);
-}
-
 HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
                                             std::vector<com::Utf8Str> &aValues,
                                             std::vector<LONG64>       &aTimestamps,
@@ -13262,6 +13404,7 @@ HRESULT SessionMachine::pushGuestProperty(const  com::Utf8Str &aName,
             case MachineState_Running:
             case MachineState_Teleporting:
             case MachineState_TeleportingPausedVM:
+            case MachineState_OnlineSnapshotting:
             case MachineState_LiveSnapshotting:
             case MachineState_DeletingSnapshotOnline:
             case MachineState_DeletingSnapshotPaused:
@@ -13535,7 +13678,8 @@ HRESULT SessionMachine::i_onNetworkAdapterChange(INetworkAdapter *networkAdapter
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13560,7 +13704,8 @@ HRESULT SessionMachine::i_onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRem
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13588,7 +13733,8 @@ HRESULT SessionMachine::i_onSerialPortChange(ISerialPort *serialPort)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13611,7 +13757,8 @@ HRESULT SessionMachine::i_onParallelPortChange(IParallelPort *parallelPort)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13634,7 +13781,8 @@ HRESULT SessionMachine::i_onStorageControllerChange()
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13657,7 +13805,8 @@ HRESULT SessionMachine::i_onMediumChange(IMediumAttachment *aAttachment, BOOL aF
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13680,7 +13829,8 @@ HRESULT SessionMachine::i_onCPUChange(ULONG aCPU, BOOL aRemove)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13700,7 +13850,8 @@ HRESULT SessionMachine::i_onCPUExecutionCapChange(ULONG aExecutionCap)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13723,7 +13874,8 @@ HRESULT SessionMachine::i_onVRDEServerChange(BOOL aRestart)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13746,7 +13898,8 @@ HRESULT SessionMachine::i_onVideoCaptureChange()
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13769,7 +13922,8 @@ HRESULT SessionMachine::i_onUSBControllerChange()
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13792,7 +13946,8 @@ HRESULT SessionMachine::i_onSharedFolderChange()
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13815,7 +13970,8 @@ HRESULT SessionMachine::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13838,7 +13994,8 @@ HRESULT SessionMachine::i_onDnDModeChange(DnDMode_T aDnDMode)
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13861,7 +14018,8 @@ HRESULT SessionMachine::i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGrou
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13884,7 +14042,8 @@ HRESULT SessionMachine::i_onStorageDeviceChange(IMediumAttachment *aAttachment, 
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* ignore notifications sent after #OnSessionEnd() is called */
@@ -13950,7 +14109,8 @@ HRESULT SessionMachine::i_onUSBDeviceAttach(IUSBDevice *aDevice,
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* fail on notifications sent after #OnSessionEnd() is called, it is
@@ -13982,7 +14142,8 @@ HRESULT SessionMachine::i_onUSBDeviceDetach(IN_BSTR aId,
     ComPtr<IInternalSessionControl> directControl;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
     }
 
     /* fail on notifications sent after #OnSessionEnd() is called, it is
@@ -13999,68 +14160,6 @@ HRESULT SessionMachine::i_onUSBDeviceDetach(IN_BSTR aId,
 
 // protected methods
 /////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Helper method to finalize saving the state.
- *
- *  @note Must be called from under this object's lock.
- *
- *  @param aRc      S_OK if the snapshot has been taken successfully
- *  @param aErrMsg  human readable error message for failure
- *
- *  @note Locks mParent + this objects for writing.
- */
-HRESULT SessionMachine::i_endSavingState(HRESULT aRc, const Utf8Str &aErrMsg)
-{
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = S_OK;
-
-    if (SUCCEEDED(aRc))
-    {
-        mSSData->strStateFilePath = mConsoleTaskData.strStateFilePath;
-
-        /* save all VM settings */
-        rc = i_saveSettings(NULL);
-                // no need to check whether VirtualBox.xml needs saving also since
-                // we can't have a name change pending at this point
-    }
-    else
-    {
-        // delete the saved state file (it might have been already created);
-        // we need not check whether this is shared with a snapshot here because
-        // we certainly created this saved state file here anew
-        RTFileDelete(mConsoleTaskData.strStateFilePath.c_str());
-    }
-
-    /* notify the progress object about operation completion */
-    Assert(mConsoleTaskData.mProgress);
-    if (SUCCEEDED(aRc))
-        mConsoleTaskData.mProgress->i_notifyComplete(S_OK);
-    else
-    {
-        if (aErrMsg.length())
-            mConsoleTaskData.mProgress->i_notifyComplete(aRc,
-                                                         COM_IIDOF(ISession),
-                                                         getComponentName(),
-                                                         aErrMsg.c_str());
-        else
-            mConsoleTaskData.mProgress->i_notifyComplete(aRc);
-    }
-
-    /* clear out the temporary saved state data */
-    mConsoleTaskData.mLastState = MachineState_Null;
-    mConsoleTaskData.strStateFilePath.setNull();
-    mConsoleTaskData.mProgress.setNull();
-
-    LogFlowThisFuncLeave();
-    return rc;
-}
 
 /**
  * Deletes the given file if it is no longer in use by either the current machine state
@@ -14258,6 +14357,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
     else if (   (   oldMachineState == MachineState_Running
                  || oldMachineState == MachineState_Paused
                  || oldMachineState == MachineState_Teleporting
+                 || oldMachineState == MachineState_OnlineSnapshotting
                  || oldMachineState == MachineState_LiveSnapshotting
                  || oldMachineState == MachineState_Stuck
                  || oldMachineState == MachineState_Starting
@@ -14271,11 +14371,6 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
                  || aMachineState == MachineState_Saved
                  || aMachineState == MachineState_Teleported
                  || aMachineState == MachineState_Aborted
-                )
-             /* ignore PoweredOff->Saving->PoweredOff transition when taking a
-              * snapshot */
-             && (   mConsoleTaskData.mSnapshot.isNull()
-                 || mConsoleTaskData.mLastState >= MachineState_Running /** @todo Live Migration: clean up (lazy bird) */
                 )
             )
     {
@@ -14309,7 +14404,7 @@ HRESULT SessionMachine::i_setMachineState(MachineState_T aMachineState)
             )
     {
         /*
-         *  delete the saved state after Console::ForgetSavedState() is called
+         *  delete the saved state after SessionMachine::ForgetSavedState() is called
          *  or if the VM process (owning a direct VM session) crashed while the
          *  VM was Saved
          */
@@ -14455,7 +14550,8 @@ HRESULT SessionMachine::i_updateMachineStateOnClient()
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
         AssertReturn(!!mData, E_FAIL);
-        directControl = mData->mSession.mDirectControl;
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
 
         /* directControl may be already set to NULL here in #OnSessionEnd()
          * called too early by the direct session process while there is still
@@ -14468,18 +14564,49 @@ HRESULT SessionMachine::i_updateMachineStateOnClient()
 
         if (mData->mSession.mState == SessionState_Unlocking)
             return S_OK;
-
-        AssertReturn(!directControl.isNull(), E_FAIL);
     }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
 
     return directControl->UpdateMachineState(mData->mMachineState);
 }
 
-HRESULT Machine::setRemoveSavedStateFile(BOOL aRemove)
+
+/**
+ * Static Machine method that can get passed to RTThreadCreate to
+ * have a thread started for a Task. See Machine::Task.
+ */
+/* static */ DECLCALLBACK(int) Machine::taskHandler(RTTHREAD /* thread */, void *pvUser)
 {
-    NOREF(aRemove);
-    ReturnComNotImplemented();
+    AssertReturn(pvUser, VERR_INVALID_POINTER);
+
+    Task *pTask = static_cast<Task *>(pvUser);
+    pTask->handler();
+    /** @todo r=klaus it would be safer to update the progress object here,
+     * as it avoids possible races due to scoping issues/tricks in the handler */
+    // it's our responsibility to delete the task
+    delete pTask;
+
+    return 0;
 }
+
+/*static*/
+HRESULT Machine::i_setErrorStatic(HRESULT aResultCode, const char *pcszMsg, ...)
+{
+    va_list args;
+    va_start(args, pcszMsg);
+    HRESULT rc = setErrorInternal(aResultCode,
+                                  getStaticClassIID(),
+                                  getStaticComponentName(),
+                                  Utf8Str(pcszMsg, args),
+                                  false /* aWarning */,
+                                  true /* aLogIt */);
+    va_end(args);
+    return rc;
+}
+
 
 HRESULT Machine::updateState(MachineState_T aState)
 {
@@ -14557,80 +14684,8 @@ HRESULT Machine::onSessionEnd(const ComPtr<ISession> &aSession,
     ReturnComNotImplemented();
 }
 
-HRESULT Machine::beginSavingState(ComPtr<IProgress> &aProgress,
-                                  com::Utf8Str &aStateFilePath)
-{
-    NOREF(aProgress);
-    NOREF(aStateFilePath);
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::endSavingState(LONG aResult,
-                                const com::Utf8Str &aErrMsg)
-{
-    NOREF(aResult);
-    NOREF(aErrMsg);
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::adoptSavedState(const com::Utf8Str &aSavedStateFile)
-{
-    NOREF(aSavedStateFile);
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::beginTakingSnapshot(const ComPtr<IConsole> &aInitiator,
-                                     const com::Utf8Str &aName,
-                                     const com::Utf8Str &aDescription,
-                                     const ComPtr<IProgress> &aConsoleProgress,
-                                     BOOL aFTakingSnapshotOnline,
-                                     com::Utf8Str &aStateFilePath)
-{
-    NOREF(aInitiator);
-    NOREF(aName);
-    NOREF(aDescription);
-    NOREF(aConsoleProgress);
-    NOREF(aFTakingSnapshotOnline);
-    NOREF(aStateFilePath);
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::endTakingSnapshot(BOOL aSuccess)
-{
-    NOREF(aSuccess);
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::deleteSnapshot(const ComPtr<IConsole> &aInitiator,
-                                const com::Guid &aStartId,
-                                const com::Guid &aEndId,
-                                BOOL aDeleteAllChildren,
-                                MachineState_T *aMachineState,
-                                ComPtr<IProgress> &aProgress)
-{
-    NOREF(aInitiator);
-    NOREF(aStartId);
-    NOREF(aEndId);
-    NOREF(aDeleteAllChildren);
-    NOREF(aMachineState);
-    NOREF(aProgress);
-    ReturnComNotImplemented();
-}
-
 HRESULT Machine::finishOnlineMergeMedium()
 {
-    ReturnComNotImplemented();
-}
-
-HRESULT Machine::restoreSnapshot(const ComPtr<IConsole> &aInitiator,
-                                 const ComPtr<ISnapshot> &aSnapshot,
-                                 MachineState_T *aMachineState,
-                                 ComPtr<IProgress> &aProgress)
-{
-    NOREF(aInitiator);
-    NOREF(aSnapshot);
-    NOREF(aMachineState);
-    NOREF(aProgress);
     ReturnComNotImplemented();
 }
 
