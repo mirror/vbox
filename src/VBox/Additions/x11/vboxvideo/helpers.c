@@ -63,7 +63,7 @@ int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int3
     /* We can get called early, before the root window is created. */
     if (!ROOT_WINDOW(pScrn))
         return VERR_NOT_FOUND;
-    atom = MakeAtom(pszName, strlen(pszName), FALSE);
+    atom = MakeAtom(pszName, strlen(pszName), TRUE);
     if (atom == BAD_RESOURCE)
         return VERR_NOT_FOUND;
     for (prop = wUserProps(ROOT_WINDOW(pScrn));
