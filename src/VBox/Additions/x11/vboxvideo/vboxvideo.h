@@ -162,10 +162,14 @@ struct VBoxScreen
     struct VBVABUFFERCONTEXT aVbvaCtx;
     /** The current preferred resolution for the screen */
     RTRECTSIZE aPreferredSize;
+    /** The current preferred location for the screen. */
+    RTPOINT aPreferredLocation;
     /** Has this screen been enabled by the host? */
     Bool afConnected;
     /** The last mode hint data read from the X11 property. */
     int32_t lastModeHintFromProperty;
+    /** Does this screen have a preferred location? */
+    Bool afHaveLocation;
 };
 
 typedef struct VBOXRec
@@ -205,9 +209,11 @@ typedef struct VBOXRec
     struct VBoxScreen *pScreens;
     /** The last requested framebuffer size. */
     RTRECTSIZE FBSize;
-#ifdef VBOXVIDEO_13
+    /** Can we get mode hint and cursor integration information from HGSMI? */
+    bool fHaveHGSMIModeHints;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
+#ifdef VBOXVIDEO_13
 # ifdef RT_OS_LINUX
     /** Input device file descriptor for getting ACPI hot-plug events. */
     int fdACPIDevices;
@@ -243,6 +249,7 @@ extern void vbvxAbortServer(void);
 extern VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn);
 #define VBOXGetRec vbvxGetRec  /* Temporary */
 extern int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData);
+extern void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData, int32_t *paData, Bool fSendEvent);
 extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
 
 /* setmode.c */

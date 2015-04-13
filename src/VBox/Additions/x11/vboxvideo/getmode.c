@@ -265,6 +265,137 @@ void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
         vbvxReprobeCursor(pScrn);
 }
 
+static bool useHardwareCursor(uint32_t fCursorCapabilities)
+{
+    if (   !(fCursorCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
+        && (fCursorCapabilities & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
+        return true;
+    return false;
+}
+
+static void compareAndMaybeSetUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities, bool *pfChanged, bool fSet)
+{
+    if (pVBox->fUseHardwareCursor != useHardwareCursor(fCursorCapabilities))
+        *pfChanged = true;
+    if (fSet)
+        pVBox->fUseHardwareCursor = useHardwareCursor(fCursorCapabilities);
+}
+
+#define SIZE_HINTS_PROPERTY          "VBOX_SIZE_HINTS"
+#define SIZE_HINTS_MISMATCH_PROPERTY "VBOX_SIZE_HINTS_MISMATCH"
+#define MOUSE_CAPABILITIES_PROPERTY  "VBOX_MOUSE_CAPABILITIES"
+
+#define COMPARE_AND_MAYBE_SET(pDest, src, pfChanged, fSet) \
+do { \
+    if (*(pDest) != (src)) \
+    { \
+        if (fSet) \
+            *(pDest) = (src); \
+        *(pfChanged) = true; \
+    } \
+} while(0)
+
+/** Read in information about the most recent size hints and cursor
+ * capabilities requested for the guest screens from a root window property set
+ * by an X11 client.  Information obtained via HGSMI takes priority. */
+void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    size_t cPropertyElements, cDummy;
+    int32_t *paModeHints,  *pfCursorCapabilities;
+    int rc;
+    unsigned i;
+    bool fChanged;
+    bool fNeedUpdate = false;
+    int32_t fSizeMismatch = false;
+
+    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cPropertyElements, &paModeHints) != VINF_SUCCESS)
+        paModeHints = NULL;
+    if (paModeHints != NULL)
+        for (i = 0; i < cPropertyElements / 2 && i < pVBox->cScreens; ++i)
+        {
+            VBVAMODEHINT *pVBVAModeHint = &pVBox->paVBVAModeHints[i];
+            int32_t iSizeHint = paModeHints[i * 2];
+            int32_t iLocation = paModeHints[i * 2 + 1];
+            bool fNoHGSMI = !pVBox->fHaveHGSMIModeHints || pVBVAModeHint->magic != VBVAMODEHINT_MAGIC;
+
+            fChanged = false;
+            if (iSizeHint != 0)
+            {
+                if (iSizeHint == -1)
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afConnected, false, &fChanged, fNoHGSMI);
+                else
+                {
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cx, (iSizeHint >> 16) & 0x8fff, &fChanged, fNoHGSMI);
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cy, iSizeHint & 0x8fff, &fChanged, fNoHGSMI);
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afConnected, true, &fChanged, fNoHGSMI);
+                }
+                if (iLocation == -1)
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, false, &fChanged, fNoHGSMI);
+                else
+                {
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.x, (iLocation >> 16) & 0x8fff, &fChanged,
+                                          fNoHGSMI);
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.y, iLocation & 0x8fff, &fChanged, fNoHGSMI);
+                    COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, true, &fChanged, fNoHGSMI);
+                }
+                if (fChanged && fNoHGSMI)
+                    fNeedUpdate = true;
+                if (fChanged && !fNoHGSMI)
+                    fSizeMismatch = true;
+            }
+        }
+    fChanged = false;
+    if (   vbvxGetIntegerPropery(pScrn, MOUSE_CAPABILITIES_PROPERTY, &cDummy, &pfCursorCapabilities) == VINF_SUCCESS
+        && cDummy == 1)
+        compareAndMaybeSetUseHardwareCursor(pVBox, *pfCursorCapabilities, &fChanged, !pVBox->fHaveHGSMIModeHints);
+    if (fChanged && !pVBox->fHaveHGSMIModeHints)
+        fNeedUpdate = true;
+    if (fChanged && pVBox->fHaveHGSMIModeHints)
+        fSizeMismatch = true;
+    vbvxSetIntegerPropery(pScrn, SIZE_HINTS_MISMATCH_PROPERTY, 1, &fSizeMismatch, false);
+    if (pfNeedUpdate != NULL && fNeedUpdate)
+        *pfNeedUpdate = true;
+}
+
+/** Read in information about the most recent size hints and cursor
+ * capabilities requested for the guest screens from HGSMI. */
+void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    int rc;
+    unsigned i;
+    bool fChanged = false;
+    uint32_t fCursorCapabilities;
+
+    if (!pVBox->fHaveHGSMIModeHints)
+        return;
+    rc = VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens, pVBox->paVBVAModeHints);
+    VBVXASSERT(rc == VINF_SUCCESS, ("VBoxHGSMIGetModeHints failed, rc=%d.\n", rc));
+    for (i = 0; i < pVBox->cScreens; ++i)
+        if (pVBox->paVBVAModeHints[i].magic == VBVAMODEHINT_MAGIC)
+        {
+            COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cx, pVBox->paVBVAModeHints[i].cx & 0x8fff, &fChanged, true);
+            COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredSize.cy, pVBox->paVBVAModeHints[i].cy & 0x8fff, &fChanged, true);
+            COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afConnected, RT_BOOL(pVBox->paVBVAModeHints[i].fEnabled), &fChanged, true);
+            COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.x, (int32_t)pVBox->paVBVAModeHints[i].dx & 0x8fff, &fChanged,
+                                  true);
+            COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].aPreferredLocation.y, (int32_t)pVBox->paVBVAModeHints[i].dy & 0x8fff, &fChanged,
+                                  true);
+            if (pVBox->paVBVAModeHints[i].dx != ~(uint32_t)0 && pVBox->paVBVAModeHints[i].dy != ~(uint32_t)0)
+                COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, true, &fChanged, true);
+            else
+                COMPARE_AND_MAYBE_SET(&pVBox->pScreens[i].afHaveLocation, false, &fChanged, true);
+        }
+    rc = VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &fCursorCapabilities);
+    VBVXASSERT(rc == VINF_SUCCESS, ("Getting VBOX_VBVA_CONF32_CURSOR_CAPABILITIES failed, rc=%d.\n", rc));
+    compareAndMaybeSetUseHardwareCursor(pVBox, fCursorCapabilities, &fChanged, true);
+    if (pfNeedUpdate != NULL && fChanged)
+        *pfNeedUpdate = true;
+}
+
+#undef COMPARE_AND_MAYBE_SET
+
 #ifndef VBOXVIDEO_13
 
 /** The RandR "proc" vector, which we wrap with our own in order to notice
