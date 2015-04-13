@@ -10,7 +10,7 @@
 
       <listitem>
         <para>Paravirtualization support for Windows and Linux guests to improve
-          time-keeping accuracy and performance</para>
+          time-keeping accuracy and performance (see  <xref linkend="gimproviders" />)</para>
       </listitem>
 
       <listitem>
@@ -21,7 +21,8 @@
       </listitem>
 
       <listitem>
-        <para>xHCI Controller to support USB 3 devices</para>
+        <para>xHCI Controller to support USB 3 devices
+          (see <xref linkend="settings-usb" />)</para>
       </listitem>
 
       <listitem>
@@ -29,7 +30,7 @@
       </listitem>
 
       <listitem>
-        <para>Disk image encryption</para>
+        <para>Disk image encryption (see </para>
       </listitem>
 
       <listitem>
@@ -89,7 +90,7 @@
       </listitem>
 
       <listitem>
-        <para>USB: added USB traffic capturing</para>
+        <para>USB: added USB traffic capturing (see <xref linkend="usbtrafficcapturing" />)</para>
       </listitem>
 
       <listitem>
