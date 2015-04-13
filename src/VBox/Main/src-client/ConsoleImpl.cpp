@@ -6144,7 +6144,7 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
                                    (PFNRT)i_reconfigureMediumAttachment, 13,
                                    this, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
                                    fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
-                                   0 /* uMergeTarget */, aAttachments[i], mMachineState, &rc);
+                                   0 /* uMergeTarget */, *aAttachments[i], mMachineState, &rc);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, tr("%Rrc"), vrc);
         if (FAILED(rc))
