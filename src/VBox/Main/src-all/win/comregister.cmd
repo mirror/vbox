@@ -6,7 +6,7 @@ REM (both inproc and out-of-process)
 REM
 
 REM
-REM Copyright (C) 2006-2014 Oracle Corporation
+REM Copyright (C) 2006-2015 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
@@ -21,8 +21,7 @@ setlocal
 
 REM Check if the current user is an administrator. Otherwise
 REM all the COM registration will fail silently.
-NET FILE 1>NUL 2>NUL & IF ERRORLEVEL 1 ^
-    (ECHO Must be run as Administrator. Exiting.) & GOTO end
+NET FILE 1>NUL 2>NUL & IF ERRORLEVEL 1 (ECHO Must be run as Administrator. Exiting.) & GOTO end
 
 REM
 REM Figure out where the script lives first, so that we can invoke the
