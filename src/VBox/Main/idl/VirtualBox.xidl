@@ -12858,7 +12858,7 @@
               that was restored.
           </li>
 
-          <li><link to="IConsole::deleteSnapshot"/> deletes a snapshot
+          <li><link to="IMachine::deleteSnapshot"/> deletes a snapshot
               without affecting the current machine state.
 
               This does not change the current machine state, but instead frees the
