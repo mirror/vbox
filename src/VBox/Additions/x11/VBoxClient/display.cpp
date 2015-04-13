@@ -85,7 +85,7 @@ struct DISPLAYSTATE
 
 /** Tell the VBoxGuest driver we no longer want any events and tell the host
  * we no longer support any capabilities. */
-static int disableEventsAndCaps()
+static int disableEventsAndCaps(bool fDisableEvents)
 {
     int rc = VbglR3SetGuestCaps(0, VMMDEV_GUEST_SUPPORTS_GRAPHICS);
     if (RT_FAILURE(rc))
@@ -93,8 +93,8 @@ static int disableEventsAndCaps()
     rc = VbglR3SetMouseStatus(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to unset mouse status, rc=%Rrc.\n", rc));
-    rc = VbglR3CtlFilterMask(0,  VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED
-                                | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+    if (fDisableEvents)
+        rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED | VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to unset filter mask, rc=%Rrc.\n", rc));
     return VINF_SUCCESS;
@@ -384,7 +384,7 @@ static int pause(struct VBCLSERVICE **ppInterface)
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
-    return disableEventsAndCaps();
+    return disableEventsAndCaps(false);
 }
 
 static int resume(struct VBCLSERVICE **ppInterface)
@@ -399,7 +399,7 @@ static int resume(struct VBCLSERVICE **ppInterface)
 static void cleanup(struct VBCLSERVICE **ppInterface)
 {
     NOREF(ppInterface);
-    disableEventsAndCaps();
+    disableEventsAndCaps(true);
     VbglR3Term();
 }
 
