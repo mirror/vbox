@@ -272,7 +272,7 @@ void HostDnsMonitorProxy::notify() const
 {
     LogRel(("HostDnsMonitorProxy::notify\n"));
     m->fModified = true;
-    const_cast<VirtualBox *>(m->virtualbox)->i_onHostNameResolutionConfigurationChange();
+    m->virtualbox->i_onHostNameResolutionConfigurationChange();
 }
 
 HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServers)
