@@ -29,6 +29,7 @@
 #include <wingdi.h> /* needed for RGNDATA definition */
 #include <VBoxDisplay.h> /* this is from Additions/WINNT/include/ to include escape codes */
 #include <VBox/Hardware/VBoxVideoVBE.h>
+#include <VBox/Version.h>
 
 #include <stdio.h>
 
@@ -7409,9 +7410,13 @@ DriverEntry(
 #endif
 
 #ifdef VBOX_WDDM_WIN8
-    LOGREL(("VBox WDDM Driver for Windows 8, %d bit; Built %s %s", (sizeof (void*) << 3), __DATE__, __TIME__));
+    LOGREL(("VBox WDDM Driver for Windows 8 version %d.%d.%dr%d, %d bit; Built %s %s",
+            VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
+            (sizeof (void*) << 3), __DATE__, __TIME__));
 #else
-    LOGREL(("VBox WDDM Driver for Windows Vista and 7, %d bit; Built %s %s", (sizeof (void*) << 3), __DATE__, __TIME__));
+    LOGREL(("VBox WDDM Driver for Windows Vista and 7 version %d.%d.%dr%d, %d bit; Built %s %s",
+            VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV,
+            (sizeof (void*) << 3), __DATE__, __TIME__));
 #endif
 
     if (! ARGUMENT_PRESENT(DriverObject) ||
