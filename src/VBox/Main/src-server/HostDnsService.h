@@ -20,8 +20,8 @@
 #include "VirtualBoxBase.h"
 
 #include <iprt/cdefs.h>
-#include <iprt/critsect.h>
 #include <iprt/types.h>
+#include <iprt/cpp/lock.h>
 
 #include <list>
 #include <vector>
@@ -31,27 +31,6 @@ typedef Utf8StrList::iterator Utf8StrListIterator;
 
 class HostDnsMonitorProxy;
 typedef const HostDnsMonitorProxy *PCHostDnsMonitorProxy;
-
-class Lockee
-{
-  public:
-    Lockee();
-    virtual ~Lockee();
-    const RTCRITSECT* lock() const;
-
-  private:
-    RTCRITSECT mLock;
-};
-
-class ALock
-{
-  public:
-    explicit ALock(const Lockee *l);
-    ~ALock();
-
-  private:
-    const Lockee *lockee;
-};
 
 class HostDnsInformation
 {
@@ -66,7 +45,7 @@ class HostDnsInformation
  * This class supposed to be a real DNS monitor object it should be singleton,
  * it lifecycle starts and ends together with VBoxSVC.
  */
-class HostDnsMonitor : public Lockee
+class HostDnsMonitor
 {
   public:
     static const HostDnsMonitor *getHostDnsMonitor();
@@ -95,6 +74,9 @@ class HostDnsMonitor : public Lockee
     HostDnsMonitor& operator= (const HostDnsMonitor &);
     static int threadMonitoringRoutine(RTTHREAD, void *);
 
+  protected:
+    mutable RTCLockMtx m_LockMtx;
+
   public:
     struct Data;
     Data *m;
@@ -103,7 +85,7 @@ class HostDnsMonitor : public Lockee
 /**
  * This class supposed to be a proxy for events on changing Host Name Resolving configurations.
  */
-class HostDnsMonitorProxy : public Lockee
+class HostDnsMonitorProxy
 {
     public:
     HostDnsMonitorProxy();
@@ -119,6 +101,9 @@ class HostDnsMonitorProxy : public Lockee
 
     private:
     void updateInfo();
+ 
+  private:
+    mutable RTCLockMtx m_LockMtx;
 
     private:
     struct Data;

@@ -76,7 +76,7 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *, void *, void *inf
 {
     HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
 
-    ALock l(pThis);
+    RTCLock grab(pThis->m_LockMtx);
     pThis->updateInfo();
 }
 
@@ -115,7 +115,7 @@ HRESULT HostDnsServiceDarwin::init()
 
 void HostDnsServiceDarwin::monitorThreadShutdown()
 {
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
     if (!m->m_fStop)
     {
         CFRunLoopSourceSignal(m->m_Stopper);

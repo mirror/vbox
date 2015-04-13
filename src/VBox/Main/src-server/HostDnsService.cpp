@@ -37,35 +37,6 @@ static HostDnsMonitor *g_monitor;
 static void dumpHostDnsInformation(const HostDnsInformation&);
 static void dumpHostDnsStrVector(const std::string&, const std::vector<std::string>&);
 
-/* Lockee */
-Lockee::Lockee()
-{
-    RTCritSectInit(&mLock);
-}
-
-Lockee::~Lockee()
-{
-    RTCritSectDelete(&mLock);
-}
-
-const RTCRITSECT* Lockee::lock() const
-{
-    return &mLock;
-}
-
-/* ALock */
-ALock::ALock(const Lockee *aLockee)
-  : lockee(aLockee)
-{
-    RTCritSectEnter(const_cast<PRTCRITSECT>(lockee->lock()));
-}
-
-ALock::~ALock()
-{
-    RTCritSectLeave(const_cast<PRTCRITSECT>(lockee->lock()));
-}
-
-/* HostDnsInformation */
 
 bool HostDnsInformation::equals(const HostDnsInformation &info) const
 {
@@ -164,14 +135,14 @@ const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor()
 
 void HostDnsMonitor::addMonitorProxy(PCHostDnsMonitorProxy proxy) const
 {
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
     m->proxies.push_back(proxy);
     proxy->notify();
 }
 
 void HostDnsMonitor::releaseMonitorProxy(PCHostDnsMonitorProxy proxy) const
 {
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
     std::vector<PCHostDnsMonitorProxy>::iterator it;
     it = std::find(m->proxies.begin(), m->proxies.end(), proxy);
 
@@ -197,7 +168,7 @@ const HostDnsInformation &HostDnsMonitor::getInfo() const
 
 void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 {
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
 
     if (info.equals(m->info))
         return;
@@ -278,7 +249,7 @@ void HostDnsMonitorProxy::notify() const
 HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServers)
 {
     AssertReturn(m && m->info, E_FAIL);
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
 
     if (m->fModified)
         updateInfo();
@@ -294,7 +265,7 @@ HRESULT HostDnsMonitorProxy::GetNameServers(std::vector<com::Utf8Str> &aNameServ
 HRESULT HostDnsMonitorProxy::GetDomainName(com::Utf8Str *pDomainName)
 {
     AssertReturn(m && m->info, E_FAIL);
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
 
     if (m->fModified)
         updateInfo();
@@ -310,7 +281,7 @@ HRESULT HostDnsMonitorProxy::GetDomainName(com::Utf8Str *pDomainName)
 HRESULT HostDnsMonitorProxy::GetSearchStrings(std::vector<com::Utf8Str> &aSearchStrings)
 {
     AssertReturn(m && m->info, E_FAIL);
-    ALock l(this);
+    RTCLock grab(m_LockMtx);
 
     if (m->fModified)
         updateInfo();
