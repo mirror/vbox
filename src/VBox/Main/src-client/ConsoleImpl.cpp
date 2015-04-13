@@ -5918,8 +5918,8 @@ static int onlineMergeMediumProgress(void *pvUser, unsigned uPercentage)
  * @note Temporarily locks this object for writing. bird: And/or reading?
  */
 HRESULT Console::i_onlineMergeMedium(IMediumAttachment *aMediumAttachment,
-                                   ULONG aSourceIdx, ULONG aTargetIdx,
-                                   IProgress *aProgress)
+                                     ULONG aSourceIdx, ULONG aTargetIdx,
+                                     IProgress *aProgress)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -6140,11 +6140,12 @@ HRESULT Console::i_reconfigureMediumAttachments(const std::vector<ComPtr<IMedium
 
         alock.release();
 
+        IMediumAttachment *pAttachment = aAttachments[i];
         int vrc = VMR3ReqCallWaitU(ptrVM.rawUVM(), VMCPUID_ANY,
                                    (PFNRT)i_reconfigureMediumAttachment, 13,
                                    this, ptrVM.rawUVM(), pcszDevice, lInstance, enmBus, fUseHostIOCache,
                                    fBuiltinIOCache, false /* fSetupMerge */, 0 /* uMergeSource */,
-                                   0 /* uMergeTarget */, *aAttachments[i], mMachineState, &rc);
+                                   0 /* uMergeTarget */, pAttachment, mMachineState, &rc);
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, tr("%Rrc"), vrc);
         if (FAILED(rc))
