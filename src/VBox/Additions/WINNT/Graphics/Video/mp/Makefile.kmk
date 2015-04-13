@@ -28,6 +28,7 @@ VBoxVideo_TEMPLATE      = VBOXGUESTR0
 VBoxVideo_SDKS          = ReorderCompilerIncs $(VBOX_WINDDK_GST_NT4)
 VBoxVideo_DEFS          = VBOX_XPDM_MINIPORT VBOX_WITH_8BPP_MODES VBOX_USING_$(VBOX_WINDDK_GST_NT4)
 VBoxVideo_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
+VBoxVideo_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
@@ -87,6 +88,7 @@ ifdef VBOX_WITH_WDDM
   VBoxVideoWddm_DEFS      += LOG_ENABLED
  endif
  VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
+ VBoxVideoWddm_DEFS       += VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_VDMA_WITH_WATCHDOG
   VBoxVideoWddm_DEFS      += VBOX_VDMA_WITH_WATCHDOG
  endif
