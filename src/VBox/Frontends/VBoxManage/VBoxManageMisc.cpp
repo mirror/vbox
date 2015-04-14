@@ -649,9 +649,9 @@ int handleDiscardState(HandlerArg *a)
             CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
-                ComPtr<IMachine> console;
-                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(machine.asOutParam()));
-                CHECK_ERROR_BREAK(console, DiscardSavedState(true /* fDeleteFile */));
+                ComPtr<IMachine> sessionMachine;
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, DiscardSavedState(true /* fDeleteFile */));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
@@ -686,9 +686,9 @@ int handleAdoptState(HandlerArg *a)
             CHECK_ERROR_BREAK(machine, LockMachine(a->session, LockType_Write));
             do
             {
-                ComPtr<IMachine> machine;
-                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(machine.asOutParam()));
-                CHECK_ERROR_BREAK(machine, AdoptSavedState(Bstr(szStateFileAbs).raw()));
+                ComPtr<IMachine> sessionMachine;
+                CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, AdoptSavedState(Bstr(szStateFileAbs).raw()));
             } while (0);
             CHECK_ERROR_BREAK(a->session, UnlockMachine());
         } while (0);
@@ -806,14 +806,15 @@ int handleSetExtraData(HandlerArg *a)
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
             /* get the session machine */
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
+            ComPtr<IMachine> sessionMachine;
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
             /** @todo passing NULL is deprecated */
             if (a->argc < 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]).raw(),
-                                                  NULL));
+                CHECK_ERROR(sessionMachine, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                         NULL));
             else if (a->argc == 3)
-                CHECK_ERROR(machine, SetExtraData(Bstr(a->argv[1]).raw(),
-                                                  Bstr(a->argv[2]).raw()));
+                CHECK_ERROR(sessionMachine, SetExtraData(Bstr(a->argv[1]).raw(),
+                                                         Bstr(a->argv[2]).raw()));
             else
                 return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
         }
@@ -988,8 +989,11 @@ int handleSharedFolder(HandlerArg *a)
 
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+
             /* get the session machine */
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
+            ComPtr<IMachine> sessionMachine;
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
+
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
@@ -1005,13 +1009,14 @@ int handleSharedFolder(HandlerArg *a)
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
             /* get the mutable session machine */
-            a->session->COMGETTER(Machine)(machine.asOutParam());
+            ComPtr<IMachine> sessionMachine;
+            a->session->COMGETTER(Machine)(sessionMachine.asOutParam());
 
-            CHECK_ERROR(machine, CreateSharedFolder(Bstr(name).raw(),
-                                                    Bstr(hostpath).raw(),
-                                                    fWritable, fAutoMount));
+            CHECK_ERROR(sessionMachine, CreateSharedFolder(Bstr(name).raw(),
+                                                           Bstr(hostpath).raw(),
+                                                           fWritable, fAutoMount));
             if (SUCCEEDED(rc))
-                CHECK_ERROR(machine, SaveSettings());
+                CHECK_ERROR(sessionMachine, SaveSettings());
 
             a->session->UnlockMachine();
         }
@@ -1055,7 +1060,8 @@ int handleSharedFolder(HandlerArg *a)
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
             /* get the session machine */
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(machine.asOutParam()), 1);
+            ComPtr<IMachine> sessionMachine;
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
 
@@ -1070,12 +1076,13 @@ int handleSharedFolder(HandlerArg *a)
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
 
             /* get the mutable session machine */
-            a->session->COMGETTER(Machine)(machine.asOutParam());
+            ComPtr<IMachine> sessionMachine;
+            a->session->COMGETTER(Machine)(sessionMachine.asOutParam());
 
-            CHECK_ERROR(machine, RemoveSharedFolder(Bstr(name).raw()));
+            CHECK_ERROR(sessionMachine, RemoveSharedFolder(Bstr(name).raw()));
 
             /* commit and close the session */
-            CHECK_ERROR(machine, SaveSettings());
+            CHECK_ERROR(sessionMachine, SaveSettings());
             a->session->UnlockMachine();
         }
     }

@@ -197,7 +197,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
     if (pSnapshot)
     {
         ComPtr<ISnapshot> pCurrentSnapshot;
-        CHECK_ERROR2_RET(pMachine,COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(pMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
         hrc = showSnapshots(pSnapshot, pCurrentSnapshot, enmDetails);
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
@@ -285,7 +285,8 @@ int handleSnapshot(HandlerArg *a)
     do
     {
         /* replace the (read-only) IMachine object by a writable one */
-        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(pMachine.asOutParam()));
+        ComPtr<IMachine> sessionMachine;
+        CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         /* switch based on the command */
         bool fDelete = false,
@@ -346,9 +347,9 @@ int handleSnapshot(HandlerArg *a)
                 break;
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(pMachine, TakeSnapshot(name.raw(), desc.raw(),
-                                                     fPause,
-                                                     progress.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, TakeSnapshot(name.raw(), desc.raw(),
+                                                           fPause,
+                                                           progress.asOutParam()));
 
             rc = showProgress(progress);
             CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
@@ -381,12 +382,12 @@ int handleSnapshot(HandlerArg *a)
 
             if (fRestoreCurrent)
             {
-                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
             }
             else
             {
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                CHECK_ERROR_BREAK(sessionMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
                                                          pSnapshot.asOutParam()));
             }
 
@@ -394,14 +395,14 @@ int handleSnapshot(HandlerArg *a)
 
             if (fDelete)
             {
-                CHECK_ERROR_BREAK(pMachine, DeleteSnapshot(bstrSnapGuid.raw(),
+                CHECK_ERROR_BREAK(sessionMachine, DeleteSnapshot(bstrSnapGuid.raw(),
                                                            pProgress.asOutParam()));
             }
             else
             {
                 // restore or restore current
                 RTPrintf("Restoring snapshot %ls\n", bstrSnapGuid.raw());
-                CHECK_ERROR_BREAK(pMachine, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, RestoreSnapshot(pSnapshot, pProgress.asOutParam()));
             }
 
             rc = showProgress(pProgress);
@@ -421,11 +422,11 @@ int handleSnapshot(HandlerArg *a)
             if (   !strcmp(a->argv[2], "--current")
                 || !strcmp(a->argv[2], "-current"))
             {
-                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(sessionMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
             }
             else
             {
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                CHECK_ERROR_BREAK(sessionMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
                                                          pSnapshot.asOutParam()));
             }
 
@@ -479,8 +480,8 @@ int handleSnapshot(HandlerArg *a)
 
             ComPtr<ISnapshot> pSnapshot;
 
-            CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                     pSnapshot.asOutParam()));
+            CHECK_ERROR_BREAK(sessionMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                           pSnapshot.asOutParam()));
 
             /* get the machine of the given snapshot */
             ComPtr<IMachine> pMachine2;
@@ -488,9 +489,9 @@ int handleSnapshot(HandlerArg *a)
             showVMInfo(a->virtualBox, pMachine2, NULL, VMINFO_NONE);
         }
         else if (!strcmp(a->argv[1], "list"))
-            rc = handleSnapshotList(a, pMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+            rc = handleSnapshotList(a, sessionMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
         else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
-            DumpSnapshot(pMachine);
+            DumpSnapshot(sessionMachine);
         else
         {
             errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
