@@ -5503,6 +5503,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
              * Check whether the hotpluggable flag of all storage devices differs
              * from the default for old settings.
              * AHCI ports are hotpluggable by default every other device is not.
+             * Also check if there are USB storage controllers.
              */
             for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
                  it != storageMachine.llStorageControllers.end();
@@ -5510,6 +5511,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             {
                 bool fSettingsBumped = false;
                 const StorageController &sctl = *it;
+
+                if (sctl.controllerType == StorageControllerType_USB)
+                {
+                    m->sv = SettingsVersion_v1_15;
+                    fSettingsBumped = true;
+                    break;
+                }
 
                 for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
                      it2 != sctl.llAttachedDevices.end();
@@ -5533,6 +5541,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                     return;
             }
 
+            /*
+             * Check if there is an xHCI (USB3) USB controller.
+             */
             for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
                  it != hardwareMachine.usbSettings.llUSBControllers.end();
                  ++it)
