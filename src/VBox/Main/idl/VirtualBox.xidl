@@ -20110,7 +20110,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="1622f8d2-6c76-4410-9e78-86e083046efc"
+    uuid="b2ddb312-2f9e-4e69-98df-7235e43b2149"
     >
 
     <desc>
@@ -20489,9 +20489,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IHostNameResolutionConfigurationChangeEvent">IHostNameResolutionConfigurationChangeEvent</link>.
       </desc>
     </const>
-    <!-- OnHostNameResolutionConfigurationChange -->
+    <const name="OnSnapshotRestored" value="95">
+      <desc>
+        See <link to="ISnapshotRestoredEvent">ISnapshotRestoredEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="95">
+    <const name="Last" value="96">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -20986,6 +20990,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         attempt to call its methods will return an error).
       </note>
 
+      <see><link to="ISnapshot"/></see>
+    </desc>
+    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
+
+  <interface
+    name="ISnapshotRestoredEvent" extends="ISnapshotEvent"
+    uuid="f4d803b4-9b2d-4377-bfe6-9702e881516b"
+    wsmap="managed" autogen="VBoxEvent" id="OnSnapshotRestored"
+    >
+    <desc>
+      Snapshot of the given machine has been restored.
       <see><link to="ISnapshot"/></see>
     </desc>
     <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>

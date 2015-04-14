@@ -2172,7 +2172,6 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
         else
             i_setMachineState(MachineState_PoweredOff);
 
-        i_updateMachineStateOnClient();
         stateRestored = true;
 
         /* Paranoia: no one must have saved the settings in the mean time. If
@@ -2264,7 +2263,6 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
         {
             /* restore the machine state */
             i_setMachineState(task.m_machineStateBackup);
-            i_updateMachineStateOnClient();
         }
     }
 
@@ -2274,7 +2272,7 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
     task.m_pProgress->i_notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->i_onSnapshotDeleted(mData->mUuid, Guid());
+        mParent->i_onSnapshotRestored(mData->mUuid, Guid());
 
     LogFlowThisFunc(("Done restoring snapshot (rc=%08X)\n", rc));
 
@@ -2487,12 +2485,17 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
     // which we acquired above; once this function leaves, the task will be unblocked;
     // set the proper machine state here now (note: after creating a Task instance)
     if (mData->mMachineState == MachineState_Running)
+    {
         i_setMachineState(MachineState_DeletingSnapshotOnline);
+        i_updateMachineStateOnClient();
+    }
     else if (mData->mMachineState == MachineState_Paused)
+    {
         i_setMachineState(MachineState_DeletingSnapshotPaused);
+        i_updateMachineStateOnClient();
+    }
     else
         i_setMachineState(MachineState_DeletingSnapshot);
-    i_updateMachineStateOnClient();
 
     /* return the progress to the caller */
     pProgress.queryInterfaceTo(aProgress.asOutParam());
@@ -3165,7 +3168,8 @@ void SessionMachine::i_deleteSnapshotHandler(DeleteSnapshotTask &task)
         // restore the machine state that was saved when the
         // task was started
         i_setMachineState(task.m_machineStateBackup);
-        i_updateMachineStateOnClient();
+        if (Global::IsOnline(mData->mMachineState))
+            i_updateMachineStateOnClient();
 
         mParent->i_saveModifiedRegistries();
     }

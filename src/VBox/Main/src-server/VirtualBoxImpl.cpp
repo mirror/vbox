@@ -2813,7 +2813,7 @@ void VirtualBox::i_onSessionStateChange(const Guid &aId, SessionState_T aState)
     i_postEvent(new SessionEvent(this, aId, aState));
 }
 
-/** Event for onSnapshotTaken(), onSnapshotDeleted() and onSnapshotChange() */
+/** Event for i_onSnapshotTaken(), i_onSnapshotDeleted(), i_onSnapshotRestored() and i_onSnapshotChange() */
 struct SnapshotEvent : public VirtualBox::CallbackEvent
 {
     SnapshotEvent(VirtualBox *aVB, const Guid &aMachineId, const Guid &aSnapshotId,
@@ -2838,7 +2838,7 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
 void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                VBoxEventType_OnSnapshotTaken));
+                                  VBoxEventType_OnSnapshotTaken));
 }
 
 /**
@@ -2847,7 +2847,16 @@ void VirtualBox::i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshot
 void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                VBoxEventType_OnSnapshotDeleted));
+                                  VBoxEventType_OnSnapshotDeleted));
+}
+
+/**
+ *  @note Doesn't lock any object.
+ */
+void VirtualBox::i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId)
+{
+    i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
+                                  VBoxEventType_OnSnapshotRestored));
 }
 
 /**
@@ -2856,7 +2865,7 @@ void VirtualBox::i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapsh
 void VirtualBox::i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId)
 {
     i_postEvent(new SnapshotEvent(this, aMachineId, aSnapshotId,
-                                VBoxEventType_OnSnapshotChanged));
+                                  VBoxEventType_OnSnapshotChanged));
 }
 
 /** Event for onGuestPropertyChange() */

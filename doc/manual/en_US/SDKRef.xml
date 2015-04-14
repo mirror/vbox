@@ -3922,6 +3922,16 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
+          <para>A new event has been introduced, which signals when a snapshot has been
+          restored:
+          <xref linkend="ISnapshotRestoredEvent" xreflabel="ISnapshotRestoredEvent"/>.
+          Previously the event
+          <xref linkend="ISnapshotDeletedEvent" xreflabel="ISnapshotDeletedEvent"/> was
+          signalled, which isn't logical (but could be distinguished from actual deletion
+          by the fact that the snapshot was still there).</para>
+        </listitem>
+
+        <listitem>
           <para>The method <xref linkend="IVirtualBox__createMedium"
           xreflabel="IVirtualBox::createMedium()" /> replaces
           <computeroutput>VirtualBox::createHardDisk()</computeroutput>.

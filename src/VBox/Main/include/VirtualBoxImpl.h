@@ -140,6 +140,7 @@ public:
 
     void i_onSnapshotTaken(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotDeleted(const Guid &aMachineId, const Guid &aSnapshotId);
+    void i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                  IN_BSTR aFlags);

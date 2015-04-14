@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -562,6 +562,8 @@ typedef enum LOGGROUP
     /** Main group, ISnapshotEvent. */
     LOG_GROUP_MAIN_SNAPSHOTEVENT,
     /** Main group, ISnapshotTakenEvent. */
+    LOG_GROUP_MAIN_SNAPSHOTRESTOREDEVENT,
+    /** Main group, ISnapshotRestoredEvent. */
     LOG_GROUP_MAIN_SNAPSHOTTAKENEVENT,
     /** Main group, IStateChangedEvent. */
     LOG_GROUP_MAIN_STATECHANGEDEVENT,
@@ -1025,6 +1027,7 @@ typedef enum LOGGROUP
     "MAIN_SNAPSHOTCHANGEDEVENT", \
     "MAIN_SNAPSHOTDELETEDEVENT", \
     "MAIN_SNAPSHOTEVENT", \
+    "MAIN_SNAPSHOTRESTOREDEVENT", \
     "MAIN_SNAPSHOTTAKENEVENT", \
     "MAIN_STATECHANGEDEVENT", \
     "MAIN_STORAGECONTROLLER", \
