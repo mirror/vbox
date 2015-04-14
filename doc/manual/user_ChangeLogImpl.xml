@@ -74,7 +74,7 @@
 
       <listitem>
         <para>GUI: improved HID LEDs synchronization for Mac and Windows hosts.
-          Phisical LEDs state now restored together with VM state restore</para>
+          Phisical LEDs state now restored together with VM state restore.</para>
       </listitem>
 
       <listitem>
@@ -124,6 +124,15 @@
       <listitem>
         <para>API: a number of settings (e.g. network settings) can now also
           be changed when the VM is in saved state</para>
+      </listitem>
+
+      <listitem>
+        <para>3D: fix potential race in which might cause a crash on VM
+          termination</para>
+      </listitem>
+
+      <listitem>
+        <para>3D: fixed a possible memory leak in the host service</para>
       </listitem>
 
     </itemizedlist>
