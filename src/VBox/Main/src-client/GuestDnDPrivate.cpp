@@ -281,7 +281,7 @@ HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
     {
         rc = m_progress->init(static_cast<IGuest*>(pParent),
                               Bstr(pParent->tr("Dropping data")).raw(),
-                              TRUE);
+                              FALSE /* fCancelable */);
     }
     return rc;
 }

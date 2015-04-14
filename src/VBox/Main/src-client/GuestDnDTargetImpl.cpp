@@ -431,9 +431,8 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId,
                                           i, paParms);
         if (RT_SUCCESS(rc))
         {
-            /* Query the progress object to the caller. */
-            if (aProgress)
-                pResp->queryProgressTo(aProgress.asOutParam());
+            hr = pResp->queryProgressTo(aProgress.asOutParam());
+            ComAssertComRC(hr);
         }
     }
 
