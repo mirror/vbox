@@ -595,8 +595,10 @@
     the benefits of communicating with the VirtualBox hypervisor.</para>
     
     <para>Most mainstream, modern operating systems, including Windows and
-    Linux, support one or more paravirtualization interfaces without
-    needing the installation of additional software.</para>
+    Linux, ship with support for one or more paravirtualization interfaces.
+    Hence, there is typically no need to install additional software in the
+    guest (including VirtualBox Guest Additions) to make use of this
+    feature.</para>
 
     <para>VirtualBox provides the following interfaces:</para>
       <itemizedlist>
