@@ -349,13 +349,14 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
  */
 DECL_FORCE_INLINE(int32_t) rtMemCacheGrabObj(PRTMEMCACHEPAGE pPage)
 {
-    int32_t cFreeNew = ASMAtomicDecS32(&pPage->cFree);
-    if (cFreeNew < 0)
+    if (ASMAtomicUoReadS32(&pPage->cFree) > 0)
     {
+        int32_t cFreeNew = ASMAtomicDecS32(&pPage->cFree);
+        if (cFreeNew >= 0)
+            return cFreeNew;
         ASMAtomicIncS32(&pPage->cFree);
-        return -1;
     }
-    return cFreeNew;
+    return -1;
 }
 
 
@@ -413,7 +414,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
     /*
      * Grab a free object at the page level.
      */
-    PRTMEMCACHEPAGE pPage = ASMAtomicReadPtrT(&pThis->pPageHint, PRTMEMCACHEPAGE);
+    PRTMEMCACHEPAGE pPage = ASMAtomicUoReadPtrT(&pThis->pPageHint, PRTMEMCACHEPAGE);
     int32_t iObj = pPage ? rtMemCacheGrabObj(pPage) : -1;
     if (iObj < 0)
     {
