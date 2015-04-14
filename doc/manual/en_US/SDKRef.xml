@@ -141,7 +141,7 @@
           <listitem>
             <para>Internally, for portability and easier maintenance, the Main
             API is implemented using the <emphasis role="bold">Component
-            Object Model (COM),</emphasis> an interprocess mechanism for
+            Object Model (COM), </emphasis> an interprocess mechanism for
             software components originally introduced by Microsoft for
             Microsoft Windows. On a Windows host, VirtualBox will use
             Microsoft COM; on other hosts where COM is not present, it ships
@@ -1391,14 +1391,14 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>a
 
             <orderedlist>
               <listitem>
-                <para>For <emphasis role="bold">C++,</emphasis> among many
+                <para>For <emphasis role="bold">C++, </emphasis> among many
                 others, the gSOAP toolkit is a good option. Parts of gSOAP are
                 also used in VirtualBox to implement the VirtualBox web
                 service.</para>
               </listitem>
 
               <listitem>
-                <para>For <emphasis role="bold">Java,</emphasis> there are
+                <para>For <emphasis role="bold">Java, </emphasis> there are
                 several implementations already described in this document
                 (see <xref linkend="glue-jax-ws" /> and <xref
                 linkend="webservice-java-sample" />).</para>
@@ -3857,38 +3857,54 @@ AuthResult AUTHCALL AuthEntry(
       <itemizedlist>
         <listitem>
           <para>The methods for saving state, adopting a saved state file,
-          discarding saved state, taking a snapshot, restoring
+          discarding a saved state, taking a snapshot, restoring
           a snapshot and deleting a snapshot have been moved from
           <computeroutput>IConsole</computeroutput> to
           <computeroutput>IMachine</computeroutput>. This straightens out the
           logical placement of methods and was necessary to resolve a
-          long-standing issue, preventing 32 bit API clients from invokingi
+          long-standing issue, preventing 32 bit API clients from invoking
           those operations in the case where no VM is running.
-          Method
-          <xref linkend="IMachine__saveState"
-          xreflabel="IMachine::saveState()" /> replaces
-          <computeroutput>IConsole::saveState()</computeroutput>,
-          <xref linkend="IMachine__adoptSavedState"
-          xreflabel="IMachine::adoptSavedState()" /> replaces
-          <computeroutput>IConsole::adoptSavedState()</computeroutput>,
-          <xref linkend="IMachine__discardSavedState"
-          xreflabel="IMachine::discardSavedState()" /> replaces
-          <computeroutput>IConsole::discardSavedState()</computeroutput>,
-          <xref linkend="IMachine__takeSnapshot"
-          xreflabel="IMachine::takeSnapshot()" /> replaces
-          <computeroutput>IConsole::takeSnapshot()</computeroutput>,
-          <xref linkend="IMachine__deleteSnapshot"
-          xreflabel="IMachine::deleteSnapshot()" /> replaces
-          <computeroutput>IConsole::deleteSnapshot()</computeroutput>,
-          <xref linkend="IMachine__deleteSnapshotAndAllChildren"
-          xreflabel="IMachine::deleteSnapshotAndAllChildren()" /> replaces
-          <computeroutput>IConsole::deleteSnapshotAndAllChildren()</computeroutput>,
-          <xref linkend="IMachine__deleteSnapshotRange"
-          xreflabel="IMachine::deleteSnapshotRange()" /> replaces
-          <computeroutput>IConsole::deleteSnapshotRange()</computeroutput> and
-          <xref linkend="IMachine__restoreSnapshot"
-          xreflabel="IMachine::restoreSnapshot()" /> replaces
-          <computeroutput>IConsole::restoreSnapshot()</computeroutput>.
+          <itemizedlist>
+            <listitem><xref linkend="IMachine__saveState"
+                xreflabel="IMachine::saveState()" /> replaces
+              <computeroutput>IConsole::saveState()</computeroutput>
+            </listitem>
+            <listitem>
+              <xref linkend="IMachine__adoptSavedState"
+                xreflabel="IMachine::adoptSavedState()" /> replaces
+              <computeroutput>IConsole::adoptSavedState()</computeroutput>
+            </listitem>
+            <listitem>
+              <xref linkend="IMachine__discardSavedState"
+                xreflabel="IMachine::discardSavedState()" /> replaces
+              <computeroutput>IConsole::discardSavedState()</computeroutput>
+            </listitem>
+            <listitem>
+              <xref linkend="IMachine__takeSnapshot"
+                xreflabel="IMachine::takeSnapshot()" /> replaces
+              <computeroutput>IConsole::takeSnapshot()</computeroutput>
+            </listitem>
+            <listitem>
+              <xref linkend="IMachine__deleteSnapshot"
+                xreflabel="IMachine::deleteSnapshot()" /> replaces
+              <computeroutput>IConsole::deleteSnapshot()</computeroutput>
+            </listitem>
+            <listitem>
+              <xref linkend="IMachine__deleteSnapshotAndAllChildren"
+                xreflabel="IMachine::deleteSnapshotAndAllChildren()" /> replaces
+              <computeroutput>IConsole::deleteSnapshotAndAllChildren()</computeroutput>
+            </listitem>
+            <listitem>
+               <xref linkend="IMachine__deleteSnapshotRange"
+                xreflabel="IMachine::deleteSnapshotRange()" /> replaces
+               <computeroutput>IConsole::deleteSnapshotRange()</computeroutput>
+             </listitem>
+             <listitem>
+               <xref linkend="IMachine__restoreSnapshot"
+                xreflabel="IMachine::restoreSnapshot()" /> replaces
+               <computeroutput>IConsole::restoreSnapshot()</computeroutput>
+             </listitem>
+           </itemizedlist>
           Small adjustments to the parameter lists have been made to reduce
           the number of API calls when taking online snapshots etc.</para>
         </listitem>
