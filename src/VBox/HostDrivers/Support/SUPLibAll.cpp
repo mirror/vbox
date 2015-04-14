@@ -152,7 +152,7 @@ SUPDECL(uint64_t) SUPReadTscWithDelta(PSUPGLOBALINFOPAGE pGip)
     {
         int64_t iTscDelta = pGip->aCPUs[iGipCpu].i64TSCDelta;
         if (RT_LIKELY(iTscDelta != INT64_MAX))
-            return uTsc + iTscDelta;
+            return uTsc - iTscDelta;
 
 # ifdef IN_RING3
         /*
