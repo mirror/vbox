@@ -108,6 +108,39 @@ void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY)
 }
 
 /** Set a graphics mode.  Poke any required values into registers, do an HGSMI
+ * mode set and tell the host we support advanced graphics functions.
+ */
+void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned
+ cHeight, int x, int y, bool fEnabled,
+                 bool fConnected, struct vbvxFrameBuffer *pFrameBuffer)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    uint32_t offStart;
+    uint16_t fFlags;
+    int rc;
+    bool fEnabledAndVisible = fEnabled && x + cWidth <= pFrameBuffer->cWidth && y + cHeight <= pFrameBuffer->cHeight;
+    /* Recent host code has a flag to blank the screen; older code needs BPP set to zero. */
+    uint32_t cBPP = fEnabledAndVisible || pVBox->fHostHasScreenBlankingFlag ? pFrameBuffer->cBPP : 0;
+
+    TRACE_LOG("cDisplay=%u, cWidth=%u, cHeight=%u, x=%d, y=%d, fEnabled=%d, fConnected=%d, pFrameBuffer: { x0=%d, y0=%d, cWidth=%u, cHeight=%u, cBPP=%u }\n",
+              cDisplay, cWidth, cHeight, x, y, fEnabled, fConnected, pFrameBuffer->x0, pFrameBuffer->y0, pFrameBuffer->cWidth,
+              pFrameBuffer->cHeight, pFrameBuffer->cBPP);
+    VBVXASSERT(cWidth != 0 && cHeight != 0, ("cWidth = 0 or cHeight = 0\n"));
+    offStart = (y * pFrameBuffer->cWidth + x) * pFrameBuffer->cBPP / 8;
+    if (cDisplay == 0 && fEnabled)
+        VBoxVideoSetModeRegisters(cWidth, cHeight, pFrameBuffer->cWidth, pFrameBuffer->cBPP, 0, x, y);
+    fFlags = VBVA_SCREEN_F_ACTIVE;
+    fFlags |= (fConnected ? 0 : VBVA_SCREEN_F_DISABLED);
+    fFlags |= (!fEnabledAndVisible && pVBox->fHostHasScreenBlankingFlag ? VBVA_SCREEN_F_BLANK : 0);
+    VBoxHGSMIProcessDisplayInfo(&pVBox->guestCtx, cDisplay, x - pFrameBuffer->x0, y - pFrameBuffer->y0, offStart,
+                                pFrameBuffer->cWidth * pFrameBuffer->cBPP / 8, cWidth, cHeight, cBPP, fFlags);
+    rc = VBoxHGSMIUpdateInputMapping(&pVBox->guestCtx, 0 - pFrameBuffer->x0, 0 - pFrameBuffer->y0, pFrameBuffer->cWidth,
+                                     pFrameBuffer->cHeight);
+    if (RT_FAILURE(rc))
+        FatalError("Failed to update the input mapping.\n");
+}
+
+/** Set a graphics mode.  Poke any required values into registers, do an HGSMI
  * mode set and tell the host we support advanced graphics functions.  This
  * procedure is complicated by the fact that X.Org can implicitly disable a
  * screen by resizing the virtual framebuffer so that the screen is no longer

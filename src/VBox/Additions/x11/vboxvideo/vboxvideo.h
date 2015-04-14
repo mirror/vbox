@@ -214,6 +214,8 @@ typedef struct VBOXRec
     RTRECTSIZE FBSize;
     /** Can we get mode hint and cursor integration information from HGSMI? */
     bool fHaveHGSMIModeHints;
+    /** Does the host support the screen blanking flag? */
+    bool fHostHasScreenBlankingFlag;
     /** Array of structures for receiving mode hints. */
     VBVAMODEHINT *paVBVAModeHints;
 #ifdef VBOXVIDEO_13
@@ -256,6 +258,24 @@ extern void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData
 extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
 
 /* setmode.c */
+
+/** Structure describing the virtual frame buffer.  It starts at the beginning
+ * of the video RAM. */
+struct vbvxFrameBuffer {
+    /** X offset of first screen in frame buffer. */
+    int x0;
+    /** Y offset of first screen in frame buffer. */
+    int y0;
+    /** Frame buffer virtual width. */
+    unsigned cWidth;
+    /** Frame buffer virtual height. */
+    unsigned cHeight;
+    /** Bits per pixel. */
+    unsigned cBPP;
+};
+
+extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
+                         bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
 extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
