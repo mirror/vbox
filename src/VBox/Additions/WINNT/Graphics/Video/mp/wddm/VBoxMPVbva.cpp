@@ -1006,7 +1006,7 @@ VBOXCMDVBVA_HDR* VBoxCmdVbvaSubmitLock(PVBOXMP_DEVEXT pDevExt, VBOXCMDVBVA *pVbv
     void* pvBuffer = VBoxVBVAExAllocContiguous(&pVbva->Vbva, &VBoxCommonFromDeviceExt(pDevExt)->guestCtx, cbCmd);
     if (!pvBuffer)
     {
-        WARN(("failed to allocate contiguous buffer, trying nopping the tail"));
+        WARN(("failed to allocate contiguous buffer %d bytes, trying nopping the tail", cbCmd));
         uint32_t cbTail = VBoxVBVAExGetFreeTail(&pVbva->Vbva);
         if (!cbTail)
         {
