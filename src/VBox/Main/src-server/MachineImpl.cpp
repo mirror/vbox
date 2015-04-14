@@ -7131,7 +7131,7 @@ HRESULT Machine::discardSavedState(BOOL aFRemoveFile)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // This check should always fail.
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     AssertFailedReturn(E_NOTIMPL);
@@ -12931,7 +12931,7 @@ HRESULT SessionMachine::discardSavedState(BOOL aFRemoveFile)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = i_checkStateDependency(MutableStateDep);
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
     if (FAILED(rc)) return rc;
 
     if (mData->mMachineState != MachineState_Saved)

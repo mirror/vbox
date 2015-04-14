@@ -1429,7 +1429,9 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
                         tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %s)"),
                         Global::stringifyMachineState(mData->mMachineState));
 
-    HRESULT rc = S_OK;
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
+    if (FAILED(rc))
+        return rc;
 
     // prepare the progress object:
     // a) count the no. of hard disk attachments to get a matching no. of progress sub-operations
@@ -1583,8 +1585,8 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         if (task.m_fTakingSnapshotOnline)
         {
             Bstr value;
-            HRESULT rc = GetExtraData(Bstr("VBoxInternal2/ForceTakeSnapshotWithoutState").raw(),
-                                      value.asOutParam());
+            rc = GetExtraData(Bstr("VBoxInternal2/ForceTakeSnapshotWithoutState").raw(),
+                              value.asOutParam());
             if (FAILED(rc) || value != "1")
                 // creating a new online snapshot: we need a fresh saved state file
                 i_composeSavedStateFilename(task.m_strStateFilePath);
@@ -1950,11 +1952,13 @@ HRESULT SessionMachine::restoreSnapshot(const ComPtr<ISnapshot> &aSnapshot,
                         tr("Cannot delete the current state of the running machine (machine state: %s)"),
                         Global::stringifyMachineState(mData->mMachineState));
 
+    HRESULT rc = i_checkStateDependency(MutableOrSavedStateDep);
+    if (FAILED(rc))
+        return rc;
+
     ISnapshot* iSnapshot = aSnapshot;
     ComObjPtr<Snapshot> pSnapshot(static_cast<Snapshot*>(iSnapshot));
     ComObjPtr<SnapshotMachine> pSnapMachine = pSnapshot->i_getSnapshotMachine();
-
-    HRESULT rc = S_OK;
 
     // create a progress object. The number of operations is:
     // 1 (preparing) + # of hard disks + 1 (if we need to copy the saved state file) */
@@ -2350,7 +2354,6 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
 
     AssertReturn(!aStartId.isZero() && !aEndId.isZero() && aStartId.isValid() && aEndId.isValid(), E_INVALIDARG);
 
-
     /** @todo implement the "and all children" and "range" variants */
     if (aDeleteAllChildren || aStartId != aEndId)
         ReturnComNotImplemented();
@@ -2374,9 +2377,14 @@ HRESULT SessionMachine::i_deleteSnapshot(const com::Guid &aStartId,
                         tr("Invalid machine state: %s"),
                         Global::stringifyMachineState(mData->mMachineState));
 
+    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
+    if (FAILED(rc))
+        return rc;
+
     ComObjPtr<Snapshot> pSnapshot;
-    HRESULT rc = i_findSnapshotById(aStartId, pSnapshot, true /* aSetError */);
-    if (FAILED(rc)) return rc;
+    rc = i_findSnapshotById(aStartId, pSnapshot, true /* aSetError */);
+    if (FAILED(rc))
+        return rc;
 
     AutoWriteLock snapshotLock(pSnapshot COMMA_LOCKVAL_SRC_POS);
     Utf8Str str;
