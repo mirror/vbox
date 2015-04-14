@@ -37,8 +37,6 @@
 
 #ifdef VBOXVIDEO_13
 # ifdef RT_OS_LINUX
-# include "randrstr.h"
-# include "xf86_OSproc.h"
 #  include <linux/input.h>
 #  ifndef EVIOCGRAB
 #   define EVIOCGRAB _IOW('E', 0x90, int)
@@ -52,6 +50,7 @@
 #  include <unistd.h>
 # endif /* RT_OS_LINUX */
 #endif /* VBOXVIDEO_13 */
+
 /**************************************************************************
 * Main functions                                                          *
 **************************************************************************/
@@ -154,9 +153,8 @@ void vboxAddModes(ScrnInfoPtr pScrn)
     }
 }
 
-/** Set the initial values for the guest screen size hints by reading saved
- * values from files. */
-/** @todo Actually read the files instead of setting dummies. */
+/** Set the initial values for the guest screen size hints to standard values
+ * in case nothing else is available. */
 void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
@@ -172,97 +170,6 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
     /* Set up the first mode correctly to match the requested initial mode. */
     pScrn->modes->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
     pScrn->modes->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
-    /* RandR 1.1 quirk: make sure that the initial resolution is always present
-     * in the mode list as RandR will always advertise a mode of the initial
-     * virtual resolution via GetScreenInfo. */
-    pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pScrn, pMode, NULL, pVBox->pScreens[0].aPreferredSize.cx,
-                        pVBox->pScreens[0].aPreferredSize.cy);
-}
-
-static void updateUseHardwareCursor(VBOXPtr pVBox, uint32_t fCursorCapabilities)
-{
-    if (   !(fCursorCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-        && (fCursorCapabilities & VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE))
-        pVBox->fUseHardwareCursor = true;
-    else
-        pVBox->fUseHardwareCursor = false;
-}
-
-# define SIZE_HINTS_PROPERTY         "VBOX_SIZE_HINTS"
-# define MOUSE_CAPABILITIES_PROPERTY "VBOX_MOUSE_CAPABILITIES"
-
-/** Read in information about the most recent size hints requested for the
- * guest screens.  A client application sets the hint information as a root
- * window property. */
-/* TESTING: dynamic resizing and absolute pointer toggling work on old guest X servers and recent ones on Linux at the log-in screen. */
-/** @note we try to maximise code coverage by typically using all code paths (HGSMI and properties) in a single X session. */
-void VBoxUpdateSizeHints(ScrnInfoPtr pScrn)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    size_t cModesFromProperty, cDummy;
-    int32_t *paModeHints, *pfCursorCapabilities;
-    unsigned i;
-    uint32_t fCursorCapabilities;
-    bool fOldUseHardwareCursor = pVBox->fUseHardwareCursor;
-
-    if (vbvxGetIntegerPropery(pScrn, SIZE_HINTS_PROPERTY, &cModesFromProperty, &paModeHints) != VINF_SUCCESS)
-        paModeHints = NULL;
-    if (   vbvxGetIntegerPropery(pScrn, MOUSE_CAPABILITIES_PROPERTY, &cDummy, &pfCursorCapabilities) != VINF_SUCCESS
-        || cDummy != 1)
-        pfCursorCapabilities = NULL;
-#ifdef VBOXVIDEO_13
-    if (!pVBox->fHaveReadHGSMIModeHintData && RT_SUCCESS(VBoxHGSMIGetModeHints(&pVBox->guestCtx, pVBox->cScreens,
-                                                         pVBox->paVBVAModeHints)))
-    {
-        for (i = 0; i < pVBox->cScreens; ++i)
-        {
-            if (pVBox->paVBVAModeHints[i].magic == VBVAMODEHINT_MAGIC)
-            {
-                pVBox->pScreens[i].aPreferredSize.cx = pVBox->paVBVAModeHints[i].cx;
-                pVBox->pScreens[i].aPreferredSize.cy = pVBox->paVBVAModeHints[i].cy;
-                pVBox->pScreens[i].afConnected = pVBox->paVBVAModeHints[i].fEnabled;
-                /* Do not re-read this if we have data from HGSMI. */
-                if (paModeHints != NULL && i < cModesFromProperty)
-                    pVBox->pScreens[i].lastModeHintFromProperty = paModeHints[i];
-            }
-        }
-    }
-    if (!pVBox->fHaveReadHGSMIModeHintData)
-    {
-        if (RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_CURSOR_CAPABILITIES, &fCursorCapabilities)))
-            updateUseHardwareCursor(pVBox, fCursorCapabilities);
-        else
-            pVBox->fUseHardwareCursor = false;
-        /* Do not re-read this if we have data from HGSMI. */
-        if (pfCursorCapabilities != NULL)
-            pVBox->fLastCursorCapabilitiesFromProperty = *pfCursorCapabilities;
-    }
-    pVBox->fHaveReadHGSMIModeHintData = true;
-#endif
-    if (paModeHints != NULL)
-        for (i = 0; i < cModesFromProperty && i < pVBox->cScreens; ++i)
-        {
-            if (paModeHints[i] != 0 && paModeHints[i] != pVBox->pScreens[i].lastModeHintFromProperty)
-            {
-                if (paModeHints[i] == -1)
-                    pVBox->pScreens[i].afConnected = false;
-                else
-                {
-                    pVBox->pScreens[i].aPreferredSize.cx = paModeHints[i] >> 16;
-                    pVBox->pScreens[i].aPreferredSize.cy = paModeHints[i] & 0x8fff;
-                    pVBox->pScreens[i].afConnected = true;
-                }
-                pVBox->pScreens[i].lastModeHintFromProperty = paModeHints[i];
-            }
-        }
-    if (pfCursorCapabilities != NULL && *pfCursorCapabilities != pVBox->fLastCursorCapabilitiesFromProperty)
-    {
-        updateUseHardwareCursor(pVBox, (uint32_t)*pfCursorCapabilities);
-        pVBox->fLastCursorCapabilitiesFromProperty = *pfCursorCapabilities;
-    }
-    if (pVBox->fUseHardwareCursor != fOldUseHardwareCursor)
-        vbvxReprobeCursor(pScrn);
 }
 
 static bool useHardwareCursor(uint32_t fCursorCapabilities)
@@ -396,129 +303,12 @@ void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedU
 
 #undef COMPARE_AND_MAYBE_SET
 
-#ifndef VBOXVIDEO_13
-
-/** The RandR "proc" vector, which we wrap with our own in order to notice
- * when a client sends a GetScreenInfo request. */
-static int (*g_pfnVBoxRandRProc)(ClientPtr) = NULL;
-/** The swapped RandR "proc" vector. */
-static int (*g_pfnVBoxRandRSwappedProc)(ClientPtr) = NULL;
-
-/* TESTING: dynamic resizing and toggling cursor integration work with older guest X servers (1.2 and older). */
-static void vboxRandRDispatchCore(ClientPtr pClient)
-{
-    xRRGetScreenInfoReq *pReq = (xRRGetScreenInfoReq *)pClient->requestBuffer;
-    WindowPtr pWin;
-    ScrnInfoPtr pScrn;
-    VBOXPtr pVBox;
-    DisplayModePtr pMode;
-
-    if (pClient->req_len != sizeof(xRRGetScreenInfoReq) >> 2)
-        return;
-    pWin = (WindowPtr)SecurityLookupWindow(pReq->window, pClient,
-                                           SecurityReadAccess);
-    if (!pWin)
-        return;
-    pScrn = xf86Screens[pWin->drawable.pScreen->myNum];
-    pVBox = VBOXGetRec(pScrn);
-    TRACE_LOG("pVBox->fUseHardwareCursor=%u\n", pVBox->fUseHardwareCursor);
-    VBoxUpdateSizeHints(pScrn);
-    pMode = pScrn->modes;
-    if (pScrn->currentMode == pMode)
-        pMode = pMode->next;
-    pMode->HDisplay = pVBox->pScreens[0].aPreferredSize.cx;
-    pMode->VDisplay = pVBox->pScreens[0].aPreferredSize.cy;
-}
-
-static int vboxRandRDispatch(ClientPtr pClient)
-{
-    xReq *pReq = (xReq *)pClient->requestBuffer;
-
-    if (pReq->data == X_RRGetScreenInfo)
-        vboxRandRDispatchCore(pClient);
-    return g_pfnVBoxRandRProc(pClient);
-}
-
-static int vboxRandRSwappedDispatch(ClientPtr pClient)
-{
-    xReq *pReq = (xReq *)pClient->requestBuffer;
-
-    if (pReq->data == X_RRGetScreenInfo)
-        vboxRandRDispatchCore(pClient);
-    return g_pfnVBoxRandRSwappedProc(pClient);
-}
-
-static Bool vboxRandRCreateScreenResources(ScreenPtr pScreen)
-{
-    ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    ExtensionEntry *pExt;
-
-    pScreen->CreateScreenResources = pVBox->pfnCreateScreenResources;
-    if (!pScreen->CreateScreenResources(pScreen))
-        return FALSE;
-    /* I doubt we can be loaded twice - should I fail here? */
-    if (g_pfnVBoxRandRProc)
-        return TRUE;
-    pExt = CheckExtension(RANDR_NAME);
-    if (!pExt)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                   "RandR extension not found, disabling dynamic resizing.\n");
-        return TRUE;
-    }
-    if (   !ProcVector[pExt->base]
-#if    !defined(XF86_VERSION_CURRENT) \
-    || XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4, 3, 99, 0, 0)
-    /* SwappedProcVector is not exported in XFree86, so we will not support
-     * swapped byte order clients.  I doubt this is a big issue. */
-        || !SwappedProcVector[pExt->base]
-#endif
-        )
-        FatalError("RandR \"proc\" vector not initialised\n");
-    g_pfnVBoxRandRProc = ProcVector[pExt->base];
-    ProcVector[pExt->base] = vboxRandRDispatch;
-#if    !defined(XF86_VERSION_CURRENT) \
-    || XF86_VERSION_CURRENT >= XF86_VERSION_NUMERIC(4, 3, 99, 0, 0)
-    g_pfnVBoxRandRSwappedProc = SwappedProcVector[pExt->base];
-    SwappedProcVector[pExt->base] = vboxRandRSwappedDispatch;
-#endif
-    return TRUE;
-}
-
-/** Install our private RandR hook procedure, so that we can detect
- * GetScreenInfo requests from clients to update our dynamic mode.  This works
- * by installing a wrapper around CreateScreenResources(), which will be called
- * after RandR is initialised.  The wrapper then in turn wraps the RandR "proc"
- * vectors with its own handlers which will get called on any client RandR
- * request.  This should not be used in conjunction with RandR 1.2 or later.
- * A couple of points of interest in our RandR 1.1 support:
- *  * We use the first two screen modes as dynamic modes.  When a new mode hint
- *    arrives we update the first of the two which is not the current mode with
- *    the new size.
- *  * RandR 1.1 always advertises a mode of the size of the initial virtual
- *    resolution via GetScreenInfo(), so we make sure that a mode of that size
- *    is always present in the list.
- *  * RandR adds each new mode it sees to an internal array, but never removes
- *    entries.  This array might end up getting rather long given that we can
- *    report a lot more modes than physical hardware.
- */
-void VBoxSetUpRandR11(ScreenPtr pScreen)
-{
-    VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
-
-    if (!pScreen->CreateScreenResources)
-        FatalError("called to early: CreateScreenResources not yet initialised\n");
-    pVBox->pfnCreateScreenResources = pScreen->CreateScreenResources;
-    pScreen->CreateScreenResources = vboxRandRCreateScreenResources;
-}
-
-#endif /* !VBOXVIDEO_13 */
-
 #ifdef VBOXVIDEO_13
 # ifdef RT_OS_LINUX
-/* TESTING: dynamic resizing works on recent Linux guest X servers at the log-in screen. */
-/** @note to maximise code coverage we only read data from HGSMI once, and only when responding to an ACPI event. */
+/** We have this for two purposes: one is to ensure that the X server is woken
+ * up when we get a video ACPI event.  Two is to grab ACPI video events to
+ * prevent gnome-settings-daemon from seeing them, as older versions ignored
+ * the time stamp and handled them at the wrong time. */
 static void acpiEventHandler(int fd, void *pvData)
 {
     ScreenPtr pScreen = (ScreenPtr)pvData;
@@ -526,13 +316,6 @@ static void acpiEventHandler(int fd, void *pvData)
     struct input_event event;
     ssize_t rc;
 
-    pVBox->fHaveReadHGSMIModeHintData = false;
-    RRGetInfo(pScreen
-# if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
-              , TRUE
-# endif
-             );
-    VBVXASSERT(pVBox->fHaveReadHGSMIModeHintData == true, ("fHaveReadHGSMIModeHintData not set.\n"));
     do
         rc = read(fd, &event, sizeof(event));
     while (rc > 0 || (rc == -1 && errno == EINTR));
@@ -540,7 +323,7 @@ static void acpiEventHandler(int fd, void *pvData)
     VBVXASSERT(rc != -1 || errno == EAGAIN, ("Reading ACPI input event failed.\n"));
 }
 
-void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
+void vbvxSetUpLinuxACPI(ScreenPtr pScreen)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
     struct dirent *pDirent;
@@ -590,7 +373,7 @@ void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
     closedir(pDir);
 }
 
-void VBoxCleanUpLinuxACPI(ScreenPtr pScreen)
+void vbvxCleanUpLinuxACPI(ScreenPtr pScreen)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
     if (pVBox->fdACPIDevices != -1)
@@ -601,3 +384,4 @@ void VBoxCleanUpLinuxACPI(ScreenPtr pScreen)
 }
 # endif /* RT_OS_LINUX */
 #endif /* VBOXVIDEO_13 */
+
