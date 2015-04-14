@@ -662,7 +662,7 @@ bool UIMachineSettingsSF::isSharedFolderTypeSupported(UISharedFolderType sharedF
             fIsSharedFolderTypeSupported = isMachineInValidMode();
             break;
         case ConsoleType:
-            fIsSharedFolderTypeSupported = isMachineSaved() || isMachineOnline();
+            fIsSharedFolderTypeSupported = isMachineOnline();
             break;
         default:
             break;
