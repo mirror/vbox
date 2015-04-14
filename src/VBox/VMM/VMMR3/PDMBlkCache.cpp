@@ -923,7 +923,7 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
             break;
         }
 
-        RTStrFree(pszId);
+        RTMemFree(pszId);
         pszId = NULL;
 
         while (cEntries > 0)
@@ -966,7 +966,7 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
     }
 
     if (pszId)
-        RTStrFree(pszId);
+        RTMemFree(pszId);
 
     if (cRefs && RT_SUCCESS(rc))
         rc = SSMR3SetCfgError(pSSM, RT_SRC_POS,
