@@ -6753,6 +6753,28 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
+ * Ensures that we've got a complete basic context.
+ *
+ * This excludes the FPU, SSE, AVX, and similar extended state.  The interface
+ * is for the interpreter.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU of the calling EMT.
+ * @param   pMixedCtx       Pointer to the guest-CPU context which may have data
+ *                          needing to be synced in.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(int) HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    /* Note! Since this is only applicable to VT-x, the implementation is placed
+             in the VT-x part of the sources instead of the generic stuff. */
+    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fSupported)
+        return hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Check per-VM and per-VCPU force flag actions that require us to go back to
  * ring-3 for one reason or another.
  *
@@ -10927,35 +10949,32 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitMovCRx, y2);
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc |= hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
     AssertRCReturn(rc, rc);
 
     RTGCUINTPTR const uExitQualification = pVmxTransient->uExitQualification;
     uint32_t const uAccessType           = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
     PVM pVM                              = pVCpu->CTX_SUFF(pVM);
+    VBOXSTRICTRC rcStrict;
+    rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx); /* Only really need CS+SS. */
     switch (uAccessType)
     {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:       /* MOV to CRx */
         {
-#if 0
-            /* EMInterpretCRxWrite() references a lot of guest state (EFER, RFLAGS, Segment Registers, etc.) Sync entire state */
-            rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-#else
-            rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
             rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
-            rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
-#endif
             AssertRCReturn(rc, rc);
 
-            rc = EMInterpretCRxWrite(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx),
-                                     VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification),
-                                     VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification));
-            Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
-
+            rcStrict = IEMExecDecodedMovCRxWrite(pVCpu, pVmxTransient->cbInstr,
+                                                 VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification),
+                                                 VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification));
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE
+                      || rcStrict == VINF_PGM_SYNC_CR3, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             switch (VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification))
             {
                 case 0: /* CR0 */
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
-                    Log4(("CRX CR0 write rc=%d CR0=%#RX64\n", rc, pMixedCtx->cr0));
+                    Log4(("CRX CR0 write rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr0));
                     break;
                 case 2: /* CR2 */
                     /* Nothing to do here, CR2 it's not part of the VMCS. */
@@ -10963,15 +10982,15 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                 case 3: /* CR3 */
                     Assert(!pVM->hm.s.fNestedPaging || !CPUMIsGuestPagingEnabledEx(pMixedCtx));
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR3);
-                    Log4(("CRX CR3 write rc=%d CR3=%#RX64\n", rc, pMixedCtx->cr3));
+                    Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr3));
                     break;
                 case 4: /* CR4 */
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR4);
-                    Log4(("CRX CR4 write rc=%d CR4=%#RX64\n", rc, pMixedCtx->cr4));
+                    Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr4));
                     break;
                 case 8: /* CR8 */
                     Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
-                    /* CR8 contains the APIC TPR. Was updated by EMInterpretCRxWrite(). */
+                    /* CR8 contains the APIC TPR. Was updated by IEMExecDecodedMovCRxWrite(). */
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
                     break;
                 default:
@@ -10985,10 +11004,9 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ:        /* MOV from CRx */
         {
-            /* EMInterpretCRxRead() requires EFER MSR, CS. */
-            rc  = hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
             rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
+
             Assert(   !pVM->hm.s.fNestedPaging
                    || !CPUMIsGuestPagingEnabledEx(pMixedCtx)
                    || VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification) != 3);
@@ -10997,57 +11015,48 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
             Assert(   VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification) != 8
                    || !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
 
-            rc = EMInterpretCRxRead(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx),
-                                    VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification),
-                                    VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification));
-            Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
+            rcStrict = IEMExecDecodedMovCRxRead(pVCpu, pVmxTransient->cbInstr,
+                                                VMX_EXIT_QUALIFICATION_CRX_GENREG(uExitQualification),
+                                                VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification));
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification)]);
-            Log4(("CRX CR%d Read access rc=%d\n", VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification), rc));
+            Log4(("CRX CR%d Read access rcStrict=%Rrc\n", VMX_EXIT_QUALIFICATION_CRX_REGISTER(uExitQualification),
+                  VBOXSTRICTRC_VAL(rcStrict)));
             break;
         }
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:        /* CLTS (Clear Task-Switch Flag in CR0) */
         {
-            rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
-            rc = EMInterpretCLTS(pVM, pVCpu);
-            AssertRCReturn(rc, rc);
+            rcStrict = IEMExecDecodedClts(pVCpu, pVmxTransient->cbInstr);
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitClts);
-            Log4(("CRX CLTS write rc=%d\n", rc));
+            Log4(("CRX CLTS rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
         }
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
-            rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+            rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
-            rc = EMInterpretLMSW(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
-            if (RT_LIKELY(rc == VINF_SUCCESS))
-                HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
+            rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr,
+                                          VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));
+            AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT || rcStrict == VINF_PGM_CHANGE_MODE, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitLmsw);
-            Log4(("CRX LMSW write rc=%d\n", rc));
+            Log4(("CRX LMSW rcStrict=%d\n", VBOXSTRICTRC_VAL(rcStrict)));
             break;
         }
 
         default:
-        {
-            AssertMsgFailed(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType));
-            rc = VERR_VMX_UNEXPECTED_EXCEPTION;
-        }
+            AssertMsgFailedReturn(("Invalid access-type in Mov CRx VM-exit qualification %#x\n", uAccessType),
+                                  VERR_VMX_UNEXPECTED_EXCEPTION);
     }
 
-    /* Validate possible error codes. */
-    Assert(rc == VINF_SUCCESS || rc == VINF_PGM_CHANGE_MODE || rc == VERR_EM_INTERPRETER || rc == VINF_PGM_SYNC_CR3
-           || rc == VERR_VMX_UNEXPECTED_EXCEPTION);
-    if (RT_SUCCESS(rc))
-    {
-        int rc2 = hmR0VmxAdvanceGuestRip(pVCpu, pMixedCtx, pVmxTransient);
-        AssertRCReturn(rc2, rc2);
-    }
-
+    HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitMovCRx, y2);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 

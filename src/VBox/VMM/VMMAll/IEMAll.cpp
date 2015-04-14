@@ -188,15 +188,6 @@ typedef IEMSELDESC *PIEMSELDESC;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** @name IEM status codes.
- *
- * Not quite sure how this will play out in the end, just aliasing safe status
- * codes for now.
- *
- * @{ */
-#define VINF_IEM_RAISED_XCPT    VINF_EM_RESCHEDULE
-/** @} */
-
 /** Temporary hack to disable the double execution.  Will be removed in favor
  * of a dedicated execution mode in EM. */
 //#define IEM_VERIFICATION_MODE_NO_REM
@@ -1105,6 +1096,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         cbToTryRead = cbLeftOnPage;
     if (cbToTryRead > sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode)
         cbToTryRead = sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode;
+/** @todo r=bird: Convert assertion into undefined opcode exception? */
     Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
@@ -1200,12 +1192,13 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU8Slow(PIEMCPU pIemCpu, uin
 DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PIEMCPU pIemCpu, uint8_t *pu8)
 {
     uint8_t const offOpcode = pIemCpu->offOpcode;
-    if (RT_UNLIKELY(offOpcode >= pIemCpu->cbOpcode))
-        return iemOpcodeGetNextU8Slow(pIemCpu, pu8);
-
-    *pu8 = pIemCpu->abOpcode[offOpcode];
-    pIemCpu->offOpcode = offOpcode + 1;
-    return VINF_SUCCESS;
+    if (RT_LIKELY(offOpcode < pIemCpu->cbOpcode))
+    {
+        *pu8 = pIemCpu->abOpcode[offOpcode];
+        pIemCpu->offOpcode = offOpcode + 1;
+        return VINF_SUCCESS;
+    }
+    return iemOpcodeGetNextU8Slow(pIemCpu, pu8);
 }
 
 
@@ -3858,6 +3851,10 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
                   uint64_t    uCr2)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+#ifdef IN_RING0
+    int rc = HMR0EnsureCompleteBasicContext(IEMCPU_TO_VMCPU(pIemCpu), pCtx);
+    AssertRCReturn(rc, rc);
+#endif
 
     /*
      * Perform the V8086 IOPL check and upgrade the fault without nesting.
@@ -11233,6 +11230,96 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
         }
     }
 
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
+
+
+
+/**
+ * Interface for HM and EM to write to a CRx register.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   iCrReg      The control register number (destination).
+ * @param   iGReg       The general purpose register number (source).
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iCrReg, uint8_t iGReg)
+{
+    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+    Assert(iCrReg < 16);
+    Assert(iGReg < 16);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Cd_Rd, iCrReg, iGReg);
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to read from a CRx register.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   iGReg       The general purpose register number (destination).
+ * @param   iCrReg      The control register number (source).
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
+{
+    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+    Assert(iCrReg < 16);
+    Assert(iGReg < 16);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_2(iemCImpl_mov_Rd_Cd, iGReg, iCrReg);
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to clear the CR0[TS] bit.
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
+{
+    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_0(iemCImpl_clts);
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM to emulate the LMSW instruction (loads CR0).
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu       The cross context per virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   uValue      The value to load into CR0.
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uValue)
+{
+    AssertReturn(cbInstr - 3U <= 15U - 3U, VERR_IEM_INVALID_INSTR_LENGTH);
+
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_1(iemCImpl_lmsw, uValue);
     return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
 }
 

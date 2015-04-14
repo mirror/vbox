@@ -1452,7 +1452,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
     NOREF(pVM);
 
     /** @todo Clean up this mess. */
-    LogFlow(("EMInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
+    LogFlow(("emInterpretCRxWrite at %RGv CR%d <- %RX64\n", (RTGCPTR)pRegFrame->rip, DestRegCrx, val));
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     switch (DestRegCrx)
     {
@@ -1609,7 +1609,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
  * @param   SrcRegGen   General purpose register index (USE_REG_E**))
  *
  */
-VMM_INT_DECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
+static int emInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen)
 {
     uint64_t val;
     int      rc;
@@ -1628,47 +1628,6 @@ VMM_INT_DECL(int) EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
         return emUpdateCRx(pVM, pVCpu, pRegFrame, DestRegCrx, val);
 
     return VERR_EM_INTERPRETER;
-}
-
-/**
- * Interpret LMSW.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pRegFrame   The register frame.
- * @param   u16Data     LMSW source data.
- *
- */
-VMM_INT_DECL(int) EMInterpretLMSW(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint16_t u16Data)
-{
-    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
-    uint64_t OldCr0 = CPUMGetGuestCR0(pVCpu);
-
-    /* Only PE, MP, EM and TS can be changed; note that PE can't be cleared by this instruction. */
-    uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
-                    | (u16Data &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
-
-    return emUpdateCRx(pVM, pVCpu, pRegFrame, DISCREG_CR0, NewCr0);
-}
-
-
-/**
- * Interpret CLTS.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- *
- */
-VMM_INT_DECL(int) EMInterpretCLTS(PVM pVM, PVMCPU pVCpu)
-{
-    NOREF(pVM);
-
-    uint64_t cr0 = CPUMGetGuestCR0(pVCpu);
-    if (!(cr0 & X86_CR0_TS))
-        return VINF_SUCCESS;
-    return CPUMSetGuestCR0(pVCpu, cr0 & ~X86_CR0_TS);
 }
 
 
@@ -1804,7 +1763,7 @@ VMM_INT_DECL(int) EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
  * @param   SrcRegCRx   CRx register index (DISUSE_REG_CR*)
  *
  */
-VMM_INT_DECL(int) EMInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
+static int emInterpretCRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegCrx)
 {
     Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
     uint64_t val64;
@@ -3350,8 +3309,12 @@ static int emInterpretCpuId(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  */
 static int emInterpretClts(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    NOREF(pDis); NOREF(pRegFrame); NOREF(pvFault); NOREF(pcbSize);
-    return EMInterpretCLTS(pVM, pVCpu);
+    NOREF(pVM); NOREF(pDis); NOREF(pRegFrame); NOREF(pvFault); NOREF(pcbSize);
+
+    uint64_t cr0 = CPUMGetGuestCR0(pVCpu);
+    if (!(cr0 & X86_CR0_TS))
+        return VINF_SUCCESS;
+    return CPUMSetGuestCR0(pVCpu, cr0 & ~X86_CR0_TS);
 }
 
 
@@ -3363,6 +3326,7 @@ static int emInterpretLmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
     DISQPVPARAMVAL param1;
     uint32_t    val;
     NOREF(pvFault); NOREF(pcbSize);
+    Assert(pRegFrame == CPUMGetGuestCtxCore(pVCpu));
 
     int rc = DISQueryParamVal(pRegFrame, pDis, &pDis->Param1, &param1, DISQPVWHICH_SRC);
     if(RT_FAILURE(rc))
@@ -3382,7 +3346,14 @@ static int emInterpretLmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
     }
 
     LogFlow(("emInterpretLmsw %x\n", val));
-    return EMInterpretLMSW(pVM, pVCpu, pRegFrame, val);
+    uint64_t OldCr0 = CPUMGetGuestCR0(pVCpu);
+
+    /* Only PE, MP, EM and TS can be changed; note that PE can't be cleared by this instruction. */
+    uint64_t NewCr0 = ( OldCr0 & ~(             X86_CR0_MP | X86_CR0_EM | X86_CR0_TS))
+                    | (val     &  (X86_CR0_PE | X86_CR0_MP | X86_CR0_EM | X86_CR0_TS));
+
+    return emUpdateCRx(pVM, pVCpu, pRegFrame, DISCREG_CR0, NewCr0);
+
 }
 
 #ifdef EM_EMULATE_SMSW
@@ -3445,10 +3416,10 @@ static int emInterpretMovCRx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXC
 {
     NOREF(pvFault); NOREF(pcbSize);
     if ((pDis->Param1.fUse == DISUSE_REG_GEN32 || pDis->Param1.fUse == DISUSE_REG_GEN64) && pDis->Param2.fUse == DISUSE_REG_CR)
-        return EMInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxGenReg, pDis->Param2.Base.idxCtrlReg);
+        return emInterpretCRxRead(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxGenReg, pDis->Param2.Base.idxCtrlReg);
 
     if (pDis->Param1.fUse == DISUSE_REG_CR && (pDis->Param2.fUse == DISUSE_REG_GEN32 || pDis->Param2.fUse == DISUSE_REG_GEN64))
-        return EMInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxCtrlReg, pDis->Param2.Base.idxGenReg);
+        return emInterpretCRxWrite(pVM, pVCpu, pRegFrame, pDis->Param1.Base.idxCtrlReg, pDis->Param2.Base.idxGenReg);
 
     AssertMsgFailedReturn(("Unexpected control register move\n"), VERR_EM_INTERPRETER);
 }

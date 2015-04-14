@@ -208,6 +208,8 @@ VMMR0_INT_DECL(int)             HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMC
 VMMR0_INT_DECL(int)             HMR0TestSwitcher3264(PVM pVM);
 # endif
 
+VMMR0_INT_DECL(int)             HMR0EnsureCompleteBasicContext(PVMCPU pVCpu, PCPUMCTX pMixedCtx);
+
 /** @} */
 #endif /* IN_RING0 */
 
