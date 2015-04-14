@@ -67,6 +67,7 @@
 %define X86_CPUID_FEATURE_ECX_TM2       RT_BIT(8)
 %define X86_CPUID_FEATURE_ECX_SSSE3     RT_BIT(9)
 %define X86_CPUID_FEATURE_ECX_CNTXID    RT_BIT(10)
+%define X86_CPUID_FEATURE_ECX_SDBG      RT_BIT(11)
 %define X86_CPUID_FEATURE_ECX_FMA       RT_BIT(12)
 %define X86_CPUID_FEATURE_ECX_CX16      RT_BIT(13)
 %define X86_CPUID_FEATURE_ECX_TPRUPDATE RT_BIT(14)
@@ -141,6 +142,7 @@
 %define X86_CPUID_STEXT_FEATURE_EBX_AVX512ER          RT_BIT(27)
 %define X86_CPUID_STEXT_FEATURE_EBX_AVX512CD          RT_BIT(28)
 %define X86_CPUID_STEXT_FEATURE_EBX_SHA               RT_BIT(29)
+%define X86_CPUID_STEXT_FEATURE_ECX_PREFETCHWT1       RT_BIT(0)
 %define X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF     RT_BIT(0)
 %define X86_CPUID_EXT_FEATURE_EDX_SYSCALL       RT_BIT(11)
 %define X86_CPUID_EXT_FEATURE_EDX_NX            RT_BIT(20)
@@ -182,6 +184,11 @@
 %define X86_CPUID_AMD_FEATURE_ECX_XOP       RT_BIT(11)
 %define X86_CPUID_AMD_FEATURE_ECX_SKINIT    RT_BIT(12)
 %define X86_CPUID_AMD_FEATURE_ECX_WDT       RT_BIT(13)
+%define X86_CPUID_AMD_FEATURE_ECX_LWP       RT_BIT(15)
+%define X86_CPUID_AMD_FEATURE_ECX_FMA4      RT_BIT(16)
+%define X86_CPUID_AMD_FEATURE_ECX_NODEID    RT_BIT(19)
+%define X86_CPUID_AMD_FEATURE_ECX_TBM       RT_BIT(21)
+%define X86_CPUID_AMD_FEATURE_ECX_TOPOEXT   RT_BIT(22)
 %define X86_CPUID_AMD_ADVPOWER_EDX_TS        RT_BIT(0)
 %define X86_CPUID_AMD_ADVPOWER_EDX_FID       RT_BIT(1)
 %define X86_CPUID_AMD_ADVPOWER_EDX_VID       RT_BIT(2)
@@ -191,6 +198,10 @@
 %define X86_CPUID_AMD_ADVPOWER_EDX_MC        RT_BIT(6)
 %define X86_CPUID_AMD_ADVPOWER_EDX_HWPSTATE  RT_BIT(7)
 %define X86_CPUID_AMD_ADVPOWER_EDX_TSCINVAR  RT_BIT(8)
+%define X86_CPUID_AMD_ADVPOWER_EDX_CPB       RT_BIT(9)
+%define X86_CPUID_AMD_ADVPOWER_EDX_EFRO      RT_BIT(10)
+%define X86_CPUID_AMD_ADVPOWER_EDX_PFI       RT_BIT(11)
+%define X86_CPUID_AMD_ADVPOWER_EDX_PA        RT_BIT(12)
 %define X86_CR0_PE                          RT_BIT(0)
 %define X86_CR0_PROTECTION_ENABLE           RT_BIT(0)
 %define X86_CR0_MP                          RT_BIT(1)
@@ -285,8 +296,10 @@
 %define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
 %define X86_DR7_GET_RW(uDR7, iBp)            ( ( (uDR7) >> ((iBp) * 4 + 16) ) & 3 )
 %define X86_DR7_RW_ALL_MASKS                0x33330000
-%define X86_DR7_ANY_RW_IO(uDR7) \
+%ifndef VBOX_FOR_DTRACE_LIB
+ %define X86_DR7_ANY_RW_IO(uDR7) \
     (   (    0x22220000 & (uDR7) )
+%endif
 %define X86_DR7_LEN_BYTE                    0
 %define X86_DR7_LEN_WORD                    1
 %define X86_DR7_LEN_QWORD                   2
@@ -586,8 +599,20 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_OFF_FXSTATE_RSVD            0x1d0
 %define X86_FXSTATE_RSVD_32BIT_MAGIC    0x32b3232b
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
 %define X86_FSW_IE          RT_BIT(0)
 %define X86_FSW_DE          RT_BIT(1)
 %define X86_FSW_ZE          RT_BIT(2)
@@ -647,6 +672,33 @@
 %define X86_MXSCR_RC_ZERO     0x6000
 %define X86_MXSCR_FZ          RT_BIT(15)
 %define X86_MXSCR_MM          RT_BIT(17)
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%ifndef VBOX_FOR_DTRACE_LIB
+%endif
+%define XSAVE_C_X87         RT_BIT_64(0)
+%define XSAVE_C_SSE         RT_BIT_64(1)
+%define XSAVE_C_YMM         RT_BIT_64(2)
+%define XSAVE_C_BNDREGS     RT_BIT_64(3)
+%define XSAVE_C_BNDCSR      RT_BIT_64(4)
+%define XSAVE_C_OPMASK      RT_BIT_64(5)
+%define XSAVE_C_ZMM_HI256   RT_BIT_64(6)
+%define XSAVE_C_ZMM_16HI    RT_BIT_64(7)
+%define XSAVE_C_LWP         RT_BIT_64(62)
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86DESCATTR_TYPE            0x0000000f
