@@ -86,7 +86,7 @@ typedef struct RTMEMCACHEPAGE
     void volatile              *pbmAlloc;
     /** Bitmap tracking which blocks that has been thru the constructor. */
     void volatile              *pbmCtor;
-    /** Pointer to the object array.. */
+    /** Pointer to the object array. */
     uint8_t                    *pbObjects;
     /** The number of objects on this page.  */
     uint32_t                    cObjects;
@@ -148,6 +148,11 @@ typedef struct RTMEMCACHEINT
     PRTMEMCACHEFREEOBJ volatile pFreeTop;
 } RTMEMCACHEINT;
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static void rtMemCacheFreeList(RTMEMCACHEINT *pThis, PRTMEMCACHEFREEOBJ pHead);
 
 
 RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbAlignment, uint32_t cMaxObjects,
@@ -220,6 +225,7 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
     pThis->pPageHint        = NULL;
     pThis->pFreeTop         = NULL;
 
+#if 1 /* should be fixed now, enable shortly... */
     /** @todo
      * Here is a puzzler (or maybe I'm just blind), the free list code breaks
      * badly on my macbook pro (i7) (32-bit).
@@ -234,6 +240,7 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
      * No time to figure it out, so I'm disabling the broken code paths for
      * now. */
     pThis->fUseFreeList = false;
+#endif
 
     *phMemCache = pThis;
     return VINF_SUCCESS;
@@ -381,21 +388,21 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
     PRTMEMCACHEFREEOBJ pObj = ASMAtomicUoReadPtrT(&pThis->pFreeTop, PRTMEMCACHEFREEOBJ);
     if (pObj)
     {
-        do
+        pObj = ASMAtomicXchgPtrT(&pThis->pFreeTop, NULL, PRTMEMCACHEFREEOBJ);
+        if (pObj)
         {
-            PRTMEMCACHEFREEOBJ pNext = ASMAtomicUoReadPtrT(&pObj->pNext, PRTMEMCACHEFREEOBJ);
-            PRTMEMCACHEFREEOBJ pObjOld;
-            if (ASMAtomicCmpXchgExPtr(&pThis->pFreeTop, pNext, pObj, &pObjOld))
+            if (pObj->pNext)
             {
-                Assert(pObjOld == pObj);
-                Assert(pNext != pObjOld);
-                pObj->pNext = NULL;
-                *ppvObj = pObj;
-                return VINF_SUCCESS;
+                Assert(pObj->pNext != pObj);
+                PRTMEMCACHEFREEOBJ pAllocRace = ASMAtomicXchgPtrT(&pThis->pFreeTop, pObj->pNext, PRTMEMCACHEFREEOBJ);
+                if (pAllocRace)
+                    rtMemCacheFreeList(pThis, pAllocRace);
             }
-            pObj = pObjOld;
-            ASMNopPause();
-        } while (pObj);
+
+            pObj->pNext = NULL;
+            *ppvObj = pObj;
+            return VINF_SUCCESS;
+        }
     }
 
     /*
@@ -501,6 +508,58 @@ RTDECL(void *) RTMemCacheAlloc(RTMEMCACHE hMemCache)
 }
 
 
+
+/**
+ * Really frees one object.
+ *
+ * @param   pThis               The memory cache.
+ * @param   pvObj               The memory object to free.
+ */
+static void rtMemCacheFreeOne(RTMEMCACHEINT *pThis, void *pvObj)
+{
+    /* Note: Do *NOT* attempt to poison the object! */
+
+    /*
+     * Find the cache page.  The page structure is at the start of the page.
+     */
+    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
+    Assert(pPage->pCache == pThis);
+    Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
+
+    /*
+     * Clear the bitmap bit and update the two object counter. Order matters!
+     */
+    uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
+    uintptr_t iObj   = offObj / pThis->cbObject;
+    Assert(iObj * pThis->cbObject == offObj);
+    Assert(iObj < pThis->cPerPage);
+    AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
+
+    ASMAtomicIncS32(&pPage->cFree);
+    ASMAtomicIncS32(&pThis->cFree);
+}
+
+
+/**
+ * Really frees a list of 'freed' object.
+ *
+ * @param   pThis               The memory cache.
+ * @param   pHead               The head of the list.
+ */
+static void rtMemCacheFreeList(RTMEMCACHEINT *pThis, PRTMEMCACHEFREEOBJ pHead)
+{
+    while (pHead)
+    {
+        PRTMEMCACHEFREEOBJ pFreeMe = pHead;
+        pHead = pHead->pNext;
+        pFreeMe->pNext = NULL;
+        ASMCompilerBarrier();
+        rtMemCacheFreeOne(pThis, pFreeMe);
+    }
+}
+
+
+
 RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
 {
     if (!pvObj)
@@ -513,7 +572,9 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
     AssertPtr(pvObj);
     Assert(RT_ALIGN_P(pvObj, pThis->cbAlignment) == pvObj);
 
-    if (pThis->fUseFreeList)
+    if (!pThis->fUseFreeList)
+        rtMemCacheFreeOne(pThis, pvObj);
+    else
     {
 # ifdef RT_STRICT
         /* This is the same as the other branch, except it's not actually freed. */
@@ -531,39 +592,10 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
          * Push it onto the free stack.
          */
         PRTMEMCACHEFREEOBJ pObj = (PRTMEMCACHEFREEOBJ)pvObj;
-        PRTMEMCACHEFREEOBJ pNext = ASMAtomicUoReadPtrT(&pThis->pFreeTop, PRTMEMCACHEFREEOBJ);
-        PRTMEMCACHEFREEOBJ pFreeTopOld;
-        pObj->pNext = pNext;
-        while (!ASMAtomicCmpXchgExPtr(&pThis->pFreeTop, pObj, pNext, &pFreeTopOld))
-        {
-            pNext = pFreeTopOld;
-            Assert(pNext != pObj);
-            pObj->pNext = pNext;
-            ASMNopPause();
-        }
-    }
-    else
-    {
-        /* Note: Do *NOT* attempt to poison the object! */
-
-        /*
-         * Find the cache page.  The page structure is at the start of the page.
-         */
-        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
-        Assert(pPage->pCache == pThis);
-        Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
-
-        /*
-         * Clear the bitmap bit and update the two object counter. Order matters!
-         */
-        uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
-        uintptr_t iObj   = offObj / pThis->cbObject;
-        Assert(iObj * pThis->cbObject == offObj);
-        Assert(iObj < pThis->cPerPage);
-        AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
-
-        ASMAtomicIncS32(&pPage->cFree);
-        ASMAtomicIncS32(&pThis->cFree);
+        pObj->pNext = ASMAtomicXchgPtrT(&pThis->pFreeTop, NULL, PRTMEMCACHEFREEOBJ);
+        PRTMEMCACHEFREEOBJ pFreeRace = ASMAtomicXchgPtrT(&pThis->pFreeTop, pObj, PRTMEMCACHEFREEOBJ);
+        if (pFreeRace)
+            rtMemCacheFreeList(pThis, pFreeRace);
     }
 }
 
