@@ -1663,7 +1663,6 @@ static const RTGETOPTDEF g_aEncryptMediumOptions[] =
 int handleEncryptMedium(HandlerArg *a)
 {
     HRESULT rc;
-    int vrc;
     ComPtr<IMedium> hardDisk;
     const char *pszPasswordNew = NULL;
     const char *pszPasswordOld = NULL;
@@ -1809,7 +1808,6 @@ int handleEncryptMedium(HandlerArg *a)
 int handleCheckMediumPassword(HandlerArg *a)
 {
     HRESULT rc;
-    int vrc;
     ComPtr<IMedium> hardDisk;
     const char *pszFilenameOrUuid = NULL;
     Utf8Str strPassword;
