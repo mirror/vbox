@@ -903,7 +903,8 @@ static NTSTATUS vboxWddmSetupDisplaysNew(PVBOXMP_DEVEXT pDevExt)
     /* Size of the VBVA buffer which is used to pass VBOXCMDVBVA_* commands to the host.
      * Estimate max 4KB per command.
      */
-    ULONG cbCmdVbva = VBOXCMDVBVA_BUFFERSIZE(4096);
+    //ULONG cbCmdVbva = VBOXCMDVBVA_BUFFERSIZE(4096);
+    ULONG cbCmdVbva = RT_MIN(_4M, cbAvailable / 4); /* <- temporary fix against ring buffer overflow. */
 
     if (cbCmdVbva >= cbAvailable)
     {
