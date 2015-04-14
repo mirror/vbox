@@ -39,9 +39,9 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	 clname CODE  \
 	  segment VGAROM segaddr=0xC000 \
  	  segment _TEXT  segaddr=0xC000 offset=0xA00 \
- 	  segment VBE32  segaddr=0xC000 offset=0x4600 \
+ 	  segment VBE32  segaddr=0xC000 offset=0x4400 \
  	 clname DATA \
- 	  segment _DATA  segaddr=0xC000 offset=0x4800 \
+ 	  segment _DATA  segaddr=0xC000 offset=0x4600 \
 
  #
  # Updates the alternative source file.
