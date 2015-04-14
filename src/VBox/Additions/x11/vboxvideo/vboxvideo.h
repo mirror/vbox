@@ -256,6 +256,7 @@ extern void vbvxSetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t cData
 extern void vbvxReprobeCursor(ScrnInfoPtr pScrn);
 
 /* setmode.c */
+extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
 extern Bool vbox_cursor_init (ScreenPtr pScreen);

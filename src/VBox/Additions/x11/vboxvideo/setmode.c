@@ -74,6 +74,25 @@
 /** Clear the virtual framebuffer in VRAM.  Optionally also clear up to the
  * size of a new framebuffer.  Framebuffer sizes larger than available VRAM
  * be treated as zero and passed over. */
+void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize)
+{
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+
+    /* Assume 32BPP - this is just a sanity test. */
+    VBVXASSERT(   cbOldSize / 4 <= VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL
+               && cbNewSize / 4 <= VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL,
+               ("cbOldSize=%llu cbNewSize=%llu, max=%u.\n", (unsigned long long)cbOldSize, (unsigned long long)cbNewSize,
+                VBOX_VIDEO_MAX_VIRTUAL * VBOX_VIDEO_MAX_VIRTUAL));
+    if (cbOldSize > (size_t)pVBox->cbFBMax)
+        cbOldSize = pVBox->cbFBMax;
+    if (cbNewSize > (size_t)pVBox->cbFBMax)
+        cbNewSize = pVBox->cbFBMax;
+    memset(pVBox->base, 0, max(cbOldSize, cbNewSize));
+}
+
+/** Clear the virtual framebuffer in VRAM.  Optionally also clear up to the
+ * size of a new framebuffer.  Framebuffer sizes larger than available VRAM
+ * be treated as zero and passed over. */
 void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
