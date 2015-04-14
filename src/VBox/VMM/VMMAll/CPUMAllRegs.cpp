@@ -49,6 +49,9 @@
 # pragma optimize("y", off)
 #endif
 
+AssertCompile2MemberOffsets(VM, cpum.s.HostFeatures,  cpum.ro.HostFeatures);
+AssertCompile2MemberOffsets(VM, cpum.s.GuestFeatures, cpum.ro.GuestFeatures);
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -741,9 +744,23 @@ VMMDECL(int) CPUMSetGuestCR3(PVMCPU pVCpu, uint64_t cr3)
 
 VMMDECL(int) CPUMSetGuestCR4(PVMCPU pVCpu, uint64_t cr4)
 {
-    if (    (cr4                     & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
-        !=  (pVCpu->cpum.s.Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
+    /*
+     * The CR4.OSXSAVE bit is reflected in CPUID(1).ECX[27].
+     */
+    if (   (cr4                     & X86_CR4_OSXSAVE)
+        != (pVCpu->cpum.s.Guest.cr4 & X86_CR4_OSXSAVE) )
+    {
+        PVM pVM = pVCpu->CTX_SUFF(pVM);
+        if (cr4 & X86_CR4_OSXSAVE)
+            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_OSXSAVE);
+        else
+            CPUMClearGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_OSXSAVE);
+    }
+
+    if (   (cr4                     & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE))
+        != (pVCpu->cpum.s.Guest.cr4 & (X86_CR4_PGE | X86_CR4_PAE | X86_CR4_PSE)))
         pVCpu->cpum.s.fChanged |= CPUM_CHANGED_GLOBAL_TLB_FLUSH;
+
     pVCpu->cpum.s.fChanged |= CPUM_CHANGED_CR4;
     pVCpu->cpum.s.Guest.cr4 = cr4;
     return VINF_SUCCESS;
@@ -1283,14 +1300,18 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t uLeaf, uint32_t uSubLeaf,
             /*
              * Deal with CPU specific information (currently only APIC ID).
              */
-            if (pLeaf->fFlags & CPUMCPUIDLEAF_F_CONTAINS_APIC_ID)
+            if (pLeaf->fFlags & (CPUMCPUIDLEAF_F_CONTAINS_APIC_ID | CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE))
             {
                 if (uLeaf == 1)
                 {
-                    /* Bits 31-24: Initial APIC ID */
+                    /* EBX: Bits 31-24: Initial APIC ID. */
                     Assert(pVCpu->idCpu <= 255);
                     AssertMsg((pLeaf->uEbx >> 24) == 0, ("%#x\n", pLeaf->uEbx)); /* raw-mode assumption */
                     *pEbx = (pLeaf->uEbx & UINT32_C(0x00ffffff)) | (pVCpu->idCpu << 24);
+
+                    /* ECX: Bit 27: CR4.OSXSAVE mirror. */
+                    *pEcx = (pLeaf->uEcx & ~X86_CPUID_FEATURE_ECX_OSXSAVE)
+                          | (pVCpu->cpum.s.Guest.cr4 & X86_CR4_OSXSAVE ? X86_CPUID_FEATURE_ECX_OSXSAVE : 0);
                 }
                 else if (uLeaf == 0xb)
                 {
@@ -1588,6 +1609,23 @@ VMMDECL(void) CPUMSetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             LogRel(("CPUM: SetGuestCpuIdFeature: Enabled MWAIT Extensions.\n"));
             break;
 
+        /*
+         * OSXSAVE - only used from CPUMSetGuestCR4.
+         */
+        case CPUMCPUIDFEATURE_OSXSAVE:
+            AssertLogRelReturnVoid(pVM->cpum.s.HostFeatures.fXSaveRstor && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor);
+
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
+            AssertLogRelReturnVoid(pLeaf);
+
+            /* UNI: Special case for single CPU to make life simple for CPUMPatchHlpCpuId. */
+            if (pVM->cCpus == 1)
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx |= X86_CPUID_FEATURE_ECX_OSXSAVE;
+            /* SMP: Set flag indicating OSXSAVE updating (superfluous because of the APIC ID, but that's fine). */
+            else
+                ASMAtomicOrU32(&pLeaf->fFlags, CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE);
+            break;
+
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));
             break;
@@ -1625,6 +1663,7 @@ VMMDECL(bool) CPUMGetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
         case CPUMCPUIDFEATURE_HVP:          return pVM->cpum.s.GuestFeatures.fHypervisorPresent;
         case CPUMCPUIDFEATURE_MWAIT_EXTS:   return pVM->cpum.s.GuestFeatures.fMWaitExtensions;
 
+        case CPUMCPUIDFEATURE_OSXSAVE:
         case CPUMCPUIDFEATURE_INVALID:
         case CPUMCPUIDFEATURE_32BIT_HACK:
             break;
@@ -1731,6 +1770,22 @@ VMMDECL(void) CPUMClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFeature)
             pVM->cpum.s.GuestFeatures.fMWaitExtensions = 0;
             Log(("CPUM: ClearGuestCpuIdFeature: Disabled MWAIT Extensions!\n"));
             break;
+
+        /*
+         * OSXSAVE - only used from CPUMSetGuestCR4.
+         */
+        case CPUMCPUIDFEATURE_OSXSAVE:
+            AssertLogRelReturnVoid(pVM->cpum.s.HostFeatures.fXSaveRstor && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor);
+
+            pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x00000001));
+            AssertLogRelReturnVoid(pLeaf);
+
+            /* UNI: Special case for single CPU to make life easy for CPUMPatchHlpCpuId. */
+            if (pVM->cCpus == 1)
+                pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx = pLeaf->uEcx &= ~X86_CPUID_FEATURE_ECX_OSXSAVE;
+            /* else: SMP: We never set the OSXSAVE bit and leaving the CONTAINS_OSXSAVE flag is fine. */
+            break;
+
 
         default:
             AssertMsgFailed(("enmFeature=%d\n", enmFeature));

@@ -295,39 +295,18 @@ typedef IEMSELDESC *PIEMSELDESC;
 #define IEM_IS_REAL_MODE(a_pIemCpu)         (CPUMIsGuestInRealModeEx((a_pIemCpu)->CTX_SUFF(pCtx)))
 
 /**
- * Tests if an AMD CPUID feature (extended) is marked present - ECX.
+ * Returns a (const) pointer to the CPUMFEATURES for the guest CPU.
+ * @returns PCCPUMFEATURES
+ * @param   a_pIemCpu       The IEM state of the current CPU.
  */
-#define IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(a_fEcx)    iemRegIsAmdCpuIdFeaturePresent(pIemCpu, 0, (a_fEcx))
+#define IEM_GET_GUEST_CPU_FEATURES(a_pIemCpu) (&(IEMCPU_TO_VM(a_pIemCpu)->cpum.ro.GuestFeatures))
 
 /**
- * Tests if an AMD CPUID feature (extended) is marked present - EDX.
+ * Returns a (const) pointer to the CPUMFEATURES for the host CPU.
+ * @returns PCCPUMFEATURES
+ * @param   a_pIemCpu       The IEM state of the current CPU.
  */
-#define IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(a_fEdx)    iemRegIsAmdCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0)
-
-/**
- * Tests if at least on of the specified AMD CPUID features (extended) are
- * marked present.
- */
-#define IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(a_fEdx, a_fEcx)   iemRegIsAmdCpuIdFeaturePresent(pIemCpu, (a_fEdx), (a_fEcx))
-
-/**
- * Checks if an Intel CPUID feature is present.
- */
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)  \
-    (   ((a_fEdx) & (X86_CPUID_FEATURE_EDX_TSC | 0)) \
-     || iemRegIsIntelCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0) )
-
-/**
- * Checks if an Intel CPUID feature is present.
- */
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX(a_fEcx)  \
-    ( iemRegIsIntelCpuIdFeaturePresent(pIemCpu, 0, (a_fEcx)) )
-
-/**
- * Checks if an Intel CPUID feature is present in the host CPU.
- */
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(a_fEdx)  \
-    ( (a_fEdx) & pIemCpu->fHostCpuIdStdFeaturesEdx )
+#define IEM_GET_HOST_CPU_FEATURES(a_pIemCpu)  (&(IEMCPU_TO_VM(a_pIemCpu)->cpum.ro.HostFeatures))
 
 /**
  * Evaluates to true if we're presenting an Intel CPU to the guest.
@@ -5109,46 +5088,6 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUI
     return GCPtrTop;
 }
 
-
-/**
- * Checks if an Intel CPUID feature bit is set.
- *
- * @returns true / false.
- *
- * @param   pIemCpu             The IEM per CPU data.
- * @param   fEdx                The EDX bit to test, or 0 if ECX.
- * @param   fEcx                The ECX bit to test, or 0 if EDX.
- * @remarks Used via IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX,
- *          IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX and others.
- */
-static bool iemRegIsIntelCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
-{
-    uint32_t uEax, uEbx, uEcx, uEdx;
-    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x00000001, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    return (fEcx && (uEcx & fEcx))
-        || (fEdx && (uEdx & fEdx));
-}
-
-
-/**
- * Checks if an AMD CPUID feature bit is set.
- *
- * @returns true / false.
- *
- * @param   pIemCpu             The IEM per CPU data.
- * @param   fEdx                The EDX bit to test, or 0 if ECX.
- * @param   fEcx                The ECX bit to test, or 0 if EDX.
- * @remarks Used via IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX,
- *          IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX and others.
- */
-static bool iemRegIsAmdCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint32_t fEcx)
-{
-    uint32_t uEax, uEbx, uEcx, uEdx;
-    CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 0x80000001, 0, &uEax, &uEbx, &uEcx, &uEdx);
-    return (fEcx && (uEcx & fEcx))
-        || (fEdx && (uEdx & fEdx));
-}
-
 /** @}  */
 
 
@@ -8317,7 +8256,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     do { \
         if (   (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
             || !(pIemCpu->CTX_SUFF(pCtx)->cr4 & X86_CR4_OSFXSR) \
-            || !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2) ) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2) \
             return iemRaiseUndefinedOpcode(pIemCpu); \
         if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pIemCpu); \
@@ -8325,7 +8264,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
     do { \
         if (   ((pIemCpu)->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
-            || !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_MMX) ) \
+            || !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fMmx) \
             return iemRaiseUndefinedOpcode(pIemCpu); \
         if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pIemCpu); \
@@ -8333,8 +8272,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() \
     do { \
         if (   ((pIemCpu)->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
-            || (   !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE) \
-                && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_AMD_FEATURE_EDX_AXMMX) ) ) \
+            || (   !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse \
+                && !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fAmdMmxExts) ) \
             return iemRaiseUndefinedOpcode(pIemCpu); \
         if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pIemCpu); \

@@ -137,14 +137,10 @@ typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
 #define IEM_IS_REAL_OR_V86_MODE(a_pIemCpu)                  (g_fRandom)
 #define IEM_IS_LONG_MODE(a_pIemCpu)                         (g_fRandom)
 #define IEM_IS_REAL_MODE(a_pIemCpu)                         (g_fRandom)
-#define IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(a_fEcx)        (g_fRandom)
-#define IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(a_fEdx)        (g_fRandom)
-#define IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(a_fEdx, a_fEcx) (g_fRandom)
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)      (g_fRandom)
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX(a_fEcx)      (g_fRandom)
-#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(a_fEdx) (g_fRandom)
 #define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)                     (g_fRandom)
 #define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)                   (g_fRandom)
+#define IEM_GET_GUEST_CPU_FEATURES(a_pIemCpu)               ((PCCPUMFEATURES)(uintptr_t)42)
+#define IEM_GET_HOST_CPU_FEATURES(a_pIemCpu)                ((PCCPUMFEATURES)(uintptr_t)88)
 
 #define iemRecalEffOpSize(a_pIemCpu)                        do { } while (0)
 

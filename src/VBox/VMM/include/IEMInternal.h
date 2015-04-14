@@ -372,22 +372,12 @@ typedef struct IEMCPU
 
     /** @name Target CPU information.
      * @{ */
-    /** EDX value of CPUID(1).
-     * @remarks Some bits are subject to change and must be queried dynamically. */
-    uint32_t                fCpuIdStdFeaturesEdx;
-    /** ECX value of CPUID(1).
-     * @remarks Some bits are subject to change and must be queried dynamically. */
-    uint32_t                fCpuIdStdFeaturesEcx;
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmCpuVendor;
     /** @} */
 
     /** @name Host CPU information.
      * @{ */
-    /** EDX value of CPUID(1). */
-    uint32_t                fHostCpuIdStdFeaturesEdx;
-    /** ECX value of CPUID(1). */
-    uint32_t                fHostCpuIdStdFeaturesEcx;
     /** The CPU vendor. */
     CPUMCPUVENDOR           enmHostCpuVendor;
     /** @} */

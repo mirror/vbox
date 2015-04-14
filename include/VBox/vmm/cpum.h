@@ -67,6 +67,8 @@ typedef enum CPUMCPUIDFEATURE
     CPUMCPUIDFEATURE_HVP,
     /** The MWait Extensions bits (Std) */
     CPUMCPUIDFEATURE_MWAIT_EXTS,
+    /** The CR4.OSXSAVE bit CPUID mirroring, only use from CPUMSetGuestCR4. */
+    CPUMCPUIDFEATURE_OSXSAVE,
     /** 32bit hackishness. */
     CPUMCPUIDFEATURE_32BIT_HACK = 0x7fffffff
 } CPUMCPUIDFEATURE;
@@ -309,8 +311,10 @@ typedef CPUMCPUIDLEAF const *PCCPUMCPUIDLEAF;
 #define CPUMCPUIDLEAF_F_INTEL_TOPOLOGY_SUBLEAVES    RT_BIT_32(0)
 /** The leaf contains an APIC ID that needs changing to that of the current CPU. */
 #define CPUMCPUIDLEAF_F_CONTAINS_APIC_ID            RT_BIT_32(1)
+/** The leaf contains an OSXSAVE which needs individual handling on each CPU. */
+#define CPUMCPUIDLEAF_F_CONTAINS_OSXSAVE            RT_BIT_32(2)
 /** Mask of the valid flags. */
-#define CPUMCPUIDLEAF_F_VALID_MASK                  UINT32_C(0x3)
+#define CPUMCPUIDLEAF_F_VALID_MASK                  UINT32_C(0x7)
 /** @} */
 
 /**
@@ -886,6 +890,124 @@ AssertCompileSize(CPUMMSRRANGE, 96);
 typedef CPUMMSRRANGE *PCPUMMSRRANGE;
 /** Pointer to a const MSR range. */
 typedef CPUMMSRRANGE const *PCCPUMMSRRANGE;
+
+
+/**
+ * CPU features and quirks.
+ * This is mostly exploded CPUID info.
+ */
+typedef struct CPUMFEATURES
+{
+    /** The CPU vendor (CPUMCPUVENDOR). */
+    uint8_t         enmCpuVendor;
+    /** The CPU family. */
+    uint8_t         uFamily;
+    /** The CPU model. */
+    uint8_t         uModel;
+    /** The CPU stepping. */
+    uint8_t         uStepping;
+    /** The microarchitecture. */
+#ifndef VBOX_FOR_DTRACE_LIB
+    CPUMMICROARCH   enmMicroarch;
+#else
+    uint32_t        enmMicroarch;
+#endif
+    /** The maximum physical address with of the CPU. */
+    uint8_t         cMaxPhysAddrWidth;
+    /** Alignment padding. */
+    uint8_t         abPadding[1];
+    /** Max size of the extended state (or FPU state if no XSAVE). */
+    uint16_t        cbMaxExtendedState;
+
+    /** Supports MSRs. */
+    uint32_t        fMsr : 1;
+    /** Supports the page size extension (4/2 MB pages). */
+    uint32_t        fPse : 1;
+    /** Supports 36-bit page size extension (4 MB pages can map memory above
+     *  4GB). */
+    uint32_t        fPse36 : 1;
+    /** Supports physical address extension (PAE). */
+    uint32_t        fPae : 1;
+    /** Page attribute table (PAT) support (page level cache control). */
+    uint32_t        fPat : 1;
+    /** Supports the FXSAVE and FXRSTOR instructions. */
+    uint32_t        fFxSaveRstor : 1;
+    /** Supports the XSAVE and XRSTOR instructions. */
+    uint32_t        fXSaveRstor : 1;
+    /** The XSAVE/XRSTOR bit in CR4 has been set (only applicable for host!). */
+    uint32_t        fOpSysXSaveRstor : 1;
+    /** Supports MMX. */
+    uint32_t        fMmx : 1;
+    /** Supports AMD extensions to MMX instructions. */
+    uint32_t        fAmdMmxExts : 1;
+    /** Supports SSE. */
+    uint32_t        fSse : 1;
+    /** Supports SSE2. */
+    uint32_t        fSse2 : 1;
+    /** Supports SSE3. */
+    uint32_t        fSse3 : 1;
+    /** Supports SSSE3. */
+    uint32_t        fSsse3 : 1;
+    /** Supports SSE4.1. */
+    uint32_t        fSse41 : 1;
+    /** Supports SSE4.2. */
+    uint32_t        fSse42 : 1;
+    /** Supports AVX. */
+    uint32_t        fAvx : 1;
+    /** Supports AVX2. */
+    uint32_t        fAvx2 : 1;
+    /** Supports AVX512 foundation. */
+    uint32_t        fAvx512Foundation : 1;
+    /** Supports RDTSC. */
+    uint32_t        fTsc : 1;
+    /** Intel SYSENTER/SYSEXIT support */
+    uint32_t        fSysEnter : 1;
+    /** First generation APIC. */
+    uint32_t        fApic : 1;
+    /** Second generation APIC. */
+    uint32_t        fX2Apic : 1;
+    /** Hypervisor present. */
+    uint32_t        fHypervisorPresent : 1;
+    /** MWAIT & MONITOR instructions supported. */
+    uint32_t        fMonitorMWait : 1;
+    /** MWAIT Extensions present. */
+    uint32_t        fMWaitExtensions : 1;
+
+    /** Supports AMD 3DNow instructions. */
+    uint32_t        f3DNow : 1;
+    /** Supports the 3DNow/AMD64 prefetch instructions (could be nops). */
+    uint32_t        f3DNowPrefetch : 1;
+
+    /** AMD64: Supports long mode. */
+    uint32_t        fLongMode : 1;
+    /** AMD64: SYSCALL/SYSRET support. */
+    uint32_t        fSysCall : 1;
+    /** AMD64: No-execute page table bit. */
+    uint32_t        fNoExecute : 1;
+    /** AMD64: Supports LAHF & SAHF instructions in 64-bit mode. */
+    uint32_t        fLahfSahf : 1;
+    /** AMD64: Supports RDTSCP. */
+    uint32_t        fRdTscP : 1;
+    /** AMD64: Supports MOV CR8 in 32-bit code (lock prefix hack). */
+    uint32_t        fMovCr8In32Bit : 1;
+
+    /** Indicates that FPU instruction and data pointers may leak.
+     * This generally applies to recent AMD CPUs, where the FPU IP and DP pointer
+     * is only saved and restored if an exception is pending. */
+    uint32_t        fLeakyFxSR : 1;
+
+    /** Alignment padding / reserved for future use. */
+    uint32_t        fPadding : 29;
+    uint32_t        auPadding[3];
+} CPUMFEATURES;
+#ifndef VBOX_FOR_DTRACE_LIB
+AssertCompileSize(CPUMFEATURES, 32);
+#endif
+/** Pointer to a CPU feature structure. */
+typedef CPUMFEATURES *PCPUMFEATURES;
+/** Pointer to a const CPU feature structure. */
+typedef CPUMFEATURES const *PCCPUMFEATURES;
+
 
 
 /** @name Guest Register Getters.

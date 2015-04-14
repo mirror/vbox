@@ -75,42 +75,38 @@ endstruc
 
 struc CPUM
     ;...
-    .offCPUMCPU0          resd    1
-    .fHostUseFlags        resd    1
+    .offCPUMCPU0                resd    1
+    .fHostUseFlags              resd    1
 
     ; CR4 masks
-    .CR4.AndMask          resd    1
-    .CR4.OrMask           resd    1
+    .CR4.AndMask                resd    1
+    .CR4.OrMask                 resd    1
     ; entered rawmode?
-    .u8PortableCpuIdLevel resb    1
-    .fPendingRestore      resb    1
-%if RTHCPTR_CB == 8
-    .abPadding            resb    6
-%else
-    .abPadding            resb    2
-%endif
+    .u8PortableCpuIdLevel       resb    1
+    .fPendingRestore            resb    1
+
+    alignb 8
+    .fXStateGuestMask           resq    1
+    .fXStateHostMask            resq    1
+
+    alignb 64
+    .HostFeatures               resb    32
+    .GuestFeatures              resb    32
+    .GuestInfo                  resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
 
     ; Patch manager saved state compatability CPUID leaf arrays
     .aGuestCpuIdPatmStd         resb    16*6
     .aGuestCpuIdPatmExt         resb    16*10
     .aGuestCpuIdPatmCentaur     resb    16*4
 
-%if HC_ARCH_BITS == 32
-    .abPadding2           resb    4
-%endif
-
-    .GuestInfo            resb    RTHCPTR_CB*4 + RTRCPTR_CB*2 + 4*12
-    .GuestFeatures        resb    32
-    .HostFeatures         resb    32
-    .fXStateHostMask      resq    1
-
-    .cMsrWrites                 resq  1
-    .cMsrWritesToIgnoredBits    resq  1
-    .cMsrWritesRaiseGp          resq  1
-    .cMsrWritesUnknown          resq  1
-    .cMsrReads                  resq  1
-    .cMsrReadsRaiseGp           resq  1
-    .cMsrReadsUnknown           resq  1
+    alignb 8
+    .cMsrWrites                 resq    1
+    .cMsrWritesToIgnoredBits    resq    1
+    .cMsrWritesRaiseGp          resq    1
+    .cMsrWritesUnknown          resq    1
+    .cMsrReads                  resq    1
+    .cMsrReadsRaiseGp           resq    1
+    .cMsrReadsUnknown           resq    1
 endstruc
 
 struc CPUMCPU
@@ -217,7 +213,7 @@ struc CPUMCPU
     .Guest.msrSFMASK          resb    8
     .Guest.msrKERNELGSBASE    resb    8
     .Guest.msrApicBase        resb    8
-    .Guest.xcr0               resq    1
+    .Guest.aXcr               resq    2
     .Guest.fXStateMask        resq    1
     .Guest.pXStateR0      RTR0PTR_RES 1
     .Guest.pXStateR3      RTR3PTR_RES 1
@@ -476,7 +472,7 @@ struc CPUMCPU
     .Hyper.msrSFMASK          resb    8
     .Hyper.msrKERNELGSBASE    resb    8
     .Hyper.msrApicBase        resb    8
-    .Hyper.xcr0               resq    1
+    .Hyper.aXcr               resq    2
     .Hyper.fXStateMask        resq    1
     .Hyper.pXStateR0      RTR0PTR_RES 1
     .Hyper.pXStateR3      RTR3PTR_RES 1

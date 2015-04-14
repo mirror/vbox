@@ -398,8 +398,8 @@ typedef struct CPUMCTX
     uint64_t        msrApicBase;        /**< The local APIC base (IA32_APIC_BASE MSR). */
     /** @} */
 
-    /** The XCR0 register. */
-    uint64_t                    xcr0;
+    /** The XCR0..XCR1 registers. */
+    uint64_t                    aXcr[2];
     /** The mask to pass to XSAVE/XRSTOR in EDX:EAX.  If zero we use
      *  FXSAVE/FXRSTOR (since bit 0 will always be set, we only need to test it). */
     uint64_t                    fXStateMask;
@@ -414,7 +414,7 @@ typedef struct CPUMCTX
     uint16_t                    aoffXState[64];
 
     /** Size padding. */
-    uint32_t        au32SizePadding[HC_ARCH_BITS == 32 ? 15 : 13];
+    uint32_t        au32SizePadding[HC_ARCH_BITS == 32 ? 13 : 11];
 } CPUMCTX;
 #pragma pack()
 

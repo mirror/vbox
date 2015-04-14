@@ -1307,8 +1307,7 @@ FNIEMOP_STUB(iemOp_ud2);
 FNIEMOP_DEF(iemOp_nop_Ev_GrpP)
 {
     /* AMD prefetch group, Intel implements this as NOP Ev (and so do we). */
-    if (!IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(X86_CPUID_EXT_FEATURE_EDX_LONG_MODE | X86_CPUID_AMD_FEATURE_EDX_3DNOW,
-                                               X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->f3DNowPrefetch)
     {
         IEMOP_MNEMONIC("GrpP");
         return IEMOP_RAISE_INVALID_OPCODE();
@@ -1425,7 +1424,7 @@ FNIEMOP_STUB(iemOp_3Dnow_pavgusb_PQ_Qq);
 /** Opcode 0x0f 0x0f. */
 FNIEMOP_DEF(iemOp_3Dnow)
 {
-    if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_AMD_FEATURE_EDX_3DNOW))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->f3DNow)
     {
         IEMOP_MNEMONIC("3Dnow");
         return IEMOP_RAISE_INVALID_OPCODE();
@@ -1555,7 +1554,7 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
     if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
-        if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
+        if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fMovCr8In32Bit)
             return IEMOP_RAISE_INVALID_OPCODE(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
@@ -1601,7 +1600,7 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
-        if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
+        if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fMovCr8In32Bit)
             return IEMOP_RAISE_INVALID_OPCODE(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
@@ -4923,7 +4922,7 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fxsave m512");
-    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fFxSaveRstor)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
@@ -4943,7 +4942,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
 FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fxrstor m512");
-    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fFxSaveRstor)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
@@ -4983,11 +4982,11 @@ FNIEMOP_DEF_1(iemOp_Grp15_lfence,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC("lfence");
     IEMOP_HLP_NO_LOCK_PREFIX();
-    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
-    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+    if (IEM_GET_HOST_CPU_FEATURES(pIemCpu)->fSse2)
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_lfence);
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
@@ -5002,11 +5001,11 @@ FNIEMOP_DEF_1(iemOp_Grp15_mfence,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC("mfence");
     IEMOP_HLP_NO_LOCK_PREFIX();
-    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
-    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+    if (IEM_GET_HOST_CPU_FEATURES(pIemCpu)->fSse2)
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_mfence);
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
@@ -5021,11 +5020,11 @@ FNIEMOP_DEF_1(iemOp_Grp15_sfence,   uint8_t, bRm)
 {
     IEMOP_MNEMONIC("sfence");
     IEMOP_HLP_NO_LOCK_PREFIX();
-    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+    if (!IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fSse2)
         return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(0, 0);
-    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+    if (IEM_GET_HOST_CPU_FEATURES(pIemCpu)->fSse2)
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_sfence);
     else
         IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
@@ -10550,7 +10549,7 @@ FNIEMOP_DEF(iemOp_sahf)
     IEMOP_MNEMONIC("sahf");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
-        && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF))
+        && !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fLahfSahf)
         return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 2);
     IEM_MC_LOCAL(uint32_t, u32Flags);
@@ -10574,7 +10573,7 @@ FNIEMOP_DEF(iemOp_lahf)
     IEMOP_MNEMONIC("lahf");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
-        && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF))
+        && !IEM_GET_GUEST_CPU_FEATURES(pIemCpu)->fLahfSahf)
         return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 1);
     IEM_MC_LOCAL(uint8_t, u8Flags);

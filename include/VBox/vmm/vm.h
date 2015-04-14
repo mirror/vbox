@@ -977,6 +977,18 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
+#ifdef ___VBox_vmm_cpum_h
+        /** Read only info exposed about the host and guest CPUs.   */
+        struct
+        {
+            /** Padding for hidden fields. */
+            uint8_t                 abHidden0[64];
+            /** Host CPU feature information. */
+            CPUMFEATURES            HostFeatures;
+            /** Guest CPU feature information. */
+            CPUMFEATURES            GuestFeatures;
+        } const ro;
+#endif
         uint8_t     padding[1536];      /* multiple of 64 */
     } cpum;
 
