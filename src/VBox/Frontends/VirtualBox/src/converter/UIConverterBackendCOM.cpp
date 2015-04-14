@@ -371,6 +371,7 @@ template<> QString toString(const KPortMode &mode)
         case KPortMode_HostPipe:     return QApplication::translate("VBoxGlobal", "Host Pipe", "PortMode");
         case KPortMode_HostDevice:   return QApplication::translate("VBoxGlobal", "Host Device", "PortMode");
         case KPortMode_RawFile:      return QApplication::translate("VBoxGlobal", "Raw File", "PortMode");
+        case KPortMode_TCP:          return QApplication::translate("VBoxGlobal", "TCP", "PortMode");
         AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();
@@ -563,6 +564,7 @@ template<> KPortMode fromString<KPortMode>(const QString &strMode)
     list.insert(QApplication::translate("VBoxGlobal", "Host Pipe", "PortMode"),    KPortMode_HostPipe);
     list.insert(QApplication::translate("VBoxGlobal", "Host Device", "PortMode"),  KPortMode_HostDevice);
     list.insert(QApplication::translate("VBoxGlobal", "Raw File", "PortMode"),     KPortMode_RawFile);
+    list.insert(QApplication::translate("VBoxGlobal", "TCP", "PortMode"),          KPortMode_TCP);
     if (!list.contains(strMode))
     {
         AssertMsgFailed(("No value for '%s'", strMode.toAscii().constData()));

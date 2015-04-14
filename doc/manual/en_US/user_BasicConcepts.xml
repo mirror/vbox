@@ -1137,16 +1137,6 @@
                       where <computeroutput>&lt;name&gt;</computeroutput> should
                       identify the virtual machine but may be freely
                       chosen.</para>
-                      <para>For forwarding serial traffic, you can use a helper
-                      program called VMware Serial Line Gateway, available for
-                      download at
-                                  <literal> <ulink
-                      url="http://www.l4ka.org/91.php">http://www.l4ka.org/91.php</ulink>
-                      </literal>. This tool provides a fixed server mode named
-                      pipe at
-                      <computeroutput>\\.\pipe\vmwaredebug</computeroutput>
-                      and connects incoming TCP connections on port 567 with
-                      the named pipe.</para>
                     </listitem>
 
                     <listitem>
@@ -1186,6 +1176,27 @@
                 write to the file.
                 </para>
               </listitem>
+
+              <listitem>
+                <para>TCP Socket: useful for forwarding serial traffic over TCP/IP, acting as a server,
+                   or it can act as a TCP client connecting to other servers.
+                   It allows remote machine to connect via TCP directly to guest's serial port.
+                </para>
+                <para>TCP Server: use "create socket" mode, and type in only the <emphasis role="bold">
+                  <computeroutput>port</computeroutput></emphasis> number.
+                   Typically 23 or 2023. Note that on UNIX-like systems you will have to use port
+                   number over 1024 for normal users.
+                </para>
+                <para>
+                   The client can use software such as "Putty" or command-line "telnet" to access TCP Server.
+                </para>
+                <para>TCP Client: to create a virtual null-modem cable over the Internet or LAN,
+                   the other side can connect via TCP by specifying <emphasis role="bold">
+                   <computeroutput>hostname:port</computeroutput></emphasis>.
+                   TCP socket will act in client mode, if you remove "create socket" mode.
+                </para>
+              </listitem>
+
             </itemizedlist></para>
         </listitem>
       </orderedlist>Up to two serial ports can be configured per virtual

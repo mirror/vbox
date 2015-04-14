@@ -2564,6 +2564,8 @@ void MachineConfigFile::readSerialPorts(const xml::ElementNode &elmUART,
             port.portMode = PortMode_HostDevice;
         else if (strPortMode == "Disconnected")
             port.portMode = PortMode_Disconnected;
+        else if (strPortMode == "TCP")
+            port.portMode = PortMode_TCP;
         else
             throw ConfigFileError(this, pelmPort, N_("Invalid value '%s' in UART/Port/@hostMode attribute"), strPortMode.c_str());
 
@@ -4646,11 +4648,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         {
             case PortMode_HostPipe: pcszHostMode = "HostPipe"; break;
             case PortMode_HostDevice: pcszHostMode = "HostDevice"; break;
+            case PortMode_TCP: pcszHostMode = "TCP"; break;
             case PortMode_RawFile: pcszHostMode = "RawFile"; break;
             default: /*case PortMode_Disconnected:*/ pcszHostMode = "Disconnected"; break;
         }
         switch (port.portMode)
         {
+            case PortMode_TCP:
             case PortMode_HostPipe:
                 pelmPort->setAttribute("server", port.fServer);
                 /* no break */
@@ -5492,6 +5496,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_15)
     {
+        // VirtualBox 5.0 adds paravirt providers, explicit AHCI port hotplug
+        // setting, USB storage controller, xHCI and serial port TCP backend.
+
         /*
          * Check whether a paravirtualization provider other than "Legacy" is used, if so bump the version.
          */
@@ -5509,14 +5516,12 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                  it != storageMachine.llStorageControllers.end();
                  ++it)
             {
-                bool fSettingsBumped = false;
                 const StorageController &sctl = *it;
 
                 if (sctl.controllerType == StorageControllerType_USB)
                 {
                     m->sv = SettingsVersion_v1_15;
-                    fSettingsBumped = true;
-                    break;
+                    return;
                 }
 
                 for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
@@ -5531,14 +5536,9 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                             && sctl.controllerType == StorageControllerType_IntelAhci))
                     {
                         m->sv = SettingsVersion_v1_15;
-                        fSettingsBumped = true;
-                        break;
+                        return;
                     }
                 }
-
-                /* Abort early if possible. */
-                if (fSettingsBumped)
-                    return;
             }
 
             /*
@@ -5552,7 +5552,22 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 if (ctrl.enmType == USBControllerType_XHCI)
                 {
                     m->sv = SettingsVersion_v1_15;
-                    break;
+                    return;
+                }
+            }
+
+            /*
+             * Check if any serial port uses the TCP backend.
+             */
+            for (SerialPortsList::const_iterator it = hardwareMachine.llSerialPorts.begin();
+                 it != hardwareMachine.llSerialPorts.end();
+                 ++it)
+            {
+                const SerialPort &port = *it;
+                if (port.portMode == PortMode_TCP)
+                {
+                    m->sv = SettingsVersion_v1_15;
+                    return;
                 }
             }
         }

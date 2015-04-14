@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1322,6 +1322,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                     toCOMPortName (port.GetIRQ(), port.GetIOBase()) + ", ";
                 if (mode == KPortMode_HostPipe ||
                     mode == KPortMode_HostDevice ||
+                    mode == KPortMode_TCP ||
                     mode == KPortMode_RawFile)
                     data += QString ("%1 (<nobr>%2</nobr>)")
                             .arg (gpConverter->toString (mode))

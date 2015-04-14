@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008-2012 Oracle Corporation
+ Copyright (C) 2008-2015 Oracle Corporation
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -176,17 +176,17 @@
       <item row="2" column="1" colspan="2" >
        <widget class="QCheckBox" name="mCbPipe" >
         <property name="whatsThis" >
-         <string>If checked, the pipe specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</string>
+         <string>If checked, the pipe or socket specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe or socket exists and try to use it.</string>
         </property>
         <property name="text" >
-         <string>&amp;Create Pipe</string>
+         <string>&amp;Connect to existing pipe/socket</string>
         </property>
        </widget>
       </item>
       <item row="3" column="0" >
        <widget class="QLabel" name="mLbPath" >
         <property name="text" >
-         <string>Port/File &amp;Path:</string>
+         <string>&amp;Path/Address:</string>
         </property>
         <property name="alignment" >
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -199,7 +199,12 @@
       <item row="3" column="1" colspan="6" >
        <widget class="QLineEdit" name="mLePath" >
         <property name="whatsThis" >
-         <string>Holds the path to the serial port's pipe on the host when the port is working in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port is working in &lt;b>Host Device&lt;/b> mode.</string>
+         <string>In &lt;b>Host Pipe&lt;/b> mode: Holds the path to the serial port's pipe on the host, examples:
+"\\.\pipe\myvbox" or "/tmp/myvbox", for Windows and UNIX-like systems respectively. 
+In &lt;b>Host Device&lt;/b> mode: Holds the host serial device name; examples: "COM1" or "/dev/ttyS0".
+In &lt;b>Raw file&lt;/b> mode: file-path on the host system, where serial output will be dumped.
+In &lt;b>TCP&lt;/b> mode: Holds TCP "port" when in server mode, or "hostname:port" or when in client mode.
+</string>
         </property>
        </widget>
       </item>

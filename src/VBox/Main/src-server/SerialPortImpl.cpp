@@ -257,6 +257,13 @@ HRESULT SerialPort::setHostMode(PortMode_T aHostMode)
                                        "because the device path is empty or null"),
                                     m->bd->ulSlot);
                 break;
+            case PortMode_TCP:
+                if (m->bd->strPath.isEmpty())
+                    return setError(E_INVALIDARG,
+                                    tr("Cannot set the host device mode of the serial port %d "
+                                       "because the server address or TCP port is invalid"),
+                                    m->bd->ulSlot);
+                break;
             case PortMode_Disconnected:
                 break;
         }
@@ -636,12 +643,13 @@ HRESULT SerialPort::i_checkSetPath(const Utf8Str &str)
 
     if (    (    m->bd->portMode == PortMode_HostDevice
               || m->bd->portMode == PortMode_HostPipe
+              || m->bd->portMode == PortMode_TCP
               || m->bd->portMode == PortMode_RawFile
             ) && str.isEmpty()
        )
         return setError(E_INVALIDARG,
                         tr("Path of the serial port %d may not be empty or null in "
-                           "host pipe or host device mode"),
+                           "host pipe, host device or TCP mode"),
                         m->bd->ulSlot);
 
     return S_OK;

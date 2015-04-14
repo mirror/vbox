@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,6 +62,7 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
     mCbMode->addItem (""); /* KPortMode_HostPipe */
     mCbMode->addItem (""); /* KPortMode_HostDevice */
     mCbMode->addItem (""); /* KPortMode_RawFile */
+    mCbMode->addItem (""); /* KPortMode_TCP */
 
     /* Setup connections */
     connect (mGbSerial, SIGNAL (toggled (bool)),
@@ -93,7 +94,8 @@ void UIMachineSettingsSerial::polishTab()
     mLeIOPort->setEnabled(!fStd && m_pParent->isMachineOffline());
     mLbMode->setEnabled(m_pParent->isMachineOffline());
     mCbMode->setEnabled(m_pParent->isMachineOffline());
-    mCbPipe->setEnabled(mode == KPortMode_HostPipe && m_pParent->isMachineOffline());
+    mCbPipe->setEnabled((mode == KPortMode_HostPipe || mode == KPortMode_TCP)
+      && m_pParent->isMachineOffline());
     mLbPath->setEnabled(m_pParent->isMachineOffline());
     mLePath->setEnabled(mode != KPortMode_Disconnected && m_pParent->isMachineOffline());
 }
@@ -166,6 +168,7 @@ void UIMachineSettingsSerial::retranslateUi()
 
     mCbNumber->setItemText (mCbNumber->count() - 1, vboxGlobal().toCOMPortName (0, 0));
 
+    mCbMode->setItemText (4, gpConverter->toString (KPortMode_TCP));
     mCbMode->setItemText (3, gpConverter->toString (KPortMode_RawFile));
     mCbMode->setItemText (2, gpConverter->toString (KPortMode_HostDevice));
     mCbMode->setItemText (1, gpConverter->toString (KPortMode_HostPipe));
@@ -204,7 +207,7 @@ void UIMachineSettingsSerial::mCbNumberActivated (const QString &aText)
 void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
 {
     KPortMode mode = gpConverter->fromString<KPortMode> (aText);
-    mCbPipe->setEnabled (mode == KPortMode_HostPipe);
+    mCbPipe->setEnabled (mode == KPortMode_HostPipe || mode == KPortMode_TCP);
     mLePath->setEnabled (mode != KPortMode_Disconnected);
 
     /* Revalidate: */

@@ -1023,6 +1023,23 @@ Statistics update:  disabled</screen></para>
                 </listitem>
 
                 <listitem>
+                  <para><computeroutput>tcpserver
+                  &lt;port&gt;</computeroutput>: This
+                  tells VirtualBox to create a TCP socket on the host with TCP
+                  <computeroutput>&lt;port&gt;</computeroutput> and
+                  connect the virtual serial device to it. Note that UNIX-like
+                  systems require ports over 1024 for normal users.</para>
+                </listitem>
+
+                <listitem>
+                  <para><computeroutput>tcpclient
+                  &lt;hostname:port&gt;</computeroutput>: This operates just like
+                  <computeroutput>tcpserver ...</computeroutput>, except that the
+                  TCP socket is not created by VirtualBox,
+                  but assumed to exist already.</para>
+                </listitem>
+                
+                <listitem>
                   <para><computeroutput>&lt;devicename&gt;</computeroutput>:
                   If, instead of the above, the device name of a physical
                   hardware serial port of the host is specified, the virtual

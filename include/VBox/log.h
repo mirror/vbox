@@ -203,6 +203,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_SCSI,
     /** Host SCSI driver group. */
     LOG_GROUP_DRV_SCSIHOST,
+    /** TCP socket stream driver group. */
+    LOG_GROUP_DRV_TCP,
     /** Async transport driver group */
     LOG_GROUP_DRV_TRANSPORT_ASYNC,
     /** TUN network transport driver group */
@@ -848,6 +850,7 @@ typedef enum LOGGROUP
     "DRV_RAW_IMAGE", \
     "DRV_SCSI",     \
     "DRV_SCSIHOST", \
+    "DRV_TELNETSERVER", \
     "DRV_TRANSPORT_ASYNC", \
     "DRV_TUN",      \
     "DRV_UDPTUNNEL", \

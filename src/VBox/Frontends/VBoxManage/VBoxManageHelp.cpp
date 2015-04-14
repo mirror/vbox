@@ -272,6 +272,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--uartmode<1-N> disconnected|\n"
                      "                                             server <pipe>|\n"
                      "                                             client <pipe>|\n"
+                     "                                             tcpserver <port>|\n"
+                     "                                             tcpclient <hostname:port>|\n"
                      "                                             file <file>|\n"
                      "                                             <devicename>]\n"
 #if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)

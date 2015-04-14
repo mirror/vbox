@@ -807,7 +807,8 @@ void UIGDetailsUpdateThreadSerial::run()
                 {
                     KPortMode mode = port.GetHostMode();
                     QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
-                    if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice || mode == KPortMode_RawFile)
+                    if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice ||
+                        mode == KPortMode_RawFile || mode == KPortMode_TCP)
                         data += QString("%1 (%2)").arg(gpConverter->toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
                     else
                         data += gpConverter->toString(mode);

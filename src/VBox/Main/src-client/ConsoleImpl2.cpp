@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2527,6 +2527,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigNode(pLunL0,    "Config", &pLunL1);
                     InsertConfigString(pLunL1,  "DevicePath", bstr);
                 }
+                else if (eHostMode == PortMode_TCP)
+                {
+                    InsertConfigString(pLunL0,  "Driver", "Char");
+                    InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
+                    InsertConfigString(pLunL1,  "Driver", "TCP");
+                    InsertConfigNode(pLunL1,    "Config", &pLunL2);
+                    InsertConfigString(pLunL2,  "Location", bstr);
+                    InsertConfigInteger(pLunL2, "IsServer", fServer);
+                }
                 else if (eHostMode == PortMode_RawFile)
                 {
                     InsertConfigString(pLunL0,  "Driver", "Char");
@@ -2716,7 +2725,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     LogRel(("Audio: WARNING: Solaris Audio is deprecated, please switch to OSS!\n"));
                     LogRel(("Audio: Automatically setting host audio backend to OSS\n"));
                     /* Manually set backend to OSS for now. */
-                    InsertConfigString(pLunL1, "Driver", "OSSAudio"); 
+                    InsertConfigString(pLunL1, "Driver", "OSSAudio");
 # else
                     InsertConfigString(pCfg, "AudioDriver", "solaudio");
 # endif

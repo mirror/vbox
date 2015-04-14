@@ -16418,7 +16418,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="PortMode"
-    uuid="533b5fe3-0185-4197-86a7-17e37dd39d76"
+    uuid="7485fcfd-d603-470a-87af-26d33beb7de9"
     >
     <desc>
       The PortMode enumeration represents possible communication modes for
@@ -16436,6 +16436,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="RawFile"           value="3">
       <desc>Virtual device is attached to a raw file.</desc>
+    </const>
+    <const name="TCP"               value="4">
+      <desc>Virtual device is attached to a TCP socket.</desc>
     </const>
   </enum>
 
@@ -16506,17 +16509,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Flag whether this serial port acts as a server (creates a new pipe on
         the host) or as a client (uses the existing pipe). This attribute is
-        used only when <link to="#hostMode"/> is PortMode_HostPipe.
+        used only when <link to="#hostMode"/> is PortMode_HostPipe or PortMode_TCP.
       </desc>
     </attribute>
 
     <attribute name="path" type="wstring">
       <desc>
         Path to the serial port's pipe on the host when <link to="ISerialPort::hostMode"/> is
-        PortMode_HostPipe, or the host serial device name when
-        <link to="ISerialPort::hostMode"/> is PortMode_HostDevice. For both
-        cases, setting a @c null or empty string as the attribute's value
-        is an error. Otherwise, the value of this property is ignored.
+        PortMode_HostPipe, the host serial device name when
+        <link to="ISerialPort::hostMode"/> is PortMode_HostDevice or the TCP
+       <b>port</b> (server) or <b>hostname:port</b> (client) when
+        <link to="ISerialPort::hostMode"/> is PortMode_TCP.
+        For those cases, setting a @c null or empty string as the attribute's
+        value is an error. Otherwise, the value of this property is ignored.
       </desc>
     </attribute>
 
