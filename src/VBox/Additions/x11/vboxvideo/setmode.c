@@ -110,8 +110,7 @@ void vboxClearVRAM(ScrnInfoPtr pScrn, int32_t cNewX, int32_t cNewY)
 /** Set a graphics mode.  Poke any required values into registers, do an HGSMI
  * mode set and tell the host we support advanced graphics functions.
  */
-void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned
- cHeight, int x, int y, bool fEnabled,
+void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
                  bool fConnected, struct vbvxFrameBuffer *pFrameBuffer)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
