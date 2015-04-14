@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2014 Oracle Corporation
+ * Copyright (C) 2004-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -613,12 +613,15 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
 HRESULT Host::getNetworkInterfaces(std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
 #if defined(RT_OS_WINDOWS) || defined(VBOX_WITH_NETFLT) /*|| defined(RT_OS_OS2)*/
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
 # ifdef VBOX_WITH_HOSTNETIF_API
-    int rc = i_updateNetIfList();
-    if (rc)
-        Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
+    HRESULT rc = i_updateNetIfList();
+    if (FAILED(rc))
+    {
+        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
+        return rc;
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aNetworkInterfaces.resize(m->llNetIfs.size());
     size_t i = 0;
@@ -1485,17 +1488,16 @@ HRESULT Host::findHostNetworkInterfaceByName(const com::Utf8Str &aName,
     if (!aName.length())
         return E_INVALIDARG;
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = i_updateNetIfList();
+    if (FAILED(rc))
+    {
+        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
+        return rc;
+    }
 
-    aNetworkInterface = NULL;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<HostNetworkInterface> found;
-    int rc = i_updateNetIfList();
-    if (RT_FAILURE(rc))
-    {
-        Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
-        return E_FAIL;
-    }
     for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr n;
@@ -1521,19 +1523,17 @@ HRESULT Host::findHostNetworkInterfaceById(const com::Guid &aId,
     if (!aId.isValid())
         return E_INVALIDARG;
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = i_updateNetIfList();
+    if (FAILED(rc))
+    {
+        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
+        return rc;
+    }
 
-    aNetworkInterface = NULL;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<HostNetworkInterface> found;
-    int rc = i_updateNetIfList();
-    if (RT_FAILURE(rc))
-    {
-        Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
-        return E_FAIL;
-    }
-    HostNetworkInterfaceList::iterator it;
-    for (it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
+    for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         Bstr g;
         (*it)->COMGETTER(Id)(g.asOutParam());
@@ -1553,13 +1553,16 @@ HRESULT Host::findHostNetworkInterfacesOfType(HostNetworkInterfaceType_T aType,
                                               std::vector<ComPtr<IHostNetworkInterface> > &aNetworkInterfaces)
 {
 #ifdef VBOX_WITH_HOSTNETIF_API
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    int rc = i_updateNetIfList();
-    if (RT_FAILURE(rc))
-        return E_FAIL;
+    HRESULT rc = i_updateNetIfList();
+    if (FAILED(rc))
+    {
+        Log(("Failed to update host network interface list with rc=%Rhrc\n", rc));
+        return rc;
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HostNetworkInterfaceList resultList;
-
     for (HostNetworkInterfaceList::iterator it = m->llNetIfs.begin(); it != m->llNetIfs.end(); ++it)
     {
         HostNetworkInterfaceType_T t;
@@ -2950,19 +2953,26 @@ HRESULT Host::i_checkUSBProxyService()
 HRESULT Host::i_updateNetIfList()
 {
 #ifdef VBOX_WITH_HOSTNETIF_API
-    AssertReturn(   getObjectState().getState() == ObjectState::InInit
-                 || isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
 
-    HostNetworkInterfaceList list, listCopy;
+    /** @todo r=klaus it would save lots of clock cycles if for concurrent
+     * threads executing this code we'd only do one interface enumeration
+     * and update, and let the other threads use the result as is. However
+     * if there's a constant hammering of this method, we don't want this
+     * to cause update starvation. */
+    HostNetworkInterfaceList list;
     int rc = NetIfList(list);
     if (rc)
     {
         Log(("Failed to get host network interface list with rc=%Rrc\n", rc));
         return E_FAIL;
     }
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     AssertReturn(m->pParent, E_FAIL);
     /* Make a copy as the original may be partially destroyed later. */
-    listCopy = list;
+    HostNetworkInterfaceList listCopy(list);
     HostNetworkInterfaceList::iterator itOld, itNew;
 # ifdef VBOX_WITH_RESOURCE_USAGE_API
     PerformanceCollector *aCollector = m->pParent->i_performanceCollector();
@@ -3000,8 +3010,8 @@ HRESULT Host::i_updateNetIfList()
     for (itNew = listCopy.begin(); itNew != listCopy.end(); ++itNew)
     {
         HostNetworkInterfaceType_T t;
-        HRESULT hr = (*itNew)->COMGETTER(InterfaceType)(&t);
-        if (FAILED(hr))
+        HRESULT hrc = (*itNew)->COMGETTER(InterfaceType)(&t);
+        if (FAILED(hrc))
         {
             Bstr n;
             (*itNew)->COMGETTER(Name)(n.asOutParam());
