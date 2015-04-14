@@ -492,7 +492,12 @@ static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
  /* 56  UNDEFINED                        */  hmR0VmxExitErrUndefined,
  /* 57  VMX_EXIT_RDRAND                  */  hmR0VmxExitRdrand,
  /* 58  VMX_EXIT_INVPCID                 */  hmR0VmxExitInvpcid,
- /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitSetPendingXcptUD
+ /* 59  VMX_EXIT_VMFUNC                  */  hmR0VmxExitSetPendingXcptUD,
+ /* 60  VMX_EXIT_RESERVED_60             */  hmR0VmxExitErrUndefined,
+ /* 61  VMX_EXIT_RDSEED                  */  hmR0VmxExitErrUndefined, /* only spurious exits, so undefined */
+ /* 62  VMX_EXIT_RESERVED_62             */  hmR0VmxExitErrUndefined,
+ /* 63  VMX_EXIT_XSAVES                  */  hmR0VmxExitSetPendingXcptUD,
+ /* 64  VMX_EXIT_XRSTORS                 */  hmR0VmxExitSetPendingXcptUD,
 };
 #endif /* HMVMX_USE_FUNCTION_TABLE */
 
@@ -9158,8 +9163,13 @@ DECLINLINE(int) hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         case VMX_EXIT_INVEPT:
         case VMX_EXIT_INVVPID:
         case VMX_EXIT_VMFUNC:
+        case VMX_EXIT_XSAVES:
+        case VMX_EXIT_XRSTORS:
             rc = hmR0VmxExitSetPendingXcptUD(pVCpu, pMixedCtx, pVmxTransient);
             break;
+        case VMX_EXIT_RESERVED_60:
+        case VMX_EXIT_RDSEED: /* only spurious exits, so undefined */
+        case VMX_EXIT_RESERVED_62:
         default:
             rc = hmR0VmxExitErrUndefined(pVCpu, pMixedCtx, pVmxTransient);
             break;
@@ -10582,7 +10592,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* We expose XSETBV to the guest, fallback to the recompiler for emulation. */
+    /* We expose XSETBV to the guest, fallback to the interpreter for emulation. */
     /** @todo check if XSETBV is supported by the recompiler. */
     return VERR_EM_INTERPRETER;
 }
@@ -10595,7 +10605,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* The guest should not invalidate the host CPU's TLBs, fallback to recompiler. */
+    /* The guest should not invalidate the host CPU's TLBs, fallback to interpreter. */
     /** @todo implement EMInterpretInvpcid() */
     return VERR_EM_INTERPRETER;
 }
@@ -10942,7 +10952,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTprBelowThreshold(PVMCPU pVCpu, PCPUMCTX pMixedCtx, P
  * @retval VINF_PGM_CHANGE_MODE when shadow paging mode changed, back to ring-3.
  * @retval VINF_PGM_SYNC_CR3 CR3 sync is required, back to ring-3.
  * @retval VERR_EM_INTERPRETER when something unexpected happened, fallback to
- *         recompiler.
+ *         interpreter.
  */
 HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {

@@ -981,10 +981,6 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INVPCID                                        58
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
 #define VMX_EXIT_VMFUNC                                         59
-#if 1
-/** The maximum exit value (inclusive). */
-#define VMX_EXIT_MAX                                            (VMX_EXIT_VMFUNC)
-#else
 /** 60 ??? */
 #define VMX_EXIT_RESERVED_60                                    60
 /** 61 - RDSEED - Guest software attempted to executed RDSEED and exiting was
@@ -1000,7 +996,6 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_XRSTORS                                        64
 /** The maximum exit value (inclusive). */
 #define VMX_EXIT_MAX                                            (VMX_EXIT_XRSTORS)
-#endif
 /** @} */
 
 

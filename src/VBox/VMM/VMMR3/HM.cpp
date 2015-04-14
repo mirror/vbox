@@ -119,7 +119,12 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON_NIL(),
     EXIT_REASON(VMX_EXIT_RDRAND             , 57, "RDRAND instruction."),
     EXIT_REASON(VMX_EXIT_INVPCID            , 58, "INVPCID instruction."),
-    EXIT_REASON(VMX_EXIT_VMFUNC             , 59, "VMFUNC instruction.")
+    EXIT_REASON(VMX_EXIT_VMFUNC             , 59, "VMFUNC instruction."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_RDSEED             , 61, "RDSEED instruction."),
+    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_XSAVES             , 61, "XSAVES instruction."),
+    EXIT_REASON(VMX_EXIT_XRSTORS            , 62, "XRSTORS instruction.")
 };
 /** Exit reason descriptions for AMD-V, used to describe statistics. */
 static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
