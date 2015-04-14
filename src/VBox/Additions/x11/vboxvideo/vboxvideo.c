@@ -862,8 +862,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Work around a bug in the original X server modesetting code, which
      * took the first valid values set to these two as maxima over the
      * server lifetime. */
-    pScrn->virtualX = 32000;
-    pScrn->virtualY = 32000;
+    pScrn->virtualX = VBOX_VIDEO_MAX_VIRTUAL;
+    pScrn->virtualY = VBOX_VIDEO_MAX_VIRTUAL;
 #else
     /* We don't validate with xf86ValidateModes and xf86PruneModes as we
      * already know what we like and what we don't. */
@@ -1088,7 +1088,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     /* Set a sane minimum and maximum mode size to match what the hardware
      * supports. */
-    xf86CrtcSetSizeRange(pScrn, 64, 64, 16384, 16384);
+    xf86CrtcSetSizeRange(pScrn, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL, VBOX_VIDEO_MAX_VIRTUAL);
 
     /* Now create our initial CRTC/output configuration. */
     if (!xf86InitialConfiguration(pScrn, TRUE)) {

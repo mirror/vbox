@@ -129,6 +129,9 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
 #define VBOX_DRI_DRIVER_NAME  "vboxvideo"  /* For starters. */
 #define VBOX_MAX_DRAWABLES    256          /* At random. */
 
+#define VBOX_VIDEO_MIN_SIZE    64
+#define VBOX_VIDEO_MAX_VIRTUAL (INT16_MAX - 1)
+
 #define VBOXPTR(p) ((VBOXPtr)((p)->driverPrivate))
 
 /** Helper to work round different ways of getting the root window in different
