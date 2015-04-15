@@ -145,6 +145,11 @@ static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
 static void VBOXSaveMode(ScrnInfoPtr pScrn);
 static void VBOXRestoreMode(ScrnInfoPtr pScrn);
 
+#ifndef XF86_SCRN_INTERFACE
+# define xf86ScreenToScrn(pScreen) xf86Screens[(pScreen)->myNum]
+# define xf86ScrnToScreen(pScrn) screenInfo.screens[(pScrn)->scrnIndex]
+#endif
+
 static inline void VBOXSetRec(ScrnInfoPtr pScrn)
 {
     if (!pScrn->driverPrivate)
@@ -260,6 +265,49 @@ static const char *vgahwSymbols[] = {
     NULL
 };
 #endif /* !XORG_7X */
+
+/** Resize the virtual framebuffer. */
+static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
+{
+    ScreenPtr pScreen = xf86ScrnToScreen(pScrn);
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    int adjustedWidth = pScrn->bitsPerPixel == 16 ? (width + 1) & ~1 : width;
+    int cbLine = adjustedWidth * pScrn->bitsPerPixel / 8;
+    PixmapPtr pPixmap;
+    int rc;
+
+    TRACE_LOG("width=%d, height=%d\n", width, height);
+    VBVXASSERT(width >= 0 && height >= 0, ("Invalid negative width (%d) or height (%d)\n", width, height));
+    if (pScreen == NULL)  /* Not yet initialised. */
+        return TRUE;
+    pPixmap = pScreen->GetScreenPixmap(pScreen);
+    VBVXASSERT(pPixmap != NULL, ("Failed to get the screen pixmap.\n"));
+    TRACE_LOG("pPixmap=%p adjustedWidth=%d height=%d pScrn->depth=%d pScrn->bitsPerPixel=%d cbLine=%d pVBox->base=%p pPixmap->drawable.width=%d pPixmap->drawable.height=%d\n",
+              pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base, pPixmap->drawable.width,
+              pPixmap->drawable.height);
+    if (   adjustedWidth != pPixmap->drawable.width
+        || height != pPixmap->drawable.height)
+    {
+        if (   adjustedWidth > VBOX_VIDEO_MAX_VIRTUAL || height > VBOX_VIDEO_MAX_VIRTUAL
+            || (unsigned)cbLine * (unsigned)height >= pVBox->cbFBMax)
+        {
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                       "Virtual framebuffer %dx%d too large.  For information, video memory: %u Kb.\n",
+                       adjustedWidth, height, (unsigned) pVBox->cbFBMax / 1024);
+            return FALSE;
+        }
+        vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8,
+                      adjustedWidth * height * pScrn->bitsPerPixel / 8);
+        pScreen->ModifyPixmapHeader(pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base);
+    }
+    pScrn->displayWidth = pScrn->virtualX = adjustedWidth;
+    pScrn->virtualY = height;
+#ifdef VBOX_DRI_OLD
+    if (pVBox->useDRI)
+        VBOXDRIUpdateStride(pScrn, pVBox);
+#endif
+    return TRUE;
+}
 
 #ifdef VBOXVIDEO_13
 /* X.org 1.3+ mode-setting support ******************************************/
@@ -599,8 +647,6 @@ VBOXIdentify(int flags)
 }
 
 #ifndef XF86_SCRN_INTERFACE
-# define xf86ScreenToScrn(pScreen) xf86Screens[(pScreen)->myNum]
-# define xf86ScrnToScreen(pScrn) screenInfo.screens[(pScrn)->scrnIndex]
 # define SCRNINDEXAPI(pfn) pfn ## Index
 static Bool VBOXScreenInitIndex(int scrnIndex, ScreenPtr pScreen, int argc,
                                 char **argv)
