@@ -6025,6 +6025,81 @@ IEM_CIMPL_DEF_0(iemCImpl_das)
 
 
 /**
+ * Implements 'XGETBV'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_xgetbv)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    if (pCtx->cr4 & X86_CR4_OSXSAVE)
+    {
+        uint32_t uEcx = pCtx->ecx;
+        switch (uEcx)
+        {
+            case 0:
+                break;
+
+            case 1: /** @todo Implement XCR1 support. */
+            default:
+                Log(("xgetbv ecx=%RX32 -> #GP(0)\n", uEcx));
+                return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+        }
+        pCtx->rax = RT_LO_U32(pCtx->aXcr[uEcx]);
+        pCtx->rdx = RT_HI_U32(pCtx->aXcr[uEcx]);
+
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+        return VINF_SUCCESS;
+    }
+    Log(("xgetbv CR4.OSXSAVE=0 -> UD\n"));
+    return iemRaiseUndefinedOpcode(pIemCpu);
+}
+
+
+/**
+ * Implements 'XSETBV'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_xsetbv)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    if (pCtx->cr4 & X86_CR4_OSXSAVE)
+    {
+        if (pIemCpu->uCpl == 0)
+        {
+            uint32_t uEcx = pCtx->ecx;
+            uint64_t uNewValue = RT_MAKE_U64(pCtx->eax, pCtx->edx);
+            switch (uEcx)
+            {
+                case 0:
+                {
+                    int rc = CPUMSetGuestXcr0(IEMCPU_TO_VMCPU(pIemCpu), uNewValue);
+                    if (rc == VINF_SUCCESS)
+                        break;
+                    Assert(rc == VERR_CPUM_RAISE_GP_0);
+                    Log(("xsetbv ecx=%RX32 (newvalue=%RX64) -> #GP(0)\n", uEcx, uNewValue));
+                    return iemRaiseGeneralProtectionFault0(pIemCpu);
+                }
+
+                case 1: /** @todo Implement XCR1 support. */
+                default:
+                    Log(("xsetbv ecx=%RX32 (newvalue=%RX64) -> #GP(0)\n", uEcx, uNewValue));
+                    return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+            }
+
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+            return VINF_SUCCESS;
+        }
+
+        Log(("xsetbv cpl=%u -> GP(0)\n", pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    Log(("xsetbv CR4.OSXSAVE=0 -> UD\n"));
+    return iemRaiseUndefinedOpcode(pIemCpu);
+}
+
+
+
+/**
  * Implements 'FINIT' and 'FNINIT'.
  *
  * @param   fCheckXcpts     Whether to check for umasked pending exceptions or

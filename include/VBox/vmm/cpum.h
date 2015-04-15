@@ -1073,6 +1073,7 @@ VMMDECL(int)        CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3);
 VMMDECL(int)        CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6);
 VMMDECL(int)        CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7);
 VMMDECL(int)        CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value);
+VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue);
 VMMDECL(int)        CPUMSetGuestEFlags(PVMCPU pVCpu, uint32_t eflags);
 VMMDECL(int)        CPUMSetGuestEIP(PVMCPU pVCpu, uint32_t eip);
 VMMDECL(int)        CPUMSetGuestEAX(PVMCPU pVCpu, uint32_t eax);

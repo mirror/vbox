@@ -2140,6 +2140,37 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
 
 
 /**
+ * Set the guest XCR0 register.
+ *
+ * @returns VINF_SUCCESS on success, VERR_CPUM_RAISE_GP_0 on invalid input
+ *          value.
+ * @param   pVCpu       Pointer to the cross context VMCPU structure for the
+ *                      calling EMT.
+ * @param   uNewValue   The new value.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
+{
+    if (   (uNewValue & ~pVCpu->CTX_SUFF(pVM)->cpum.s.fXStateGuestMask) == 0
+        /* The X87 bit cannot be cleared. */
+        && (uNewValue & XSAVE_C_X87)
+        /* AVX requires SSE. */
+        && (uNewValue & (XSAVE_C_SSE | XSAVE_C_YMM)) != XSAVE_C_YMM
+        /* AVX-512 requires YMM, SSE and all of its three components to be enabled. */
+        && (   (uNewValue & (XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI)) == 0
+            ||    (uNewValue & (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI))
+               ==              (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI) )
+       )
+    {
+        pVCpu->cpum.s.Guest.aXcr[0] = uNewValue;
+        pVCpu->cpum.s.Guest.fXStateMask = uNewValue;
+        return VINF_SUCCESS;
+    }
+    return VERR_CPUM_RAISE_GP_0;
+}
+
+
+/**
  * Tests if the guest has No-Execute Page Protection Enabled (NXE).
  *
  * @returns true if in real mode, otherwise false.
