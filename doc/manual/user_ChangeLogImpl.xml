@@ -136,7 +136,7 @@
       </listitem>
 
       <listitem>
-        <para>Serial: new backend TCP/IP backend (see <xref linkend="serialports"/>)</para>
+        <para>Serial: new TCP/IP backend (see <xref linkend="serialports"/>)</para>
       </listitem>
 
       <listitem>
