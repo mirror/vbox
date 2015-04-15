@@ -777,7 +777,9 @@ void UIExtraDataManagerWindow::sltDataHandleCustomContextMenuRequested(const QPo
 {
     /* Prepare menu: */
     QMenu menu;
+    menu.addAction(m_pActionAdd);
     menu.addAction(m_pActionDel);
+    menu.addSeparator();
     menu.addAction(m_pActionSave);
     /* Execute menu: */
     m_pActionSave->setProperty("CalledFromContextMenu", true);
