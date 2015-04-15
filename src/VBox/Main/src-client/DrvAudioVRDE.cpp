@@ -356,6 +356,8 @@ static DECLCALLBACK(int) drvAudioVRDEControlIn(PPDMIHOSTAUDIO pInterface, PPDMAU
         pDrv->pConsoleVRDPServer->SendAudioInputEnd(NULL /* pvUserCtx */);
         rc = VINF_SUCCESS;
     }
+    else
+        rc = VERR_INVALID_PARAMETER;
 
     return rc;
 }
