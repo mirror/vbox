@@ -843,8 +843,8 @@ static int vbgdHeartbeatInit(PVBOXGUESTDEVEXT pDevExt)
             rc = VbglGRAlloc(&pDevExt->pReqGuestHeartbeat, sizeof(*pDevExt->pReqGuestHeartbeat), VMMDevReq_GuestHeartbeat);
             if (RT_SUCCESS(rc))
             {
-                LogRel(("VbgdCommonInitDevExt: Setting up heartbeat to trigger every %RU64 sec\n",
-                        pDevExt->cNsHeartbeatInterval / RT_NS_1SEC));
+                LogRel(("VbgdCommonInitDevExt: Setting up heartbeat to trigger every %RU64 milliseconds\n",
+                        pDevExt->cNsHeartbeatInterval / RT_NS_1MS));
                 rc = RTTimerCreateEx(&pDevExt->pHeartbeatTimer, pDevExt->cNsHeartbeatInterval, 0 /*fFlags*/,
                                      (PFNRTTIMER)vbgdHeartbeatTimerHandler, pDevExt);
                 if (RT_SUCCESS(rc))

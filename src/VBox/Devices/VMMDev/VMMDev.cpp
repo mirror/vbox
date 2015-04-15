@@ -408,7 +408,7 @@ static DECLCALLBACK(void) vmmDevHeartBeatCheckTimer(PPDMDEVINS pDevIns, PTMTIMER
         uint64_t uIntervalNs = TMTimerGetNano(pTimer) - pThis->uLastHBTime;
         if (!pThis->fHasMissedHB && uIntervalNs >= pThis->u64HeartbeatInterval)
         {
-            LogRel(("VMMDev: HeartBeatCheckTimer: Guest seems to be unresponsive. Last heartbeat received %RU64 sec ago\n",
+            LogRel(("VMMDev: HeartBeatCheckTimer: Guest seems to be unresponsive. Last heartbeat received %RU64 seconds ago\n",
                     uIntervalNs / RT_NS_1SEC_64));
             ASMAtomicWriteBool(&pThis->fHasMissedHB, true);
         }
@@ -439,11 +439,8 @@ static int vmmDevReqHandler_HeartbeatConfigure(PVMMDEV pThis, VMMDevRequestHeade
             /* set first timer explicitly */
             rc = vmmDevHeartbeatTimerReset(pThis);
             if (RT_SUCCESS(rc))
-            {
-                /** @todo r=ramshankar: Why are we using 500000000 here? The comment in
-                 *        u64HeartbeatInterval doesn't indicate anything special.  */
-                LogRel(("VMMDev: Heartbeat checking timer set to trigger every %RU64 sec\n", pThis->u64HeartbeatInterval / 500000000));
-            }
+                LogRel(("VMMDev: Heartbeat checking timer set to trigger every %RU64 milliseconds\n",
+                        pThis->u64HeartbeatTimeout / RT_NS_1MS));
             else
                 LogRel(("VMMDev: Cannot create heartbeat check timer, rc=%Rrc\n", rc));
         }
@@ -3873,6 +3870,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                   "GuestCoreDumpEnabled|"
                                   "GuestCoreDumpDir|"
                                   "GuestCoreDumpCount|"
+                                  "HeartbeatInterval|"
+                                  "HeartbeatTimeout|"
                                   "TestingEnabled|"
                                   "TestingMMIO|"
                                   "TestintXmlOutputFile"
@@ -3932,11 +3931,17 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"HeartbeatInterval\" as a 64-bit unsigned integer"));
+    if (pThis->u64HeartbeatInterval < RT_NS_100MS/2)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Heartbeat interval \"HeartbeatInterval\" too small"));
 
     rc = CFGMR3QueryU64Def(pCfg, "HeartbeatTimeout", &pThis->u64HeartbeatTimeout, pThis->u64HeartbeatInterval * 2);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"HeartbeatTimeout\" as a 64-bit unsigned integer"));
+    if (pThis->u64HeartbeatTimeout < RT_NS_100MS)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Heartbeat timeout timer interval \"HeartbeatTimeout\" too small"));
 
 #ifndef VBOX_WITHOUT_TESTING_FEATURES
     rc = CFGMR3QueryBoolDef(pCfg, "TestingEnabled", &pThis->fTestingEnabled, false);

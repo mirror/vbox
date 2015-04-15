@@ -3690,4 +3690,41 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
   </sect1>
 
+  <sect1 id="heartbeatservice">
+    <title>Configuring the heartbeat service</title>
+    <para>
+      VirtualBox ships a simple heartbeat service. Once the Guest Additions are
+      active, the guest sends frequent heartbeat pings to the host. If the guest
+      stops sending the heartbeat pings without properly termination the service,
+      the VM process will log this event in the VBox.log file. In the future it
+      might be possible to configure dedicated actions but for there is only a
+      warning in the log file.</para>
+
+    <para>
+      There are two parameters to configure. The <emphasis>heartbeat interval</emphasis>
+      defines the time between two heartbeat pings. The default value is 2 seconds, that
+      is, the heartbeat service of the VirtualBox Guest Additions will send a heartbeat
+      ping every two seconds. The value in nanoseconds can be configured like this:
+    </para>
+    <screen>VBoxManage controlvm "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatInterval 2000000000</screen>
+    <para>
+      The <emphasis>heartbeat timeout</emphasis> defines the time the host waits
+      starting from the last heartbeat ping before it defines the guest as unresponsive.
+      The default value is 2 times the heartbeat interval (4 seconds) and can be configured
+      as following (in nanoseconds):
+    </para>
+
+    <screen>VBoxManage controlvm "VM name" VBoxInternal/Devices/VMMDev/0/Config/HeartbeatTimeout 4000000000</screen>
+
+    <para>
+      If the heartbeat timeout expires, there will be a log message like
+      <emphasis>VMMDev: HeartBeatCheckTimer: Guest seems to be unresponsive. Last heartbeat
+        received 5 seconds ago.</emphasis>
+      If another heartbeat ping arrives after this warning, there will be a log
+      message like
+      <emphasis>VMMDev: GuestHeartBeat: Guest is alive.</emphasis>
+    </para>
+
+  </sect1>
+
 </chapter>

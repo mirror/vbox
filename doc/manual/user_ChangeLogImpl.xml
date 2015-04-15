@@ -135,6 +135,10 @@
         <para>3D: fixed a possible memory leak in the host service</para>
       </listitem>
 
+      <listitem>
+        <para>Guest Additions: added a heartbeat service (see <xref linkend="heartbeatservice" />)</para>
+      </listitem>
+
     </itemizedlist>
 
   </sect1>
