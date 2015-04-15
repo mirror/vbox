@@ -1,5 +1,4 @@
-﻿/* $Id$ */
-/** @file
+﻿/** @file
  * VBox Qt GUI - UISettingsSerializer class implementation.
  */
 
