@@ -191,10 +191,10 @@ private:
     /** Holds the pointer to the thread loading/saving settings in async mode. */
     UISettingsSerializer *m_pSerializer;
 
-    /** Holds the progress label. */
-    QLabel *m_pLabelProgress;
-    /** Holds the progress bar. */
-    QProgressBar *m_pBarProgress;
+    /** Holds the operation progress label. */
+    QLabel *m_pLabelOperationProgress;
+    /** Holds the operation progress bar. */
+    QProgressBar *m_pBarOperationProgress;
 };
 
 #endif /* !___UISettingsSerializer_h___ */
