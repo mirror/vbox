@@ -73,6 +73,7 @@ class HostDnsMonitor
     HostDnsMonitor(const HostDnsMonitor &);
     HostDnsMonitor& operator= (const HostDnsMonitor &);
     static int threadMonitoringRoutine(RTTHREAD, void *);
+    void pollGlobalExtraData();
 
   protected:
     mutable RTCLockMtx m_LockMtx;
@@ -101,7 +102,7 @@ class HostDnsMonitorProxy
 
     private:
     void updateInfo();
- 
+
   private:
     mutable RTCLockMtx m_LockMtx;
 

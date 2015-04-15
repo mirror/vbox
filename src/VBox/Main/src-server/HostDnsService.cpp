@@ -23,6 +23,7 @@
 
 #include "Logging.h"
 #include "VirtualBoxImpl.h"
+#include <iprt/time.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
@@ -70,16 +71,20 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
 struct HostDnsMonitor::Data
 {
     Data(bool aThreaded)
-      : fDNSOrderIgnore(false),
-        fThreaded(aThreaded)
+      : uLastExtraDataPoll(0),
+        fDNSOrderIgnore(false),
+        fThreaded(aThreaded),
+        virtualbox(NULL)
     {}
 
     std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
+    uint64_t uLastExtraDataPoll;
     bool fDNSOrderIgnore;
     const bool fThreaded;
     RTTHREAD hMonitoringThread;
     RTSEMEVENT hDnsInitEvent;
+    VirtualBox *virtualbox;
 };
 
 struct HostDnsMonitorProxy::Data
@@ -185,6 +190,8 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 {
     RTCLock grab(m_LockMtx);
 
+    pollGlobalExtraData();
+
     if (info.equals(m->info))
         return;
 
@@ -209,20 +216,9 @@ void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 
 HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
 {
-    const com::Bstr bstrHostDNSOrderIgnoreKey("VBoxInternal2/HostDNSOrderIgnore");
-    com::Bstr bstrHostDNSOrderIgnore;
-    virtualbox->GetExtraData(bstrHostDNSOrderIgnoreKey.raw(),
-                             bstrHostDNSOrderIgnore.asOutParam());
+    m->virtualbox = virtualbox;
 
-    if (bstrHostDNSOrderIgnore.isNotEmpty())
-    {
-        LogRel(("HostDnsMonitor: %ls=%ls\n",
-                bstrHostDNSOrderIgnoreKey.raw(),
-                bstrHostDNSOrderIgnore.raw()));
-
-        if (bstrHostDNSOrderIgnore != "0")
-            m->fDNSOrderIgnore = true;
-    }
+    pollGlobalExtraData();
 
     if (m->fThreaded)
     {
@@ -239,6 +235,34 @@ HRESULT HostDnsMonitor::init(VirtualBox *virtualbox)
     return S_OK;
 }
 
+
+void HostDnsMonitor::pollGlobalExtraData()
+{
+    uint64_t uNow = RTTimeNanoTS();
+    if (m->virtualbox && (uNow - m->uLastExtraDataPoll >= RT_NS_30SEC || m->uLastExtraDataPoll == 0))
+    {
+        m->uLastExtraDataPoll = uNow;
+
+        const com::Bstr bstrHostDNSOrderIgnoreKey("VBoxInternal2/HostDNSOrderIgnore");
+        com::Bstr bstrHostDNSOrderIgnore;
+        m->virtualbox->GetExtraData(bstrHostDNSOrderIgnoreKey.raw(),
+                                    bstrHostDNSOrderIgnore.asOutParam());
+        bool fDNSOrderIgnore = false;
+        if (bstrHostDNSOrderIgnore.isNotEmpty())
+        {
+            if (bstrHostDNSOrderIgnore != "0")
+                fDNSOrderIgnore = true;
+        }
+
+        if (fDNSOrderIgnore != m->fDNSOrderIgnore)
+        {
+            m->fDNSOrderIgnore = fDNSOrderIgnore;
+            LogRel(("HostDnsMonitor: %ls=%ls\n",
+                    bstrHostDNSOrderIgnoreKey.raw(),
+                    bstrHostDNSOrderIgnore.raw()));
+        }
+    }
+}
 
 void HostDnsMonitor::monitorThreadInitializationDone()
 {
