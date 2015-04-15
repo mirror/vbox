@@ -4338,7 +4338,7 @@ Value: 2006.01.01</screen>
     </glosslist>
   </sect1>
 
-  <sect1>
+  <sect1 id="vboxmanage-hostonlyif">
     <title>VBoxManage hostonlyif</title>
 
     <para>With "hostonlyif" you can change the IP configuration of a host-only
@@ -4346,6 +4346,31 @@ Value: 2006.01.01</screen>
     refer to <xref linkend="network_hostonly" />. Each host-only interface is
     identified by a name and can either use the internal DHCP server or a
     manual IP configuration (both IP4 and IP6).</para>
+
+    <para>The following list summarizes the available subcommands:</para>
+
+    <glosslist>
+      <glossentry>
+        <glossterm><computeroutput>ipconfig "&lt;name&gt;"</computeroutput></glossterm>
+        <glossdef>
+          <para>Configure a hostonly interface</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>create</computeroutput></glossterm>
+        <glossdef>
+          <para>Ceates a new vboxnet&lt;N&gt; interface on the host OS. 
+            This command is essential before you can attach VMs to host-only network.</para>
+        </glossdef>
+      </glossentry>
+      <glossentry>
+        <glossterm><computeroutput>remove vboxnet&lt;N&gt;</computeroutput></glossterm>
+        <glossdef>
+          <para>Removes a vboxnet&lt;N&gt; interface from the host OS.</para>
+        </glossdef>
+      </glossentry>
+    </glosslist>
+
   </sect1>
 
   <sect1 id="vboxmanage-dhcpserver">

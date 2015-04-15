@@ -696,7 +696,14 @@
           "VM name" --nic&lt;x&gt; hostonly</computeroutput>; see <xref
           linkend="vboxmanage-modifyvm" /> for details.</para>
         </listitem>
-      </itemizedlist></para>
+    </itemizedlist></para>
+
+    <para>Before you can attach a VM to a host-only network you have to
+      create at least one host-only interface, either from the GUI:
+      "File" -&gt; "Preferences" -&gt; "Network" -&gt; "Host-only network"
+      -&gt; "(+)Add host-only network", or via command line with</para>
+      <screen>VBoxManage hostonlyif create</screen> 
+      <para>see <xref linkend="vboxmanage-hostonlyif" /> for details.</para>
 
     <para>For host-only networking, like with internal networking, you may
     find the DHCP server useful that is built into VirtualBox. This can be
