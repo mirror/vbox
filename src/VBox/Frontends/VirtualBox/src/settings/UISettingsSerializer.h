@@ -21,16 +21,18 @@
 #include <QThread>
 #include <QVariant>
 #include <QWaitCondition>
-#include <QProgressDialog>
 #include <QMutex>
 #include <QList>
 #include <QMap>
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "QIDialog.h"
 
 /* Forward declarations: */
 class UISettingsPage;
+class QProgressBar;
+class QLabel;
 
 /* Type definitions: */
 typedef QList<UISettingsPage*> UISettingsPageList;
@@ -124,9 +126,9 @@ protected:
     QWaitCondition m_condition;
 };
 
-/** QProgressDialog reimplementation used to
+/** QIDialog reimplementation used to
   * reflect the settings serialization operation. */
-class UISettingsSerializerProgress : public QIWithRetranslateUI<QProgressDialog>
+class UISettingsSerializerProgress : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
@@ -171,7 +173,10 @@ private slots:
     void sltStartProcess();
 
     /** Advances the current progress value. */
-    void sltAdvanceProgressValue() { setValue(value() + 1); }
+    void sltAdvanceProgressValue();
+
+    /** Handles the progress value change. */
+    void sltProgressValueChanged(int iValue);
 
 private:
 
@@ -185,6 +190,11 @@ private:
 
     /** Holds the pointer to the thread loading/saving settings in async mode. */
     UISettingsSerializer *m_pSerializer;
+
+    /** Holds the progress label. */
+    QLabel *m_pLabelProgress;
+    /** Holds the progress bar. */
+    QProgressBar *m_pBarProgress;
 };
 
 #endif /* !___UISettingsSerializer_h___ */
