@@ -114,7 +114,7 @@ void UIMachineSettingsSerial::fetchPortData(const UICacheSettingsMachineSerialPo
     mLeIRQ->setText(QString::number(portData.m_uIRQ));
     mLeIOPort->setText("0x" + QString::number(portData.m_uIOBase, 16).toUpper());
     mCbMode->setCurrentIndex(mCbMode->findText(gpConverter->toString(portData.m_hostMode)));
-    mCbPipe->setChecked(portData.m_fServer);
+    mCbPipe->setChecked(!portData.m_fServer);
     mLePath->setText(portData.m_strPath);
 
     /* Ensure everything is up-to-date */
@@ -130,7 +130,7 @@ void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &p
     portData.m_fPortEnabled = mGbSerial->isChecked();
     portData.m_uIRQ = mLeIRQ->text().toULong(NULL, 0);
     portData.m_uIOBase = mLeIOPort->text().toULong (NULL, 0);
-    portData.m_fServer = mCbPipe->isChecked();
+    portData.m_fServer = !mCbPipe->isChecked();
     portData.m_hostMode = gpConverter->fromString<KPortMode>(mCbMode->currentText());
     portData.m_strPath = QDir::toNativeSeparators(mLePath->text());
 

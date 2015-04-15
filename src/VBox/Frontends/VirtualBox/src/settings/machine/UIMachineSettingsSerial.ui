@@ -176,7 +176,7 @@
       <item row="2" column="1" colspan="2" >
        <widget class="QCheckBox" name="mCbPipe" >
         <property name="whatsThis" >
-         <string>If checked, the pipe or socket specified in the &lt;b>Port Path&lt;/b> field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe or socket exists and try to use it.</string>
+         <string>If checked, the virtual machine will assume that the pipe or socket specified in the &lt;b>Path/Address&lt;/b> field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</string>
         </property>
         <property name="text" >
          <string>&amp;Connect to existing pipe/socket</string>
@@ -199,12 +199,7 @@
       <item row="3" column="1" colspan="6" >
        <widget class="QLineEdit" name="mLePath" >
         <property name="whatsThis" >
-         <string>In &lt;b>Host Pipe&lt;/b> mode: Holds the path to the serial port's pipe on the host, examples:
-"\\.\pipe\myvbox" or "/tmp/myvbox", for Windows and UNIX-like systems respectively. 
-In &lt;b>Host Device&lt;/b> mode: Holds the host serial device name; examples: "COM1" or "/dev/ttyS0".
-In &lt;b>Raw file&lt;/b> mode: file-path on the host system, where serial output will be dumped.
-In &lt;b>TCP&lt;/b> mode: Holds TCP "port" when in server mode, or "hostname:port" or when in client mode.
-</string>
+         <string>&lt;p>In &lt;b>Host Pipe&lt;/b> mode: Holds the path to the serial port's pipe on the host. Examples: "\\.\pipe\myvbox" or "/tmp/myvbox", for Windows and UNIX-like systems respectively.&lt;/p>&lt;p>In &lt;b>Host Device&lt;/b> mode: Holds the host serial device name. Examples: "COM1" or "/dev/ttyS0".&lt;/p>&lt;p>In &lt;b>Raw File&lt;/b> mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p>&lt;p>In &lt;b>TCP&lt;/b> mode: Holds the TCP "port" when in server mode, or "hostname:port" when in client mode.</string>
         </property>
        </widget>
       </item>
