@@ -259,5 +259,15 @@
         <file alias="os_oracle_64_hidpi.png">images/hidpi/os_oracle_64_hidpi.png</file>
         <file alias="os_oracle_hidpi.png">images/hidpi/os_oracle_hidpi.png</file>
         <file alias="os_oraclesolaris_64_hidpi.png">images/hidpi/os_oraclesolaris_64_hidpi.png</file>
+        <file alias="os_oraclesolaris_hidpi.png">images/hidpi/os_oraclesolaris_hidpi.png</file>
+        <file alias="os_os2_other_hidpi.png">images/hidpi/os_os2_other_hidpi.png</file>
+        <file alias="os_os2ecs_hidpi.png">images/hidpi/os_os2ecs_hidpi.png</file>
+        <file alias="os_os2warp3_hidpi.png">images/hidpi/os_os2warp3_hidpi.png</file>
+        <file alias="os_os2warp45_hidpi.png">images/hidpi/os_os2warp45_hidpi.png</file>
+        <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
+        <file alias="os_other_64_hidpi.png">images/hidpi/os_other_64_hidpi.png</file>
+        <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
+        <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
+        <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
     </qresource>
 </RCC>

@@ -279,5 +279,6 @@
         <file alias="os_turbolinux_64.png">images/os_turbolinux_64.png</file>
         <file alias="os_type_16px.png">images/os_type_16px.png</file>
         <file alias="os_ubuntu.png">images/os_ubuntu.png</file>
+        <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
     </qresource>
 </RCC>
