@@ -705,6 +705,9 @@ public:
             RTMemWipeThoroughly(mstrNewPassword.mutableRaw(), mstrNewPassword.length(), 10 /* cPasses */);
         if (mstrCurrentPassword.length())
             RTMemWipeThoroughly(mstrCurrentPassword.mutableRaw(), mstrCurrentPassword.length(), 10 /* cPasses */);
+
+        /* Keep any errors which might be set when deleting the lock list. */
+        ErrorInfoKeeper eik;
         delete mpMediumLockList;
     }
 
