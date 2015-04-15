@@ -140,7 +140,35 @@
       </listitem>
 
       <listitem>
-        <para>Guest Additions: added a heartbeat service (see <xref linkend="heartbeatservice" />)</para>
+        <para>Storage: added USB mass storage device class
+          (see <xref linkend="harddiskcontrollers"/>)</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: fix for booting from SCSI CD/DVD media</para>
+      </listitem>
+
+      <listitem>
+        <para>BIOS: fix for reads partially beyond end of disk (bug #14021)</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed listening for IPv6 on some systems (bug #14038)</para>
+      </listitem>
+
+      <listitem>
+        <para>rdesktop-vrdp: upgraded to version 1.8.3</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: added a heartbeat service
+          (see <xref linkend="heartbeatservice" />)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions/WDDM: improved video memory utilization and
+          allow more/bigger guest screens with large resolutions (including HiDPI
+        </para>
       </listitem>
 
     </itemizedlist>
