@@ -136,6 +136,10 @@
       </listitem>
 
       <listitem>
+        <para>Serial: new backend TCP/IP backend (see <xref linkend="serialports"/>)</para>
+      </listitem>
+
+      <listitem>
         <para>Guest Additions: added a heartbeat service (see <xref linkend="heartbeatservice" />)</para>
       </listitem>
 

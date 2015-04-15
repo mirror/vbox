@@ -1178,23 +1178,34 @@
               </listitem>
 
               <listitem>
-                <para>TCP Socket: useful for forwarding serial traffic over TCP/IP, acting as a server,
-                   or it can act as a TCP client connecting to other servers.
-                   It allows remote machine to connect via TCP directly to guest's serial port.
+                <para>TCP Socket: Useful for forwarding serial traffic over TCP/IP,
+                  acting as a server, or it can act as a TCP client connecting to other
+                  servers. It allows a remote machine to directly connect to the guest's
+                  serial port via TCP.
                 </para>
-                <para>TCP Server: use "create socket" mode, and type in only the <emphasis role="bold">
-                  <computeroutput>port</computeroutput></emphasis> number.
-                   Typically 23 or 2023. Note that on UNIX-like systems you will have to use port
-                   number over 1024 for normal users.
-                </para>
-                <para>
-                   The client can use software such as "Putty" or command-line "telnet" to access TCP Server.
-                </para>
-                <para>TCP Client: to create a virtual null-modem cable over the Internet or LAN,
-                   the other side can connect via TCP by specifying <emphasis role="bold">
-                   <computeroutput>hostname:port</computeroutput></emphasis>.
-                   TCP socket will act in client mode, if you remove "create socket" mode.
-                </para>
+                <itemizedlist>
+                  <listitem>
+                    <para>TCP Server: Uncheck the
+                      <emphasis>Connect to existing pipe/socket</emphasis> checkbox and specify
+                      the <emphasis role="bold"><computeroutput>port</computeroutput></emphasis>
+                      number. Typically 23 or 2023. Note that on UNIX-like systems you will
+                      have to use a port a number greater than 1024 for regular users.
+                    </para>
+                    <para>
+                      The client can use software such as <computeroutput>PuTTY</computeroutput>
+                      or the <computeroutput>telnet</computeroutput> command line
+                      tool to access the TCP Server.
+                    </para>
+                  </listitem>
+                  <listitem>
+                    <para>TCP Client: To create a virtual null-modem cable over the Internet or
+                      LAN, the other side can connect via TCP by specifying <emphasis role="bold">
+                      <computeroutput>hostname:port</computeroutput></emphasis>. The TCP socket
+                    will act in client mode if check the <emphasis>Connect to existing pipe/socket</emphasis>
+                    checkbox.
+                    </para>
+                  </listitem>
+                </itemizedlist>
               </listitem>
 
             </itemizedlist></para>
