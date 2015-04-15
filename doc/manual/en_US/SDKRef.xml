@@ -3996,6 +3996,61 @@ AuthResult AUTHCALL AuthEntry(
           </itemizedlist></para>
         </listitem>
 
+        <listitem><para>IDisplay and IFramebuffer interfaces were changed to allow IFramebuffer
+          object to reside in a separate frontend process:<itemizedlist>
+
+          <listitem><para>
+            IDisplay::ResizeCompleted() has been removed, because the IFramebuffer object
+            does not provide the screen memory anymore.
+          </para></listitem>
+
+          <listitem><para>
+            IDisplay::SetFramebuffer() has been replaced with IDisplay::AttachFramebuffer()
+            and IDisplay::DetachFramebuffer().
+          </para></listitem>
+
+          <listitem><para>
+            IDisplay::GetFramebuffer() has been replaced with IDisplay::QueryFramebuffer().
+          </para></listitem>
+
+          <listitem><para>
+            IDisplay::GetScreenResolution() has a new output parameter
+            <computeroutput>guestMonitorStatus</computeroutput>
+            which tells whether the monitor is enabled in the guest.
+          </para></listitem>
+
+          <listitem><para>
+            IDisplay::TakeScreenShot() and IDisplay::TakeScreenShotToArray() have a new parameter
+            <computeroutput>bitmapFormat</computeroutput>. As a consequence of this,
+            IDisplay::TakeScreenShotPNGToArray() has been removed.
+          </para></listitem>
+
+          <listitem><para>
+            IFramebuffer::RequestResize() has been replaced with IFramebuffer::NotifyChange().
+          </para></listitem>
+
+          <listitem><para>
+            IFramebuffer::NotifyUpdateImage() added to support IFramebuffer objects in a different process.
+          </para></listitem>
+
+          <listitem><para>
+            IFramebuffer::Lock(), IFramebuffer::Unlock(), IFramebuffer::Address(), IFramebuffer::UsesGuestVRAM()
+            have been removed because  the IFramebuffer object does not provide the screen memory anymore.
+          </para></listitem>
+
+          </itemizedlist></para>
+        </listitem>
+
+        <listitem><para>
+          IConsole::GetDeviceActivity() returns information about multiple devices.
+        </para></listitem>
+
+        <listitem><para>
+          IMachine::ReadSavedThumbnailToArray() has a new parameter
+          <computeroutput>bitmapFormat</computeroutput>. As a consequence of this,
+          IMachine::ReadSavedThumbnailPNGToArray() has been removed.
+        </para></listitem>
+
         <listitem>
           <para>The method <xref linkend="IWebsessionManager__getSessionObject"
           xreflabel="IWebsessionManager::getSessionObject()" /> now returns
