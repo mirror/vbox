@@ -1218,7 +1218,10 @@ int handleExportAppliance(HandlerArg *a)
 
                 RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Password ID %s:", Utf8Str(bstrId).c_str());
                 if (rcExit == RTEXITCODE_FAILURE)
+                {
+                    RTStrFree(pszAbsFilePath);
                     return rcExit;
+                }
 
                 bstrPassword = strPassword;
                 bstrPassword.detachTo(&aPasswords[idxId]);
