@@ -327,3 +327,73 @@ void UIProgressDialog::sltCancelOperation()
     m_progress.Cancel();
 }
 
+
+UIProgress::UIProgress(CProgress &progress, QObject *pParent /* = 0 */)
+    : QObject(pParent)
+    , m_progress(progress)
+    , m_cOperations(m_progress.GetOperationCount())
+    , m_fEnded(false)
+{
+}
+
+void UIProgress::run(int iRefreshInterval)
+{
+    /* Make sure the CProgress still valid: */
+    if (!m_progress.isOk())
+        return;
+
+    /* Start the refresh timer: */
+    int id = startTimer(iRefreshInterval);
+
+    /* Create a local event-loop: */
+    {
+        QEventLoop eventLoop;
+        m_pEventLoop = &eventLoop;
+
+        /* Guard ourself for the case
+         * we destroyed ourself in our event-loop: */
+        QPointer<UIProgress> guard = this;
+
+        /* Start the blocking event-loop: */
+        eventLoop.exec();
+
+        /* Are we still valid? */
+        if (guard.isNull())
+            return;
+
+        m_pEventLoop = 0;
+    }
+
+    /* Kill the refresh timer: */
+    killTimer(id);
+}
+
+void UIProgress::timerEvent(QTimerEvent*)
+{
+    /* Make sure the UIProgress still 'running': */
+    if (m_fEnded)
+        return;
+
+    /* If progress had failed or finished: */
+    if (!m_progress.isOk() || m_progress.GetCompleted())
+    {
+        /* Exit from the event-loop if there is any: */
+        if (m_pEventLoop)
+            m_pEventLoop->exit();
+
+        /* Mark UIProgress as 'ended': */
+        m_fEnded = true;
+
+        /* Return early: */
+        return;
+    }
+
+    /* If CProgress was not yet canceled: */
+    if (!m_progress.GetCanceled())
+    {
+        /* Notify listeners about the operation progress update: */
+        emit sigProgressChange(m_cOperations, m_progress.GetOperationDescription(),
+                               m_progress.GetOperation() + 1, m_progress.GetPercent());
+    }
+}
+
