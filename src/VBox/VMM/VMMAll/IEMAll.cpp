@@ -11015,6 +11015,18 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 #endif
 
 
+/**
+ * Macro used by the IEMExec* method to check the given instruction length.
+ *
+ * Will return on failure!
+ *
+ * @param   a_cbInstr   The given instruction length.
+ * @param   a_cbMin     The minimum length.
+ */
+#define IEMEXEC_ASSERT_INSTR_LEN_RETURN(a_cbInstr, a_cbMin) \
+    AssertMsgReturn((unsigned)(a_cbInstr) - (unsigned)(a_cbMin) <= (unsigned)15 - (unsigned)(a_cbMin), \
+                    ("cbInstr=%u cbMin=%u\n", (a_cbInstr), (a_cbMin)), VERR_IEM_INVALID_INSTR_LENGTH)
+
 
 /**
  * Interface for HM and EM for executing string I/O OUT (write) instructions.
@@ -11036,7 +11048,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
                                                 bool fRepPrefix, uint8_t cbInstr, uint8_t iEffSeg)
 {
     AssertMsgReturn(iEffSeg < X86_SREG_COUNT, ("%#x\n", iEffSeg), VERR_IEM_INVALID_EFF_SEG);
-    AssertReturn(cbInstr - 1U <= 14U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
 
     /*
      * State init.
@@ -11153,7 +11165,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, I
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
                                                bool fRepPrefix, uint8_t cbInstr)
 {
-    AssertReturn(cbInstr - 1U <= 14U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 1);
 
     /*
      * State init.
@@ -11266,7 +11278,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IE
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iCrReg, uint8_t iGReg)
 {
-    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 2);
     Assert(iCrReg < 16);
     Assert(iGReg < 16);
 
@@ -11290,7 +11302,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxWrite(PVMCPU pVCpu, uint8_t cbIns
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInstr, uint8_t iGReg, uint8_t iCrReg)
 {
-    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 2);
     Assert(iCrReg < 16);
     Assert(iGReg < 16);
 
@@ -11312,7 +11324,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedMovCRxRead(PVMCPU pVCpu, uint8_t cbInst
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
 {
-    AssertReturn(cbInstr - 2U <= 15U - 2U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 2);
 
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
@@ -11333,7 +11345,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedClts(PVMCPU pVCpu, uint8_t cbInstr)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uint16_t uValue)
 {
-    AssertReturn(cbInstr - 3U <= 15U - 3U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);
@@ -11356,7 +11368,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedLmsw(PVMCPU pVCpu, uint8_t cbInstr, uin
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedXsetbv(PVMCPU pVCpu, uint8_t cbInstr)
 {
-    AssertReturn(cbInstr - 3U <= 15U - 3U, VERR_IEM_INVALID_INSTR_LENGTH);
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 3);
 
     PIEMCPU pIemCpu = &pVCpu->iem.s;
     iemInitExec(pIemCpu, false /*fBypassHandlers*/);

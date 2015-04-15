@@ -2163,7 +2163,7 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
        )
     {
         pVCpu->cpum.s.Guest.aXcr[0] = uNewValue;
-        pVCpu->cpum.s.Guest.fXStateMask = uNewValue;
+        pVCpu->cpum.s.Guest.fXStateMask |= uNewValue;
         return VINF_SUCCESS;
     }
     return VERR_CPUM_RAISE_GP_0;
