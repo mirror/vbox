@@ -3176,10 +3176,15 @@ HRESULT Medium::changeEncryption(const com::Utf8Str &aCurrentPassword, const com
             throw rc;
         }
 
+        const char *pszAction = "Encrypting";
+        if (   aCurrentPassword.isNotEmpty()
+            && aCipher.isEmpty())
+            pszAction = "Decrypting";
+
         pProgress.createObject();
         rc = pProgress->init(m->pVirtualBox,
                              static_cast <IMedium *>(this),
-                             BstrFmt(tr("Encrypting medium '%s'"), m->strLocationFull.c_str()).raw(),
+                             BstrFmt(tr("%s medium '%s'"), pszAction, m->strLocationFull.c_str()).raw(),
                              TRUE /* aCancelable */);
         if (FAILED(rc))
         {
