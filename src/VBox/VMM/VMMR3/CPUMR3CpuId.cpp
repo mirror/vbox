@@ -3642,7 +3642,7 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "SSE4.2", &pConfig->enmSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
-#if 0 /* Incomplete, so not yet enabled.  */
+#if 1 /* Incomplete, so not yet enabled.  */
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
                             && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
