@@ -562,6 +562,9 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
 
 /**
  * HM VMCPU Instance data.
+ *
+ * Note! If you change members of this struct, make sure to check if the
+ * assembly counterpart in HMInternal.mac needs to be updated as well.
  */
 typedef struct HMCPU
 {
