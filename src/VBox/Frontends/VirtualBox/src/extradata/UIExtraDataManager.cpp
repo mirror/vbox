@@ -1203,7 +1203,7 @@ void UIExtraDataManagerWindow::prepareMenu()
             connect(m_pActionLoad, SIGNAL(triggered(bool)), this, SLOT(sltLoad()));
         }
         /* Create 'Save' action: */
-        m_pActionSave = pActionsMenu->addAction("Save");
+        m_pActionSave = pActionsMenu->addAction("Save As...");
         AssertReturnVoid(m_pActionSave);
         {
             /* Configure 'Save' action: */
