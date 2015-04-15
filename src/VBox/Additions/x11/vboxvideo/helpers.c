@@ -54,6 +54,7 @@ VBOXPtr vbvxGetRec(ScrnInfoPtr pScrn)
     return ((VBOXPtr)pScrn->driverPrivate);
 }
 
+/* TESTING: if this is broken, dynamic resizing will not work on old X servers (1.2 and older). */
 int vbvxGetIntegerPropery(ScrnInfoPtr pScrn, char *pszName, size_t *pcData, int32_t **ppaData)
 {
     Atom atom;
