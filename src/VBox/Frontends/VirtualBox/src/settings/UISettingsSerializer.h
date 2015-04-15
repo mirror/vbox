@@ -32,6 +32,7 @@
 /* Forward declarations: */
 class UISettingsPage;
 class QProgressBar;
+class QILabel;
 class QLabel;
 
 /* Type definitions: */
@@ -61,6 +62,14 @@ signals:
 
     /** Notifies listeners about process has been finished. */
     void sigNotifyAboutProcessFinished();
+
+    /** Notifies listeners about particular operation progress change.
+      * @param iOperations  holds the number of operations CProgress have,
+      * @param strOperation holds the description of the current CProgress operation,
+      * @param iOperation   holds the index of the current CProgress operation,
+      * @param iPercent     holds the percentage of the current CProgress operation. */
+    void sigOperationProgressChange(ulong iOperations, QString strOperation,
+                                    ulong iOperation, ulong iPercent);
 
 public:
 
@@ -178,6 +187,14 @@ private slots:
     /** Handles the progress value change. */
     void sltProgressValueChanged(int iValue);
 
+    /** Handles particular operation progress change.
+      * @param iOperations  holds the number of operations CProgress have,
+      * @param strOperation holds the description of the current CProgress operation,
+      * @param iOperation   holds the index of the current CProgress operation,
+      * @param iPercent     holds the percentage of the current CProgress operation. */
+    void sltHandleOperationProgressChange(ulong iOperations, QString strOperation,
+                                          ulong iOperation, ulong iPercent);
+
 private:
 
     /** Holds the load/save direction. */
@@ -195,6 +212,14 @@ private:
     QLabel *m_pLabelOperationProgress;
     /** Holds the operation progress bar. */
     QProgressBar *m_pBarOperationProgress;
+
+    /** Holds the sub-operation progress label. */
+    QILabel *m_pLabelSubOperationProgress;
+    /** Holds the sub-operation progress bar. */
+    QProgressBar *m_pBarSubOperationProgress;
+
+    /** Holds the template for the sub-operation progress label. */
+    static QString m_strProgressDescriptionTemplate;
 };
 
 #endif /* !___UISettingsSerializer_h___ */
