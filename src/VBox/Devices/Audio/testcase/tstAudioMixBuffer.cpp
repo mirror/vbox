@@ -99,7 +99,7 @@ static int tstSingle(RTTEST hTest)
     }
     RTTESTI_CHECK(!audioMixBufIsEmpty(&mb));
     RTTESTI_CHECK(audioMixBufFree(&mb) == 1);
-    RTTESTI_CHECK(audioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, 1));
+    RTTESTI_CHECK(audioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, 1U));
     RTTESTI_CHECK(audioMixBufProcessed(&mb) == cToWrite + written_abs /* + last absolute write */);
 
     RTTESTI_CHECK_RC_OK(audioMixBufWriteCirc(&mb, &samples16, sizeof(samples16), &written));

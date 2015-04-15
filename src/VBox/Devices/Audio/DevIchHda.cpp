@@ -2618,7 +2618,6 @@ static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, ui
     PHDASTATE pThis = pCodec->pHDAState;
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-    int rc;
 
     uint8_t      u8Strm;
     PHDABDLEDESC pBdle;
@@ -2655,6 +2654,7 @@ static DECLCALLBACK(int) hdaTransfer(PHDACODEC pCodec, ENMSOUNDSOURCE enmSrc, ui
     HDASTREAMTRANSFERDESC StreamDesc;
     hdaInitTransferDescriptor(pThis, pBdle, u8Strm, &StreamDesc);
 
+    int rc = VINF_EOF;
     while (cbAvail)
     {
         Assert(   (StreamDesc.u32Ctl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN))
