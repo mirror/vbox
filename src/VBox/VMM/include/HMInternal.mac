@@ -62,3 +62,28 @@ struc VMCSCACHE
 %endif
 endstruc
 
+
+struc HMCPU
+        .fForceTLBFlush         resb    1
+        .fActive                resb    1
+        .fCheckedTLBFlush       resb    1
+        .fSingleInstruction     resb    1
+        .fClearTrapFlag         resb    1
+        .fLeaveDone             resb    1
+        .fUsingHyperDR7         resb    1
+        .fPreloadGuestFpu       resb    1
+        .fLoadSaveGuestXcr0     resb    1
+        .fGIMTrapXcptUD         resb    1
+        .fHypercallsEnabled     resb    1
+        alignb 8
+        .cWorldSwitchExits      resd    1
+        .fContextUseFlags       resd    1
+        .idLastCpu              resd    1
+        .cTlbFlushes            resd    1
+        .uCurrentAsid           resd    1
+        .u32HMError             resd    1
+        alignb 8
+        .u64HostTscAux          resq    1
+
+        ; incomplete to save unnecessary pain...
+endstruc

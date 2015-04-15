@@ -5215,11 +5215,11 @@ static bool hmR0VmxIsValidReadField(uint32_t idxField)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  * @param   enmOp       The operation to perform.
- * @param   cbParam     Number of parameters.
+ * @param   cParams     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
-                                         uint32_t *paParam)
+VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp,
+                                         uint32_t cParams, uint32_t *paParam)
 {
     int             rc, rc2;
     PHMGLOBALCPUINFO pCpu;
@@ -5260,7 +5260,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
     CPUMSetHyperEIP(pVCpu, enmOp);
-    for (int i = (int)cbParam - 1; i >= 0; i--)
+    for (int i = (int)cParams - 1; i >= 0; i--)
         CPUMPushHyper(pVCpu, paParam[i]);
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);
@@ -5303,7 +5303,6 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  */
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
-    uint32_t         aParam[6];
     PHMGLOBALCPUINFO pCpu          = NULL;
     RTHCPHYS         HCPhysCpuPage = 0;
     int              rc            = VERR_INTERNAL_ERROR_5;
@@ -5327,18 +5326,23 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCache->TestOut.eflags       = 0;
 #endif
 
+    uint32_t aParam[10];
     aParam[0] = (uint32_t)(HCPhysCpuPage);                              /* Param 1: VMXON physical address - Lo. */
     aParam[1] = (uint32_t)(HCPhysCpuPage >> 32);                        /* Param 1: VMXON physical address - Hi. */
     aParam[2] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs);                 /* Param 2: VMCS physical address - Lo. */
     aParam[3] = (uint32_t)(pVCpu->hm.s.vmx.HCPhysVmcs >> 32);           /* Param 2: VMCS physical address - Hi. */
     aParam[4] = VM_RC_ADDR(pVM, &pVM->aCpus[pVCpu->idCpu].hm.s.vmx.VMCSCache);
     aParam[5] = 0;
+    aParam[6] = VM_RC_ADDR(pVM, pVM);
+    aParam[7] = 0;
+    aParam[8] = VM_RC_ADDR(pVM, pVCpu);
+    aParam[9] = 0;
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     pCtx->dr[4] = pVM->hm.s.vmx.pScratchPhys + 16 + 8;
     *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 1;
 #endif
-    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_VMXRCStartVM64, 6, &aParam[0]);
+    rc = VMXR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_VMXRCStartVM64, RT_ELEMENTS(aParam), &aParam[0]);
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     Assert(*(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) == 5);
@@ -6693,7 +6697,9 @@ static int hmR0VmxSaveGuestApicState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 /**
  * Saves the entire guest state from the currently active VMCS into the
- * guest-CPU context. This essentially VMREADs all guest-data.
+ * guest-CPU context.
+ *
+ * This essentially VMREADs all guest-data.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -6753,6 +6759,49 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (VMMRZCallRing3IsEnabled(pVCpu))
         VMMR0LogFlushEnable(pVCpu);
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Saves basic guest registers needed for IEM instruction execution.
+ *
+ * @returns VBox status code (OR-able).
+ * @param   pVCpu       Pointer to the cross context CPU data for the calling
+ *                      EMT.
+ * @param   pMixedCtx   Pointer to the CPU context of the guest.
+ * @param   fMemory     Whether the instruction being executed operates on
+ *                      memory or not.  Only CR0 is synced up if clear.
+ * @param   fNeedRsp    Need RSP (any instruction working on GPRs or stack).
+ */
+static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fMemory, bool fNeedRsp)
+{
+    /*
+     * We assume all general purpose registers other than RSP are available.
+     *
+     * RIP is a must as it will be incremented or otherwise changed.
+     *
+     * RFLAGS are always required to figure the CPL.
+     *
+     * RSP isn't always required, however it's a GPR so frequently required.
+     *
+     * SS and CS are the only segment register needed if IEM doesn't do memory
+     * access (CPL + 16/32/64-bit mode), but we can only get all segment registers.
+     *
+     * CR0 is always required by IEM for the CPL, while CR3 and CR4 will only
+     * be required for memory accesses.
+     *
+     * Note! Before IEM dispatches an exception, it will call us to sync in everything.
+     */
+    int rc  = hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc     |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+    if (fNeedRsp)
+        rc |= hmR0VmxSaveGuestRsp(pVCpu, pMixedCtx);
+    rc     |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    if (!fMemory)
+        rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+    else
+        rc |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
     return rc;
 }
 
@@ -10592,9 +10641,17 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* We expose XSETBV to the guest, fallback to the interpreter for emulation. */
-    /** @todo check if XSETBV is supported by the recompiler. */
-    return VERR_EM_INTERPRETER;
+    int rc = hmR0VmxReadEntryInstrLenVmcs(pVmxTransient);
+    rc |= hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, false /*fNeedRsp*/);
+    rc |= hmR0VmxSaveGuestCR4(pVCpu, pMixedCtx);
+    AssertRCReturn(rc, rc);
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedXsetbv(pVCpu, pVmxTransient->cbInstr);
+    HMCPU_CF_SET(pVCpu, rcStrict != VINF_IEM_RAISED_XCPT ? HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS : HM_CHANGED_ALL_GUEST);
+
+    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
+
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
@@ -10966,8 +11023,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     uint32_t const uAccessType           = VMX_EXIT_QUALIFICATION_CRX_ACCESS(uExitQualification);
     PVM pVM                              = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC rcStrict;
-    rc  = hmR0VmxSaveGuestRipRspRflags(pVCpu, pMixedCtx);
-    rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx); /* Only really need CS+SS. */
+    rc  = hmR0VmxSaveGuestRegsForIemExec(pVCpu, pMixedCtx, false /*fMemory*/, true /*fNeedRsp*/);
     switch (uAccessType)
     {
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE:       /* MOV to CRx */
@@ -10995,8 +11051,10 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                     Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr3));
                     break;
                 case 4: /* CR4 */
+                    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR4);
-                    Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr4));
+                    Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n",
+                          VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));
                     break;
                 case 8: /* CR8 */
                     Assert(!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW));
@@ -11037,7 +11095,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS:        /* CLTS (Clear Task-Switch Flag in CR0) */
         {
-            rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             rcStrict = IEMExecDecodedClts(pVCpu, pVmxTransient->cbInstr);
             AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IEM_RAISED_XCPT, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
@@ -11049,7 +11106,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         case VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW:        /* LMSW (Load Machine-Status Word into CR0) */
         {
-            rc |= hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             rcStrict = IEMExecDecodedLmsw(pVCpu, pVmxTransient->cbInstr,
                                           VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(uExitQualification));

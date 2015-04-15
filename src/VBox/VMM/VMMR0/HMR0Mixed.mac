@@ -123,19 +123,30 @@ ALIGN(16)
     ; Restore segment registers.
     MYPOPSEGS xAX, ax
 
+    ; Restore the host XCR0 if necessary.
+    pop     xCX
+    test    ecx, ecx
+    jnz     %%xcr0_after_skip
+    pop     xAX
+    pop     xDX
+    xsetbv                              ; ecx is already zero.
+%%xcr0_after_skip:
+
     ; Restore general purpose registers.
     MYPOPAD
 %endmacro
 
 
-;/**
-; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
-; *
-; * @returns VBox status code
-; * @param   fResume    x86:[ebp+8], msc:rcx,gcc:rdi     Whether to use vmlauch/vmresume.
-; * @param   pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
-; * @param   pCache     x86:[esp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
-; */
+;;
+; Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
+;
+; @returns VBox status code
+; @param    fResume    x86:[ebp+8], msc:rcx,gcc:rdi     Whether to use vmlauch/vmresume.
+; @param    pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
+; @param    pCache     x86:[ebp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
+; @param    pVM        x86:[ebp+14],msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVCpu      x86:[ebp+18],msc:[ebp+30],gcc:r8 Pointer to the cross context VMCPU structure.
+;
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM32)
     push    xBP
@@ -144,10 +155,14 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     pushf
     cli
 
+    ;
     ; Save all general purpose host registers.
+    ;
     MYPUSHAD
 
-    ; First we have to save some final CPU context registers.
+    ;
+    ; First we have to write some final guest CPU context registers.
+    ;
     mov     eax, VMX_VMCS_HOST_RIP
 %ifdef RT_ARCH_AMD64
     lea     r10, [.vmlaunch_done wrt rip]
@@ -158,7 +173,9 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
 %endif
     ; Note: assumes success!
 
-    ; Save guest-CPU context pointer.
+    ;
+    ; Unify input parameter registers.
+    ;
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
@@ -175,8 +192,41 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
     mov     ebx, [ebp + 16] ; pCache
 %endif
 
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ; Note! Trashes rdx and rcx.
+    ;
+%ifdef ASM_CALL64_MSC
+    mov     rax, [xBP + 30h]            ; pVCpu
+%elifdef ASM_CALL64_GCC
+    mov     rax, r8                     ; pVCpu
+%else
+    mov     eax, [xBP + 18h]            ; pVCpu
+%endif
+    test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    xDX
+    push    xAX
+
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
+
+    ;
     ; Save segment registers.
-    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case).
+    ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
+    ;
     MYPUSHSEGS xAX, ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -381,19 +431,30 @@ ALIGN(16)
     ; Restore segment registers.
     MYPOPSEGS xAX, ax
 
+    ; Restore the host XCR0 if necessary.
+    pop     xCX
+    test    ecx, ecx
+    jnz     %%xcr0_after_skip
+    pop     xAX
+    pop     xDX
+    xsetbv                              ; ecx is already zero.
+%%xcr0_after_skip:
+
     ; Restore general purpose registers.
     MYPOPAD
 %endmacro
 
 
-;/**
-; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
-; *
-; * @returns VBox status code
-; * @param   fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
-; * @param   pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
-; * @param   pCache     msc:r8,  gcc:rdx     Pointer to the VMCS cache.
-; */
+;;
+; Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
+;
+; @returns VBox status code
+; @param    fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
+; @param    pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
+; @param    pCache     msc:r8,  gcc:rdx     Pointer to the VMCS cache.
+; @param    pVM        msc:r9,  gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVCpu      msc:[ebp+30], gcc:r8 Pointer to the cross context VMCPU structure.
+;
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM64)
     push    xBP
@@ -411,7 +472,9 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     vmwrite rax, r10
     ; Note: assumes success!
 
-    ; Save guest-CPU context pointer.
+    ;
+    ; Unify the input parameter registers.
+    ;
 %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
@@ -422,8 +485,39 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     mov     rbx, r8         ; pCache
 %endif
 
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ; Note! Trashes rdx and rcx.
+    ;
+%ifdef ASM_CALL64_MSC
+    mov     rax, [xBP + 30h]            ; pVCpu
+%else
+    mov     rax, r8                     ; pVCpu
+%endif
+    test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    xDX
+    push    xAX
+
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
+
+    ;
     ; Save segment registers.
-    ; Note: MYPUSHSEGS trashes rdx & rcx, so we moved it here (msvc amd64 case).
+    ; Note! Trashes rdx & rcx, so we moved it here (amd64 case).
+    ;
     MYPUSHSEGS xAX, ax
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -546,25 +640,32 @@ ENDPROC MY_NAME(VMXR0StartVM64)
 %endif ; RT_ARCH_AMD64
 
 
-;/**
-; * Prepares for and executes VMRUN (32 bits guests)
-; *
-; * @returns VBox status code
-; * @param   HCPhysVMCB     Physical address of host VMCB.
-; * @param   HCPhysVMCB     Physical address of guest VMCB.
-; * @param   pCtx           Pointer to the guest CPU-context.
-; */
+;;
+; Prepares for and executes VMRUN (32 bits guests)
+;
+; @returns  VBox status code
+; @param    HCPhysVMCB      Physical address of host VMCB.
+; @param    HCPhysVMCB      Physical address of guest VMCB.
+; @param    pCtx            Pointer to the guest CPU-context.
+; @param    pVM             msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
+;
 ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun)
 %ifdef RT_ARCH_AMD64 ; fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
+    push    r8
+    push    rcx
     push    rdx
     push    rsi
     push    rdi
  %else
-    push    r8
-    push    rdx
-    push    rcx
+    mov     rax, [rsp + 28h]
+    push    rax                         ; pVCpu
+    push    r9                          ; pVM
+    push    r8                          ; pCtx
+    push    rdx                         ; HCPHYSGuestVMCB
+    push    rcx                         ; HCPhysHostVMCB
  %endif
     push    0
 %endif
@@ -572,12 +673,45 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     mov     xBP, xSP
     pushf
 
+    ;
     ; Save all general purpose host registers.
+    ;
     MYPUSHAD
 
-    ; Save guest CPU-context pointer.
+    ;
+    ; Load pCtx into xSI.
+    ;
     mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
-    push    xSI                                     ; push for saving the state at the end
+
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ;
+    mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB * 2 + xCB * 2] ; pVCpu
+    test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    xDX
+    push    xAX
+
+    mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
+
+    ;
+    ; Save guest CPU-context pointer for simplifying saving of the GPRs afterwards.
+    ;
+    push    xSI
 
     ; Save host fs, gs, sysenter msr etc.
     mov     xAX, [xBP + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
@@ -618,7 +752,10 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     cli
     stgi
 
-    pop     xAX                     ; pCtx
+    ;
+    ; Pop the context pointer (pushed above) and save the guest GPRs (sans RSP and RAX).
+    ;
+    pop     xAX
 
     mov     [ss:xAX + CPUMCTX.ebx], ebx
     mov     [ss:xAX + CPUMCTX.ecx], ecx
@@ -627,7 +764,20 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     mov     [ss:xAX + CPUMCTX.edi], edi
     mov     [ss:xAX + CPUMCTX.ebp], ebp
 
+    ;
+    ; Restore the host xcr0 if necessary.
+    ;
+    pop     xCX
+    test    ecx, ecx
+    jnz     .xcr0_after_skip
+    pop     xAX
+    pop     xDX
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip:
+
+    ;
     ; Restore host general purpose registers.
+    ;
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
@@ -635,34 +785,41 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     popf
     pop     xBP
 %ifdef RT_ARCH_AMD64
-    add     xSP, 4*xCB
+    add     xSP, 6*xCB
 %endif
     ret
 ENDPROC MY_NAME(SVMR0VMRun)
 
 %ifdef RT_ARCH_AMD64
-;/**
-; * Prepares for and executes VMRUN (64 bits guests)
-; *
-; * @returns VBox status code
-; * @param   HCPhysVMCB     Physical address of host VMCB.
-; * @param   HCPhysVMCB     Physical address of guest VMCB.
-; * @param   pCtx           Pointer to the guest-CPU context.
-; */
+;;
+; Prepares for and executes VMRUN (64 bits guests)
+;
+; @returns  VBox status code
+; @param    HCPhysVMCB      Physical address of host VMCB.
+; @param    HCPhysVMCB      Physical address of guest VMCB.
+; @param    pCtx            Pointer to the guest-CPU context.
+; @param    pVM             msc:r9, gcc:rcx     Pointer to the cross context VM structure.
+; @param    pVCpu           msc:[rsp+28],gcc:r8 Pointer to the cross context VMCPU structure.
+;
 ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun64)
     ; Fake a cdecl stack frame
  %ifdef ASM_CALL64_GCC
+    push    r8
+    push    rcx
     push    rdx
     push    rsi
     push    rdi
  %else
-    push    r8
-    push    rdx
-    push    rcx
+    mov     rax, [rsp + 28h]
+    push    rax                         ; rbp + 30h pVCpu
+    push    r9                          ; rbp + 28h pVM
+    push    r8                          ; rbp + 20h pCtx
+    push    rdx                         ; rbp + 18h HCPHYSGuestVMCB
+    push    rcx                         ; rbp + 10h HCPhysHostVMCB
  %endif
-    push    0
-    push    rbp
+    push    0                           ; rbp + 08h "fake ret addr"
+    push    rbp                         ; rbp + 00h
     mov     rbp, rsp
     pushf
 
@@ -676,14 +833,49 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     ;  - DR7 (reset to 0x400)
     ;
 
+    ;
     ; Save all general purpose host registers.
+    ;
     MYPUSHAD
 
-    ; Save guest CPU-context pointer.
-    mov     rsi, [rbp + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
-    push    rsi                                     ; push for saving the state at the end
+    ;
+    ; Load pCtx into xSI.
+    ;
+    mov     xSI, [rbp + xCB * 2 + RTHCPHYS_CB * 2]
 
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ;
+    mov     rax, [xBP + 30h]            ; pVCpu
+    test    byte [xAX + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    xDX
+    push    xAX
+
+    mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
+
+    ;
+    ; Save guest CPU-context pointer for simplifying saving of the GPRs afterwards.
+    ;
+    push    rsi
+
+    ;
     ; Save host fs, gs, sysenter msr etc.
+    ;
     mov     rax, [rbp + xCB * 2]                    ; pVMCBHostPhys (64 bits physical address; x86: take low dword only)
     push    rax                                     ; Save for the vmload after vmrun
     vmsave
@@ -722,15 +914,22 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     ; Save guest fs, gs, sysenter msr etc.
     vmsave
 
+    ;
     ; Load host fs, gs, sysenter msr etc.
+    ;
     pop     rax                     ; pushed above
     vmload
 
+    ;
     ; Set the global interrupt flag again, but execute cli to make sure IF=0.
+    ;
     cli
     stgi
 
-    pop     rax                     ; pCtx
+    ;
+    ; Pop the context pointer (pushed above) and save the guest GPRs (sans RSP and RAX).
+    ;
+    pop     rax
 
     mov     qword [rax + CPUMCTX.ebx], rbx
     mov     qword [rax + CPUMCTX.ecx], rcx
@@ -747,14 +946,27 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     mov     qword [rax + CPUMCTX.r14], r14
     mov     qword [rax + CPUMCTX.r15], r15
 
+    ;
+    ; Restore the host xcr0 if necessary.
+    ;
+    pop     xCX
+    test    ecx, ecx
+    jnz     .xcr0_after_skip
+    pop     xAX
+    pop     xDX
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip:
+
+    ;
     ; Restore host general purpose registers.
+    ;
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
 
     popf
     pop     rbp
-    add     rsp, 4 * xCB
+    add     rsp, 6 * xCB
     ret
 ENDPROC MY_NAME(SVMR0VMRun64)
 %endif ; RT_ARCH_AMD64

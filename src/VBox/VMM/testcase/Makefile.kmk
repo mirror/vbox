@@ -611,6 +611,7 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsHC.h: $(VBOX_VMM_TESTCASE_OUT_DIR)/tst
 		-e '/VMCPU_size$$/d' \
 		-e '/VMMCPU_size$$/d' \
 		-e '/SUPDRVTRACERUSRCTX32_size$$/d' \
+		-e '/HMCPU_size$$/d' \
 		\
 		-e '/00[0-9a-fA-F]* [aA] [^_.]*_size$$/!d' \
 		-e 's/\(00[0-9a-fA-F]*\) [aA] \([^_.]*\)_size/    CHECK_SIZE(\2, 0x0\1);/' \

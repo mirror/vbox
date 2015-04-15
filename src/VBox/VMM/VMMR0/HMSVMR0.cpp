@@ -1025,13 +1025,17 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
  */
 DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu)
 {
-    uint32_t aParam[4];
+    uint32_t aParam[8];
     aParam[0] = (uint32_t)(HCPhysVmcbHost);             /* Param 1: HCPhysVmcbHost - Lo. */
     aParam[1] = (uint32_t)(HCPhysVmcbHost >> 32);       /* Param 1: HCPhysVmcbHost - Hi. */
     aParam[2] = (uint32_t)(HCPhysVmcb);                 /* Param 2: HCPhysVmcb - Lo. */
     aParam[3] = (uint32_t)(HCPhysVmcb >> 32);           /* Param 2: HCPhysVmcb - Hi. */
+    aParam[4] = VM_RC_ADDR(pVM, pVM);
+    aParam[5] = 0;
+    aParam[6] = VM_RC_ADDR(pVM, pVCpu);
+    aParam[7] = 0;
 
-    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_SVMRCVMRun64, 4, &aParam[0]);
+    return SVMR0Execute64BitsHandler(pVM, pVCpu, pCtx, HM64ON32OP_SVMRCVMRun64, RT_ELEMENTS(aParam), &aParam[0]);
 }
 
 
@@ -1043,11 +1047,11 @@ DECLASM(int) SVMR0VMSwitcherRun64(RTHCPHYS HCPhysVmcbHost, RTHCPHYS HCPhysVmcb, 
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   enmOp       The operation to perform.
- * @param   cbParam     Number of parameters.
+ * @param   cParams     Number of parameters.
  * @param   paParam     Array of 32-bit parameters.
  */
-VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
-                                         uint32_t *paParam)
+VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp,
+                                         uint32_t cParams, uint32_t *paParam)
 {
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
@@ -1062,7 +1066,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVCpu));
     CPUMSetHyperEIP(pVCpu, enmOp);
-    for (int i = (int)cbParam - 1; i >= 0; i--)
+    for (int i = (int)cParams - 1; i >= 0; i--)
         CPUMPushHyper(pVCpu, paParam[i]);
 
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatWorldSwitch3264, z);

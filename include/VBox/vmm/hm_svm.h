@@ -263,6 +263,8 @@
 #define SVM_EXIT_MWAIT                  0x8B
 /** MWAIT instruction, when armed. */
 #define SVM_EXIT_MWAIT_ARMED            0x8C
+/** XSETBV instruction. */
+#define SVM_EXIT_XSETBV                 0x8D
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 #define SVM_EXIT_NPF                    0x400
 /** AVIC: Virtual IPI delivery not completed. */

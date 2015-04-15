@@ -808,6 +808,8 @@ ENDPROC vmmR0ToRawModeAsm
 ; * @param   HCPhysCpuPage  VMXON physical address  [rsp+8]
 ; * @param   HCPhysVmcs     VMCS physical address   [rsp+16]
 ; * @param   pCache         VMCS cache              [rsp+24]
+; * @param   pVM            The VM handle           [rbp+28h]
+; * @param   pVM            The VMCPU handle.       [rbp+30h]
 ; * @param   pCtx           Guest context (rsi)
 ; */
 BEGINPROC VMXRCStartVM64
@@ -952,6 +954,7 @@ ALIGN(16)
 
     ; Manual save and restore:
     ;  - General purpose registers except RIP, RSP
+    ;  - XCR0
     ;
     ; Trashed:
     ;  - CR2 (we don't care)
@@ -963,6 +966,31 @@ ALIGN(16)
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 5
 %endif
+
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ; Note! Trashes rdx and rcx.
+    ;
+    mov     rax, [rbp + 30h]            ; pVCpu
+    test    byte [rax + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    rdx
+    push    rax
+
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
 
     ; Save the pCtx pointer
     push    rsi
@@ -1037,6 +1065,15 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.edi], rax
 
     pop     rsi         ; pCtx (needed in rsi by the macros below)
+
+    ; Restore the host xcr0 if necessary.
+    pop     rcx
+    test    ecx, ecx
+    jnz     .xcr0_after_skip
+    pop     rax
+    pop     rdx
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip:
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; Saved pCache
@@ -1115,6 +1152,15 @@ ALIGN(16)
 .vmstart64_invalid_vmcs_ptr:
     pop     rsi         ; pCtx (needed in rsi by the macros below)
 
+    ; Restore the host xcr0 if necessary.
+    pop     rcx
+    test    ecx, ecx
+    jnz     .xcr0_after_skip2
+    pop     rax
+    pop     rdx
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip2:
+
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -1136,6 +1182,15 @@ ALIGN(16)
 
 .vmstart64_start_failed:
     pop     rsi         ; pCtx (needed in rsi by the macros below)
+
+    ; Restore the host xcr0 if necessary.
+    pop     rcx
+    test    ecx, ecx
+    jnz     .xcr0_after_skip3
+    pop     rax
+    pop     rdx
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip3:
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; pCache
@@ -1164,6 +1219,8 @@ ENDPROC VMXRCStartVM64
 ; * @returns VBox status code
 ; * @param   HCPhysVMCB     Physical address of host VMCB       (rsp+8)
 ; * @param   HCPhysVMCB     Physical address of guest VMCB      (rsp+16)
+; * @param   pVM            The VM handle                       (rbp+18h)
+; * @param   pVM            The VMCPU handle.                   (rbp+20h)
 ; * @param   pCtx           Guest context                       (rsi)
 ; */
 BEGINPROC SVMRCVMRun64
@@ -1183,6 +1240,30 @@ BEGINPROC SVMRCVMRun64
 
     ; Save the Guest CPU context pointer.
     push    rsi                             ; Push for saving the state at the end
+
+    ;
+    ; Save the host XCR0 and load the guest one if necessary.
+    ;
+    mov     rax, [rbx + 20h]            ; pVCpu
+    test    byte [rax + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
+    jz      .xcr0_before_skip
+
+    xor     ecx, ecx
+    xgetbv                              ; Save the host one on the stack.
+    push    rdx
+    push    rax
+
+    mov     eax, [xSI + CPUMCTX.aXcr]   ; Load the guest one.
+    mov     edx, [xSI + CPUMCTX.aXcr + 4]
+    xor     ecx, ecx                    ; paranoia
+    xsetbv
+
+    push    0                           ; Indicate that we must restore XCR0 (popped into ecx, thus 0).
+    jmp     .xcr0_before_done
+
+.xcr0_before_skip:
+    push    3fh                         ; indicate that we need not.
+.xcr0_before_done:
 
     ; Save host fs, gs, sysenter msr etc
     mov     rax, [rbp + 8 + 8]              ; pVMCBHostPhys (64 bits physical address)
@@ -1247,6 +1328,17 @@ BEGINPROC SVMRCVMRun64
     mov     qword [rax + CPUMCTX.r13], r13
     mov     qword [rax + CPUMCTX.r14], r14
     mov     qword [rax + CPUMCTX.r15], r15
+
+    ;
+    ; Restore the host xcr0 if necessary.
+    ;
+    pop     rcx
+    test    ecx, ecx
+    jnz     .xcr0_after_skip
+    pop     rax
+    pop     rdx
+    xsetbv                              ; ecx is already zero.
+.xcr0_after_skip:
 
     mov     eax, VINF_SUCCESS
 

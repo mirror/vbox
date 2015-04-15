@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2013 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 %include "VBox/err.mac"
 %include "VBox/vmm/hm_vmx.mac"
 %include "VBox/vmm/cpum.mac"
+%include "VBox/vmm/vm.mac"
 %include "iprt/x86.mac"
 %include "HMInternal.mac"
 
@@ -1409,7 +1410,7 @@ ENDPROC   HMR0SVMRunWrapXMM
  ; restoring, but better safe than sorry...
  ;
 
-; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache /*, PVM pVM, PVMCPU pVCpu*/);
+; DECLASM(int) VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM32
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
@@ -1432,6 +1433,8 @@ BITS 64
     mov     edi, [rsp + 20h + 14h]      ; fResume
     mov     esi, [rsp + 20h + 18h]      ; pCtx
     mov     edx, [rsp + 20h + 1Ch]      ; pCache
+    mov     ecx, [rsp + 20h + 20h]      ; pVM
+    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
     call    NAME(VMXR0StartVM32_64)
     add     esp, 20h
     jmp far [.fpthunk32 wrt rip]
@@ -1449,7 +1452,7 @@ ALIGNCODE(16)
 ENDPROC   VMXR0StartVM32
 
 
-; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache /*, PVM pVM, PVMCPU pVCpu*/);
+; DECLASM(int) VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 ALIGNCODE(16)
 BEGINPROC VMXR0StartVM64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
@@ -1472,6 +1475,8 @@ BITS 64
     mov     edi, [rsp + 20h + 14h]      ; fResume
     mov     esi, [rsp + 20h + 18h]      ; pCtx
     mov     edx, [rsp + 20h + 1Ch]      ; pCache
+    mov     ecx, [rsp + 20h + 20h]      ; pVM
+    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
     call    NAME(VMXR0StartVM64_64)
     add     esp, 20h
     jmp far [.fpthunk32 wrt rip]
@@ -1492,7 +1497,7 @@ ALIGNCODE(16)
     ret
 ENDPROC   VMXR0StartVM64
 
-;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx /*, PVM pVM, PVMCPU pVCpu*/);
+;DECLASM(int) SVMR0VMRun(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
@@ -1515,6 +1520,8 @@ BITS 64
     mov     rdi, [rsp + 20h + 14h]      ; pVMCBHostPhys
     mov     rsi, [rsp + 20h + 1Ch]      ; pVMCBPhys
     mov     edx, [rsp + 20h + 24h]      ; pCtx
+    mov     ecx, [rsp + 20h + 20h]      ; pVM
+    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
     call    NAME(SVMR0VMRun_64)
     add     esp, 20h
     jmp far [.fpthunk32 wrt rip]
@@ -1532,7 +1539,7 @@ ALIGNCODE(16)
 ENDPROC   SVMR0VMRun
 
 
-; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx /*, PVM pVM, PVMCPU pVCpu*/);
+; DECLASM(int) SVMR0VMRun64(RTHCPHYS pVMCBHostPhys, RTHCPHYS pVMCBPhys, PCPUMCTX pCtx, PVM pVM, PVMCPU pVCpu);
 ALIGNCODE(16)
 BEGINPROC SVMR0VMRun64
     cmp     byte [NAME(g_fVMXIs64bitHost)], 0
@@ -1555,6 +1562,8 @@ BITS 64
     mov     rdi, [rbp + 20h + 14h]      ; pVMCBHostPhys
     mov     rsi, [rbp + 20h + 1Ch]      ; pVMCBPhys
     mov     edx, [rbp + 20h + 24h]      ; pCtx
+    mov     ecx, [rsp + 20h + 20h]      ; pVM
+    mov     r8,  [rsp + 20h + 24h]      ; pVCpu
     call    NAME(SVMR0VMRun64_64)
     add     esp, 20h
     jmp far [.fpthunk32 wrt rip]
