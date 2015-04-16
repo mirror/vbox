@@ -1737,19 +1737,20 @@ DECLASM(uint64_t) ASMGetXcr0(void);
  */
 DECLASM(void) ASMSetXcr0(uint64_t uXcr0);
 
+struct X86XSAVEAREA;
 /**
  * Save extended CPU state.
  * @param   pXStateArea     Where to save the state.
  * @param   fComponents     Which state components to save.
  */
-DECLASM(void) ASMXSave(PX86XSAVEAREA pXStateArea, uint64_t fComponents);
+DECLASM(void) ASMXSave(struct X86XSAVEAREA *pXStateArea, uint64_t fComponents);
 
 /**
  * Loads extended CPU state.
  * @param   pXStateArea     Where to load the state from.
  * @param   fComponents     Which state components to load.
  */
-DECLASM(void) ASMXLoad(PCX86XSAVEAREA pXStateArea, uint64_t fComponents);
+DECLASM(void) ASMXLoad(struct X86XSAVEAREA const *pXStateArea, uint64_t fComponents);
 
 
 /**
