@@ -399,6 +399,8 @@ typedef struct VGAState {
 # if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_CRHGSMI))
     /** LUN\#0: VBVA callbacks interface */
     PDMIDISPLAYVBVACALLBACKS    IVBVACallbacks;
+# else
+    RTR3PTR                     Padding2;
 # endif
     /** Status LUN\#0: Leds interface. */
     PDMILEDPORTS                ILeds;
