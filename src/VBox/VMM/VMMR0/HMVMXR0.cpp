@@ -7355,9 +7355,10 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
          * If you modify code here, make sure to check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs
          * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
          */
+        RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER; \
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT();
+        RTThreadPreemptDisable(&PreemptState);
 
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (CPUMIsGuestFPUStateActive(pVCpu))
@@ -7375,9 +7376,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         /* Restore the lazy host MSRs as we're leaving VT-x context. */
         if (   pVM->hm.s.fAllow64BitGuests
             && pVCpu->hm.s.vmx.fLazyMsrs)
-        {
             hmR0VmxLazyRestoreHostMsrs(pVCpu);
-        }
 #endif
         /* Update auto-load/store host MSRs values when we re-enter VT-x (as we could be on a different CPU). */
         pVCpu->hm.s.vmx.fUpdatedHostMsrs = false;
@@ -7389,9 +7388,8 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         }
 
         VMMR0ThreadCtxHooksDeregister(pVCpu);
-
         HMR0LeaveCpu(pVCpu);
-        HM_RESTORE_PREEMPT();
+        RTThreadPreemptRestore(&PreemptState);
         return VINF_SUCCESS;
     }
 
