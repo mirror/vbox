@@ -26,6 +26,7 @@
 # include <QProgressBar>
 /* GUI includes: */
 # include "UISettingsSerializer.h"
+# include "UIMessageCenter.h"
 # include "UISettingsPage.h"
 # include "UIIconPool.h"
 # include "QILabel.h"
@@ -146,6 +147,8 @@ void UISettingsSerializer::run()
         /* Process this page if its enabled: */
         connect(pPage, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
                 this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)));
+        connect(pPage, SIGNAL(sigOperationProgressError(QString)),
+                this, SIGNAL(sigOperationProgressError(QString)));
         if (pPage->isEnabled())
         {
             if (m_direction == Load)
@@ -156,6 +159,8 @@ void UISettingsSerializer::run()
         /* Remember what page was processed: */
         disconnect(pPage, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
                    this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)));
+        disconnect(pPage, SIGNAL(sigOperationProgressError(QString)),
+                   this, SIGNAL(sigOperationProgressError(QString)));
         pPage->setProcessed(true);
         /* Remove processed page from our map: */
         pages.remove(pPage->id());
@@ -232,6 +237,8 @@ void UISettingsSerializerProgress::prepare()
                 this, SLOT(sltAdvanceProgressValue()));
         connect(m_pSerializer, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
                 this, SLOT(sltHandleOperationProgressChange(ulong, QString, ulong, ulong)));
+        connect(m_pSerializer, SIGNAL(sigOperationProgressError(QString)),
+                this, SLOT(sltHandleOperationProgressError(QString)));
     }
 
     /* Create layout: */
@@ -373,5 +380,11 @@ void UISettingsSerializerProgress::sltHandleOperationProgressChange(ulong iOpera
     m_pBarSubOperationProgress->show();
     m_pLabelSubOperationProgress->setText(m_strProgressDescriptionTemplate.arg(strOperation).arg(iOperation).arg(iOperations));
     m_pBarSubOperationProgress->setValue(iPercent);
+}
+
+void UISettingsSerializerProgress::sltHandleOperationProgressError(QString strErrorInfo)
+{
+    /* Show the error message: */
+    msgCenter().cannotSaveSettings(strErrorInfo, this);
 }
 

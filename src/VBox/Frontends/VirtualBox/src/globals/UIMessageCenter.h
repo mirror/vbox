@@ -209,6 +209,9 @@ public:
     void cannotRemoveSnapshot(const CMachine &machine, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
+    /* API: Common settings warnings: */
+    void cannotSaveSettings(const QString strDetails, QWidget *pParent = 0) const;
+
     /* API: Global settings warnings: */
     bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
     bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;

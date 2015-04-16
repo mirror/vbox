@@ -114,6 +114,10 @@ signals:
     void sigProgressChange(ulong iOperations, QString strOperation,
                            ulong iOperation, ulong iPercent);
 
+    /** Notifies listeners about particular COM error.
+      * @param strErrorInfo holds the details of the error happened. */
+    void sigProgressError(QString strErrorInfo);
+
 public:
 
     /** Constructor passing @a pParent to the base-class.

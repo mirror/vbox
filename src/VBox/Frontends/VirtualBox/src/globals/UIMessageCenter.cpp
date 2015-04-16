@@ -915,6 +915,13 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
           formatErrorInfo(progress));
 }
 
+void UIMessageCenter::cannotSaveSettings(const QString strDetails, QWidget *pParent /* = 0 */) const
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to save the settings."),
+          strDetails);
+}
+
 bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,

@@ -71,6 +71,10 @@ signals:
     void sigOperationProgressChange(ulong iOperations, QString strOperation,
                                     ulong iOperation, ulong iPercent);
 
+    /** Notifies listeners about particular COM error.
+      * @param strErrorInfo holds the details of the error happened. */
+    void sigOperationProgressError(QString strErrorInfo);
+
 public:
 
     /** Serialization directions. */
@@ -194,6 +198,10 @@ private slots:
       * @param iPercent     holds the percentage of the current CProgress operation. */
     void sltHandleOperationProgressChange(ulong iOperations, QString strOperation,
                                           ulong iOperation, ulong iPercent);
+
+    /** Handles particular COM error.
+      * @param strErrorInfo holds the details of the error happened. */
+    void sltHandleOperationProgressError(QString strErrorInfo);
 
 private:
 

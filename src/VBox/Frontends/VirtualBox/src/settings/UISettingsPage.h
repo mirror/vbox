@@ -87,6 +87,10 @@ signals:
     void sigOperationProgressChange(ulong iOperations, QString strOperation,
                                     ulong iOperation, ulong iPercent);
 
+    /** Notifies listeners about particular COM error.
+      * @param strErrorInfo holds the details of the error happened. */
+    void sigOperationProgressError(QString strErrorInfo);
+
 public:
 
     /* Load data to cache from corresponding external object(s),
