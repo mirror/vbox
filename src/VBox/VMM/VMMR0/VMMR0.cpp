@@ -564,12 +564,13 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
     {
         case RTTHREADCTXEVENT_RESUMED:
         {
-            /** @todo Linux may call us with preemption enabled (really!) but technically we
+            /*
+             * Linux may call us with preemption enabled (really!) but technically we
              * cannot get preempted here, otherwise we end up in an infinite recursion
-             * scenario (i.e. preempted in resume hook -> preempt hook -> resume hook... ad
-             * infinitum). Let's just disable preemption for now...
+             * scenario (i.e. preempted in resume hook -> preempt hook -> resume hook...
+             * ad infinitum). Let's just disable preemption for now...
              */
-            HM_DISABLE_PREEMPT_IF_NEEDED();
+            HM_DISABLE_PREEMPT();
 
             /* We need to update the VCPU <-> host CPU mapping. */
             RTCPUID idHostCpu;
@@ -587,7 +588,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HMR0ThreadCtxCallback(enmEvent, pvUser);
 
             /* Restore preemption. */
-            HM_RESTORE_PREEMPT_IF_NEEDED();
+            HM_RESTORE_PREEMPT();
             break;
         }
 

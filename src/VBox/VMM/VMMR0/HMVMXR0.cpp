@@ -5980,7 +5980,7 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * see hmR0VmxLeave(). Safer to just make this code non-preemptible.
      */
     VMMRZCallRing3Disable(pVCpu);
-    HM_DISABLE_PREEMPT_IF_NEEDED();
+    HM_DISABLE_PREEMPT();
 
     if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0))
     {
@@ -5997,7 +5997,7 @@ static int hmR0VmxSaveGuestCR0(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_CR0);
     }
 
-    HM_RESTORE_PREEMPT_IF_NEEDED();
+    HM_RESTORE_PREEMPT();
     VMMRZCallRing3Enable(pVCpu);
     return VINF_SUCCESS;
 }
@@ -6274,7 +6274,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     {
         /* Since this can be called from our preemption hook it's safer to make the guest-MSRs update non-preemptible. */
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         /* Doing the check here ensures we don't overwrite already-saved guest MSRs from a preemption hook. */
         if (!HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS))
@@ -6283,7 +6283,7 @@ static int hmR0VmxSaveGuestLazyMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             HMVMXCPU_GST_SET_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_LAZY_MSRS);
         }
 
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         VMMRZCallRing3Enable(pVCpu);
     }
     else
@@ -7199,7 +7199,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
  */
 DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    HM_DISABLE_PREEMPT_IF_NEEDED();
+    HM_DISABLE_PREEMPT();
     HMVMX_ASSERT_CPU_SAFE();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -7209,7 +7209,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (!pVCpu->hm.s.fLeaveDone)
     {
         int rc2 = hmR0VmxLeave(pVM, pVCpu, pMixedCtx, true /* fSaveGuestState */);
-        AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT_IF_NEEDED(), rc2);
+        AssertRCReturnStmt(rc2, HM_RESTORE_PREEMPT(), rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
     Assert(HMVMXCPU_GST_VALUE(pVCpu) == HMVMX_UPDATED_GUEST_ALL);
@@ -7227,8 +7227,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
 
-    HM_RESTORE_PREEMPT_IF_NEEDED();
-
+    HM_RESTORE_PREEMPT();
     return rc;
 }
 
@@ -7358,7 +7357,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
          */
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         if (CPUMIsGuestFPUStateActive(pVCpu))
@@ -7392,7 +7391,7 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         VMMR0ThreadCtxHooksDeregister(pVCpu);
 
         HMR0LeaveCpu(pVCpu);
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         return VINF_SUCCESS;
     }
 
@@ -11304,7 +11303,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
             /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
             VMMRZCallRing3Disable(pVCpu);
-            HM_DISABLE_PREEMPT_IF_NEEDED();
+            HM_DISABLE_PREEMPT();
 
             bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /* fDr6 */);
 
@@ -11324,7 +11323,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
 
-            HM_RESTORE_PREEMPT_IF_NEEDED();
+            HM_RESTORE_PREEMPT();
             VMMRZCallRing3Enable(pVCpu);
         }
     }
@@ -11532,13 +11531,13 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
         /* We're playing with the host CPU state here, make sure we can't preempt or longjmp. */
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         VMMRZCallRing3Enable(pVCpu);
 
 #ifdef VBOX_WITH_STATISTICS
@@ -11818,14 +11817,14 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
          * (See Intel spec. 27.1 "Architectural State before a VM-Exit".)
          */
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         pMixedCtx->dr[6] &= ~X86_DR6_B_MASK;
         pMixedCtx->dr[6] |= uDR6;
         if (CPUMIsGuestDebugStateActive(pVCpu))
             ASMSetDR6(pMixedCtx->dr[6]);
 
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         VMMRZCallRing3Enable(pVCpu);
 
         rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
@@ -11885,7 +11884,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 
     /* We're playing with the host CPU state here, have to disable preemption or longjmp. */
     VMMRZCallRing3Disable(pVCpu);
-    HM_DISABLE_PREEMPT_IF_NEEDED();
+    HM_DISABLE_PREEMPT();
 
     /* If the guest FPU was active at the time of the #NM exit, then it's a guest fault. */
     if (pVmxTransient->fWasGuestFPUStateActive)
@@ -11902,7 +11901,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 
-    HM_RESTORE_PREEMPT_IF_NEEDED();
+    HM_RESTORE_PREEMPT();
     VMMRZCallRing3Enable(pVCpu);
 
     if (rc == VINF_SUCCESS)

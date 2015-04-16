@@ -2114,7 +2114,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    HM_DISABLE_PREEMPT_IF_NEEDED();
+    HM_DISABLE_PREEMPT();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -2137,7 +2137,7 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
 
-    HM_RESTORE_PREEMPT_IF_NEEDED();
+    HM_RESTORE_PREEMPT();
     return rc;
 }
 
@@ -2179,7 +2179,7 @@ DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
          */
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         /* Restore host FPU state if necessary and resync on next R0 reentry .*/
         if (CPUMIsGuestFPUStateActive(pVCpu))
@@ -2194,7 +2194,7 @@ DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         /* Leave HM context. This takes care of local init (term). */
         HMR0LeaveCpu(pVCpu);
 
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         return VINF_SUCCESS;
     }
 
@@ -4663,13 +4663,13 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
         VMMRZCallRing3Disable(pVCpu);
-        HM_DISABLE_PREEMPT_IF_NEEDED();
+        HM_DISABLE_PREEMPT();
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
-        HM_RESTORE_PREEMPT_IF_NEEDED();
+        HM_RESTORE_PREEMPT();
         VMMRZCallRing3Enable(pVCpu);
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
@@ -4816,7 +4816,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
             VMMRZCallRing3Disable(pVCpu);
-            HM_DISABLE_PREEMPT_IF_NEEDED();
+            HM_DISABLE_PREEMPT();
 
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
             CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);
@@ -4835,7 +4835,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
 
-            HM_RESTORE_PREEMPT_IF_NEEDED();
+            HM_RESTORE_PREEMPT();
             VMMRZCallRing3Enable(pVCpu);
         }
 
@@ -5207,7 +5207,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
     VMMRZCallRing3Disable(pVCpu);
-    HM_DISABLE_PREEMPT_IF_NEEDED();
+    HM_DISABLE_PREEMPT();
 
     int rc;
     /* If the guest FPU was active at the time of the #NM exit, then it's a guest fault. */
@@ -5225,7 +5225,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 
-    HM_RESTORE_PREEMPT_IF_NEEDED();
+    HM_RESTORE_PREEMPT();
     VMMRZCallRing3Enable(pVCpu);
 
     if (rc == VINF_SUCCESS)
