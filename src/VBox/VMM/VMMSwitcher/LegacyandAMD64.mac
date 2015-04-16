@@ -1238,9 +1238,6 @@ BEGINPROC SVMRCVMRun64
     ;  - DRx (presumably not changed at all)
     ;  - DR7 (reset to 0x400)
 
-    ; Save the Guest CPU context pointer.
-    push    rsi                             ; Push for saving the state at the end
-
     ;
     ; Save the host XCR0 and load the guest one if necessary.
     ;
@@ -1264,6 +1261,9 @@ BEGINPROC SVMRCVMRun64
 .xcr0_before_skip:
     push    3fh                         ; indicate that we need not.
 .xcr0_before_done:
+
+    ; Save the Guest CPU context pointer.
+    push    rsi                             ; Push for saving the state at the end
 
     ; Save host fs, gs, sysenter msr etc
     mov     rax, [rbp + 8 + 8]              ; pVMCBHostPhys (64 bits physical address)
