@@ -23,9 +23,6 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
 
-#include "HMInternal.h"
-#include <VBox/vmm/vm.h>
-#include "HMVMXR0.h"
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iem.h>
@@ -36,7 +33,10 @@
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
 #endif
-# include "dtrace/VBoxVMM.h"
+#include "HMInternal.h"
+#include <VBox/vmm/vm.h>
+#include "HMVMXR0.h"
+#include "dtrace/VBoxVMM.h"
 
 #ifdef DEBUG_ramshankar
 # define HMVMX_ALWAYS_SAVE_GUEST_RFLAGS
@@ -4017,6 +4017,7 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /*
      * Guest CR4.
+     * ASSUMES this is done everytime we get in from ring-3! (XCR0)
      */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR4))
     {
@@ -4099,15 +4100,19 @@ static int hmR0VmxLoadGuestCR3AndCR4(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         AssertRCReturn(rc, rc);
 
         /* Setup CR4 mask. CR4 flags owned by the host, if the guest attempts to change them, that would cause a VM-exit. */
-        uint32_t u32CR4Mask = 0;
-        u32CR4Mask =  X86_CR4_VME
-                    | X86_CR4_PAE
-                    | X86_CR4_PGE
-                    | X86_CR4_PSE
-                    | X86_CR4_VMXE;
+        uint32_t u32CR4Mask = X86_CR4_VME
+                            | X86_CR4_PAE
+                            | X86_CR4_PGE
+                            | X86_CR4_PSE
+                            | X86_CR4_VMXE;
+        if (pVM->cpum.ro.HostFeatures.fXSaveRstor)
+            u32CR4Mask |= X86_CR4_OSXSAVE;
         pVCpu->hm.s.vmx.u32CR4Mask = u32CR4Mask;
         rc = VMXWriteVmcs32(VMX_VMCS_CTRL_CR4_MASK, u32CR4Mask);
         AssertRCReturn(rc, rc);
+
+        /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
 
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR4);
     }
@@ -10648,7 +10653,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
 
-    return VBOXSTRICTRC_VAL(rcStrict);
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -11048,7 +11053,6 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                     Log4(("CRX CR3 write rcStrict=%Rrc CR3=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr3));
                     break;
                 case 4: /* CR4 */
-                    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pMixedCtx->cr4 & X86_CR4_OSXSAVE) && pMixedCtx->aXcr[0] != ASMGetXcr0();
                     HMCPU_CF_SET(pVCpu, HM_CHANGED_GUEST_CR4);
                     Log4(("CRX CR4 write rc=%Rrc CR4=%#RX64 fLoadSaveGuestXcr0=%u\n",
                           VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->cr4, pVCpu->hm.s.fLoadSaveGuestXcr0));

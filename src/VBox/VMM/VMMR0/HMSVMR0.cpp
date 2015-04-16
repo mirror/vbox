@@ -22,14 +22,15 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/thread.h>
 
-#include "HMInternal.h"
-#include <VBox/vmm/vm.h>
-#include "HMSVMR0.h"
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/gim.h>
+#include "HMInternal.h"
+#include <VBox/vmm/vm.h>
+#include "HMSVMR0.h"
 #include "dtrace/VBoxVMM.h"
 
 #ifdef DEBUG_ramshankar
@@ -287,6 +288,7 @@ static FNSVMEXITHANDLER hmR0SvmExitSetPendingXcptUD;
 static FNSVMEXITHANDLER hmR0SvmExitMsr;
 static FNSVMEXITHANDLER hmR0SvmExitReadDRx;
 static FNSVMEXITHANDLER hmR0SvmExitWriteDRx;
+static FNSVMEXITHANDLER hmR0SvmExitXsetbv;
 static FNSVMEXITHANDLER hmR0SvmExitIOInstr;
 static FNSVMEXITHANDLER hmR0SvmExitNestedPF;
 static FNSVMEXITHANDLER hmR0SvmExitVIntr;
@@ -723,7 +725,8 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL2_INTERCEPT_SKINIT        /* SKINIT causes a #VMEXIT. */
                                         | SVM_CTRL2_INTERCEPT_WBINVD        /* WBINVD causes a #VMEXIT. */
                                         | SVM_CTRL2_INTERCEPT_MONITOR       /* MONITOR causes a #VMEXIT. */
-                                        | SVM_CTRL2_INTERCEPT_MWAIT;        /* MWAIT causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_MWAIT         /* MWAIT causes a #VMEXIT. */
+                                        | SVM_CTRL2_INTERCEPT_XSETBV;       /* XSETBV causes a #VMEXIT. */
 
         /* CR0, CR4 reads must be intercepted, our shadow values are not necessarily the same as the guest's. */
         pVmcb->ctrl.u16InterceptRdCRx = RT_BIT(0) | RT_BIT(4);
@@ -1248,6 +1251,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
 
     /*
      * Guest CR4.
+     * ASSUMES this is done everytime we get in from ring-3! (XCR0)
      */
     if (HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_GUEST_CR4))
     {
@@ -1288,6 +1292,10 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
 
         pVmcb->guest.u64CR4 = u64GuestCR4;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
+
+        /* Whether to save/load/restore XCR0 during world switch depends on CR4.OSXSAVE and host+guest XCR0. */
+        pVCpu->hm.s.fLoadSaveGuestXcr0 = (u64GuestCR4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+
         HMCPU_CF_CLEAR(pVCpu, HM_CHANGED_GUEST_CR4);
     }
 
@@ -3582,6 +3590,9 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_WRITE_DR14:   case SVM_EXIT_WRITE_DR15:
                     return hmR0SvmExitWriteDRx(pVCpu, pCtx, pSvmTransient);
 
+                case SVM_EXIT_XSETBV:
+                    return hmR0SvmExitXsetbv(pVCpu, pCtx, pSvmTransient);
+
                 case SVM_EXIT_TASK_SWITCH:
                     return hmR0SvmExitTaskSwitch(pVCpu, pCtx, pSvmTransient);
 
@@ -4706,6 +4717,25 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxWrite);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatExitDRxRead);
     return rc;
+}
+
+
+/**
+ * #VMEXIT handler for XCRx write (SVM_EXIT_XSETBV). Conditional #VMEXIT.
+ */
+HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+{
+    HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
+    /** @todo decode assists... */
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+    if (rcStrict == VINF_IEM_RAISED_XCPT)
+        HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
+
+    pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 

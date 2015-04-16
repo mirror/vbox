@@ -3642,14 +3642,9 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "SSE4.2", &pConfig->enmSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
-#if 1 /* Incomplete, so not yet enabled.  */
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
-                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
-                            && pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL /** @todo test and enable on AMD! */;
-#else
-    bool const fMayHaveXSave = false;
-#endif
+                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor;
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
      * Expose XSAVE/XRSTOR to the guest if available.  For the time being the
      * default is to only expose this to VMs with nested paging and AMD-V or
