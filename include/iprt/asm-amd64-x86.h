@@ -1750,7 +1750,7 @@ DECLASM(void) ASMXSave(struct X86XSAVEAREA *pXStateArea, uint64_t fComponents);
  * @param   pXStateArea     Where to load the state from.
  * @param   fComponents     Which state components to load.
  */
-DECLASM(void) ASMXLoad(struct X86XSAVEAREA const *pXStateArea, uint64_t fComponents);
+DECLASM(void) ASMXRstor(struct X86XSAVEAREA const *pXStateArea, uint64_t fComponents);
 
 
 /**
