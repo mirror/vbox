@@ -2283,6 +2283,10 @@ ifdef VBOX_WITH_RAW_MODE
  RuntimeRC_DEFS          = IN_RT_RC RT_WITH_VBOX IN_SUP_RC IN_VMM_RC
  RuntimeRC_INCS          = include
  RuntimeRC_SOURCES      := \
+	common/asm/ASMGetXcr0.asm \
+	common/asm/ASMSetXcr0.asm \
+	common/asm/ASMXSave.asm \
+	common/asm/ASMXRstor.asm \
 	common/checksum/alt-md5.cpp \
 	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - ASMRstor().
+; IPRT - ASMXRstor().
 ;
 
 ;
@@ -39,7 +39,7 @@ BEGINCODE
 ; @param    fMask       The 64-bit state component mask.
 ;                       msc=rdx, gcc=rsi, x86=[esp+8]
 ;
-BEGINPROC_EXPORTED ASMRstor
+BEGINPROC_EXPORTED ASMXRstor
 SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         mov     rdx, rdx
@@ -60,5 +60,5 @@ SEH64_END_PROLOGUE
  %error "Undefined arch?"
 %endif
         ret
-ENDPROC ASMRstor
+ENDPROC ASMXRstor
 
