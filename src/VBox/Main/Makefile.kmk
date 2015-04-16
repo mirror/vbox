@@ -676,6 +676,7 @@ VBoxC_LIBS += \
 	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
 	$(VBOX_LIB_VMM_LAZY)
 VBoxC_LIBS.win += \
+	$(PATH_SDK_$(VBOX_WINPSDK)_LIB)/psapi.lib \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/delayimp.lib
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \

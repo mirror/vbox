@@ -818,6 +818,151 @@ DECLCALLBACK(int) Console::i_configConstructor(PUVM pUVM, PVM pVM, void *pvConso
 }
 
 
+#ifdef RT_OS_WINDOWS
+#include <psapi.h>
+
+/**
+ * Report versions of installed drivers to release log.
+ */
+static void reportDriverVersions(void)
+{
+    DWORD   err;
+    HRESULT hrc;
+    LPVOID  aDrivers[1024];
+    LPVOID *pDrivers      = aDrivers;
+    UINT    cNeeded       = 0;
+    TCHAR   szSystemRoot[MAX_PATH];
+    TCHAR  *pszSystemRoot = szSystemRoot;
+    LPVOID  pVerInfo      = NULL;
+    DWORD   cbVerInfo     = 0;
+
+    do
+    {
+        cNeeded = GetWindowsDirectory(szSystemRoot, RT_ELEMENTS(szSystemRoot));
+        if (cNeeded == 0)
+        {
+            err = GetLastError();
+            hrc = HRESULT_FROM_WIN32(err);
+            AssertLogRelMsgFailed(("GetWindowsDirectory failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                   hrc, hrc, err));
+            break;
+        }
+        else if (cNeeded > RT_ELEMENTS(szSystemRoot))
+        {
+            /* The buffer is too small, allocate big one. */
+            pszSystemRoot = (TCHAR *)RTMemTmpAlloc(cNeeded * sizeof(_TCHAR));
+            if (!pszSystemRoot)
+            {
+                AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cNeeded));
+                break;
+            }
+            if (GetWindowsDirectory(pszSystemRoot, cNeeded) == 0)
+            {
+                err = GetLastError();
+                hrc = HRESULT_FROM_WIN32(err);
+                AssertLogRelMsgFailed(("GetWindowsDirectory failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                   hrc, hrc, err));
+                break;
+            }
+        }
+
+        DWORD  cbNeeded = 0;
+        if (!EnumDeviceDrivers(aDrivers, sizeof(aDrivers), &cbNeeded) || cbNeeded > sizeof(aDrivers))
+        {
+            pDrivers = (LPVOID *)RTMemTmpAlloc(cbNeeded);
+            if (!EnumDeviceDrivers(pDrivers, cbNeeded, &cbNeeded))
+            {
+                err = GetLastError();
+                hrc = HRESULT_FROM_WIN32(err);
+                AssertLogRelMsgFailed(("EnumDeviceDrivers failed, hr=%Rhrc (0x%x) err=%u\n",
+                                                   hrc, hrc, err));
+                break;
+            }
+        }
+
+        LogRel(("Installed Drivers:\n"));
+
+        TCHAR szDriver[1024];
+        int cDrivers = cbNeeded / sizeof(pDrivers[0]);
+        for (int i = 0; i < cDrivers; i++)
+        {
+            if (GetDeviceDriverBaseName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
+            {
+                if (_tcsnicmp(TEXT("vbox"), szDriver, 4))
+                    continue;
+            }
+            else
+                continue;
+            if (GetDeviceDriverFileName(pDrivers[i], szDriver, sizeof(szDriver) / sizeof(szDriver[0])))
+            {
+                _TCHAR szTmpDrv[1024];
+                _TCHAR *pszDrv = szDriver;
+                if (!_tcsncmp(TEXT("\\SystemRoot"), szDriver, 11))
+                {
+                    _tcscpy_s(szTmpDrv, pszSystemRoot);
+                    _tcsncat_s(szTmpDrv, szDriver + 11, sizeof(szTmpDrv) / sizeof(szTmpDrv[0]) - _tclen(pszSystemRoot));
+                    pszDrv = szTmpDrv;
+                }
+                else if (!_tcsncmp(TEXT("\\??\\"), szDriver, 4))
+                    pszDrv = szDriver + 4;
+
+                /* Allocate a buffer for version info. Reuse if large enough. */
+                DWORD cbNewVerInfo = GetFileVersionInfoSize(pszDrv, NULL);
+                if (cbNewVerInfo > cbVerInfo)
+                {
+                    if (pVerInfo)
+                        RTMemTmpFree(pVerInfo);
+                    cbVerInfo = cbNewVerInfo;
+                    pVerInfo = RTMemTmpAlloc(cbVerInfo);
+                    if (!pVerInfo)
+                    {
+                        AssertLogRelMsgFailed(("RTMemTmpAlloc failed to allocate %d bytes\n", cbVerInfo));
+                        break;
+                    }
+                }
+                        
+                if (GetFileVersionInfo(pszDrv, NULL, cbVerInfo, pVerInfo))
+                {
+                    UINT   cbSize = 0;
+                    LPBYTE lpBuffer = NULL;
+                    if (VerQueryValue(pVerInfo, TEXT("\\"), (VOID FAR* FAR*)&lpBuffer, &cbSize))
+                    {
+                        if (cbSize)
+                        {
+                            VS_FIXEDFILEINFO *pFileInfo = (VS_FIXEDFILEINFO *)lpBuffer;
+                            if (pFileInfo->dwSignature == 0xfeef04bd)
+                            {
+                                LogRel(("  %ls (Version: %d.%d.%d.%d)\n", pszDrv,
+                                        (pFileInfo->dwFileVersionMS >> 16) & 0xffff,
+                                        (pFileInfo->dwFileVersionMS >> 0) & 0xffff,
+                                        (pFileInfo->dwFileVersionLS >> 16) & 0xffff,
+                                        (pFileInfo->dwFileVersionLS >> 0) & 0xffff));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    while (0);
+
+    if (pVerInfo)
+        RTMemTmpFree(pVerInfo);
+
+    if (pDrivers != aDrivers)
+        RTMemTmpFree(pDrivers);
+
+    if (pszSystemRoot != szSystemRoot)
+        RTMemTmpFree(pszSystemRoot);
+}
+#else /* !RT_OS_WINDOWS */
+static void reportDriverVersions(void)
+{
+}
+#endif /* !RT_OS_WINDOWS */
+
+
 /**
  * Worker for configConstructor.
  *
@@ -909,6 +1054,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     ULONG maxNetworkAdapters;
     hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();
+
+    reportDriverVersions();
     /*
      * Get root node first.
      * This is the only node in the tree.
