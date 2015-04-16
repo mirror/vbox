@@ -27,6 +27,7 @@
 ;*******************************************************************************
 ;* Header Files                                                                *
 ;*******************************************************************************
+%define RT_ASM_WITH_SEH64
 %include "iprt/asmdefs.mac"
 
 BEGINCODE
@@ -37,6 +38,7 @@ BEGINCODE
 ;                   msc=rcx, gcc=rdi, x86=[esp+4]
 ;
 BEGINPROC_EXPORTED ASMSetXcr0
+SEH64_END_PROLOGUE
 %ifdef ASM_CALL64_MSC
         mov     rdx, rcx
         shr     rdx, 32

@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; IPRT - ASMGetXcr0().
+; IPRT - ASMRstor().
 ;
 
 ;
@@ -33,17 +33,32 @@
 BEGINCODE
 
 ;;
-; Gets the content of the XCR0 CPU register.
-; @returns XCR0 value in rax (amd64) / edx:eax (x86).
+; Loads extended CPU state.
+; @param    pXStateArea Pointer to the XRSTOR state area.
+;                       msc=rcx, gcc=rdi, x86=[esp+4]
+; @param    fMask       The 64-bit state component mask.
+;                       msc=rdx, gcc=rsi, x86=[esp+8]
 ;
-BEGINPROC_EXPORTED ASMGetXcr0
+BEGINPROC_EXPORTED ASMRstor
 SEH64_END_PROLOGUE
-        xor     ecx, ecx                ; XCR0
-        xgetbv
-%ifdef RT_ARCH_AMD64
-        shl     rdx, 32
-        or      rax, rdx
+%ifdef ASM_CALL64_MSC
+        mov     rdx, rdx
+        shr     rdx, 32
+        mov     eax, edx
+        xrstor  [rcx]
+%elifdef ASM_CALL64_GCC
+        mov     rdx, rsi
+        shr     rdx, 32
+        mov     eax, esi
+        xrstor  [rdi]
+%elifdef RT_ARCH_X86
+        mov     ecx, [esp + 4]
+        mov     eax, [esp + 8]
+        mov     edx, [esp + 12]
+        xrstor  [ecx]
+%else
+ %error "Undefined arch?"
 %endif
         ret
-ENDPROC ASMGetXcr0
+ENDPROC ASMRstor
 

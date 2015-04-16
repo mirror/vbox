@@ -1731,12 +1731,25 @@ DECLINLINE(RTCCUINTREG) ASMGetCR8(void)
  */
 DECLASM(uint64_t) ASMGetXcr0(void);
 
-
 /**
  * Sets the XCR0 register.
  * @param   uXcr0   The new XCR0 value.
  */
 DECLASM(void) ASMSetXcr0(uint64_t uXcr0);
+
+/**
+ * Save extended CPU state.
+ * @param   pXStateArea     Where to save the state.
+ * @param   fComponents     Which state components to save.
+ */
+DECLASM(void) ASMXSave(PX86XSAVEAREA pXStateArea, uint64_t fComponents);
+
+/**
+ * Loads extended CPU state.
+ * @param   pXStateArea     Where to load the state from.
+ * @param   fComponents     Which state components to load.
+ */
+DECLASM(void) ASMXLoad(PCX86XSAVEAREA pXStateArea, uint64_t fComponents);
 
 
 /**
