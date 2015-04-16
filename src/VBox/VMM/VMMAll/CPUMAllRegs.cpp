@@ -2142,6 +2142,9 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
 /**
  * Set the guest XCR0 register.
  *
+ * Will load additional state if the FPU state is already loaded (in ring-0 &
+ * raw-mode context).
+ *
  * @returns VINF_SUCCESS on success, VERR_CPUM_RAISE_GP_0 on invalid input
  *          value.
  * @param   pVCpu       Pointer to the cross context VMCPU structure for the
@@ -2163,7 +2166,30 @@ VMM_INT_DECL(int)   CPUMSetGuestXcr0(PVMCPU pVCpu, uint64_t uNewValue)
        )
     {
         pVCpu->cpum.s.Guest.aXcr[0] = uNewValue;
-        pVCpu->cpum.s.Guest.fXStateMask |= uNewValue;
+
+        /* If more state components are enabled, we need to take care to load
+           them if the FPU/SSE state is already loaded.  May otherwise leak
+           host state to the guest. */
+        uint64_t fNewComponents = ~pVCpu->cpum.s.Guest.fXStateMask & uNewValue;
+        if (fNewComponents)
+        {
+#if defined(IN_RING0) || defined(IN_RC)
+            if (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU)
+            {
+                if (pVCpu->cpum.s.Guest.fXStateMask != 0)
+                    /* Adding more components. */
+                    ASMXRstor(pVCpu->cpum.s.Guest.CTX_SUFF(pXState), fNewComponents);
+                else
+                {
+                    /* We're switching from FXSAVE/FXRSTOR to XSAVE/XRSTOR. */
+                    pVCpu->cpum.s.Guest.fXStateMask |= XSAVE_C_X87 | XSAVE_C_SSE;
+                    if (uNewValue & ~(XSAVE_C_X87 | XSAVE_C_SSE))
+                        ASMXRstor(pVCpu->cpum.s.Guest.CTX_SUFF(pXState), uNewValue & ~(XSAVE_C_X87 | XSAVE_C_SSE));
+                }
+            }
+#endif
+            pVCpu->cpum.s.Guest.fXStateMask |= uNewValue;
+        }
         return VINF_SUCCESS;
     }
     return VERR_CPUM_RAISE_GP_0;
@@ -2622,20 +2648,6 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU);
-}
-
-
-/**
- * Deactivate the FPU/XMM state of the guest OS.
- * @param   pVCpu       Pointer to the VMCPU.
- *
- * @todo    r=bird: Why is this needed? Looks like a workaround for mishandled
- *          FPU state management.
- */
-VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
-{
-    Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU));
-    pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
 }
 
 
