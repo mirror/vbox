@@ -1219,8 +1219,8 @@ ENDPROC VMXRCStartVM64
 ; * @returns VBox status code
 ; * @param   HCPhysVMCB     Physical address of host VMCB       (rsp+8)
 ; * @param   HCPhysVMCB     Physical address of guest VMCB      (rsp+16)
-; * @param   pVM            The VM handle                       (rbp+18h)
-; * @param   pVM            The VMCPU handle.                   (rbp+20h)
+; * @param   pVM            The VM handle                       (rbp+20h)
+; * @param   pVM            The VMCPU handle.                   (rbp+28h)
 ; * @param   pCtx           Guest context                       (rsi)
 ; */
 BEGINPROC SVMRCVMRun64
@@ -1244,7 +1244,7 @@ BEGINPROC SVMRCVMRun64
     ;
     ; Save the host XCR0 and load the guest one if necessary.
     ;
-    mov     rax, [rbx + 20h]            ; pVCpu
+    mov     rax, [rbp + 28h]            ; pVCpu
     test    byte [rax + VMCPU.hm + HMCPU.fLoadSaveGuestXcr0], 1
     jz      .xcr0_before_skip
 
