@@ -1252,6 +1252,10 @@ RuntimeGuestR3_INCS                     := $(RuntimeR3_INCS)
 RuntimeGuestR3_INCS.$(KBUILD_TARGET)    := $(RuntimeR3_INCS.$(KBUILD_TARGET))
 RuntimeGuestR3_INCS.$(KBUILD_HOST)      := $(RuntimeR3_INCS.$(KBUILD_HOST))
 RuntimeGuestR3_SOURCES                  := $(filter-out \
+	common/asm/ASMGetXcr0.asm \
+	common/asm/ASMSetXcr0.asm \
+	common/asm/ASMXSave.asm \
+	common/asm/ASMXRstor.asm \
 	common/time/timesupref.cpp \
 	common/time/timesupA.asm \
 	common/time/timesup.cpp \
