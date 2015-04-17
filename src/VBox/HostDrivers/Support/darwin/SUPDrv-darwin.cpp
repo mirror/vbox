@@ -278,7 +278,11 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
             if (RT_SUCCESS(rc))
             {
                 if (vboxdrvDarwinCpuHasSMAP())
+                {
+                    LogRel(("disabling SMAP for VBoxDrvDarwinIOCtl\n"));
                     g_DevCW.d_ioctl = VBoxDrvDarwinIOCtlSMAP;
+                }
+
                 /*
                  * Registering ourselves as a character device.
                  */

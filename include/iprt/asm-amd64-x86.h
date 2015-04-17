@@ -3092,6 +3092,7 @@ DECLINLINE(void) ASMReadFenceSSE2(void)
 #endif
 }
 
+#if !defined(_MSC_VER) || !defined(RT_ARCH_AMD64)
 
 /*
  * Clear the AC bit in the EFLAGS register.
@@ -3131,6 +3132,8 @@ DECLINLINE(void) ASMSetAC(void)
     }
 #endif
 }
+
+#endif /* !_MSC_VER) || !RT_ARCH_AMD64 */
 
 /** @} */
 #endif
