@@ -1257,7 +1257,7 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     }
 
     /* Make sure that the current screen image is immediately displayed: */
-    emit sigNotifyUpdate(0, 0, width(), height());
+    m_pMachineView->viewport()->update();
 
     unlock();
 }
