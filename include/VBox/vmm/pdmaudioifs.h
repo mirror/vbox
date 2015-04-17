@@ -82,25 +82,25 @@ typedef struct PDMAUDIOBACKENDCFG
  */
 typedef struct PDMAUDIOSAMPLE
 {
-    int64_t u64LSample;
-    int64_t u64RSample;
+    int64_t i64LSample;
+    int64_t i64RSample;
 } PDMAUDIOSAMPLE, *PPDMAUDIOSAMPLE;
 
-typedef enum PDMAUDIOENDIANESS
+typedef enum PDMAUDIOENDIANNESS
 {
     /** The usual invalid endian. */
-    PDMAUDIOENDIANESS_INVALID,
+    PDMAUDIOENDIANNESS_INVALID,
     /** Little endian. */
-    PDMAUDIOENDIANESS_LITTLE,
+    PDMAUDIOENDIANNESS_LITTLE,
     /** Bit endian. */
-    PDMAUDIOENDIANESS_BIG,
+    PDMAUDIOENDIANNESS_BIG,
     /** Endianness doesn't have a meaning in the context. */
-    PDMAUDIOENDIANESS_NA,
+    PDMAUDIOENDIANNESS_NA,
     /** The end of the valid endian values (exclusive). */
-    PDMAUDIOENDIANESS_END,
+    PDMAUDIOENDIANNESS_END,
     /** Hack to blow the type up to 32-bit. */
-    PDMAUDIOENDIANESS_32BIT_HACK = 0x7fffffff
-} PDMAUDIOENDIANESS;
+    PDMAUDIOENDIANNESS_32BIT_HACK = 0x7fffffff
+} PDMAUDIOENDIANNESS;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct PDMAUDIOSTREAMCFG
@@ -112,14 +112,14 @@ typedef struct PDMAUDIOSTREAMCFG
     /** Audio format. */
     PDMAUDIOFMT enmFormat;
     /** @todo Use RT_LE2H_*? */
-    PDMAUDIOENDIANESS enmEndianness;
+    PDMAUDIOENDIANNESS enmEndianness;
 } PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
 #endif
 
 #if defined(RT_LITTLE_ENDIAN)
-# define PDMAUDIOHOSTENDIANESS PDMAUDIOENDIANESS_LITTLE
+# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
 #elif defined(RT_BIG_ENDIAN)
-# define PDMAUDIOHOSTENDIANESS PDMAUDIOENDIANESS_BIG
+# define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_BIG
 #else
 # error "Port me!"
 #endif
@@ -198,7 +198,7 @@ typedef struct PDMPCMPROPS
     uint32_t    uHz;
     /** Bandwidth (bytes/s). */
     uint32_t    cbPerSec;
-    /** Whether the endianess is swapped or not. */
+    /** Whether the endianness is swapped or not. */
     bool        fSwapEndian;
 } PDMPCMPROPS, *PPDMPCMPROPS;
 

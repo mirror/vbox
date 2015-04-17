@@ -57,7 +57,7 @@ typedef struct DRVHOSTOSSAUDIO
 typedef struct OSSAUDIOSTREAMCFG
 {
     PDMAUDIOFMT       enmFormat;
-    PDMAUDIOENDIANESS enmEndianess;
+    PDMAUDIOENDIANNESS enmENDIANNESS;
     uint16_t          uFreq;
     uint8_t           cChannels;
     uint16_t          cFragments;
@@ -156,44 +156,44 @@ static int drvHostOSSAudioFmtToOSS(PDMAUDIOFMT fmt)
 }
 
 static int drvHostOSSAudioOSSToFmt(int fmt,
-                                   PDMAUDIOFMT *pFmt, PDMAUDIOENDIANESS *pEndianess)
+                                   PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pENDIANNESS)
 {
     switch (fmt)
     {
         case AFMT_S8:
             *pFmt = AUD_FMT_S8;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_LITTLE;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_U8:
             *pFmt = AUD_FMT_U8;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_LITTLE;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_S16_LE:
             *pFmt = AUD_FMT_S16;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_LITTLE;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_U16_LE:
             *pFmt = AUD_FMT_U16;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_LITTLE;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case AFMT_S16_BE:
             *pFmt = AUD_FMT_S16;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_BIG;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case AFMT_U16_BE:
             *pFmt = AUD_FMT_U16;
-            if (pEndianess)
-                *pEndianess = PDMAUDIOENDIANESS_BIG;
+            if (pENDIANNESS)
+                *pENDIANNESS = PDMAUDIOENDIANNESS_BIG;
             break;
 
         default:
@@ -311,7 +311,7 @@ static int drvHostOSSAudioOpen(bool fIn,
         }
 
         rc = drvHostOSSAudioOSSToFmt(iFormat,
-                                     &pObt->enmFormat, &pObt->enmEndianess);
+                                     &pObt->enmFormat, &pObt->enmENDIANNESS);
         if (RT_SUCCESS(rc))
         {
             pObt->cChannels      = cChannels;
@@ -596,7 +596,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitIn(PPDMIHOSTAUDIO pInterface,
             streamCfg.enmFormat     = obtStream.enmFormat;
             streamCfg.uHz           = obtStream.uFreq;
             streamCfg.cChannels     = pCfg->cChannels;
-            streamCfg.enmEndianness = obtStream.enmEndianess;
+            streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
             rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmIn->Props);
             if (RT_SUCCESS(rc))
@@ -673,7 +673,7 @@ static DECLCALLBACK(int) drvHostOSSAudioInitOut(PPDMIHOSTAUDIO pInterface,
             streamCfg.enmFormat     = obtStream.enmFormat;
             streamCfg.uHz           = obtStream.uFreq;
             streamCfg.cChannels     = pCfg->cChannels;
-            streamCfg.enmEndianness = obtStream.enmEndianess;
+            streamCfg.enmEndianness = obtStream.enmENDIANNESS;
 
             rc = drvAudioStreamCfgToProps(&streamCfg, &pHstStrmOut->Props);
             if (RT_SUCCESS(rc))

@@ -1777,7 +1777,7 @@ static int hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pCfg)
         pCfg->uHz = u32Hz * u32HzMult / u32HzDiv;
         pCfg->cChannels = (u32SdFmt & 0xf) + 1;
         pCfg->enmFormat = enmFmt;
-        pCfg->enmEndianness = PDMAUDIOHOSTENDIANESS;
+        pCfg->enmEndianness = PDMAUDIOHOSTENDIANNESS;
 #else
         pCfg->nchannels = (u32SdFmt & 0xf) + 1;
         pCfg->fmt = enmFmt;
@@ -3848,7 +3848,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             streamCfg.uHz           = 41000;
             streamCfg.cChannels     = 2;
             streamCfg.enmFormat     = AUD_FMT_S16;
-            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
             rc = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
             AssertRC(rc);

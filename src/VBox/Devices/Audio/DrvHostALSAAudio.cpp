@@ -218,7 +218,7 @@ static snd_pcm_format_t drvHostALSAAudioFmtToALSA(PDMAUDIOFMT fmt)
 }
 
 static int drvHostALSAAudioALSAToFmt(snd_pcm_format_t fmt,
-                                     PDMAUDIOFMT *pFmt, PDMAUDIOENDIANESS *pEndianness)
+                                     PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEndianness)
 {
     AssertPtrReturn(pFmt, VERR_INVALID_POINTER);
     /* pEndianness is optional. */
@@ -228,61 +228,61 @@ static int drvHostALSAAudioALSAToFmt(snd_pcm_format_t fmt,
         case SND_PCM_FORMAT_S8:
             *pFmt = AUD_FMT_S8;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U8:
             *pFmt = AUD_FMT_U8;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S16_LE:
             *pFmt = AUD_FMT_S16;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U16_LE:
             *pFmt = AUD_FMT_U16;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S16_BE:
             *pFmt = AUD_FMT_S16;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_BIG;
+                *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_U16_BE:
             *pFmt = AUD_FMT_U16;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_BIG;
+                *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_S32_LE:
             *pFmt = AUD_FMT_S32;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_U32_LE:
             *pFmt = AUD_FMT_U32;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_LITTLE;
+                *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case SND_PCM_FORMAT_S32_BE:
             *pFmt = AUD_FMT_S32;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_BIG;
+                *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         case SND_PCM_FORMAT_U32_BE:
             *pFmt = AUD_FMT_U32;
             if (pEndianness)
-                *pEndianness = PDMAUDIOENDIANESS_BIG;
+                *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
         default:
@@ -1087,7 +1087,7 @@ static DECLCALLBACK(int) drvHostALSAAudioInitOut(PPDMIHOSTAUDIO pInterface,
             break;
 
         PDMAUDIOFMT enmFormat;
-        PDMAUDIOENDIANESS enmEnd;
+        PDMAUDIOENDIANNESS enmEnd;
         rc = drvHostALSAAudioALSAToFmt(obt.fmt, &enmFormat, &enmEnd);
         if (RT_FAILURE(rc))
             break;
@@ -1158,7 +1158,7 @@ static DECLCALLBACK(int) drvHostALSAAudioInitIn(PPDMIHOSTAUDIO pInterface,
             break;
 
         PDMAUDIOFMT enmFormat;
-        PDMAUDIOENDIANESS enmEnd;
+        PDMAUDIOENDIANNESS enmEnd;
         rc = drvHostALSAAudioALSAToFmt(obt.fmt, &enmFormat, &enmEnd);
         if (RT_FAILURE(rc))
             break;

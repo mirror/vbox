@@ -459,7 +459,7 @@ static void continue_dma8(PSB16STATE pThis)
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
         streamCfg.enmFormat     = pThis->fmt;
-        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -612,7 +612,7 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
         streamCfg.enmFormat     = pThis->fmt;
-        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
@@ -1134,7 +1134,7 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     streamCfg.uHz           = pThis->freq;
     streamCfg.cChannels     = 1; /* Mono */
     streamCfg.enmFormat     = AUD_FMT_U8;
-    streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+    streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     int rc = sb16OpenOut(pThis, &streamCfg);
     AssertRC(rc);
@@ -1437,7 +1437,7 @@ static void sb16MixerReset(PSB16STATE pThis)
         streamCfg.uHz           = 41000;
         streamCfg.cChannels     = 2;
         streamCfg.enmFormat     = AUD_FMT_S16;
-        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+        streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
         rc2 = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
         AssertRC(rc2);
@@ -2052,7 +2052,7 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
             streamCfg.uHz           = pThis->freq;
             streamCfg.cChannels     = 1 << pThis->fmt_stereo;
             streamCfg.enmFormat     = pThis->fmt;
-            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+            streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
             int rc = sb16OpenOut(pThis, &streamCfg);
             AssertRC(rc);

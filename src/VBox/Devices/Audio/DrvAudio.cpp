@@ -284,8 +284,8 @@ static bool drvAudioStreamCfgIsValid(PPDMAUDIOSTREAMCFG pCfg)
     bool fValid = (   pCfg->cChannels == 1
                    || pCfg->cChannels == 2); /* Either stereo (2) or mono (1), per stream. */
 
-    fValid |= (   pCfg->enmEndianness == PDMAUDIOENDIANESS_LITTLE
-               || pCfg->enmEndianness == PDMAUDIOENDIANESS_BIG);
+    fValid |= (   pCfg->enmEndianness == PDMAUDIOENDIANNESS_LITTLE
+               || pCfg->enmEndianness == PDMAUDIOENDIANNESS_BIG);
 
     if (fValid)
     {

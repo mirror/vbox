@@ -1,4 +1,4 @@
-/* $Id$ */
+/* ENDIANNESS: DevIchHdaCodec.cpp 99354 2015-04-01 09:29:05Z andy $ */
 /** @file
  * DevIchHdaCodec - VBox ICH Intel HD Audio Codec.
  *
@@ -2463,7 +2463,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     as.uHz           = 44100;
     as.cChannels     = 2;
     as.enmFormat     = AUD_FMT_S16;
-    as.enmEndianness = PDMAUDIOHOSTENDIANESS;
+    as.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 #else
     AUD_register_card("ICH0", &pThis->card);
 

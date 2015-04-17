@@ -176,7 +176,7 @@ static struct {
             44100,              /* freq */
             2,                  /* nchannels */
             AUD_FMT_S16,        /* fmt */
-            PDMAUDIOHOSTENDIANESS
+            PDMAUDIOHOSTENDIANNESS
         }
     },
 
@@ -189,7 +189,7 @@ static struct {
             44100,              /* freq */
             2,                  /* nchannels */
             AUD_FMT_S16,        /* fmt */
-            PDMAUDIOHOSTENDIANESS
+            PDMAUDIOHOSTENDIANNESS
         }
     },
 

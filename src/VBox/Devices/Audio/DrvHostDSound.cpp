@@ -988,7 +988,7 @@ static DECLCALLBACK(int) drvHostDSoundInitOut(PPDMIHOSTAUDIO pInterface,
     PDSOUNDSTREAMOUT pDSoundStrmOut = (PDSOUNDSTREAMOUT)pHstStrmOut;
 
     pDSoundStrmOut->streamCfg = *pCfg;
-    pDSoundStrmOut->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+    pDSoundStrmOut->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     int rc = drvAudioStreamCfgToProps(&pDSoundStrmOut->streamCfg, &pDSoundStrmOut->hw.Props);
     if (RT_SUCCESS(rc))
@@ -1228,7 +1228,7 @@ static DECLCALLBACK(int) drvHostDSoundInitIn(PPDMIHOSTAUDIO pInterface,
                  pHstStrmIn, pCfg, enmRecSource));
 
     pDSoundStrmIn->streamCfg = *pCfg;
-    pDSoundStrmIn->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANESS;
+    pDSoundStrmIn->streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
     /** @todo caller should already init Props? */
     int rc = drvAudioStreamCfgToProps(&pDSoundStrmIn->streamCfg, &pHstStrmIn->Props);

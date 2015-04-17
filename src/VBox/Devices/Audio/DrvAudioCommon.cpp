@@ -307,7 +307,7 @@ bool drvAudioPCMPropsAreEqual(PPDMPCMPROPS pProps, PPDMAUDIOSTREAMCFG pCfg)
                   && pProps->cChannels   == pCfg->cChannels
                   && pProps->fSigned     == fSigned
                   && pProps->cBits       == cBits
-                  && pProps->fSwapEndian == !(pCfg->enmEndianness == PDMAUDIOHOSTENDIANESS);
+                  && pProps->fSwapEndian == !(pCfg->enmEndianness == PDMAUDIOHOSTENDIANNESS);
 
     LogFlowFunc(("fEqual=%RTbool\n", fEqual));
     return fEqual;
@@ -356,7 +356,7 @@ int drvAudioStreamCfgToProps(PPDMAUDIOSTREAMCFG pCfg, PPDMPCMPROPS pProps)
         pProps->cShift      = (pCfg->cChannels == 2) + cShift;
         pProps->uAlign      = (1 << pProps->cShift) - 1;
         pProps->cbPerSec    = pProps->uHz << pProps->cShift;
-        pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANESS;
+        pProps->fSwapEndian = pCfg->enmEndianness != PDMAUDIOHOSTENDIANNESS;
     }
 
 #ifdef DEBUG
@@ -400,10 +400,10 @@ void drvAudioStreamCfgPrint(PPDMAUDIOSTREAMCFG pCfg)
     LogFlow((", endianness="));
     switch (pCfg->enmEndianness)
     {
-        case PDMAUDIOENDIANESS_LITTLE:
+        case PDMAUDIOENDIANNESS_LITTLE:
             LogFlow(("little\n"));
             break;
-        case PDMAUDIOENDIANESS_BIG:
+        case PDMAUDIOENDIANNESS_BIG:
             LogFlow(("big\n"));
             break;
         default:
