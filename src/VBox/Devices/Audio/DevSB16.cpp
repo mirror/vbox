@@ -1469,7 +1469,7 @@ uint32_t popcount (uint32_t u) /** @todo r=andy WTF? */
 
 uint32_t lsbindex (uint32_t u)
 {
-    return popcount ((u&-u)-1); /** @todo r=andy Un/signed mismatch? */
+    return popcount ((u & -(int32_t)u) - 1);
 }
 #endif
 
@@ -1660,13 +1660,12 @@ static IO_READ_PROTO(mixer_read)
 #endif
 }
 
-static int sb16WriteAudio(PSB16STATE pThis, int nchan, int dma_pos,
-                          int dma_len, int len)
+static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
+                          uint32_t dma_len, int len)
 {
-    uint8_t tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
-
-    int cbToWrite = len;
-    int cbWrittenTotal = 0;
+    uint8_t     tmpbuf[_4K]; /** @todo Have a buffer on the heap. */
+    uint32_t    cbToWrite = len;
+    uint32_t    cbWrittenTotal = 0;
 
     while (cbToWrite)
     {
@@ -1675,7 +1674,7 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, int dma_pos,
         int cbRead;
 #else
         uint32_t cbWrittenMin = UINT32_MAX;
-        size_t cbToRead;
+        uint32_t cbToRead;
         uint32_t cbRead;
 #endif
         cbToRead = RT_MIN(dma_len - dma_pos, cbToWrite);
