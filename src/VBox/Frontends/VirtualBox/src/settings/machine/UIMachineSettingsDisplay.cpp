@@ -396,11 +396,12 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(1));
 
 #ifdef VBOX_WITH_EXTPACK
+        /* VRDE Extension Pack presence test: */
         CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
         if (m_pCheckboxRemoteDisplay->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
         {
             message.second << tr("Remote Display is currently enabled for this virtual machine. "
-                                 "However, this requires the <b>%1</b> to be installed. "
+                                 "However, this requires the <i>%1</i> to be installed. "
                                  "Please install the Extension Pack from the VirtualBox download site as "
                                  "otherwise your VM will be started with Remote Display disabled.")
                                  .arg(GUI_ExtPackName);

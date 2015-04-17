@@ -30,6 +30,8 @@
 # include "UIConverter.h"
 /* COM includes: */
 # include "CMedium.h"
+# include "CExtPack.h"
+# include "CExtPackManager.h"
 # include "CMediumAttachment.h"
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -397,6 +399,19 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
     AssertPtrReturn(m_pCheckBoxEncryption, false);
     if (m_pCheckBoxEncryption->isChecked())
     {
+#ifdef VBOX_WITH_EXTPACK
+        /* Encryption Extension Pack presence test: */
+        const CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
+        if (extPack.isNull() || !extPack.GetUsable())
+        {
+            message.second << tr("You are trying to encrypt this virtual machine. "
+                                 "However, this requires the <i>%1</i> to be installed. "
+                                 "Please install the Extension Pack from the VirtualBox download site.")
+                                 .arg(GUI_ExtPackName);
+            fPass = false;
+        }
+#endif /* VBOX_WITH_EXTPACK */
+
         /* Cipher should be chosen if once changed: */
         AssertPtrReturn(m_pComboCipher, false);
         if (!m_cache.base().m_fEncryptionEnabled ||
@@ -404,7 +419,9 @@ bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
         {
             if (m_pComboCipher->currentIndex() == 0)
                 message.second << tr("Encryption cipher type not specified.");
+            fPass = false;
         }
+
         /* Password should be entered and confirmed if once changed: */
         AssertPtrReturn(m_pEditorEncryptionPassword, false);
         AssertPtrReturn(m_pEditorEncryptionPasswordConfirm, false);
