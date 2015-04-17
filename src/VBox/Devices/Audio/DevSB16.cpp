@@ -879,6 +879,11 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
 #endif
                 break;
 
+            case 0xf8:
+                /* Undocumented, used by old Creative diagnostic programs. */
+                dsp_out_data (pThis, 0);
+                goto warn;
+
             case 0xf9:
                 pThis->needed_bytes = 1;
                 goto warn;
