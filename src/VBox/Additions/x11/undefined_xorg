@@ -106,7 +106,10 @@ __realpath_chk
 __register_frame_info_bases
 rename
 RRChangeOutputProperty
+RRCrtcNotify
 RRGetInfo
+RRScreenSizeNotify
+RRTellChanged
 setenv
 ShadowFBInit2
 sigdelset
@@ -156,6 +159,7 @@ xf86CrtcConfigInit
 xf86CrtcConfigPrivateIndex
 xf86CrtcCreate
 xf86CrtcScreenInit
+xf86CrtcSetMode
 xf86CrtcSetSizeRange
 xf86DestroyCursorInfoRec
 xf86DPMSSet
@@ -173,4 +177,5 @@ xf86ScrnToScreen
 xf86SetDesiredModes
 xf86SetModeDefaultName
 xf86SetSingleMode
+xf86UpdateDesktopDimensions
 __xstat64

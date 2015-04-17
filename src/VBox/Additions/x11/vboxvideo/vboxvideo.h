@@ -150,6 +150,8 @@ struct VBoxScreen
      * sending dirty rectangle information to the right one. */
     RTRECT2 aScreenLocation;
     /** Is this CRTC enabled or in DPMS off state? */
+    Bool fPowerOn;
+    /** Is this CRTC enabled or in DPMS off state? */
     Bool fCrtcEnabled;
     /** Is this output enabled or in DPMS low power state? */
     Bool fOutputEnabled;
@@ -296,6 +298,8 @@ extern void VBoxSetUpRandR11(ScreenPtr pScreen);
 void VBoxSetUpLinuxACPI(ScreenPtr pScreen);
 void VBoxCleanUpLinuxACPI(ScreenPtr pScreen);
 #endif
+extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
+extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 
 /* DRI stuff */
 extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
