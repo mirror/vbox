@@ -91,6 +91,8 @@ Preparations:
 
 22. Disable loading CONIME. Set "HKEY_CURRENT_USER\Console\LoadConIme" to 0.
 
+23. Windows 2012 R2: If you experience mouse pointer problems connecting with rdesktop,
+    open the mouse pointer settings and disable mouse pointer shadow.
 
 The install:
 
