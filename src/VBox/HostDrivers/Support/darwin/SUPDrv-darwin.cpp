@@ -51,6 +51,7 @@
 #include <iprt/alloc.h>
 #include <iprt/power.h>
 #include <iprt/dbg.h>
+#include <iprt/x86.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 
@@ -104,6 +105,7 @@ static kern_return_t    VBoxDrvDarwinStop(struct kmod_info *pKModInfo, void *pvD
 static int              VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int              VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *pProcess);
 static int              VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
+static int              VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess);
 static int              VBoxDrvDarwinIOCtlSlow(PSUPDRVSESSION pSession, u_long iCmd, caddr_t pData, struct proc *pProcess);
 
 static int              VBoxDrvDarwinErr2DarwinErr(int rc);
@@ -112,6 +114,7 @@ static IOReturn         VBoxDrvDarwinSleepHandler(void *pvTarget, void *pvRefCon
 RT_C_DECLS_END
 
 static void             vboxdrvDarwinResolveSymbols(void);
+static bool             vboxdrvDarwinCpuHasSMAP(void);
 
 
 /*******************************************************************************
@@ -274,6 +277,8 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
             rc = RTSpinlockCreate(&g_Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxDrvDarwin");
             if (RT_SUCCESS(rc))
             {
+                if (vboxdrvDarwinCpuHasSMAP())
+                    g_DevCW.d_ioctl = VBoxDrvDarwinIOCtlSMAP;
                 /*
                  * Registering ourselves as a character device.
                  */
@@ -592,6 +597,30 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
         rc = VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
 
     supdrvSessionRelease(pSession);
+    return rc;
+}
+
+
+/**
+ * Alternative Device I/O Control entry point on hosts with SMAP support.
+ *
+ * @returns Darwin for slow IOCtls and VBox status code for the fast ones.
+ * @param   Dev         The device number (major+minor).
+ * @param   iCmd        The IOCtl command.
+ * @param   pData       Pointer to the data (if any it's a SUPDRVIOCTLDATA (kernel copy)).
+ * @param   fFlags      Flag saying we're a character device (like we didn't know already).
+ * @param   pProcess    The process issuing this request.
+ */
+static int VBoxDrvDarwinIOCtlSMAP(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
+{
+    /*
+     * Allow VBox R0 code to touch R3 memory. Setting the AC bit disables the
+     * SMAP check.
+     */
+    RTCCUINTREG uFlags = ASMGetFlags();
+    ASMSetAC();
+    int rc = VBoxDrvDarwinIOCtl(Dev, iCmd, pData, fFlags, pProcess);
+    ASMSetFlags(uFlags);
     return rc;
 }
 
@@ -1285,6 +1314,22 @@ static int VBoxDrvDarwinErr2DarwinErr(int rc)
     return EPERM;
 }
 
+/**
+ * Check if the CPU has SMAP support.
+ */
+static bool vboxdrvDarwinCpuHasSMAP(void)
+{
+    uint32_t uMaxId, uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(0, &uMaxId, &uEBX, &uECX, &uEDX);
+    if (   ASMIsValidStdRange(uMaxId)
+        && uMaxId >= 0x00000007)
+    {
+        ASMCpuId_Idx_ECX(0x00000007, 0, &uEAX, &uEBX, &uECX, &uEDX);
+        if (uEBX & X86_CPUID_STEXT_FEATURE_EBX_SMAP)
+            return true;
+    }
+    return false;
+}
 
 RTDECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
