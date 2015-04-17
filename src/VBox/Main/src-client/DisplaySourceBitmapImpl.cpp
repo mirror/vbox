@@ -131,7 +131,7 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
     ULONG ulBytesPerLine = 0;
     BitmapFormat_T bitmapFormat = BitmapFormat_Opaque;
 
-    if (pFBInfo->pu8FramebufferVRAM && pFBInfo->u16BitsPerPixel == 32)
+    if (pFBInfo->pu8FramebufferVRAM && pFBInfo->u16BitsPerPixel == 32 && !pFBInfo->fDisabled)
     {
         /* From VRAM. */
         LogFunc(("%d from VRAM\n", aScreenId));
@@ -173,6 +173,10 @@ int DisplaySourceBitmap::initSourceBitmap(unsigned aScreenId,
         m.ulBitsPerPixel = ulBitsPerPixel;
         m.ulBytesPerLine = ulBytesPerLine;
         m.bitmapFormat = bitmapFormat;
+        if (pFBInfo->fDisabled)
+        {
+            RT_BZERO(pAddress, ulBytesPerLine * ulHeight);
+        }
     }
 
     return rc;
