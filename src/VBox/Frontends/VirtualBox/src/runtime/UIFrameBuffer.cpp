@@ -1256,6 +1256,9 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
         emit sigSetVisibleRegion(m_syncVisibleRegion);
     }
 
+    /* Make sure that the current screen image is immediately displayed: */
+    emit sigNotifyUpdate(0, 0, width(), height());
+
     unlock();
 }
 
