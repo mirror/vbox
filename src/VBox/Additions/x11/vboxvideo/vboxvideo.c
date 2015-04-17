@@ -499,26 +499,7 @@ vbox_output_stub (xf86OutputPtr output)
 static void
 vbox_output_dpms (xf86OutputPtr output, int mode)
 {
-    VBOXPtr pVBox = VBOXGetRec(output->scrn);
-    unsigned cDisplay = (uintptr_t)output->driver_private;
-    bool fEnabled = (mode == DPMSModeOn);
-
-    TRACE_LOG("cDisplay=%u, mode=%i\n", cDisplay, mode);
-    pVBox->pScreens[cDisplay].fOutputEnabled = fEnabled;
-    /* Don't fiddle with the hardware if we are switched
-     * to a virtual terminal. */
-    if (!output->scrn->vtSema) {
-        xf86DrvMsg(output->scrn->scrnIndex, X_ERROR,
-                   "We do not own the active VT, exiting.\n");
-        return;
-    }
-    if (   pVBox->pScreens[cDisplay].aScreenLocation.cx
-        && pVBox->pScreens[cDisplay].aScreenLocation.cy)
-        VBOXSetMode(output->scrn, cDisplay,
-                    pVBox->pScreens[cDisplay].aScreenLocation.cx,
-                    pVBox->pScreens[cDisplay].aScreenLocation.cy,
-                    pVBox->pScreens[cDisplay].aScreenLocation.x,
-                    pVBox->pScreens[cDisplay].aScreenLocation.y);
+    (void)output; (void)mode;
 }
 
 static int
@@ -1446,7 +1427,7 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     TRACE_ENTRY();
 #ifdef VBOXVIDEO_13
     for (i = 0; i < pVBox->cScreens; ++i)
-        vbox_output_dpms(pVBox->pScreens[i].paOutputs, DPMSModeOff);
+        vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
     vboxDisableVbva(pScrn);
     vboxClearVRAM(pScrn, 0, 0);
@@ -1477,7 +1458,7 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
         unsigned i;
 
         for (i = 0; i < pVBox->cScreens; ++i)
-            vbox_output_dpms(pVBox->pScreens[i].paOutputs, DPMSModeOff);
+            vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
         vboxDisableVbva(pScrn);
         vboxClearVRAM(pScrn, 0, 0);
