@@ -641,28 +641,21 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
 
 
 /**
- * Changes the callbacks associated with a physical access handler.
+ * Changes the user callback arguments associated with a physical access
+ * handler.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
- * @param   GCPhys          Start physical address.
- * @param   pfnHandlerR3    The R3 handler.
+ * @param   GCPhys          Start physical address of the handler.
  * @param   pvUserR3        User argument to the R3 handler.
- * @param   pfnHandlerR0    The R0 handler.
  * @param   pvUserR0        User argument to the R0 handler.
- * @param   pfnHandlerRC    The RC handler.
  * @param   pvUserRC        User argument to the RC handler. Values larger or
  *                          equal to 0x10000 will be relocated automatically.
- * @param   pszDesc         Pointer to description string. This must not be freed.
  */
-VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
-                                               R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3, RTR3PTR pvUserR3,
-                                               R0PTRTYPE(PFNPGMR0PHYSHANDLER) pfnHandlerR0, RTR0PTR pvUserR0,
-                                               RCPTRTYPE(PFNPGMRCPHYSHANDLER) pfnHandlerRC, RTRCPTR pvUserRC,
-                                               R3PTRTYPE(const char *) pszDesc)
+VMMDECL(int) PGMHandlerPhysicalChangeUserArgs(PVM pVM, RTGCPHYS GCPhys, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC)
 {
     /*
-     * Get the handler.
+     * Find the handler.
      */
     int rc = VINF_SUCCESS;
     pgmLock(pVM);
@@ -670,15 +663,11 @@ VMMDECL(int) PGMHandlerPhysicalChangeCallbacks(PVM pVM, RTGCPHYS GCPhys,
     if (pCur)
     {
         /*
-         * Change callbacks.
+         * Change arguments.
          */
-        pCur->pfnHandlerR3  = pfnHandlerR3;
-        pCur->pvUserR3      = pvUserR3;
-        pCur->pfnHandlerR0  = pfnHandlerR0;
-        pCur->pvUserR0      = pvUserR0;
-        pCur->pfnHandlerRC  = pfnHandlerRC;
-        pCur->pvUserRC      = pvUserRC;
-        pCur->pszDesc       = pszDesc;
+        pCur->pvUserR3 = pvUserR3;
+        pCur->pvUserR0 = pvUserR0;
+        pCur->pvUserRC = pvUserRC;
     }
     else
     {
