@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 #define ___VBox_hgcm_h
 
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -87,9 +88,9 @@ typedef VBOXHGCMSVCHELPERS *PVBOXHGCMSVCHELPERS;
 
 
 #define VBOX_HGCM_SVC_PARM_INVALID (0U)
-#define VBOX_HGCM_SVC_PARM_32BIT (1U)
-#define VBOX_HGCM_SVC_PARM_64BIT (2U)
-#define VBOX_HGCM_SVC_PARM_PTR   (3U)
+#define VBOX_HGCM_SVC_PARM_32BIT   (1U)
+#define VBOX_HGCM_SVC_PARM_64BIT   (2U)
+#define VBOX_HGCM_SVC_PARM_PTR     (3U)
 
 typedef struct VBOXHGCMSVCPARM
 {
@@ -108,7 +109,7 @@ typedef struct VBOXHGCMSVCPARM
     } u;
 #ifdef __cplusplus
     /** Extract a uint32_t value from an HGCM parameter structure */
-    int getUInt32 (uint32_t *u32)
+    int getUInt32(uint32_t *u32)
     {
         AssertPtrReturn(u32, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
@@ -120,7 +121,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a uint64_t value from an HGCM parameter structure */
-    int getUInt64 (uint64_t *u64)
+    int getUInt64(uint64_t *u64)
     {
         AssertPtrReturn(u64, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
@@ -132,7 +133,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a pointer value from an HGCM parameter structure */
-    int getPointer (void **ppv, uint32_t *pcb)
+    int getPointer(void **ppv, uint32_t *pcb)
     {
         AssertPtrReturn(ppv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -147,7 +148,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a constant pointer value from an HGCM parameter structure */
-    int getPointer (const void **ppcv, uint32_t *pcb)
+    int getPointer(const void **ppcv, uint32_t *pcb)
     {
         AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -159,7 +160,7 @@ typedef struct VBOXHGCMSVCPARM
 
     /** Extract a pointer value to a non-empty buffer from an HGCM parameter
      * structure */
-    int getBuffer (void **ppv, uint32_t *pcb)
+    int getBuffer(void **ppv, uint32_t *pcb)
     {
         AssertPtrReturn(ppv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -180,7 +181,7 @@ typedef struct VBOXHGCMSVCPARM
 
     /** Extract a pointer value to a non-empty constant buffer from an HGCM
      * parameter structure */
-    int getBuffer (const void **ppcv, uint32_t *pcb)
+    int getBuffer(const void **ppcv, uint32_t *pcb)
     {
         AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -191,7 +192,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a string value from an HGCM parameter structure */
-    int getString (char **ppch, uint32_t *pcb)
+    int getString(char **ppch, uint32_t *pcb)
     {
         uint32_t cb = 0;
         char *pch = NULL;
@@ -210,7 +211,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a constant string value from an HGCM parameter structure */
-    int getString (const char **ppch, uint32_t *pcb)
+    int getString(const char **ppch, uint32_t *pcb)
     {
         char *pch = NULL;
         int rc = getString(&pch, pcb);
@@ -233,19 +234,25 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Set a pointer value to an HGCM parameter structure */
-    void setPointer(void *pv, uint32_t cb)
+    int setPointer(void *pv, uint32_t cb, bool fDeepCopy = false)
     {
         type = VBOX_HGCM_SVC_PARM_PTR;
-        u.pointer.addr = pv;
+        void *addr = fDeepCopy ? RTMemDup(pv, cb) : pv;
+        if (fDeepCopy && !addr)
+            return VERR_NO_MEMORY;
+        u.pointer.addr = addr;
         u.pointer.size = cb;
     }
 
     /** Set a const string value to an HGCM parameter structure */
-    void setString(const char *psz)
+    int setString(const char *psz, bool fDeepCopy = false)
     {
         type = VBOX_HGCM_SVC_PARM_PTR;
-        u.pointer.addr = (void *)psz;
-        u.pointer.size = (uint32_t)strlen(psz) + 1;
+        void *pszaddr = fDeepCopy ? (void *)RTStrDup(psz) : (void *)psz;
+        if (fDeepCopy && !pszaddr)
+            return VERR_NO_MEMORY;
+        u.pointer.addr = pszaddr;
+        u.pointer.size = (uint32_t)strlen((char *)pszaddr) + 1;
     }
 
 #ifdef VBOX_TEST_HGCM_PARMS
@@ -312,7 +319,7 @@ typedef struct VBOXHGCMSVCPARM
 #endif
 
     VBOXHGCMSVCPARM() : type(VBOX_HGCM_SVC_PARM_INVALID) {}
-#endif
+#endif /* __cplusplus */
 } VBOXHGCMSVCPARM;
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
