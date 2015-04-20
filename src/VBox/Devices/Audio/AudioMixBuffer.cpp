@@ -271,7 +271,7 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
  * Be careful what to pass in/out, as most of the macros are optimized for speed and
  * thus don't do any bounds checking!
  *
- * Note: Currently does not handle any endianess conversion yet!
+ * Note: Currently does not handle any endianness conversion yet!
  */
 #define AUDMIXBUF_CONVERT(_aName, _aType, _aMin, _aMax, _aSigned, _aShift) \
     /* Clips a specific output value to a single sample value. */ \

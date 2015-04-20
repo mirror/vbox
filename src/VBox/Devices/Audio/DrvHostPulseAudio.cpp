@@ -153,36 +153,36 @@ static pa_sample_format_t drvHostPulseAudioFmtToPulse(PDMAUDIOFMT fmt)
 }
 
 static int drvHostPulseAudioPulseToFmt(pa_sample_format_t pulsefmt,
-                                       PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEndianess)
+                                       PDMAUDIOFMT *pFmt, PDMAUDIOENDIANNESS *pEndianness)
 {
     switch (pulsefmt)
     {
         case PA_SAMPLE_U8:
             *pFmt = AUD_FMT_U8;
-            *pEndianess = PDMAUDIOENDIANNESS_LITTLE;
+            *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case PA_SAMPLE_S16LE:
             *pFmt = AUD_FMT_S16;
-            *pEndianess = PDMAUDIOENDIANNESS_LITTLE;
+            *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 
         case PA_SAMPLE_S16BE:
             *pFmt = AUD_FMT_S16;
-            *pEndianess = PDMAUDIOENDIANNESS_BIG;
+            *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 
 #ifdef PA_SAMPLE_S32LE
         case PA_SAMPLE_S32LE:
             *pFmt = AUD_FMT_S32;
-            *pEndianess = PDMAUDIOENDIANNESS_LITTLE;
+            *pEndianness = PDMAUDIOENDIANNESS_LITTLE;
             break;
 #endif
 
 #ifdef PA_SAMPLE_S32BE
         case PA_SAMPLE_S32BE:
             *pFmt = AUD_FMT_S32;
-            *pEndianess = PDMAUDIOENDIANNESS_BIG;
+            *pEndianness = PDMAUDIOENDIANNESS_BIG;
             break;
 #endif
 
@@ -601,7 +601,7 @@ static DECLCALLBACK(int) drvHostPulseAudioInitOut(PPDMIHOSTAUDIO pInterface,
     {
         uint32_t cbBuf  = RT_MIN(pThisStrmOut->BufAttr.tlength * 2,
                                  pThisStrmOut->BufAttr.maxlength); /** @todo Make this configurable! */
-        if (cbBuf) 
+        if (cbBuf)
         {
             pThisStrmOut->pvPCMBuf = RTMemAllocZ(cbBuf);
             if (pThisStrmOut->pvPCMBuf)
@@ -851,16 +851,16 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
         uint32_t cRead, cbRead;
         while (cbToRead)
         {
-            rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf, pThisStrmOut->pvPCMBuf, 
+            rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf, pThisStrmOut->pvPCMBuf,
                                      RT_MIN(cbToRead, pThisStrmOut->cbPCMBuf), &cRead);
-            if (   !cRead 
+            if (   !cRead
                 || RT_FAILURE(rc))
             {
                 break;
             }
 
             cbRead = AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cRead);
-            if (pa_stream_write(pThisStrmOut->pStream, pThisStrmOut->pvPCMBuf, cbRead, NULL /* Cleanup callback */, 
+            if (pa_stream_write(pThisStrmOut->pStream, pThisStrmOut->pvPCMBuf, cbRead, NULL /* Cleanup callback */,
                                 0, PA_SEEK_RELATIVE) < 0)
             {
                 rc = drvHostPulseAudioError(pThisStrmOut->pDrv, "Failed to write to output stream");
@@ -871,7 +871,7 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
             cbToRead    -= cbRead;
             cbReadTotal += cbRead;
 
-            LogFlowFunc(("\tcRead=%RU32 (%zu bytes) cbReadTotal=%RU32, cbToRead=%RU32\n", 
+            LogFlowFunc(("\tcRead=%RU32 (%zu bytes) cbReadTotal=%RU32, cbToRead=%RU32\n",
                          cRead, AUDIOMIXBUF_S2B(&pHstStrmOut->MixBuf, cRead), cbReadTotal, cbToRead));
         }
 
