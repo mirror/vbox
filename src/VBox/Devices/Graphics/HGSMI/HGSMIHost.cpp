@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -260,88 +260,6 @@ static void hgsmiFIFOUnlock (HGSMIINSTANCE *pIns)
     AssertRC (rc);
 }
 
-//static HGSMICHANNEL *hgsmiChannelFindById (PHGSMIINSTANCE pIns,
-//                                           uint8_t u8Channel)
-//{
-//    HGSMICHANNEL *pChannel = &pIns->Channels[u8Channel];
-//
-//    if (pChannel->u8Flags & HGSMI_CH_F_REGISTERED)
-//    {
-//        return pChannel;
-//    }
-//
-//    return NULL;
-//}
-
-#if 0
-/* Verify that the given offBuffer points to a valid buffer, which is within the area.
- */
-static const HGSMIBUFFERHEADER *hgsmiVerifyBuffer (const HGSMIAREA *pArea,
-                                                   HGSMIOFFSET offBuffer)
-{
-    AssertPtr(pArea);
-
-    LogFlowFunc(("buffer 0x%x, area %p %x [0x%x;0x%x]\n", offBuffer, pArea->pu8Base, pArea->cbArea, pArea->offBase, pArea->offLast));
-
-    if (   offBuffer < pArea->offBase
-        || offBuffer > pArea->offLast)
-    {
-        LogFunc(("offset 0x%x is outside the area [0x%x;0x%x]!!!\n", offBuffer, pArea->offBase, pArea->offLast));
-        HGSMI_STRICT_ASSERT_FAILED();
-        return NULL;
-    }
-
-    const HGSMIBUFFERHEADER *pHeader = HGSMIOffsetToPointer (pArea, offBuffer);
-
-    /* Quick check of the data size, it should be less than the maximum
-     * data size for the buffer at this offset.
-     */
-    LogFlowFunc(("datasize check: pHeader->u32DataSize = 0x%x pArea->offLast - offBuffer = 0x%x\n", pHeader->u32DataSize, pArea->offLast - offBuffer));
-    if (pHeader->u32DataSize <= pArea->offLast - offBuffer)
-    {
-        HGSMIBUFFERTAIL *pTail = HGSMIBufferTail (pHeader);
-
-        /* At least both pHeader and pTail structures are in the area. Check the checksum. */
-        uint32_t u32Checksum = HGSMIChecksum (offBuffer, pHeader, pTail);
-
-        LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n", u32Checksum, pTail->u32Checksum));
-        if (u32Checksum == pTail->u32Checksum)
-        {
-            LogFlowFunc(("returning %p\n", pHeader));
-            return pHeader;
-        }
-        else
-        {
-            LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n", u32Checksum, pTail->u32Checksum));
-        }
-    }
-    else
-    {
-        LogFunc(("invalid data size 0x%x, maximum is 0x%x!!!\n", pHeader->u32DataSize, pArea->offLast - offBuffer));
-    }
-
-    LogFlowFunc(("returning NULL\n"));
-    HGSMI_STRICT_ASSERT_FAILED();
-    return NULL;
-}
-
-/*
- * Process a guest buffer.
- * @thread EMT
- */
-static int hgsmiGuestBufferProcess (HGSMIINSTANCE *pIns,
-                                    const HGSMICHANNEL *pChannel,
-                                    const HGSMIBUFFERHEADER *pHeader)
-{
-    LogFlowFunc(("pIns %p, pChannel %p, pHeader %p\n", pIns, pChannel, pHeader));
-
-    int rc = HGSMIChannelHandlerCall (pIns,
-                                      &pChannel->handler,
-                                      pHeader);
-
-    return rc;
-}
-#endif
 /*
  * Virtual hardware IO handlers.
  */
@@ -571,14 +489,6 @@ static int hgsmiWaitEvent (const HGSMIHOSTFIFOENTRY *pEntry)
 }
 #endif
 
-#if 0
-DECLINLINE(HGSMIOFFSET) hgsmiMemoryOffset (const HGSMIINSTANCE *pIns, const void *pv)
-{
-    Assert((uint8_t *)pv >= pIns->area.pu8Base);
-    Assert((uint8_t *)pv < pIns->area.pu8Base + pIns->area.cbArea);
-    return (HGSMIOFFSET)((uint8_t *)pv - pIns->area.pu8Base);
-}
-#endif
 /*
  * The host heap.
  *
@@ -597,97 +507,6 @@ static void hgsmiHostHeapUnlock (HGSMIINSTANCE *pIns)
     int rc = RTCritSectLeave (&pIns->hostHeapCritSect);
     AssertRC (rc);
 }
-
-#if 0
-static int hgsmiHostHeapAlloc (HGSMIINSTANCE *pIns, void **ppvMem, uint32_t cb)
-{
-    int rc = hgsmiHostHeapLock (pIns);
-
-    if (RT_SUCCESS (rc))
-    {
-        if (pIns->hostHeap == NIL_RTHEAPSIMPLE)
-        {
-            rc = VERR_NOT_SUPPORTED;
-        }
-        else
-        {
-            /* A block structure: [header][data][tail].
-             * 'header' and 'tail' is used to verify memory blocks.
-             */
-            uint32_t cbAlloc = HGSMIBufferRequiredSize (cb);
-
-            void *pv = RTHeapSimpleAlloc (pIns->hostHeap, cbAlloc, 0);
-
-            if (pv)
-            {
-                HGSMIBUFFERHEADER *pHdr = (HGSMIBUFFERHEADER *)pv;
-
-                /* Store some information which will help to verify memory pointers. */
-                pHdr->u32Signature   = HGSMI_MEM_SIGNATURE;
-                pHdr->cb             = cb;
-                pHdr->off            = hgsmiMemoryOffset (pIns, pv);
-                pHdr->u32HdrVerifyer = HGSMI_MEM_VERIFYER_HDR (pHdr);
-
-                /* Setup the tail. */
-                HGSMIBUFFERTAIL *pTail = HGSMIBufferTail (pHdr);
-
-                pTail->u32TailVerifyer = HGSMI_MEM_VERIFYER_TAIL (pHdr);
-
-                *ppvMem = pv;
-            }
-            else
-            {
-                rc = VERR_NO_MEMORY;
-            }
-        }
-
-        hgsmiHostHeapUnlock (pIns);
-    }
-
-    return rc;
-}
-
-
-static int hgsmiHostHeapCheckBlock (HGSMIINSTANCE *pIns, void *pvMem)
-{
-    int rc = hgsmiHostHeapLock (pIns);
-
-    if (RT_SUCCESS (rc))
-    {
-        rc = hgsmiVerifyBuffer (pIns, pvMem);
-
-        hgsmiHostHeapUnlock (pIns);
-    }
-
-    return rc;
-}
-
-static int hgsmiHostHeapFree (HGSMIINSTANCE *pIns, void *pvMem)
-{
-    int rc = hgsmiHostHeapLock (pIns);
-
-    if (RT_SUCCESS (rc))
-    {
-        RTHeapSimpleFree (pIns->hostHeap, pvMem);
-
-        hgsmiHostHeapUnlock (pIns);
-    }
-
-    return rc;
-}
-
-static int hgsmiCheckMemPtr (HGSMIINSTANCE *pIns, void *pvMem, HGSMIOFFSET *poffMem)
-{
-    int rc = hgsmiHostHeapCheckBlock (pIns, pvMem);
-
-    if (RT_SUCCESS (rc))
-    {
-        *poffMem = hgsmiMemoryOffset (pIns, pvMem);
-    }
-
-    return rc;
-}
-#endif
 
 static int hgsmiHostFIFOAlloc (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY **ppEntry)
 {
@@ -1544,14 +1363,13 @@ static int hgsmiChannelMapCreate (PHGSMIINSTANCE pIns,
 
 /* Register a new HGSMI channel by a predefined index.
  */
-int HGSMIHostChannelRegister (PHGSMIINSTANCE pIns,
-                          uint8_t u8Channel,
-                          PFNHGSMICHANNELHANDLER pfnChannelHandler,
-                          void *pvChannelHandler,
-                          HGSMICHANNELHANDLER *pOldHandler)
+int HGSMIHostChannelRegister(PHGSMIINSTANCE pIns,
+                             uint8_t u8Channel,
+                             PFNHGSMICHANNELHANDLER pfnChannelHandler,
+                             void *pvChannelHandler)
 {
-    LogFlowFunc(("pIns %p, u8Channel %x, pfnChannelHandler %p, pvChannelHandler %p, pOldHandler %p\n",
-                  pIns, u8Channel, pfnChannelHandler, pvChannelHandler, pOldHandler));
+    LogFlowFunc(("pIns %p, u8Channel %x, pfnChannelHandler %p, pvChannelHandler %p\n",
+                  pIns, u8Channel, pfnChannelHandler, pvChannelHandler));
 
     AssertReturn(!HGSMI_IS_DYNAMIC_CHANNEL(u8Channel), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pIns, VERR_INVALID_PARAMETER);
@@ -1561,7 +1379,7 @@ int HGSMIHostChannelRegister (PHGSMIINSTANCE pIns,
 
     if (RT_SUCCESS (rc))
     {
-        rc = HGSMIChannelRegister (&pIns->channelInfo, u8Channel, NULL, pfnChannelHandler, pvChannelHandler, pOldHandler);
+        rc = HGSMIChannelRegister (&pIns->channelInfo, u8Channel, NULL, pfnChannelHandler, pvChannelHandler);
 
         hgsmiUnlock (pIns);
     }
@@ -1577,11 +1395,10 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               const char *pszChannel,
                               PFNHGSMICHANNELHANDLER pfnChannelHandler,
                               void *pvChannelHandler,
-                              uint8_t *pu8Channel,
-                              HGSMICHANNELHANDLER *pOldHandler)
+                              uint8_t *pu8Channel)
 {
-    LogFlowFunc(("pIns %p, pszChannel %s, pfnChannelHandler %p, pvChannelHandler %p, pu8Channel %p, pOldHandler %p\n",
-                  pIns, pszChannel, pfnChannelHandler, pvChannelHandler, pu8Channel, pOldHandler));
+    LogFlowFunc(("pIns %p, pszChannel %s, pfnChannelHandler %p, pvChannelHandler %p, pu8Channel %p\n",
+                  pIns, pszChannel, pfnChannelHandler, pvChannelHandler, pu8Channel));
 
     AssertPtrReturn(pIns, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszChannel, VERR_INVALID_PARAMETER);
@@ -1603,7 +1420,7 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
 
             if (RT_SUCCESS (rc))
             {
-                rc = HGSMIChannelRegister (&pIns->channelInfo, *pu8Channel, pszName, pfnChannelHandler, pvChannelHandler, pOldHandler);
+                rc = HGSMIChannelRegister (&pIns->channelInfo, *pu8Channel, pszName, pfnChannelHandler, pvChannelHandler);
             }
 
             hgsmiUnlock (pIns);
@@ -1623,38 +1440,6 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
 
     return rc;
 }
-
-#if 0
-/* A wrapper to safely call the handler.
- */
-int HGSMIChannelHandlerCall (PHGSMIINSTANCE pIns,
-                             const HGSMICHANNELHANDLER *pHandler,
-                             const HGSMIBUFFERHEADER *pHeader)
-{
-    LogFlowFunc(("pHandler %p, pIns %p, pHeader %p\n", pHandler, pIns, pHeader));
-
-    int rc;
-
-    if (   pHandler
-        && pHandler->pfnHandler)
-    {
-        void *pvBuffer = HGSMIBufferData (pHeader);
-        HGSMISIZE cbBuffer = pHeader->u32DataSize;
-
-        rc = pHandler->pfnHandler (pIns, pHandler->pvHandler, pHeader->u16ChannelInfo, pvBuffer, cbBuffer);
-    }
-    else
-    {
-        /* It is a NOOP case here. */
-        rc = VINF_SUCCESS;
-    }
-
-    LogFlowFunc(("leave rc = %Rrc\n", rc));
-
-    return rc;
-}
-
-#endif
 
 void *HGSMIOffsetToPointerHost (PHGSMIINSTANCE pIns,
                                 HGSMIOFFSET offBuffer)
@@ -1737,8 +1522,6 @@ static DECLCALLBACK(int) hgsmiChannelHandler (void *pvHandler, uint16_t u16Chann
     return rc;
 }
 
-static HGSMICHANNELHANDLER sOldChannelHandler;
-
 int HGSMICreate (PHGSMIINSTANCE *ppIns,
                  PVM             pVM,
                  const char     *pszName,
@@ -1815,8 +1598,7 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
     rc = HGSMIHostChannelRegister (pIns,
                                    HGSMI_CH_HGSMI,
                                    hgsmiChannelHandler,
-                                   pIns,
-                                   &sOldChannelHandler);
+                                   pIns);
 
     if (RT_SUCCESS (rc))
     {

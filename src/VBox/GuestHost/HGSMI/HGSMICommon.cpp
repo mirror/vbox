@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -412,76 +412,92 @@ void HGSMIHeapBufferFree(HGSMIHEAP *pHeap,
     --pHeap->cRefs;
 }
 
+typedef struct HGSMIBUFFERCONTEXT
+{
+    const HGSMIBUFFERHEADER *pHeader; /* The original buffer header. */
+    void *pvData;                     /* Payload data in the buffer./ */
+    uint32_t cbData;                  /* Size of data  */
+} HGSMIBUFFERCONTEXT;
+
 /* Verify that the given offBuffer points to a valid buffer, which is within the area.
  */
-static const HGSMIBUFFERHEADER *hgsmiVerifyBuffer (const HGSMIAREA *pArea,
-                                                   HGSMIOFFSET offBuffer)
+static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
+                             HGSMIOFFSET offBuffer,
+                             HGSMIBUFFERCONTEXT *pBufferContext)
 {
-    AssertPtr(pArea);
+    LogFlowFunc(("buffer 0x%x, area %p %x [0x%x;0x%x]\n",
+                 offBuffer, pArea->pu8Base, pArea->cbArea, pArea->offBase, pArea->offLast));
 
-    LogFlowFunc(("buffer 0x%x, area %p %x [0x%x;0x%x]\n", offBuffer, pArea->pu8Base, pArea->cbArea, pArea->offBase, pArea->offLast));
+    int rc = VINF_SUCCESS;
 
     if (   offBuffer < pArea->offBase
         || offBuffer > pArea->offLast)
     {
-        LogFunc(("offset 0x%x is outside the area [0x%x;0x%x]!!!\n", offBuffer, pArea->offBase, pArea->offLast));
+        LogFunc(("offset 0x%x is outside the area [0x%x;0x%x]!!!\n",
+                 offBuffer, pArea->offBase, pArea->offLast));
+        rc = VERR_INVALID_PARAMETER;
         HGSMI_STRICT_ASSERT_FAILED();
-        return NULL;
-    }
-
-    const HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)HGSMIOffsetToPointer (pArea, offBuffer);
-
-    /* Quick check of the data size, it should be less than the maximum
-     * data size for the buffer at this offset.
-     */
-    LogFlowFunc(("datasize check: pHeader->u32DataSize = 0x%x pArea->offLast - offBuffer = 0x%x\n", pHeader->u32DataSize, pArea->offLast - offBuffer));
-    if (pHeader->u32DataSize <= pArea->offLast - offBuffer)
-    {
-        HGSMIBUFFERTAIL *pTail = HGSMIBufferTail (pHeader);
-
-        /* At least both pHeader and pTail structures are in the area. Check the checksum. */
-        uint32_t u32Checksum = HGSMIChecksum (offBuffer, pHeader, pTail);
-
-        LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n", u32Checksum, pTail->u32Checksum));
-        if (u32Checksum == pTail->u32Checksum)
-        {
-            LogFlowFunc(("returning %p\n", pHeader));
-            return pHeader;
-        }
-        else
-        {
-            LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n", u32Checksum, pTail->u32Checksum));
-            HGSMI_STRICT_ASSERT_FAILED();
-        }
     }
     else
     {
-        LogFunc(("invalid data size 0x%x, maximum is 0x%x!!!\n", pHeader->u32DataSize, pArea->offLast - offBuffer));
-        HGSMI_STRICT_ASSERT_FAILED();
+        void *pvBuffer = HGSMIOffsetToPointer(pArea, offBuffer);
+        HGSMIBUFFERHEADER header = *HGSMIBufferHeaderFromPtr(pvBuffer);
+
+        /* Quick check of the data size, it should be less than the maximum
+         * data size for the buffer at this offset.
+         */
+        LogFlowFunc(("datasize check: header.u32DataSize = 0x%x pArea->offLast - offBuffer = 0x%x\n",
+                     header.u32DataSize, pArea->offLast - offBuffer));
+
+        if (header.u32DataSize <= pArea->offLast - offBuffer)
+        {
+            HGSMIBUFFERTAIL tail = *HGSMIBufferTailFromPtr(pvBuffer, header.u32DataSize);
+
+            /* At least both header and tail structures are in the area. Check the checksum. */
+            uint32_t u32Checksum = HGSMIChecksum(offBuffer, &header, &tail);
+            LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n",
+                         u32Checksum, pTail->u32Checksum));
+            if (u32Checksum == tail.u32Checksum)
+            {
+                /* Success. */
+                pBufferContext->pHeader = HGSMIBufferHeaderFromPtr(pvBuffer);
+                pBufferContext->pvData = HGSMIBufferDataFromPtr(pvBuffer);
+                pBufferContext->cbData = header.u32DataSize;
+            }
+            else
+            {
+                LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n",
+                         u32Checksum, pTail->u32Checksum));
+                rc = VERR_INVALID_STATE;
+                HGSMI_STRICT_ASSERT_FAILED();
+            }
+        }
+        else
+        {
+            LogFunc(("invalid data size 0x%x, maximum is 0x%x!!!\n",
+                     header.u32DataSize, pArea->offLast - offBuffer));
+            rc = VERR_TOO_MUCH_DATA;
+            HGSMI_STRICT_ASSERT_FAILED();
+        }
     }
 
-    LogFlowFunc(("returning NULL\n"));
-    return NULL;
+    return rc;
 }
 
 /* A wrapper to safely call the handler.
  */
-int HGSMIChannelHandlerCall (const HGSMICHANNELHANDLER *pHandler,
-                             const HGSMIBUFFERHEADER *pHeader)
+static int hgsmiChannelHandlerCall(const HGSMICHANNELHANDLER *pHandler,
+                                   const HGSMIBUFFERCONTEXT *pBufferContext)
 {
-    LogFlowFunc(("pHandler %p, pHeader %p\n", pHandler, pHeader));
+    LogFlowFunc(("pHandler %p\n", pHandler));
 
     int rc;
-
-    Assert(pHandler && pHandler->pfnHandler);
 
     if (   pHandler
         && pHandler->pfnHandler)
     {
-        void *pvBuffer = HGSMIBufferData (pHeader);
-        HGSMISIZE cbBuffer = pHeader->u32DataSize;
-
-        rc = pHandler->pfnHandler (pHandler->pvHandler, pHeader->u16ChannelInfo, pvBuffer, cbBuffer);
+        rc = pHandler->pfnHandler(pHandler->pvHandler, pBufferContext->pHeader->u16ChannelInfo,
+                                  pBufferContext->pvData, pBufferContext->cbData);
     }
     else
     {
@@ -490,28 +506,19 @@ int HGSMIChannelHandlerCall (const HGSMICHANNELHANDLER *pHandler,
     }
 
     LogFlowFunc(("leave rc = %Rrc\n", rc));
-
     return rc;
 }
 
-/*
- * Process a guest buffer.
- * @thread EMT
+/** Helper to convert HGSMI channel index to the channel structure pointer.
+ *
+ * @returns Pointer to the channel data.
+ * @param pChannelInfo The channel pool.
+ * @param u8Channel    The channel index.
  */
-static int hgsmiBufferProcess (const HGSMICHANNEL *pChannel,
-                                    const HGSMIBUFFERHEADER *pHeader)
+HGSMICHANNEL *HGSMIChannelFindById(HGSMICHANNELINFO *pChannelInfo,
+                                   uint8_t u8Channel)
 {
-    LogFlowFunc(("pChannel %p, pHeader %p\n", pChannel, pHeader));
-
-    int rc = HGSMIChannelHandlerCall (&pChannel->handler,
-                                      pHeader);
-
-    return rc;
-}
-
-HGSMICHANNEL *HGSMIChannelFindById (HGSMICHANNELINFO * pChannelInfo,
-                                           uint8_t u8Channel)
-{
+    AssertCompile(RT_ELEMENTS(pChannelInfo->Channels) >= 0x100);
     HGSMICHANNEL *pChannel = &pChannelInfo->Channels[u8Channel];
 
     if (pChannel->u8Flags & HGSMI_CH_F_REGISTERED)
@@ -522,82 +529,79 @@ HGSMICHANNEL *HGSMIChannelFindById (HGSMICHANNELINFO * pChannelInfo,
     return NULL;
 }
 
-int HGSMIBufferProcess (HGSMIAREA *pArea,
-                         HGSMICHANNELINFO * pChannelInfo,
-                         HGSMIOFFSET offBuffer)
+/** Process a guest buffer.
+ *
+ * @returns VBox status.
+ * @param pArea        Area which supposed to contain the buffer.
+ * @param pChannelInfo The channel pool.
+ * @param offBuffer    The buffer location in the area.
+ */
+int HGSMIBufferProcess(HGSMIAREA *pArea,
+                       HGSMICHANNELINFO *pChannelInfo,
+                       HGSMIOFFSET offBuffer)
 {
     LogFlowFunc(("pArea %p, offBuffer 0x%x\n", pArea, offBuffer));
 
-    AssertPtr(pArea);
-    AssertPtr(pChannelInfo);
-
-    int rc = VERR_GENERAL_FAILURE;
-
-//    VM_ASSERT_EMT(pIns->pVM);
+    AssertPtrReturn(pArea, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pChannelInfo, VERR_INVALID_PARAMETER);
 
     /* Guest has prepared a command description at 'offBuffer'. */
-    const HGSMIBUFFERHEADER *pHeader = hgsmiVerifyBuffer (pArea, offBuffer);
-    Assert(pHeader);
-    if (pHeader)
+    HGSMIBUFFERCONTEXT bufferContext;
+    int rc = hgsmiVerifyBuffer(pArea, offBuffer, &bufferContext);
+    if (RT_SUCCESS(rc))
     {
         /* Pass the command to the appropriate handler registered with this instance.
          * Start with the handler list head, which is the preallocated HGSMI setup channel.
          */
-        HGSMICHANNEL *pChannel = HGSMIChannelFindById (pChannelInfo, pHeader->u8Channel);
-        Assert(pChannel);
+        HGSMICHANNEL *pChannel = HGSMIChannelFindById(pChannelInfo, bufferContext.pHeader->u8Channel);
         if (pChannel)
         {
-            hgsmiBufferProcess (pChannel, pHeader);
-            HGSMI_STRICT_ASSERT(hgsmiVerifyBuffer (pArea, offBuffer) != NULL);
-            rc = VINF_SUCCESS;
+            rc = hgsmiChannelHandlerCall(&pChannel->handler, &bufferContext);
+            HGSMI_STRICT_ASSERT(RT_SUCCESS(hgsmiVerifyBuffer(pArea, offBuffer, &bufferContext)));
         }
         else
         {
             rc = VERR_INVALID_FUNCTION;
+            HGSMI_STRICT_ASSERT_FAILED();
         }
     }
-    else
-    {
-        rc = VERR_INVALID_HANDLE;
-//        LogRel(("HGSMI[%s]: ignored invalid guest buffer 0x%08X!!!\n", pIns->pszName, offBuffer));
-    }
+
     return rc;
 }
 
-/* Register a new VBVA channel by index.
+/** Register a new HGSMI channel by index.
  *
+ * @returns VBox status.
+ * @param pChannelInfo      The channel pool managed by the caller.
+ * @param u8Channel         Index of the channel.
+ * @param pszName           Name of the channel (optional, allocated by the caller).
+ * @param pfnChannelHandler The channel callback.
+ * @param pvChannelHandler  The callback pointer.
  */
-int HGSMIChannelRegister (HGSMICHANNELINFO * pChannelInfo,
-                                 uint8_t u8Channel,
-                                 const char *pszName,
-                                 PFNHGSMICHANNELHANDLER pfnChannelHandler,
-                                 void *pvChannelHandler,
-                                 HGSMICHANNELHANDLER *pOldHandler)
+int HGSMIChannelRegister(HGSMICHANNELINFO *pChannelInfo,
+                         uint8_t u8Channel,
+                         const char *pszName,
+                         PFNHGSMICHANNELHANDLER pfnChannelHandler,
+                         void *pvChannelHandler)
 {
-    AssertPtrReturn(pOldHandler, VERR_INVALID_PARAMETER);
-
     /* Check whether the channel is already registered. */
-    HGSMICHANNEL *pChannel = HGSMIChannelFindById (pChannelInfo, u8Channel);
-
-    if (!pChannel)
+    HGSMICHANNEL *pChannel = HGSMIChannelFindById(pChannelInfo, u8Channel);
+    if (pChannel)
     {
-        /* Channel is not yet registered. */
-        pChannel = &pChannelInfo->Channels[u8Channel];
-
-        pChannel->u8Flags = HGSMI_CH_F_REGISTERED;
-        pChannel->u8Channel = u8Channel;
-
-        pChannel->handler.pfnHandler = NULL;
-        pChannel->handler.pvHandler = NULL;
-
-        pChannel->pszName = pszName;
+        HGSMI_STRICT_ASSERT_FAILED();
+        return VERR_ALREADY_EXISTS;
     }
 
-    *pOldHandler = pChannel->handler;
+    /* Channel is not yet registered. */
+    pChannel = &pChannelInfo->Channels[u8Channel];
+
+    pChannel->u8Flags = HGSMI_CH_F_REGISTERED;
+    pChannel->u8Channel = u8Channel;
 
     pChannel->handler.pfnHandler = pfnChannelHandler;
     pChannel->handler.pvHandler = pvChannelHandler;
 
+    pChannel->pszName = pszName;
+
     return VINF_SUCCESS;
 }
-

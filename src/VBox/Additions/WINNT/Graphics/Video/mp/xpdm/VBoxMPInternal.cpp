@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -580,8 +580,6 @@ VBoxVbvaChannelGenericHandlerCB(void *pvHandler, uint16_t u16ChannelInfo, void *
 /* Note: negative iDisplay would mean this is a miniport handler */
 int VBoxVbvaChannelDisplayEnable(PVBOXMP_COMMON pCommon, int iDisplay, uint8_t u8Channel)
 {
-    static HGSMICHANNELHANDLER s_OldHandler;
-
     LOGF_ENTER();
 
     VBVA_CHANNELCONTEXTS * pContexts;
@@ -625,7 +623,7 @@ int VBoxVbvaChannelDisplayEnable(PVBOXMP_COMMON pCommon, int iDisplay, uint8_t u
         {
             rc = HGSMIChannelRegister(&pCommon->hostCtx.channels, u8Channel,
                                        "VGA Miniport HGSMI channel", VBoxVbvaChannelGenericHandlerCB,
-                                       pContexts, &s_OldHandler);
+                                       pContexts);
         }
 
         if (RT_SUCCESS(rc))

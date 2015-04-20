@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -59,20 +59,13 @@ HGSMIOFFSET HGSMIPointerToOffsetHost (PHGSMIINSTANCE pIns,
 int HGSMIHostChannelRegister (PHGSMIINSTANCE pIns,
                           uint8_t u8Channel,
                           PFNHGSMICHANNELHANDLER pfnChannelHandler,
-                          void *pvChannelHandler,
-                          HGSMICHANNELHANDLER *pOldHandler);
+                          void *pvChannelHandler);
 
 int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               const char *pszChannel,
                               PFNHGSMICHANNELHANDLER pfnChannelHandler,
                               void *pvChannelHandler,
-                              uint8_t *pu8Channel,
-                              HGSMICHANNELHANDLER *pOldHandler);
-
-int HGSMIChannelHandlerCall (PHGSMIINSTANCE pIns,
-                             const HGSMICHANNELHANDLER *pHandler,
-                             const HGSMIBUFFERHEADER *pHeader);
-
+                              uint8_t *pu8Channel);
 
 int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
                         HGSMIOFFSET    offHeap,
