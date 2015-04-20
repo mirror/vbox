@@ -305,8 +305,8 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: l=%RI16, r=%RI16\n", paDst, *pSrc, *(pSrc + 1))); \
-            paDst->i64LSample = (ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft ) >> 31); \
-            paDst->i64RSample = (ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uRight) >> 31); \
+            paDst->i64LSample = ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft ) >> 7; \
+            paDst->i64RSample = ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uRight) >> 7; \
             AUDMIXBUF_MACRO_LOG(("\t-> l=%RI64, r=%RI64\n", paDst->i64LSample, paDst->i64RSample)); \
             paDst++; \
         } \
@@ -319,12 +319,14 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     { \
         _aType *pSrc = (_aType *)pvSrc; \
         uint32_t cSamples = (uint32_t)RT_MIN(pOpts->cSamples, cbSrc / sizeof(_aType)); \
-        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, sizeof(%zu)\n", cSamples, sizeof(_aType))); \
+        AUDMIXBUF_MACRO_LOG(("cSamples=%RU32, sizeof(%zu), lVol=%RU32, rVol=%RU32\n", \
+                             cSamples, sizeof(_aType), pOpts->Volume.uLeft, pOpts->Volume.uRight)); \
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
-            paDst->i64LSample = ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(pSrc[0]), pOpts->Volume.uLeft); \
+            AUDMIXBUF_MACRO_LOG(("%p: s=%RI16\n", paDst, *pSrc)); \
+            paDst->i64LSample = ASMMult2xS32RetS64(audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft) >> 7; \
             paDst->i64RSample = paDst->i64LSample; \
-            pSrc++; \
+            AUDMIXBUF_MACRO_LOG(("\t-> l=%RI64, r=%RI64\n", paDst->i64LSample, paDst->i64RSample)); \
             paDst++; \
         } \
         \
@@ -385,8 +387,9 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
                                                   uint32_t *pcDstWritten, uint32_t *pcSrcRead) \
     { \
         AUDMIXBUF_MACRO_LOG(("cSrcSamples=%RU32, cDstSamples=%RU32\n", cSrcSamples, cDstSamples)); \
-        AUDMIXBUF_MACRO_LOG(("pRate=%p: srcOffset=0x%x (%RU32), dstOffset=0x%x (%RU32), dstInc=0x%RX64 (%RU64)\n", \
-                             pRate, pRate->srcOffset, pRate->srcOffset, pRate->dstOffset >> 32, pRate->dstOffset >> 32, \
+        AUDMIXBUF_MACRO_LOG(("pRate=%p: srcOffset=0x%RX32 (%RU32), dstOffset=0x%RX32 (%RU32), dstInc=0x%RX64 (%RU64)\n", \
+                             pRate, pRate->srcOffset, pRate->srcOffset, \
+                             (uint32_t)(pRate->dstOffset >> 32), (uint32_t)(pRate->dstOffset >> 32), \
                              pRate->dstInc, pRate->dstInc)); \
         \
         if (pRate->dstInc == (UINT64_C(1) + UINT32_MAX)) /* No conversion needed? */ \
