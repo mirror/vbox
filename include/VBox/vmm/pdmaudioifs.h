@@ -69,8 +69,8 @@ typedef enum PDMAUDIOFMT
  */
 typedef struct PDMAUDIOBACKENDCFG
 {
-    size_t      cbStreamOut;
-    size_t      cbStreamIn;
+    uint32_t    cbStreamOut;
+    uint32_t    cbStreamIn;
     uint32_t    cMaxHstStrmsOut;
     uint32_t    cMaxHstStrmsIn;
 } PDMAUDIOBACKENDCFG, *PPDMAUDIOBACKENDCFG;
@@ -414,7 +414,7 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   cbSize          Number of bytes to read.
      * @param   pcbRead         Bytes of audio data read. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn, void *pvBuf, size_t cbSize, uint32_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn, void *pvBuf, uint32_t cbSize, uint32_t *pcbRead));
 
     /**
      * Writes PCM audio data to the host (output).
@@ -426,7 +426,7 @@ typedef struct PDMIAUDIOCONNECTOR
      * @param   cbSize          Number of bytes to be written.
      * @param   pcbWritten      Bytes of audio data written. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut, const void *pvBuf, size_t cbSize, uint32_t *pcbWritten));
+    DECLR3CALLBACKMEMBER(int, pfnWrite, (PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut, const void *pvBuf, uint32_t cbSize, uint32_t *pcbWritten));
 
     /**
      * Checks whether the specified guest input stream is in a working state.

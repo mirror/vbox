@@ -91,8 +91,8 @@ static int tstSingle(RTTEST hTest)
     /*
      * Circular writes.
      */
-    size_t cToWrite = audioMixBufSize(&mb) - written_abs - 1; /* -1 as padding plus -2 samples for above. */
-    for (size_t i = 0; i < cToWrite; i++)
+    uint32_t cToWrite = audioMixBufSize(&mb) - written_abs - 1; /* -1 as padding plus -2 samples for above. */
+    for (uint32_t i = 0; i < cToWrite; i++)
     {
         RTTESTI_CHECK_RC_OK(audioMixBufWriteCirc(&mb, &samples16, sizeof(samples16), &written));
         RTTESTI_CHECK(written == 1);
@@ -109,8 +109,8 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK(audioMixBufProcessed(&mb) == cBufSize);
 
     /* Circular reads. */
-    size_t cToRead = audioMixBufSize(&mb) - written_abs - 1;
-    for (size_t i = 0; i < cToWrite; i++)
+    uint32_t cToRead = audioMixBufSize(&mb) - written_abs - 1;
+    for (uint32_t i = 0; i < cToWrite; i++)
     {
         RTTESTI_CHECK_RC_OK(audioMixBufReadCirc(&mb, &samples16, sizeof(samples16), &read));
         RTTESTI_CHECK(read == 1);
@@ -185,10 +185,10 @@ static int tstParentChild(RTTEST hTest)
     /*
      * Writing + mixing from child/children -> parent, sequential.
      */
-    size_t cbBuf = _1K;
+    uint32_t cbBuf = _1K;
     char pvBuf[_1K];
     int16_t samples[32] = { 0xAA, 0xBB };
-    uint32_t free, read , written, proc, mixed, temp;
+    uint32_t read , written, mixed, temp;
 
     uint32_t cChild1Free     = cBufSize;
     uint32_t cChild1Mixed    = 0;

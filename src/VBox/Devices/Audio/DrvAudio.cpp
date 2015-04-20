@@ -395,8 +395,8 @@ int drvAudioDestroyHstOut(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMOUT pHstStrmOut)
     }
     else
     {
-        LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, rc));
         rc = VERR_ACCESS_DENIED;
+        LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmOut->MixBuf.pszName, rc));
     }
 
     return rc;
@@ -860,7 +860,7 @@ static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTR
  * @param   pcbWritten
  */
 int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOut,
-                  const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
+                  const void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -975,8 +975,8 @@ int drvAudioDestroyHstIn(PDRVAUDIO pThis, PPDMAUDIOHSTSTRMIN pHstStrmIn)
     }
     else
     {
-        LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmIn->MixBuf.pszName, rc));
         rc = VERR_ACCESS_DENIED;
+        LogFlowFunc(("[%s] Still is being used, rc=%Rrc\n", pHstStrmIn->MixBuf.pszName, rc));
     }
 
     return rc;
@@ -1400,7 +1400,7 @@ static DECLCALLBACK(int) drvAudioInitNull(PPDMIAUDIOCONNECTOR pInterface)
 }
 
 static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMIN pGstStrmIn,
-                                      void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
+                                      void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     PDRVAUDIO pThis = PDMIAUDIOCONNECTOR_2_DRVAUDIO(pInterface);
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);

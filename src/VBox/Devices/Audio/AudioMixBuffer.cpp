@@ -230,7 +230,7 @@ uint32_t audioMixBufFree(PPDMAUDIOMIXBUF pMixBuf)
     return cFree;
 }
 
-size_t audioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t audioMixBufFreeBytes(PPDMAUDIOMIXBUF pMixBuf)
 {
     return AUDIOMIXBUF_S2B(pMixBuf, audioMixBufFree(pMixBuf));
 }
@@ -934,7 +934,7 @@ uint32_t audioMixBufProcessed(PPDMAUDIOMIXBUF pMixBuf)
 
 int audioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf,
                       uint32_t offSamples,
-                      void *pvBuf, size_t cbBuf,
+                      void *pvBuf, uint32_t cbBuf,
                       uint32_t *pcbRead)
 {
     return audioMixBufReadAtEx(pMixBuf, pMixBuf->AudioFmt,
@@ -943,7 +943,7 @@ int audioMixBufReadAt(PPDMAUDIOMIXBUF pMixBuf,
 
 int audioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                         uint32_t offSamples,
-                        void *pvBuf, size_t cbBuf,
+                        void *pvBuf, uint32_t cbBuf,
                         uint32_t *pcbRead)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -990,14 +990,14 @@ int audioMixBufReadAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 }
 
 int audioMixBufReadCirc(PPDMAUDIOMIXBUF pMixBuf,
-                        void *pvBuf, size_t cbBuf, uint32_t *pcRead)
+                        void *pvBuf, uint32_t cbBuf, uint32_t *pcRead)
 {
     return audioMixBufReadCircEx(pMixBuf, pMixBuf->AudioFmt,
                                  pvBuf, cbBuf, pcRead);
 }
 
 int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
-                          void *pvBuf, size_t cbBuf, uint32_t *pcRead)
+                          void *pvBuf, uint32_t cbBuf, uint32_t *pcRead)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
@@ -1026,10 +1026,10 @@ int audioMixBufReadCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VERR_NOT_SUPPORTED;
 
     PPDMAUDIOSAMPLE pSamplesSrc1 = pMixBuf->pSamples + pMixBuf->offReadWrite;
-    size_t cLenSrc1 = cToRead;
+    uint32_t cLenSrc1 = cToRead;
 
     PPDMAUDIOSAMPLE pSamplesSrc2 = NULL;
-    size_t cLenSrc2 = 0;
+    uint32_t cLenSrc2 = 0;
 
     uint32_t offRead = pMixBuf->offReadWrite + cToRead;
 
@@ -1143,7 +1143,7 @@ uint32_t audioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
  * @return  uint32_t
  * @param   pMixBuf
  */
-size_t audioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
+uint32_t audioMixBufSizeBytes(PPDMAUDIOMIXBUF pMixBuf)
 {
     return AUDIOMIXBUF_S2B(pMixBuf, pMixBuf->cSamples);
 }
@@ -1192,7 +1192,7 @@ void audioMixBufUnlink(PPDMAUDIOMIXBUF pMixBuf)
 
 int audioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf,
                        uint32_t offSamples,
-                       const void *pvBuf, size_t cbBuf,
+                       const void *pvBuf, uint32_t cbBuf,
                        uint32_t *pcWritten)
 {
     return audioMixBufWriteAtEx(pMixBuf, pMixBuf->AudioFmt,
@@ -1213,7 +1213,7 @@ int audioMixBufWriteAt(PPDMAUDIOMIXBUF pMixBuf,
  */
 int audioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
                          uint32_t offSamples,
-                         const void *pvBuf, size_t cbBuf,
+                         const void *pvBuf, uint32_t cbBuf,
                          uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1278,14 +1278,14 @@ int audioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
 }
 
 int audioMixBufWriteCirc(PPDMAUDIOMIXBUF pMixBuf,
-                         const void *pvBuf, size_t cbBuf,
+                         const void *pvBuf, uint32_t cbBuf,
                          uint32_t *pcWritten)
 {
     return audioMixBufWriteCircEx(pMixBuf, pMixBuf->AudioFmt, pvBuf, cbBuf, pcWritten);
 }
 
 int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
-                           const void *pvBuf, size_t cbBuf,
+                           const void *pvBuf, uint32_t cbBuf,
                            uint32_t *pcWritten)
 {
     AssertPtrReturn(pMixBuf, VERR_INVALID_POINTER);
@@ -1326,10 +1326,10 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     AssertMsg(cToWrite, ("cToWrite is 0 (cbBuf=%zu)\n", cbBuf));
 
     PPDMAUDIOSAMPLE pSamplesDst1 = pMixBuf->pSamples + pMixBuf->offReadWrite;
-    size_t cLenDst1 = cToWrite;
+    uint32_t cLenDst1 = cToWrite;
 
     PPDMAUDIOSAMPLE pSamplesDst2 = NULL;
-    size_t cLenDst2 = 0;
+    uint32_t cLenDst2 = 0;
 
     uint32_t offWrite = pMixBuf->offReadWrite + cToWrite;
 
