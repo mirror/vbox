@@ -388,13 +388,6 @@ void UIMachineLogicFullscreen::sltInvokePopupMenu()
     }
 }
 
-#ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
-{
-    setPresentationModeEnabled(true);
-}
-#endif /* Q_WS_MAC */
-
 void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 {
     LogRel(("UIMachineLogicFullscreen::sltScreenLayoutChanged: Multi-screen layout changed.\n"));
@@ -406,8 +399,6 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
         /* Make sure all machine-window(s) have proper geometry: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
             pMachineWindow->showInNecessaryMode();
-        /* Update 'presentation mode': */
-        setPresentationModeEnabled(true);
     }
     /* Revalidate native fullscreen for ML and next: */
     else revalidateNativeFullScreen();
@@ -503,17 +494,6 @@ void UIMachineLogicFullscreen::prepareActionConnections()
             this, SLOT(sltChangeVisualStateToScale()));
 }
 
-#ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::prepareOtherConnections()
-{
-    /* Make sure 'presentation mode' preference handling
-     * is updated at runtime for Lion and previous: */
-    if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        connect(gEDataManager, SIGNAL(sigPresentationModeChange(bool)),
-                this, SLOT(sltChangePresentationMode(bool)));
-}
-#endif /* Q_WS_MAC */
-
 void UIMachineLogicFullscreen::prepareMachineWindows()
 {
     /* Do not create machine-window(s) if they created already: */
@@ -554,9 +534,6 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
             this, SLOT(sltScreenLayoutChanged()));
 
 #ifdef Q_WS_MAC
-    /* Activate 'presentation mode': */
-    setPresentationModeEnabled(true);
-
     /* For ML and next: */
     if (vboxGlobal().osRelease() > MacOSXRelease_Lion)
     {
@@ -635,11 +612,6 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     /* Destroy machine-window(s): */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
-
-#ifdef Q_WS_MAC
-    /* Deactivate 'presentation mode': */
-    setPresentationModeEnabled(false);
-#endif/* Q_WS_MAC */
 }
 
 void UIMachineLogicFullscreen::cleanupActionConnections()
@@ -681,37 +653,6 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
-{
-    /* Should we enable it? */
-    if (fEnabled)
-    {
-        /* For Lion and previous: */
-        if (vboxGlobal().osRelease() <= MacOSXRelease_Lion)
-        {
-            /* Check if we have screen which contains the Dock or the Menubar (which hasn't to be the same),
-             * only than the 'presentation mode' have to be changed. */
-            if (m_pScreenLayout->isHostTaskbarCovert())
-            {
-                if (gEDataManager->presentationModeEnabled(vboxGlobal().managedVMUuid()))
-                    SetSystemUIMode(kUIModeAllHidden, 0);
-                else
-                    SetSystemUIMode(kUIModeAllSuppressed, 0);
-            }
-        }
-        /* For ML and next: */
-        else
-        {
-            /* I am not sure we have to check anything here.
-             * Without 'presentation mode' native fullscreen works pretty bad,
-             * so we have to enable it anyway: */
-            SetSystemUIMode(kUIModeAllSuppressed, 0);
-        }
-    }
-    /* Should we disable it? */
-    else SetSystemUIMode(kUIModeNormal, 0);
-}
-
 void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMachineWindow)
 {
     /* Make sure that is full-screen machine-window: */
@@ -770,9 +711,6 @@ void UIMachineLogicFullscreen::revalidateNativeFullScreen(UIMachineWindow *pMach
             {
                 LogRel(("UIMachineLogicFullscreen::revalidateNativeFullScreen: "
                         "Ask machine-window #%d to enter native fullscreen.\n", (int)uScreenID));
-
-                /* Update 'presentation mode': */
-                setPresentationModeEnabled(true);
 
                 /* Make sure window have proper geometry and shown: */
                 pMachineWindow->showInNecessaryMode();

@@ -66,7 +66,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData()
     maxGuestRes = "auto";
     remapScancodes = QString::null;
     proxySettings = QString::null;
-    presentationModeEnabled = false;
     hostScreenSaverDisabled = false;
 }
 
@@ -79,7 +78,6 @@ VBoxGlobalSettingsData::VBoxGlobalSettingsData (const VBoxGlobalSettingsData &th
     maxGuestRes = that.maxGuestRes;
     remapScancodes = that.remapScancodes;
     proxySettings = that.proxySettings;
-    presentationModeEnabled = that.presentationModeEnabled;
     hostScreenSaverDisabled = that.hostScreenSaverDisabled;
 }
 
@@ -97,7 +95,6 @@ bool VBoxGlobalSettingsData::operator== (const VBoxGlobalSettingsData &that) con
          maxGuestRes == that.maxGuestRes &&
          remapScancodes == that.remapScancodes &&
          proxySettings == that.proxySettings &&
-         presentationModeEnabled == that.presentationModeEnabled &&
          hostScreenSaverDisabled == that.hostScreenSaverDisabled
         );
 }
@@ -127,9 +124,6 @@ gPropertyMap[] =
     { "GUI/MaxGuestResolution",                    "maxGuestRes",             "\\d*[1-9]\\d*,\\d*[1-9]\\d*|any|auto", true },
     { "GUI/RemapScancodes",                        "remapScancodes",          "(\\d+=\\d+,)*\\d+=\\d+", true },
     { "GUI/ProxySettings",                         "proxySettings",           "[\\s\\S]*", true },
-#ifdef Q_WS_MAC
-    { GUI_PresentationModeEnabled,                 "presentationModeEnabled", "true|false", true },
-#endif /* Q_WS_MAC */
     { "GUI/HostScreenSaverDisabled",               "hostScreenSaverDisabled", "true|false", true }
 };
 

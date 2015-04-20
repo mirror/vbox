@@ -85,8 +85,6 @@ signals:
     void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 
 #ifdef RT_OS_DARWIN
-    /** Mac OS X: Notifies about 'presentation mode' status change. */
-    void sigPresentationModeChange(bool fEnabled);
     /** Mac OS X: Notifies about 'dock icon' appearance change. */
     void sigDockIconAppearanceChange(bool fEnabled);
 #endif /* RT_OS_DARWIN */
@@ -447,9 +445,6 @@ public:
         void setStatusBarIndicatorOrder(const QList<IndicatorType> &list, const QString &strID);
 
 #ifdef Q_WS_MAC
-        /** Mac OS X: Returns whether 'presentation mode' enabled. */
-        bool presentationModeEnabled(const QString &strID);
-
         /** Mac OS X: Returns whether Dock icon should be updated at runtime. */
         bool realtimeDockIconUpdateEnabled(const QString &strID);
         /** Mac OS X: Defines whether Dock icon update should be fEnabled at runtime. */

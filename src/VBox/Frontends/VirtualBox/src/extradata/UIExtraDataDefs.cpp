@@ -133,7 +133,6 @@ const char* UIExtraDataDefs::GUI_StatusBar_Enabled = "GUI/StatusBar/Enabled";
 const char* UIExtraDataDefs::GUI_RestrictedStatusBarIndicators = "GUI/RestrictedStatusBarIndicators";
 const char* UIExtraDataDefs::GUI_StatusBar_IndicatorOrder = "GUI/StatusBar/IndicatorOrder";
 #ifdef Q_WS_MAC
-const char* UIExtraDataDefs::GUI_PresentationModeEnabled = "GUI/PresentationModeEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateEnabled = "GUI/RealtimeDockIconUpdateEnabled";
 const char* UIExtraDataDefs::GUI_RealtimeDockIconUpdateMonitor = "GUI/RealtimeDockIconUpdateMonitor";
 #endif /* Q_WS_MAC */

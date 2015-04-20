@@ -53,7 +53,6 @@ public:
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
     quint64 memoryRequirements() const;
-    bool isHostTaskbarCovert() const;
 
 private slots:
 

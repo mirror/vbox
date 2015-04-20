@@ -99,10 +99,6 @@ private slots:
     /** Invokes popup-menu. */
     void sltInvokePopupMenu();
 
-#ifdef RT_OS_DARWIN
-    void sltChangePresentationMode(bool fEnabled);
-#endif /* RT_OS_DARWIN */
-
     /** Updates machine-window(s) location/size on screen-layout changes. */
     void sltScreenLayoutChanged();
 
@@ -118,24 +114,16 @@ private:
     /* Prepare helpers: */
     void prepareActionGroups();
     void prepareActionConnections();
-#ifdef Q_WS_MAC
-    void prepareOtherConnections();
-#endif /* Q_WS_MAC */
     void prepareMachineWindows();
     void prepareMenu();
 
     /* Cleanup helpers: */
     void cleanupMenu();
     void cleanupMachineWindows();
-#ifdef Q_WS_MAC
-    //void cleanupOtherConnections() {}
-#endif /* Q_WS_MAC */
     void cleanupActionConnections();
     void cleanupActionGroups();
 
 #ifdef Q_WS_MAC
-    void setPresentationModeEnabled(bool fEnabled);
-
     /** Mac OS X: Revalidates 'fullscreen' mode for @a pMachineWindow. */
     void revalidateNativeFullScreen(UIMachineWindow *pMachineWindow);
     /** Mac OS X: Revalidates 'fullscreen' mode for all windows. */

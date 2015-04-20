@@ -34,10 +34,6 @@ UIGlobalSettingsGeneral::UIGlobalSettingsGeneral()
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsGeneral::setupUi(this);
 
-#ifndef Q_WS_MAC
-    m_pLabelPresentationMode->hide();
-    m_pCheckBoxPresentationMode->hide();
-#endif /* !Q_WS_MAC */
     /* Hide checkbox for now: */
     m_pLabelHostScreenSaver->hide();
     m_pCheckBoxHostScreenSaver->hide();
@@ -61,9 +57,6 @@ void UIGlobalSettingsGeneral::loadToCacheFrom(QVariant &data)
     /* Load to cache: */
     m_cache.m_strDefaultMachineFolder = m_properties.GetDefaultMachineFolder();
     m_cache.m_strVRDEAuthLibrary = m_properties.GetVRDEAuthLibrary();
-#ifdef Q_WS_MAC
-    m_cache.m_fPresentationModeEnabled = m_settings.presentationModeEnabled();
-#endif /* Q_WS_MAC */
     m_cache.m_fHostScreenSaverDisabled = m_settings.hostScreenSaverDisabled();
 
     /* Upload properties & settings to data: */
@@ -77,9 +70,6 @@ void UIGlobalSettingsGeneral::getFromCache()
     /* Fetch from cache: */
     m_pSelectorMachineFolder->setPath(m_cache.m_strDefaultMachineFolder);
     m_pSelectorVRDPLibName->setPath(m_cache.m_strVRDEAuthLibrary);
-#ifdef Q_WS_MAC
-    m_pCheckBoxPresentationMode->setChecked(m_cache.m_fPresentationModeEnabled);
-#endif /* Q_WS_MAC */
     m_pCheckBoxHostScreenSaver->setChecked(m_cache.m_fHostScreenSaverDisabled);
 }
 
@@ -90,9 +80,6 @@ void UIGlobalSettingsGeneral::putToCache()
     /* Upload to cache: */
     m_cache.m_strDefaultMachineFolder = m_pSelectorMachineFolder->path();
     m_cache.m_strVRDEAuthLibrary = m_pSelectorVRDPLibName->path();
-#ifdef Q_WS_MAC
-    m_cache.m_fPresentationModeEnabled = m_pCheckBoxPresentationMode->isChecked();
-#endif /* Q_WS_MAC */
     m_cache.m_fHostScreenSaverDisabled = m_pCheckBoxHostScreenSaver->isChecked();
 }
 
@@ -108,9 +95,6 @@ void UIGlobalSettingsGeneral::saveFromCacheTo(QVariant &data)
         m_properties.SetDefaultMachineFolder(m_cache.m_strDefaultMachineFolder);
     if (m_properties.isOk() && m_pSelectorVRDPLibName->isModified())
         m_properties.SetVRDEAuthLibrary(m_cache.m_strVRDEAuthLibrary);
-#ifdef Q_WS_MAC
-    m_settings.setPresentationModeEnabled(m_cache.m_fPresentationModeEnabled);
-#endif /* Q_WS_MAC */
     m_settings.setHostScreenSaverDisabled(m_cache.m_fHostScreenSaverDisabled);
 
     /* Upload properties & settings to data: */
@@ -122,8 +106,7 @@ void UIGlobalSettingsGeneral::setOrderAfter(QWidget *pWidget)
     /* Configure navigation: */
     setTabOrder(pWidget, m_pSelectorMachineFolder);
     setTabOrder(m_pSelectorMachineFolder, m_pSelectorVRDPLibName);
-    setTabOrder(m_pSelectorVRDPLibName, m_pCheckBoxPresentationMode);
-    setTabOrder(m_pCheckBoxPresentationMode, m_pCheckBoxHostScreenSaver);
+    setTabOrder(m_pSelectorVRDPLibName, m_pCheckBoxHostScreenSaver);
 }
 
 void UIGlobalSettingsGeneral::retranslateUi()

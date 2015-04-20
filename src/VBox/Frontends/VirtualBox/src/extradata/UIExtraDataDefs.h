@@ -229,8 +229,6 @@ namespace UIExtraDataDefs
         /** Holds Runtime UI status-bar indicator order. */
         extern const char* GUI_StatusBar_IndicatorOrder;
 #ifdef Q_WS_MAC
-        /** Mac OS X: Holds whether 'presentation mode' enabled. */
-        extern const char* GUI_PresentationModeEnabled;
         /** Mac OS X: Holds whether Dock icon should be updated at runtime. */
         extern const char* GUI_RealtimeDockIconUpdateEnabled;
         /** Mac OS X: Holds guest-screen which Dock icon should reflect at runtime. */
