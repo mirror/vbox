@@ -6567,7 +6567,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
                 cParams = sscanf(pszExtraData, "%ux%ux%u", &cx, &cy, &cBits);
                 if (    cParams != 3
-                    ||  (cBits != 16 && cBits != 24 && cBits != 32))
+                    ||  (cBits != 8 && cBits != 16 && cBits != 24 && cBits != 32))
                 {
                     AssertMsgFailed(("Configuration error: Invalid mode data '%s' for '%s'! cBits=%d\n", pszExtraData, szExtraDataKey, cBits));
                     return VERR_VGA_INVALID_CUSTOM_MODE;
@@ -6586,6 +6586,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                 /* Use defaults from max@bpp mode. */
                 switch (cBits)
                 {
+                    case 8:
+                        u16DefMode = VBE_VESA_MODE_1024X768X8;
+                        break;
+
                     case 16:
                         u16DefMode = VBE_VESA_MODE_1024X768X565;
                         break;
