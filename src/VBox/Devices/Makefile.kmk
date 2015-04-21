@@ -791,6 +791,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	Serial/DrvHostSerial.cpp \
 	Parallel/DrvHostParallel.cpp
 
+ ifdef VBOX_WITH_VIRTUALKD
+  VBoxDD_DEFS.win     += VBOX_WITH_VIRTUALKD
+  VBoxDD_SOURCES.win  += \
+	Misc/VirtualKD.cpp
+ endif
+
  if defined(VBOX_WITH_NETFLT)
   VBoxDD_DEFS += VBOX_WITH_NETFLT
   if defined(VBOX_NETFLT_ONDEMAND_BIND)
