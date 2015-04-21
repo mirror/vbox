@@ -1021,7 +1021,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (pVCpu->idCpu > 0)
                 {
                     PVMMR0LOGGER pR0Logger = pVCpu->vmm.s.pR0LoggerR0;
-                    if (    pR0Logger
+                    if (   pR0Logger
                         && RT_UNLIKELY(!pR0Logger->fRegistered))
                     {
                         RTLogSetDefaultInstanceThread(&pR0Logger->Logger, (uintptr_t)pVM->pSession);
