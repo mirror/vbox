@@ -32,6 +32,7 @@
 # include "UIIconPool.h"
 # include "UIConverter.h"
 # include "UIGraphicsTextPane.h"
+# include "UIMessageCenter.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -522,6 +523,11 @@ void UIGDetailsUpdateThreadStorage::run()
                 {
                     /* Prepare current storage slot: */
                     StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                    AssertMsg(controller.isOk(),
+                              ("Unable to acquire controller data: %s\n",
+                               msgCenter().formatRC(controller.lastRC()).toAscii().constData()));
+                    if (!controller.isOk())
+                        continue;
                     /* Prepare attachment information: */
                     QString strAttachmentInfo = vboxGlobal().details(attachment.GetMedium(), false, false);
                     /* That temporary hack makes sure 'Inaccessible' word is always bold: */
