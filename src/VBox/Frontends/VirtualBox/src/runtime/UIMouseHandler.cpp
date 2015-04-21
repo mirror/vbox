@@ -560,10 +560,10 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                     UIGrabMouseEvent *pDeltaEvent = static_cast<UIGrabMouseEvent*>(pEvent);
                     QPoint p = QPoint(pDeltaEvent->xDelta() + m_lastMousePos.x(),
                                       pDeltaEvent->yDelta() + m_lastMousePos.y());
-                    /* Old Qt versions had a bug where mouse-buttons coming with the event were not quite valid.
-                     * For now we will be asking the QApplication for the valid button combination instead. */
-                    if (mouseEvent(pDeltaEvent->mouseEventType(), uScreenId, m_viewports[uScreenId]->mapFromGlobal(p), p,
-                                   QApplication::mouseButtons(), pDeltaEvent->wheelDelta(), pDeltaEvent->orientation()))
+                    if (mouseEvent(pDeltaEvent->mouseEventType(), uScreenId,
+                                   m_viewports[uScreenId]->mapFromGlobal(p), p,
+                                   pDeltaEvent->buttons(),
+                                   pDeltaEvent->wheelDelta(), pDeltaEvent->orientation()))
                         return true;
                     break;
                 }
@@ -638,10 +638,9 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                 {
                     QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
                     m_iLastMouseWheelDelta = 0;
-                    /* Old Qt versions had a bug where mouse-buttons coming with the event were not quite valid.
-                     * For now we will be asking the QApplication for the valid button combination instead. */
-                    if (mouseEvent(pMouseEvent->type(), uScreenId, pMouseEvent->pos(), pMouseEvent->globalPos(),
-                                   QApplication::mouseButtons(), 0, Qt::Horizontal))
+                    if (mouseEvent(pMouseEvent->type(), uScreenId,
+                                   pMouseEvent->pos(), pMouseEvent->globalPos(),
+                                   pMouseEvent->buttons(), 0, Qt::Horizontal))
                         return true;
                     break;
                 }
@@ -667,10 +666,17 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         iDelta = m_iLastMouseWheelDelta;
                         m_iLastMouseWheelDelta = m_iLastMouseWheelDelta % 120;
                     }
-                    /* Old Qt versions had a bug where mouse-buttons coming with the event were not quite valid.
-                     * For now we will be asking the QApplication for the valid button combination instead. */
-                    if (mouseEvent(pWheelEvent->type(), uScreenId, pWheelEvent->pos(), pWheelEvent->globalPos(),
-                                   QApplication::mouseButtons(), iDelta, pWheelEvent->orientation()))
+                    if (mouseEvent(pWheelEvent->type(), uScreenId,
+                                   pWheelEvent->pos(), pWheelEvent->globalPos(),
+#ifdef QT_MAC_USE_COCOA
+                                   /* Qt Cocoa is buggy. It always reports a left button pressed when the
+                                    * mouse wheel event occurs. A workaround is to ask the application which
+                                    * buttons are pressed currently: */
+                                   QApplication::mouseButtons(),
+#else /* QT_MAC_USE_COCOA */
+                                   pWheelEvent->buttons(),
+#endif /* !QT_MAC_USE_COCOA */
+                                   iDelta, pWheelEvent->orientation()))
                         return true;
                     break;
                 }
