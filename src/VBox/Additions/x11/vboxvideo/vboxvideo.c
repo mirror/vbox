@@ -1094,6 +1094,7 @@ static void setVirtualSizeRandR12(ScrnInfoPtr pScrn, bool fLimitedContext)
             screenInfo.height = cy;
 #endif
             adjustScreenPixmap(pScrn, cx, cy);
+            vbvxSetSolarisMouseRange(cx, cy);
         }
     }
 }
