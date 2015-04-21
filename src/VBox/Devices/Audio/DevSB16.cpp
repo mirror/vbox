@@ -51,7 +51,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
-#include "vl_vbox.h"
+#include "VBoxDD.h"
 
 #ifdef LOG_GROUP
  #undef LOG_GROUP
@@ -67,21 +67,11 @@
  }
 #endif
 
-#ifndef VBOX
-#define LENOFA(a) ((int) (sizeof(a)/sizeof(a[0])))
-#else /* VBOX */
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
 /** The version used in VirtualBox version 3.0 and earlier. This didn't include the config dump. */
 #define SB16_SAVE_STATE_VERSION_VBOX_30 1
-#endif /* VBOX */
 
-#ifndef VBOX
-#define IO_READ_PROTO(name)                             \
-    uint32_t name (void *opaque, uint32_t nport)
-#define IO_WRITE_PROTO(name)                                    \
-    void name (void *opaque, uint32_t nport, uint32_t val)
-#else  /* VBOX */
 #define IO_READ_PROTO(name)                                             \
     DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
                             RTIOPORT nport, uint32_t *pu32, unsigned cb)
@@ -89,21 +79,8 @@
 #define IO_WRITE_PROTO(name)                                            \
     DECLCALLBACK(int) name (PPDMDEVINS pDevIns, void *opaque,       \
                             RTIOPORT nport, uint32_t val, unsigned cb)
-#endif /* VBOX */
 
 static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
-
-#ifndef VBOX
-static struct
-{
-    int ver_lo;
-    int ver_hi;
-    int irq;
-    int dma;
-    int hdma;
-    int port;
-} conf = {5, 4, 5, 1, 5, 0x220};
-#endif /* !VBOX */
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct SB16OUTPUTSTREAM
@@ -390,18 +367,6 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     LogFlowFunc(("hold %d high %d dma %d\n", hold, pThis->use_hdma, dma));
 
-#ifndef VBOX
-    if (hold)
-    {
-        DMA_hold_DREQ(dma);
-        AUD_set_active_out(pThis->voice, 1);
-    }
-    else
-    {
-        DMA_release_DREQ(dma);
-        AUD_set_active_out(pThis->voice, 0);
-    }
-#else  /* VBOX */
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
 # endif
@@ -428,24 +393,14 @@ static void sb16Control(PSB16STATE pThis, int hold)
         AUD_set_active_out (pThis->voice, 0);
 # endif
     }
-#endif /* VBOX */
 }
 
-#ifndef VBOX
-static void aux_timer (void *opaque)
-{
-    PSB16STATE pThis = opaque;
-    pThis->can_write = 1;
-    qemu_irq_raise (pThis->pic[pThis->irq]);
-}
-#else  /* VBOX */
 static DECLCALLBACK(void) sb16TimerIRQ(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvThis)
 {
     PSB16STATE pThis = (PSB16STATE)pvThis;
     pThis->can_write = 1;
     PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 1);
 }
-#endif /* VBOX */
 
 #define DMA8_AUTO 1
 #define DMA8_HIGH 2
@@ -872,11 +827,7 @@ static void sb16HandleCommand(PSB16STATE pThis, uint8_t cmd)
             case 0xf3:
                 dsp_out_data(pThis, 0xaa);
                 pThis->mixer_regs[0x82] |= (cmd == 0xf2) ? 1 : 2;
-#ifndef VBOX
-                qemu_irq_raise (pThis->pic[pThis->irq]);
-#else
                 PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 1);
-#endif
                 break;
 
             case 0xf8:
@@ -1047,29 +998,12 @@ static void complete(PSB16STATE pThis)
             freq = pThis->freq > 0 ? pThis->freq : 11025;
             samples = dsp_get_lohi (pThis) + 1;
             bytes = samples << pThis->fmt_stereo << ((pThis->fmt_bits == 16) ? 1 : 0);
-#ifndef VBOX
-            ticks = (bytes * ticks_per_sec) / freq;
-            if (ticks < ticks_per_sec / 1024) {
-                qemu_irq_raise (pThis->pic[pThis->irq]);
-            }
-            else {
-                if (pThis->aux_ts) {
-                    qemu_mod_timer (
-                        pThis->aux_ts,
-                        qemu_get_clock (vm_clock) + ticks
-                        );
-                }
-            }
-            LogFlowFunc(("mix silence %d %d %" PRId64 "\n", samples, bytes, ticks));
-#else  /* VBOX */
             ticks = (bytes * TMTimerGetFreq(pThis->pTimerIRQ)) / freq;
             if (ticks < TMTimerGetFreq(pThis->pTimerIRQ) / 1024)
                 PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 1);
             else
                 TMTimerSet(pThis->pTimerIRQ, TMTimerGet(pThis->pTimerIRQ) + ticks);
             LogFlowFunc(("mix silence %d %d % %RU64\n", samples, bytes, ticks));
-#endif /* VBOX */
-
             break;
         }
 
@@ -1160,20 +1094,12 @@ static void sb16ResetLegacy(PSB16STATE pThis)
 
 static void sb16Reset(PSB16STATE pThis)
 {
-#ifndef VBOX
-    qemu_irq_lower (pThis->pic[pThis->irq]);
-    if (pThis->dma_auto) {
-        qemu_irq_raise (pThis->pic[pThis->irq]);
-        qemu_irq_lower (pThis->pic[pThis->irq]);
-    }
-#else  /* VBOX */
     PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
     if (pThis->dma_auto)
     {
         PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 1);
         PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
     }
-#endif /* VBOX */
 
     pThis->mixer_regs[0x82] = 0;
     pThis->dma_auto = 0;
@@ -1211,11 +1137,7 @@ static IO_WRITE_PROTO(dsp_write)
                         if (0 && pThis->highspeed)
                         {
                             pThis->highspeed = 0;
-#ifndef VBOX
-                            qemu_irq_lower (pThis->pic[pThis->irq]);
-#else
                             PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
-#endif
                             sb16Control(pThis, 0);
                         }
                         else
@@ -1290,9 +1212,7 @@ static IO_WRITE_PROTO(dsp_write)
             break;
     }
 
-#ifdef VBOX
     return VINF_SUCCESS;
-#endif
 }
 
 static IO_READ_PROTO(dsp_read)
@@ -1301,10 +1221,9 @@ static IO_READ_PROTO(dsp_read)
     int iport, retval, ack = 0;
 
     iport = nport - pThis->port;
-#ifdef VBOX
+
     /** @todo reject non-byte access?
      *  The spec does not mention a non-byte access so we should check how real hardware behaves. */
-#endif
 
     switch (iport)
     {
@@ -1342,11 +1261,7 @@ static IO_READ_PROTO(dsp_read)
             {
                 ack = 1;
                 pThis->mixer_regs[0x82] &= ~1;
-#ifndef VBOX
-                qemu_irq_lower (pThis->pic[pThis->irq]);
-#else
                 PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
-#endif
             }
             break;
 
@@ -1356,11 +1271,7 @@ static IO_READ_PROTO(dsp_read)
             {
                 ack = 1;
                 pThis->mixer_regs[0x82] &= ~2;
-#ifndef VBOX
-               qemu_irq_lower (pThis->pic[pThis->irq]);
-#else
                PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
-#endif
             }
             break;
 
@@ -1371,20 +1282,12 @@ static IO_READ_PROTO(dsp_read)
     if (!ack)
         LogFlowFunc(("read %#x -> %#x\n", nport, retval));
 
-#ifndef VBOX
-    return retval;
-#else
     *pu32 = retval;
     return VINF_SUCCESS;
-#endif
 
  error:
     LogFlowFunc(("warning: dsp_read %#x error\n", nport));
-#ifndef VBOX
-    return 0xff;
-#else
     return VERR_IOM_IOPORT_UNUSED;
-#endif
 }
 
 static void sb16MixerReset(PSB16STATE pThis)
@@ -1456,9 +1359,7 @@ static IO_WRITE_PROTO(mixer_write_indexb)
     (void) nport;
     pThis->mixer_nreg = val;
 
-#ifdef VBOX
     return VINF_SUCCESS;
-#endif
 }
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -1561,9 +1462,7 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
         case 0x82:
             LogFlowFunc(("attempt to write into IRQ status register (val=%#x)\n", val));
-#ifdef VBOX
             return VINF_SUCCESS;
-#endif
 
         default:
             if (pThis->mixer_nreg >= 0x80)
@@ -1573,7 +1472,6 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
     pThis->mixer_regs[pThis->mixer_nreg] = val;
 
-#ifdef VBOX
     /* Update the master (mixer) volume. */
     if (fUpdateMaster)
     {
@@ -1603,19 +1501,12 @@ static IO_WRITE_PROTO(mixer_write_datab)
         AUD_set_volume(AUD_MIXER_PCM, &mute, &lvol, &rvol);
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
-#endif /* VBOX */
 
-#ifdef VBOX
     return VINF_SUCCESS;
-#endif
 }
 
 static IO_WRITE_PROTO(mixer_write)
 {
-#ifndef VBOX
-    mixer_write_indexb (opaque, nport, val & 0xff);
-    mixer_write_datab (opaque, nport, (val >> 8) & 0xff);
-#else  /* VBOX */
     PSB16STATE pThis = (PSB16STATE)opaque;
     int iport = nport - pThis->port;
     switch (cb)
@@ -1640,7 +1531,6 @@ static IO_WRITE_PROTO(mixer_write)
             break;
     }
     return VINF_SUCCESS;
-#endif /* VBOX */
 }
 
 static IO_READ_PROTO(mixer_read)
@@ -1657,12 +1547,8 @@ static IO_READ_PROTO(mixer_read)
     LogFlowFunc(("mixer_read[%#x] -> %#x\n",
             pThis->mixer_nreg, pThis->mixer_regs[pThis->mixer_nreg]));
 #endif
-#ifndef VBOX
-    return pThis->mixer_regs[pThis->mixer_nreg];
-#else
     *pu32 = pThis->mixer_regs[pThis->mixer_nreg];
     return VINF_SUCCESS;
-#endif
 }
 
 static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
@@ -1674,24 +1560,16 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
 
     while (cbToWrite)
     {
-#ifndef VBOX
-        size_t cbToRead;
-        int cbRead;
-#else
         uint32_t cbWrittenMin = UINT32_MAX;
         uint32_t cbToRead;
         uint32_t cbRead;
-#endif
+
         cbToRead = RT_MIN(dma_len - dma_pos, cbToWrite);
         if (cbToRead > sizeof(tmpbuf))
             cbToRead = sizeof(tmpbuf);
 
-#ifndef VBOX
-        cbRead = DMA_read_memory (nchan, tmpbuf, dma_pos, cbToRead);
-#else
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevIns, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
-#endif
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         uint32_t cbWritten;
@@ -1726,11 +1604,7 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
     return cbWrittenTotal;
 }
 
-#ifndef VBOX
-static int sb16DMARead(void *opaque, int nchan, int dma_pos, int dma_len)
-#else
 static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsigned nchan, uint32_t dma_pos, uint32_t dma_len)
-#endif
 {
     PSB16STATE pThis = (PSB16STATE)opaque;
     int till, copy, written, free;
@@ -1807,11 +1681,7 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     if (pThis->left_till_irq <= 0)
     {
         pThis->mixer_regs[0x82] |= (nchan & 4) ? 2 : 1;
-#ifndef VBOX
-        qemu_irq_raise (pThis->pic[pThis->irq]);
-#else
         PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 1);
-#endif
         if (0 == pThis->dma_auto)
         {
             sb16Control(pThis, 0);
@@ -1837,10 +1707,8 @@ static void sb16AudioCallback(void *pvContext, int cbFree)
     PSB16STATE pState = (PSB16STATE)pvContext;
     AssertPtrReturnVoid(pState);
     pState->audio_free = cbFree;
-#ifdef VBOX
     /* New space available, see if we can transfer more. There is no cyclic DMA timer in VBox. */
     PDMDevHlpDMASchedule(pState->pDevIns);
-#endif
 }
 #else
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -1911,122 +1779,111 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 }
 #endif /* !VBOX_WITH_PDM_AUDIO_DRIVER */
 
-static void SB_save (QEMUFile *f, void *opaque)
+static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
-#ifndef VBOX
-    PSB16STATE pThis = opaque;
-#else
-    PSB16STATE pThis = (PSB16STATE)opaque;
-#endif
+    SSMR3PutS32(pSSM, pThis->irq);
+    SSMR3PutS32(pSSM, pThis->dma);
+    SSMR3PutS32(pSSM, pThis->hdma);
+    SSMR3PutS32(pSSM, pThis->port);
+    SSMR3PutS32(pSSM, pThis->ver);
+    SSMR3PutS32(pSSM, pThis->in_index);
+    SSMR3PutS32(pSSM, pThis->out_data_len);
+    SSMR3PutS32(pSSM, pThis->fmt_stereo);
+    SSMR3PutS32(pSSM, pThis->fmt_signed);
+    SSMR3PutS32(pSSM, pThis->fmt_bits);
 
-    qemu_put_be32 (f, pThis->irq);
-    qemu_put_be32 (f, pThis->dma);
-    qemu_put_be32 (f, pThis->hdma);
-    qemu_put_be32 (f, pThis->port);
-    qemu_put_be32 (f, pThis->ver);
-    qemu_put_be32 (f, pThis->in_index);
-    qemu_put_be32 (f, pThis->out_data_len);
-    qemu_put_be32 (f, pThis->fmt_stereo);
-    qemu_put_be32 (f, pThis->fmt_signed);
-    qemu_put_be32 (f, pThis->fmt_bits);
-    qemu_put_be32s (f, &pThis->fmt);
-    qemu_put_be32 (f, pThis->dma_auto);
-    qemu_put_be32 (f, pThis->block_size);
-    qemu_put_be32 (f, pThis->fifo);
-    qemu_put_be32 (f, pThis->freq);
-    qemu_put_be32 (f, pThis->time_const);
-    qemu_put_be32 (f, pThis->speaker);
-    qemu_put_be32 (f, pThis->needed_bytes);
-    qemu_put_be32 (f, pThis->cmd);
-    qemu_put_be32 (f, pThis->use_hdma);
-    qemu_put_be32 (f, pThis->highspeed);
-    qemu_put_be32 (f, pThis->can_write);
-    qemu_put_be32 (f, pThis->v2x6);
+    SSMR3PutU32(pSSM, pThis->fmt);
 
-    qemu_put_8s (f, &pThis->csp_param);
-    qemu_put_8s (f, &pThis->csp_value);
-    qemu_put_8s (f, &pThis->csp_mode);
-    qemu_put_8s (f, &pThis->csp_param);
-    qemu_put_buffer (f, pThis->csp_regs, 256);
-    qemu_put_8s (f, &pThis->csp_index);
-    qemu_put_buffer (f, pThis->csp_reg83, 4);
-    qemu_put_be32 (f, pThis->csp_reg83r);
-    qemu_put_be32 (f, pThis->csp_reg83w);
+    SSMR3PutS32(pSSM, pThis->dma_auto);
+    SSMR3PutS32(pSSM, pThis->block_size);
+    SSMR3PutS32(pSSM, pThis->fifo);
+    SSMR3PutS32(pSSM, pThis->freq);
+    SSMR3PutS32(pSSM, pThis->time_const);
+    SSMR3PutS32(pSSM, pThis->speaker);
+    SSMR3PutS32(pSSM, pThis->needed_bytes);
+    SSMR3PutS32(pSSM, pThis->cmd);
+    SSMR3PutS32(pSSM, pThis->use_hdma);
+    SSMR3PutS32(pSSM, pThis->highspeed);
+    SSMR3PutS32(pSSM, pThis->can_write);
+    SSMR3PutS32(pSSM, pThis->v2x6);
 
-    qemu_put_buffer (f, pThis->in2_data, sizeof (pThis->in2_data));
-    qemu_put_buffer (f, pThis->out_data, sizeof (pThis->out_data));
-    qemu_put_8s (f, &pThis->test_reg);
-    qemu_put_8s (f, &pThis->last_read_byte);
+    SSMR3PutU8 (pSSM, pThis->csp_param);
+    SSMR3PutU8 (pSSM, pThis->csp_value);
+    SSMR3PutU8 (pSSM, pThis->csp_mode);
+    SSMR3PutU8 (pSSM, pThis->csp_param); /* Bug compatible! */
+    SSMR3PutMem(pSSM, pThis->csp_regs, 256);
+    SSMR3PutU8 (pSSM, pThis->csp_index);
+    SSMR3PutMem(pSSM, pThis->csp_reg83, 4);
+    SSMR3PutS32(pSSM, pThis->csp_reg83r);
+    SSMR3PutS32(pSSM, pThis->csp_reg83w);
 
-    qemu_put_be32 (f, pThis->nzero);
-    qemu_put_be32 (f, pThis->left_till_irq);
-    qemu_put_be32 (f, pThis->dma_running);
-    qemu_put_be32 (f, pThis->bytes_per_second);
-    qemu_put_be32 (f, pThis->align);
+    SSMR3PutMem(pSSM, pThis->in2_data, sizeof (pThis->in2_data));
+    SSMR3PutMem(pSSM, pThis->out_data, sizeof (pThis->out_data));
+    SSMR3PutU8 (pSSM, pThis->test_reg);
+    SSMR3PutU8 (pSSM, pThis->last_read_byte);
 
-    qemu_put_be32 (f, pThis->mixer_nreg);
-    qemu_put_buffer (f, pThis->mixer_regs, 256);
+    SSMR3PutS32(pSSM, pThis->nzero);
+    SSMR3PutS32(pSSM, pThis->left_till_irq);
+    SSMR3PutS32(pSSM, pThis->dma_running);
+    SSMR3PutS32(pSSM, pThis->bytes_per_second);
+    SSMR3PutS32(pSSM, pThis->align);
+
+    SSMR3PutS32(pSSM, pThis->mixer_nreg);
+    SSMR3PutMem(pSSM, pThis->mixer_regs, 256);
+
 }
 
-static int SB_load (QEMUFile *f, void *opaque, int version_id)
+static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
 {
-#ifndef VBOX
-    PSB16STATE pThis = opaque;
+    SSMR3GetS32(pSSM, &pThis->irq);
+    SSMR3GetS32(pSSM, &pThis->dma);
+    SSMR3GetS32(pSSM, &pThis->hdma);
+    SSMR3GetS32(pSSM, &pThis->port);
+    SSMR3GetS32(pSSM, &pThis->ver);
+    SSMR3GetS32(pSSM, &pThis->in_index);
+    SSMR3GetS32(pSSM, &pThis->out_data_len);
+    SSMR3GetS32(pSSM, &pThis->fmt_stereo);
+    SSMR3GetS32(pSSM, &pThis->fmt_signed);
+    SSMR3GetS32(pSSM, &pThis->fmt_bits);
 
-    if (version_id != 1) {
-        return -EINVAL;
-    }
-#else
-    PSB16STATE pThis = (PSB16STATE)opaque;
-#endif
+    SSMR3GetU32(pSSM, (uint32_t *)&pThis->fmt);
 
-    pThis->irq=qemu_get_be32 (f);
-    pThis->dma=qemu_get_be32 (f);
-    pThis->hdma=qemu_get_be32 (f);
-    pThis->port=qemu_get_be32 (f);
-    pThis->ver=qemu_get_be32 (f);
-    pThis->in_index=qemu_get_be32 (f);
-    pThis->out_data_len=qemu_get_be32 (f);
-    pThis->fmt_stereo=qemu_get_be32 (f);
-    pThis->fmt_signed=qemu_get_be32 (f);
-    pThis->fmt_bits=qemu_get_be32 (f);
-    qemu_get_be32s (f, (uint32_t*)&pThis->fmt);
-    pThis->dma_auto=qemu_get_be32 (f);
-    pThis->block_size=qemu_get_be32 (f);
-    pThis->fifo=qemu_get_be32 (f);
-    pThis->freq=qemu_get_be32 (f);
-    pThis->time_const=qemu_get_be32 (f);
-    pThis->speaker=qemu_get_be32 (f);
-    pThis->needed_bytes=qemu_get_be32 (f);
-    pThis->cmd=qemu_get_be32 (f);
-    pThis->use_hdma=qemu_get_be32 (f);
-    pThis->highspeed=qemu_get_be32 (f);
-    pThis->can_write=qemu_get_be32 (f);
-    pThis->v2x6=qemu_get_be32 (f);
+    SSMR3GetS32(pSSM, &pThis->dma_auto);
+    SSMR3GetS32(pSSM, &pThis->block_size);
+    SSMR3GetS32(pSSM, &pThis->fifo);
+    SSMR3GetS32(pSSM, &pThis->freq);
+    SSMR3GetS32(pSSM, &pThis->time_const);
+    SSMR3GetS32(pSSM, &pThis->speaker);
+    SSMR3GetS32(pSSM, &pThis->needed_bytes);
+    SSMR3GetS32(pSSM, &pThis->cmd);
+    SSMR3GetS32(pSSM, &pThis->use_hdma);
+    SSMR3GetS32(pSSM, &pThis->highspeed);
+    SSMR3GetS32(pSSM, &pThis->can_write);
+    SSMR3GetS32(pSSM, &pThis->v2x6);
 
-    qemu_get_8s (f, &pThis->csp_param);
-    qemu_get_8s (f, &pThis->csp_value);
-    qemu_get_8s (f, &pThis->csp_mode);
-    qemu_get_8s (f, &pThis->csp_param);
-    qemu_get_buffer (f, pThis->csp_regs, 256);
-    qemu_get_8s (f, &pThis->csp_index);
-    qemu_get_buffer (f, pThis->csp_reg83, 4);
-    pThis->csp_reg83r=qemu_get_be32 (f);
-    pThis->csp_reg83w=qemu_get_be32 (f);
+    SSMR3GetU8 (pSSM, &pThis->csp_param);
+    SSMR3GetU8 (pSSM, &pThis->csp_value);
+    SSMR3GetU8 (pSSM, &pThis->csp_mode);
+    SSMR3GetU8 (pSSM, &pThis->csp_param);   /* Bug compatible! */
+    SSMR3GetMem(pSSM, pThis->csp_regs, 256);
+    SSMR3GetU8 (pSSM, &pThis->csp_index);
+    SSMR3GetMem(pSSM, pThis->csp_reg83, 4);
+    SSMR3GetS32(pSSM, &pThis->csp_reg83r);
+    SSMR3GetS32(pSSM, &pThis->csp_reg83w);
 
-    qemu_get_buffer (f, pThis->in2_data, sizeof (pThis->in2_data));
-    qemu_get_buffer (f, pThis->out_data, sizeof (pThis->out_data));
-    qemu_get_8s (f, &pThis->test_reg);
-    qemu_get_8s (f, &pThis->last_read_byte);
+    SSMR3GetMem(pSSM, pThis->in2_data, sizeof (pThis->in2_data));
+    SSMR3GetMem(pSSM, pThis->out_data, sizeof (pThis->out_data));
+    SSMR3GetU8 (pSSM, &pThis->test_reg);
+    SSMR3GetU8 (pSSM, &pThis->last_read_byte);
 
-    pThis->nzero=qemu_get_be32 (f);
-    pThis->left_till_irq=qemu_get_be32 (f);
-    pThis->dma_running=qemu_get_be32 (f);
-    pThis->bytes_per_second=qemu_get_be32 (f);
-    pThis->align=qemu_get_be32 (f);
+    SSMR3GetS32(pSSM, &pThis->nzero);
+    SSMR3GetS32(pSSM, &pThis->left_till_irq);
+    SSMR3GetS32(pSSM, &pThis->dma_running);
+    SSMR3GetS32(pSSM, &pThis->bytes_per_second);
+    SSMR3GetS32(pSSM, &pThis->align);
 
-    pThis->mixer_nreg=qemu_get_be32 (f);
-    qemu_get_buffer (f, pThis->mixer_regs, 256);
+    SSMR3GetS32(pSSM, &pThis->mixer_nreg);
+    SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
@@ -2079,75 +1936,8 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
         sb16SpeakerControl(pThis, pThis->speaker);
     }
 
-#ifdef VBOX
     return VINF_SUCCESS;
-#endif
 }
-
-#ifndef VBOX
-int SB16_init (AudioState *audio, qemu_irq *pic)
-{
-    PSB16STATE pThis;
-    int i;
-    static const uint8_t dsp_write_ports[] = {0x6, 0xc};
-    static const uint8_t dsp_read_ports[] = {0x6, 0xa, 0xc, 0xd, 0xe, 0xf};
-
-    if (!audio) {
-        LogFlowFunc(("No audio state\n"));
-        return -1;
-    }
-
-    s = qemu_mallocz (sizeof (*s));
-    if (!s) {
-        LogFlowFunc(("Could not allocate memory for SB16 (%zu bytes)\n",
-               sizeof (*s));
-        return -1;
-    }
-
-    pThis->cmd = -1;
-    pThis->pic = pic;
-    pThis->irq = conf.irq;
-    pThis->dma = conf.dma;
-    pThis->hdma = conf.hdma;
-    pThis->port = conf.port;
-    pThis->ver = conf.ver_lo | (conf.ver_hi << 8);
-
-    pThis->mixer_regs[0x80] = magic_of_irq (pThis->irq);
-    pThis->mixer_regs[0x81] = (1 << pThis->dma) | (1 << pThis->hdma);
-    pThis->mixer_regs[0x82] = 2 << 5;
-
-    pThis->csp_regs[5] = 1;
-    pThis->csp_regs[9] = 0xf8;
-
-    sb16MixerReset(pThis);
-    pThis->aux_ts = qemu_new_timer (vm_clock, aux_timer, s);
-    if (!pThis->aux_ts) {
-        LogFlowFunc(("warning: Could not create auxiliary timer\n"));
-    }
-
-    for (i = 0; i < LENOFA (dsp_write_ports); i++) {
-        register_ioport_write (pThis->port + dsp_write_ports[i], 1, 1, dsp_write, s);
-    }
-
-    for (i = 0; i < LENOFA (dsp_read_ports); i++) {
-        register_ioport_read (pThis->port + dsp_read_ports[i], 1, 1, dsp_read, s);
-    }
-
-    register_ioport_write (pThis->port + 0x4, 1, 1, mixer_write_indexb, s);
-    register_ioport_write (pThis->port + 0x4, 1, 2, mixer_write_indexw, s);
-    register_ioport_read (pThis->port + 0x5, 1, 1, mixer_read, s);
-    register_ioport_write (pThis->port + 0x5, 1, 1, mixer_write_datab, s);
-
-    DMA_register_channel (pThis->hdma, sb16DMARead, s);
-    DMA_register_channel (pThis->dma, sb16DMARead, s);
-    pThis->can_write = 1;
-
-    register_savevm ("sb16", 0, 1, SB_save, SB_load, s);
-    AUD_register_card (audio, "sb16", &pThis->card);
-    return 0;
-}
-
-#else /* VBOX */
 
 static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
@@ -2165,8 +1955,8 @@ static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
-    sb16LiveExec (pDevIns, pSSM, 0);
-    SB_save (pSSM, pThis);
+    sb16LiveExec(pDevIns, pSSM, 0);
+    sb16Save(pSSM, pThis);
     return VINF_SUCCESS;
 }
 
@@ -2211,7 +2001,7 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
-    SB_load(pSSM, pThis, uVersion);
+    sb16Load(pSSM, pThis, uVersion);
     return VINF_SUCCESS;
 }
 
@@ -2565,5 +2355,3 @@ const PDMDEVREG g_DeviceSB16 =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
-#endif /* VBOX */
-

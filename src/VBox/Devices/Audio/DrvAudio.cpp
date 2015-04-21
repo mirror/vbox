@@ -62,7 +62,6 @@
 #include <VBox/log.h>
 
 #include "VBoxDD.h"
-#include "vl_vbox.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -341,7 +340,7 @@ void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len)
                 short s = INT16_MAX;
 
                 if (pPCMInfo->fSwapEndian)
-                    s = bswap16(s);
+                    s = RT_BSWAP_U16(s);
 
                 for (i = 0; i < len << shift; i++)
                     p[i] = s;
@@ -356,7 +355,7 @@ void audio_pcm_info_clear_buf(PPDMPCMPROPS pPCMInfo, void *pvBuf, int len)
                 int32_t s = INT32_MAX;
 
                 if (pPCMInfo->fSwapEndian)
-                    s = bswap32(s);
+                    s = RT_BSWAP_U32(s);
 
                 for (i = 0; i < len << shift; i++)
                     p[i] = s;
