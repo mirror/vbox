@@ -71,6 +71,7 @@ ODIR_OVERRIDE=0
 OUT_PATH=""
 OUT_PATH_OVERRIDE=0
 SETUP_WINE=
+ONLY_ADDITIONS=0
 TARGET_MACHINE=""
 TARGET_CPU=""
 WITH_XPCOM=1
@@ -2296,6 +2297,7 @@ EOF
 EOF
 [ "$OS"   != "darwin" ] && echo "  --setup-wine             setup a Wine directory and register the hhc hack"
 cat << EOF
+  --only-additions         only build the Guest Additions
 
 Paths:
   --with-gcc=PATH          location of the gcc compiler [$CC]
@@ -2563,6 +2565,9 @@ for option in "$@"; do
     --setup-wine)
       [ "$OS" != "darwin" ] && SETUP_WINE=1
       ;;
+    --only-additions)
+      ONLY_ADDITIONS=1
+      ;;
     *)
       echo
       echo "Unrecognized option \"$option\""
@@ -2656,7 +2661,9 @@ if [ $OSE -ge 1 ]; then
 fi
 
 # extpack
-if [ $OSE -eq 0 ]; then
+if [ $ONLY_ADDITIONS -eq 1 ]; then
+  cnf_append "VBOX_WITH_EXTPACK_PUEL_BUILD" ""
+elif [ $OSE -eq 0 ]; then
   if [ $WITH_EXTPACK -eq 1 ]; then
     BUILD_LIBSSL=1
   else
@@ -2692,43 +2699,47 @@ if [ "$OS" = "darwin" ]; then
 fi
 # the tools
 check_gcc
-check_open_watcom
-[ "$OS" != "darwin"  ] && check_iasl
-# don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
-# [ "$OS" != "darwin" ] && check_yasm
-[ "$OS" != "darwin"  ] && check_xsltproc
-[ "$OS" != "darwin"  ] && check_mkisofs
+if [ $ONLY_ADDITIONS -eq 0 ]; then
+  check_open_watcom
+  [ "$OS" != "darwin"  ] && check_iasl
+  # don't check for yasm for the time beeing as 0.40 and 0.50 both have known bugs
+  # [ "$OS" != "darwin" ] && check_yasm
+  [ "$OS" != "darwin"  ] && check_xsltproc
+  [ "$OS" != "darwin"  ] && check_mkisofs
+fi
 
 # the libraries
-[ "$OS" != "darwin"  ] && check_pthread
-check_libxml2
-[ $WITH_LIBIDL -eq 1 ] && check_libidl
-check_ssl
-check_curl
-[ $WITH_LIBVPX -eq 1 ] && check_vpx
-[ "$OS" != "darwin"  ] && check_z
-[ "$OS" != "darwin"  ] && check_png
-[ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
-[ $WITH_SDL -eq 1 ]    && check_sdl
-[ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
-[ $WITH_X11    -eq 1 ] && check_x
-# TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
-# TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
-[ $WITH_X11    -eq 1 ] && check_xcursor
-[ $WITH_X11    -eq 1 ] && check_xinerama
-[ $WITH_X11    -eq 1 ] && check_xrandr
-[ $WITH_OPENGL -eq 1 ] && check_opengl
-[ $WITH_QT4    -eq 1 ] && check_qt4
-[ $WITH_PYTHON -eq 1 ] && check_python
-[ $WITH_JAVA   -eq 1 ] && check_java
+if [ $ONLY_ADDITIONS -eq 0 ]; then
+  [ "$OS" != "darwin"  ] && check_pthread
+  check_libxml2
+  [ $WITH_LIBIDL -eq 1 ] && check_libidl
+  check_ssl
+  check_curl
+  [ $WITH_LIBVPX -eq 1 ] && check_vpx
+ [ "$OS" != "darwin"  ] && check_z
+  [ "$OS" != "darwin"  ] && check_png
+  [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
+  [ $WITH_SDL -eq 1 ]    && check_sdl
+  [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
+  [ $WITH_X11    -eq 1 ] && check_x
+  # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
+  # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
+  [ $WITH_X11    -eq 1 ] && check_xcursor
+  [ $WITH_X11    -eq 1 ] && check_xinerama
+  [ $WITH_X11    -eq 1 ] && check_xrandr
+  [ $WITH_OPENGL -eq 1 ] && check_opengl
+  [ $WITH_QT4    -eq 1 ] && check_qt4
+  [ $WITH_PYTHON -eq 1 ] && check_python
+  [ $WITH_JAVA   -eq 1 ] && check_java
 
-# PulseAudio
-if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
-  if [ $WITH_PULSE -eq 1 ]; then
-    check_pulse
-  elif [ $WITH_PULSE -eq 0 ]; then
-    cnf_append "VBOX_WITH_PULSE" ""
-  fi
+  # PulseAudio
+  if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
+    if [ $WITH_PULSE -eq 1 ]; then
+      check_pulse
+    elif [ $WITH_PULSE -eq 0 ]; then
+      cnf_append "VBOX_WITH_PULSE" ""
+    fi
+ fi
 fi
 
 # Linux-specific
@@ -2743,29 +2754,31 @@ if [ "$OS" = "linux" ]; then
     cnf_append "VBOX_WITH_VBOXDRV" ""
     cnf_append "VBOX_WITH_ADDITION_DRIVERS" ""
   fi
-  if [ $WITH_ALSA -eq 1 ]; then
-    check_alsa
-  else
-    cnf_append "VBOX_WITH_ALSA" ""
+  if [ $ONLY_ADDITIONS -eq 0 ]; then
+    if [ $WITH_ALSA -eq 1 ]; then
+      check_alsa
+    else
+      cnf_append "VBOX_WITH_ALSA" ""
+    fi
+    if [ $WITH_DBUS -eq 0 ]; then
+      cnf_append "VBOX_WITH_DBUS" ""
+    fi
+    if [ $WITH_DEVMAPPER -eq 1 ]; then
+      check_libdevmapper
+    else
+      cnf_append "VBOX_WITH_DEVMAPPER" ""
+    fi
+    check_libcap
   fi
-  if [ $WITH_DBUS -eq 0 ]; then
-    cnf_append "VBOX_WITH_DBUS" ""
-  fi
-  if [ $WITH_DEVMAPPER -eq 1 ]; then
-    check_libdevmapper
-  else
-    cnf_append "VBOX_WITH_DEVMAPPER" ""
-  fi
-  check_libcap
   check_compiler_h
-  [ "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
+  [ $ONLY_ADDITIONS -eq 0 -a "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
   # tools/common/makeself*
   [ $OSE -ge 1 ] && check_makeself
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
 
-if [ $WITH_GSOAP -eq 1 ]; then
+if [ $ONLY_ADDITIONS -eq 0 -a $WITH_GSOAP -eq 1 ]; then
   check_gsoap
 else
   if [ $OSE -ge 1 ]; then
@@ -2774,30 +2787,34 @@ else
 fi
 
 # UDPTUNNEL
-if [ $WITH_UDPTUNNEL -eq 0 ]; then
+if [ $ONLY_ADDITIONS -eq 0 -a $WITH_UDPTUNNEL -eq 0 ]; then
   cnf_append "VBOX_WITH_UDPTUNNEL" ""
 fi
 
 # VDE
-if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
+if [ $ONLY_ADDITIONS -eq 0 -a "$OS" = "linux" -o "$OS" = "freebsd" ]; then
   if [ $WITH_VDE -eq 1 ]; then
     cnf_append "VBOX_WITH_VDE" "1"
   fi
 fi
 
 # DOCS
-if [ $WITH_DOCS -eq 0 ]; then
+if [ $ONLY_ADDITIONS -eq 1 -o $WITH_DOCS -eq 0 ]; then
   cnf_append "VBOX_WITH_DOCS" ""
   cnf_append "VBOX_WITH_DOCS_PACKING" ""
 fi
 
 # VNC server support
-if [ $OSE -ge 1 ]; then
+if [ $ONLY_ADDITIONS -eq 0 -a $OSE -ge 1 ]; then
   if [ $WITH_VNC = 1 ]; then
     check_vncserver
   else
     cnf_append "VBOX_WITH_EXTPACK_VNC" ""
   fi
+fi
+
+if [ $ONLY_ADDITIONS -eq 1 ]; then
+  cnf_append "VBOX_ONLY_ADDITIONS" "1"
 fi
 
 # success!
@@ -2820,7 +2837,11 @@ if [ "$OS" = "linux" ]; then
     echo "  make"
     echo ""
 fi
-if [ $WITH_HARDENING -gt 0 ]; then
+if [ $ONLY_ADDITIONS -eq 1 ]; then
+    echo ""
+    echo "  Tree configured to build only the Guest Additions"
+    echo ""
+elif [ $WITH_HARDENING -gt 0 ]; then
     echo ""
     echo "  +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++ WARNING +++"
     echo "  Hardening is enabled which means that the VBox binaries will not run from"
