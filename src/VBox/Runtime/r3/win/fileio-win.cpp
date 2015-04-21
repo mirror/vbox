@@ -709,6 +709,9 @@ RTR3DECL(bool) RTFileIsValid(RTFILE hFile)
                 if (GetLastError() == NO_ERROR)
                     return true;
                 break;
+
+            default:
+                break;
         }
     }
     return false;
