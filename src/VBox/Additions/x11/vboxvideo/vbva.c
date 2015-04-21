@@ -50,8 +50,7 @@
  * @param aRects  Array of structures containing the coordinates of the
  *                rectangles
  */
-static void
-vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
+void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
 {
     VBVACMDHDR cmdHdr;
     VBOXPtr pVBox;
@@ -132,15 +131,6 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
     if (!VBoxHGSMIIsSupported())
     {
         xf86DrvMsg(scrnIndex, X_ERROR, "The graphics device does not seem to support HGSMI.  Disableing video acceleration.\n");
-        return FALSE;
-    }
-
-    /* Set up the dirty rectangle handler.  It will be added into a function
-     * chain and gets removed when the screen is cleaned up. */
-    if (ShadowFBInit2(pScreen, NULL, vboxHandleDirtyRect) != TRUE)
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Unable to install dirty rectangle handler for VirtualBox graphics acceleration.\n");
         return FALSE;
     }
     return TRUE;

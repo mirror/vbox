@@ -98,6 +98,9 @@
 /* #define DPMS_SERVER
 #include "extensions/dpms.h" */
 
+/* ShadowFB support */
+#include "shadowfb.h"
+
 /* VGA hardware functions for setting and restoring text mode */
 #include "vgaHW.h"
 
@@ -1270,6 +1273,10 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
 
     vbox_open (pScrn, pScreen, pVBox);
     vboxEnableVbva(pScrn);
+    /* Set up the dirty rectangle handler.  It will be added into a function
+     * chain and gets removed when the screen is cleaned up. */
+    if (ShadowFBInit2(pScreen, NULL, vbvxHandleDirtyRect) != TRUE)
+        return FALSE;
     VBoxInitialiseSizeHints(pScrn);
 
 #ifdef VBOXVIDEO_13
