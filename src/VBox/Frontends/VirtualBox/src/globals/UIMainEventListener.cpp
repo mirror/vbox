@@ -34,6 +34,7 @@
 # include "CSnapshotTakenEvent.h"
 # include "CSnapshotDeletedEvent.h"
 # include "CSnapshotChangedEvent.h"
+# include "CSnapshotRestoredEvent.h"
 # include "CExtraDataCanChangeEvent.h"
 # include "CExtraDataChangedEvent.h"
 # include "CMousePointerShapeChangedEvent.h"
@@ -116,6 +117,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
         {
             CSnapshotChangedEvent es(pEvent);
             emit sigSnapshotChange(es.GetMachineId(), es.GetSnapshotId());
+            break;
+        }
+        case KVBoxEventType_OnSnapshotRestored:
+        {
+            CSnapshotRestoredEvent es(pEvent);
+            emit sigSnapshotRestore(es.GetMachineId(), es.GetSnapshotId());
             break;
         }
 //        case KVBoxEventType_OnMediumRegistered:

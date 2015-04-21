@@ -1447,6 +1447,7 @@ void UISelectorWindow::prepareConnections()
     connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));
 }
 
 void UISelectorWindow::loadSettings()

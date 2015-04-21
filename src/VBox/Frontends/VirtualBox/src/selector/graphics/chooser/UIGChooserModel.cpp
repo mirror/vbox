@@ -1282,6 +1282,8 @@ void UIGChooserModel::prepareConnections()
             this, SLOT(sltSnapshotChanged(QString, QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)),
             this, SLOT(sltSnapshotChanged(QString, QString)));
+    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QString, QString)),
+            this, SLOT(sltSnapshotChanged(QString, QString)));
 }
 
 void UIGChooserModel::loadLastSelectedItem()

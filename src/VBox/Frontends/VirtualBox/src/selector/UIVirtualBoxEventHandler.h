@@ -45,6 +45,8 @@ signals:
     void sigSnapshotDelete(QString strId, QString strSnapshotId);
     /** Notifies about snapshot with @a strSnapshotId was changed for the machine with @a strId. */
     void sigSnapshotChange(QString strId, QString strSnapshotId);
+    /** Notifies about snapshot with @a strSnapshotId was restored for the machine with @a strId. */
+    void sigSnapshotRestore(QString strId, QString strSnapshotId);
 
 public:
 

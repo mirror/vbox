@@ -87,7 +87,8 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
         << KVBoxEventType_OnSessionStateChanged
         << KVBoxEventType_OnSnapshotTaken
         << KVBoxEventType_OnSnapshotDeleted
-        << KVBoxEventType_OnSnapshotChanged;
+        << KVBoxEventType_OnSnapshotChanged
+        << KVBoxEventType_OnSnapshotRestored;
     eventSourceVirtualBox.RegisterListener(m_mainEventListener, vboxEvents, TRUE);
     AssertWrapperOk(eventSourceVirtualBox);
 
@@ -115,6 +116,9 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
             Qt::QueuedConnection);
     connect(pListener->getWrapped(), SIGNAL(sigSnapshotChange(QString, QString)),
             this, SIGNAL(sigSnapshotChange(QString, QString)),
+            Qt::QueuedConnection);
+    connect(pListener->getWrapped(), SIGNAL(sigSnapshotRestore(QString, QString)),
+            this, SIGNAL(sigSnapshotRestore(QString, QString)),
             Qt::QueuedConnection);
 }
 
