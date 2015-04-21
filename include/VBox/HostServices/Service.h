@@ -40,13 +40,14 @@ namespace HGCM
 
 class Message
 {
+    /* Contains a copy of HGCM parameters. */
 public:
     Message(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
         : m_uMsg(0)
         , m_cParms(0)
         , m_paParms(0)
     {
-        setData(uMsg, cParms, aParms);
+        initData(uMsg, cParms, aParms);
     }
     ~Message()
     {
@@ -71,35 +72,10 @@ public:
             return VERR_INVALID_PARAMETER;
         }
 
-        int rc = copyParms(cParms, m_paParms, &aParms[0], false /* fCreatePtrs */);
+        int rc = copyParmsInternal(cParms, m_paParms, &aParms[0], false /* fCreatePtrs */);
 
 //        if (RT_FAILURE(rc))
 //            cleanup(aParms);
-        return rc;
-    }
-    int setData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
-    {
-        AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
-        AssertPtrNullReturn(aParms, VERR_INVALID_PARAMETER);
-
-        /* Cleanup old messages. */
-        cleanup();
-
-        m_uMsg = uMsg;
-        m_cParms = cParms;
-
-        if (cParms > 0)
-        {
-            m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
-            if (!m_paParms)
-                return VERR_NO_MEMORY;
-        }
-
-        int rc = copyParms(cParms, &aParms[0], m_paParms, true /* fCreatePtrs */);
-
-        if (RT_FAILURE(rc))
-            cleanup();
-
         return rc;
     }
 
@@ -136,7 +112,43 @@ public:
         return VINF_SUCCESS;
     }
 
-    int copyParms(uint32_t cParms, PVBOXHGCMSVCPARM paParmsSrc, PVBOXHGCMSVCPARM paParmsDst, bool fCreatePtrs) const
+    int copyParms(uint32_t cParms, PVBOXHGCMSVCPARM paParmsSrc, PVBOXHGCMSVCPARM paParmsDst) const
+    {
+        return copyParmsInternal(cParms, paParmsSrc, paParmsDst, false /* fCreatePtrs */);
+    }
+
+private:
+    uint32_t m_uMsg;
+    uint32_t m_cParms;
+    PVBOXHGCMSVCPARM m_paParms;
+
+    int initData(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM aParms[])
+    {
+        AssertReturn(cParms < 256, VERR_INVALID_PARAMETER);
+        AssertPtrNullReturn(aParms, VERR_INVALID_PARAMETER);
+
+        /* Cleanup old messages. */
+        cleanup();
+
+        m_uMsg = uMsg;
+        m_cParms = cParms;
+
+        if (cParms > 0)
+        {
+            m_paParms = (VBOXHGCMSVCPARM*)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * m_cParms);
+            if (!m_paParms)
+                return VERR_NO_MEMORY;
+        }
+
+        int rc = copyParmsInternal(cParms, &aParms[0], m_paParms, true /* fCreatePtrs */);
+
+        if (RT_FAILURE(rc))
+            cleanup();
+
+        return rc;
+    }
+
+    int copyParmsInternal(uint32_t cParms, PVBOXHGCMSVCPARM paParmsSrc, PVBOXHGCMSVCPARM paParmsDst, bool fCreatePtrs) const
     {
         int rc = VINF_SUCCESS;
         for (uint32_t i = 0; i < cParms; ++i)
@@ -218,11 +230,6 @@ public:
         m_cParms = 0;
         m_uMsg = 0;
     }
-
-protected:
-    uint32_t m_uMsg;
-    uint32_t m_cParms;
-    PVBOXHGCMSVCPARM m_paParms;
 };
 
 class Client
