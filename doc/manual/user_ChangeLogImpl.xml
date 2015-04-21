@@ -78,6 +78,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI: take the guest screen aspect ratio into account for the
+          preview window</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: improved timing on Solaris hosts with older VT-x hosts
           without preemption timers</para>
       </listitem>
