@@ -282,11 +282,11 @@ extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize)
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
-extern void vbox_open (ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox);
 extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
 
 /* vbva.c */
 extern void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects);
+extern void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM);
 extern Bool vboxEnableVbva(ScrnInfoPtr pScrn);
 extern void vboxDisableVbva(ScrnInfoPtr pScrn);
 

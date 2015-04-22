@@ -98,6 +98,45 @@ void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
     }
 }
 
+static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
+{
+    NOREF(pvEnv);
+    return calloc(1, cb);
+}
+
+static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
+{
+    NOREF(pvEnv);
+    free(pv);
+}
+
+static HGSMIENV g_hgsmiEnv =
+{
+    NULL,
+    hgsmiEnvAlloc,
+    hgsmiEnvFree
+};
+
+/**
+ * Calculate the location in video RAM of and initialise the heap for guest to
+ * host messages.  In the VirtualBox 4.3 and earlier Guest Additions this
+ * function creates the heap structures directly in guest video RAM, so it
+ * needs to be called whenever video RAM is (re-)set-up.
+ */
+void vbvxSetUpHGSMIHeapInGuest(VBOXPtr pVBox, uint32_t cbVRAM)
+{
+    int rc;
+    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory;
+    void *pvGuestHeapMemory;
+
+    VBoxHGSMIGetBaseMappingInfo(cbVRAM, &offVRAMBaseMapping, NULL, &offGuestHeapMemory, &cbGuestHeapMemory, NULL);
+    pvGuestHeapMemory = ((uint8_t *)pVBox->base) + offVRAMBaseMapping + offGuestHeapMemory;
+    rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory, cbGuestHeapMemory,
+                                    offVRAMBaseMapping + offGuestHeapMemory, &g_hgsmiEnv);
+    VBVXASSERT(RT_SUCCESS(rc), ("Failed to set up the guest-to-host message buffer heap, rc=%d\n", rc));
+    pVBox->cbView = offVRAMBaseMapping;
+}
+
 /** Callback to fill in the view structures */
 static int
 vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
@@ -119,85 +158,12 @@ vboxFillViewInfo(void *pvVBox, struct VBVAINFOVIEW *pViews, uint32_t cViews)
  *
  * @returns TRUE on success, FALSE on failure
  */
-static Bool
-vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
-{
-    ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
-    int rc = VINF_SUCCESS;
-
-    /* Why is this here?  In case things break before we have found the real
-     * count? */
-    pVBox->cScreens = 1;
-    if (!VBoxHGSMIIsSupported())
-    {
-        xf86DrvMsg(scrnIndex, X_ERROR, "The graphics device does not seem to support HGSMI.  Disableing video acceleration.\n");
-        return FALSE;
-    }
-    return TRUE;
-}
-
-static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)
-{
-    NOREF(pvEnv);
-    return calloc(1, cb);
-}
-
-static DECLCALLBACK(void) hgsmiEnvFree(void *pvEnv, void *pv)
-{
-    NOREF(pvEnv);
-    free(pv);
-}
-
-static HGSMIENV g_hgsmiEnv =
-{
-    NULL,
-    hgsmiEnvAlloc,
-    hgsmiEnvFree
-};
-
-/**
- * Initialise VirtualBox's accelerated video extensions.
- *
- * @returns TRUE on success, FALSE on failure
- */
-static Bool
-vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
+static Bool vboxSetupVRAMVbva(VBOXPtr pVBox)
 {
     int rc = VINF_SUCCESS;
     unsigned i;
-    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory;
-    void *pvGuestHeapMemory;
 
-    VBoxHGSMIGetBaseMappingInfo(pScrn->videoRam * 1024, &offVRAMBaseMapping,
-                                NULL, &offGuestHeapMemory, &cbGuestHeapMemory,
-                                NULL);
-    pvGuestHeapMemory =   ((uint8_t *)pVBox->base) + offVRAMBaseMapping
-                        + offGuestHeapMemory;
-    TRACE_LOG("video RAM: %u KB, guest heap offset: 0x%x, cbGuestHeapMemory: %u\n",
-              pScrn->videoRam, offVRAMBaseMapping + offGuestHeapMemory,
-              cbGuestHeapMemory);
-    rc = VBoxHGSMISetupGuestContext(&pVBox->guestCtx, pvGuestHeapMemory,
-                                    cbGuestHeapMemory,
-                                    offVRAMBaseMapping + offGuestHeapMemory,
-                                    &g_hgsmiEnv);
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to set up the guest-to-host communication context, rc=%d\n", rc);
-        return FALSE;
-    }
-    pVBox->cbView = pVBox->cbFBMax = offVRAMBaseMapping;
-    pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
-    pVBox->pScreens = calloc(pVBox->cScreens, sizeof(*pVBox->pScreens));
-    if (pVBox->pScreens == NULL)
-        FatalError("Failed to allocate memory for screens array.\n");
-#ifdef VBOXVIDEO_13
-    pVBox->paVBVAModeHints = calloc(pVBox->cScreens,
-                                    sizeof(*pVBox->paVBVAModeHints));
-    if (pVBox->paVBVAModeHints == NULL)
-        FatalError("Failed to allocate memory for mode hints array.\n");
-#endif
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Requested monitor count: %u\n",
-               pVBox->cScreens);
+    pVBox->cbFBMax = pVBox->cbView;
     for (i = 0; i < pVBox->cScreens; ++i)
     {
         pVBox->cbFBMax -= VBVA_MIN_BUFFER_SIZE;
@@ -213,21 +179,8 @@ vboxSetupVRAMVbva(ScrnInfoPtr pScrn, VBOXPtr pVBox)
               (unsigned long) pVBox->cbFBMax);
     rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
                                vboxFillViewInfo, (void *)pVBox);
-    if (RT_FAILURE(rc))
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to send the view information to the host, rc=%d\n", rc);
-        return FALSE;
-    }
+    VBVXASSERT(RT_SUCCESS(rc), ("Failed to send the view information to the host, rc=%d\n", rc));
     return TRUE;
-}
-
-void
-vbox_open(ScrnInfoPtr pScrn, ScreenPtr pScreen, VBOXPtr pVBox)
-{
-    TRACE_ENTRY();
-
-    if (!vboxInitVbva(pScrn->scrnIndex, pScreen, pVBox))
-        FatalError("failed to initialise vboxvideo graphics acceleration.\n");
 }
 
 /**
@@ -241,12 +194,11 @@ Bool
 vboxEnableVbva(ScrnInfoPtr pScrn)
 {
     bool rc = TRUE;
-    int scrnIndex = pScrn->scrnIndex;
     unsigned i;
     VBOXPtr pVBox = pScrn->driverPrivate;
 
     TRACE_ENTRY();
-    if (!vboxSetupVRAMVbva(pScrn, pVBox))
+    if (!vboxSetupVRAMVbva(pVBox))
         return FALSE;
     for (i = 0; i < pVBox->cScreens; ++i)
     {
@@ -258,13 +210,7 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
                             pVBVA, i))
             rc = FALSE;
     }
-    if (!rc)
-    {
-        /* Request not accepted - disable for old hosts. */
-        xf86DrvMsg(scrnIndex, X_ERROR,
-                   "Failed to enable screen update reporting for at least one virtual monitor.\n");
-         vboxDisableVbva(pScrn);
-    }
+    VBVXASSERT(rc, ("Failed to enable screen update reporting for at least one virtual monitor.\n"));
 #ifdef VBOXVIDEO_13
 # ifdef RT_OS_LINUX
     if (rc && pVBox->hACPIEventHandler != NULL)
@@ -288,7 +234,6 @@ void
 vboxDisableVbva(ScrnInfoPtr pScrn)
 {
     int rc;
-    int scrnIndex = pScrn->scrnIndex;
     unsigned i;
     VBOXPtr pVBox = pScrn->driverPrivate;
 

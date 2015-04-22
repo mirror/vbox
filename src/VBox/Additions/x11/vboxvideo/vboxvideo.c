@@ -1271,7 +1271,16 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     VBoxSetUpLinuxACPI(pScreen);
 #endif
 
-    vbox_open (pScrn, pScreen, pVBox);
+    if (!VBoxHGSMIIsSupported())
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Graphics device too old to support.\n");
+        return FALSE;
+    }
+    vbvxSetUpHGSMIHeapInGuest(pVBox, pScrn->videoRam * 1024);
+    pVBox->cScreens = VBoxHGSMIGetMonitorCount(&pVBox->guestCtx);
+    pVBox->pScreens = xnfcalloc(pVBox->cScreens, sizeof(*pVBox->pScreens));
+    pVBox->paVBVAModeHints = xnfcalloc(pVBox->cScreens, sizeof(*pVBox->paVBVAModeHints));
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "Requested monitor count: %u\n", pVBox->cScreens);
     vboxEnableVbva(pScrn);
     /* Set up the dirty rectangle handler.  It will be added into a function
      * chain and gets removed when the screen is cleaned up. */
