@@ -2515,6 +2515,9 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
         RTStrFree(pszDesc);
     }
 
+    PDMAUDIOVOLUME vol = { false, 255, 255 };
+    audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
