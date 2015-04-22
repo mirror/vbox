@@ -117,7 +117,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     /*
      * Setup the GIM provider for this VM.
      */
-    LogRel(("GIM: Using provider \"%s\" (Implementation version: %u)\n", szProvider, uVersion));
+    LogRel(("GIM: Using provider '%s' (Implementation version: %u)\n", szProvider, uVersion));
     if (!RTStrCmp(szProvider, "None"))
         pVM->gim.s.enmProviderId = GIMPROVIDERID_NONE;
     else
@@ -142,7 +142,7 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
             rc = gimR3KvmInit(pVM);
         }
         else
-            rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider \"%s\" unknown.", szProvider);
+            rc = VMR3SetError(pVM->pUVM, VERR_GIM_INVALID_PROVIDER, RT_SRC_POS, "Provider '%s' unknown.", szProvider);
     }
     return rc;
 }

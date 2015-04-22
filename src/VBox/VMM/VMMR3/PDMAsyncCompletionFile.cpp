@@ -820,7 +820,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
             if (RT_FAILURE(rc))
                 return rc;
 
-            LogRel(("AIOMgr: Default manager type is \"%s\"\n", pdmacFileMgrTypeToName(pEpClassFile->enmMgrTypeOverride)));
+            LogRel(("AIOMgr: Default manager type is '%s'\n", pdmacFileMgrTypeToName(pEpClassFile->enmMgrTypeOverride)));
 
             /* Query default backend type */
             rc = CFGMR3QueryStringAllocDef(pCfgNode, "FileBackend", &pszVal, "NonBuffered");
@@ -831,7 +831,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
             if (RT_FAILURE(rc))
                 return rc;
 
-            LogRel(("AIOMgr: Default file backend is \"%s\"\n", pdmacFileBackendTypeToName(pEpClassFile->enmEpBackendDefault)));
+            LogRel(("AIOMgr: Default file backend is '%s'\n", pdmacFileBackendTypeToName(pEpClassFile->enmEpBackendDefault)));
 
 #ifdef RT_OS_LINUX
             if (   pEpClassFile->enmMgrTypeOverride == PDMACEPFILEMGRTYPE_ASYNC
