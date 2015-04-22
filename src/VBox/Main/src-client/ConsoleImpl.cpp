@@ -6229,7 +6229,7 @@ HRESULT Console::i_pause(Reason_T aReason)
 
     LogFlowThisFunc(("Sending PAUSE request...\n"));
     if (aReason != Reason_Unspecified)
-        LogRel(("Pausing VM execution, reason \"%s\"\n", Global::stringifyReason(aReason)));
+        LogRel(("Pausing VM execution, reason '%s'\n", Global::stringifyReason(aReason)));
 
     /** @todo r=klaus make use of aReason */
     VMSUSPENDREASON enmReason = VMSUSPENDREASON_USER;
@@ -6275,7 +6275,7 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
 
     LogFlowThisFunc(("Sending RESUME request...\n"));
     if (aReason != Reason_Unspecified)
-        LogRel(("Resuming VM execution, reason \"%s\"\n", Global::stringifyReason(aReason)));
+        LogRel(("Resuming VM execution, reason '%s'\n", Global::stringifyReason(aReason)));
 
     int vrc;
     if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_CREATED)
@@ -6357,7 +6357,7 @@ HRESULT Console::i_saveState(Reason_T aReason, const ComPtr<IProgress> &aProgres
                         tr("Saving the execution state is disabled for this VM"));
 
     if (aReason != Reason_Unspecified)
-        LogRel(("Saving state of VM, reason \"%s\"\n", Global::stringifyReason(aReason)));
+        LogRel(("Saving state of VM, reason '%s'\n", Global::stringifyReason(aReason)));
 
     /* ensure the directory for the saved state file exists */
     {
@@ -7730,7 +7730,7 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
     {
         LogThisFunc(("machineState=%s -> %s aUpdateServer=%RTbool\n",
                      Global::stringifyMachineState(mMachineState), Global::stringifyMachineState(aMachineState), aUpdateServer));
-        LogRel(("Console: Machine state changed to %s\n", Global::stringifyMachineState(aMachineState)));
+        LogRel(("Console: Machine state changed to '%s'\n", Global::stringifyMachineState(aMachineState)));
         mMachineState = aMachineState;
 
         /// @todo (dmik)
