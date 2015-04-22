@@ -183,6 +183,24 @@ static Bool vboxSetupVRAMVbva(VBOXPtr pVBox)
     return TRUE;
 }
 
+static bool haveHGSMIModeHintAndCursorReportingInterface(VBOXPtr pVBox)
+{
+    uint32_t fModeHintReporting, fCursorReporting;
+
+    return    RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_MODE_HINT_REPORTING, &fModeHintReporting))
+           && RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_GUEST_CURSOR_REPORTING, &fCursorReporting))
+           && fModeHintReporting == VINF_SUCCESS
+           && fCursorReporting == VINF_SUCCESS;
+}
+
+static bool hostHasScreenBlankingFlag(VBOXPtr pVBox)
+{
+    uint32_t fScreenFlags;
+
+    return    RT_SUCCESS(VBoxQueryConfHGSMI(&pVBox->guestCtx, VBOX_VBVA_CONF32_SCREEN_FLAGS, &fScreenFlags))
+           && fScreenFlags & VBVA_SCREEN_F_BLANK;
+}
+
 /**
  * Inform VBox that we will supply it with dirty rectangle information
  * and install the dirty rectangle handler.
@@ -218,6 +236,8 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
          * anyway. */
         VBoxHGSMISendCapsInfo(&pVBox->guestCtx, VBVACAPS_VIDEO_MODE_HINTS | VBVACAPS_DISABLE_CURSOR_INTEGRATION);
 # endif
+    pVBox->fHaveHGSMIModeHints = haveHGSMIModeHintAndCursorReportingInterface(pVBox);
+    pVBox->fHostHasScreenBlankingFlag = hostHasScreenBlankingFlag(pVBox);
 #endif
     return rc;
 }
