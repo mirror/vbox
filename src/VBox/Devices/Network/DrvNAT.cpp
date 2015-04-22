@@ -637,13 +637,13 @@ static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enm
     switch (enmLinkState)
     {
         case PDMNETWORKLINKSTATE_UP:
-            LogRel(("NAT: link up\n"));
+            LogRel(("NAT: Link up\n"));
             slirp_link_up(pThis->pNATState);
             break;
 
         case PDMNETWORKLINKSTATE_DOWN:
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
-            LogRel(("NAT: link down\n"));
+            LogRel(("NAT: Link down\n"));
             slirp_link_down(pThis->pNATState);
             break;
 
@@ -801,7 +801,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
             }
             else if (cPollNegRet++ > 128)
             {
-                LogRel(("NAT:Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
+                LogRel(("NAT: Poll returns (%s) suppressed %d\n", strerror(errno), cPollNegRet));
                 cPollNegRet = 0;
             }
         }
@@ -1527,7 +1527,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
         GET_STRING_ALLOC(rc, pThis, pCfg, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
         if (rc != 0 && pszBindIP && *pszBindIP)
-            LogRel(("NAT: value of BindIP has been ignored\n"));
+            LogRel(("NAT: Value of BindIP has been ignored\n"));
 
         if(pszBindIP != NULL)
             MMR3HeapFree(pszBindIP);
