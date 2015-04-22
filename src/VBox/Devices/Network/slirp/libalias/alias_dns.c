@@ -250,7 +250,6 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
             && !LIST_EMPTY(&la->pData->DNSMapHead))
             alterHostentWithDataFromDNSMap(la->pData, pHostent);
 #endif
-        fprintf(stderr, "pszCname:%s\n", pszCname);
         doanswer(pHdr, meta, qw_qname, pIp, pHostent);
     }
 
