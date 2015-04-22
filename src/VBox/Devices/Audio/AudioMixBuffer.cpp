@@ -488,16 +488,28 @@ AUDMIXBUF_MIXOP(Blend  /* Name */, += /* Operation */)
 #undef AUDMIXBUF_MIXOP
 #undef AUDMIXBUF_MACRO_LOG
 
+/** Dummy conversion used when the source is muted. */
+AUDMIXBUF_MACRO_FN uint32_t audioMixBufConvFromSilence(PPDMAUDIOSAMPLE paDst, const void *pvSrc,
+                                                       uint32_t cbSrc, const PAUDMIXBUF_CONVOPTS pOpts)
+{
+    /* Internally zero always corresponds to silence. */
+    memset(paDst, 0, pOpts->cSamples * sizeof(paDst[0]));
+    return pOpts->cSamples;
+}
+
 /**
  *
  ** @todo Speed up the lookup by binding it to the actual stream state.
  *
- * @return  IPRT status code.
  * @return  PAUDMIXBUF_FN_CONVFROM
- * @param   enmFmt
+ * @param   enmFmt      The source audio stream format
+ * @param   fMuted      Flag determining whether the source is muted
  */
-static inline PAUDMIXBUF_FN_CONVFROM audioMixBufConvFromLookup(PDMAUDIOMIXBUFFMT enmFmt)
+static inline PAUDMIXBUF_FN_CONVFROM audioMixBufConvFromLookup(PDMAUDIOMIXBUFFMT enmFmt, bool fMuted)
 {
+    if (fMuted)
+        return audioMixBufConvFromSilence;
+
     if (AUDMIXBUF_FMT_SIGNED(enmFmt))
     {
         if (AUDMIXBUF_FMT_CHANNELS(enmFmt) == 2)
@@ -1234,7 +1246,7 @@ int audioMixBufWriteAtEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
     if (offSamples + cToProcess > pMixBuf->cSamples)
         return VERR_BUFFER_OVERFLOW;
 
-    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt);
+    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt, pMixBuf->Volume.fMuted);
     if (!pConv)
         return VERR_NOT_SUPPORTED;
 
@@ -1316,7 +1328,7 @@ int audioMixBufWriteCircEx(PPDMAUDIOMIXBUF pMixBuf, PDMAUDIOMIXBUFFMT enmFmt,
         return VINF_SUCCESS;
     }
 
-    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt);
+    PAUDMIXBUF_FN_CONVFROM pConv = audioMixBufConvFromLookup(enmFmt, pMixBuf->Volume.fMuted);
     if (!pConv)
         return VERR_NOT_SUPPORTED;
 
