@@ -17,18 +17,8 @@
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuestLib.h>
 
-#ifndef PCIACCESS
-# include <xf86Pci.h>
-# include <Pci.h>
-#endif
-
-#include "xf86.h"
-#define NEED_XF86_TYPES
 #include <iprt/string.h>
 #include "compiler.h"
-
-/* ShadowFB support */
-#include "shadowfb.h"
 
 #include "vboxvideo.h"
 

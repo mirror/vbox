@@ -105,7 +105,6 @@ realpath
 __realpath_chk
 __register_frame_info_bases
 rename
-RRChangeOutputProperty
 RRCrtcNotify
 RRGetInfo
 RRScreenSizeNotify
