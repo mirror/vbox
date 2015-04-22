@@ -843,12 +843,13 @@ static void ichac97SetVolume(PAC97STATE pThis, int index, audmixerctl_t mt, uint
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 {
     int mute = (val >> MUTE_SHIFT) & 1;
-    uint8_t rvol = VOL_MASK - (val & VOL_MASK);
-    uint8_t lvol = VOL_MASK - ((val >> 8) & VOL_MASK);
-    rvol = 255 * rvol / VOL_MASK;
-    lvol = 255 * lvol / VOL_MASK;
+    uint8_t rvol = val & VOL_MASK;
+    uint8_t lvol = (val >> 8) & VOL_MASK;
+    /* AC'97 has 1.5dB steps; we use 0.375dB steps. */
+    rvol = 255 - rvol * 4;
+    lvol = 255 - lvol * 4;
 
-    LogFunc(("mt=%ld, val=%RU32, mute=%RTbool\n", mt, val, RT_BOOL(mute)));
+    LogFunc(("mt=%ld, val=%RX32, mute=%RTbool\n", mt, val, RT_BOOL(mute)));
 
 #ifdef SOFT_VOLUME
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER

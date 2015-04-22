@@ -1204,19 +1204,12 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
     uint8_t rVol = AMPLIFIER_REGISTER(*pAmp, dir, AMPLIFIER_RIGHT, 0) & 0x7f;
 
     /* The STAC9220 volume controls have 0 to -96dB attenuation range in 128 steps.
-     * We have 0 to -48dB range in 256 steps. HDA volume setting of 127 must map
-     * to 255 internally (0dB), while HDA volume setting of 63 (-48dB) and below
-     * should map  to 1 (rather than zero) internally.
+     * We have 0 to -96dB range in 256 steps. HDA volume setting of 127 must map
+     * to 255 internally (0dB), while HDA volume setting of 0 (-96dB) should map
+     * to 1 (rather than zero) internally.
      */
-    if (lVol > 63)
-        lVol = (lVol - 63) * (4 * 255) / 256;
-    else
-        lVol = 1;   /* Not quite zero. */
-
-    if (rVol > 63)
-        rVol = (rVol - 63) * (4 * 255) / 256;
-    else
-        rVol = 1;   /* Not quite zero. */
+    lVol = (lVol + 1) * (2 * 255) / 256;
+    rVol = (rVol + 1) * (2 * 255) / 256;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /** @todo In SetVolume no passing audmixerctl_in as its not used in DrvAudio.cpp. */

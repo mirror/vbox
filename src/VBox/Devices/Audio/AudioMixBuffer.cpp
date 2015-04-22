@@ -57,6 +57,63 @@
 # endif
 #endif
 
+
+/*
+ *   Soft Volume Control
+ *
+ * The external code supplies an 8-bit volume (attenuation) value in the
+ * 0 .. 255 range. This represents 0 to -96dB attenuation where an input
+ * value of 0 corresponds to -96dB and 255 corresponds to 0dB (unchanged).
+ *
+ * Each step thus correspons to 96 / 256 or 0.375dB. Every 6dB (16 steps)
+ * represents doubling the sample value.
+ *
+ * For internal use, the volume control needs to be converted to a 16-bit
+ * (sort of) exponential value between 1 and 65536. This is used with fixed
+ * point arithmetic such that 65536 means 1.0 and 1 means 1/65536.
+ *
+ * For actual volume calculation, 33.31 fixed point is used. Maximum (or
+ * unattenuated) volume is represented as 0x80000000; conveniently, this
+ * value fits into a uint32_t.
+ */
+
+
+/**   Logarithmic/exponential volume conversion table. */
+uint32_t aVolumeConv[256] = {
+        1,     1,     1,     1,     1,     1,     1,     1, /*   7 */
+        1,     2,     2,     2,     2,     2,     2,     2, /*  15 */
+        2,     2,     2,     2,     2,     3,     3,     3, /*  23 */
+        3,     3,     3,     3,     4,     4,     4,     4, /*  31 */
+        4,     4,     5,     5,     5,     5,     5,     6, /*  39 */
+        6,     6,     6,     7,     7,     7,     8,     8, /*  47 */
+        8,     9,     9,    10,    10,    10,    11,    11, /*  55 */
+       12,    12,    13,    13,    14,    15,    15,    16, /*  63 */
+       17,    17,    18,    19,    20,    21,    22,    23, /*  71 */
+       24,    25,    26,    27,    28,    29,    31,    32, /*  79 */
+       33,    35,    36,    38,    40,    41,    43,    45, /*  87 */
+       47,    49,    52,    54,    56,    59,    61,    64, /*  95 */
+       67,    70,    73,    76,    79,    83,    87,    91, /* 103 */
+       95,    99,   103,   108,   112,   117,   123,   128, /* 111 */
+      134,   140,   146,   152,   159,   166,   173,   181, /* 119 */
+      189,   197,   206,   215,   225,   235,   245,   256, /* 127 */
+      267,   279,   292,   304,   318,   332,   347,   362, /* 135 */
+      378,   395,   412,   431,   450,   470,   490,   512, /* 143 */
+      535,   558,   583,   609,   636,   664,   693,   724, /* 151 */
+      756,   790,   825,   861,   899,   939,   981,  1024, /* 159 */
+     1069,  1117,  1166,  1218,  1272,  1328,  1387,  1448, /* 167 */
+     1512,  1579,  1649,  1722,  1798,  1878,  1961,  2048, /* 175 */
+     2139,  2233,  2332,  2435,  2543,  2656,  2774,  2896, /* 183 */
+     3025,  3158,  3298,  3444,  3597,  3756,  3922,  4096, /* 191 */
+     4277,  4467,  4664,  4871,  5087,  5312,  5547,  5793, /* 199 */
+     6049,  6317,  6597,  6889,  7194,  7512,  7845,  8192, /* 207 */
+     8555,  8933,  9329,  9742, 10173, 10624, 11094, 11585, /* 215 */
+    12098, 12634, 13193, 13777, 14387, 15024, 15689, 16384, /* 223 */
+    17109, 17867, 18658, 19484, 20347, 21247, 22188, 23170, /* 231 */
+    24196, 25268, 26386, 27554, 28774, 30048, 31379, 32768, /* 239 */
+    34219, 35734, 37316, 38968, 40693, 42495, 44376, 46341, /* 247 */
+    48393, 50535, 52773, 55109, 57549, 60097, 62757, 65536, /* 255 */
+};
+
 /**
  * Structure for holding sample conversion parameters for
  * the audioMixBufConvFromXXX / audioMixBufConvToXXX macros.
@@ -1140,6 +1197,9 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     pMixBuf->Volume.fMuted = pVol->fMuted;
     pMixBuf->Volume.uLeft  = (UINT64_C(0x80000000) * pVol->uLeft) / 255;
     pMixBuf->Volume.uRight = (UINT64_C(0x80000000) * pVol->uRight) / 255;
+    //@todo: Ensure that the input is in the correct range/initialized!
+    pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * UINT64_C(0x8000);
+    pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * UINT64_C(0x8000);
 
     LogFlowFunc(("\t-> lVol=%RU32, rVol=%RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }

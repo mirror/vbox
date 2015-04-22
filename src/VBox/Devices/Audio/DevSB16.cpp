@@ -1056,6 +1056,49 @@ static void complete(PSB16STATE pThis)
     return;
 }
 
+static uint8_t sb16MixRegToVol(PSB16STATE pThis, int reg)
+{
+    /* The SB16 mixer has a 0 to -62dB range in 32 levels (2dB each step).
+     * We use a 0 to -96dB range in 256 levels (0.375dB each step).
+     * Only the top 5 bits of a mixer register are used.
+     */
+    uint8_t steps = 31 - (pThis->mixer_regs[reg] >> 3);
+    uint8_t vol   = 255 - steps * 16 / 3;   /* (2dB*8) / (0.375dB*8) */
+    return vol;
+}
+
+static void sb16SetMasterVolume(PSB16STATE pThis)
+{
+    int     mute = 0; /** @todo Handle (un)muting. */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
+    uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
+    PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
+    audioMixerSetMasterVolume(pThis->pMixer, &vol);
+#else
+    uint8_t lvol = pThis->mixer_regs[0x30];
+    uint8_t rvol = pThis->mixer_regs[0x31];
+
+    AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lvol, &rvol);
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+}
+
+static void sb16SetPcmOutVolume(PSB16STATE pThis)
+{
+    int     mute = 0; /** @todo Handle (un)muting. */
+#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
+    uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
+    PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
+    audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
+#else
+    uint8_t lvol = pThis->mixer_regs[0x32];
+    uint8_t rvol = pThis->mixer_regs[0x33];
+
+    AUD_set_volume(AUD_MIXER_PCM, &mute, &lvol, &rvol);
+#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+}
+
 static void sb16ResetLegacy(PSB16STATE pThis)
 {
     pThis->freq       = 11025;
@@ -1322,14 +1365,19 @@ static void sb16MixerReset(PSB16STATE pThis)
     pThis->mixer_regs[0x0e] = 0;
 
     /* voice volume L d5,d7, R d1,d3 */
-    pThis->mixer_regs[0x04] = (4 << 5) | (4 << 1);
+    pThis->mixer_regs[0x04] = (12 << 4) | 12;
     /* master ... */
-    pThis->mixer_regs[0x22] = (4 << 5) | (4 << 1);
+    pThis->mixer_regs[0x22] = (12 << 4) | 12;
     /* MIDI ... */
-    pThis->mixer_regs[0x26] = (4 << 5) | (4 << 1);
+    pThis->mixer_regs[0x26] = (12 << 4) | 12;
 
-    for (int i = 0x30; i < 0x48; i++)
-        pThis->mixer_regs[i] = 0x20;
+    /* master/voice/MIDI L/R volume */
+    for (int i = 0x30; i < 0x36; i++)
+        pThis->mixer_regs[i] = 24 << 3; /* -14 dB */
+
+    /* treble/bass */
+    for (int i = 0x44; i < 0x48; i++)
+        pThis->mixer_regs[i] = 0x80;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     int rc2 = audioMixerCreate("SB16 Mixer", 0 /* uFlags */, &pThis->pMixer);
@@ -1351,6 +1399,10 @@ static void sb16MixerReset(PSB16STATE pThis)
         AssertRC(rc2);
     }
 #endif
+
+    /* Update the master (mixer) and PCM out volumes. */
+    sb16SetMasterVolume(pThis);
+    sb16SetPcmOutVolume(pThis);
 }
 
 static IO_WRITE_PROTO(mixer_write_indexb)
@@ -1474,33 +1526,11 @@ static IO_WRITE_PROTO(mixer_write_datab)
 
     /* Update the master (mixer) volume. */
     if (fUpdateMaster)
-    {
-        int     mute = 0; /** @todo Handle (un)muting. */
-        uint8_t lvol = pThis->mixer_regs[0x30];
-        uint8_t rvol = pThis->mixer_regs[0x31];
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
-        audioMixerSetMasterVolume(pThis->pMixer, &vol);
-#else
-        AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-    }
+        sb16SetMasterVolume(pThis);
 
     /* Update the stream (PCM) volume. */
     if (fUpdateStream)
-    {
-        int     mute = 0; /** @todo Handle (un)muting. */
-        uint8_t lvol = pThis->mixer_regs[0x32];
-        uint8_t rvol = pThis->mixer_regs[0x33];
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
-        audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
-#else
-        AUD_set_volume(AUD_MIXER_PCM, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-    }
+        sb16SetPcmOutVolume(pThis);
 
     return VINF_SUCCESS;
 }
@@ -2046,6 +2076,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
         uLUN++;
     }
+    /* Ensure volume gets propagated. */
+    audioMixerInvalidate(pThis->pMixer);
 
     return rc;
 }
