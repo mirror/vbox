@@ -1415,6 +1415,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
         drmSetMaster(pVBox->drmFD);
     }
 #endif
+    vbvxSetUpHGSMIHeapInGuest(pVBox, pScrn->videoRam * 1024);
     vboxEnableVbva(pScrn);
     /* Re-assert this in case we had a change request while switched out. */
     if (pVBox->FBSize.cx && pVBox->FBSize.cy)
