@@ -141,7 +141,7 @@ typedef enum RTTHREADTYPE
     /** Message pump thread.
      * Thread pumping messages from one thread/process to another
      * thread/process. The workload is very small, most of the time
-     * it's blocked waiting for messages to be procduced or processed.
+     * it's blocked waiting for messages to be produced or processed.
      * This type of thread will be favored after I/O threads.
      */
     RTTHREADTYPE_MSG_PUMP,
