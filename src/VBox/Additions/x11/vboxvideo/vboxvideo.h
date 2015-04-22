@@ -55,6 +55,10 @@
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
 
+#ifndef VBVA_SCREEN_F_BLANK
+# define VBVA_SCREEN_F_BLANK    0x0004
+#endif
+
 #ifdef DEBUG
 
 #define TRACE_ENTRY() \
