@@ -37,7 +37,7 @@
 #include <VBox/log.h>
 
 
-int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink);
+static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink);
 
 
 int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink)
@@ -443,7 +443,7 @@ static inline PDMAUDIOVOLUME audioMixerVolMix(const PPDMAUDIOVOLUME pVolMaster, 
     return volOut;
 }
 
-int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink)
+static int audioMixerUpdateSinkVolume(PAUDMIXSINK pSink, const PPDMAUDIOVOLUME pVolMaster, const PPDMAUDIOVOLUME pVolSink)
 {
     AssertPtrReturn(pSink,      VERR_INVALID_POINTER);
     AssertPtrReturn(pVolMaster, VERR_INVALID_POINTER);
