@@ -189,8 +189,6 @@ typedef struct VBOXRec
     unsigned long cbFBMax;
     /** The size of the framebuffer and the VBVA buffers at the end of it. */
     unsigned long cbView;
-    /** The current line size in bytes */
-    uint32_t cbLine;
     /** Whether the pre-X-server mode was a VBE mode */
     bool fSavedVBEMode;
     /** Paramters of the saved pre-X-server VBE mode, invalid if there is none
@@ -293,27 +291,6 @@ extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
 extern Bool VBOXDRIFinishScreenInit(ScreenPtr pScreen);
 extern void VBOXDRIUpdateStride(ScrnInfoPtr pScrn, VBOXPtr pVBox);
 extern void VBOXDRICloseScreen(ScreenPtr pScreen, VBOXPtr pVBox);
-
-/* Utilities */
-
-/** Calculate the BPP from the screen depth */
-static inline uint16_t vboxBPP(ScrnInfoPtr pScrn)
-{
-    return pScrn->depth == 24 ? 32 : 16;
-}
-
-/** Calculate the scan line length for a display width */
-static inline int32_t vboxLineLength(ScrnInfoPtr pScrn, int32_t cDisplayWidth)
-{
-    uint32_t cbLine = (cDisplayWidth * vboxBPP(pScrn) / 8 + 3) & ~3;
-    return cbLine < INT32_MAX ? cbLine : INT32_MAX;
-}
-
-/** Calculate the display pitch from the scan line length */
-static inline int32_t vboxDisplayPitch(ScrnInfoPtr pScrn, int32_t cbLine)
-{
-    return cbLine * 8 / vboxBPP(pScrn);
-}
 
 #endif /* _VBOXVIDEO_H_ */
 

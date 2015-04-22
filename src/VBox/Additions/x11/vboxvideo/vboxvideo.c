@@ -944,14 +944,13 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     pScrn->currentMode = pScrn->modes;
 
     /* Set the right virtual resolution. */
-    pScrn->virtualX = pScrn->currentMode->HDisplay;
+    pScrn->virtualX = pScrn->bitsPerPixel == 16 ? (pScrn->currentMode->HDisplay + 1) & ~1 : pScrn->currentMode->HDisplay;
     pScrn->virtualY = pScrn->currentMode->VDisplay;
 
 #endif /* !VBOXVIDEO_13 */
 
     /* Needed before we initialise DRI. */
-    pVBox->cbLine = vboxLineLength(pScrn, pScrn->virtualX);
-    pScrn->displayWidth = vboxDisplayPitch(pScrn, pVBox->cbLine);
+    pScrn->displayWidth = pScrn->virtualX;
 
     xf86PrintModes(pScrn);
 
