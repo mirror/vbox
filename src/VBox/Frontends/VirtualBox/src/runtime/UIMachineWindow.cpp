@@ -338,9 +338,38 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
         /* Make sure close-dialog is valid: */
         if (pCloseDlg->isValid())
         {
-            /* If VM is not paused and not stuck, we should pause it first: */
-            bool fWasPaused = uisession()->isPaused() || uisession()->isStuck();
-            if (fWasPaused || uisession()->pause())
+            /* We are going to show close-dialog: */
+            bool fShowCloseDialog = true;
+            /* Check if VM is paused or stuck: */
+            const bool fWasPaused = uisession()->isPaused();
+            const bool fIsStuck = uisession()->isStuck();
+            /* If VM is NOT paused and NOT stuck: */
+            if (!fWasPaused && !fIsStuck)
+            {
+                /* We should pause it first: */
+                const bool fIsPaused = uisession()->pause();
+                /* If we were unable to pause VM: */
+                if (!fIsPaused)
+                {
+                    /* If that is NOT the separate VM process UI: */
+                    if (!vboxGlobal().isSeparateProcess())
+                    {
+                        /* We are not going to show close-dialog: */
+                        fShowCloseDialog = false;
+                    }
+                    /* If that is the separate VM process UI: */
+                    else
+                    {
+                        /* We are going to show close-dialog only
+                         * if headless frontend stopped/killed already: */
+                        CMachine machine = uisession()->machine();
+                        KMachineState machineState = machine.GetState();
+                        fShowCloseDialog = !machine.isOk() || machineState == KMachineState_Null;
+                    }
+                }
+            }
+            /* If we are going to show close-dialog: */
+            if (fShowCloseDialog)
             {
                 /* Show close-dialog to let the user make the choice: */
                 windowManager().registerNewParent(pCloseDlg, pParentDlg);
