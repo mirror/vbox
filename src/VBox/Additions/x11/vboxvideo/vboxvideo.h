@@ -300,12 +300,11 @@ extern void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn);
 extern void VBoxUpdateSizeHints(ScrnInfoPtr pScrn);
 #ifndef VBOXVIDEO_13
 extern void VBoxSetUpRandR11(ScreenPtr pScreen);
-#else
-void VBoxSetUpLinuxACPI(ScreenPtr pScreen);
-void VBoxCleanUpLinuxACPI(ScreenPtr pScreen);
 #endif
 extern void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
 extern void vbvxReadSizesAndCursorIntegrationFromHGSMI(ScrnInfoPtr pScrn, bool *pfNeedUpdate);
+extern void vbvxSetUpLinuxACPI(ScreenPtr pScreen);
+extern void vbvxCleanUpLinuxACPI(ScreenPtr pScreen);
 
 /* DRI stuff */
 extern Bool VBOXDRIScreenInit(ScrnInfoPtr pScrn, ScreenPtr pScreen,
