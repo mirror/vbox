@@ -72,9 +72,9 @@
 *******************************************************************************/
 struct VBoxNetBaseService::Data
 {
-    Data(const std::string& aName, const std::string& aNetworkName):
-      m_Name(aName),
-      m_Network(aNetworkName),
+    Data(const std::string& aServiceName, const std::string& aNetworkName):
+      m_ServiceName(aServiceName),
+      m_NetworkName(aNetworkName),
       m_enmTrunkType(kIntNetTrunkType_WhateverNone),
       m_pSession(NIL_RTR0PTR),
       m_cbSendBuf(128 * _1K),
@@ -91,8 +91,8 @@ struct VBoxNetBaseService::Data
         AssertRC(rc);
     };
 
-    std::string         m_Name;
-    std::string         m_Network;
+    std::string         m_ServiceName;
+    std::string         m_NetworkName;
     std::string         m_TrunkName;
     INTNETTRUNKTYPE     m_enmTrunkType;
 
@@ -267,11 +267,11 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
         switch (rc)
         {
             case 'N': // --name
-                m->m_Name = Val.psz;
+                m->m_ServiceName = Val.psz;
                 break;
 
             case 'n': // --network
-                m->m_Network = Val.psz;
+                m->m_NetworkName = Val.psz;
                 break;
 
             case 't': //--trunk-name
@@ -392,9 +392,9 @@ int VBoxNetBaseService::tryGoOnline(void)
     OpenReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     OpenReq.Hdr.cbReq = sizeof(OpenReq);
     OpenReq.pSession = m->m_pSession;
-    strncpy(OpenReq.szNetwork, m->m_Network.c_str(), sizeof(OpenReq.szNetwork));
+    RTStrCopy(OpenReq.szNetwork, sizeof(OpenReq.szNetwork), m->m_NetworkName.c_str());
     OpenReq.szNetwork[sizeof(OpenReq.szNetwork) - 1] = '\0';
-    strncpy(OpenReq.szTrunk, m->m_TrunkName.c_str(), sizeof(OpenReq.szTrunk));
+    RTStrCopy(OpenReq.szTrunk, sizeof(OpenReq.szTrunk), m->m_TrunkName.c_str());
     OpenReq.szTrunk[sizeof(OpenReq.szTrunk) - 1] = '\0';
     OpenReq.enmTrunkType = m->m_enmTrunkType;
     OpenReq.fFlags = 0; /** @todo check this */
@@ -580,27 +580,27 @@ int VBoxNetBaseService::hlpUDPBroadcast(unsigned uSrcPort, unsigned uDstPort,
 }
 
 
-const std::string VBoxNetBaseService::getName() const
+const std::string VBoxNetBaseService::getServiceName() const
 {
-    return m->m_Name;
+    return m->m_ServiceName;
 }
 
 
-void VBoxNetBaseService::setName(const std::string& aName)
+void VBoxNetBaseService::setServiceName(const std::string& aName)
 {
-    m->m_Name = aName;
+    m->m_ServiceName = aName;
 }
 
 
-const std::string VBoxNetBaseService::getNetwork() const
+const std::string VBoxNetBaseService::getNetworkName() const
 {
-    return m->m_Network;
+    return m->m_NetworkName;
 }
 
 
-void VBoxNetBaseService::setNetwork(const std::string& aNetwork)
+void VBoxNetBaseService::setNetworkName(const std::string& aName)
 {
-    m->m_Network = aNetwork;
+    m->m_NetworkName = aName;
 }
 
 

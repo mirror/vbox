@@ -54,7 +54,8 @@
 bool NetworkManager::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
     RawOption opt;
-    memset(&opt, 0, sizeof(RawOption));
+    RT_ZERO(opt);
+
     /* 1. Find client */
     ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
     Client client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);

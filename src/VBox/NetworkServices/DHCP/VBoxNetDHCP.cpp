@@ -220,7 +220,7 @@ VBoxNetDhcp::VBoxNetDhcp()
     m_uCurMsgType           = UINT8_MAX;
     m_cbCurMsg              = 0;
     m_pCurMsg               = NULL;
-    memset(&m_CurHdrs, '\0', sizeof(m_CurHdrs));
+    RT_ZERO(m_CurHdrs);
 
     m_fIgnoreCmdLineParameters = true;
 
@@ -498,7 +498,7 @@ int VBoxNetDhcp::initWithMain()
      * and listener for Dhcp configuration events
      */
     AssertRCReturn(virtualbox.isNull(), VERR_INTERNAL_ERROR);
-    std::string networkName = getNetwork();
+    std::string networkName = getNetworkName();
 
     int rc = findDhcpServer(virtualbox, networkName, m_DhcpServer);
     AssertRCReturn(rc, rc);
@@ -615,8 +615,16 @@ HRESULT VBoxNetDhcp::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
         case VBoxEventType_OnNATNetworkStartStop:
         {
             ComPtr <INATNetworkStartStopEvent> pStartStopEvent = pEvent;
+
+            com::Bstr networkName;
+            HRESULT hrc = pStartStopEvent->COMGETTER(NetworkName)(networkName.asOutParam());
+            AssertComRCReturn(hrc, hrc);
+            if (networkName.compare(getNetworkName().c_str()))
+                break; /* change not for our network */
+
             BOOL fStart = TRUE;
-            HRESULT hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
+            hrc = pStartStopEvent->COMGETTER(StartEvent)(&fStart);
+            AssertComRCReturn(hrc, hrc);
             if (!fStart)
                 shutdown();
             break;

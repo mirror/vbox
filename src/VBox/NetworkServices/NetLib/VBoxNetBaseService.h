@@ -86,11 +86,11 @@ public:
     virtual bool        isMainNeeded() const;
 
 protected:
-    const std::string getName() const;
-    void setName(const std::string&);
+    const std::string getServiceName() const;
+    void setServiceName(const std::string&);
 
-    const std::string getNetwork() const;
-    void setNetwork(const std::string&);
+    const std::string getNetworkName() const;
+    void setNetworkName(const std::string&);
 
     const RTMAC getMacAddress() const;
     void setMacAddress(const RTMAC&);
