@@ -540,7 +540,7 @@ static void acpiEventHandler(int fd, void *pvData)
     VBVXASSERT(rc != -1 || errno == EAGAIN, ("Reading ACPI input event failed.\n"));
 }
 
-void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
+void vbvxSetUpLinuxACPI(ScreenPtr pScreen)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
     struct dirent *pDirent;
@@ -590,7 +590,7 @@ void VBoxSetUpLinuxACPI(ScreenPtr pScreen)
     closedir(pDir);
 }
 
-void VBoxCleanUpLinuxACPI(ScreenPtr pScreen)
+void vbvxCleanUpLinuxACPI(ScreenPtr pScreen)
 {
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[pScreen->myNum]);
     if (pVBox->fdACPIDevices != -1)
