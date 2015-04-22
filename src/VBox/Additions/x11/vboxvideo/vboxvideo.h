@@ -269,8 +269,9 @@ extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, u
                         bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
-extern Bool vbox_cursor_init (ScreenPtr pScreen);
-extern void vbox_close (ScrnInfoPtr pScrn, VBOXPtr pVBox);
+/* pointer.h */
+extern Bool vbvxCursorInit(ScreenPtr pScreen);
+extern void vbvxCursorTerm(VBOXPtr pVBox);
 
 /* vbva.c */
 extern void vbvxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects);

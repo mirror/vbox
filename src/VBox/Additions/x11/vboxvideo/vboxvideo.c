@@ -1369,7 +1369,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
-    if (vbox_cursor_init(pScreen) != TRUE)
+    if (vbvxCursorInit(pScreen) != TRUE)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
 
@@ -1483,8 +1483,7 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
         VBOXUnmapVidMem(pScrn);
     pScrn->vtSema = FALSE;
 
-    /* Do additional bits which are separate for historical reasons */
-    vbox_close(pScrn, pVBox);
+    vbvxCursorTerm(pVBox);
 
     pScreen->CloseScreen = pVBox->CloseScreen;
 #if defined(VBOXVIDEO_13) && defined(RT_OS_LINUX)
