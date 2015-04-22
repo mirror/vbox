@@ -7730,7 +7730,7 @@ HRESULT Console::i_setMachineState(MachineState_T aMachineState,
     {
         LogThisFunc(("machineState=%s -> %s aUpdateServer=%RTbool\n",
                      Global::stringifyMachineState(mMachineState), Global::stringifyMachineState(aMachineState), aUpdateServer));
-        LogRel(("Console: machine state changed to %s\n", Global::stringifyMachineState(aMachineState)));
+        LogRel(("Console: Machine state changed to %s\n", Global::stringifyMachineState(aMachineState)));
         mMachineState = aMachineState;
 
         /// @todo (dmik)
