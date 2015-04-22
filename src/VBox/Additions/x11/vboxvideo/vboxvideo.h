@@ -280,9 +280,9 @@ struct vbvxFrameBuffer {
     unsigned cBPP;
 };
 
+extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
 extern void vbvxSetMode(ScrnInfoPtr pScrn, unsigned cDisplay, unsigned cWidth, unsigned cHeight, int x, int y, bool fEnabled,
                          bool fConnected, struct vbvxFrameBuffer *pFrameBuffer);
-extern void vbvxClearVRAM(ScrnInfoPtr pScrn, size_t cbOldSize, size_t cbNewSize);
 extern void vbvxSetSolarisMouseRange(int width, int height);
 
 extern Bool vbox_cursor_init (ScreenPtr pScreen);
