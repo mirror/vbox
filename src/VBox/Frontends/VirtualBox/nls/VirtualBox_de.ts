@@ -541,7 +541,7 @@
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>Webseite von &amp;VirtualBox...</translation>
+        <translation>&amp;VirtualBox-Webseite...</translation>
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
@@ -665,7 +665,7 @@
     </message>
     <message>
         <source>&amp;Network Settings...</source>
-        <translation>&amp;Netzwerkeinstellungen...</translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
@@ -714,7 +714,7 @@
     </message>
     <message>
         <source>&amp;Insert Guest Additions CD image...</source>
-        <translation>&amp;Medium mit Gasterweiterungen einlegen...</translation>
+        <translation>&amp;Gasterweiterungen einlegen...</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual drive</source>
@@ -730,7 +730,7 @@
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation>&amp;Menüleisten-Einstelungen...</translation>
+        <translation>&amp;Einstelungen...</translation>
     </message>
     <message>
         <source>Opens window to configure menu-bar</source>
@@ -750,7 +750,7 @@
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation>&amp;Statusleisten-Einstellungen...</translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Opens window to configure status-bar</source>
@@ -766,7 +766,7 @@
     </message>
     <message>
         <source>&amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Eingabe</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
@@ -774,7 +774,7 @@
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Display the global settings window to configure shortcuts</source>
@@ -802,7 +802,7 @@
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation>&amp;USB-Einstellungen...</translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Change the settings of USB devices</source>
@@ -810,7 +810,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Gemeinsame Ordner</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
@@ -1625,7 +1625,7 @@
     </message>
     <message>
         <source>Machine Windows:</source>
-        <translation type="unfinished"></translation>
+        <translation>VM-Fenster:</translation>
     </message>
     <message>
         <source>If checked, machine windows will be raised when the mouse pointer moves over them.</source>
@@ -1633,7 +1633,7 @@
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fenster unter Mauszeiger hervorholen</translation>
     </message>
 </context>
 <context>
@@ -2874,7 +2874,7 @@
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Ungefährt %1 MB pro Videominute&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
@@ -2977,7 +2977,7 @@
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschlüsselungs-C&amp;hiffre:</translation>
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
@@ -2993,7 +2993,7 @@
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Neues Passwort &amp;bestätigen:</translation>
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
@@ -3005,15 +3005,15 @@
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschlüsselungs-Chiffre nicht ausgewählt.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschlüsselungspasswort nicht gesetzt.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschlüsselungspasswörter stimmen nicht überein.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
@@ -4244,11 +4244,11 @@
     </message>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation>USB-&amp;1.1 (OHCI-)Controller</translation>
+        <translation>USB-&amp;1.1-Controller (OHCI)</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
-        <translation>USB-&amp;2.0 (EHCI-)Controller</translation>
+        <translation>USB-&amp;2.0-Controller (EHCI)</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
@@ -4256,7 +4256,7 @@
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation>USB-&amp;3.0 (xHCI-)Controller</translation>
+        <translation>USB-&amp;3.0-Controller (xHCI)</translation>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
