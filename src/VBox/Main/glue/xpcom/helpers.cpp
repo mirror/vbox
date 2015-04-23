@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * COM helper functions for XPCOM

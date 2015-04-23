@@ -1,3 +1,4 @@
+/* $Id$ */
 void vboxCConvApplyAYUV(vec4 color)
 {
     float y, u, v, r, g, b;

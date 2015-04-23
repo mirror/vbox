@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - UIWarningPane class declaration.
  */

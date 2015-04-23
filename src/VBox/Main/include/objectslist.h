@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * List of COM objects

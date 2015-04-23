@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * Internal helpers/structures for guest control functionality.

@@ -1,4 +1,4 @@
-/* Id: 73443 $ */
+/* $Id$ */
 /** @file
  * VBoxGuestLibR0 - Internal header.
  */

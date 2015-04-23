@@ -1,3 +1,4 @@
+/* $Id$ */
 #extension GL_ARB_texture_rectangle : enable
 uniform sampler2DRect uSrcTex;
 uniform sampler2DRect uVTex;

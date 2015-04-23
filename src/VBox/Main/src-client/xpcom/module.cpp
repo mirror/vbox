@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * XPCOM module implementation functions

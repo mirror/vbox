@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * HGCMThread - Host-Guest Communication Manager worker threads header.
  */

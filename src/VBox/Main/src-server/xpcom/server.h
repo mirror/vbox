@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * Common header for XPCOM server and its module counterpart

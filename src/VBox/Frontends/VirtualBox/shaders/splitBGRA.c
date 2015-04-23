@@ -1,3 +1,4 @@
+/* $Id$ */
 float vboxSplitBGRA(vec4 color, float coord)
 {
     int pix = int(coord);

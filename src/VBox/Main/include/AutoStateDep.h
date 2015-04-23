@@ -1,3 +1,4 @@
+/* $Id$ */
 #ifndef ____H_AUTOSTATEDEP
 #define ____H_AUTOSTATEDEP
 

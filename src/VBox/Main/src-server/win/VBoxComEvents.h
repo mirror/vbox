@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  *  Declaration of COM Events Helper routines.

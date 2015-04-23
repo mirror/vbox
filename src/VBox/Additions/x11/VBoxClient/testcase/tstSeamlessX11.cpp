@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Linux seamless guest additions simulator in host.
  */

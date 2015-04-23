@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * Declaration of template classes that provide simple API to

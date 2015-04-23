@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - Qt extensions: QIWidgetValidator class declaration.
  */

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * IPRT - SHA256 digest creation
  *

@@ -1,3 +1,4 @@
+/* $Id$ */
 void vboxCKeyDst(void);
 void vboxCConv();
 void main(void)

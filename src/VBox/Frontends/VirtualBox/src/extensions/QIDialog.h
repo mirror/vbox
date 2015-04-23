@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - VBox Qt extensions: QIDialog class declaration.
  */

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxGuestLib - Central calls header.
  */

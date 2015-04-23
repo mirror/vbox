@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * tstVBoxAPIXPCOM - sample program to illustrate the VirtualBox

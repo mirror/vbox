@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VirtualBox object caller handling definitions

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - Qt GUI - Utility Classes and Functions specific to darwin..
  */

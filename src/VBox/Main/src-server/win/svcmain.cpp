@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * SVCMAIN - COM out-of-proc server main entry

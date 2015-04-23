@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox Host Guest Shared Memory Interface (HGSMI).

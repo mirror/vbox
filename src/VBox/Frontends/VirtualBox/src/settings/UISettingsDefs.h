@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - Header with definitions and functions related to settings configuration.
  */

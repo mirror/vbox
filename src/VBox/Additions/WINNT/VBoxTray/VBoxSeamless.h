@@ -1,3 +1,4 @@
+/* $Id: $ */
 /** @file
  * VBoxSeamless - Seamless windows
  */

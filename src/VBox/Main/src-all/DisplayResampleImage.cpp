@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Image resampling code, used for snapshot thumbnails.
  */

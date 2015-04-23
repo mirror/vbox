@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxVRDP - VRDP notification
  */

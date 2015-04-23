@@ -1,4 +1,4 @@
-/* $Revision$ */
+/* $Id$ */
 /** @file
  * VBoxGuestLibR0 - Library initialization.
  */

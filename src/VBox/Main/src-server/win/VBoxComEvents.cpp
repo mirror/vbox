@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  *  COM Events Helper routines.

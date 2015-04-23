@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxSharedFolders - Handling for shared folders
  */

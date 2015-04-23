@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VirtualBox API client session crash token handling

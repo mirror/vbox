@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBoxService - Guest Additions Service

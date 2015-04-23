@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Main - Secret key interface.
  */

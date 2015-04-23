@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxTray - Display Settings Interface abstraction for XPDM & WDDM
  */

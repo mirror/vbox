@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBox Qt GUI - UIMiniToolBar class declaration (fullscreen/seamless).
  */

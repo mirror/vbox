@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * Medium lock management helper classes

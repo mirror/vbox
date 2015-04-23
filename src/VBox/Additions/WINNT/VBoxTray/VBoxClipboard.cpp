@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBoxClipboard - Shared clipboard

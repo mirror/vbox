@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * X11 Seamless mode.
  */

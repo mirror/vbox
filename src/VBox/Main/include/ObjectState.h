@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VirtualBox object state handling definitions

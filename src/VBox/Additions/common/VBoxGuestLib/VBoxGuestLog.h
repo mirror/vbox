@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * VBoxGuestLibR0 - Guest Logging facility.
  */

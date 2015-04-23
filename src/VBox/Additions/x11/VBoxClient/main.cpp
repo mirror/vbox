@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VirtualBox Guest Service:

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Automated test of the X11 seamless Additions code.
  * @todo Better separate test data from implementation details!

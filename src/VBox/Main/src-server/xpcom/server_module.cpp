@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * XPCOM server process helper module implementation functions

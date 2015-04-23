@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * HGCM - Host-Guest Communication Manager.
  */

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * X11 guest client - host version check.
  */

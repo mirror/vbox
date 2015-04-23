@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * helpers - Guest Additions Service helper functions
  */

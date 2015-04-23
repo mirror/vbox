@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * Main driver registration.
