@@ -1201,7 +1201,7 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * UINT64_C(0x8000);
     pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * UINT64_C(0x8000);
 
-    LogFlowFunc(("\t-> lVol=%RU32, rVol=%RU32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
+    LogFlowFunc(("\t-> lVol=%#RX32, rVol=%#RX32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }
 
 uint32_t audioMixBufSize(PPDMAUDIOMIXBUF pMixBuf)
