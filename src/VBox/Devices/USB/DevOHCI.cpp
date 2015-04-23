@@ -2763,7 +2763,9 @@ static bool ohciServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint3
     Log(("%s: ohciServiceTd: submitting TdAddr=%#010x EdAddr=%#010x cbData=%#x\n",
          pUrb->pszDesc, TdAddr, EdAddr, pUrb->cbData));
 
+    RTCritSectLeave(&pThis->CritSect);
     int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
+    RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
         return true;
 
@@ -2927,7 +2929,9 @@ static bool ohciServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pE
     ohci_in_flight_add_urb(pThis, pUrb);
     Log(("%s: ohciServiceTdMultiple: submitting cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x\n",
          pUrb->pszDesc, pUrb->cbData, EdAddr, cTds, TdAddr));
+    RTCritSectLeave(&pThis->CritSect);
     int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
+    RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
         return true;
 
@@ -3151,7 +3155,9 @@ static bool ohciServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdAdd
     ohci_in_flight_add_urb(pThis, pUrb);
     Log(("%s: ohciServiceIsochronousTd: submitting cbData=%#x cIsocPkts=%d EdAddr=%#010x TdAddr=%#010x SF=%#x (%#x)\n",
          pUrb->pszDesc, pUrb->cbData, pUrb->cIsocPkts, EdAddr, ITdAddr, pITd->HwInfo & ITD_HWINFO_SF, pThis->HcFmNumber));
+    RTCritSectLeave(&pThis->CritSect);
     int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
+    RTCritSectEnter(&pThis->CritSect);
     if (RT_SUCCESS(rc))
         return true;
 
