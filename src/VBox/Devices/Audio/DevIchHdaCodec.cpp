@@ -1173,11 +1173,12 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
 #endif
 {
     uint32_t dir = AMPLIFIER_OUT;
+    ENMSOUNDSOURCE enmSrc;
     switch (mt)
     {
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        case PDMAUDIOMIXERCTL_VOLUME:
         case PDMAUDIOMIXERCTL_PCM:
+            enmSrc = PO_INDEX;
 #else
         case AUD_MIXER_VOLUME:
         case AUD_MIXER_PCM:
@@ -1186,6 +1187,7 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
             break;
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         case PDMAUDIOMIXERCTL_LINE_IN:
+            enmSrc = PI_INDEX;
 #else
         case AUD_MIXER_LINE_IN:
 #endif
@@ -1213,7 +1215,7 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /** @todo In SetVolume no passing audmixerctl_in as its not used in DrvAudio.cpp. */
-    pThis->pfnSetVolume(pThis->pHDAState, RT_BOOL(mute), lVol, rVol);
+    pThis->pfnSetVolume(pThis->pHDAState, enmSrc, RT_BOOL(mute), lVol, rVol);
 #else
     AUD_set_volume(mt, &mute, &lVol, &rVol);
 #endif
@@ -1372,7 +1374,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
 
         /** @todo Fix ID of u8DacLineOut! */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_VOLUME);
+        hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_PCM);
 #else
         hdaCodecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
 #endif
@@ -2414,13 +2416,13 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
      */
     if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_VOLUME);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
 #else
         hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
 #endif
     else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_VOLUME);
+        hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_PCM);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 #else
         hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
@@ -2503,7 +2505,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
         pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_VOLUME);
+    hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
 
 

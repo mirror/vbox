@@ -2515,20 +2515,34 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
         RTStrFree(pszDesc);
     }
 
-    PDMAUDIOVOLUME vol = { false, 255, 255 };
-    audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-static DECLCALLBACK(int) hdaSetVolume(PHDASTATE pThis,
+static DECLCALLBACK(int) hdaSetVolume(PHDASTATE pThis, ENMSOUNDSOURCE enmSource,
                                       bool fMute, uint8_t uVolLeft, uint8_t uVolRight)
 {
-    int rc = VINF_SUCCESS;
+    int             rc = VINF_SUCCESS;
+    PDMAUDIOVOLUME  vol = { fMute, uVolLeft, uVolRight };
+    PAUDMIXSINK     pSink;
 
-    PDMAUDIOVOLUME vol = { fMute, uVolLeft, uVolRight };
-    audioMixerSetMasterVolume(pThis->pMixer, &vol);
+    /* Convert the audio source to corresponding sink. */
+    switch (enmSource) {
+    case PO_INDEX:
+        pSink = pThis->pSinkOutput;
+        break;
+    case PI_INDEX:
+        pSink = pThis->pSinkLineIn;
+        break;
+    case MC_INDEX:
+        pSink = pThis->pSinkMicIn;
+        break;
+    default:
+        AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    /* Set the volume. Codec already converted it to the correct range. */
+    audioMixerSetSinkVolume(pSink, &vol);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3867,6 +3881,11 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
             rc = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
                                    AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
+            AssertRC(rc);
+
+            /* There is no master volume control. Set the master to max. */
+            PDMAUDIOVOLUME vol = { false, 255, 255 };
+            rc = audioMixerSetMasterVolume(pThis->pMixer, &vol);
             AssertRC(rc);
         }
     }

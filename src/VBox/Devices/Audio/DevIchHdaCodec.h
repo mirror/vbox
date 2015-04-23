@@ -115,7 +115,7 @@ typedef struct HDACODEC
     DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PHDASTATE pThis));
     DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
-    DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
+    DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, ENMSOUNDSOURCE enmSource, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
 #else
     QEMUSoundCard           card;
     /** PCM in */
