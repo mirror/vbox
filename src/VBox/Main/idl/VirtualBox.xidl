@@ -11657,7 +11657,7 @@
     </attribute>
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
-        Event source for VirtualBox events.
+        Event source for process events.
       </desc>
     </attribute>
     <attribute name="executablePath" type="wstring" readonly="yes">
@@ -11909,7 +11909,7 @@
     </attribute>
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
-        Event source for guest session events.
+        Event source for file events.
       </desc>
     </attribute>
     <attribute name="fileName" type="wstring" readonly="yes">
