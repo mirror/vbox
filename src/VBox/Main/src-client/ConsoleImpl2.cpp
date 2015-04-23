@@ -3695,10 +3695,13 @@ int Console::i_configMediumAttachment(const char *pcszDevice,
             PCFGMNODE pCfg = NULL;
 
             /* Create correct instance. */
-            if (!fHotplug && !fAttachDetach)
-                InsertConfigNode(pCtlInst, Utf8StrFmt("%d", lPort).c_str(), &pCtlInst);
-            else if (fAttachDetach)
-                pCtlInst = CFGMR3GetChildF(pCtlInst, "%d/", lPort);
+            if (!fHotplug)
+            {
+                if (!fAttachDetach)
+                    InsertConfigNode(pCtlInst, Utf8StrFmt("%d", lPort).c_str(), &pCtlInst);
+                else
+                    pCtlInst = CFGMR3GetChildF(pCtlInst, "%d/", lPort);
+            }
 
             if (!fAttachDetach)
                 InsertConfigNode(pCtlInst, "Config", &pCfg);
