@@ -1069,13 +1069,14 @@ static uint8_t sb16MixRegToVol(PSB16STATE pThis, int reg)
 
 static void sb16SetMasterVolume(PSB16STATE pThis)
 {
-    int     mute = 0; /** @todo Handle (un)muting. */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
-    PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
+    PDMAUDIOVOLUME vol = { false, lvol, rvol };
     audioMixerSetMasterVolume(pThis->pMixer, &vol);
 #else
+    int     mute = 0;
     uint8_t lvol = pThis->mixer_regs[0x30];
     uint8_t rvol = pThis->mixer_regs[0x31];
 
@@ -1085,13 +1086,14 @@ static void sb16SetMasterVolume(PSB16STATE pThis)
 
 static void sb16SetPcmOutVolume(PSB16STATE pThis)
 {
-    int     mute = 0; /** @todo Handle (un)muting. */
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+    /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
-    PDMAUDIOVOLUME vol = { RT_BOOL(mute), lvol, rvol };
+    PDMAUDIOVOLUME vol = { false, lvol, rvol };
     audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
 #else
+    int     mute = 0;
     uint8_t lvol = pThis->mixer_regs[0x32];
     uint8_t rvol = pThis->mixer_regs[0x33];
 
