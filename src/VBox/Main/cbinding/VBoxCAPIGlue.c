@@ -1,4 +1,4 @@
-/* $Revision$ */
+/* $Id $ */
 /** @file
  * Glue code for dynamically linking to VBoxCAPI.
  */
