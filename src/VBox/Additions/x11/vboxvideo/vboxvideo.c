@@ -54,71 +54,52 @@
  *          Dave Airlie <airlied@redhat.com>
  */
 
-#ifdef XORG_7X
-# include <stdlib.h>
-# include <string.h>
-#endif
-
-#include "xf86.h"
-#include "xf86_OSproc.h"
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
-# include "xf86Resources.h"
-#endif
-
-/* This was accepted upstream in X.Org Server 1.16 which bumped the video
- * driver ABI to 17. */
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 17
-# define SET_HAVE_VT_PROPERTY
-#endif
-
-#ifndef PCIACCESS
-/* Drivers for PCI hardware need this */
-# include "xf86PciInfo.h"
-/* Drivers that need to access the PCI config space directly need this */
-# include "xf86Pci.h"
-#endif
-
-#include "fb.h"
-
 #include "vboxvideo.h"
 #include <VBox/VBoxGuest.h>
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include "version-generated.h"
 #include "product-generated.h"
-#include <xf86.h>
-#include <misc.h>
 
-/* All drivers initialising the SW cursor need this */
-#include "mipointer.h"
-
-/* Colormap handling */
+/* Basic definitions and functions needed by all drivers. */
+#include "xf86.h"
+/* For video memory mapping. */
+#include "xf86_OSproc.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
+/* PCI resources. */
+# include "xf86Resources.h"
+#endif
+/* Generic server linear frame-buffer APIs. */
+#include "fb.h"
+/* Colormap and visual handling. */
 #include "micmap.h"
 #include "xf86cmap.h"
-
-/* DPMS */
-/* #define DPMS_SERVER
-#include "extensions/dpms.h" */
-
 /* ShadowFB support */
 #include "shadowfb.h"
-
 /* VGA hardware functions for setting and restoring text mode */
 #include "vgaHW.h"
-
+#ifdef VBOX_DRI
+# include "xf86drm.h"
+# include "xf86drmMode.h"
+#endif
 #ifdef VBOXVIDEO_13
 /* X.org 1.3+ mode setting */
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 # include "xf86Crtc.h"
 # include "xf86Modes.h"
 #endif
-
 /* For setting the root window property. */
-#include <X11/Xatom.h>
 #include "property.h"
+#include "X11/Xatom.h"
 
-#ifdef VBOX_DRI
-# include "xf86drm.h"
-# include "xf86drmMode.h"
+#ifdef XORG_7X
+# include <stdlib.h>
+# include <string.h>
+#endif
+
+/* This was accepted upstream in X.Org Server 1.16 which bumped the video
+ * driver ABI to 17. */
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 17
+# define SET_HAVE_VT_PROPERTY
 #endif
 
 /* Mandatory functions */
