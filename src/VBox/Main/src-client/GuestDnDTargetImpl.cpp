@@ -690,7 +690,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     {
         if (!aFile.IsOpen())
         {
-            rc = aFile.OpenEx(aFile.GetSourcePath(), DnDURIObject::Type::File, DnDURIObject::Dest::Source,
+            rc = aFile.OpenEx(aFile.GetSourcePath(), DnDURIObject::File, DnDURIObject::Source,
                               RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
             if (RT_SUCCESS(rc))
             {
