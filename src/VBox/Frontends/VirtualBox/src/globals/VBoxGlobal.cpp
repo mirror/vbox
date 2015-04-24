@@ -4602,7 +4602,7 @@ bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = 
     switch (enmLaunchMode)
     {
         case LaunchMode_Default:  strType = ""; break;
-        case LaunchMode_Separate:
+        case LaunchMode_Separate: strType = vboxGlobal().isSeparateProcess() ? "headless" : "separate"; break;
         case LaunchMode_Headless: strType = "headless"; break;
     }
 
