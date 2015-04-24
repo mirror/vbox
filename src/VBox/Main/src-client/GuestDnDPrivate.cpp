@@ -296,7 +296,7 @@ bool GuestDnDResponse::isProgressCanceled(void) const
 
 int GuestDnDResponse::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback, void *pvUser /* = NULL */)
 {
-    GuestDnDCallbackMap::const_iterator it = m_mapCallbacks.find(uMsg);
+    GuestDnDCallbackMap::iterator it = m_mapCallbacks.find(uMsg);
 
     /* Add. */
     if (pfnCallback)
