@@ -27,7 +27,6 @@
 #include "AutoCaller.h"
 
 #include <algorithm>        /* For std::find(). */
-#include <memory>           /* For auto_ptr (deprecated) / unique_ptr, seee #7179. */
 
 #include <iprt/file.h>
 #include <iprt/dir.h>
@@ -484,19 +483,26 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser
 {
     LogFlowFunc(("pvUser=%p\n", pvUser));
 
-    std::auto_ptr<SendDataTask> pTask(static_cast<SendDataTask*>(pvUser));
-    AssertPtr(pTask.get());
+    SendDataTask *pTask = (SendDataTask *)pvUser;
+    AssertPtrReturn(pTask, VERR_INVALID_POINTER);
 
     const ComObjPtr<GuestDnDTarget> pTarget(pTask->getTarget());
     Assert(!pTarget.isNull());
 
-    AutoCaller autoCaller(pTarget);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    int rc;
 
-    int rc = pTarget->i_sendData(pTask->getCtx());
-    /* Nothing to do here anymore. */
+    AutoCaller autoCaller(pTarget);
+    if (SUCCEEDED(autoCaller.rc()))
+    {
+        rc = pTarget->i_sendData(pTask->getCtx());
+        /* Nothing to do here anymore. */
+    }
+    else
+         rc = VERR_COM_INVALID_OBJECT_STATE;
 
     LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pTarget, rc));
+
+    delete pTask;
     return rc;
 }
 
@@ -543,18 +549,17 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
             pSendCtx->mFormat   = aFormat;
             pSendCtx->mData     = aData;
 
-            std::auto_ptr<SendDataTask> pTask(new SendDataTask(this, pSendCtx));
+            SendDataTask *pTask = new SendDataTask(this, pSendCtx);
             AssertReturn(pTask->isOk(), pTask->getRC());
 
             vrc = RTThreadCreate(NULL, GuestDnDTarget::i_sendDataThread,
-                                 (void *)pTask.get(), 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
+                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
             if (RT_SUCCESS(vrc))
             {
                 hr = pResp->queryProgressTo(aProgress.asOutParam());
                 ComAssertComRC(hr);
 
-                /* pTask is now owned by i_sendDataThread(), so release it. */
-                pTask.release();
+                /* Note: pTask is now owned by the worker thread. */
             }
             else if (pSendCtx)
                 delete pSendCtx;
