@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,25 +36,23 @@
 VBoxDnDDropTarget::VBoxDnDDropTarget(VBoxDnDWnd *pParent)
     : mRefCount(1),
       mpWndParent(pParent),
-      mClientID(UINT32_MAX),
       mdwCurEffect(0),
       mpvData(NULL),
       mcbData(0),
       hEventDrop(NIL_RTSEMEVENT)
 {
-    int rc = VbglR3DnDConnect(&mClientID);
+    int rc = VbglR3DnDConnect(&mDnDCtx);
     if (RT_SUCCESS(rc))
         rc = RTSemEventCreate(&hEventDrop);
 
-    LogFlowFunc(("clientID=%RU32, rc=%Rrc\n",
-                 mClientID, rc));
+    LogFlowFunc(("clientID=%RU32, rc=%Rrc\n", mDnDCtx.uClientID, rc));
 }
 
 VBoxDnDDropTarget::~VBoxDnDDropTarget(void)
 {
     reset();
 
-    int rc2 = VbglR3DnDDisconnect(mClientID);
+    int rc2 = VbglR3DnDDisconnect(&mDnDCtx);
     AssertRC(rc2);
     rc2 = RTSemEventDestroy(hEventDrop);
     AssertRC(rc2);

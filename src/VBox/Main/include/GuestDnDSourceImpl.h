@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,9 +21,12 @@
 #include "GuestDnDSourceWrap.h"
 #include "GuestDnDPrivate.h"
 
+struct RECVDATACTX;
+typedef struct RECVDATACTX *PRECVDATACTX;
+
 class ATL_NO_VTABLE GuestDnDSource :
     public GuestDnDSourceWrap,
-    protected GuestDnDBase
+    public GuestDnDBase
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
@@ -45,6 +48,8 @@ private:
     HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
     HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
     HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+
+    HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     /** @}  */
 
     /** Private wrapped @name IDnDSource methods.
@@ -56,11 +61,31 @@ private:
 
 protected:
 
-    /** @name Attributes.
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    /** @name Dispatch handlers for the HGCM callbacks.
      * @{ */
-    /** Pointer to guest implementation. */
-    const ComObjPtr<Guest>     m_pGuest;
+    int i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData, uint64_t cbTotalSize);
+    int i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode);
+    int i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint64_t cbSize, uint32_t fMode, uint32_t fFlags);
+    int i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData);
     /** @}  */
+#endif
+
+protected:
+
+    static DECLCALLBACK(int) i_receiveDataThread(RTTHREAD Thread, void *pvUser);
+
+    /** @name Callbacks for dispatch handler.
+     * @{ */
+    static DECLCALLBACK(int) i_receiveRawDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+    static DECLCALLBACK(int) i_receiveURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+    /** @}  */
+
+protected:
+
+    int i_receiveData(PRECVDATACTX pCtx);
+    int i_receiveRawData(PRECVDATACTX pCtx);
+    int i_receiveURIData(PRECVDATACTX pCtx);
 };
 
 #endif /* !____H_GUESTDNDSOURCEIMPL */

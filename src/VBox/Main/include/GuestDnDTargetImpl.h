@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,9 +21,15 @@
 #include "GuestDnDTargetWrap.h"
 #include "GuestDnDPrivate.h"
 
+#include <VBox/GuestHost/DragAndDrop.h>
+#include <VBox/HostServices/DragAndDropSvc.h>
+
+struct SENDDATACTX;
+typedef struct SENDDATACTX *PSENDDATACTX;
+
 class ATL_NO_VTABLE GuestDnDTarget :
     public GuestDnDTargetWrap,
-    protected GuestDnDBase
+    public GuestDnDBase
 {
 public:
     /** @name COM and internal init/term/mapping cruft.
@@ -45,6 +51,8 @@ private:
     HRESULT getFormats(std::vector<com::Utf8Str> &aFormats);
     HRESULT addFormats(const std::vector<com::Utf8Str> &aFormats);
     HRESULT removeFormats(const std::vector<com::Utf8Str> &aFormats);
+
+    HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     /** @}  */
 
     /** Private wrapped @name IDnDTarget methods.
@@ -54,14 +62,30 @@ private:
     HRESULT leave(ULONG aScreenId);
     HRESULT drop(ULONG aScreenId, ULONG aX, ULONG aY, DnDAction_T aDefaultAction, const std::vector<DnDAction_T> &aAllowedActions, const std::vector<com::Utf8Str> &aFormats, com::Utf8Str &aFormat, DnDAction_T *aResultAction);
     HRESULT sendData(ULONG aScreenId, const com::Utf8Str &aFormat, const std::vector<BYTE> &aData, ComPtr<IProgress> &aProgress);
+    HRESULT cancel(BOOL *aVeto);
     /** @}  */
+
+protected:
+
+    static DECLCALLBACK(int) i_sendDataThread(RTTHREAD Thread, void *pvUser);
+    static DECLCALLBACK(int) i_sendURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+
+protected:
+
+    int i_cancelOperation(void);
+    int i_sendData(PSENDDATACTX pCtx);
+    int i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aDirectory);
+    int i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aFile);
+    int i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObject &aFile);
+    int i_sendURIData(PSENDDATACTX pCtx);
+    int i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg);
 
 protected:
 
     /** @name Attributes.
      * @{ */
-    /** Pointer to guest implementation. */
-    const ComObjPtr<Guest>     m_pGuest;
+    /** Maximum data block size (in bytes) the target can handle. */
+    uint32_t                   m_cbBlockSize;
     /** @}  */
 };
 

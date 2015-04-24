@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@
 #include <iprt/cpp/ministring.h>
 #include <iprt/cpp/list.h>
 
-typedef DECLCALLBACK(int) FNDNDPROGRESS(unsigned uPercentage, uint32_t uState, int rc, void *pvUser);
+typedef DECLCALLBACK(int) FNDNDPROGRESS(uint32_t uState, uint32_t uPercentage, int rc, void *pvUser);
 typedef FNDNDPROGRESS *PFNDNDPROGRESS;
 
 /**
@@ -107,43 +107,7 @@ public:
 };
 
 /**
- * DnD message class for informing the guest about a new drop data event.
- */
-class DnDHGSendDataMessage: public DnDMessage
-{
-public:
-
-    DnDHGSendDataMessage(uint32_t uMsg, uint32_t cParms,
-                         VBOXHGCMSVCPARM paParms[],
-                         PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser);
-
-    virtual ~DnDHGSendDataMessage(void);
-
-    HGCM::Message* nextHGCMMessage(void);
-    int currentMessageInfo(uint32_t *puMsg, uint32_t *pcParms);
-    int currentMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-
-    bool isMessageWaiting(void) const { return !!m_pNextPathMsg; }
-
-protected:
-
-    static DECLCALLBACK(int) progressCallback(size_t cbDone, void *pvUser);
-
-    DnDMessage         *m_pNextPathMsg;
-
-    DnDURIList          m_lstURI;
-    /* Total message size (in bytes). */
-    size_t              m_cbTotal;
-    /* Transferred message size (in bytes). */
-    size_t              m_cbTransfered;
-
-    PFNDNDPROGRESS      m_pfnProgressCallback;
-    void               *m_pvProgressUser;
-};
-
-/**
- * DnD message class for informing the guest to cancel any currently and
- * pending activities.
+ * DnD message class for informing the guest to cancel any current (and pending) activities.
  */
 class DnDHGCancelMessage: public DnDMessage
 {
@@ -166,8 +130,7 @@ class DnDManager
 public:
 
     DnDManager(PFNDNDPROGRESS pfnProgressCallback, void *pvProgressUser)
-        : m_pCurMsg(0)
-        , m_fOpInProcess(false)
+        : m_pCurMsg(NULL)
         , m_pfnProgressCallback(pfnProgressCallback)
         , m_pvProgressUser(pvProgressUser)
     {}
@@ -177,21 +140,18 @@ public:
         clear();
     }
 
-    int addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int addMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fAppend = true);
 
     HGCM::Message *nextHGCMMessage(void);
     int nextMessageInfo(uint32_t *puMsg, uint32_t *pcParms);
     int nextMessage(uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
     void clear(void);
-
-    bool hasActiveOperation(void) const { return m_fOpInProcess; }
+    int doReschedule(void);
 
 private:
     DnDMessage           *m_pCurMsg;
     RTCList<DnDMessage*>  m_dndMessageQueue;
-
-    bool                  m_fOpInProcess;
 
     /* Progress stuff */
     PFNDNDPROGRESS        m_pfnProgressCallback;

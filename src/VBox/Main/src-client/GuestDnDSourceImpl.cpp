@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2014 Oracle Corporation
+ * Copyright (C) 2014-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,12 @@
 #include "Global.h"
 #include "AutoCaller.h"
 
+#include <memory>    /* For unique_ptr, seee #7179. */
+
+#include <iprt/dir.h>
+#include <iprt/file.h>
+#include <iprt/path.h>
+
 #include <iprt/cpp/utils.h> /* For unconst(). */
 
 #include <VBox/com/array.h>
@@ -38,6 +44,57 @@
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
 
+/**
+ * Base class for a source task.
+ */
+class GuestDnDSourceTask
+{
+public:
+
+    GuestDnDSourceTask(GuestDnDSource *pSource)
+        : mSource(pSource),
+          mRC(VINF_SUCCESS) { }
+
+    virtual ~GuestDnDSourceTask(void) { }
+
+    int getRC(void) const { return mRC; }
+    bool isOk(void) const { return RT_SUCCESS(mRC); }
+    const ComObjPtr<GuestDnDSource> &getSource(void) const { return mSource; }
+
+protected:
+
+    const ComObjPtr<GuestDnDSource>     mSource;
+    int                                 mRC;
+};
+
+/**
+ * Task structure for receiving data from a source using
+ * a worker thread.
+ */
+class RecvDataTask : public GuestDnDSourceTask
+{
+public:
+
+    RecvDataTask(GuestDnDSource *pSource, PRECVDATACTX pCtx)
+        : GuestDnDSourceTask(pSource)
+        , mpCtx(pCtx) { }
+
+    virtual ~RecvDataTask(void)
+    {
+        if (mpCtx)
+        {
+            delete mpCtx;
+            mpCtx = NULL;
+        }
+    }
+
+    PRECVDATACTX getCtx(void) { return mpCtx; }
+
+protected:
+
+    /** Pointer to receive data context. */
+    PRECVDATACTX mpCtx;
+};
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -94,8 +151,7 @@ void GuestDnDSource::uninit(void)
 // implementation of wrapped IDnDBase methods.
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat,
-                                          BOOL *aSupported)
+HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat, BOOL *aSupported)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -106,7 +162,7 @@ HRESULT GuestDnDSource::isFormatSupported(const com::Utf8Str &aFormat,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::isFormatSupported(aFormat, aSupported);
+    return GuestDnDBase::i_isFormatSupported(aFormat, aSupported);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -121,7 +177,7 @@ HRESULT GuestDnDSource::getFormats(std::vector<com::Utf8Str> &aFormats)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::getFormats(aFormats);
+    return GuestDnDBase::i_getFormats(aFormats);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -136,7 +192,7 @@ HRESULT GuestDnDSource::addFormats(const std::vector<com::Utf8Str> &aFormats)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::addFormats(aFormats);
+    return GuestDnDBase::i_addFormats(aFormats);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -151,7 +207,22 @@ HRESULT GuestDnDSource::removeFormats(const std::vector<com::Utf8Str> &aFormats)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return GuestDnDBase::removeFormats(aFormats);
+    return GuestDnDBase::i_removeFormats(aFormats);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
+{
+#if !defined(VBOX_WITH_DRAG_AND_DROP)
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_DRAG_AND_DROP */
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return GuestDnDBase::i_getProtocolVersion(aProtocolVersion);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -170,6 +241,9 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
+    /* Determine guest DnD protocol to use. */
+    GuestDnDBase::getProtocolVersion(&mData.mProtocolVersion);
+
     /* Default is ignoring the action. */
     DnDAction_T defaultAction = DnDAction_Ignore;
 
@@ -179,8 +253,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
     int i = 0;
     paParms[i++].setUInt32(uScreenId);
 
-    int rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_GH_REQ_PENDING,
-                                      i, paParms);
+    int rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_GH_REQ_PENDING, i, paParms);
     if (RT_SUCCESS(rc))
     {
         bool fFetchResult = true;
@@ -209,7 +282,7 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
 
     if (RT_FAILURE(rc))
         hr = setError(VBOX_E_IPRT_ERROR,
-                      tr("Unable to retrieve pending status (%Rrc)\n"), rc);
+                      tr("Unable to retrieve drag'n drop pending status (%Rrc)\n"), rc);
 
     LogFlowFunc(("hr=%Rhrc, defaultAction=0x%x\n", hr, defaultAction));
     return hr;
@@ -237,52 +310,47 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat,
 
     HRESULT hr = S_OK;
 
-    const char *pcszFormat = aFormat.c_str();
-    bool fNeedsDropDir = DnDMIMENeedsDropDir(pcszFormat, strlen(pcszFormat));
-    LogFlowFunc(("strFormat=%s, uAction=0x%x, fNeedsDropDir=%RTbool\n",
-                 pcszFormat, uAction, fNeedsDropDir));
-
+    /* Note: At the moment we only support one response at a time. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
     if (pResp)
     {
-        /* Reset any old data. */
-        pResp->reset();
         pResp->resetProgress(m_pGuest);
 
-        /* Set the format we are going to retrieve to have it around
-         * when retrieving the data later. */
-        pResp->setFormat(aFormat);
+        int rc;
 
-        if (fNeedsDropDir)
+        try
         {
-            char szDropDir[RTPATH_MAX];
-            int rc = DnDDirCreateDroppedFiles(szDropDir, sizeof(szDropDir));
-            LogFlowFunc(("rc=%Rrc, szDropDir=%s\n", rc, szDropDir));
-            if (RT_FAILURE(rc))
-                return setError(VBOX_E_IPRT_ERROR,
-                                tr("Unable to create the temporary drag and drop directory \"%s\" (%Rrc)\n"),
-                                szDropDir, rc);
+            PRECVDATACTX pRecvCtx = new RECVDATACTX;
+            RT_BZERO(pRecvCtx, sizeof(RECVDATACTX));
 
-            pResp->setDropDir(szDropDir);
+            pRecvCtx->mpSource  = this;
+            pRecvCtx->mpResp    = pResp;
+            pRecvCtx->mFormat   = aFormat;
+
+            std::unique_ptr <RecvDataTask> pTask(new RecvDataTask(this, pRecvCtx));
+            AssertReturn(pTask->isOk(), pTask->getRC());
+
+            rc = RTThreadCreate(NULL, GuestDnDSource::i_receiveDataThread,
+                                (void *)pTask.get(), 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndSrcRcvData");
+            if (RT_SUCCESS(rc))
+            {
+                hr = pResp->queryProgressTo(aProgress.asOutParam());
+                ComAssertComRC(hr);
+
+                /* pTask is now owned by i_receiveDataThread(), so release it. */
+                pTask.release();
+            }
+            else if (pRecvCtx)
+                delete pRecvCtx;
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
         }
 
-        VBOXHGCMSVCPARM paParms[4];
-        int i = 0;
-        paParms[i++].setPointer((void*)aFormat.c_str(), (uint32_t)aFormat.length() + 1);
-        paParms[i++].setUInt32((uint32_t)aFormat.length() + 1);
-        paParms[i++].setUInt32(uAction);
-
-        int rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED,
-                                          i, paParms);
-        if (RT_SUCCESS(rc))
-        {
-            /* Query the progress object to the caller. */
-            pResp->queryProgressTo(aProgress.asOutParam());
-        }
-        else
-            hr = setError(VBOX_E_IPRT_ERROR,
-                          tr("Error signalling to drop data (%Rrc)\n"), rc);
+        /*if (RT_FAILURE(vrc)) @todo SetError(...) */
     }
+    /** @todo SetError(...) */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
@@ -312,8 +380,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
             AssertPtr(pvData);
 
             Utf8Str strFormat = pResp->format();
-            LogFlowFunc(("strFormat=%s, cbData=%zu, pvData=0x%p\n",
-                         strFormat.c_str(), cbData, pvData));
+            LogFlowFunc(("strFormat=%s, cbData=%zu, pvData=0x%p\n", strFormat.c_str(), cbData, pvData));
 
             try
             {
@@ -328,8 +395,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
                         Utf8Str strURIs = lstURI.RootToString(pResp->dropDir());
                         size_t cbURIs = strURIs.length();
 
-                        LogFlowFunc(("Found %zu root URIs (%zu bytes)\n",
-                                     lstURI.RootCount(), cbURIs));
+                        LogFlowFunc(("Found %zu root URIs (%zu bytes)\n", lstURI.RootCount(), cbURIs));
 
                         aData.resize(cbURIs + 1 /* Include termination */);
                         memcpy(&aData.front(), strURIs.c_str(), cbURIs);
@@ -359,5 +425,636 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
+}
+
+// implementation of internal methods.
+/////////////////////////////////////////////////////////////////////////////
+
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData, uint64_t cbTotalSize)
+{
+    AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData,   VERR_INVALID_POINTER);
+    AssertReturn(cbData,      VERR_INVALID_PARAMETER);
+    AssertReturn(cbTotalSize, VERR_INVALID_PARAMETER);
+
+    LogFlowFunc(("cbData=%RU32, cbTotalSize=%RU64\n", cbData, cbTotalSize));
+
+    int rc = VINF_SUCCESS;
+
+    try
+    {
+        if (   cbData > cbTotalSize
+            || cbData > _64K) /** @todo Make this configurable? */
+        {
+            LogFlowFunc(("Data sizes invalid: cbData=%RU32, cbTotalSize=%RU64\n", cbData, cbTotalSize));
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else if (cbData < pCtx->mData.size())
+        {
+            AssertMsgFailed(("New size (%RU64) is smaller than current size (%zu)\n", cbTotalSize, pCtx->mData.size()));
+            rc = VERR_INVALID_PARAMETER;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pCtx->mData.insert(pCtx->mData.begin(), (BYTE *)pvData, (BYTE *)pvData + cbData);
+
+            LogFlowFunc(("mDataSize=%zu\n", pCtx->mData.size()));
+
+            /* Data transfer complete? */
+            Assert(cbData <= pCtx->mData.size());
+            if (cbData == pCtx->mData.size())
+            {
+                bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
+                if (fHasURIList)
+                {
+                    LogFlowFunc(("Parsing URI data ...\n"));
+
+                    /* Try parsing the data as URI list. */
+                    rc = pCtx->mURI.lstURI.RootFromURIData(&pCtx->mData[0], pCtx->mData.size(), 0 /* uFlags */);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pCtx->mURI.cbProcessed = 0;
+                        pCtx->mURI.cbToProcess = cbTotalSize;
+                    }
+                }
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath, uint32_t fMode)
+{
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cbPath,     VERR_INVALID_PARAMETER);
+
+    LogFlowFunc(("pszPath=%s, cbPath=%zu, fMode=0x%x\n", pszPath, cbPath, fMode));
+
+    int rc;
+    char *pszDir = RTPathJoinA(pCtx->mURI.strDropDir.c_str(), pszPath);
+    if (pszDir)
+    {
+        rc = RTDirCreateFullPath(pszDir, fMode);
+        RTStrFree(pszDir);
+    }
+    else
+         rc = VERR_NO_MEMORY;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, uint32_t cbPath,
+                                       uint64_t cbSize, uint32_t fMode, uint32_t fFlags)
+{
+    AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cbPath,     VERR_INVALID_PARAMETER);
+    AssertReturn(fMode,      VERR_INVALID_PARAMETER);
+    /* fFlags are optional. */
+
+    LogFlowFunc(("pszPath=%s, cbPath=%RU32, cbSize=%RU64, fMode=0x%x, fFlags=0x%x\n", pszPath, cbPath, cbSize, fMode, fFlags));
+
+    int rc = VINF_SUCCESS;
+
+    do
+    {
+        if (!pCtx->mURI.objURI.IsComplete())
+        {
+            LogFlowFunc(("Warning: Object \"%s\" not complete yet\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            rc = VERR_INVALID_PARAMETER;
+            break;
+        }
+
+        if (pCtx->mURI.objURI.IsOpen()) /* File already opened? */
+        {
+            LogFlowFunc(("Warning: Current opened object is \"%s\"\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            rc = VERR_WRONG_ORDER;
+            break;
+        }
+
+        char pszPathAbs[RTPATH_MAX];
+        rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pCtx->mURI.strDropDir.c_str(), pszPath);
+        if (RT_FAILURE(rc))
+        {
+            LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
+            break;
+        }
+
+        rc = DnDPathSanitize(pszPathAbs, sizeof(pszPathAbs));
+        if (RT_FAILURE(rc))
+        {
+            LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
+            break;
+        }
+
+        LogFunc(("Rebased to: %s\n", pszPathAbs));
+
+        /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
+        /** @todo Add fMode to opening flags. */
+        rc = pCtx->mURI.objURI.OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
+                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            /** @todo Unescpae path before printing. */
+            LogRel2(("DnD: Transferring file to host: %s\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+
+            /* Note: Protocol v1 does not send any file sizes, so always 0. */
+            if (mData.mProtocolVersion >= 2)
+                rc = pCtx->mURI.objURI.SetSize(cbSize);
+        }
+
+    } while (0);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn(cbData, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+
+    do
+    {
+        if (pCtx->mURI.objURI.IsComplete())
+        {
+            LogFlowFunc(("Warning: Object \"%s\" already completed\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            rc = VERR_WRONG_ORDER;
+            break;
+        }
+
+        if (!pCtx->mURI.objURI.IsOpen()) /* File opened on host? */
+        {
+            LogFlowFunc(("Warning: Object \"%s\" not opened\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            rc = VERR_WRONG_ORDER;
+            break;
+        }
+
+        uint32_t cbWritten;
+        rc = pCtx->mURI.objURI.Write(pvData, cbData, &cbWritten);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbWritten <= cbData);
+            if (cbWritten < cbData)
+            {
+                /** @todo What to do when the host's disk is full? */
+                rc = VERR_DISK_FULL;
+            }
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pCtx->mURI.objURI.IsComplete())
+            {
+                LogRel2(("DnD: File transfer to host complete: %s", pCtx->mURI.objURI.GetDestPath().c_str()));
+                rc = VINF_EOF;
+            }
+        }
+        else
+            LogRel(("DnD: Error: Can't write guest file to host to \"%s\": %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+
+    } while (0);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    int rc;
+
+    GuestDnD *pInst = GuestDnDInst();
+    if (!pInst)
+        return VERR_INVALID_POINTER;
+
+    GuestDnDResponse *pResp = pCtx->mpResp;
+    AssertPtr(pCtx->mpResp);
+
+    ASMAtomicWriteBool(&pCtx->mIsActive, true);
+
+    /* Create event semaphore. */
+    pCtx->SemEvent = NIL_RTSEMEVENT;
+    rc = RTSemEventCreate(&pCtx->SemEvent);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pCtx->mURI.cbToProcess = 0;
+    pCtx->mURI.cbProcessed = 0;
+    pCtx->mURI.cProcessed  = 0;
+
+    do
+    {
+        /* Reset any old data. */
+        pResp->reset();
+        pResp->resetProgress(m_pGuest);
+
+        /* Set the format we are going to retrieve to have it around
+         * when retrieving the data later. */
+        pResp->setFormat(pCtx->mFormat);
+
+        bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
+        LogFlowFunc(("strFormat=%s, uAction=0x%x, fHasURIList=%RTbool\n", pCtx->mFormat.c_str(), pCtx->mAction, fHasURIList));
+
+        if (fHasURIList)
+        {
+            rc = i_receiveURIData(pCtx);
+        }
+        else
+        {
+            rc = i_receiveRawData(pCtx);
+        }
+
+    } while (0);
+
+    if (pCtx->SemEvent != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pCtx->SemEvent);
+        pCtx->SemEvent = NIL_RTSEMEVENT;
+    }
+
+    ASMAtomicWriteBool(&pCtx->mIsActive, false);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* static */
+DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvUser)
+{
+    LogFlowFunc(("pvUser=%p\n", pvUser));
+
+    std::unique_ptr<RecvDataTask> pTask(static_cast<RecvDataTask*>(pvUser));
+    AssertPtr(pTask.get());
+
+    const ComObjPtr<GuestDnDSource> pTarget(pTask->getSource());
+    Assert(!pTarget.isNull());
+
+    AutoCaller autoCaller(pTarget);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    int rc = pTarget->i_receiveData(pTask->getCtx());
+    /* Nothing to do here anymore. */
+
+    LogFlowFunc(("pSource=%p returning rc=%Rrc\n", (GuestDnDSource *)pTarget, rc));
+    return rc;
+}
+
+int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    int rc;
+
+    GuestDnDResponse *pResp = pCtx->mpResp;
+    AssertPtr(pCtx->mpResp);
+
+    GuestDnD *pInst = GuestDnDInst();
+    if (!pInst)
+        return VERR_INVALID_POINTER;
+
+#define REGISTER_CALLBACK(x) \
+    rc = pResp->setCallback(x, i_receiveRawDataCallback, pCtx); \
+    if (RT_FAILURE(rc)) \
+        return rc;
+
+#define UNREGISTER_CALLBACK(x) \
+    rc = pCtx->mpResp->setCallback(x, NULL); \
+    AssertRC(rc);
+
+    /*
+     * Register callbacks.
+     */
+    /* Guest callbacks. */
+    REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DATA);
+
+    do
+    {
+        /*
+         * Receive the raw data.
+         */
+        GuestDnDMsg Msg;
+        Msg.setType(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED);
+        Msg.setNextPointer((void*)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextUInt32(pCtx->mAction);
+
+        /* Make the initial call to the guest by telling that we initiated the "dropped" event on
+         * the host and therefore now waiting for the actual raw data. */
+        rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Wait until our callback i_receiveRawDataCallback triggered the
+             * wait event.
+             */
+            LogFlowFunc(("Waiting for raw data callback ...\n"));
+            rc = RTSemEventWait(pCtx->SemEvent, RT_INDEFINITE_WAIT);
+            LogFlowFunc(("Raw data callback done\n"));
+        }
+
+    } while (0);
+
+    /*
+     * Unregister callbacks.
+     */
+    UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DATA);
+
+#undef REGISTER_CALLBACK
+#undef UNREGISTER_CALLBACK
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    int rc;
+
+    GuestDnDResponse *pResp = pCtx->mpResp;
+    AssertPtr(pCtx->mpResp);
+
+    GuestDnD *pInst = GuestDnDInst();
+    if (!pInst)
+        return VERR_INVALID_POINTER;
+
+#define REGISTER_CALLBACK(x) \
+    rc = pResp->setCallback(x, i_receiveURIDataCallback, pCtx); \
+    if (RT_FAILURE(rc)) \
+        return rc;
+
+#define UNREGISTER_CALLBACK(x) \
+    rc = pResp->setCallback(x, NULL); \
+    AssertRC(rc);
+
+    /*
+     * Register callbacks.
+     */
+    /* Guest callbacks. */
+    REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DATA);
+    REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DIR);
+    if (mData.mProtocolVersion >= 2)
+        REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_FILE_HDR);
+    REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_FILE_DATA);
+
+    do
+    {
+        char szDropDir[RTPATH_MAX];
+        rc = DnDDirCreateDroppedFiles(szDropDir, sizeof(szDropDir));
+        LogFlowFunc(("rc=%Rrc, szDropDir=%s\n", rc, szDropDir));
+        if (RT_FAILURE(rc))
+            break;
+
+        pCtx->mURI.strDropDir = szDropDir; /** @todo Keep directory handle open? */
+        pResp->setDropDir(szDropDir);
+
+        /*
+         * Receive the URI list.
+         */
+        GuestDnDMsg Msg;
+        Msg.setType(DragAndDropSvc::HOST_DND_GH_EVT_DROPPED);
+        Msg.setNextPointer((void*)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        Msg.setNextUInt32(pCtx->mAction);
+
+        /* Make the initial call to the guest by telling that we initiated the "dropped" event on
+         * the host and therefore now waiting for the actual URI actual data. */
+        rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Wait until our callback i_receiveURIDataCallback triggered the
+             * wait event.
+             */
+            LogFlowFunc(("Waiting for URI callback ...\n"));
+            rc = RTSemEventWait(pCtx->SemEvent, RT_INDEFINITE_WAIT);
+            LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
+        }
+
+    } while (0);
+
+    /*
+     * Unregister callbacks.
+     */
+    UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DATA);
+    UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_DIR);
+    if (mData.mProtocolVersion >= 2)
+        UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_FILE_HDR);
+    UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_SND_FILE_DATA);
+
+#undef REGISTER_CALLBACK
+#undef UNREGISTER_CALLBACK
+
+    if (RT_FAILURE(rc))
+    {
+        LogFlowFunc(("Rolling back ...\n"));
+
+        /* Rollback by removing any stuff created. */
+        for (size_t i = 0; i < pCtx->mURI.lstFiles.size(); ++i)
+            RTFileDelete(pCtx->mURI.lstFiles.at(i).c_str());
+        for (size_t i = 0; i < pCtx->mURI.lstDirs.size(); ++i)
+            RTDirRemove(pCtx->mURI.lstDirs.at(i).c_str());
+    }
+
+    /* Try removing (hopefully) empty drop directory in any case. */
+    if (pCtx->mURI.strDropDir.isNotEmpty())
+        RTDirRemove(pCtx->mURI.strDropDir.c_str());
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/* static */
+DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
+{
+    PRECVDATACTX pCtx = (PRECVDATACTX)pvUser;
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    GuestDnDSource *pThis = pCtx->mpSource;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
+
+    int rc = VINF_SUCCESS;
+
+    switch (uMsg)
+    {
+        case DragAndDropSvc::GUEST_DND_GH_SND_DATA:
+        {
+            DragAndDropSvc::PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBSNDDATADATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDDATADATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            rc = pThis->i_onReceiveData(pCtx, pCBData->pvData, pCBData->cbData, pCBData->cbTotalSize);
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
+        {
+            DragAndDropSvc::PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBEVTERRORDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            /* Cleanup. */
+            pCtx->mpResp->reset();
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+            break;
+        }
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pCtx->SemEvent != NIL_RTSEMEVENT)
+        {
+            LogFlowFunc(("Signalling ...\n"));
+            int rc2 = RTSemEventSignal(pCtx->SemEvent);
+            AssertRC(rc2);
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc; /* Tell the guest. */
+}
+
+/* static */
+DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser)
+{
+    PRECVDATACTX pCtx = (PRECVDATACTX)pvUser;
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    GuestDnDSource *pThis = pCtx->mpSource;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
+
+    int rc = VINF_SUCCESS;
+
+    switch (uMsg)
+    {
+        case DragAndDropSvc::GUEST_DND_GH_SND_DATA:
+        {
+            DragAndDropSvc::PVBOXDNDCBSNDDATADATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBSNDDATADATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDDATADATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            rc = pThis->i_onReceiveData(pCtx, pCBData->pvData, pCBData->cbData, pCBData->cbTotalSize);
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_SND_DIR:
+        {
+            DragAndDropSvc::PVBOXDNDCBSNDDIRDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBSNDDIRDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDDIRDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_DIR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            rc = pThis->i_onReceiveDir(pCtx, pCBData->pszPath, pCBData->cbPath, pCBData->fMode);
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_SND_FILE_HDR:
+        {
+            DragAndDropSvc::PVBOXDNDCBSNDFILEHDRDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBSNDFILEHDRDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDFILEHDRDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_HDR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            rc = pThis->i_onReceiveFileHdr(pCtx, pCBData->pszFilePath, pCBData->cbFilePath,
+                                           pCBData->cbSize, pCBData->fMode, pCBData->fFlags);
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_SND_FILE_DATA:
+        {
+            DragAndDropSvc::PVBOXDNDCBSNDFILEDATADATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBSNDFILEDATADATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBSNDFILEDATADATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            if (pThis->mData.mProtocolVersion <= 1)
+            {
+                /**
+                 * Notes for protocol v1 (< VBox 5.0):
+                 * - Every time this command is being sent it includes the file header,
+                 *   so just process both calls here.
+                 * - There was no information whatsoever about the total file size; the old code only
+                 *   appended data to the desired file. So just pass 0 as cbSize.
+                 */
+                rc = pThis->i_onReceiveFileHdr(pCtx,
+                                               pCBData->u.v1.pszFilePath, pCBData->u.v1.cbFilePath,
+                                               0 /* cbSize */, pCBData->u.v1.fMode, 0 /* fFlags */);
+                if (RT_SUCCESS(rc))
+                    rc = pThis->i_onReceiveFileData(pCtx, pCBData->pvData, pCBData->cbData);
+            }
+            else /* Protocol v2 and up. */
+                rc = pThis->i_onReceiveFileData(pCtx, pCBData->pvData, pCBData->cbData);
+
+            /* Current file done? */
+            if (rc == VINF_EOF)
+            {
+                /* Remove it from the list. */
+                pCtx->mURI.lstURI.RemoveFirst();
+
+                if (pCtx->mURI.lstURI.IsEmpty()) /* Current file processed? Check if there's more. */
+                {
+                    /* Let waiters know. */
+                    if (pCtx->SemEvent != NIL_RTSEMEVENT)
+                    {
+                        LogFlowFunc(("Signalling ...\n"));
+                        int rc2 = RTSemEventSignal(pCtx->SemEvent);
+                        AssertRC(rc2);
+                    }
+                }
+            }
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
+        {
+            DragAndDropSvc::PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBEVTERRORDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            /* Cleanup. */
+            pCtx->mpResp->reset();
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+            break;
+        }
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        if (pCtx->SemEvent != NIL_RTSEMEVENT)
+        {
+            LogFlowFunc(("Signalling ...\n"));
+            int rc2 = RTSemEventSignal(pCtx->SemEvent);
+            AssertRC(rc2);
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc; /* Tell the guest. */
 }
 

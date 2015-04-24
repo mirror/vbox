@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -71,7 +71,6 @@ VBoxDnDWnd::VBoxDnDWnd(void)
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
       pDropTarget(NULL),
 #endif
-      mClientID(UINT32_MAX),
       mMode(Unknown),
       mState(Uninitialized)
 {
@@ -706,14 +705,14 @@ int VBoxDnDWnd::UnregisterAsDropTarget(void)
  */
 int VBoxDnDWnd::OnCreate(void)
 {
-    int rc = VbglR3DnDConnect(&mClientID);
+    int rc = VbglR3DnDConnect(&mDnDCtx);
     if (RT_FAILURE(rc))
     {
         LogFlowThisFunc(("Connection to host service failed, rc=%Rrc\n", rc));
         return rc;
     }
 
-    LogFlowThisFunc(("Client ID=%RU32, rc=%Rrc\n", mClientID, rc));
+    LogFlowThisFunc(("Client ID=%RU32, rc=%Rrc\n", mDnDCtx.uClientID, rc));
     return rc;
 }
 
@@ -722,7 +721,7 @@ int VBoxDnDWnd::OnCreate(void)
  */
 void VBoxDnDWnd::OnDestroy(void)
 {
-    VbglR3DnDDisconnect(mClientID);
+    VbglR3DnDDisconnect(&mDnDCtx);
     LogFlowThisFuncLeave();
 }
 
@@ -852,7 +851,7 @@ int VBoxDnDWnd::OnHgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
 
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3DnDHGAcknowledgeOperation(mClientID, uActionNotify);
+        rc = VbglR3DnDHGAcknowledgeOperation(&mDnDCtx, uActionNotify);
         if (RT_FAILURE(rc))
             LogFlowThisFunc(("Acknowledging operation failed with rc=%Rrc\n", rc));
     }
@@ -922,10 +921,11 @@ int VBoxDnDWnd::OnHgDrop(void)
             if (RT_SUCCESS(rc))
             {
                 LogRel(("DnD: Requesting data as '%s' ...\n", mFormatRequested.c_str()));
-                rc = VbglR3DnDHGRequestData(mClientID, mFormatRequested.c_str());
+                rc = VbglR3DnDHGRequestData(&mDnDCtx, mFormatRequested.c_str());
                 if (RT_FAILURE(rc))
                     LogFlowThisFunc(("Requesting data failed with rc=%Rrc\n", rc));
             }
+
         }
         else /* Should never happen. */
             LogRel(("DnD: Error: Host did not specify a data format for drop data\n"));
@@ -975,7 +975,7 @@ int VBoxDnDWnd::OnHgDataReceived(const void *pvData, uint32_t cbData)
 }
 
 /**
- * Handles actions required when the host wants to cancel an action
+ * Handles actions required when the host wants to cancel the current
  * host -> guest operation.
  *
  * @return  IPRT status code.
@@ -1121,7 +1121,7 @@ int VBoxDnDWnd::OnGhIsDnDPending(uint32_t uScreenID)
         /** @todo Support more than one action at a time. */
         uAllActions = uDefAction;
 
-        rc = VbglR3DnDGHAcknowledgePending(mClientID,
+        rc = VbglR3DnDGHAcknowledgePending(&mDnDCtx,
                                            uDefAction, uAllActions, strFormats.c_str());
         if (RT_FAILURE(rc))
         {
@@ -1198,11 +1198,8 @@ int VBoxDnDWnd::OnGhDropped(const char *pszFormat, uint32_t cbFormat,
             uint32_t cbData = pDropTarget->DataSize();
             Assert(cbData);
 
-            rc = VbglR3DnDGHSendData(mClientID, pszFormat, pvData, cbData);
-            LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n",
-                         pvData, cbData, rc));
-
-
+            rc = VbglR3DnDGHSendData(&mDnDCtx, pszFormat, pvData, cbData);
+            LogFlowFunc(("Sent pvData=0x%p, cbData=%RU32, rc=%Rrc\n", pvData, cbData, rc));
         }
     }
     else
@@ -1230,7 +1227,7 @@ int VBoxDnDWnd::ProcessEvent(PVBOXDNDEVENT pEvent)
     if (!fRc)
     {
         static int s_iBitchedAboutFailedDnDMessages = 0;
-        if (s_iBitchedAboutFailedDnDMessages++ < 10)
+        if (s_iBitchedAboutFailedDnDMessages++ < 32)
         {
             DWORD dwErr = GetLastError();
             LogRel(("DnD: Processing event %p failed with %ld (%Rrc), skpping\n",
@@ -1618,8 +1615,9 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
     PVBOXDNDCONTEXT pCtx = (PVBOXDNDCONTEXT)pInstance;
     AssertPtr(pCtx);
 
-    uint32_t uClientID;
-    int rc = VbglR3DnDConnect(&uClientID);
+    VBGLR3GUESTDNDCMDCTX ctxDnD; /* The thread's own DnD context. */
+
+    int rc = VbglR3DnDConnect(&ctxDnD);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1641,14 +1639,15 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
         }
         /* Note: pEvent will be free'd by the consumer later. */
 
-        rc = VbglR3DnDProcessNextMessage(uClientID, &pEvent->Event);
+        rc = VbglR3DnDProcessNextMessage(&ctxDnD, &pEvent->Event);
         LogFlowFunc(("VbglR3DnDProcessNextMessage returned uType=%RU32, rc=%Rrc\n",
                      pEvent->Event.uType, rc));
 
         if (ASMAtomicReadBool(&pCtx->fShutdown))
             break;
 
-        if (RT_SUCCESS(rc))
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_CANCELLED)
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
 
@@ -1657,13 +1656,6 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
             int rc2 = pWnd->ProcessEvent(pEvent);
             if (RT_FAILURE(rc2))
                 LogFlowFunc(("Processing event failed with rc=%Rrc\n", rc2));
-        }
-        else if (rc == VERR_CANCELLED)
-        {
-            int rc2 = pWnd->OnHgCancel();
-            if (RT_FAILURE(rc2))
-                LogFlowFunc(("Cancelling failed with rc=%Rrc\n", rc2));
-            break;
         }
         else
         {
@@ -1678,7 +1670,7 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
                 break;
             }
 
-            int rc2 = VbglR3DnDGHSendError(uClientID, rc);
+            int rc2 = VbglR3DnDGHSendError(&ctxDnD, rc);
             AssertRC(rc2);
         }
 
@@ -1692,7 +1684,7 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
 
     LogFlowFunc(("Shutting down ...\n"));
 
-    VbglR3DnDDisconnect(uClientID);
+    VbglR3DnDDisconnect(&ctxDnD);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

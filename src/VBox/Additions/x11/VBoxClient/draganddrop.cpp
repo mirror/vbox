@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -405,34 +405,35 @@ public:
 
 protected:
 
-    uint32_t            m_uClientID;
-    DragAndDropService *m_pParent;
-    Display            *m_pDisplay;
-    int                 m_screenId;
-    Screen             *m_pScreen;
-    Window              m_wndRoot;
-    Window              m_wndProxy;
-    Window              m_wndCur;
-    long                m_curVer;
-    RTCList<Atom>       m_formats;
-    RTCList<Atom>       m_actions;
+    /** The instance's own DnD context. */
+    VBGLR3GUESTDNDCMDCTX        m_dndCtx;
+    DragAndDropService         *m_pParent;
+    Display                    *m_pDisplay;
+    int                         m_screenId;
+    Screen                     *m_pScreen;
+    Window                      m_wndRoot;
+    Window                      m_wndProxy;
+    Window                      m_wndCur;
+    long                        m_curVer;
+    RTCList<Atom>               m_formats;
+    RTCList<Atom>               m_actions;
     /** Deferred host to guest selection event for sending to the
      *  target window as soon as data from the host arrived. */
-    XEvent              m_eventHgSelection;
+    XEvent                      m_eventHgSelection;
     /** Current operation mode. */
-    Mode                m_mode;
+    Mode                        m_mode;
     /** Current state of operation mode. */
-    State               m_state;
+    State                       m_state;
     /** The instance's own X event queue. */
-    RTCMTList<XEvent>   m_eventQueue;
+    RTCMTList<XEvent>           m_eventQueue;
     /** Critical section for providing serialized access to list
      *  event queue's contents. */
-    RTCRITSECT          m_eventQueueCS;
+    RTCRITSECT                  m_eventQueueCS;
     /** Event for notifying this instance in case of a new
      *  event. */
-    RTSEMEVENT          m_hEventSem;
+    RTSEMEVENT                  m_hEventSem;
     /** List of allowed formats. */
-    RTCList<RTCString>  m_lstAllowedFormats;
+    RTCList<RTCString>          m_lstAllowedFormats;
 };
 
 /*******************************************************************************
@@ -506,16 +507,15 @@ private:
  ******************************************************************************/
 
 DragInstance::DragInstance(Display *pDisplay, DragAndDropService *pParent)
-  : m_uClientID(0)
-  , m_pParent(pParent)
-  , m_pDisplay(pDisplay)
-  , m_pScreen(0)
-  , m_wndRoot(0)
-  , m_wndProxy(0)
-  , m_wndCur(0)
-  , m_curVer(-1)
-  , m_mode(Unknown)
-  , m_state(Uninitialized)
+    : m_pParent(pParent)
+    , m_pDisplay(pDisplay)
+    , m_pScreen(0)
+    , m_wndRoot(0)
+    , m_wndProxy(0)
+    , m_wndCur(0)
+    , m_curVer(-1)
+    , m_mode(Unknown)
+    , m_state(Uninitialized)
 {
     uninit();
 }
@@ -526,11 +526,7 @@ void DragInstance::uninit(void)
     if (m_wndProxy != 0)
         XDestroyWindow(m_pDisplay, m_wndProxy);
 
-    if (m_uClientID)
-    {
-        VbglR3DnDDisconnect(m_uClientID);
-        m_uClientID = 0;
-    }
+    VbglR3DnDDisconnect(&m_dndCtx);
 
     m_state    = Uninitialized;
     m_screenId = -1;
@@ -570,7 +566,7 @@ int DragInstance::init(uint32_t u32ScreenId)
     {
         uninit();
 
-        rc = VbglR3DnDConnect(&m_uClientID);
+        rc = VbglR3DnDConnect(&m_dndCtx);
         if (RT_FAILURE(rc))
             break;
 
@@ -691,7 +687,7 @@ int DragInstance::onX11ClientMessage(const XEvent &e)
                 if (ASMBitTest(&e.xclient.data.l[1], 0))
                     uAction = toHGCMAction(static_cast<Atom>(e.xclient.data.l[4]));
 
-                rc = VbglR3DnDHGAcknowledgeOperation(m_uClientID, uAction);
+                rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, uAction);
             }
             else if (e.xclient.message_type == xAtom(XA_XdndFinished))
             {
@@ -858,7 +854,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
 
                     RTCString strFormat = xAtomToString(e.xselectionrequest.target);
                     Assert(strFormat.isNotEmpty());
-                    rc = VbglR3DnDHGRequestData(m_uClientID, strFormat.c_str());
+                    rc = VbglR3DnDHGRequestData(&m_dndCtx, strFormat.c_str());
                     LogFlowThisFunc(("Requesting data from host as \"%s\", rc=%Rrc\n",
                                      strFormat.c_str(), rc));
                 }
@@ -1220,7 +1216,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
         && newVer    == -1)
     {
         /* No window to process, so send a ignore ack event to the host. */
-        rc = VbglR3DnDHGAcknowledgeOperation(m_uClientID, DND_IGNORE_ACTION);
+        rc = VbglR3DnDHGAcknowledgeOperation(&m_dndCtx, DND_IGNORE_ACTION);
     }
 
     m_wndCur = wndCursor;
@@ -1475,9 +1471,9 @@ int DragInstance::ghIsDnDPending(void)
             uint32_t uDefAction = DND_COPY_ACTION; /** @todo Handle default action! */
             uint32_t uAllActions = toHGCMActions(m_actions);
 
-            rc = VbglR3DnDGHAcknowledgePending(m_uClientID, uDefAction, uAllActions, strFormats.c_str());
+            rc = VbglR3DnDGHAcknowledgePending(&m_dndCtx, uDefAction, uAllActions, strFormats.c_str());
             LogFlowThisFunc(("Acknowledging m_uClientID=%RU32, allActions=0x%x, strFormats=%s, rc=%Rrc\n",
-                             m_uClientID, uAllActions, strFormats.c_str(), rc));
+                             m_dndCtx.uClientID, uAllActions, strFormats.c_str(), rc));
         }
     }
 
@@ -1586,8 +1582,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                             memcpy(pvDataTmp, pcData, cbData);
                             pvDataTmp[cbData++] = '\0';
 
-                            rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(),
-                                                     pvDataTmp, cbData);
+                            rc = VbglR3DnDGHSendData(&m_dndCtx, strFormat.c_str(), pvDataTmp, cbData);
                             RTMemFree(pvDataTmp);
                         }
                         else
@@ -1596,12 +1591,10 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     else
                     {
                         /* Send the raw data to the host. */
-                        rc = VbglR3DnDGHSendData(m_uClientID, strFormat.c_str(),
-                                                 pcData, cbData);
+                        rc = VbglR3DnDGHSendData(&m_dndCtx, strFormat.c_str(), pcData, cbData);
                     }
 
-                    LogFlowThisFunc(("Sent strFormat=%s with rc=%Rrc\n",
-                                     strFormat.c_str(), rc));
+                    LogFlowThisFunc(("Sent strFormat=%s, rc=%Rrc\n", strFormat.c_str(), rc));
 
                     if (RT_SUCCESS(rc))
                     {
@@ -1678,7 +1671,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
     /* Inform the host on error. */
     if (RT_FAILURE(rc))
     {
-        int rc2 = VbglR3DnDGHSendError(m_uClientID, rc);
+        int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
         AssertRC(rc2);
     }
 
@@ -2252,8 +2245,10 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
     DragAndDropService *pThis = static_cast<DragAndDropService*>(pvUser);
     AssertPtr(pThis);
 
-    uint32_t uClientID;
-    int rc = VbglR3DnDConnect(&uClientID);
+    /* This thread has an own DnD context, e.g. an own client ID. */
+    VBGLR3GUESTDNDCMDCTX dndCtx;
+
+    int rc = VbglR3DnDConnect(&dndCtx);
     if (RT_FAILURE(rc))
         LogRel(("DnD: Unable to connect to drag and drop service, rc=%Rrc\n", rc));
     /* Not RT_FAILURE: VINF_PERMISSION_DENIED is host service not present. */
@@ -2270,8 +2265,9 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         e.type = DnDEvent::HGCM_Type;
 
         /* Wait for new events. */
-        rc = VbglR3DnDProcessNextMessage(uClientID, &e.hgcm);
-        if (RT_SUCCESS(rc))
+        rc = VbglR3DnDProcessNextMessage(&dndCtx, &e.hgcm);
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_CANCELLED)
         {
             cMsgSkippedInvalid = 0; /* Reset skipped messages count. */
 
@@ -2284,6 +2280,8 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
         }
         else
         {
+            LogFlowFunc(("Processing next message failed with rc=%Rrc\n", rc));
+
             /* Old(er) hosts either are broken regarding DnD support or otherwise
              * don't support the stuff we do on the guest side, so make sure we
              * don't process invalid messages forever. */
@@ -2298,7 +2296,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
 
     } while (!ASMAtomicReadBool(&pThis->m_fSrvStopping));
 
-    VbglR3DnDDisconnect(uClientID);
+    VbglR3DnDDisconnect(&dndCtx);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

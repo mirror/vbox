@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013-2014 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -120,11 +120,11 @@ public: /* IDropSource methods. */
 
 protected:
 
-    LONG mRefCount;
-    VBoxDnDWnd *mpWndParent;
-    uint32_t mClientID;
-    DWORD mdwCurEffect;
-    uint32_t muCurAction;
+    LONG                  mRefCount;
+    VBoxDnDWnd           *mpWndParent;
+    VBGLR3GUESTDNDCMDCTX  mDnDCtx;
+    DWORD                 mdwCurEffect;
+    uint32_t              muCurAction;
 };
 
 class VBoxDnDDropTarget : public IDropTarget
@@ -161,19 +161,18 @@ public:
 
 protected:
 
-    LONG mRefCount;
-    VBoxDnDWnd *mpWndParent;
-    uint32_t mClientID;
-    DWORD mdwCurEffect;
+    LONG                  mRefCount;
+    VBoxDnDWnd           *mpWndParent;
+    VBGLR3GUESTDNDCMDCTX  mDnDCtx;
+    DWORD                 mdwCurEffect;
     /** Copy of the data object's FORMATETC struct.
-     *  Note: We don't keep the pointer of the
-     *        DVTARGETDEVICE here! */
-    FORMATETC mFormatEtc;
-    RTCString mFormats;
-    void *mpvData;
-    uint32_t mcbData;
-    RTSEMEVENT hEventDrop;
-    int mDroppedRc;
+     *  Note: We don't keep the pointer of the DVTARGETDEVICE here! */
+    FORMATETC             mFormatEtc;
+    RTCString             mFormats;
+    void                 *mpvData;
+    uint32_t              mcbData;
+    RTSEMEVENT            hEventDrop;
+    int                   mDroppedRc;
 };
 
 class VBoxDnDEnumFormatEtc : public IEnumFORMATETC
@@ -391,8 +390,8 @@ public: /** @todo Make protected! */
     /** @todo Implement me. */
 #endif /* RT_OS_WINDOWS */
 
-    /** The window's own HGCM client ID. */
-    uint32_t                   mClientID;
+    /** The window's own DnD context. */
+    VBGLR3GUESTDNDCMDCTX       mDnDCtx;
     /** The current operation mode. */
     Mode                       mMode;
     /** The current state. */

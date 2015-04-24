@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -72,6 +72,7 @@
 # include "CEmulatedUSB.h"
 # ifdef VBOX_WITH_DRAG_AND_DROP
 #  include "CGuest.h"
+#  include "CDnDTarget.h"
 # endif /* VBOX_WITH_DRAG_AND_DROP */
 
 /* Other VBox includes: */
@@ -2393,15 +2394,22 @@ void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWid
 void UIMessageCenter::cannotDropData(const CGuest &guest, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to drop data."),
+          tr("Drag and drop operation failed."),
           formatErrorInfo(guest));
 }
 
 void UIMessageCenter::cannotDropData(const CProgress &progress, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to drop data."),
+          tr("Failed while dropping data."),
           formatErrorInfo(progress));
+}
+
+void UIMessageCenter::cannotCancelDrop(const CDnDTarget &dndTarget, QWidget *pParent /* = 0*/) const
+{
+    error(pParent, MessageType_Error,
+          tr("Unable to cancel drag and drop operation."),
+          formatErrorInfo(dndTarget));
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 

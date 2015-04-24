@@ -59,25 +59,45 @@ public:
         Directory
     };
 
+    enum Dest
+    {
+        Source = 0,
+        Target
+    };
+
+    DnDURIObject(void);
     DnDURIObject(Type type,
-                 const RTCString &strSrcPath,
-                 const RTCString &strDstPath,
-                 uint32_t fMode, uint64_t cbSize);
+                 const RTCString &strSrcPath = "",
+                 const RTCString &strDstPath = "",
+                 uint32_t fMode = 0, uint64_t cbSize = 0);
     virtual ~DnDURIObject(void);
 
 public:
 
     const RTCString &GetSourcePath(void) const { return m_strSrcPath; }
-    const RTCString &GetDestPath(void) const { return m_strDstPath; }
-    uint32_t GetMode(void) const { return m_fMode; }
+    const RTCString &GetDestPath(void) const { return m_strTgtPath; }
+    uint64_t GetMode(void) const { return m_fMode; }
+    uint64_t GetProcessed(void) const { return m_cbProcessed; }
     uint64_t GetSize(void) const { return m_cbSize; }
     Type GetType(void) const { return m_Type; }
 
 public:
 
+    int SetSize(uint64_t uSize) { m_cbSize = uSize; return VINF_SUCCESS; }
+
+public:
+
+    void Close(void);
     bool IsComplete(void) const;
-    static int RebaseURIPath(RTCString &strPath, const RTCString &strBaseOld, const RTCString &strBaseNew);
-    int Read(void *pvBuf, uint32_t cbToRead, uint32_t *pcbRead);
+    bool IsOpen(void) const;
+    int Open(Dest enmDest, uint64_t fOpen);
+    int OpenEx(const RTCString &strPath, Type enmType, Dest enmDest, uint64_t fMode = 0, uint32_t fFlags = 0);
+    int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
+    int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
+
+public:
+
+    static int RebaseURIPath(RTCString &strPath, const RTCString &strBaseOld = "", const RTCString &strBaseNew = "");
 
 protected:
 
@@ -87,8 +107,9 @@ protected:
 
     Type      m_Type;
     RTCString m_strSrcPath;
-    RTCString m_strDstPath;
-    uint32_t  m_fMode;
+    RTCString m_strTgtPath;
+    /** File mode. */
+    uint64_t  m_fMode;
     /** Size (in bytes) to read/write. */
     uint64_t  m_cbSize;
     /** Bytes processed reading/writing. */

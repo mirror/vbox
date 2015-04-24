@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,10 +42,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-#undef LOG_GROUP
+#ifdef LOG_GROUP
+ #undef LOG_GROUP
+#endif
 #define LOG_GROUP LOG_GROUP_GUEST_DND
 #include <VBox/log.h>
-
 
 
 UIDnDHandler *UIDnDHandler::m_pInstance = NULL;
@@ -126,24 +127,45 @@ Qt::DropAction UIDnDHandler::dragDrop(CSession &session, CDnDTarget &dndTarget,
         if (   !d.isEmpty()
             && !format.isEmpty())
         {
-            /* Convert the actual MIME data to a vector (needed
-             * for the COM wrapper). */
+            /* Convert the actual MIME data to a vector (needed for the COM wrapper). */
             QVector<uint8_t> dv(d.size());
             memcpy(dv.data(), d.constData(), d.size());
 
             CProgress progress = dndTarget.SendData(screenId, format, dv);
-            if (guest.isOk())
+
+            if (progress.isOk())
             {
+                LogFlowFunc(("Transferring data to guest ...\n"));
+
                 msgCenter().showModalProgressDialog(progress,
                                                     tr("Dropping data ..."), ":/progress_dnd_hg_90px.png",
                                                     pParent);
-                if (   !progress.GetCanceled()
+
+                LogFlowFunc(("Transfer fCompleted=%RTbool, fCanceled=%RTbool, hr=%Rhrc\n",
+                             progress.GetCompleted(), progress.GetCanceled(), progress.GetResultCode()));
+
+                BOOL fCanceled = progress.GetCanceled();
+
+                /* Some error occurred? */
+                if (   !fCanceled
                     && (   !progress.isOk()
                         ||  progress.GetResultCode() != 0))
                 {
                     msgCenter().cannotDropData(progress, pParent);
                     result = KDnDAction_Ignore;
                 }
+                #if 0
+                else if (fCanceled) /* Operation canceled by user? */
+                {
+                    Assert(progress.isOk());
+                    Assert(progress.GetResultCode() == 0);
+
+                    /* Tell the guest. */
+                    BOOL fVeto = dndTarget.Cancel();
+                    if (fVeto) /* Cancelling vetoed by the target? Tell the user why. */
+                        msgCenter().cannotCancelDrop(dndTarget, pParent);
+                }
+                #endif
             }
             else
             {

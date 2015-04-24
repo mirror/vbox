@@ -350,6 +350,7 @@ public:
     /* API: Drag&drop warnings: */
     void cannotDropData(const CGuest &guest, QWidget *pParent = 0) const;
     void cannotDropData(const CProgress &progress, QWidget *pParent = 0) const;
+    void cannotCancelDrop(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
     /* API: License-viewer warnings: */

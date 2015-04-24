@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -605,7 +605,7 @@ VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);
 /**
  * Structure containing the context required for
  * either retrieving or sending a HGCM guest control
- * command from or to the host.
+ * commands from or to the host.
  *
  * Note: Do not change parameter order without also
  *       adapting all structure initializers.
@@ -712,41 +712,64 @@ VBGLR3DECL(int)     VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *
 # ifdef VBOX_WITH_DRAG_AND_DROP
 /** @name Drag and Drop
  * @{ */
+/**
+ * Structure containing the context required for
+ * either retrieving or sending a HGCM guest drag'n drop
+ * commands from or to the host.
+ *
+ * Note: Do not change parameter order without also
+ *       adapting all structure initializers.
+ */
+typedef struct VBGLR3GUESTDNDCMDCTX
+{
+    /** @todo This struct could be handy if we want to implement
+     *        a second communication channel, e.g. via TCP/IP.
+     *        Use a union for the HGCM stuff then. */
+
+    /** IN: HGCM client ID to use for communication. */
+    uint32_t uClientID;
+    /** IN: Protocol version to use. */
+    uint32_t uProtocol;
+    /** OUT: Number of parameters retrieved. */
+    uint32_t uNumParms;
+} VBGLR3GUESTDNDCMDCTX, *PVBGLR3GUESTDNDCMDCTX;
+
 typedef struct VBGLR3DNDHGCMEVENT
 {
-    uint32_t uType;               /** The event type this struct contains */
-    uint32_t uScreenId;           /** Screen ID this request belongs to */
-    char    *pszFormats;          /** Format list (\r\n separated) */
-    uint32_t cbFormats;           /** Size of pszFormats (\0 included) */
+    uint32_t uType;               /** The event type this struct contains. */
+    uint32_t uScreenId;           /** Screen ID this request belongs to. */
+    char    *pszFormats;          /** Format list (\r\n separated). */
+    uint32_t cbFormats;           /** Size of pszFormats (\0 included). */
     union
     {
         struct
         {
-            uint32_t uXpos;       /** X position of guest screen */
-            uint32_t uYpos;       /** Y position of guest screen */
-            uint32_t uDefAction;  /** Proposed DnD action */
-            uint32_t uAllActions; /** Allowed DnD actions */
-        }a; /** Values used in init, move and drop event type */
+            uint32_t uXpos;       /** X position of guest screen. */
+            uint32_t uYpos;       /** Y position of guest screen. */
+            uint32_t uDefAction;  /** Proposed DnD action. */
+            uint32_t uAllActions; /** Allowed DnD actions. */
+        } a; /** Values used in init, move and drop event type. */
         struct
         {
-            void    *pvData;      /** Data request */
-            size_t   cbData;      /** Size of pvData */
-        }b; /** Values used in drop data event type */
-    }u;
+            void    *pvData;      /** Data request. */
+            size_t   cbData;      /** Size of pvData. */
+        } b; /** Values used in drop data event type. */
+    } u;
 } VBGLR3DNDHGCMEVENT;
 typedef VBGLR3DNDHGCMEVENT *PVBGLR3DNDHGCMEVENT;
 typedef const PVBGLR3DNDHGCMEVENT CPVBGLR3DNDHGCMEVENT;
-VBGLR3DECL(int)     VbglR3DnDConnect(uint32_t *pu32ClientId);
-VBGLR3DECL(int)     VbglR3DnDDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3DnDConnect(PVBGLR3GUESTDNDCMDCTX pCtx);
+VBGLR3DECL(int)     VbglR3DnDDisconnect(PVBGLR3GUESTDNDCMDCTX pCtx);
 
-VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(uint32_t u32ClientId, CPVBGLR3DNDHGCMEVENT pEvent);
+VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(PVBGLR3GUESTDNDCMDCTX pCtx, CPVBGLR3DNDHGCMEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t u32ClientId, uint32_t uAction);
-VBGLR3DECL(int)     VbglR3DnDHGRequestData(uint32_t u32ClientId, const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uAction);
+VBGLR3DECL(int)     VbglR3DnDHGRequestData(PVBGLR3GUESTDNDCMDCTX pCtx, const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDHGSetProgress(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uStatus, uint8_t uPercent, int rcErr);
 #  ifdef VBOX_WITH_DRAG_AND_DROP_GH
-VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t u32ClientId, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats);
-VBGLR3DECL(int)     VbglR3DnDGHSendData(uint32_t u32ClientId, const char *pszFormat, void *pvData, uint32_t cbData);
-VBGLR3DECL(int)     VbglR3DnDGHSendError(uint32_t u32ClientId, int rcOp);
+VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(PVBGLR3GUESTDNDCMDCTX pCtx, uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormats);
+VBGLR3DECL(int)     VbglR3DnDGHSendData(PVBGLR3GUESTDNDCMDCTX pCtx, const char *pszFormat, void *pvData, uint32_t cbData);
+VBGLR3DECL(int)     VbglR3DnDGHSendError(PVBGLR3GUESTDNDCMDCTX pCtx, int rcOp);
 #  endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 /** @} */
 # endif /* VBOX_WITH_DRAG_AND_DROP */
