@@ -48,11 +48,6 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 #undef LOG_VOICES
-#ifndef VBOX
-//#define USE_MIXER
-#else
-# define USE_MIXER
-#endif
 
 #ifdef DEBUG
 //#define DEBUG_LUN
@@ -834,8 +829,6 @@ static void ichac97ResetStreams(PAC97STATE pThis, uint8_t active[LAST_INDEX])
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 }
 
-#ifdef USE_MIXER
-
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 static void ichac97SetVolume(PAC97STATE pThis, int index, PDMAUDIOMIXERCTL mt, uint32_t val)
 #else
@@ -845,6 +838,16 @@ static void ichac97SetVolume(PAC97STATE pThis, int index, audmixerctl_t mt, uint
     int mute = (val >> MUTE_SHIFT) & 1;
     uint8_t rvol = val & VOL_MASK;
     uint8_t lvol = (val >> 8) & VOL_MASK;
+
+    /* For the master volume, 0 corresponds to 0dB gain. But for the other
+     * volume controls, 0 corresponds to +12dB and 8 to 0dB. */
+    if (mt != PDMAUDIOMIXERCTL_VOLUME)
+    {
+        /* NB: Currently there is no gain support, only attenuation. */
+        lvol = lvol < 8 ? 0 : lvol - 8;
+        rvol = rvol < 8 ? 0 : rvol - 8;
+    }
+
     /* AC'97 has 1.5dB steps; we use 0.375dB steps. */
     rvol = 255 - rvol * 4;
     lvol = 255 - lvol * 4;
@@ -956,8 +959,6 @@ static void ichac97RecordSelect(PAC97STATE pThis, uint32_t val)
     ichac97MixerStore(pThis, AC97_Record_Select, rs | (ls << 8));
 }
 
-#endif /* USE_MIXER */
-
 static void ichac97MixerReset(PAC97STATE pThis)
 {
     LogFlowFuncEnter();
@@ -1045,7 +1046,6 @@ static void ichac97MixerReset(PAC97STATE pThis)
         ichac97MixerStore(pThis, AC97_Vendor_ID1              , 0x8384);
         ichac97MixerStore(pThis, AC97_Vendor_ID2              , 0x7600); /* 7608 */
     }
-#ifdef USE_MIXER
     ichac97RecordSelect(pThis, 0);
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     ichac97SetVolume(pThis, AC97_Master_Volume_Mute,  PDMAUDIOMIXERCTL_VOLUME,  0x8000);
@@ -1056,12 +1056,6 @@ static void ichac97MixerReset(PAC97STATE pThis)
     ichac97SetVolume(pThis, AC97_PCM_Out_Volume_Mute, AUD_MIXER_PCM,     0x8808);
     ichac97SetVolume(pThis, AC97_Line_In_Volume_Mute, AUD_MIXER_LINE_IN, 0x8808);
 # endif
-#else
-    ichac97MixerStore(pThis, AC97_Record_Select, 0);
-    ichac97MixerStore(pThis, AC97_Master_Volume_Mute,  0x8000);
-    ichac97MixerStore(pThis, AC97_PCM_Out_Volume_Mute, 0x8808);
-    ichac97MixerStore(pThis, AC97_Line_In_Volume_Mute, 0x8808);
-#endif
 
     /* Reset all streams. */
     uint8_t active[LAST_INDEX] = { 0 };
@@ -1915,7 +1909,6 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                     u32 |= ichac97MixerLoad(pThis, index) & 0xf;
                     ichac97MixerStore(pThis, index, u32);
                     break;
-#ifdef USE_MIXER
                 case AC97_Master_Volume_Mute:
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
                     ichac97SetVolume(pThis, index, PDMAUDIOMIXERCTL_VOLUME, u32);
@@ -1940,14 +1933,6 @@ static DECLCALLBACK(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns,
                 case AC97_Record_Select:
                     ichac97RecordSelect(pThis, u32);
                     break;
-#else  /* !USE_MIXER */
-                case AC97_Master_Volume_Mute:
-                case AC97_PCM_Out_Volume_Mute:
-                case AC97_Line_In_Volume_Mute:
-                case AC97_Record_Select:
-                    ichac97MixerStore(pThis, index, u32);
-                    break;
-#endif /* !USE_MIXER */
                 case AC97_Vendor_ID1:
                 case AC97_Vendor_ID2:
                     LogFlowFunc(("Attempt to write vendor ID to %#x\n", u32));
@@ -2139,7 +2124,6 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     uint8_t active[LAST_INDEX];
     SSMR3GetMem(pSSM, active, sizeof(active));
 
-#ifdef USE_MIXER
     ichac97RecordSelect(pThis, ichac97MixerLoad(pThis, AC97_Record_Select));
 # define V_(a, b) ichac97SetVolume(pThis, a, b, ichac97MixerLoad(pThis, a))
 # ifdef VBOX_WITH_PDM_AUDIO_DRIVER
@@ -2152,7 +2136,6 @@ static DECLCALLBACK(int) ichac97LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
     V_(AC97_Line_In_Volume_Mute, AUD_MIXER_LINE_IN);
 # endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 # undef V_
-#endif /* USE_MIXER */
     ichac97ResetStreams(pThis, active);
 
     pThis->bup_flag = 0;
