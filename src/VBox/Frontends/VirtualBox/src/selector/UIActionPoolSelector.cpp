@@ -548,16 +548,16 @@ protected:
 };
 
 
-class UIActionStateCommonStartOrShow : public UIActionPolymorphic
+class UIActionStateCommonStartOrShow : public UIActionPolymorphicMenu
 {
     Q_OBJECT;
 
 public:
 
     UIActionStateCommonStartOrShow(UIActionPool *pParent)
-        : UIActionPolymorphic(pParent,
-                        ":/vm_start_32px.png", ":/vm_start_16px.png",
-                        ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+        : UIActionPolymorphicMenu(pParent,
+                                  ":/vm_start_32px.png", ":/vm_start_16px.png",
+                                  ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
 
 protected:
 
@@ -572,6 +572,7 @@ protected:
         {
             case 0:
             {
+                showMenu();
                 setName(QApplication::translate("UIActionPool", "S&tart"));
                 setStatusTip(QApplication::translate("UIActionPool", "Start the selected virtual machines"));
                 setToolTip(text().remove('&').remove('.') +
@@ -580,6 +581,7 @@ protected:
             }
             case 1:
             {
+                hideMenu();
                 setName(QApplication::translate("UIActionPool", "S&how"));
                 setStatusTip(QApplication::translate("UIActionPool", "Switch to the windows of the selected virtual machines"));
                 setToolTip(text().remove('&').remove('.') +
@@ -589,6 +591,56 @@ protected:
             default:
                 break;
         }
+    }
+};
+
+class UIActionSimpleStartDefault : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleStartDefault(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/vm_start_32px.png", ":/vm_start_16px.png",
+                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("StartVMDefault");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Default Start"));
+        setStatusTip(QApplication::translate("UIActionPool", "Start the selected virtual machines"));
+    }
+};
+
+class UIActionSimpleStartSeparate : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimpleStartSeparate(UIActionPool *pParent)
+        : UIActionSimple(pParent,
+                         ":/vm_start_32px.png", ":/vm_start_16px.png",
+                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+
+protected:
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("StartVMSeparate");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "S&eparate Start"));
+        setStatusTip(QApplication::translate("UIActionPool", "Start the selected virtual machines with detachable GUI"));
     }
 };
 
@@ -949,7 +1001,9 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Group_S_Add] = new UIActionSimpleGroupAdd(this);
     m_pool[UIActionIndexST_M_Group_S_Rename] = new UIActionSimpleGroupRename(this);
     m_pool[UIActionIndexST_M_Group_S_Remove] = new UIActionSimpleGroupRemove(this);
-    m_pool[UIActionIndexST_M_Group_P_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Group_M_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault] = new UIActionSimpleStartDefault(this);
+    m_pool[UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate] = new UIActionSimpleStartSeparate(this);
     m_pool[UIActionIndexST_M_Group_T_Pause] = new UIActionToggleCommonPauseAndResume(this);
     m_pool[UIActionIndexST_M_Group_S_Reset] = new UIActionSimpleCommonReset(this);
     m_pool[UIActionIndexST_M_Group_M_Close] = new UIActionMenuClose(this);
@@ -971,7 +1025,9 @@ void UIActionPoolSelector::preparePool()
     m_pool[UIActionIndexST_M_Machine_S_Clone] = new UIActionSimpleMachineClone(this);
     m_pool[UIActionIndexST_M_Machine_S_Remove] = new UIActionSimpleMachineRemove(this);
     m_pool[UIActionIndexST_M_Machine_S_AddGroup] = new UIActionSimpleMachineAddGroup(this);
-    m_pool[UIActionIndexST_M_Machine_P_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Machine_M_StartOrShow] = new UIActionStateCommonStartOrShow(this);
+    m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault] = new UIActionSimpleStartDefault(this);
+    m_pool[UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate] = new UIActionSimpleStartSeparate(this);
     m_pool[UIActionIndexST_M_Machine_T_Pause] = new UIActionToggleCommonPauseAndResume(this);
     m_pool[UIActionIndexST_M_Machine_S_Reset] = new UIActionSimpleCommonReset(this);
     m_pool[UIActionIndexST_M_Machine_M_Close] = new UIActionMenuClose(this);
