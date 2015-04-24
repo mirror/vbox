@@ -282,22 +282,22 @@
  * @{
  */
 /** Set to 1 if the task switch was caused by an IRET; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_IRET                  RT_BIT_64(36)
+#define SVM_EXIT2_TASK_SWITCH_IRET            RT_BIT_64(36)
 /** Set to 1 if the task switch was caused by a far jump; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_JMP                   RT_BIT_64(38)
+#define SVM_EXIT2_TASK_SWITCH_JMP             RT_BIT_64(38)
 /** Set to 1 if the task switch has an error code; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE        RT_BIT_64(44)
+#define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE  RT_BIT_64(44)
 /** The value of EFLAGS.RF that would be saved in the outgoing TSS if the task switch were not intercepted. */
-#define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF             RT_BIT_64(48)
+#define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF       RT_BIT_64(48)
 /** @} */
 
 /** @name SVMVMCB.u64ExitInfo1 for MSR accesses
  * @{
  */
 /** The access was a read MSR. */
-#define SVM_EXIT1_MSR_READ                      0x0
+#define SVM_EXIT1_MSR_READ                    0x0
 /** The access was a write MSR. */
-#define SVM_EXIT1_MSR_WRITE                     0x1
+#define SVM_EXIT1_MSR_WRITE                   0x1
 /** @} */
 
 /** @name SVMVMCB.ctrl.u32InterceptCtrl1
@@ -406,13 +406,13 @@
 /** @name SVMVMCB.ctrl.u64NestedPaging
  * @{
  */
-#define SVM_NESTED_PAGING_ENABLE                RT_BIT(0)
+#define SVM_NESTED_PAGING_ENABLE              RT_BIT(0)
 /** @} */
 
 /** @name SVMVMCB.ctrl.u64IntShadow
  * @{
  */
-#define SVM_INTERRUPT_SHADOW_ACTIVE             RT_BIT(0)
+#define SVM_INTERRUPT_SHADOW_ACTIVE           RT_BIT(0)
 /** @} */
 
 
@@ -852,7 +852,7 @@ AssertCompileMemberOffset(SVMVMCB, guest.u64BR_FROM, 0x678);
 AssertCompileMemberOffset(SVMVMCB, guest.u64BR_TO, 0x680);
 AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPFROM, 0x688);
 AssertCompileMemberOffset(SVMVMCB, guest.u64LASTEXCPTO, 0x690);
-AssertCompileMemberOffset(SVMVMCB, u8Reserved10,                0x698);
+AssertCompileMemberOffset(SVMVMCB, u8Reserved10, 0x698);
 AssertCompileSize(SVMVMCB, 0x1000);
 
 #ifdef IN_RING0
