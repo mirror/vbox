@@ -165,7 +165,7 @@ typedef struct VBOXDISK
     /** Flag whether boot acceleration is currently active. */
     bool                     fBootAccelActive;
     /** Size of the disk, used for read truncation. */
-    size_t                   cbDisk;
+    uint64_t                 cbDisk;
     /** Size of the configured buffer. */
     size_t                   cbBootAccelBuffer;
     /** Start offset for which the buffer holds data. */
