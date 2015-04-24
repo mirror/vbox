@@ -66,7 +66,7 @@
 #include <iprt/string.h>
 
 #include <VBox/err.h>
-#define LOG_GROUP LOG_GROUP_DEV_VGA
+#define LOG_GROUP LOG_GROUP_HGSMI
 #include <VBox/log.h>
 #include <VBox/vmm/ssm.h>
 
@@ -132,6 +132,31 @@
 #endif /* !HGSMI_STRICT */
 
 
+/* Host heap types. */
+#define HGSMI_HEAP_TYPE_NULL    0 /* Heap not initialized. */
+#define HGSMI_HEAP_TYPE_POINTER 1 /* Deprecated, used only for old saved states. RTHEAPSIMPLE. */
+#define HGSMI_HEAP_TYPE_OFFSET  2 /* Deprecated, used only for old saved states. RTHEAPOFFSET. */
+#define HGSMI_HEAP_TYPE_MA      3 /* Memory allocator. */
+
+typedef struct HGSMIHOSTHEAP
+{
+    uint32_t u32HeapType;   /* HGSMI_HEAP_TYPE_* */
+    int32_t volatile cRefs; /* How many blocks allocated. */
+    HGSMIAREA area;         /* Host heap location. */
+    union
+    {
+        HGSMIMADATA ma;     /* Memory allocator for the default host heap implementation. */
+        struct              /* Legacy heap implementations. For old saved states. */
+        {
+            union
+            {
+                RTHEAPSIMPLE hPtr;  /* Pointer based heap. */
+                RTHEAPOFFSET hOff;  /* Offset based heap. */
+            } u;
+        } legacy;
+    } u;
+} HGSMIHOSTHEAP;
+
 typedef struct HGSMIINSTANCE
 {
     PVM pVM;                           /* The VM. */
@@ -141,7 +166,7 @@ typedef struct HGSMIINSTANCE
     RTCRITSECT   instanceCritSect;     /* For updating the instance data: FIFO's, channels. */
 
     HGSMIAREA area; /* The shared memory description. */
-    HGSMIHEAP hostHeap;                /* Host heap instance. */
+    HGSMIHOSTHEAP hostHeap;            /* Host heap instance. */
     RTCRITSECT    hostHeapCritSect;    /* Heap serialization lock. */
 
     RTLISTANCHOR hostFIFO;             /* Pending host buffers. */
@@ -181,7 +206,8 @@ typedef struct HGSMIHOSTFIFOENTRY
 
     volatile uint32_t fl;              /* Status flags of the entry. */
 
-    HGSMIOFFSET offBuffer;             /* Offset in the memory region of the entry data. */
+    HGSMIOFFSET offBuffer;             /* Offset of the HGSMI buffer header in the HGSMI host heap:
+                                        * [pIns->hostHeap.area.offBase .. offLast]. */
 
 #if 0
     /* removed to allow saved state handling */
@@ -509,6 +535,182 @@ static void hgsmiHostHeapUnlock (HGSMIINSTANCE *pIns)
     AssertRC (rc);
 }
 
+static HGSMIOFFSET hgsmiHostHeapOffset(HGSMIHOSTHEAP *pHeap)
+{
+    return pHeap->area.offBase;
+}
+
+static HGSMISIZE hgsmiHostHeapSize(HGSMIHOSTHEAP *pHeap)
+{
+    return pHeap->area.cbArea;
+}
+
+static void *hgsmiHostHeapBufferAlloc(HGSMIHOSTHEAP *pHeap,
+                                      HGSMISIZE cbBuffer)
+{
+    void *pvBuf = NULL;
+
+    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
+    {
+        pvBuf = HGSMIMAAlloc(&pHeap->u.ma, cbBuffer);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+    {
+        pvBuf = RTHeapSimpleAlloc(pHeap->u.legacy.u.hPtr, cbBuffer, 0);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+    {
+        pvBuf = RTHeapOffsetAlloc(pHeap->u.legacy.u.hOff, cbBuffer, 0);
+    }
+
+    if (pvBuf)
+    {
+        ++pHeap->cRefs;
+    }
+
+    return pvBuf;
+}
+
+static void hgsmiHostHeapBufferFree(HGSMIHOSTHEAP *pHeap,
+                                    void *pvBuf)
+{
+    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
+    {
+        HGSMIMAFree(&pHeap->u.ma, pvBuf);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+    {
+        RTHeapSimpleFree(pHeap->u.legacy.u.hPtr, pvBuf);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+    {
+        RTHeapOffsetFree(pHeap->u.legacy.u.hOff, pvBuf);
+    }
+    --pHeap->cRefs;
+}
+
+static void *hgsmiHostHeapDataAlloc(HGSMIHOSTHEAP *pHeap,
+                                    HGSMISIZE cbData,
+                                    uint8_t u8Channel,
+                                    uint16_t u16ChannelInfo)
+{
+    HGSMISIZE cbAlloc = HGSMIBufferRequiredSize(cbData);
+    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)hgsmiHostHeapBufferAlloc(pHeap, cbAlloc);
+    if (!pHeader)
+        return NULL;
+
+    HGSMIBufferInitializeSingle(&pHeap->area, pHeader, cbAlloc, u8Channel, u16ChannelInfo);
+
+    return HGSMIBufferDataFromPtr(pHeader);
+}
+
+static void hgsmiHostHeapDataFree(HGSMIHOSTHEAP *pHeap,
+                                  void *pvData)
+{
+    if (   pvData
+        && pHeap->u32HeapType != HGSMI_HEAP_TYPE_NULL)
+    {
+        HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData(pvData);
+        hgsmiHostHeapBufferFree(pHeap, pHeader);
+    }
+}
+
+/* Needed for heap relocation: offset of the heap handle relative to the start of heap area. */
+static HGSMIOFFSET hgsmiHostHeapHandleLocationOffset(HGSMIHOSTHEAP *pHeap)
+{
+    HGSMIOFFSET offHeapHandle;
+    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+    {
+        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.legacy.u.hPtr - (uintptr_t)pHeap->area.pu8Base);
+    }
+    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+    {
+        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.legacy.u.hOff - (uintptr_t)pHeap->area.pu8Base);
+    }
+    else
+    {
+        offHeapHandle = HGSMIOFFSET_VOID;
+    }
+    return offHeapHandle;
+}
+
+static int hgsmiHostHeapRelocate(HGSMIHOSTHEAP *pHeap,
+                                 uint32_t u32HeapType,
+                                 void *pvBase,
+                                 uint32_t offHeapHandle,
+                                 uintptr_t offDelta,
+                                 HGSMISIZE cbArea,
+                                 HGSMIOFFSET offBase)
+{
+    int rc = HGSMIAreaInitialize(&pHeap->area, pvBase, cbArea, offBase);
+    if (RT_SUCCESS(rc))
+    {
+        if (u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
+        {
+            pHeap->u.legacy.u.hOff = (RTHEAPOFFSET)((uint8_t *)pvBase + offHeapHandle);
+        }
+        else if (u32HeapType == HGSMI_HEAP_TYPE_POINTER)
+        {
+            pHeap->u.legacy.u.hPtr = (RTHEAPSIMPLE)((uint8_t *)pvBase + offHeapHandle);
+            rc = RTHeapSimpleRelocate(pHeap->u.legacy.u.hPtr, offDelta); AssertRC(rc);
+        }
+        else
+        {
+            /* HGSMI_HEAP_TYPE_MA does not need the relocation. */
+            rc = VERR_NOT_SUPPORTED;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            pHeap->u32HeapType = u32HeapType;
+        }
+        else
+        {
+            HGSMIAreaClear(&pHeap->area);
+        }
+    }
+
+    return rc;
+}
+
+static int hgsmiHostHeapRestoreMA(HGSMIHOSTHEAP *pHeap,
+                                  void *pvBase,
+                                  HGSMISIZE cbArea,
+                                  HGSMIOFFSET offBase,
+                                  uint32_t cBlocks,
+                                  HGSMIOFFSET *paDescriptors,
+                                  HGSMISIZE cbMaxBlock,
+                                  HGSMIENV *pEnv)
+{
+    int rc = HGSMIAreaInitialize(&pHeap->area, pvBase, cbArea, offBase);
+    if (RT_SUCCESS(rc))
+    {
+        rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, paDescriptors, cBlocks, cbMaxBlock, pEnv);
+
+        if (RT_FAILURE(rc))
+        {
+            HGSMIAreaClear(&pHeap->area);
+        }
+    }
+
+    return rc;
+}
+
+static void hgsmiHostHeapSetupUninitialized(HGSMIHOSTHEAP *pHeap)
+{
+    RT_ZERO(*pHeap);
+    pHeap->u32HeapType = HGSMI_HEAP_TYPE_NULL;
+}
+
+static void hgsmiHostHeapDestroy(HGSMIHOSTHEAP *pHeap)
+{
+    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
+    {
+        HGSMIMAUninit(&pHeap->u.ma);
+    }
+    hgsmiHostHeapSetupUninitialized(pHeap);
+}
+
 static int hgsmiHostFIFOAlloc (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY **ppEntry)
 {
     int rc = VINF_SUCCESS;
@@ -556,6 +758,8 @@ static void hgsmiHostFIFOFree (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY *pEntry)
 
 static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
 {
+    LogFlowFunc(("offBuffer 0x%08X\n", pEntry->offBuffer));
+
     HGSMIINSTANCE *pIns = pEntry->pIns;
     int rc = hgsmiFIFOLock (pIns);
     if(RT_SUCCESS(rc))
@@ -563,41 +767,43 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
         RTListNodeRemove(&pEntry->nodeEntry);
         hgsmiFIFOUnlock (pIns);
 
-        void *pvMem = HGSMIBufferDataFromOffset(&pIns->area, pEntry->offBuffer);
+        void *pvData = HGSMIBufferDataFromOffset(&pIns->hostHeap.area, pEntry->offBuffer);
 
         rc = hgsmiHostHeapLock (pIns);
         if(RT_SUCCESS(rc))
         {
             /* Deallocate the host heap memory. */
-            HGSMIHeapFree (&pIns->hostHeap, pvMem);
+            hgsmiHostHeapDataFree(&pIns->hostHeap, pvData);
 
             hgsmiHostHeapUnlock(pIns);
         }
 
         hgsmiHostFIFOFree (pIns, pEntry);
     }
+
+    LogFlowFunc(("%Rrc\n", rc));
     return rc;
 }
 
 static int hgsmiHostCommandFree (HGSMIINSTANCE *pIns,
-                                                void *pvMem)
+                                                void *pvData)
 {
-    HGSMIOFFSET offMem = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
     int rc = VINF_SUCCESS;
-    if (offMem != HGSMIOFFSET_VOID)
+    if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
     {
+        HGSMIHOSTFIFOENTRY *pEntry = NULL;
+        HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
+
         rc = hgsmiFIFOLock (pIns);
         if(RT_SUCCESS(rc))
         {
-            /* Search the Processed list for the given offMem. */
-            HGSMIHOSTFIFOENTRY *pEntry = NULL;
-
+            /* Search the Processed list for the given offBuffer. */
             HGSMIHOSTFIFOENTRY *pIter;
             RTListForEach(&pIns->hostFIFOProcessed, pIter, HGSMIHOSTFIFOENTRY, nodeEntry)
             {
                 Assert(pIter->fl == (HGSMI_F_HOST_FIFO_ALLOCATED | HGSMI_F_HOST_FIFO_PROCESSED));
 
-                if (pIter->offBuffer == offMem)
+                if (pIter->offBuffer == offBuffer)
                 {
                     pEntry = pIter;
                     break;
@@ -610,8 +816,8 @@ static int hgsmiHostCommandFree (HGSMIINSTANCE *pIns,
             }
             else
             {
-                LogRel(("HGSMI[%s]: the host frees unprocessed FIFO entry: 0x%08X\n", pIns->pszName, offMem));
-                AssertFailed ();
+                AssertLogRelMsgFailed(("HGSMI[%s]: the host frees unprocessed FIFO entry: 0x%08X\n",
+                                       pIns->pszName, offBuffer));
             }
 
             hgsmiFIFOUnlock (pIns);
@@ -620,7 +826,7 @@ static int hgsmiHostCommandFree (HGSMIINSTANCE *pIns,
             if(RT_SUCCESS(rc))
             {
                 /* Deallocate the host heap memory. */
-                HGSMIHeapFree (&pIns->hostHeap, pvMem);
+                hgsmiHostHeapDataFree(&pIns->hostHeap, pvData);
 
                 hgsmiHostHeapUnlock(pIns);
             }
@@ -635,9 +841,9 @@ static int hgsmiHostCommandFree (HGSMIINSTANCE *pIns,
     }
     else
     {
+        AssertLogRelMsgFailed(("HGSMI[%s]: the host frees invalid FIFO entry: %p\n",
+                               pIns->pszName, pvData));
         rc = VERR_INVALID_POINTER;
-        LogRel(("HGSMI[%s]: the host frees invalid FIFO entry: %p\n", pIns->pszName, pvMem));
-        AssertFailed ();
     }
     return rc;
 }
@@ -775,42 +981,46 @@ static void hgsmiWait (void *pvContext)
 }
 #endif
 /**
- * Allocate a shared memory block. The host can write command/data to the memory.
+ * Allocate a shared memory buffer. The host can write command/data to the memory.
+ * The allocated buffer contains the 'header', 'data' and the 'tail', but *ppvData
+ * will point to the 'data'.
  *
- * @param pIns   Pointer to HGSMI instance,
- * @param ppvMem Where to store the allocated memory pointer to data.
- * @param cbMem  How many bytes of data to allocate.
+ * @return VBox status code. Pointer to the payload data in *ppvData.
+ * @param pIns           HGSMI instance,
+ * @param ppvData        Where to store the allocated memory pointer to data.
+ * @param cbData         How many bytes of data to allocate.
+ * @param u8Channel      HGSMI channel.
+ * @param u16ChannelInfo Command parameter.
  */
 int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
-                           void **ppvMem,
-                           HGSMISIZE cbMem,
+                           void **ppvData,
+                           HGSMISIZE cbData,
                            uint8_t u8Channel,
                            uint16_t u16ChannelInfo)
 {
-    LogFlowFunc (("pIns = %p, cbMem = 0x%08X(%d)\n", pIns, cbMem, cbMem));
+    LogFlowFunc (("pIns = %p, cbData = 0x%08X(%d)\n", pIns, cbData, cbData));
 
     int rc = hgsmiHostHeapLock (pIns);
     if(RT_SUCCESS(rc))
     {
-        void *pvMem = HGSMIHeapAlloc (&pIns->hostHeap,
-                                  cbMem,
-                                  u8Channel,
-                                  u16ChannelInfo);
+        void *pvData = hgsmiHostHeapDataAlloc(&pIns->hostHeap,
+                                              cbData,
+                                              u8Channel,
+                                              u16ChannelInfo);
         hgsmiHostHeapUnlock(pIns);
 
-        if (pvMem)
+        if (pvData)
         {
-            *ppvMem = pvMem;
+            *ppvData = pvData;
         }
         else
         {
-            LogRel((0, "HGSMIHeapAlloc: HGSMIHeapAlloc failed\n"));
-            rc = VERR_GENERAL_FAILURE;
+            LogRel(("HGSMI[%s]: host heap allocation failed %dbytes\n", pIns->pszName, cbData));
+            rc = VERR_NO_MEMORY;
         }
     }
 
-    LogFlowFunc (("rc = %Rrc, pvMem = %p\n", rc, *ppvMem));
-
+    LogFlowFunc(("%Rrc, pvData = %p\n", rc, *ppvData));
     return rc;
 }
 
@@ -818,25 +1028,26 @@ int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
  * Convenience function that allows posting the host command asynchronously
  * and make it freed on completion.
  * The caller does not get notified in any way on command completion,
- * on success return the pvMem buffer can not be used after being passed to this function
+ * on successful return the pvData buffer can not be used after being passed to this function.
  *
- * @param pIns  Pointer to HGSMI instance,
- * @param pvMem The pointer returned by 'HGSMIHostCommandAlloc'.
- * @param bDoIrq specifies whether the guest interrupt should be generated,
- * i.e. in case the command is not urgent(e.g. some guest command completion notification that does not require post-processing)
- * the command could be posted without raising an irq.
+ * @param pIns   HGSMI instance,
+ * @param pvData The pointer returned by 'HGSMIHostCommandAlloc'.
+ * @param bDoIrq Specifies whether the guest interrupt should be generated.
+ *               In case the command is not urgent (e.g. some guest command
+ *               completion notification that does not require post-processing)
+ *               the command could be posted without raising an irq.
  */
 int HGSMIHostCommandProcessAndFreeAsynch (PHGSMIINSTANCE pIns,
-                             void *pvMem,
+                             void *pvData,
                              bool bDoIrq)
 {
-    LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
+    LogFlowFunc(("pIns = %p, pvData = %p\n", pIns, pvData));
 
 #if 0
     void *pvContext = NULL;
 #endif
 
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
+    HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
 
     int rc = hgsmiHostCommandProcess (pIns, offBuffer,
 #if 0
@@ -924,23 +1135,25 @@ static HGSMIENV g_hgsmiEnv =
     hgsmiEnvFree
 };
 
-int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
-                        HGSMIOFFSET    offHeap,
-                        HGSMISIZE      cbHeap)
+int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns,
+                       HGSMIOFFSET    offHeap,
+                       HGSMISIZE      cbHeap)
 {
     LogFlowFunc(("pIns %p, offHeap 0x%08X, cbHeap = 0x%08X\n", pIns, offHeap, cbHeap));
 
     int rc = VINF_SUCCESS;
 
-    Assert (pIns);
+    AssertPtrReturn(pIns, VERR_INVALID_PARAMETER);
 
-//    if (   offHeap >= pIns->cbMem
-//        || cbHeap > pIns->cbMem
-//        || offHeap + cbHeap > pIns->cbMem)
-//    {
-//        rc = VERR_INVALID_PARAMETER;
-//    }
-//    else
+    if (   offHeap >= pIns->area.cbArea
+        || cbHeap > pIns->area.cbArea
+        || offHeap > pIns->area.cbArea - cbHeap)
+    {
+        AssertLogRelMsgFailed(("offHeap 0x%08X, cbHeap = 0x%08X, pIns->area.cbArea 0x%08X\n",
+                               offHeap, cbHeap, pIns->area.cbArea));
+        rc = VERR_INVALID_PARAMETER;
+    }
+    else
     {
         rc = hgsmiHostHeapLock (pIns);
 
@@ -948,18 +1161,27 @@ int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
         {
             if (pIns->hostHeap.cRefs)
             {
-                AssertFailed();
+                AssertLogRelMsgFailed(("HGSMI[%s]: host heap setup ignored. %d allocated.\n",
+                                       pIns->pszName, pIns->hostHeap.cRefs));
                 /* It is possible to change the heap only if there is no pending allocations. */
                 rc = VERR_ACCESS_DENIED;
             }
             else
             {
-                rc = HGSMIHeapSetup (&pIns->hostHeap,
-                                     HGSMI_HEAP_TYPE_MA,
-                                     pIns->area.pu8Base+offHeap,
-                                     cbHeap,
-                                     offHeap,
-                                     &g_hgsmiEnv);
+                rc = HGSMIAreaInitialize(&pIns->hostHeap.area, pIns->area.pu8Base + offHeap, cbHeap, offHeap);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = HGSMIMAInit(&pIns->hostHeap.u.ma, &pIns->hostHeap.area, NULL, 0, 0, &g_hgsmiEnv);
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    pIns->hostHeap.u32HeapType = HGSMI_HEAP_TYPE_MA;
+                }
+                else
+                {
+                    HGSMIAreaClear(&pIns->hostHeap.area);
+                }
             }
 
             hgsmiHostHeapUnlock (pIns);
@@ -1204,12 +1426,12 @@ int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM)
 
     off = pIns->hostHeap.u32HeapType == HGSMI_HEAP_TYPE_MA?
               0:
-              HGSMIHeapHandleLocationOffset(&pIns->hostHeap);
+              hgsmiHostHeapHandleLocationOffset(&pIns->hostHeap);
     rc = SSMR3PutU32 (pSSM, off);
     if(off != HGSMIOFFSET_VOID)
     {
-        SSMR3PutU32 (pSSM, HGSMIHeapOffset(&pIns->hostHeap));
-        SSMR3PutU32 (pSSM, HGSMIHeapSize(&pIns->hostHeap));
+        SSMR3PutU32 (pSSM, hgsmiHostHeapOffset(&pIns->hostHeap));
+        SSMR3PutU32 (pSSM, hgsmiHostHeapSize(&pIns->hostHeap));
         /* need save mem pointer to calculate offset on restore */
         SSMR3PutU64 (pSSM, (uint64_t)(uintptr_t)pIns->area.pu8Base);
         rc = hgsmiFIFOLock (pIns);
@@ -1260,7 +1482,7 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
     AssertRCReturn(rc, rc);
     pIns->pHGFlags = (off != HGSMIOFFSET_VOID) ? (HGSMIHOSTFLAGS*)HGSMIOffsetToPointer (&pIns->area, off) : NULL;
 
-    HGSMIHEAP hHeap = pIns->hostHeap;
+    HGSMIHOSTHEAP hHeap = pIns->hostHeap;
     rc = SSMR3GetU32(pSSM, &off);
     AssertRCReturn(rc, rc);
     if(off != HGSMIOFFSET_VOID)
@@ -1310,14 +1532,14 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
                 rc = hgsmiHostLoadMA(pSSM, &cBlocks, &paDescriptors, &cbMaxBlock);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = HGSMIHeapRestoreMA(&pIns->hostHeap,
-                                            pIns->area.pu8Base+offHeap,
-                                            cbHeap,
-                                            offHeap,
-                                            cBlocks,
-                                            paDescriptors,
-                                            cbMaxBlock,
-                                            &g_hgsmiEnv);
+                    rc = hgsmiHostHeapRestoreMA(&pIns->hostHeap,
+                                                pIns->area.pu8Base+offHeap,
+                                                cbHeap,
+                                                offHeap,
+                                                cBlocks,
+                                                paDescriptors,
+                                                cbMaxBlock,
+                                                &g_hgsmiEnv);
 
                     RTMemFree(paDescriptors);
                 }
@@ -1331,13 +1553,13 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
                     Assert(!pIns->hostHeap.cRefs);
                     pIns->hostHeap.cRefs = 0;
 
-                    rc = HGSMIHeapRelocate(&pIns->hostHeap,
-                                           u32HeapType,
-                                           pIns->area.pu8Base+offHeap,
-                                           off,
-                                           uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
-                                           cbHeap,
-                                           offHeap);
+                    rc = hgsmiHostHeapRelocate(&pIns->hostHeap,
+                                               u32HeapType,
+                                               pIns->area.pu8Base+offHeap,
+                                               off,
+                                               uintptr_t(pIns->area.pu8Base) - uintptr_t(oldMem),
+                                               cbHeap,
+                                               offHeap);
 
                     hgsmiHostHeapUnlock (pIns);
                 }
@@ -1533,11 +1755,12 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
                  void           *pvNotifyGuest,
                  size_t         cbContext)
 {
-    LogFlowFunc(("ppIns = %p, pVM = %p, pszName = [%s], pu8MemBase = %p, cbMem = 0x%08X, offMemBase = 0x%08X, "
+    LogFlowFunc(("ppIns = %p, pVM = %p, pszName = [%s], offBase = 0x%08X, pu8MemBase = %p, cbMem = 0x%08X, "
                  "pfnNotifyGuest = %p, pvNotifyGuest = %p, cbContext = %d\n",
                  ppIns,
                  pVM,
                  pszName,
+                 offBase,
                  pu8MemBase,
                  cbMem,
                  pfnNotifyGuest,
@@ -1584,7 +1807,7 @@ int HGSMICreate (PHGSMIINSTANCE *ppIns,
 
         pIns->pszName        = VALID_PTR(pszName)? pszName: "";
 
-        HGSMIHeapSetupUninitialized(&pIns->hostHeap);
+        hgsmiHostHeapSetupUninitialized(&pIns->hostHeap);
 
         pIns->pfnNotifyGuest = pfnNotifyGuest;
         pIns->pvNotifyGuest  = pvNotifyGuest;
@@ -1633,9 +1856,7 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns)
     while(hgsmiProcessGuestCmdCompletion(pIns) != HGSMIOFFSET_VOID) {}
 #endif
 
-    HGSMIHeapDestroy(&pIns->hostHeap);
-
-    HGSMIHeapSetupUninitialized(&pIns->hostHeap);
+    hgsmiHostHeapDestroy(&pIns->hostHeap);
 
     return flags;
 }
@@ -1646,7 +1867,7 @@ void HGSMIDestroy (PHGSMIINSTANCE pIns)
 
     if (pIns)
     {
-        HGSMIHeapDestroy(&pIns->hostHeap);
+        hgsmiHostHeapDestroy(&pIns->hostHeap);
 
         if (RTCritSectIsInitialized (&pIns->hostHeapCritSect))
         {

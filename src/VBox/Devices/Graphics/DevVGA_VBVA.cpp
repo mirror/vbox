@@ -2272,7 +2272,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             LogFlowFunc(("VBVA_INFO_HEAP: offset 0x%x, size 0x%x\n",
                          pHeap->u32HeapOffset, pHeap->u32HeapSize));
 
-            rc = HGSMISetupHostHeap (pIns, pHeap->u32HeapOffset, pHeap->u32HeapSize);
+            rc = HGSMIHostHeapSetup(pIns, pHeap->u32HeapOffset, pHeap->u32HeapSize);
         } break;
 
         case VBVA_FLUSH:

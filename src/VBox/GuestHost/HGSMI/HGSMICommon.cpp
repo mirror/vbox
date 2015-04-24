@@ -100,48 +100,6 @@ uint32_t HGSMIChecksum (HGSMIOFFSET offBuffer,
     return hgsmiHashEnd (u32Checksum);
 }
 
-static HGSMIOFFSET hgsmiBufferInitializeSingle (const HGSMIAREA *pArea,
-                                                HGSMIBUFFERHEADER *pHeader,
-                                                uint32_t u32DataSize,
-                                                uint8_t u8Channel,
-                                                uint16_t u16ChannelInfo)
-{
-    if (   !pArea
-        || !pHeader)
-    {
-        return HGSMIOFFSET_VOID;
-    }
-
-    /* Buffer must be within the area:
-     *   * header data size do not exceed the maximum data size;
-     *   * buffer address is greater than the area base address;
-     *   * buffer address is lower than the maximum allowed for the given data size.
-     */
-    HGSMISIZE cbMaximumDataSize = pArea->offLast - pArea->offBase;
-
-    if (   u32DataSize > cbMaximumDataSize
-        || (uint8_t *)pHeader < pArea->pu8Base
-        || (uint8_t *)pHeader > pArea->pu8Base + cbMaximumDataSize - u32DataSize)
-    {
-        return HGSMIOFFSET_VOID;
-    }
-
-    HGSMIOFFSET offBuffer = HGSMIPointerToOffset (pArea, pHeader);
-
-    pHeader->u8Flags        = HGSMI_BUFFER_HEADER_F_SEQ_SINGLE;
-    pHeader->u32DataSize    = u32DataSize;
-    pHeader->u8Channel      = u8Channel;
-    pHeader->u16ChannelInfo = u16ChannelInfo;
-    memset (pHeader->u.au8Union, 0, sizeof (pHeader->u.au8Union));
-
-    HGSMIBUFFERTAIL *pTail = HGSMIBufferTail (pHeader);
-
-    pTail->u32Reserved = 0;
-    pTail->u32Checksum = HGSMIChecksum (offBuffer, pHeader, pTail);
-
-    return offBuffer;
-}
-
 int HGSMIAreaInitialize (HGSMIAREA *pArea, void *pvBase, HGSMISIZE cbArea, HGSMIOFFSET offBase)
 {
     uint8_t *pu8Base = (uint8_t *)pvBase;
@@ -174,104 +132,51 @@ void HGSMIAreaClear (HGSMIAREA *pArea)
 /* Initialize the memory buffer including its checksum.
  * No changes alloed to the header and the tail after that.
  */
-HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
-                                         HGSMIBUFFERHEADER *pHeader,
-                                         HGSMISIZE cbBuffer,
-                                         uint8_t u8Channel,
-                                         uint16_t u16ChannelInfo)
+HGSMIOFFSET HGSMIBufferInitializeSingle(const HGSMIAREA *pArea,
+                                        HGSMIBUFFERHEADER *pHeader,
+                                        HGSMISIZE cbBuffer,
+                                        uint8_t u8Channel,
+                                        uint16_t u16ChannelInfo)
 {
-    if (cbBuffer < HGSMIBufferMinimumSize ())
+    if (   !pArea
+        || !pHeader
+        || cbBuffer < HGSMIBufferMinimumSize())
     {
         return HGSMIOFFSET_VOID;
     }
 
-    return hgsmiBufferInitializeSingle (pArea, pHeader, cbBuffer - HGSMIBufferMinimumSize (), u8Channel, u16ChannelInfo);
-}
+    /* Buffer must be within the area:
+     *   * header data size do not exceed the maximum data size;
+     *   * buffer address is greater than the area base address;
+     *   * buffer address is lower than the maximum allowed for the given data size.
+     */
+    HGSMISIZE cbMaximumDataSize = pArea->offLast - pArea->offBase;
+    uint32_t u32DataSize = cbBuffer - HGSMIBufferMinimumSize();
 
-void HGSMIHeapSetupUninitialized(HGSMIHEAP *pHeap)
-{
-    RT_ZERO(*pHeap);
-    pHeap->u32HeapType = HGSMI_HEAP_TYPE_NULL;
-}
-
-int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
-                       uint32_t u32HeapType,
-                       void *pvBase,
-                       uint32_t offHeapHandle,
-                       uintptr_t offDelta,
-                       HGSMISIZE cbArea,
-                       HGSMIOFFSET offBase)
-{
-    if (   !pHeap
-        || !pvBase)
+    if (   u32DataSize > cbMaximumDataSize
+        || (uint8_t *)pHeader < pArea->pu8Base
+        || (uint8_t *)pHeader > pArea->pu8Base + cbMaximumDataSize - u32DataSize)
     {
-        return VERR_INVALID_PARAMETER;
+        return HGSMIOFFSET_VOID;
     }
 
-    int rc = HGSMIAreaInitialize (&pHeap->area, pvBase, cbArea, offBase);
+    HGSMIOFFSET offBuffer = HGSMIPointerToOffset (pArea, pHeader);
 
-    if (RT_SUCCESS (rc))
-    {
-        if (u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-        {
-            pHeap->u.hOff = (RTHEAPOFFSET)((uint8_t *)pvBase + offHeapHandle);
-        }
-        else if (u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-        {
-            pHeap->u.hPtr = (RTHEAPSIMPLE)((uint8_t *)pvBase + offHeapHandle);
-            rc = RTHeapSimpleRelocate (pHeap->u.hPtr, offDelta); AssertRC(rc);
-        }
-        else
-        {
-            /* HGSMI_HEAP_TYPE_MA does not need the relocation. */
-            rc = VERR_NOT_SUPPORTED;
-        }
+    pHeader->u8Flags        = HGSMI_BUFFER_HEADER_F_SEQ_SINGLE;
+    pHeader->u32DataSize    = u32DataSize;
+    pHeader->u8Channel      = u8Channel;
+    pHeader->u16ChannelInfo = u16ChannelInfo;
+    memset (pHeader->u.au8Union, 0, sizeof (pHeader->u.au8Union));
 
-        if (RT_SUCCESS(rc))
-        {
-            pHeap->cRefs = 0;
-            pHeap->u32HeapType = u32HeapType;
-        }
-        else
-        {
-            HGSMIAreaClear (&pHeap->area);
-        }
-    }
+    HGSMIBUFFERTAIL *pTail = HGSMIBufferTail (pHeader);
 
-    return rc;
-}
+    pTail->u32Reserved = 0;
+    pTail->u32Checksum = HGSMIChecksum (offBuffer, pHeader, pTail);
 
-int HGSMIHeapRestoreMA(HGSMIHEAP *pHeap,
-                       void *pvBase,
-                       HGSMISIZE cbArea,
-                       HGSMIOFFSET offBase,
-                       uint32_t cBlocks,
-                       HGSMIOFFSET *paDescriptors,
-                       HGSMISIZE cbMaxBlock,
-                       HGSMIENV *pEnv)
-{
-    int rc = HGSMIAreaInitialize(&pHeap->area, pvBase, cbArea, offBase);
-
-    if (RT_SUCCESS (rc))
-    {
-        rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, paDescriptors, cBlocks, cbMaxBlock, pEnv);
-
-        if (RT_SUCCESS(rc))
-        {
-            pHeap->cRefs = 0;
-            pHeap->u32HeapType = HGSMI_HEAP_TYPE_MA;
-        }
-        else
-        {
-            HGSMIAreaClear(&pHeap->area);
-        }
-    }
-
-    return rc;
+    return offBuffer;
 }
 
 int HGSMIHeapSetup (HGSMIHEAP *pHeap,
-                    uint32_t u32HeapType,
                     void *pvBase,
                     HGSMISIZE cbArea,
                     HGSMIOFFSET offBase,
@@ -287,29 +192,8 @@ int HGSMIHeapSetup (HGSMIHEAP *pHeap,
 
     if (RT_SUCCESS (rc))
     {
-        if (u32HeapType == HGSMI_HEAP_TYPE_MA)
-        {
-            rc = HGSMIMAInit(&pHeap->u.ma, &pHeap->area, NULL, 0, 0, pEnv);
-        }
-        else if (u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-        {
-            rc = RTHeapSimpleInit (&pHeap->u.hPtr, pvBase, cbArea);
-        }
-        else if (u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-        {
-            rc = RTHeapOffsetInit (&pHeap->u.hOff, pvBase, cbArea);
-        }
-        else
-        {
-            rc = VERR_NOT_SUPPORTED;
-        }
-
-        if (RT_SUCCESS (rc))
-        {
-            pHeap->cRefs = 0;
-            pHeap->u32HeapType = u32HeapType;
-        }
-        else
+        rc = HGSMIMAInit(&pHeap->ma, &pHeap->area, NULL, 0, 0, pEnv);
+        if (RT_FAILURE(rc))
         {
             HGSMIAreaClear (&pHeap->area);
         }
@@ -322,12 +206,7 @@ void HGSMIHeapDestroy (HGSMIHEAP *pHeap)
 {
     if (pHeap)
     {
-        if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
-        {
-            HGSMIMAUninit(&pHeap->u.ma);
-        }
-        Assert(!pHeap->cRefs);
-        HGSMIHeapSetupUninitialized(pHeap);
+        HGSMIMAUninit(&pHeap->ma);
     }
 }
 
@@ -342,26 +221,21 @@ void *HGSMIHeapAlloc (HGSMIHEAP *pHeap,
     if (!pHeader)
         return NULL;
 
-    hgsmiBufferInitializeSingle (&pHeap->area, pHeader, cbData, u8Channel, u16ChannelInfo);
+    HGSMIOFFSET offBuffer = HGSMIBufferInitializeSingle(HGSMIHeapArea(pHeap), pHeader,
+                                                        cbAlloc, u8Channel, u16ChannelInfo);
+    if (offBuffer == HGSMIOFFSET_VOID)
+    {
+        HGSMIHeapBufferFree(pHeap, pHeader);
+        return NULL;
+    }
 
     return HGSMIBufferData (pHeader);
-}
-
-HGSMIOFFSET HGSMIHeapBufferOffset (HGSMIHEAP *pHeap,
-                                   void *pvData)
-{
-    HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData (pvData);
-
-    HGSMIOFFSET offBuffer = HGSMIPointerToOffset (&pHeap->area, pHeader);
-
-    return offBuffer;
 }
 
 void HGSMIHeapFree (HGSMIHEAP *pHeap,
                     void *pvData)
 {
-    if (   pvData
-        && pHeap->u32HeapType != HGSMI_HEAP_TYPE_NULL)
+    if (pvData)
     {
         HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData (pvData);
 
@@ -371,45 +245,14 @@ void HGSMIHeapFree (HGSMIHEAP *pHeap,
 
 void* HGSMIHeapBufferAlloc (HGSMIHEAP *pHeap, HGSMISIZE cbBuffer)
 {
-    void* pvBuf = NULL;
-    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
-    {
-        pvBuf = HGSMIMAAlloc(&pHeap->u.ma, cbBuffer);
-    }
-    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-    {
-        pvBuf = RTHeapSimpleAlloc (pHeap->u.hPtr, cbBuffer, 0);
-    }
-    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-    {
-        pvBuf = RTHeapOffsetAlloc (pHeap->u.hOff, cbBuffer, 0);
-    }
-
-    if (pvBuf)
-    {
-        ++pHeap->cRefs;
-    }
-
+    void *pvBuf = HGSMIMAAlloc(&pHeap->ma, cbBuffer);
     return pvBuf;
 }
 
 void HGSMIHeapBufferFree(HGSMIHEAP *pHeap,
                          void *pvBuf)
 {
-    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_MA)
-    {
-        HGSMIMAFree(&pHeap->u.ma, pvBuf);
-    }
-    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-    {
-        RTHeapSimpleFree (pHeap->u.hPtr, pvBuf);
-    }
-    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-    {
-        RTHeapOffsetFree (pHeap->u.hOff, pvBuf);
-    }
-
-    --pHeap->cRefs;
+    HGSMIMAFree(&pHeap->ma, pvBuf);
 }
 
 typedef struct HGSMIBUFFERCONTEXT
@@ -456,7 +299,7 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
             /* At least both header and tail structures are in the area. Check the checksum. */
             uint32_t u32Checksum = HGSMIChecksum(offBuffer, &header, &tail);
             LogFlowFunc(("checksum check: u32Checksum = 0x%x pTail->u32Checksum = 0x%x\n",
-                         u32Checksum, pTail->u32Checksum));
+                         u32Checksum, tail.u32Checksum));
             if (u32Checksum == tail.u32Checksum)
             {
                 /* Success. */
@@ -467,7 +310,7 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
             else
             {
                 LogFunc(("invalid checksum 0x%x, expected 0x%x!!!\n",
-                         u32Checksum, pTail->u32Checksum));
+                         u32Checksum, tail.u32Checksum));
                 rc = VERR_INVALID_STATE;
                 HGSMI_STRICT_ASSERT_FAILED();
             }
@@ -486,27 +329,17 @@ static int hgsmiVerifyBuffer(const HGSMIAREA *pArea,
 
 /* A wrapper to safely call the handler.
  */
-static int hgsmiChannelHandlerCall(const HGSMICHANNELHANDLER *pHandler,
-                                   const HGSMIBUFFERCONTEXT *pBufferContext)
+static void hgsmiChannelHandlerCall(const HGSMICHANNELHANDLER *pHandler,
+                                    const HGSMIBUFFERCONTEXT *pBufferContext)
 {
     LogFlowFunc(("pHandler %p\n", pHandler));
-
-    int rc;
 
     if (   pHandler
         && pHandler->pfnHandler)
     {
-        rc = pHandler->pfnHandler(pHandler->pvHandler, pBufferContext->pHeader->u16ChannelInfo,
-                                  pBufferContext->pvData, pBufferContext->cbData);
+        pHandler->pfnHandler(pHandler->pvHandler, pBufferContext->pHeader->u16ChannelInfo,
+                             pBufferContext->pvData, pBufferContext->cbData);
     }
-    else
-    {
-        /* It is a NOOP case here. */
-        rc = VINF_SUCCESS;
-    }
-
-    LogFlowFunc(("leave rc = %Rrc\n", rc));
-    return rc;
 }
 
 /** Helper to convert HGSMI channel index to the channel structure pointer.
@@ -556,7 +389,7 @@ int HGSMIBufferProcess(HGSMIAREA *pArea,
         HGSMICHANNEL *pChannel = HGSMIChannelFindById(pChannelInfo, bufferContext.pHeader->u8Channel);
         if (pChannel)
         {
-            rc = hgsmiChannelHandlerCall(&pChannel->handler, &bufferContext);
+            hgsmiChannelHandlerCall(&pChannel->handler, &bufferContext);
             HGSMI_STRICT_ASSERT(RT_SUCCESS(hgsmiVerifyBuffer(pArea, offBuffer, &bufferContext)));
         }
         else

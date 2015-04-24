@@ -71,24 +71,11 @@
  *     * the channel information.
  */
 
-/* Heap types. */
-#define HGSMI_HEAP_TYPE_NULL    0 /* Heap not initialized. */
-#define HGSMI_HEAP_TYPE_POINTER 1 /* Deprecated. RTHEAPSIMPLE. */
-#define HGSMI_HEAP_TYPE_OFFSET  2 /* Deprecated. RTHEAPOFFSET. */
-#define HGSMI_HEAP_TYPE_MA      3 /* Memory allocator. */
-
 #pragma pack(1)
 typedef struct HGSMIHEAP
 {
-    union
-    {
-        HGSMIMADATA   ma;           /* Memory Allocator */
-        RTHEAPSIMPLE  hPtr;         /* Pointer based heap. */
-        RTHEAPOFFSET  hOff;         /* Offset based heap. */
-    } u;
-    HGSMIAREA     area;             /* Description. */
-    int           cRefs;            /* Number of heap allocations. */
-    uint32_t      u32HeapType;      /* HGSMI_HEAP_TYPE_* */
+    HGSMIAREA area; /* Description. */
+    HGSMIMADATA ma; /* Memory allocator */
 } HGSMIHEAP;
 #pragma pack()
 
@@ -179,13 +166,18 @@ DECLINLINE(void *) HGSMIOffsetToPointer(const HGSMIAREA *pArea,
     return pArea->pu8Base + (offBuffer - pArea->offBase);
 }
 
-DECLINLINE(uint8_t *) HGSMIBufferDataFromOffset (const HGSMIAREA *pArea, HGSMIOFFSET offBuffer)
+DECLINLINE(uint8_t *) HGSMIBufferDataFromOffset(const HGSMIAREA *pArea,
+                                                HGSMIOFFSET offBuffer)
 {
-    HGSMIBUFFERHEADER *pHeader = (HGSMIBUFFERHEADER *)HGSMIOffsetToPointer(pArea, offBuffer);
-    Assert(pHeader);
-    if(pHeader)
-        return HGSMIBufferData(pHeader);
-    return NULL;
+    void *pvBuffer = HGSMIOffsetToPointer(pArea, offBuffer);
+    return HGSMIBufferDataFromPtr(pvBuffer);
+}
+
+DECLINLINE(HGSMIOFFSET) HGSMIBufferOffsetFromData(const HGSMIAREA *pArea,
+                                                  void *pvData)
+{
+    HGSMIBUFFERHEADER *pHeader = HGSMIBufferHeaderFromData(pvData);
+    return HGSMIPointerToOffset(pArea, pHeader);
 }
 
 DECLINLINE(uint8_t *) HGSMIBufferDataAndChInfoFromOffset (const HGSMIAREA *pArea, HGSMIOFFSET offBuffer, uint16_t * pChInfo)
@@ -227,31 +219,16 @@ HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
                                          uint8_t u8Channel,
                                          uint16_t u16ChannelInfo);
 
+DECLINLINE(const HGSMIAREA *) HGSMIHeapArea(HGSMIHEAP *pHeap)
+{
+    return &pHeap->area;
+}
+
 int HGSMIHeapSetup (HGSMIHEAP *pHeap,
-                    uint32_t u32HeapType,
                     void *pvBase,
                     HGSMISIZE cbArea,
                     HGSMIOFFSET offBase,
                     const HGSMIENV *pEnv);
-
-int HGSMIHeapRelocate (HGSMIHEAP *pHeap,
-                       uint32_t u32HeapType,
-                       void *pvBase,
-                       uint32_t offHeapHandle,
-                       uintptr_t offDelta,
-                       HGSMISIZE cbArea,
-                       HGSMIOFFSET offBase);
-
-int HGSMIHeapRestoreMA(HGSMIHEAP *pHeap,
-                       void *pvBase,
-                       HGSMISIZE cbArea,
-                       HGSMIOFFSET offBase,
-                       uint32_t cBlocks,
-                       HGSMIOFFSET *paDescriptors,
-                       HGSMISIZE cbMaxBlock,
-                       HGSMIENV *pEnv);
-
-void HGSMIHeapSetupUninitialized (HGSMIHEAP *pHeap);
 
 void HGSMIHeapDestroy (HGSMIHEAP *pHeap);
 
@@ -266,41 +243,22 @@ void *HGSMIHeapAlloc (HGSMIHEAP *pHeap,
                       uint8_t u8Channel,
                       uint16_t u16ChannelInfo);
 
-HGSMIOFFSET HGSMIHeapBufferOffset (HGSMIHEAP *pHeap,
-                                   void *pvData);
+DECLINLINE(HGSMIOFFSET) HGSMIHeapBufferOffset(HGSMIHEAP *pHeap, void *pvData)
+{
+    return HGSMIBufferOffsetFromData(HGSMIHeapArea(pHeap), pvData);
+}
 
 void HGSMIHeapFree (HGSMIHEAP *pHeap,
                     void *pvData);
 
 DECLINLINE(HGSMIOFFSET) HGSMIHeapOffset(HGSMIHEAP *pHeap)
 {
-    return pHeap->area.offBase;
+    return HGSMIHeapArea(pHeap)->offBase;
 }
-
-#ifdef IN_RING3
-/* Needed for heap relocation: offset of the heap handle relative to the start of heap area. */
-DECLINLINE(HGSMIOFFSET) HGSMIHeapHandleLocationOffset(HGSMIHEAP *pHeap)
-{
-    HGSMIOFFSET offHeapHandle;
-    if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_POINTER)
-    {
-        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.hPtr - (uintptr_t)pHeap->area.pu8Base);
-    }
-    else if (pHeap->u32HeapType == HGSMI_HEAP_TYPE_OFFSET)
-    {
-        offHeapHandle = (HGSMIOFFSET)((uintptr_t)pHeap->u.hOff - (uintptr_t)pHeap->area.pu8Base);
-    }
-    else
-    {
-        offHeapHandle = HGSMIOFFSET_VOID;
-    }
-    return offHeapHandle;
-}
-#endif /* IN_RING3 */
 
 DECLINLINE(HGSMISIZE) HGSMIHeapSize(HGSMIHEAP *pHeap)
 {
-    return pHeap->area.cbArea;
+    return HGSMIHeapArea(pHeap)->cbArea;
 }
 
 HGSMICHANNEL *HGSMIChannelFindById(HGSMICHANNELINFO *pChannelInfo,

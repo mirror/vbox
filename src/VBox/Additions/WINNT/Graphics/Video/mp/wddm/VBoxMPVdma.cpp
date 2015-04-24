@@ -1627,7 +1627,6 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
     {
         /* Setup a HGSMI heap within the adapter information area. */
         rc = VBoxSHGSMIInit(&pInfo->CmdHeap,
-                             HGSMI_HEAP_TYPE_MA,
                              pvBuffer,
                              cbBuffer,
                              offBuffer,

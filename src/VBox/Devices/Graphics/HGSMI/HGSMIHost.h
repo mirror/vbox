@@ -68,9 +68,9 @@ int HGSMIChannelRegisterName (PHGSMIINSTANCE pIns,
                               void *pvChannelHandler,
                               uint8_t *pu8Channel);
 
-int HGSMISetupHostHeap (PHGSMIINSTANCE pIns,
-                        HGSMIOFFSET    offHeap,
-                        HGSMISIZE      cbHeap);
+int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns,
+                       HGSMIOFFSET    offHeap,
+                       HGSMISIZE      cbHeap);
 
 int HGSMISaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
 int HGSMILoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
@@ -106,8 +106,8 @@ void HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
 
 /* Allocate a buffer in the host heap. */
 int HGSMIHostCommandAlloc (PHGSMIINSTANCE pIns,
-                           void **ppvMem,
-                           HGSMISIZE cbMem,
+                           void **ppvData,
+                           HGSMISIZE cbData,
                            uint8_t u8Channel,
                            uint16_t u16ChannelInfo);
 
@@ -115,7 +115,7 @@ int HGSMIHostCommandProcess (PHGSMIINSTANCE pIns,
                              void *pvMem);
 
 int HGSMIHostCommandProcessAndFreeAsynch (PHGSMIINSTANCE pIns,
-                             void *pvMem,
+                             void *pvData,
                              bool bDoIrq);
 
 int HGSMIHostCommandFree (PHGSMIINSTANCE pIns,
