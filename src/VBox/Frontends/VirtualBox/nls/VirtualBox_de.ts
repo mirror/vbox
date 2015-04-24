@@ -718,7 +718,7 @@
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Legt das Medium mit den Gasterweiterungen in das virtuelle CD/DVD-Laufwerk</translation>
     </message>
     <message>
         <source>&amp;VirtualBox</source>
@@ -754,15 +754,15 @@
     </message>
     <message>
         <source>Opens window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet ein Fenster zum Konfigurieren der Statuszeile</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige &amp;Statuszeile</translation>
     </message>
     <message>
         <source>Toggle status-bar visibility for this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Statuszeile für diese virtuelle Maschine ein-/ausschalten</translation>
     </message>
     <message>
         <source>&amp;Input</source>
@@ -778,23 +778,23 @@
     </message>
     <message>
         <source>Display the global settings window to configure shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnet das Fenster zum Konfigurieren der Tastenkombinationen</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Maus</translation>
     </message>
     <message>
         <source>&amp;Hard Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Festplatten</translation>
     </message>
     <message>
         <source>&amp;Hard Drive Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Change the settings of hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für Festplatten ändern</translation>
     </message>
     <message>
         <source>Network</source>
@@ -806,7 +806,7 @@
     </message>
     <message>
         <source>Change the settings of USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für USB-Geräte ändern</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
@@ -819,11 +819,11 @@
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Manager für &amp;Extradata...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Manager für Extradata an</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -839,7 +839,7 @@
     </message>
     <message>
         <source>Minimize active machine-window</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimiert das aktive Fenster</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
@@ -847,7 +847,7 @@
     </message>
     <message>
         <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Wechselt zwischen normalem Modus und Vollbildmodus</translation>
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
@@ -867,7 +867,7 @@
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Sendet %1 an die virtuelle Maschine</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
@@ -875,7 +875,7 @@
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert die Mauszeiger-Integration</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
@@ -896,7 +896,7 @@
     <message>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Logging</translation>
     </message>
 </context>
 <context>
@@ -909,7 +909,7 @@
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ändern nach %1x%2</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -1069,7 +1069,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Empfange Daten ...</translation>
     </message>
 </context>
 <context>
@@ -1495,7 +1495,7 @@
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>Optisches Laufwerk</translation>
+        <translation>[Optisches Laufwerk]</translation>
     </message>
     <message>
         <source>USB Controller</source>
@@ -2541,17 +2541,17 @@
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zeigt die Aktivität der Gastanzeige:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zeigt die optischen Laufwerke:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zeigt die Aktivität der Diskettenlaufwerke:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2969,7 +2969,7 @@
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert Verschlüsselung für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
@@ -2981,7 +2981,7 @@
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiffre, die zur Verschlüsselung der virtuellen Festplatten benutzt wird.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
@@ -2989,7 +2989,7 @@
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Passwort für diese virtuelle Maschine.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
@@ -3025,7 +3025,7 @@
     <name>UIMachineSettingsInterface</name>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern der Menüzeile des VM-Fensters.</translation>
     </message>
     <message>
         <source>Screen Scale Factor:</source>
@@ -3061,27 +3061,27 @@
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">Mini-Toolbar:</translation>
+        <translation>Mini-Toolbar:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished">Falls aktiviert wird die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus gezeigt.</translation>
+        <translation>Falls aktiviert wird die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus gezeigt.</translation>
     </message>
     <message>
         <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished">im &amp;Vollbild-/Seamless-Modus zeigen</translation>
+        <translation>im &amp;Vollbild-/Seamless-Modus zeigen</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished">Zeigt die Mini-Toolbar am oberen Rand des Bildschirms wenn ausgewählt, sonst am unteren Rand.</translation>
+        <translation>Zeigt die Mini-Toolbar am oberen Rand des Bildschirms wenn ausgewählt, sonst am unteren Rand.</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">am &amp;oberen Bildschirmrand zeigen</translation>
+        <translation>am &amp;oberen Bildschirmrand zeigen</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ändern der Statuszeile des VM-Fensters.</translation>
     </message>
 </context>
 <context>
@@ -3517,7 +3517,7 @@
     </message>
     <message>
         <source>&amp;Path/Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Pfad/Adresse:</translation>
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
@@ -3853,7 +3853,7 @@
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Hotplug-fähig</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk file...</source>
@@ -3869,15 +3869,15 @@
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Optisches Laufwerk hinzufügen</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskettenlaufwerk hinzufügen</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Optisches Laufwerk:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
@@ -4088,7 +4088,7 @@
     </message>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Paravirtualisierung:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
@@ -4260,11 +4260,7 @@
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-2.0/3.0-Unterstützung wurde für diese virtuelle Maschine aktiviert. Dafür ist allerdings die Installation des &lt;i&gt;%1&lt;/i&gt; notwendig. Bitte installieren Sie dieses Zusatzpaket von der VirtualBox-Webseite oder deaktivieren Sie die USB-2.0/3.0-Unterstützung zum Starten der Maschine.</translation>
     </message>
 </context>
 <context>
@@ -4433,7 +4429,7 @@
     </message>
     <message>
         <source>Enable Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Menüzeile anzeigen</translation>
     </message>
 </context>
 <context>
@@ -5440,16 +5436,16 @@
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Webcam &lt;b&gt;%1&lt;/b&gt; konnte nicht von der virtuellen Maschine &lt;b&gt;%2&lt;/b&gt; getrennt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die VirtualBox-Gasterweiterungen sind anscheinend für diese VM nicht verfügbar, sind aber Vorrausetzung für Gemeinsame Ordner. Um diesen Dienst zu nutzen müssen Sie daher die Gasterweiterungen installieren oder diese, falls sie nicht richtig funktionieren, neu installieren. Dies können Sie durch Auswahl von &lt;b&gt;Gasterweiterungen einlegen...&lt;/b&gt; im Menü &lt;b&gt;Geräte&lt;/b&gt; erreichen. Beachten Sie, dass Gemeinsame Ordner erst benutzt werden können, wenn der Gast vollständig gebootet wurde.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Insert</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Einlegen</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
@@ -6108,7 +6104,7 @@
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation>Gast-Erweiterungen</translation>
+        <translation>Gasterweiterungen</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
@@ -8283,7 +8279,7 @@
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paravirtualisierung</translation>
     </message>
     <message>
         <source>None</source>
@@ -8353,7 +8349,7 @@
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Erstelle Online-Sicherungspunkt</translation>
     </message>
     <message>
         <source>KVM</source>
