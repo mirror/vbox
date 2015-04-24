@@ -28,6 +28,7 @@
 
 /* Forward declarations: */
 class UIActionPolymorphic;
+class UIActionPolymorphicMenu;
 class UIActionPool;
 class UIActionPoolRuntime;
 class UIActionPoolSelector;
@@ -46,7 +47,8 @@ enum UIActionType
     UIActionType_Menu,
     UIActionType_Simple,
     UIActionType_Toggle,
-    UIActionType_Polymorphic
+    UIActionType_Polymorphic,
+    UIActionType_PolymorphicMenu
 };
 
 /** Action indexes. */
@@ -154,6 +156,8 @@ public:
 
     /** Casts action to polymorphic-action. */
     UIActionPolymorphic* toActionPolymorphic();
+    /** Casts action to polymorphic-menu-action. */
+    UIActionPolymorphicMenu* toActionPolymorphicMenu();
 
     /** Returns current action name. */
     const QString& name() const { return m_strName; }
@@ -311,6 +315,59 @@ protected:
 
 private:
 
+    /** Holds current action state. */
+    int m_iState;
+};
+
+
+/** Abstract UIAction extension for 'Polymorphic Menu' action type. */
+class UIActionPolymorphicMenu : public UIAction
+{
+    Q_OBJECT;
+
+public:
+
+    /** Returns current action state. */
+    int state() const { return m_iState; }
+    /** Defines current action state. */
+    void setState(int iState) { m_iState = iState; retranslateUi(); }
+
+protected:
+
+    /** Constructor, taking normal icon name and name for disabled analog. */
+    UIActionPolymorphicMenu(UIActionPool *pParent,
+                            const QString &strIcon = QString(), const QString &strIconDis = QString());
+    /** Constructor, taking normal, small icon names and names for disabled analogs. */
+    UIActionPolymorphicMenu(UIActionPool *pParent,
+                            const QString &strIconNormal, const QString &strIconSmall,
+                            const QString &strIconNormalDisabled, const QString &strIconSmallDisabled);
+    /** Constructor, taking copy of existing icon. */
+    UIActionPolymorphicMenu(UIActionPool *pParent,
+                            const QIcon &icon);
+
+    /** Destructor. */
+    ~UIActionPolymorphicMenu();
+
+    /** Defines whether tool-tip should be shown. */
+    void setShowToolTip(bool fShowToolTip);
+
+    /** Show menu. */
+    void showMenu();
+    /** Hide menu. */
+    void hideMenu();
+
+private:
+
+    /** Prepare routine. */
+    void prepare();
+
+    /** Updates action text accordingly. */
+    virtual void updateText();
+
+private:
+
+    /** Holds the menu instance. */
+    UIMenu *m_pMenu;
     /** Holds current action state. */
     int m_iState;
 };
