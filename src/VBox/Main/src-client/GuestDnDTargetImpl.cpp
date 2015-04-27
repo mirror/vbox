@@ -529,7 +529,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hr;
+    HRESULT hr = S_OK;
     int vrc;
 
     /* Note: At the moment we only support one response at a time. */
@@ -681,23 +681,29 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
-    RTCString strPath = aFile.GetDestPath();
-    if (strPath.isEmpty())
+    RTCString strPathSrc = aFile.GetSourcePath();
+    if (strPathSrc.isEmpty())
         return VERR_INVALID_PARAMETER;
 
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("Sending \"%s\" (%RU32 bytes buffer) using protocol v%RU32 ...\n",
-                 aFile.GetDestPath().c_str(), m_cbBlockSize, mData.mProtocolVersion));
+                 strPathSrc.c_str(), m_cbBlockSize, mData.mProtocolVersion));
+
+    bool fOpen = aFile.IsOpen();
+    if (!fOpen)
+    {
+        LogFlowFunc(("Opening \"%s\" ...\n", strPathSrc.c_str()));
+        rc = aFile.OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
+                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);           
+    }
 
     bool fSendFileData = false;
-    if (mData.mProtocolVersion >= 2)
+    if (RT_SUCCESS(rc)) 
     {
-        if (!aFile.IsOpen())
+        if (mData.mProtocolVersion >= 2)
         {
-            rc = aFile.OpenEx(aFile.GetSourcePath(), DnDURIObject::File, DnDURIObject::Source,
-                              RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
-            if (RT_SUCCESS(rc))
+            if (!fOpen) 
             {
                 /*
                  * Since protocol v2 the file header and the actual file contents are
@@ -705,26 +711,27 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
                  * The just registered callback will be called by the guest afterwards.
                  */
                 pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR);
-                pMsg->setNextUInt32(0);                                /* context ID */
-                pMsg->setNextString(strPath.c_str());                  /* pvName */
-                pMsg->setNextUInt32((uint32_t)(strPath.length() + 1)); /* cbName */
-                pMsg->setNextUInt32(0);                                /* uFlags */
-                pMsg->setNextUInt32(aFile.GetMode());                  /* fMode */
-                pMsg->setNextUInt64(aFile.GetSize());                  /* uSize */
+                pMsg->setNextUInt32(0);                                            /* context ID */
+                rc = pMsg->setNextString(aFile.GetDestPath().c_str());             /* pvName */
+                AssertRC(rc);
+                pMsg->setNextUInt32((uint32_t)(aFile.GetDestPath().length() + 1)); /* cbName */
+                pMsg->setNextUInt32(0);                                            /* uFlags */
+                pMsg->setNextUInt32(aFile.GetMode());                              /* fMode */
+                pMsg->setNextUInt64(aFile.GetSize());                              /* uSize */
 
                 LogFlowFunc(("Sending file header ...\n"));
             }
+            else
+            {
+                /* File header was sent, so only send the actual file data. */
+                fSendFileData = true;
+            }
         }
-        else
+        else /* Protocol v1. */
         {
-            /* File header was sent, so only send the actual file data. */
+            /* Always send the file data, every time. */
             fSendFileData = true;
         }
-    }
-    else /* Protocol v1. */
-    {
-        /* Always send the file data, every time. */
-        fSendFileData = true;
     }
 
     if (   RT_SUCCESS(rc)
@@ -765,9 +772,13 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
     if (mData.mProtocolVersion <= 1)
     {
-        pMsg->setNextUInt32(0);                                              /* context ID */
         pMsg->setNextString(aFile.GetSourcePath().c_str());                  /* pvName */
         pMsg->setNextUInt32((uint32_t)(aFile.GetSourcePath().length() + 1)); /* cbName */
+    }
+    else
+    {
+        /* Protocol version 2 also sends the context ID. Currently unused. */
+        pMsg->setNextUInt32(0);                                              /* context ID */
     }
 
     uint32_t cbRead = 0;
@@ -868,6 +879,8 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGGETNEXTHOSTMSGDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_GET_NEXT_HOST_MSG_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
+            LogFlowFunc(("pCBData->uMsg=%RU32, paParms=%p, cParms=%RU32\n", pCBData->uMsg, pCBData->paParms, pCBData->cParms));
+
             GuestDnDMsg *pMsg = pThis->nextMsg();
             if (pMsg)
             {
@@ -883,19 +896,21 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
 
                 if (RT_SUCCESS(rc))
                 {
-                    LogFlowFunc(("Sending uMsg=%RU32, cParms=%RU32 ...\n", uMsg, pCBData->cParms));
+                    LogFlowFunc(("Returning uMsg=%RU32\n", uMsg));
                     rc = HGCM::Message::copyParms(pMsg->getCount(), pMsg->getParms(), pCBData->paParms);
                     if (RT_SUCCESS(rc))
                     {
                         pCBData->cParms = pMsg->getCount();
                         pThis->removeNext();
                     }
+                    else
+                        LogFlowFunc(("Copying parameters failed with rc=%Rrc\n", rc));
                 }
             }
             else
                 rc = VERR_NO_DATA;
 
-            LogFlowFunc(("Returning msg %RU32, rc=%Rrc\n", uMsg, rc));
+            LogFlowFunc(("Processing next message ended with rc=%Rrc\n", rc));
             break;
         }
         default:
@@ -991,6 +1006,10 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
         else
             break;
 
+        pCtx->mURI.cbProcessed = 0;
+        pCtx->mURI.cProcessed  = 0;
+        pCtx->mURI.cbToProcess = lstURI.TotalBytes();
+
         /*
          * The first message always is the meta info for the data. The meta
          * info *only* contains the root elements of an URI list.
@@ -1043,6 +1062,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
 
+    /* Destroy temporary scratch buffer. */
     if (pvBuf)
         RTMemFree(pvBuf);
 
@@ -1054,15 +1074,14 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
 
 int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 {
-    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     DnDURIList &lstURI = pCtx->mURI.lstURI;
 
     int rc;
 
-    uint64_t cbTotal = pCtx->mURI.lstURI.TotalBytes();
+    uint64_t cbTotal = pCtx->mURI.cbToProcess;
     uint8_t uPercent = pCtx->mURI.cbProcessed * 100 / (cbTotal ? cbTotal : 1);
-    Assert(uPercent <= 100);
 
     LogFlowFunc(("%RU64 / %RU64 -- %RU8%%\n", pCtx->mURI.cbProcessed, cbTotal, uPercent));
 

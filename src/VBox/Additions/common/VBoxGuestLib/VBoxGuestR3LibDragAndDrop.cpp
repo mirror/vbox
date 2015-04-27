@@ -222,13 +222,13 @@ static int vbglR3DnDHGProcessSendDirMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
 }
 
 static int vbglR3DnDHGProcessSendFileMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                             char     *pszFilename,
-                                             uint32_t  cbFilename,
-                                             uint32_t *pcbFilenameRecv,
-                                             void     *pvData,
-                                             uint32_t  cbData,
-                                             uint32_t *pcbDataRecv,
-                                             uint32_t *pfMode)
+                                             char                 *pszFilename,
+                                             uint32_t              cbFilename,
+                                             uint32_t             *pcbFilenameRecv,
+                                             void                 *pvData,
+                                             uint32_t              cbData,
+                                             uint32_t             *pcbDataRecv,
+                                             uint32_t             *pfMode)
 {
     AssertPtrReturn(pCtx,            VERR_INVALID_POINTER);
     AssertPtrReturn(pszFilename,     VERR_INVALID_POINTER);
@@ -247,19 +247,20 @@ static int vbglR3DnDHGProcessSendFileMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
     if (pCtx->uProtocol <= 1)
     {
         Msg.u.v1.pvName.SetPtr(pszFilename, cbFilename);
-        Msg.u.v1.cbName.SetUInt32(0);
+        Msg.u.v1.cbName.SetUInt32(cbFilename);
         Msg.u.v1.pvData.SetPtr(pvData, cbData);
-        Msg.u.v1.cbData.SetUInt32(0);
+        Msg.u.v1.cbData.SetUInt32(cbData);
         Msg.u.v1.fMode.SetUInt32(0);
 
         Msg.hdr.cParms = 5;
     }
     else
     {
+        Msg.u.v2.uContext.SetUInt32(0); /** @todo Not used yet. */
         Msg.u.v2.pvData.SetPtr(pvData, cbData);
-        Msg.u.v2.cbData.SetUInt32(0);
+        Msg.u.v2.cbData.SetUInt32(cbData);
 
-        Msg.hdr.cParms = 2;
+        Msg.hdr.cParms = 3;
     }
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
@@ -315,9 +316,9 @@ static int vbglR3DnDHGProcessSendFileHdrMessage(PVBGLR3GUESTDNDCMDCTX  pCtx,
     }
     else
     {
-        Msg.pvName.SetPtr(pszFilename, cbFilename);
-        Msg.cbName.SetUInt32(0);
         Msg.uContext.SetUInt32(0); /** @todo Not used yet. */
+        Msg.pvName.SetPtr(pszFilename, cbFilename);
+        Msg.cbName.SetUInt32(cbFilename);
         Msg.uFlags.SetUInt32(0);
         Msg.fMode.SetUInt32(0);
         Msg.cbTotal.SetUInt64(0);
@@ -344,14 +345,14 @@ static int vbglR3DnDHGProcessSendFileHdrMessage(PVBGLR3GUESTDNDCMDCTX  pCtx,
     return rc;
 }
 
-static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX pCtx,
-                                         uint32_t  *puScreenId,
-                                         char      *pszFormat,
-                                         uint32_t   cbFormat,
-                                         uint32_t  *pcbFormatRecv,
-                                         void     **ppvData,
-                                         uint32_t   cbData,
-                                         size_t    *pcbDataRecv)
+static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
+                                         uint32_t              *puScreenId,
+                                         char                  *pszFormat,
+                                         uint32_t               cbFormat,
+                                         uint32_t              *pcbFormatRecv,
+                                         void                 **ppvData,
+                                         uint32_t               cbData,
+                                         size_t                *pcbDataRecv)
 {
     AssertPtrReturn(pCtx,        VERR_INVALID_POINTER);
     AssertPtrReturn(ppvData,     VERR_INVALID_POINTER);
@@ -474,7 +475,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX pCtx,
                                                            cbTmpData,
                                                            &cbDataRecv,
                                                            &fMode);
-                    LogFlowFunc(("HOST_DND_HG_SND_FILE pszPathName=%s, cbPathName=%RU32, pvData=0x%p, cbDataRecv=%RU32, fMode=0x%x, rc=%Rrc\n",
+                    LogFlowFunc(("HOST_DND_HG_SND_FILE_DATA pszPathName=%s, cbPathName=%RU32, pvData=0x%p, cbDataRecv=%RU32, fMode=0x%x, rc=%Rrc\n",
                                  szPathName, cbPathName, pvTmpData, cbDataRecv, fMode, rc));
 
                     /*
