@@ -1115,7 +1115,10 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
     Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
 
 #ifdef LOG_ENABLED
-    SUPR0Printf("hmR0PowerCallback %s\n", RTPowerGetEventName(enmEvent));
+    if (enmEvent == RTPOWEREVENT_SUSPEND)
+        SUPR0Printf("hmR0PowerCallback RTPOWEREVENT_SUSPEND\n");
+    else
+        SUPR0Printf("hmR0PowerCallback RTPOWEREVENT_RESUME\n");
 #endif
 
     if (enmEvent == RTPOWEREVENT_SUSPEND)
@@ -1137,7 +1140,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
             }
             /* else nothing to do here for the local init case */
         }
-        else if (enmEvent == RTPOWEREVENT_RESUME)
+        else
         {
             /* Reinit the CPUs from scratch as the suspend state might have
                messed with the MSRs. (lousy BIOSes as usual) */

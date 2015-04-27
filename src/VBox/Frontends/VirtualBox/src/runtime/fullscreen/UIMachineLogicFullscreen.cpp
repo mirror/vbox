@@ -349,7 +349,6 @@ void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
         {
             LogRel(("UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType: "
                     "Going 'normal' as requested...\n"));
-            uisession()->disconnect(SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
             uisession()->setRequestedVisualState(UIVisualStateType_Invalid);
             uisession()->changeVisualState(UIVisualStateType_Normal);
             break;

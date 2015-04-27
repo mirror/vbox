@@ -654,21 +654,6 @@ typedef struct SUPDRVDEVEXT
      * (The initial master will have a 0 zero value, but it it goes offline the
      * new master may have a non-zero value.) */
     RTCPUID volatile                idGipMaster;
-    /** Counter for host suspend/resume cycle. An odd number indicates a suspended
-     *  host system. */
-    uint32_t volatile               cSuspendResume;
-    /** The TSC value recorded when the host is suspended. */
-    uint64_t                        uTscOnSuspend;
-    /** The nano timestamp recorded the host is suspended. */
-    uint64_t                        uNanoTSOnSuspend;
-    /** Number of userland threads waiting on the power event semaphore. */
-    uint32_t volatile               cPowerEventUsers;
-    /** The power event that is signalled by the kernel. */
-    RTPOWEREVENT                    enmPowerEvent;
-    /** The power event sempahore for interacting with userland consumers. */
-    RTSEMEVENTMULTI                 hPowerEvent;
-    /** The power event acknowledgment sempahore. */
-    RTSEMEVENTMULTI                 hPowerEventAck;
 
     /** Component factory mutex.
      * This protects pComponentFactoryHead and component factory querying. */
@@ -962,8 +947,6 @@ int  VBOXCALL   supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvIOCtl_TscDeltaMeasure(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCDELTAMEASURE pReq);
 int  VBOXCALL   supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPTSCREAD pReq);
-int  VBOXCALL   supdrvIOCtl_WaitForPowerEvent(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PRTPOWEREVENT pEvent);
-int  VBOXCALL   supdrvIOCtl_AckPowerEvent(PSUPDRVDEVEXT pDevExt);
 
 /* SUPDrvTracer.cpp */
 int  VBOXCALL   supdrvTracerInit(PSUPDRVDEVEXT pDevExt);

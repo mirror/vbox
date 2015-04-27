@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="zh_TW" sourcelanguage="en">
+<TS version="2.0" language="zh_TW">
 <context>
     <name>MAC_APPLICATION_MENU</name>
     <message>
@@ -103,7 +103,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
-        <translation type="unfinished">
+        <translation>
             <numerusform>遺失所需的轉碼器。 您需要安裝以下轉碼器以播放這個內容: %0</numerusform>
         </translation>
     </message>
@@ -590,7 +590,7 @@ to
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation>保留視窗的名稱並包含對其進行操作的控制項</translation>
+        <translation>視窗所使用的名稱並包含對其進行操作的控制項</translation>
     </message>
 </context>
 <context>
@@ -674,7 +674,7 @@ to
     </message>
     <message>
         <source>Socket operation timed out</source>
-        <translation>通訊端操作逾時</translation>
+        <translation>通訊端操作未逾時</translation>
     </message>
     <message>
         <source>Socket is not connected</source>
@@ -928,7 +928,7 @@ to
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>這是?</translation>
+        <translation>這是? </translation>
     </message>
     <message>
         <source>Done</source>
@@ -1122,7 +1122,7 @@ to
         <source>%1 already exists.
 Do you want to replace it?</source>
         <translation>%1 已經存在。
-您要取代它嗎?</translation>
+您要取代它嗎? </translation>
     </message>
     <message>
         <source>%1
@@ -1184,11 +1184,11 @@ Please verify the correct directory name was given.</source>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
         <translation>「%1」有寫入保護。
-您仍然要刪除嗎?</translation>
+您仍然要刪除嗎? </translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation>您確定要刪除「%1」嗎?</translation>
+        <translation>您確定要刪除「%1」嗎? </translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -2101,7 +2101,7 @@ Do you want to delete it anyway?</source>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation>(未命名)</translation>
+        <translation> (未命名) </translation>
     </message>
 </context>
 <context>
@@ -2263,7 +2263,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>Unsupported socket operation</source>
-        <translation>不支援的通訊端操作</translation>
+        <translation>未支援的通訊端操作</translation>
     </message>
     <message>
         <source>Protocol type not supported</source>
@@ -2299,7 +2299,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>The address is protected</source>
-        <translation>位址受到保護</translation>
+        <translation>位址不受保護</translation>
     </message>
     <message>
         <source>Unable to send a message</source>
@@ -2741,7 +2741,7 @@ Please choose a different file name.</source>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
         <translation>%1 已經存在。
-您要覆寫它嗎?</translation>
+您要覆寫它嗎? </translation>
     </message>
     <message>
         <source>%1 is a directory.
@@ -3804,7 +3804,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation>刪除這個紀錄嗎?</translation>
+        <translation>刪除這個紀錄嗎? </translation>
     </message>
     <message>
         <source>Yes</source>
@@ -3824,7 +3824,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation>儲存編輯嗎?</translation>
+        <translation>儲存編輯嗎? </translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3836,7 +3836,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation>取消您的編輯嗎?</translation>
+        <translation>取消您的編輯嗎? </translation>
     </message>
 </context>
 <context>
@@ -4319,7 +4319,7 @@ Please choose a different file name.</source>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>這是?</translation>
+        <translation>這是? </translation>
     </message>
 </context>
 <context>

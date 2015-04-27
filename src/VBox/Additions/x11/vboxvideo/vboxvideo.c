@@ -86,8 +86,6 @@
 # define _HAVE_STRING_ARCH_strsep /* bits/string2.h, __strsep_1c. */
 # include "xf86Crtc.h"
 # include "xf86Modes.h"
-/* For xf86RandR12GetOriginalVirtualSize(). */
-# include "xf86RandR12.h"
 #endif
 /* For setting the root window property. */
 #include "property.h"
@@ -284,7 +282,7 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
                        adjustedWidth, height, (unsigned) pVBox->cbFBMax / 1024);
             return FALSE;
         }
-        vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8,
+        vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8,
                       adjustedWidth * height * pScrn->bitsPerPixel / 8);
         pScreen->ModifyPixmapHeader(pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base);
     }
@@ -334,12 +332,7 @@ static void setModeRandR12(ScrnInfoPtr pScrn, unsigned cScreen)
                                            pScrn->virtualY, pScrn->bitsPerPixel };
     unsigned cFirst = cScreen;
     unsigned cLast = cScreen != 0 ? cScreen + 1 : pVBox->cScreens;
-    int originalX, originalY;
 
-    /* Check that this code cannot trigger the resizing bug in X.Org Server 1.3.
-     * See the work-around in PreInit. */
-    xf86RandR12GetOriginalVirtualSize(pScrn, &originalX, &originalY);
-    VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, (""));
     for (i = cFirst; i < cLast; ++i)
         if (pVBox->pScreens[i].paCrtcs->mode.HDisplay != 0 && pVBox->pScreens[i].paCrtcs->mode.VDisplay != 0)
             vbvxSetMode(pScrn, i, pVBox->pScreens[i].paCrtcs->mode.HDisplay, pVBox->pScreens[i].paCrtcs->mode.VDisplay,
@@ -920,10 +913,9 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     vboxAddModes(pScrn);
 
 #ifdef VBOXVIDEO_13
-    /* Work around a bug in the original X server modesetting code, which took
-     * the first valid values set to these two as maxima over the server
-     * lifetime.  This bug was introduced on Feb 15 2007 and was fixed in commit
-     * fa877d7f three months later, so it was present in X.Org Server 1.3. */
+    /* Work around a bug in the original X server modesetting code, which
+     * took the first valid values set to these two as maxima over the
+     * server lifetime. */
     pScrn->virtualX = VBOX_VIDEO_MAX_VIRTUAL;
     pScrn->virtualY = VBOX_VIDEO_MAX_VIRTUAL;
 #else
@@ -1419,7 +1411,7 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
         vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
     vboxDisableVbva(pScrn);
-    vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
+    vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
 #ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
@@ -1450,7 +1442,7 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
             vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
         vboxDisableVbva(pScrn);
-        vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
+        vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
     }
 #ifdef VBOX_DRI
 # ifndef VBOX_DRI_OLD  /* DRI2 */

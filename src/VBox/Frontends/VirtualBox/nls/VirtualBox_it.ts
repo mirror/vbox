@@ -335,8 +335,8 @@
         <translation>Crea un&apos;istantanea della macchina virtuale</translation>
     </message>
     <message>
-        <source>Show Session Information Window</source>
-        <translation>Mostra la finestra Informazioni di sessione</translation>
+        <source>Show Session Information Dialog</source>
+        <translation type="obsolete">Visualizza la finestra Informazioni di sessione</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
@@ -407,12 +407,12 @@
         <translation>Apri la finestra per gestire le cartelle condivise</translation>
     </message>
     <message>
-        <source>&amp;Insert Guest Additions CD image...</source>
-        <translation>&amp;Inserisci l&apos;immagine del CD delle Guest Additions...</translation>
+        <source>&amp;Install Guest Additions...</source>
+        <translation type="obsolete">&amp;Installa Guest Additions...</translation>
     </message>
     <message>
-        <source>Insert the Guest Additions disk file into the virtual drive</source>
-        <translation>Inserisci il file del disco delle Guest Additions nel lettore virtuale</translation>
+        <source>Mount the Guest Additions installation image</source>
+        <translation type="obsolete">Monta l&apos;immagine per l&apos;installazione delle Guest Additions</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
@@ -1113,53 +1113,23 @@
         <translation>Menu a comparsa</translation>
     </message>
     <message>
-        <source>&amp;Insert Guest Additions CD image...</source>
-        <comment>new</comment>
-        <translation type="obsolete">&amp;Installa Guest Additions...</translation>
-    </message>
-    <message>
-        <source>Insert the Guest Additions disk file into the virtual drive</source>
-        <comment>new</comment>
-        <translation type="obsolete">Monta l&apos;immagine per l&apos;installazione delle Guest Additions</translation>
+        <source>Show Session Information Window</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;Webcams</source>
-        <translation>&amp;Webcam</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network</source>
-        <translation>Rete</translation>
+        <source>&amp;Insert Guest Additions CD image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert the Guest Additions disk file into the virtual drive</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&amp;VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <translation type="unfinished">&amp;File</translation>
-    </message>
-    <message>
-        <source>&amp;Window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Minimize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Minimize active machine-window</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Full-screen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;caled Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1203,10 +1173,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>S&amp;cale Factor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Input</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1223,23 +1189,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Insert %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Mouse</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable host mouse pointer integration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1255,16 +1205,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Optical Drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;USB</source>
-        <translation type="unfinished"></translation>
+        <source>Network</source>
+        <translation type="unfinished">Rete</translation>
     </message>
     <message>
         <source>&amp;USB Settings...</source>
@@ -1275,16 +1217,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Drag and Drop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Logging</source>
-        <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1301,25 +1234,77 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Default Start</source>
+        <source>&amp;File</source>
+        <translation type="unfinished">&amp;File</translation>
+    </message>
+    <message>
+        <source>&amp;Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>S&amp;eparate Start</source>
+        <source>&amp;Minimize</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Start the selected virtual machines with detachable GUI</source>
+        <source>Minimize active machine-window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Full-screen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and full-screen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;caled Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;cale Factor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Insert %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the %1 sequence to the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mouse Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable host mouse pointer integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Optical Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;USB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and Drop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging</source>
+        <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
-    <message>
-        <source>%1%</source>
-        <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
-    </message>
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
@@ -1329,6 +1314,11 @@
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1%</source>
+        <comment>scale-factor</comment>
+        <translation type="unfinished">%1%</translation>
     </message>
 </context>
 <context>
@@ -5202,6 +5192,10 @@ p, li { white-space: pre-wrap; }
         <translation>Stato delle funzionalità aggiuntive:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD tooltip</comment>
         <translation type="unfinished"></translation>
@@ -5209,10 +5203,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5283,19 +5273,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation>Nessuna webcam connessa</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation>Nessuna webcam supportata è connessa al PC host</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connect Network Adapter</source>
-        <translation>Connetti scheda di rete</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connect Network Adapter %1</source>
-        <translation>Connetti scheda di rete %1</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5579,15 +5569,31 @@ p, li { white-space: pre-wrap; }
         <translation>Abilita la registrazione video per lo schermo %1.</translation>
     </message>
     <message>
-        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="obsolete">Lo schermo  remoto è attualmente abilitato per questa macchina virtuale. Tuttavia, ciò richiede che &lt;b&gt;%1&lt;/b&gt; sia installato. Installa l&apos;Extension Pack scaricabile dal sito di VirtualBox altrimenti la MV sarà avviata senza schermo remoto.</translation>
+        <source>Mini ToolBar:</source>
+        <translation type="obsolete">Barra degli strumenti piccola:</translation>
     </message>
     <message>
-        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
+        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
+        <translation type="obsolete">Se marcata, mostra la barra degli strumenti piccola nelle modalità a schermo intero e trasparente.</translation>
+    </message>
+    <message>
+        <source>Show in &amp;Fullscreen/Seamless</source>
+        <translation type="obsolete">Mostra a scher&amp;mo intero/trasparente</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="obsolete">Se selezionata, mostra la barra degli strumenti piccola nella parte superiore dello schermo, invece che nella posizione predefinita (in basso).</translation>
+    </message>
+    <message>
+        <source>Show at &amp;Top of Screen</source>
+        <translation type="obsolete">Most&amp;ra nella parte alta dello schermo</translation>
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5598,8 +5604,8 @@ p, li { white-space: pre-wrap; }
         <translation>Visualizza il percorso dove saranno archiviate le istantanee di questa macchina virtuale. Nota che le istantanee possono occupare molto spazio.</translation>
     </message>
     <message>
-        <source>&amp;Basic</source>
-        <translation type="obsolete">&amp;Base</translation>
+        <source>Basi&amp;c</source>
+        <translation>&amp;Base</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
@@ -5610,8 +5616,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mostra il nome della macchina virtuale.</translation>
     </message>
     <message>
-        <source>&amp;Advanced</source>
-        <translation type="obsolete">&amp;Avanzate</translation>
+        <source>A&amp;dvanced</source>
+        <translation>&amp;Avanzate</translation>
     </message>
     <message>
         <source>&amp;Shared Clipboard:</source>
@@ -5626,8 +5632,8 @@ p, li { white-space: pre-wrap; }
         <translation>Cartella ista&amp;ntanee:</translation>
     </message>
     <message>
-        <source>&amp;Description</source>
-        <translation type="obsolete">&amp;Descrizione</translation>
+        <source>D&amp;escription</source>
+        <translation>&amp;Descrizione</translation>
     </message>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
@@ -5834,8 +5840,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Abilita pa&amp;ginazione nidificata</translation>
     </message>
     <message>
-        <source>&amp;Drag&apos;n&apos;Drop:</source>
-        <translation type="obsolete">Trasci&amp;na e rilascia:</translation>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
+        <translation>Trasci&amp;na e rilascia:</translation>
     </message>
     <message>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
@@ -5848,22 +5854,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
         <translation>Il sistema operativo della macchina virtuale è impostato a 64 bit. I sistemi guest a 64 bit richiedono la virtualizzazione hardware, che sarà abilitata se confermi le modifiche.</translation>
-    </message>
-    <message>
-        <source>Basi&amp;c</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>A&amp;dvanced</source>
-        <translation type="unfinished">A&amp;vanzate</translation>
-    </message>
-    <message>
-        <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;escription</source>
-        <translation type="unfinished">D&amp;escrizione</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -6630,10 +6620,6 @@ p, li { white-space: pre-wrap; }
         <source>If checked, this shared folder will be permanent.</source>
         <translation>Se marcata, la cartella condivisa sarà permanente.</translation>
     </message>
-    <message>
-        <source>Window</source>
-        <translation type="obsolete">Finestra</translation>
-    </message>
 </context>
 <context>
     <name>UIMachineSettingsSerial</name>
@@ -7207,6 +7193,10 @@ p, li { white-space: pre-wrap; }
         <translation>La macchina attualmente ha più controller di archiviazione assegnati di quanti ne supporta il chipset %1. Cambia il tipo di chipset nella pagina delle impostazioni Sistema o riduci il seguente numero dei controller di archiviazione nella pagina delle impostazioni Archiviazione: %2</translation>
     </message>
     <message>
+        <source>Add USB Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>When checked the guest system will see the virtual disk as a hot-pluggable device.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7224,10 +7214,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Drive&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add USB Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7872,12 +7858,12 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Switch</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Close</source>
         <translation type="unfinished">Chiudi</translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
@@ -8169,9 +8155,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Scarica</translation>
     </message>
     <message>
-        <source>Insert</source>
+        <source>Mount</source>
         <comment>additions</comment>
-        <translation>Inserisci</translation>
+        <translation type="obsolete">Monta</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -8732,8 +8718,8 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Nota che l&apos;unità di archiviazione di questo supporto non sarà eliminata e che sarà possibile utilizzare in seguito.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le VirtualBox Guest Additions non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Inserisci l&apos;immagine del CD delle Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Le VirtualBox Guest Additions non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -9029,15 +9015,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;La finestra della macchina virtuale verrà ora commutata alla modalità &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare indietro alla modalità finestra in qualsiasi momento premendo &lt;b&gt;%1&lt;/b&gt;. Nota che la &lt;i&gt;host key&lt;/i&gt; è definita attualmente come &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono obsolete: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione mouse, auto-ridimensionamento dello schermo) probabilmente smetteranno di funzionare correttamente.&lt;/p&gt;&lt;p&gt;Aggiorna le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest non sono aggiornate: la versione installata è %1, quella attesa è %2. Alcune funzionalità che richiedono Guest Additions (Integrazione Mouse, auto-ridimensionamento dello schermo) potrebbero non funzionare come ci si aspetta.&lt;/p&gt;&lt;p&gt;Si consiglia di aggiornare le Guest Additions alla versione attuale scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Le Guest Additions installate nel sistema Guest sono troppo recenti per questa versione di VirtualBox: la versione installata è %1, quella attesa è %2.&lt;/p&gt;&lt;p&gt;L&apos;utilizzo di una versione di Additions più recente di VirtualBox non è supportato. Installa la versione corrente di Guest Additions scegliendo &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9316,7 +9302,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">dispositivo floppy</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere disponibile nella macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale nuovamente se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Macchina&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9387,7 +9373,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation type="obsolete">Rimozione dei dati non riuscita.</translation>
+        <translation>Rimozione dei dati non riuscita.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -9690,26 +9676,33 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Vuoi rimuovere la rete con NAT &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se la rete è utilizzata da una o più schede di rete delle macchine virtuali, tali schede non saranno utilizzabili fino a quando non correggi le loro impostazioni, scegliendo un nome di rete diverso o un tipo di scheda diverso.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <comment>new</comment>
-        <translation type="obsolete">&lt;p&gt;Le VirtualBox Guest Additions non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <comment>additions-new</comment>
-        <translation type="obsolete">Monta</translation>
-    </message>
-    <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Connessione della webcam &lt;b&gt;%1&lt;/b&gt; alla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Disconnessione della webcam &lt;b&gt;%1&lt;/b&gt; dalla macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Lo schermo virtuale è attualmente impostato a una modalità di colore di &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;. Per ottenere prestazioni migliori, modifica questa impostazione a &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. Ciò normalmente può essere fatto dalla sezione &lt;b&gt;Schermo&lt;/b&gt; del panello di controllo del sistema operativo del guest o da Impostazioni di sistema.&lt;/p&gt;</translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -9748,14 +9741,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9785,18 +9770,6 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed while dropping data.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel drag and drop operation.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9889,8 +9862,8 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>&amp;Name:</source>
-        <translation type="obsolete">&amp;Nome:</translation>
+        <source>N&amp;ame:</source>
+        <translation>&amp;Nome:</translation>
     </message>
     <message>
         <source>Holds the name of the virtual machine.</source>
@@ -9911,10 +9884,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Visualizza il tipo di sistema operativo che intendi installare nella macchina virtuale (chiamato sistema operativo Guest).</translation>
-    </message>
-    <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11444,98 +11413,223 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <name>UIVMInfoDialog</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation type="unfinished">%1 - Informazione di sessione</translation>
+        <translation>%1 - Informazione di sessione</translation>
     </message>
     <message>
-        <source>Configuration &amp;Details</source>
-        <translation type="unfinished">&amp;Dettagli di configurazione</translation>
+        <source>&amp;Details</source>
+        <translation type="obsolete">&amp;Dettagli</translation>
     </message>
     <message>
-        <source>&amp;Runtime Information</source>
-        <translation type="unfinished">Info&amp;rmazioni di esecuzione</translation>
+        <source>&amp;Runtime</source>
+        <translation type="obsolete">Esec&amp;uzione</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
-        <translation type="unfinished">Trasferimenti DMA</translation>
+        <translation>Trasferimenti DMA</translation>
     </message>
     <message>
         <source>PIO Transfers</source>
-        <translation type="unfinished">Trasferimenti PIO</translation>
+        <translation>Trasferimenti PIO</translation>
     </message>
     <message>
         <source>Data Read</source>
-        <translation type="unfinished">Dati letti</translation>
+        <translation>Dati letti</translation>
     </message>
     <message>
         <source>Data Written</source>
-        <translation type="unfinished">Dati scritti</translation>
+        <translation>Dati scritti</translation>
     </message>
     <message>
         <source>Data Transmitted</source>
-        <translation type="unfinished">Dati trasmessi</translation>
+        <translation>Dati trasmessi</translation>
     </message>
     <message>
         <source>Data Received</source>
-        <translation type="unfinished">Dati ricevuti</translation>
+        <translation>Dati ricevuti</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation>Attributi di esecuzione</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation>Risoluzione dello schermo</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevate</translation>
     </message>
     <message>
         <source>Not Detected</source>
         <comment>guest os type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Non rilevato</translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation>Guest Additions</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation>Sistema operativo guest</translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation>Nessuna scheda di rete</translation>
+    </message>
+    <message>
+        <source>UIVMInfoDialog</source>
+        <translation type="obsolete">UIVMInfoDialog</translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation>Statistiche di archiviazione</translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation>Nessun dispositivo di archiviazione</translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation>Statistiche di rete</translation>
     </message>
     <message>
         <source>Not Available</source>
         <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Non disponibile</translation>
+        <translation>Non disponibile</translation>
     </message>
     <message>
-        <source>Runtime Attributes</source>
-        <translation type="unfinished">Attributi di esecuzione</translation>
+        <source>Session Information Dialog</source>
+        <translation type="obsolete">Finestra di Informazioni di Sessione</translation>
     </message>
     <message>
-        <source>Screen Resolution</source>
-        <translation type="unfinished">Risoluzione dello schermo</translation>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Chiudi</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation type="obsolete">Abilitato</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation type="obsolete">Disabilitato</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization</source>
+        <translation type="obsolete">Virtualizzazione hardware</translation>
+    </message>
+    <message>
+        <source>IDE Hard Disk Statistics</source>
+        <translation type="obsolete">Statistiche su dischi rigidi IDE</translation>
+    </message>
+    <message>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">Statistiche su CD/DVD</translation>
+    </message>
+    <message>
+        <source>Network Adapter Statistics</source>
+        <translation type="obsolete">Statistiche su scheda di rete</translation>
+    </message>
+    <message>
+        <source>Adapter 1</source>
+        <translation type="obsolete">Scheda 1</translation>
+    </message>
+    <message>
+        <source>Adapter 2</source>
+        <translation type="obsolete">Scheda 2</translation>
+    </message>
+    <message>
+        <source>Adapter 3</source>
+        <translation type="obsolete">Scheda 3</translation>
+    </message>
+    <message>
+        <source>Adapter 4</source>
+        <translation type="obsolete">Scheda 4</translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <translation type="obsolete">Non connesso</translation>
+    </message>
+    <message>
+        <source>Hard Disks Statistics</source>
+        <translation type="obsolete">Statistiche su dischi rigidi</translation>
+    </message>
+    <message>
+        <source>Primary Master</source>
+        <translation type="obsolete">Master primario</translation>
+    </message>
+    <message>
+        <source>Primary Slave</source>
+        <translation type="obsolete">Slave primario</translation>
+    </message>
+    <message>
+        <source>Secondary Master</source>
+        <translation type="obsolete">Master secondario</translation>
+    </message>
+    <message>
+        <source>Secondary Slave</source>
+        <translation type="obsolete">Slave secondario</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="obsolete">Versione %1.%2</translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="obsolete">Statistiche sul disco fisso</translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="obsolete">Nessun disco fisso</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">Abilitata</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">Disabilitata</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <translation type="obsolete">Paginazione nidificata</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="obsolete">Non disponibile</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Paginazione nidificata</translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
+        <translation>Modalità appunti</translation>
+    </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop Mode</source>
+        <translation type="obsolete">Modalità trascina e rilascia</translation>
+    </message>
+    <message>
+        <source>Configuration &amp;Details</source>
+        <translation>&amp;Dettagli di configurazione</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime Information</source>
+        <translation>Info&amp;rmazioni di esecuzione</translation>
     </message>
     <message>
         <source>VM Uptime</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Clipboard Mode</source>
-        <translation type="unfinished">Modalità appunti</translation>
-    </message>
-    <message>
         <source>Drag and Drop Mode</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Guest Additions</source>
-        <translation type="unfinished">Guest Additions</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation type="unfinished">Sistema operativo guest</translation>
-    </message>
-    <message>
-        <source>Storage Statistics</source>
-        <translation type="unfinished">Statistiche di archiviazione</translation>
-    </message>
-    <message>
-        <source>No Storage Devices</source>
-        <translation type="unfinished">Nessun dispositivo di archiviazione</translation>
-    </message>
-    <message>
-        <source>Network Statistics</source>
-        <translation type="unfinished">Statistiche di rete</translation>
-    </message>
-    <message>
-        <source>No Network Adapters</source>
-        <translation type="unfinished">Nessuna scheda di rete</translation>
     </message>
 </context>
 <context>
@@ -12770,11 +12864,11 @@ Versione %1</translation>
         <translation type="obsolete">Apri la finestra per gestire le cartelle condivise</translation>
     </message>
     <message>
-        <source>&amp;Insert Guest Additions CD image...</source>
+        <source>&amp;Install Guest Additions...</source>
         <translation type="obsolete">&amp;Installa Guest Additions...</translation>
     </message>
     <message>
-        <source>Insert the Guest Additions disk file into the virtual drive</source>
+        <source>Mount the Guest Additions installation image</source>
         <translation type="obsolete">Monta l&apos;immagine per l&apos;installazione delle Guest Additions</translation>
     </message>
     <message>
@@ -13119,7 +13213,7 @@ Versione %1</translation>
         <translation type="obsolete">Finestra I&amp;nformazioni di sessione</translation>
     </message>
     <message>
-        <source>Show Session Information Window</source>
+        <source>Show Session Information Dialog</source>
         <translation type="obsolete">Visualizza la finestra Informazioni di sessione</translation>
     </message>
     <message>
@@ -13568,8 +13662,8 @@ Versione %1</translation>
         <translation>&lt;ripristina valori predefiniti&gt;</translation>
     </message>
     <message>
-        <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation>Il valore attuale del percorso predefinito sarà visualizzato dopo aver accettato le modifiche e riaperto nuovamente questa finestra.</translation>
+        <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
+        <translation type="obsolete">Il valore attuale del percorso predefinito sarà visualizzato dopo aver accettato le modifiche e riaperto nuovamente la finestra.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -13617,8 +13711,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <comment>new</comment>
-        <translation type="obsolete">Il valore attuale del percorso predefinito sarà visualizzato dopo aver accettato le modifiche e riaperto nuovamente la finestra.</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -15546,53 +15639,18 @@ Versione %1</translation>
         <translation type="unfinished">USB</translation>
     </message>
     <message>
+        <source>USB Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>off</source>
         <comment>guest monitor status</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Active</source>
-        <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">Attivo</translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">Attivo</translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished">Attivo</translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Taking Snapshot</source>
-        <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Taking Online Snapshot</source>
-        <comment>MachineState</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15621,6 +15679,51 @@ Versione %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>New dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished">Attivo</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished">Attivo</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished">Attivo</translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Online Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
         <translation type="unfinished"></translation>
@@ -15628,11 +15731,6 @@ Versione %1</translation>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>New dynamically allocated storage</source>
-        <comment>MediumVariant</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15653,11 +15751,6 @@ Versione %1</translation>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Port %1</source>
-        <comment>StorageSlot</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -15948,11 +16041,11 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Visualizza il percorso della cartella predefinita per le VDI. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
-        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
+        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Reimposta il percorso della cartella predefinita per le macchine virtuali al valore di default. Il valore di default effettivo verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
-        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
+        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Reimposta il percorso della cartella predefinita per le VDI al valore di default. Il valore di default effettivo verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
@@ -15996,7 +16089,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Apri una finestra per scegliere il file per l&apos;autenticazione VRDP.</translation>
     </message>
     <message>
-        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this window again.</source>
+        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Reimposta il file della libreria per l&apos;autenticazione al valore di default. L&apos;effettivo file di libreria di default verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
@@ -17934,221 +18027,6 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMInformationDlg</name>
-    <message>
-        <source>%1 - Session Information</source>
-        <translation type="obsolete">%1 - Informazione di sessione</translation>
-    </message>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Dettagli</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime</source>
-        <translation type="obsolete">Esec&amp;uzione</translation>
-    </message>
-    <message>
-        <source>DMA Transfers</source>
-        <translation type="obsolete">Trasferimenti DMA</translation>
-    </message>
-    <message>
-        <source>PIO Transfers</source>
-        <translation type="obsolete">Trasferimenti PIO</translation>
-    </message>
-    <message>
-        <source>Data Read</source>
-        <translation type="obsolete">Dati letti</translation>
-    </message>
-    <message>
-        <source>Data Written</source>
-        <translation type="obsolete">Dati scritti</translation>
-    </message>
-    <message>
-        <source>Data Transmitted</source>
-        <translation type="obsolete">Dati trasmessi</translation>
-    </message>
-    <message>
-        <source>Data Received</source>
-        <translation type="obsolete">Dati ricevuti</translation>
-    </message>
-    <message>
-        <source>Runtime Attributes</source>
-        <translation type="obsolete">Attributi di esecuzione</translation>
-    </message>
-    <message>
-        <source>Screen Resolution</source>
-        <translation type="obsolete">Risoluzione dello schermo</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">Non rilevate</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest os type</comment>
-        <translation type="obsolete">Non rilevato</translation>
-    </message>
-    <message>
-        <source>Guest Additions</source>
-        <translation type="obsolete">Guest Additions</translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation type="obsolete">Sistema operativo guest</translation>
-    </message>
-    <message>
-        <source>No Network Adapters</source>
-        <translation type="obsolete">Nessuna scheda di rete</translation>
-    </message>
-    <message>
-        <source>VBoxVMInformationDlg</source>
-        <translation type="obsolete">VBoxVMInformationDlg</translation>
-    </message>
-    <message>
-        <source>Storage Statistics</source>
-        <translation type="obsolete">Statistiche di archiviazione</translation>
-    </message>
-    <message>
-        <source>No Storage Devices</source>
-        <translation type="obsolete">Nessun dispositivo di archiviazione</translation>
-    </message>
-    <message>
-        <source>Network Statistics</source>
-        <translation type="obsolete">Statistiche di rete</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDE server port)</comment>
-        <translation type="obsolete">Non disponibile</translation>
-    </message>
-    <message>
-        <source>Session Information Dialog</source>
-        <translation type="obsolete">Finestra di Informazioni di Sessione</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">&amp;Chiudi</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <translation type="obsolete">Abilitato</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation type="obsolete">Disabilitato</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">Virtualizzazione hardware</translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
-        <translation type="obsolete">Statistiche su dischi rigidi IDE</translation>
-    </message>
-    <message>
-        <source>CD/DVD Statistics</source>
-        <translation type="obsolete">Statistiche su CD/DVD</translation>
-    </message>
-    <message>
-        <source>Network Adapter Statistics</source>
-        <translation type="obsolete">Statistiche su scheda di rete</translation>
-    </message>
-    <message>
-        <source>Adapter 1</source>
-        <translation type="obsolete">Scheda 1</translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="obsolete">Scheda 2</translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="obsolete">Scheda 3</translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="obsolete">Scheda 4</translation>
-    </message>
-    <message>
-        <source>Not attached</source>
-        <translation type="obsolete">Non connesso</translation>
-    </message>
-    <message>
-        <source>Hard Disks Statistics</source>
-        <translation type="obsolete">Statistiche su dischi rigidi</translation>
-    </message>
-    <message>
-        <source>Primary Master</source>
-        <translation type="obsolete">Master primario</translation>
-    </message>
-    <message>
-        <source>Primary Slave</source>
-        <translation type="obsolete">Slave primario</translation>
-    </message>
-    <message>
-        <source>Secondary Master</source>
-        <translation type="obsolete">Master secondario</translation>
-    </message>
-    <message>
-        <source>Secondary Slave</source>
-        <translation type="obsolete">Slave secondario</translation>
-    </message>
-    <message>
-        <source>Version %1.%2</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">Versione %1.%2</translation>
-    </message>
-    <message>
-        <source>Hard Disk Statistics</source>
-        <translation type="obsolete">Statistiche sul disco fisso</translation>
-    </message>
-    <message>
-        <source>No Hard Disks</source>
-        <translation type="obsolete">Nessun disco fisso</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">Abilitata</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">Disabilitata</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <translation type="obsolete">Paginazione nidificata</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDP server port)</comment>
-        <translation type="obsolete">Non disponibile</translation>
-    </message>
-    <message>
-        <source>Nested Paging</source>
-        <comment>details report</comment>
-        <translation type="obsolete">Paginazione nidificata</translation>
-    </message>
-    <message>
-        <source>Clipboard Mode</source>
-        <translation type="obsolete">Modalità appunti</translation>
-    </message>
-    <message>
-        <source>Drag&apos;n&apos;Drop Mode</source>
-        <translation type="obsolete">Modalità trascina e rilascia</translation>
-    </message>
-    <message>
-        <source>Configuration &amp;Details</source>
-        <translation type="obsolete">&amp;Dettagli di configurazione</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime Information</source>
-        <translation type="obsolete">Info&amp;rmazioni di esecuzione</translation>
-    </message>
-</context>
-<context>
     <name>VBoxVMListBox</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
@@ -19033,7 +18911,7 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
         <translation type="obsolete">Visualizza il percorso dove verranno archiviati gli snapshot di questa macchina virtuale. Nota che gli snapshot possono occupare diverso spazio.</translation>
     </message>
     <message>
-        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
+        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
         <translation type="obsolete">Reimposta il percorso alla cartella per gli snapshot al valore predefinito. Il valore predefinito effettivo verrà visualizzato dopo aver accettato la modifica e aperto nuovamente questa finestra.</translation>
     </message>
     <message>

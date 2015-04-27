@@ -51,9 +51,6 @@ public:
     /* Constructor: */
     UIPopupStack(const QString &strID, UIPopupStackOrientation orientation);
 
-    /* Destructor: */
-    ~UIPopupStack();
-
     /* API: Popup-pane stuff: */
     bool exists(const QString &strPopupPaneID) const;
     void createPopupPane(const QString &strPopupPaneID,

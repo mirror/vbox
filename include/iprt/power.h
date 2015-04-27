@@ -37,53 +37,24 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+#ifdef IN_RING0
+
 /**
  * MP event, see FNRTPOWERNOTIFICATION.
  */
 typedef enum RTPOWEREVENT
 {
-    /** Invalid power event. */
-    RTPOWEREVENT_INVALID = 1,
-    /** The system is preparing for a suspend operation.
-     *  If supported, this should arrive earlier than RTPOWEREVENT_SUSPEND. */
-    RTPOWEREVENT_PRE_SUSPEND,
     /** The system will go into suspend mode. */
-    RTPOWEREVENT_SUSPEND,
+    RTPOWEREVENT_SUSPEND = 1,
     /** The system has resumed. */
     RTPOWEREVENT_RESUME
 } RTPOWEREVENT;
-/** Pointer to a power event. */
-typedef RTPOWEREVENT *PRTPOWEREVENT;
-
-/**
- * Gets the descriptive power event name.
- *
- * @returns The name.
- * @param   enmEvent      The power event.
- */
-DECLINLINE(const char *) RTPowerGetEventName(RTPOWEREVENT enmEvent)
-{
-    switch (enmEvent)
-    {
-        case RTPOWEREVENT_INVALID:          return "Invalid";
-        case RTPOWEREVENT_PRE_SUSPEND:      return "Pre-suspend";
-        case RTPOWEREVENT_SUSPEND:          return "Suspend";
-        case RTPOWEREVENT_RESUME:           return "Resume";
-        default:                            return "???";
-    }
-}
-
-
-#ifdef IN_RING0
 
 /**
  * Notification callback.
  *
  * The context this is called in differs a bit from platform to
  * platform, so be careful while in here.
- *
- * On Linux, the pre-suspend, suspend and resume events fire with preemption
- * enabled on any CPU.
  *
  * @param   enmEvent    The event.
  * @param   pvUser      The user argument.

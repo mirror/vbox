@@ -59,26 +59,6 @@ private:
     HWND        mHwnd;
     RTTHREAD    mThread;
 };
-#elif defined(RT_OS_LINUX)
-/**
- * The Linux hosted Power Service.
- */
-class HostPowerServiceLinux : public HostPowerService
-{
-public:
-
-    HostPowerServiceLinux(VirtualBox *aVirtualBox);
-    virtual ~HostPowerServiceLinux();
-
-private:
-
-    static DECLCALLBACK(int) powerChangeNotificationThread(RTTHREAD ThreadSelf, void *pInstance);
-
-    /* Private member vars */
-    RTTHREAD mThread; /* Our message thread. */
-    bool volatile *mpThreadStop;
-};
-
 # elif defined(RT_OS_DARWIN) /* RT_OS_WINDOWS */
 /**
  * The Darwin hosted Power Service.

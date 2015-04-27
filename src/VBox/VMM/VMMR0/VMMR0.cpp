@@ -457,7 +457,7 @@ VMMR0_INT_DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pVCpu->vmm.s.hR0ThreadCtx == NIL_RTTHREADCTX);
-#if 0 /* defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) */
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     int rc = RTThreadCtxHooksCreate(&pVCpu->vmm.s.hR0ThreadCtx);
     if (   RT_FAILURE(rc)
         && rc != VERR_NOT_SUPPORTED)

@@ -32,7 +32,6 @@
 #include <iprt/assert.h>
 #include <iprt/stdarg.h>
 #include <iprt/cpuset.h>
-#include <iprt/power.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
 #endif
@@ -1070,7 +1069,7 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
 /**
  * Initializes the support library.
  *
- * Each successful call to SUPR3Init() or SUPR3InitEx() must be countered by a
+ * Each successful call to SUPR3Init() or SUPR3InitEx must be countered by a
  * call to SUPR3Term(false).
  *
  * @returns VBox status code.
@@ -1082,7 +1081,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession);
 /**
  * Initializes the support library, extended version.
  *
- * Each successful call to SUPR3Init() or SUPR3InitEx() must be countered by a
+ * Each successful call to SUPR3Init() or SUPR3InitEx must be countered by a
  * call to SUPR3Term(false).
  *
  * @returns VBox status code.
@@ -1744,25 +1743,6 @@ SUPR3DECL(int) SUPR3TscDeltaMeasure(RTCPUID idCpu, bool fAsync, bool fForce, uin
  *                          was read (optional, can be NULL).
  */
 SUPR3DECL(int) SUPR3ReadTsc(uint64_t *puTsc, uint16_t *pidApic);
-
-
-/**
- * Waits for a host power event.
- *
- * This times out every few seconds, so caller is expected to retry if needed.
- *
- * @returns VBox status code.
- * @param   pEvent          Where to store the power event that occurs.
- */
-SUPR3DECL(int) SUPR3WaitForPowerEvent(RTPOWEREVENT *pEvent);
-
-
-/**
- * Acknowledges a host power event.
- *
- * @returns VBox status code.
- */
-SUPR3DECL(int) SUPR3AckPowerEvent(void);
 
 /** @} */
 #endif /* IN_RING3 */

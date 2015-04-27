@@ -1661,7 +1661,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Server closed connection unexpectedly</source>
-        <translation>Il server ha terminato inaspettatamente la connessione</translation>
+        <translation>Il server ha terminato inaspettatamente la connessione </translation>
     </message>
     <message>
         <source>Connection refused</source>
@@ -1857,7 +1857,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>No space left on device</source>
-        <translation>Spazio insufficiente sul dispositivo</translation>
+        <translation>Non è rimasto spazio sul dispositivo</translation>
     </message>
     <message>
         <source>Unknown error</source>
@@ -1927,11 +1927,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>The file &apos;%1&apos; is not a valid Qt plugin.</source>
-        <translation>Il file &apos;%1&apos; non è un&apos;estensione Qt valida.</translation>
+        <translation>Il file «%1» non è un&apos;estensione Qt valida.</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (Cannot mix debug and release libraries.)</source>
-        <translation>L&apos;estensione &apos;%1&apos; utilizza una libreria Qt incompatibile. (Non è possibile mischiare librerie di debug e di rilascio.)</translation>
+        <translation>L&apos;estensione «%1» utilizza una libreria Qt incompatibile. (Non è possibile mischiare librerie di debug e di rilascio.)</translation>
     </message>
 </context>
 <context>
@@ -2442,19 +2442,19 @@ Vuoi eliminarlo comunque?</translation>
     <name>QOCIResult</name>
     <message>
         <source>Unable to bind column for batch execute</source>
-        <translation type="unfinished">Impossibile associare la colonna per l&apos;esecuzione sequenziale</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to execute batch statement</source>
-        <translation type="unfinished">Impossibile eseguire l&apos;istruzione sequenziale</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to goto next</source>
-        <translation type="unfinished">Impossibile spostarsi al successivo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to alloc statement</source>
-        <translation type="unfinished">Impossibile allocare l&apos;istruzione</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3516,39 +3516,39 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Bass Up</source>
-        <translation>Aumenta bassi</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bass Down</source>
-        <translation>Riduci bassi</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Up</source>
-        <translation>Aumenta alti</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Treble Down</source>
-        <translation>Riduci alti</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Play</source>
-        <translation>Media Riproduci</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Stop</source>
-        <translation>Media Ferma</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Previous</source>
-        <translation>Media Precedente</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Next</source>
-        <translation>Media Successivo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Media Record</source>
-        <translation>Media Registra</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Favorites</source>
@@ -3560,7 +3560,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Standby</source>
-        <translation>Standby</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Open URL</source>
@@ -3778,7 +3778,7 @@ Scegli un nome diverso.</translation>
     <name>QSocks5SocketEngine</name>
     <message>
         <source>Socks5 timeout error connecting to socks server</source>
-        <translation>Connessione al server Socks5 fuori tempo massimo</translation>
+        <translation>Connessione al server Socks5 fuori tempo massimo </translation>
     </message>
     <message>
         <source>Network operation timed out</source>
@@ -4475,19 +4475,19 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>version expected while reading the XML declaration</source>
-        <translation>versione attesa durante la lettura della dichiarazione XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>wrong value for standalone declaration</source>
-        <translation>valore errato per la dichiarazione autonoma</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>encoding declaration or standalone declaration expected while reading the XML declaration</source>
-        <translation>dichiarazione di codifica o dichiarazione autonoma attesa durante la lettura della dichiarazione XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>standalone declaration expected while reading the XML declaration</source>
-        <translation>dichiarazione autonoma attesa durante la lettura della dichiarazione XML</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>error occurred while parsing document type definition</source>
@@ -4626,15 +4626,15 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
-        <translation>%1 non è un nome valido dell&apos;istruzione di elaborazione.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid processing instruction name.</source>
-        <translation>Nome dell&apos;istruzione di elaborazione non valido.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Illegal namespace declaration.</source>
-        <translation>Dichiarazione dello spazio dei nomi non consentita.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid XML name.</source>
@@ -4654,7 +4654,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
-        <translation>Riferimento all&apos;entità esterna &apos;%1&apos; nel valore dell&apos;attributo.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Invalid character reference.</source>
@@ -4737,7 +4737,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation>Nessun operando in una divisione intera, %1, può essere %2.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
@@ -4789,11 +4789,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation>Il valore %1 di tipo %2 supera il massimo (%3).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation>Il valore %1 di tipo %2 è sotto il minimo (%3).</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
@@ -4801,11 +4801,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation>%1 non è un valore valido di tipo %2.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation>L&apos;operatore %1 non può essere utilizzato per il tipo %2.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
@@ -4965,7 +4965,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation>%1 e %2 corrispondo all&apos;inizio e alla fine di una riga.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
@@ -4997,7 +4997,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation>La raccolta predefinita non è specificata</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
@@ -5013,7 +5013,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation>%1 non è un numero intero di minuti.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
@@ -5053,7 +5053,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation>Non è disponibile alcuna funzione con firma &apos;%1&apos;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
@@ -5089,7 +5089,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation>Lo spazio dei nomi di destinazione di un %1 non può essere vuoto.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
@@ -5117,7 +5117,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation>Una funzione con firma %1 esiste già.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
