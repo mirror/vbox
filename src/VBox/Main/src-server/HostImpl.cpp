@@ -475,9 +475,16 @@ void Host::uninit()
     /*
      * Note that unregisterMetrics() has unregistered all metrics associated
      * with Host including network interface ones. We can destroy network
-     * interface objects now.
+     * interface objects now. Don't forget the uninit call, otherwise this
+     * causes a race with crashing API clients getting their stale references
+     * cleaned up and VirtualBox shutting down.
      */
-    m->llNetIfs.clear();
+    while (!m->llNetIfs.empty())
+    {
+        ComObjPtr<HostNetworkInterface> &pNet = m->llNetIfs.front();
+        pNet->uninit();
+        m->llNetIfs.pop_front();
+    }
 
 #ifdef VBOX_WITH_USB
     /* wait for USB proxy service to terminate before we uninit all USB
@@ -492,16 +499,34 @@ void Host::uninit()
 
 #ifdef VBOX_WITH_USB
     /* uninit all USB device filters still referenced by clients
-     * Note! HostUSBDeviceFilter::uninit() will modify llChildren. */
+     * Note! HostUSBDeviceFilter::uninit() will modify llChildren.
+     * This list should be already empty, but better be safe than sorry. */
     while (!m->llChildren.empty())
     {
         ComObjPtr<HostUSBDeviceFilter> &pChild = m->llChildren.front();
-        m->llChildren.pop_front();
         pChild->uninit();
+        m->llChildren.pop_front();
     }
 
+    /* No need to uninit these, as either Machine::uninit() or the above loop
+     * already covered them all. Subset of llChildren. */
     m->llUSBDeviceFilters.clear();
 #endif
+
+    /* uninit all host DVD medium objects */
+    while (!m->llDVDDrives.empty())
+    {
+        ComObjPtr<Medium> &pMedium = m->llDVDDrives.front();
+        pMedium->uninit();
+        m->llDVDDrives.pop_front();
+    }
+    /* uninit all host floppy medium objects */
+    while (!m->llFloppyDrives.empty())
+    {
+        ComObjPtr<Medium> &pMedium = m->llFloppyDrives.front();
+        pMedium->uninit();
+        m->llFloppyDrives.pop_front();
+    }
 
     delete m;
     m = NULL;
@@ -1845,7 +1870,10 @@ HRESULT Host::i_getDrives(DeviceType_T mediumType,
                     }
                 }
                 if (!fFound)
+                {
+                    pCached->uninit();
                     itCached = pllCached->erase(itCached);
+                }
                 else
                     ++itCached;
             }
@@ -2989,6 +3017,7 @@ HRESULT Host::i_updateNetIfList()
             if (nameNew == nameOld)
             {
                 fGone = false;
+                (*itNew)->uninit();
                 listCopy.erase(itNew);
                 break;
             }
@@ -2997,6 +3026,7 @@ HRESULT Host::i_updateNetIfList()
         {
 # ifdef VBOX_WITH_RESOURCE_USAGE_API
             (*itOld)->i_unregisterMetrics(aCollector, this);
+            (*itOld)->uninit();
 # endif
         }
     }
