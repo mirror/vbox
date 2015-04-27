@@ -1630,7 +1630,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 unsigned uExponent   = pFpuCtx->aRegs[0].au16[4] & 0x7fff;
                 /** @todo This isn't entirenly correct and needs more work! */
                 pHlp->pfnPrintf(pHlp,
-                                "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u",
+                                "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u (*)",
                                 pszPrefix, iST, pszPrefix, iFPR,
                                 pFpuCtx->aRegs[0].au16[4], pFpuCtx->aRegs[0].au32[1], pFpuCtx->aRegs[0].au32[0],
                                 uTag, chSign, iInteger, u64Fraction, uExponent);
@@ -1640,16 +1640,118 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 else
                     pHlp->pfnPrintf(pHlp, "\n");
             }
-            for (unsigned iXMM = 0; iXMM < RT_ELEMENTS(pFpuCtx->aXMM); iXMM++)
-                pHlp->pfnPrintf(pHlp,
-                                iXMM & 1
-                                ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
-                                : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
-                                pszPrefix, iXMM, iXMM < 10 ? " " : "",
-                                pFpuCtx->aXMM[iXMM].au32[3],
-                                pFpuCtx->aXMM[iXMM].au32[2],
-                                pFpuCtx->aXMM[iXMM].au32[1],
-                                pFpuCtx->aXMM[iXMM].au32[0]);
+
+            pHlp->pfnPrintf(pHlp, "%sXCR0=%016RX64 %sXCR1=%016RX64 %sXSS=%016RX64 (fXStateMask=%016RX64)\n",
+                            pszPrefix, pCtx->aXcr[0], pszPrefix, pCtx->aXcr[1],
+                            pszPrefix, UINT64_C(0) /** @todo XSS */, pCtx->fXStateMask);
+
+            /* XMM/YMM/ZMM registers. */
+            if (pCtx->fXStateMask & XSAVE_C_YMM)
+            {
+                PCX86XSAVEYMMHI pYmmHiCtx = (PCX86XSAVEYMMHI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_YMM]);
+                if (!(pCtx->fXStateMask & XSAVE_C_ZMM_HI256))
+                    for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
+                        pHlp->pfnPrintf(pHlp, "%sYMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                        pszPrefix, i, i < 10 ? " " : "",
+                                        pYmmHiCtx->aYmmHi[i].au32[3],
+                                        pYmmHiCtx->aYmmHi[i].au32[2],
+                                        pYmmHiCtx->aYmmHi[i].au32[1],
+                                        pYmmHiCtx->aYmmHi[i].au32[0],
+                                        pFpuCtx->aXMM[i].au32[3],
+                                        pFpuCtx->aXMM[i].au32[2],
+                                        pFpuCtx->aXMM[i].au32[1],
+                                        pFpuCtx->aXMM[i].au32[0]);
+                else
+                {
+                    PCX86XSAVEZMMHI256 pZmmHi256;
+                    pZmmHi256 = (PCX86XSAVEZMMHI256)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_HI256]);
+                    for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
+                        pHlp->pfnPrintf(pHlp,
+                                        "%sZMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                        pszPrefix, i, i < 10 ? " " : "",
+                                        pZmmHi256->aHi256Regs[i].au32[7],
+                                        pZmmHi256->aHi256Regs[i].au32[6],
+                                        pZmmHi256->aHi256Regs[i].au32[5],
+                                        pZmmHi256->aHi256Regs[i].au32[4],
+                                        pZmmHi256->aHi256Regs[i].au32[3],
+                                        pZmmHi256->aHi256Regs[i].au32[2],
+                                        pZmmHi256->aHi256Regs[i].au32[1],
+                                        pZmmHi256->aHi256Regs[i].au32[0],
+                                        pYmmHiCtx->aYmmHi[i].au32[3],
+                                        pYmmHiCtx->aYmmHi[i].au32[2],
+                                        pYmmHiCtx->aYmmHi[i].au32[1],
+                                        pYmmHiCtx->aYmmHi[i].au32[0],
+                                        pFpuCtx->aXMM[i].au32[3],
+                                        pFpuCtx->aXMM[i].au32[2],
+                                        pFpuCtx->aXMM[i].au32[1],
+                                        pFpuCtx->aXMM[i].au32[0]);
+
+                    PCX86XSAVEZMM16HI pZmm16Hi;
+                    pZmm16Hi = (PCX86XSAVEZMM16HI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_16HI]);
+                    for (unsigned i = 0; i < RT_ELEMENTS(pZmm16Hi->aRegs); i++)
+                        pHlp->pfnPrintf(pHlp,
+                                        "%sZMM%u=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                        pszPrefix, i + 16,
+                                        pZmm16Hi->aRegs[i].au32[15],
+                                        pZmm16Hi->aRegs[i].au32[14],
+                                        pZmm16Hi->aRegs[i].au32[13],
+                                        pZmm16Hi->aRegs[i].au32[12],
+                                        pZmm16Hi->aRegs[i].au32[11],
+                                        pZmm16Hi->aRegs[i].au32[10],
+                                        pZmm16Hi->aRegs[i].au32[9],
+                                        pZmm16Hi->aRegs[i].au32[8],
+                                        pZmm16Hi->aRegs[i].au32[7],
+                                        pZmm16Hi->aRegs[i].au32[6],
+                                        pZmm16Hi->aRegs[i].au32[5],
+                                        pZmm16Hi->aRegs[i].au32[4],
+                                        pZmm16Hi->aRegs[i].au32[3],
+                                        pZmm16Hi->aRegs[i].au32[2],
+                                        pZmm16Hi->aRegs[i].au32[1],
+                                        pZmm16Hi->aRegs[i].au32[0]);
+                }
+            }
+            else
+                for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
+                    pHlp->pfnPrintf(pHlp,
+                                    i & 1
+                                    ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
+                                    : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
+                                    pszPrefix, i, i < 10 ? " " : "",
+                                    pFpuCtx->aXMM[i].au32[3],
+                                    pFpuCtx->aXMM[i].au32[2],
+                                    pFpuCtx->aXMM[i].au32[1],
+                                    pFpuCtx->aXMM[i].au32[0]);
+
+            if (pCtx->fXStateMask & XSAVE_C_OPMASK)
+            {
+                PCX86XSAVEOPMASK pOpMask;
+                pOpMask = (PCX86XSAVEOPMASK)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_OPMASK]);
+                for (unsigned i = 0; i < RT_ELEMENTS(pOpMask->aKRegs); i += 4)
+                    pHlp->pfnPrintf(pHlp, "%sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64\n",
+                                    pszPrefix, i + 0, pOpMask->aKRegs[i + 0],
+                                    pszPrefix, i + 1, pOpMask->aKRegs[i + 1],
+                                    pszPrefix, i + 2, pOpMask->aKRegs[i + 2],
+                                    pszPrefix, i + 3, pOpMask->aKRegs[i + 3]);
+            }
+
+            if (pCtx->fXStateMask & XSAVE_C_BNDREGS)
+            {
+                PCX86XSAVEBNDREGS pBndRegs;
+                pBndRegs = (PCX86XSAVEBNDREGS)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDREGS]);
+                for (unsigned i = 0; i < RT_ELEMENTS(pBndRegs->aRegs); i += 2)
+                    pHlp->pfnPrintf(pHlp, "%sBNDREG%u=%016RX64/%016RX64  %sBNDREG%u=%016RX64/%016RX64\n",
+                                    pszPrefix, i, pBndRegs->aRegs[i].uLowerBound, pBndRegs->aRegs[i].uUpperBound,
+                                    pszPrefix, i + 1, pBndRegs->aRegs[i + 1].uLowerBound, pBndRegs->aRegs[i + 1].uUpperBound);
+            }
+
+            if (pCtx->fXStateMask & XSAVE_C_BNDCSR)
+            {
+                PCX86XSAVEBNDCFG pBndCfg;
+                pBndCfg = (PCX86XSAVEBNDCFG)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDCSR]);
+                pHlp->pfnPrintf(pHlp, "%sBNDCFG.CONFIG=%016RX64 %sBNDCFG.STATUS=%016RX64\n",
+                                pszPrefix, pBndCfg->fConfig, pszPrefix, pBndCfg->fStatus);
+            }
+
             for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->au32RsrvdRest); i++)
                 if (pFpuCtx->au32RsrvdRest[i])
                     pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
