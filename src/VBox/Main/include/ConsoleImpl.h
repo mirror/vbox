@@ -145,6 +145,7 @@ public:
 #endif
 
     const ComPtr<IMachine> &i_machine() const { return mMachine; }
+    const Bstr &i_getId() const { return mstrUuid; }
 
     bool i_useHostClipboard() { return mfUseHostClipboard; }
 
@@ -973,6 +974,9 @@ private:
 
     /** Local machine state value. */
     MachineState_T mMachineState;
+
+    /** Machine uuid string. */
+    Bstr mstrUuid;
 
     /** Pointer to the progress object of a live cancelable task.
      *

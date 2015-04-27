@@ -13370,15 +13370,18 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 #endif
 }
 
-HRESULT SessionMachine::pushGuestProperty(const  com::Utf8Str &aName,
-                                          const  com::Utf8Str &aValue,
-                                                 LONG64       aTimestamp,
-                                          const  com::Utf8Str &aFlags)
+HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
+                                          const com::Utf8Str &aValue,
+                                          LONG64 aTimestamp,
+                                          const com::Utf8Str &aFlags,
+                                          BOOL *aNotify)
 {
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
+
+    *aNotify = FALSE;
 
     try
     {
@@ -13462,6 +13465,7 @@ HRESULT SessionMachine::pushGuestProperty(const  com::Utf8Str &aName,
                                              Bstr(aName).raw(),
                                              Bstr(aValue).raw(),
                                              Bstr(aFlags).raw());
+            *aNotify = TRUE;
         }
     }
     catch (...)
@@ -14704,12 +14708,14 @@ HRESULT Machine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 HRESULT Machine::pushGuestProperty(const com::Utf8Str &aName,
                                    const com::Utf8Str &aValue,
                                    LONG64 aTimestamp,
-                                   const com::Utf8Str &aFlags)
+                                   const com::Utf8Str &aFlags,
+                                   BOOL *aNotify)
 {
     NOREF(aName);
     NOREF(aValue);
     NOREF(aTimestamp);
     NOREF(aFlags);
+    NOREF(aNotify);
     ReturnComNotImplemented();
 }
 

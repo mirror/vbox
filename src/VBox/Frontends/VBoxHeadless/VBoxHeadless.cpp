@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -127,171 +127,6 @@ private:
 };
 
 /**
- *  Handler for global events.
- */
-class VirtualBoxEventListener
-{
-public:
-    VirtualBoxEventListener()
-    {
-        mfNoLoggedInUsers = true;
-    }
-
-    virtual ~VirtualBoxEventListener()
-    {
-    }
-
-    HRESULT init()
-    {
-        return S_OK;
-    }
-
-    void uninit()
-    {
-    }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
-    {
-        switch (aType)
-        {
-            case VBoxEventType_OnGuestPropertyChanged:
-            {
-                ComPtr<IGuestPropertyChangedEvent> pChangedEvent = aEvent;
-                Assert(pChangedEvent);
-
-                HRESULT hrc;
-
-                ComPtr <IMachine> pMachine;
-                if (gConsole)
-                {
-                    hrc = gConsole->COMGETTER(Machine)(pMachine.asOutParam());
-                    if (SUCCEEDED(hrc) && pMachine)
-                    {
-                        Bstr gpMachineId, machineId;
-                        hrc = pMachine->COMGETTER(Id)(gpMachineId.asOutParam());
-                        AssertComRC(hrc);
-                        hrc = pChangedEvent->COMGETTER(MachineId)(machineId.asOutParam());
-                        AssertComRC(hrc);
-                        if (gpMachineId != machineId)
-                            hrc = VBOX_E_OBJECT_NOT_FOUND;
-                    }
-                }
-                else
-                    hrc = VBOX_E_INVALID_VM_STATE;
-
-                if (SUCCEEDED(hrc))
-                {
-                    Bstr strKey;
-                    hrc = pChangedEvent->COMGETTER(Name)(strKey.asOutParam());
-                    AssertComRC(hrc);
-
-                    Bstr strValue;
-                    hrc = pChangedEvent->COMGETTER(Value)(strValue.asOutParam());
-                    AssertComRC(hrc);
-
-                    Utf8Str utf8Key = strKey;
-                    Utf8Str utf8Value = strValue;
-                    LogRelFlow(("Guest property \"%s\" has been changed to \"%s\"\n",
-                                utf8Key.c_str(), utf8Value.c_str()));
-
-                    if (utf8Key.equals("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"))
-                    {
-                        LogRelFlow(("Guest indicates that there %s logged in users\n",
-                                    utf8Value.equals("true") ? "are no" : "are"));
-
-                        /* Check if this is our machine and the "disconnect on logout feature" is enabled. */
-                        BOOL fProcessDisconnectOnGuestLogout = FALSE;
-
-                        /* Does the machine handle VRDP disconnects? */
-                        Bstr strDiscon;
-                        hrc = pMachine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout").raw(),
-                                                    strDiscon.asOutParam());
-                        if (SUCCEEDED(hrc))
-                        {
-                            Utf8Str utf8Discon = strDiscon;
-                            fProcessDisconnectOnGuestLogout = utf8Discon.equals("1")
-                                                            ? TRUE : FALSE;
-                        }
-
-                        LogRelFlow(("VRDE: hrc=%Rhrc: Host %s disconnecting clients (current host state known: %s)\n",
-                                    hrc, fProcessDisconnectOnGuestLogout ? "will handle" : "does not handle",
-                                    mfNoLoggedInUsers ? "No users logged in" : "Users logged in"));
-
-                        if (fProcessDisconnectOnGuestLogout)
-                        {
-                            bool fDropConnection = false;
-                            if (!mfNoLoggedInUsers) /* Only if the property really changes. */
-                            {
-                                if (   utf8Value == "true"
-                                    /* Guest property got deleted due to reset,
-                                     * so it has no value anymore. */
-                                    || utf8Value.isEmpty())
-                                {
-                                    mfNoLoggedInUsers = true;
-                                    fDropConnection = true;
-                                }
-                            }
-                            else if (utf8Value == "false")
-                                mfNoLoggedInUsers = false;
-                            /* Guest property got deleted due to reset,
-                             * take the shortcut without touching the mfNoLoggedInUsers
-                             * state. */
-                            else if (utf8Value.isEmpty())
-                                fDropConnection = true;
-
-                            LogRelFlow(("VRDE: szNoLoggedInUsers=%s, mfNoLoggedInUsers=%RTbool, fDropConnection=%RTbool\n",
-                                        utf8Value.c_str(), mfNoLoggedInUsers, fDropConnection));
-
-                            if (fDropConnection)
-                            {
-                                /* If there is a connection, drop it. */
-                                ComPtr<IVRDEServerInfo> info;
-                                hrc = gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
-                                if (SUCCEEDED(hrc) && info)
-                                {
-                                    ULONG cClients = 0;
-                                    hrc = info->COMGETTER(NumberOfClients)(&cClients);
-
-                                    LogRelFlow(("VRDE: connected clients=%RU32\n", cClients));
-                                    if (SUCCEEDED(hrc) && cClients > 0)
-                                    {
-                                        ComPtr <IVRDEServer> vrdeServer;
-                                        hrc = pMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
-                                        if (SUCCEEDED(hrc) && vrdeServer)
-                                        {
-                                            LogRel(("VRDE: the guest user has logged out, disconnecting remote clients.\n"));
-                                            hrc = vrdeServer->COMSETTER(Enabled)(FALSE);
-                                            AssertComRC(hrc);
-                                            HRESULT hrc2 = vrdeServer->COMSETTER(Enabled)(TRUE);
-                                            if (SUCCEEDED(hrc))
-                                                hrc = hrc2;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (FAILED(hrc))
-                        LogRelFlow(("VRDE: returned error=%Rhrc\n", hrc));
-                }
-
-                break;
-            }
-
-            default:
-                AssertFailed();
-        }
-
-        return S_OK;
-    }
-
-private:
-
-    bool mfNoLoggedInUsers;
-};
-
-/**
  *  Handler for machine events.
  */
 class ConsoleEventListener
@@ -299,7 +134,8 @@ class ConsoleEventListener
 public:
     ConsoleEventListener() :
         mLastVRDEPort(-1),
-        m_fIgnorePowerOffEvents(false)
+        m_fIgnorePowerOffEvents(false),
+        m_fNoLoggedInUsers(true)
     {
     }
 
@@ -401,6 +237,123 @@ public:
                 swev->COMSETTER(WinId)(0);
                 break;
             }
+            case VBoxEventType_OnGuestPropertyChanged:
+            {
+                ComPtr<IGuestPropertyChangedEvent> pChangedEvent = aEvent;
+                Assert(pChangedEvent);
+
+                HRESULT hrc;
+
+                ComPtr <IMachine> pMachine;
+                if (gConsole)
+                {
+                    hrc = gConsole->COMGETTER(Machine)(pMachine.asOutParam());
+                    if (FAILED(hrc) || !pMachine)
+                        hrc = VBOX_E_OBJECT_NOT_FOUND;
+                }
+                else
+                    hrc = VBOX_E_INVALID_VM_STATE;
+
+                if (SUCCEEDED(hrc))
+                {
+                    Bstr strKey;
+                    hrc = pChangedEvent->COMGETTER(Name)(strKey.asOutParam());
+                    AssertComRC(hrc);
+
+                    Bstr strValue;
+                    hrc = pChangedEvent->COMGETTER(Value)(strValue.asOutParam());
+                    AssertComRC(hrc);
+
+                    Utf8Str utf8Key = strKey;
+                    Utf8Str utf8Value = strValue;
+                    LogRelFlow(("Guest property \"%s\" has been changed to \"%s\"\n",
+                                utf8Key.c_str(), utf8Value.c_str()));
+
+                    if (utf8Key.equals("/VirtualBox/GuestInfo/OS/NoLoggedInUsers"))
+                    {
+                        LogRelFlow(("Guest indicates that there %s logged in users\n",
+                                    utf8Value.equals("true") ? "are no" : "are"));
+
+                        /* Check if this is our machine and the "disconnect on logout feature" is enabled. */
+                        BOOL fProcessDisconnectOnGuestLogout = FALSE;
+
+                        /* Does the machine handle VRDP disconnects? */
+                        Bstr strDiscon;
+                        hrc = pMachine->GetExtraData(Bstr("VRDP/DisconnectOnGuestLogout").raw(),
+                                                    strDiscon.asOutParam());
+                        if (SUCCEEDED(hrc))
+                        {
+                            Utf8Str utf8Discon = strDiscon;
+                            fProcessDisconnectOnGuestLogout = utf8Discon.equals("1")
+                                                            ? TRUE : FALSE;
+                        }
+
+                        LogRelFlow(("VRDE: hrc=%Rhrc: Host %s disconnecting clients (current host state known: %s)\n",
+                                    hrc, fProcessDisconnectOnGuestLogout ? "will handle" : "does not handle",
+                                    m_fNoLoggedInUsers ? "No users logged in" : "Users logged in"));
+
+                        if (fProcessDisconnectOnGuestLogout)
+                        {
+                            bool fDropConnection = false;
+                            if (!m_fNoLoggedInUsers) /* Only if the property really changes. */
+                            {
+                                if (   utf8Value == "true"
+                                    /* Guest property got deleted due to reset,
+                                     * so it has no value anymore. */
+                                    || utf8Value.isEmpty())
+                                {
+                                    m_fNoLoggedInUsers = true;
+                                    fDropConnection = true;
+                                }
+                            }
+                            else if (utf8Value == "false")
+                                m_fNoLoggedInUsers = false;
+                            /* Guest property got deleted due to reset,
+                             * take the shortcut without touching the m_fNoLoggedInUsers
+                             * state. */
+                            else if (utf8Value.isEmpty())
+                                fDropConnection = true;
+
+                            LogRelFlow(("VRDE: szNoLoggedInUsers=%s, m_fNoLoggedInUsers=%RTbool, fDropConnection=%RTbool\n",
+                                        utf8Value.c_str(), m_fNoLoggedInUsers, fDropConnection));
+
+                            if (fDropConnection)
+                            {
+                                /* If there is a connection, drop it. */
+                                ComPtr<IVRDEServerInfo> info;
+                                hrc = gConsole->COMGETTER(VRDEServerInfo)(info.asOutParam());
+                                if (SUCCEEDED(hrc) && info)
+                                {
+                                    ULONG cClients = 0;
+                                    hrc = info->COMGETTER(NumberOfClients)(&cClients);
+
+                                    LogRelFlow(("VRDE: connected clients=%RU32\n", cClients));
+                                    if (SUCCEEDED(hrc) && cClients > 0)
+                                    {
+                                        ComPtr <IVRDEServer> vrdeServer;
+                                        hrc = pMachine->COMGETTER(VRDEServer)(vrdeServer.asOutParam());
+                                        if (SUCCEEDED(hrc) && vrdeServer)
+                                        {
+                                            LogRel(("VRDE: the guest user has logged out, disconnecting remote clients.\n"));
+                                            hrc = vrdeServer->COMSETTER(Enabled)(FALSE);
+                                            AssertComRC(hrc);
+                                            HRESULT hrc2 = vrdeServer->COMSETTER(Enabled)(TRUE);
+                                            if (SUCCEEDED(hrc))
+                                                hrc = hrc2;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (FAILED(hrc))
+                        LogRelFlow(("VRDE: returned error=%Rhrc\n", hrc));
+                }
+
+                break;
+            }
+
             default:
                 AssertFailed();
         }
@@ -416,14 +369,13 @@ private:
 
     long mLastVRDEPort;
     bool m_fIgnorePowerOffEvents;
+    bool m_fNoLoggedInUsers;
 };
 
 typedef ListenerImpl<VirtualBoxClientEventListener> VirtualBoxClientEventListenerImpl;
-typedef ListenerImpl<VirtualBoxEventListener> VirtualBoxEventListenerImpl;
 typedef ListenerImpl<ConsoleEventListener> ConsoleEventListenerImpl;
 
 VBOX_LISTENER_DECLARE(VirtualBoxClientEventListenerImpl)
-VBOX_LISTENER_DECLARE(VirtualBoxEventListenerImpl)
 VBOX_LISTENER_DECLARE(ConsoleEventListenerImpl)
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
@@ -1056,6 +1008,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             eventTypes.push_back(VBoxEventType_OnVRDEServerInfoChanged);
             eventTypes.push_back(VBoxEventType_OnCanShowWindow);
             eventTypes.push_back(VBoxEventType_OnShowWindow);
+            eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
             CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
@@ -1204,26 +1157,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
                 break;
             }
-        }
-
-        /* VirtualBox events registration. */
-        {
-            ComPtr<IEventSource> es;
-            CHECK_ERROR(virtualBox, COMGETTER(EventSource)(es.asOutParam()));
-            ComObjPtr<VirtualBoxEventListenerImpl> listener;
-            listener.createObject();
-            listener->init(new VirtualBoxEventListener());
-            vboxListener = listener;
-            com::SafeArray<VBoxEventType_T> eventTypes;
-            eventTypes.push_back(VBoxEventType_OnGuestPropertyChanged);
-
-            /**
-             * @todo Set the notification pattern to "/VirtualBox/GuestInfo/OS/ *Logged*"
-             *       to not cause too much load. The current API is broken as
-             *       IMachine::GuestPropertyNotificationPatterns() would change the
-             *       filter for _all_ clients. This is not what we want!
-             */
-            CHECK_ERROR(es, RegisterListener(vboxListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL

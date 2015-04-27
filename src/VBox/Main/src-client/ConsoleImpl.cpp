@@ -265,7 +265,7 @@ public:
     {
     }
 
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent * aEvent)
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
         switch(aType)
         {
@@ -277,12 +277,9 @@ public:
                 HRESULT rc = E_FAIL;
                 Assert(pNREv);
 
-                Bstr interestedId;
-                rc = pMachine->COMGETTER(Id)(interestedId.asOutParam());
-                AssertComRC(rc);
                 rc = pNREv->COMGETTER(MachineId)(id.asOutParam());
                 AssertComRC(rc);
-                if (id != interestedId)
+                if (id != mConsole->i_getId())
                     break;
                 /* now we can operate with redirects */
                 NATProtocol_T proto;
@@ -341,6 +338,7 @@ public:
             default:
               AssertFailed();
         }
+
         return S_OK;
     }
 private:
@@ -475,6 +473,9 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
     /* Cache essential properties and objects, and create child objects */
 
     rc = mMachine->COMGETTER(State)(&mMachineState);
+    AssertComRCReturnRC(rc);
+
+    rc = mMachine->COMGETTER(Id)(mstrUuid.asOutParam());
     AssertComRCReturnRC(rc);
 
 #ifdef VBOX_WITH_EXTPACK
@@ -1064,14 +1065,10 @@ int Console::i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const 
         return VERR_ACCESS_DENIED;
     }
 
-    Bstr id;
-    HRESULT hrc = mMachine->COMGETTER(Id)(id.asOutParam());
-    Guid uuid = Guid(id);
-
-    AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
+    Guid uuid = Guid(i_getId());
 
     AuthType_T authType = AuthType_Null;
-    hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
+    HRESULT hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
     AssertComRCReturn(hrc, VERR_ACCESS_DENIED);
 
     ULONG authTimeout = 0;
@@ -1418,16 +1415,12 @@ void Console::i_VRDPClientDisconnect(uint32_t u32ClientId,
 #endif
     }
 
-    Bstr uuid;
-    HRESULT hrc = mMachine->COMGETTER(Id)(uuid.asOutParam());
-    AssertComRC(hrc);
-
     AuthType_T authType = AuthType_Null;
-    hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
+    HRESULT hrc = mVRDEServer->COMGETTER(AuthType)(&authType);
     AssertComRC(hrc);
 
     if (authType == AuthType_External)
-        mConsoleVRDPServer->AuthDisconnect(uuid, u32ClientId);
+        mConsoleVRDPServer->AuthDisconnect(i_getId(), u32ClientId);
 
 #ifdef VBOX_WITH_GUEST_PROPS
     i_guestPropertiesVRDPUpdateDisconnect(u32ClientId);
@@ -1761,10 +1754,12 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
     ComObjPtr<Console> pConsole = reinterpret_cast<Console *>(pvExtension);
+    BOOL fNotify = FALSE;
     HRESULT hrc = pConsole->mControl->PushGuestProperty(name.raw(),
                                                         value.raw(),
                                                         pCBData->u64Timestamp,
-                                                        flags.raw());
+                                                        flags.raw(),
+                                                        &fNotify);
     if (SUCCEEDED(hrc))
         rc = VINF_SUCCESS;
     else
@@ -1773,6 +1768,8 @@ DECLCALLBACK(int) Console::i_doGuestPropNotification(void *pvExtension,
                  hrc, pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
         rc = Global::vboxStatusCodeFromCOM(hrc);
     }
+    if (fNotify)
+        fireGuestPropertyChangedEvent(pConsole->mEventSource, pConsole->i_getId().raw(), name.raw(), value.raw(), flags.raw());
     return rc;
 }
 
@@ -5669,10 +5666,8 @@ HRESULT Console::i_onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR a
 
     HRESULT hrc = S_OK;
     Bstr idMachine(aMachineId);
-    Bstr idSelf;
-    hrc = mMachine->COMGETTER(Id)(idSelf.asOutParam());
     if (   FAILED(hrc)
-        || idMachine != idSelf)
+        || idMachine != i_getId())
         return hrc;
 
     /* don't do anything if the VM isn't running */
