@@ -57,7 +57,9 @@ if !defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_EXTPACKS)
  	scmstream.cpp
 endif
 
-BLDPROGS.win += VBoxPeSetVersion
+ifeq ($(KBUILD_TARGET),win)
+ BLDPROGS += VBoxPeSetVersion
+endif
 VBoxPeSetVersion_TEMPLATE = VBoxBldProg
 VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
 

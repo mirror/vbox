@@ -47,6 +47,9 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 16)
 # include <iprt/power.h>
 # define VBOX_WITH_SUSPEND_NOTIFICATION
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23)
+#  define VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+# endif
 #endif
 
 #include <linux/sched.h>
@@ -58,6 +61,10 @@
 #endif
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
 # include <linux/platform_device.h>
+#endif
+#ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+# include <linux/suspend.h>
+# include <linux/notifier.h>
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)) && defined(SUPDRV_WITH_MSR_PROBER)
 # define SUPDRV_LINUX_HAS_SAFE_MSR_API
@@ -121,6 +128,9 @@ static int  VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State);
 static int  VBoxDrvResume(struct platform_device *pDev);
 # endif
 static void VBoxDevRelease(struct device *pDev);
+# ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+static int VBoxDrvPowerNotificationCallback(struct notifier_block *, unsigned long, void *);
+# endif
 #endif
 
 
@@ -269,6 +279,10 @@ static struct platform_device gPlatformDevice =
         .release = VBoxDevRelease
     }
 };
+
+# ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+static struct notifier_block *g_pNotifier;
+# endif /* VBOX_WITH_PRE_SUSPEND_NOTIFICATION */
 #endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
 
 
@@ -417,6 +431,26 @@ static int __init VBoxDrvLinuxInit(void)
                     if (rc == 0)
 #endif
                     {
+# ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+                        size_t const cbNotifier = sizeof(*g_pNotifier);
+                        g_pNotifier = RTMemAllocZ(cbNotifier);
+                        if (g_pNotifier)
+                        {
+                            g_pNotifier->notifier_call = VBoxDrvPowerNotificationCallback;
+                            g_pNotifier->priority = 0;
+                            rc = register_pm_notifier(g_pNotifier);
+                            if (!rc)
+                                printk(KERN_INFO "vboxdrv: Successfully registered power notifier\n");
+                            else
+                            {
+                                printk(KERN_INFO "vboxdrv: Failed to register power notifier! rc=%d\n", rc);
+                                rc = 0;
+                            }
+                        }
+                        else
+                            printk(KERN_INFO "vboxdrv: Failed to alloc %lu bytes for power notifier\n", cbNotifier);
+# endif
+
                         printk(KERN_INFO "vboxdrv: TSC mode is %s, tentative frequency %llu Hz\n",
                                SUPGetGIPModeName(g_DevExt.pGip), g_DevExt.pGip->u64CpuHz);
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
@@ -470,6 +504,13 @@ static void __exit VBoxDrvLinuxUnload(void)
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
     platform_device_unregister(&gPlatformDevice);
     platform_driver_unregister(&gPlatformDriver);
+# ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+    if (g_pNotifier)
+    {
+        unregister_pm_notifier(g_pNotifier);
+        g_pNotifier = NULL;
+    }
+# endif
 #endif
 
     /*
@@ -633,6 +674,17 @@ static int VBoxDrvResume(struct platform_device *pDev)
 }
 #endif /* VBOX_WITH_SUSPEND_NOTIFICATION */
 
+
+#ifdef VBOX_WITH_PRE_SUSPEND_NOTIFICATION
+static int VBoxDrvPowerNotificationCallback(struct notifier_block *pNotifier, unsigned long uEvent, void *pvUnused)
+{
+    NOREF(pvUnused);
+    if (uEvent == PM_SUSPEND_PREPARE)
+        RTPowerSignalEvent(RTPOWEREVENT_PRE_SUSPEND);
+    /* The remaining events are taken care by VBoxDrvSuspend() and VboxDrvResume() hooks. */
+    return NOTIFY_DONE;
+}
+#endif
 
 /**
  * Device I/O Control entry point.

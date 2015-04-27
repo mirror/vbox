@@ -690,8 +690,9 @@ SUPDECL(PSUPGLOBALINFOPAGE) SUPGetGIP(void)
  */
 
 /**
- * Used by supdrvInitRefineInvariantTscFreqTimer and supdrvGipInitMeasureTscFreq
- * to update the TSC frequency related GIP variables.
+ * Used by supdrvInitRefineInvariantTscFreqTimer() and
+ * supdrvGipInitMeasureTscFreq() to update the TSC frequency related GIP
+ * variables.
  *
  * @param   pGip                The GIP.
  * @param   nsElapsed           The number of nano seconds elapsed.
@@ -857,12 +858,50 @@ static DECLCALLBACK(void) supdrvInitRefineInvariantTscFreqTimer(PRTTIMER pTimer,
 
 
 /**
+ * Determine the TSC-delta rating based on the TSC-delta for the CPU.
+ *
+ * @param   pGip        Pointer to the GIP.
+ * @param   pGipCpu     Pointer to the GIPCPU.
+ */
+DECLINLINE(void) supdrvGipDetermineTscDeltaRating(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu)
+{
+    SUPGIPUSETSCDELTA enmRating;
+    if (   pGipCpu->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO
+        || pGipCpu->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO)
+        enmRating = SUPGIPUSETSCDELTA_NOT_ZERO;
+    else if (   pGipCpu->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO
+             || pGipCpu->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO)
+        enmRating = SUPGIPUSETSCDELTA_ROUGHLY_ZERO;
+    else
+        enmRating = SUPGIPUSETSCDELTA_PRACTICALLY_ZERO;
+    if (pGip->enmUseTscDelta < enmRating)
+    {
+        AssertCompile(sizeof(pGip->enmUseTscDelta) == sizeof(uint32_t));
+        ASMAtomicWriteU32((uint32_t volatile *)&pGip->enmUseTscDelta, enmRating);
+    }
+}
+
+
+/**
  * @callback_method_impl{FNRTPOWERNOTIFICATION}
  */
 static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEvent, void *pvUser)
 {
+#define SUPGIP_READ_TSC_AND_NANOTS_ATOMIC(a_fEFlags, a_uTscNow, a_nsNow) \
+    do { \
+        a_nsNow = RTTimeSystemNanoTS(); \
+        while (RTTimeSystemNanoTS() == a_nsNow) \
+            ASMNopPause(); \
+        a_fEFlags = ASMIntDisableFlags(); \
+        a_uTscNow = SUPReadTsc(); \
+        a_nsNow   = RTTimeSystemNanoTS(); \
+        ASMSetFlags(a_fEFlags); \
+    } while (0);
+
     PSUPDRVDEVEXT      pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    if (RT_UNLIKELY(!pGip))
+        return;
 
     /*
      * If the TSC frequency refinement timer is running, we need to cancel it so it
@@ -871,6 +910,7 @@ static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEve
      * Recalculate all TSC-deltas on host resume as it may have changed, seen
      * on Windows 7 running on the Dell Optiplex Intel Core i5-3570.
      */
+    pDevExt->enmPowerEvent = enmEvent;
     if (enmEvent == RTPOWEREVENT_RESUME)
     {
         ASMAtomicWriteBool(&pDevExt->fInvTscRefinePowerEvent, true);
@@ -885,9 +925,45 @@ static DECLCALLBACK(void) supdrvGipPowerNotificationCallback(RTPOWEREVENT enmEve
             supdrvMeasureInitialTscDeltas(pDevExt);
 #endif
         }
+
+        if (   pDevExt->hPowerEvent != NIL_RTSEMEVENTMULTI
+            && ASMAtomicReadU32(&pDevExt->cPowerEventUsers) > 0)
+        {
+            SUPR0Printf("vboxdrv: RTPOWEREVENT_RESUME. Signaling userland\n");
+            RTSemEventMultiSignal(pDevExt->hPowerEvent);
+        }
+        else
+            SUPR0Printf("vboxdrv: RTPOWEREVENT_RESUME\n");
     }
     else if (enmEvent == RTPOWEREVENT_SUSPEND)
+    {
+        /*
+         * Signal stopping of the TSC refinement timer.
+         */
         ASMAtomicWriteBool(&pDevExt->fInvTscRefinePowerEvent, true);
+        SUPR0Printf("vboxdrv: RTPOWEREVENT_SUSPEND\n");
+    }
+    else if (enmEvent == RTPOWEREVENT_PRE_SUSPEND)
+    {
+        if (   pDevExt->hPowerEvent != NIL_RTSEMEVENTMULTI
+            && ASMAtomicReadU32(&pDevExt->cPowerEventUsers) > 0)
+        {
+            int rc2;
+            SUPR0Printf("vboxdrv: RTPOWEREVENT_PRE_SUSPEND. Signaling userland NanoTS=%llu\n", RTTimeSystemNanoTS());
+            RTSemEventMultiReset(pDevExt->hPowerEventAck);  /* Reset here as RTPOWEREVENT_RESUME case doesn't. */
+            RTSemEventMultiSignal(pDevExt->hPowerEvent);
+
+            /* Wait for userland to acknowledge with a maximum timeout of 5 seconds. */
+            rc2 = RTSemEventMultiWait(pDevExt->hPowerEventAck, 5 * RT_MS_1SEC);
+            SUPR0Printf("vboxdrv: RTPOWEREVENT_PRE_SUSPEND. Done waiting for userland to ack. rc=%Rrc NanoTS=%llu\n", rc2,
+                        RTTimeSystemNanoTS());
+            RTSemEventMultiReset(pDevExt->hPowerEventAck);
+        }
+        else
+            SUPR0Printf("vboxdrv: RTPOWEREVENT_PRE_SUSPEND\n");
+    }
+
+#undef SUPGIP_READ_TSC_AND_NANOTS_ATOMIC
 }
 
 
@@ -906,13 +982,6 @@ static void supdrvGipInitStartTimerForRefiningInvariantTscFreq(PSUPDRVDEVEXT pDe
     uint64_t    u64NanoTS;
     RTCCUINTREG fEFlags;
     int         rc;
-
-    /*
-     * Register a power management callback.
-     */
-    pDevExt->fInvTscRefinePowerEvent = false;
-    rc = RTPowerNotificationRegister(supdrvGipPowerNotificationCallback, pDevExt);
-    AssertRC(rc); /* ignore */
 
     /*
      * Record the TSC and NanoTS as the starting anchor point for refinement
@@ -1294,7 +1363,7 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
 
     /* Add this CPU to this set of CPUs we need to calculate the TSC-delta for. */
-    RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, RTMpCpuIdToSetIndex(idCpu));
+    RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, iCpuSet);
 
     /* Update the Mp online/offline counter. */
     ASMAtomicIncU32(&pDevExt->cMpOnOffEvents);
@@ -1400,6 +1469,8 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
                     RTMpOnSpecific(idCpu, supdrvGipMpEventOnlineCallback, pDevExt, NULL /* pvUser2 */);
                 }
 
+                SUPR0Printf("RTMPEVENT_ONLINE TSC=%llu\n", SUPReadTsc());
+
                 /*
                  * Recompute TSC-delta for the newly online'd CPU.
                  */
@@ -1417,6 +1488,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
 
             case RTMPEVENT_OFFLINE:
                 supdrvGipMpEventOffline(pDevExt, idCpu);
+                SUPR0Printf("RTMPEVENT_OFFLINE TSC=%llu\n", SUPReadTsc());
                 break;
         }
     }
@@ -1922,6 +1994,16 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 #endif
                     {
                         /*
+                         * Create the power event semapahore and register a power management callback.
+                         */
+                        rc = RTSemEventMultiCreate(&pDevExt->hPowerEvent); AssertRC(rc);
+                        rc = RTSemEventMultiCreate(&pDevExt->hPowerEventAck); AssertRC(rc);
+                        pDevExt->fInvTscRefinePowerEvent = false;
+                        Assert(!pDevExt->cSuspendResume);
+                        rc = RTPowerNotificationRegister(supdrvGipPowerNotificationCallback, pDevExt);
+                        AssertRC(rc); /* ignore */
+
+                        /*
                          * Create the timer.
                          * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
                          */
@@ -1952,6 +2034,12 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
                         OSDBGPRINT(("supdrvGipCreate: failed create GIP timer at %u ns interval. rc=%Rrc\n", u32Interval, rc));
                         Assert(!pDevExt->pGipTimer);
+
+                        RTPowerNotificationDeregister(supdrvGipPowerNotificationCallback, pDevExt);
+                        RTSemEventMultiDestroy(pDevExt->hPowerEvent);
+                        RTSemEventMultiDestroy(pDevExt->hPowerEventAck);
+                        pDevExt->hPowerEvent = NIL_RTSEMEVENTMULTI;
+                        pDevExt->hPowerEventAck = NIL_RTSEMEVENTMULTI;
                     }
                 }
                 else
@@ -2057,6 +2145,7 @@ void VBOXCALL supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
      * if one actually succeeded and is still pending.
      */
     supdrvGipReleaseHigherTimerFrequencyFromSystem(pDevExt);
+    RTPowerNotificationDeregister(supdrvGipPowerNotificationCallback, pDevExt);
 }
 
 
@@ -2254,6 +2343,13 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
     PSUPGIPCPU pGipCpu;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
     AssertPtrReturnVoid(pGip);
+
+    /*
+     * If the host is being suspended, stop updating the GIP.
+     * We don't want TSC values and NanoTS going out of sync.
+     */
+    if (ASMAtomicReadU32(&pDevExt->cSuspendResume) & UINT32_C(1))
+        return;
 
     if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
         pGipCpu = &pGip->aCPUs[0];
@@ -3836,20 +3932,7 @@ static int supdrvMeasureTscDeltaOne(PSUPDRVDEVEXT pDevExt, uint32_t idxWorker)
                      * Work the TSC delta applicability rating.  It starts
                      * optimistic in supdrvGipInit, we downgrade it here.
                      */
-                    SUPGIPUSETSCDELTA enmRating;
-                    if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO
-                        || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_ROUGHLY_ZERO)
-                        enmRating = SUPGIPUSETSCDELTA_NOT_ZERO;
-                    else if (   pGipCpuWorker->i64TSCDelta >  GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO
-                             || pGipCpuWorker->i64TSCDelta < -GIP_TSC_DELTA_THRESHOLD_PRACTICALLY_ZERO)
-                        enmRating = SUPGIPUSETSCDELTA_ROUGHLY_ZERO;
-                    else
-                        enmRating = SUPGIPUSETSCDELTA_PRACTICALLY_ZERO;
-                    if (pGip->enmUseTscDelta < enmRating)
-                    {
-                        AssertCompile(sizeof(pGip->enmUseTscDelta) == sizeof(uint32_t));
-                        ASMAtomicWriteU32((uint32_t volatile *)&pGip->enmUseTscDelta, enmRating);
-                    }
+                    supdrvGipDetermineTscDeltaRating(pGip, pGipCpuWorker);
                 }
                 else
                     rc = VERR_SUPDRV_TSC_DELTA_MEASUREMENT_FAILED;
@@ -4721,5 +4804,63 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
     }
 
     return rc;
+}
+
+
+/**
+ * Waits for a host power event.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pSession        The support driver session.
+ * @param   pEvent          Where to store the power event.
+ */
+int VBOXCALL supdrvIOCtl_WaitForPowerEvent(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PRTPOWEREVENT pEvent)
+{
+    /*
+     * Validate.
+     */
+    AssertPtr(pDevExt); AssertPtr(pEvent); AssertPtr(pSession); AssertPtr(pEvent);
+
+    *pEvent = RTPOWEREVENT_INVALID;
+    if (   g_pSUPGlobalInfoPage
+        && pDevExt->hPowerEvent != NIL_RTSEMEVENTMULTI)
+    {
+        int rc;
+        ASMAtomicIncU32(&pDevExt->cPowerEventUsers);
+        rc = RTSemEventMultiWait(pDevExt->hPowerEvent, 3 * RT_MS_1SEC);
+        if (rc == VINF_SUCCESS)
+        {
+            *pEvent = pDevExt->enmPowerEvent;
+            RTSemEventMultiReset(pDevExt->hPowerEvent);
+        }
+        return rc;
+    }
+    return VERR_NOT_AVAILABLE;
+}
+
+
+/**
+ * Acknowledges reception of a host power event.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         Pointer to the device instance data.
+ * @param   pSession        The support driver session.
+ */
+int VBOXCALL supdrvIOCtl_AckPowerEvent(PSUPDRVDEVEXT pDevExt)
+{
+    /*
+     * Validate.
+     */
+    AssertPtr(pDevExt);
+
+    if (   g_pSUPGlobalInfoPage
+        && pDevExt->hPowerEventAck != NIL_RTSEMEVENTMULTI)
+    {
+        ASMAtomicDecU32(&pDevExt->cPowerEventUsers);
+        RTSemEventMultiSignal(pDevExt->hPowerEventAck);
+    }
+
+    return VINF_SUCCESS;
 }
 

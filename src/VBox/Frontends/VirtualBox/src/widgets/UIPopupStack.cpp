@@ -32,6 +32,7 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#include <VBox/log.h>
 
 UIPopupStack::UIPopupStack(const QString &strID, UIPopupStackOrientation orientation)
     : m_strID(strID)
@@ -43,6 +44,11 @@ UIPopupStack::UIPopupStack(const QString &strID, UIPopupStackOrientation orienta
 {
     /* Prepare: */
     prepare();
+}
+
+UIPopupStack::~UIPopupStack()
+{
+    LogRel(("GUI: UIPopupStack::~UIPopupStack()\n"));
 }
 
 bool UIPopupStack::exists(const QString &strPopupPaneID) const
@@ -91,6 +97,8 @@ void UIPopupStack::setOrientation(UIPopupStackOrientation orientation)
 
 void UIPopupStack::setParent(QWidget *pParent)
 {
+    printf("UIPopupStack::setParent: %p\n", pParent);
+
     /* Call to base-class: */
     QWidget::setParent(pParent);
     /* Recalculate parent menu-bar height: */
@@ -101,6 +109,8 @@ void UIPopupStack::setParent(QWidget *pParent)
 
 void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags flags)
 {
+    printf("UIPopupStack::setParent2: %p\n", pParent);
+
     /* Call to base-class: */
     QWidget::setParent(pParent, flags);
     /* Recalculate parent menu-bar height: */

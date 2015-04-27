@@ -2238,6 +2238,25 @@ static int supdrvIOCtlInnerUnrestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt,
             return 0;
         }
 
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_WAIT_FOR_POWER_EVENT):
+        {
+            /* validate */
+            PSUPPOWEREVENT pReq = (PSUPPOWEREVENT)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_WAIT_FOR_POWER_EVENT);
+
+            pReqHdr->rc = supdrvIOCtl_WaitForPowerEvent(pDevExt, pSession, &pReq->u.Out.enmPowerEvent);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_ACK_POWER_EVENT):
+        {
+            /* validate */
+            REQ_CHECK_SIZES(SUP_IOCTL_ACK_POWER_EVENT);
+
+            pReqHdr->rc = supdrvIOCtl_AckPowerEvent(pDevExt);
+            return 0;
+        }
+
         default:
             Log(("Unknown IOCTL %#lx\n", (long)uIOCtl));
             break;
@@ -2320,6 +2339,27 @@ static int supdrvIOCtlInnerRestricted(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, P
             pReq->Hdr.rc = SUPR0QueryVTCaps(pSession, &pReq->u.Out.Caps);
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_WAIT_FOR_POWER_EVENT):
+        {
+            /* validate */
+            PSUPPOWEREVENT pReq = (PSUPPOWEREVENT)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_WAIT_FOR_POWER_EVENT);
+
+            /* execute */
+            pReqHdr->rc = supdrvIOCtl_WaitForPowerEvent(pDevExt, pSession, &pReq->u.Out.enmPowerEvent);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_ACK_POWER_EVENT):
+        {
+            /* validate */
+            REQ_CHECK_SIZES(SUP_IOCTL_ACK_POWER_EVENT);
+
+            /* execute */
+            pReqHdr->rc = supdrvIOCtl_AckPowerEvent(pDevExt);
             return 0;
         }
 

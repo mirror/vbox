@@ -169,6 +169,7 @@ xf86ModesAdd
 xf86OutputCreate
 xf86OutputSetEDID
 xf86OutputUseScreenMonitor
+xf86RandR12GetOriginalVirtualSize
 xf86RemoveGeneralHandler
 xf86SaveScreen
 xf86ScreenToScrn

@@ -1119,6 +1119,18 @@
         <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;Default Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;eparate Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines with detachable GUI</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIActionPoolRuntime</name>
@@ -8702,7 +8714,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation>데이터를 드롭할 수 없습니다.</translation>
+        <translation type="obsolete">데이터를 드롭할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
@@ -9070,6 +9082,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed while dropping data.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel drag and drop operation.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
