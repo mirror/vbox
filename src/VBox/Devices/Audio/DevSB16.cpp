@@ -2086,6 +2086,39 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
+{
+    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+
+    /* Bring back the device to initial state, and especially make
+     * sure there's no interrupt or DMA activity.
+     */
+    PDMDevHlpISASetIrq(pThis->pDevIns, pThis->irq, 0);
+
+    pThis->mixer_regs[0x82] = 0;
+    pThis->csp_regs[5]      = 1;
+    pThis->csp_regs[9]      = 0xf8;
+
+    pThis->dma_auto = 0;
+    pThis->in_index = 0;
+    pThis->out_data_len = 0;
+    pThis->left_till_irq = 0;
+    pThis->needed_bytes = 0;
+    pThis->block_size = -1;
+    pThis->nzero = 0;
+    pThis->highspeed = 0;
+    pThis->v2x6 = 0;
+    pThis->cmd = -1;
+
+    sb16MixerReset(pThis);
+    sb16SpeakerControl(pThis, 0);
+    sb16Control(pThis, 0);
+    sb16ResetLegacy(pThis);
+}
+
+/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) sb16QueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
@@ -2369,7 +2402,7 @@ const PDMDEVREG g_DeviceSB16 =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    NULL,
+    sb16DevReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */
