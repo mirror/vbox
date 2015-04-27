@@ -282,7 +282,7 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
                        adjustedWidth, height, (unsigned) pVBox->cbFBMax / 1024);
             return FALSE;
         }
-        vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8,
+        vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8,
                       adjustedWidth * height * pScrn->bitsPerPixel / 8);
         pScreen->ModifyPixmapHeader(pPixmap, adjustedWidth, height, pScrn->depth, pScrn->bitsPerPixel, cbLine, pVBox->base);
     }
@@ -1411,7 +1411,7 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
         vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
     vboxDisableVbva(pScrn);
-    vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
+    vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
 #ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
@@ -1442,7 +1442,7 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
             vbox_crtc_dpms(pVBox->pScreens[i].paCrtcs, DPMSModeOff);
 #endif
         vboxDisableVbva(pScrn);
-        vbvxClearVRAM(pScrn, pScrn->virtualX * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
+        vbvxClearVRAM(pScrn, ((size_t)pScrn->virtualX) * pScrn->virtualY * pScrn->bitsPerPixel / 8, 0);
     }
 #ifdef VBOX_DRI
 # ifndef VBOX_DRI_OLD  /* DRI2 */
