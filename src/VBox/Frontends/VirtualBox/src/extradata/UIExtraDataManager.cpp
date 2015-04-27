@@ -549,7 +549,7 @@ private:
       * @{ */
         /** Data pane. */
         QWidget *m_pPaneOfData;
-        /** Dta filter. */
+        /** Data filter. */
         QLineEdit *m_pFilterOfData;
         /** Data pane: Table-view. */
         QTableView *m_pViewOfData;
