@@ -2991,7 +2991,7 @@ HRESULT Console::createSharedFolder(const com::Utf8Str &aName, const com::Utf8St
         SharedFolderDataMap::const_iterator it;
         if (i_findOtherSharedFolder(aName, it))
         {
-            rc = removeSharedFolder(aName);
+            rc = i_removeSharedFolder(aName);
             if (FAILED(rc))
                 return rc;
         }
@@ -7885,7 +7885,7 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
                                  || m_mapGlobalSharedFolders.find(strName) != m_mapGlobalSharedFolders.end()
                                )
                             {
-                                rc = removeSharedFolder(strName);
+                                rc = i_removeSharedFolder(strName);
                                 if (FAILED(rc)) throw rc;
                             }
 
@@ -7912,7 +7912,7 @@ HRESULT Console::i_fetchSharedFolders(BOOL aGlobal)
                     else
                     {
                         /* remove the outdated machine folder */
-                        rc = removeSharedFolder(it->first);
+                        rc = i_removeSharedFolder(it->first);
                         if (FAILED(rc)) throw rc;
 
                         /* create the global folder if there is any */
