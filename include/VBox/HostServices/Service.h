@@ -197,16 +197,18 @@ private:
                         }
                     }
 
-                    if (   paParmsDst[i].u.pointer.addr
-                        && paParmsSrc[i].u.pointer.size > 0
-                        && paParmsDst[i].u.pointer.size > 0)
+                    if (paParmsSrc[i].u.pointer.size) 
                     {
-                        memcpy(paParmsDst[i].u.pointer.addr,
-                               paParmsSrc[i].u.pointer.addr,
-                               RT_MIN(paParmsDst[i].u.pointer.size, paParmsSrc[i].u.pointer.size));
+                        if (   paParmsDst[i].u.pointer.addr
+                            && paParmsDst[i].u.pointer.size)
+                        {
+                            memcpy(paParmsDst[i].u.pointer.addr,
+                                   paParmsSrc[i].u.pointer.addr,
+                                   RT_MIN(paParmsDst[i].u.pointer.size, paParmsSrc[i].u.pointer.size));
+                        }
+                        else 
+                            rc = VERR_INVALID_POINTER;
                     }
-                    else
-                        rc = VERR_INVALID_POINTER;
                     break;
                 }
                 default:
