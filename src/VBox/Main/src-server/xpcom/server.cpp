@@ -131,7 +131,7 @@ static bool gAutoShutdown = false;
  * VirtualBox instance is released, in ms */
 static uint32_t gShutdownDelayMs = 5000;
 
-static nsIEventQueue  *gEventQ          = nsnull;
+static nsCOMPtr<nsIEventQueue> gEventQ  = nsnull;
 static PRBool volatile gKeepRunning     = PR_TRUE;
 static PRBool volatile gAllowSigUsrQuit = PR_TRUE;
 
@@ -231,8 +231,12 @@ public:
              * (see GetInstance()) */
 
             PRBool onMainThread = PR_TRUE;
-            if (gEventQ)
-                gEventQ->IsOnCurrentThread(&onMainThread);
+            nsCOMPtr<nsIEventQueue> q(gEventQ);
+            if (q)
+            {
+                q->IsOnCurrentThread(&onMainThread);
+                q = nsnull;
+            }
 
             PRBool timerStarted = PR_FALSE;
 
@@ -288,7 +292,7 @@ public:
                      * any more. Thus, we assert below.
                      */
 
-                    Assert(gEventQ == NULL);
+                    Assert(!gEventQ);
                 }
             }
         }
@@ -355,11 +359,12 @@ public:
          * manually ended the server after a destruction has been scheduled
          * and this method was so lucky that it got a chance to run before
          * the timer was killed. */
-        AssertReturnVoid(gEventQ);
+        nsCOMPtr<nsIEventQueue> q(gEventQ);
+        AssertReturnVoid(q);
 
         /* post a quit event to the main queue */
         MaybeQuitEvent *ev = new MaybeQuitEvent();
-        nsresult rv = ev->postTo(gEventQ);
+        nsresult rv = ev->postTo(q);
         NOREF(rv);
 
         /* A failure above means we've been already stopped (for example
@@ -392,8 +397,6 @@ public:
         RTTimerLRDestroy(sTimer);
         sTimer = NULL;
 
-        RTCritSectDelete(&sLock);
-
         if (sInstance != NULL)
         {
             /* Either posting a destruction event failed for some reason (most
@@ -403,6 +406,10 @@ public:
              * Release the guard reference we added in GetInstance(). */
             sInstance->Release();
         }
+
+        /* Destroy lock after releasing the VirtualBox instance, otherwise
+         * there are races with cleanup. */
+        RTCritSectDelete(&sLock);
 
         return NS_OK;
     }
@@ -593,14 +600,15 @@ class ForceQuitEvent : public MyEvent
 
 static void signal_handler(int sig)
 {
-    if (gEventQ && gKeepRunning)
+    nsCOMPtr<nsIEventQueue> q(gEventQ);
+    if (q && gKeepRunning)
     {
         if (sig == SIGUSR1)
         {
             if (gAllowSigUsrQuit)
             {
                 VirtualBoxClassFactory::MaybeQuitEvent *ev = new VirtualBoxClassFactory::MaybeQuitEvent();
-                ev->postTo(gEventQ);
+                ev->postTo(q);
             }
             /* else do nothing */
         }
@@ -608,7 +616,7 @@ static void signal_handler(int sig)
         {
             /* post a force quit event to the queue */
             ForceQuitEvent *ev = new ForceQuitEvent();
-            ev->postTo(gEventQ);
+            ev->postTo(q);
         }
     }
 }
@@ -862,7 +870,7 @@ int main(int argc, char **argv)
         /* get the main thread's event queue (afaik, the dconnect service always
          * gets created upon XPCOM startup, so it will use the main (this)
          * thread's event queue to receive IPC events) */
-        rc = NS_GetMainEventQ(&gEventQ);
+        rc = NS_GetMainEventQ(getter_AddRefs(gEventQ));
         if (NS_FAILED(rc))
         {
             RTMsgError("Failed to get the main event queue! (rc=%Rhrc)", rc);
@@ -991,7 +999,7 @@ int main(int argc, char **argv)
     while (0); // this scopes the nsCOMPtrs
 
     NS_IF_RELEASE(gIpcServ);
-    NS_IF_RELEASE(gEventQ);
+    gEventQ = nsnull;
 
     /* no nsCOMPtrs are allowed to be alive when you call com::Shutdown(). */
 
