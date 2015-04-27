@@ -205,6 +205,8 @@ private:
                                paParmsSrc[i].u.pointer.addr,
                                RT_MIN(paParmsDst[i].u.pointer.size, paParmsSrc[i].u.pointer.size));
                     }
+                    else
+                        rc = VERR_INVALID_POINTER;
                     break;
                 }
                 default:
