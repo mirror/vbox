@@ -2799,24 +2799,42 @@ typedef X86XSAVEAREA const *PCX86XSAVEAREA;
 
 /** @name XSAVE_C_XXX - XSAVE State Components Bits.
  * @{ */
+/** Bit 0 - x87 - Legacy FPU state (bit number) */
+#define XSAVE_C_X87_BIT         0
 /** Bit 0 - x87 - Legacy FPU state. */
-#define XSAVE_C_X87         RT_BIT_64(0)
+#define XSAVE_C_X87             RT_BIT_64(XSAVE_C_X87_BIT)
+/** Bit 1 - SSE - 128-bit SSE state (bit number). */
+#define XSAVE_C_SSE_BIT         1
 /** Bit 1 - SSE - 128-bit SSE state. */
-#define XSAVE_C_SSE         RT_BIT_64(1)
+#define XSAVE_C_SSE             RT_BIT_64(XSAVE_C_SSE_BIT)
+/** Bit 2 - YMM_Hi128 - Upper 128 bits of YMM0-15 (AVX) (bit number). */
+#define XSAVE_C_YMM_BIT         2
 /** Bit 2 - YMM_Hi128 - Upper 128 bits of YMM0-15 (AVX). */
-#define XSAVE_C_YMM         RT_BIT_64(2)
+#define XSAVE_C_YMM             RT_BIT_64(XSAVE_C_YMM_BIT)
+/** Bit 3 - BNDREGS - MPX bound register state (bit number). */
+#define XSAVE_C_BNDREGS_BIT     3
 /** Bit 3 - BNDREGS - MPX bound register state. */
-#define XSAVE_C_BNDREGS     RT_BIT_64(3)
+#define XSAVE_C_BNDREGS         RT_BIT_64(XSAVE_C_BNDREGS_BIT)
+/** Bit 4 - BNDCSR - MPX bound config and status state (bit number). */
+#define XSAVE_C_BNDCSR_BIT      4
 /** Bit 4 - BNDCSR - MPX bound config and status state. */
-#define XSAVE_C_BNDCSR      RT_BIT_64(4)
+#define XSAVE_C_BNDCSR          RT_BIT_64(XSAVE_C_BNDCSR_BIT)
+/** Bit 5 - Opmask - opmask state (bit number). */
+#define XSAVE_C_OPMASK_BIT      5
 /** Bit 5 - Opmask - opmask state. */
-#define XSAVE_C_OPMASK      RT_BIT_64(5)
+#define XSAVE_C_OPMASK          RT_BIT_64(XSAVE_C_OPMASK_BIT)
+/** Bit 6 - ZMM_Hi256 - Upper 256 bits of ZMM0-15 (AVX-512) (bit number). */
+#define XSAVE_C_ZMM_HI256_BIT   6
 /** Bit 6 - ZMM_Hi256 - Upper 256 bits of ZMM0-15 (AVX-512). */
-#define XSAVE_C_ZMM_HI256   RT_BIT_64(6)
+#define XSAVE_C_ZMM_HI256       RT_BIT_64(XSAVE_C_ZMM_HI256_BIT)
+/** Bit 7 - Hi16_ZMM - 512-bits ZMM16-31 state (AVX-512) (bit number). */
+#define XSAVE_C_ZMM_16HI_BIT    7
 /** Bit 7 - Hi16_ZMM - 512-bits ZMM16-31 state (AVX-512). */
-#define XSAVE_C_ZMM_16HI    RT_BIT_64(7)
+#define XSAVE_C_ZMM_16HI        RT_BIT_64(XSAVE_C_ZMM_16HI_BIT)
+/** Bit 62 - LWP - Lightweight Profiling (AMD) (bit number). */
+#define XSAVE_C_LWP_BIT         62
 /** Bit 62 - LWP - Lightweight Profiling (AMD). */
-#define XSAVE_C_LWP         RT_BIT_64(62)
+#define XSAVE_C_LWP             RT_BIT_64(XSAVE_C_LWP_BIT)
 /** @} */
 
 

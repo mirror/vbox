@@ -1648,7 +1648,8 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             /* XMM/YMM/ZMM registers. */
             if (pCtx->fXStateMask & XSAVE_C_YMM)
             {
-                PCX86XSAVEYMMHI pYmmHiCtx = (PCX86XSAVEYMMHI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_YMM]);
+                PCX86XSAVEYMMHI pYmmHiCtx;
+                pYmmHiCtx = (PCX86XSAVEYMMHI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_YMM_BIT]);
                 if (!(pCtx->fXStateMask & XSAVE_C_ZMM_HI256))
                     for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
                         pHlp->pfnPrintf(pHlp, "%sYMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
@@ -1664,7 +1665,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                 else
                 {
                     PCX86XSAVEZMMHI256 pZmmHi256;
-                    pZmmHi256 = (PCX86XSAVEZMMHI256)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_HI256]);
+                    pZmmHi256 = (PCX86XSAVEZMMHI256)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_HI256_BIT]);
                     for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
                         pHlp->pfnPrintf(pHlp,
                                         "%sZMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
@@ -1687,7 +1688,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                                         pFpuCtx->aXMM[i].au32[0]);
 
                     PCX86XSAVEZMM16HI pZmm16Hi;
-                    pZmm16Hi = (PCX86XSAVEZMM16HI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_16HI]);
+                    pZmm16Hi = (PCX86XSAVEZMM16HI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_16HI_BIT]);
                     for (unsigned i = 0; i < RT_ELEMENTS(pZmm16Hi->aRegs); i++)
                         pHlp->pfnPrintf(pHlp,
                                         "%sZMM%u=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
@@ -1725,7 +1726,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (pCtx->fXStateMask & XSAVE_C_OPMASK)
             {
                 PCX86XSAVEOPMASK pOpMask;
-                pOpMask = (PCX86XSAVEOPMASK)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_OPMASK]);
+                pOpMask = (PCX86XSAVEOPMASK)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_OPMASK_BIT]);
                 for (unsigned i = 0; i < RT_ELEMENTS(pOpMask->aKRegs); i += 4)
                     pHlp->pfnPrintf(pHlp, "%sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64\n",
                                     pszPrefix, i + 0, pOpMask->aKRegs[i + 0],
@@ -1737,7 +1738,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (pCtx->fXStateMask & XSAVE_C_BNDREGS)
             {
                 PCX86XSAVEBNDREGS pBndRegs;
-                pBndRegs = (PCX86XSAVEBNDREGS)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDREGS]);
+                pBndRegs = (PCX86XSAVEBNDREGS)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDREGS_BIT]);
                 for (unsigned i = 0; i < RT_ELEMENTS(pBndRegs->aRegs); i += 2)
                     pHlp->pfnPrintf(pHlp, "%sBNDREG%u=%016RX64/%016RX64  %sBNDREG%u=%016RX64/%016RX64\n",
                                     pszPrefix, i, pBndRegs->aRegs[i].uLowerBound, pBndRegs->aRegs[i].uUpperBound,
@@ -1747,7 +1748,7 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
             if (pCtx->fXStateMask & XSAVE_C_BNDCSR)
             {
                 PCX86XSAVEBNDCFG pBndCfg;
-                pBndCfg = (PCX86XSAVEBNDCFG)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDCSR]);
+                pBndCfg = (PCX86XSAVEBNDCFG)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDCSR_BIT]);
                 pHlp->pfnPrintf(pHlp, "%sBNDCFG.CONFIG=%016RX64 %sBNDCFG.STATUS=%016RX64\n",
                                 pszPrefix, pBndCfg->fConfig, pszPrefix, pBndCfg->fStatus);
             }
