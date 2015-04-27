@@ -328,7 +328,7 @@ VMMR3_INT_DECL(void) gimR3HvReset(PVM pVM)
     /*
      * Unmap MMIO2 pages that the guest may have setup.
      */
-    LogRel(("GIM: HyperV: Resetting Hyper-V MMIO2 regions and MSRs\n"));
+    LogRel(("GIM: HyperV: Resetting MMIO2 regions and MSRs\n"));
     PGIMHV pHv = &pVM->gim.s.u.Hv;
     for (unsigned i = 0; i < RT_ELEMENTS(pHv->aMmio2Regions); i++)
     {
