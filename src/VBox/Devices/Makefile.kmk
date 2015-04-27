@@ -400,22 +400,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS           += VBOX_WITH_INIP
   VBoxDD_SOURCES        += \
         Network/DevINIP.cpp
-  ifndef VBOX_WITH_NEW_LWIP
-    include $(PATH_SUB_CURRENT)/Network/lwip/Makefile.kmk
-    VBoxDD_INCS         += $(LWIP_INCS)
-    VBoxDD_SOURCES      += $(LWIP_SOURCES)
-  else
-    # XXX: do not depend on order
-    ifndef LWIP_SOURCES
-      include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
-    endif
-    Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
-    VBoxDD_LWIP_INCS += Network # for lwipopts.h
-    $(eval $(call def_vbox_lwip_private, \
-                      VBoxDD, Network/lwip-new))
-    $(eval $(call def_vbox_lwip_flags, \
-                      VBoxDD, Network/DevINIP.cpp, Network/lwip-new))
+  # XXX: do not depend on order
+  ifndef LWIP_SOURCES
+    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
   endif
+  VBoxDD_LWIP_INCS += Network # for lwipopts.h
+  $(eval $(call def_vbox_lwip_private, \
+                    VBoxDD, Network/lwip-new))
+  $(eval $(call def_vbox_lwip_flags, \
+                    VBoxDD, Network/DevINIP.cpp, Network/lwip-new))
  endif # VBOX_WITH_INIP
 
  ifdef VBOX_WITH_E1000
@@ -486,13 +479,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_ISCSI
-  ifdef VBOX_WITH_NEW_LWIP
-    Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
-    $(eval $(call def_vbox_lwip_flags, \
-                      VBoxDD, Storage/DrvVD.cpp, Network/lwip-new))
-  else
-    Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
-  endif
+  $(eval $(call def_vbox_lwip_flags, \
+                    VBoxDD, Storage/DrvVD.cpp, Network/lwip-new))
  endif
 
  ifdef VBOX_WITH_DRV_DISK_INTEGRITY

@@ -45,7 +45,7 @@ RT_C_DECLS_BEGIN
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/sockets.h>
-# ifdef VBOX_WITH_NEW_LWIP
+# if LWIP_IPV6
 #  include <lwip/inet6.h>
 # endif
 RT_C_DECLS_END
@@ -710,7 +710,7 @@ typedef union INIPSOCKADDRUNION
 {
     struct sockaddr     Addr;
     struct sockaddr_in  Ipv4;
-#ifdef VBOX_WITH_NEW_LWIP
+#if LWIP_IPV6
     struct sockaddr_in6 Ipv6;
 #endif
 } INIPSOCKADDRUNION;
@@ -762,7 +762,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     int iInetFamily = PF_INET;
     struct in_addr ip;
-#ifdef VBOX_WITH_NEW_LWIP
+#ifdef LWIP_IPV6
     ip6_addr_t ip6;
 #endif
 
@@ -776,7 +776,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     }
     /* Resolve hostname. As there is no standard resolver for lwIP yet,
      * just accept numeric IP addresses for now. */
-#ifdef VBOX_WITH_NEW_LWIP
+#if LWIP_IPV6
     if (inet6_aton(pszAddress, &ip6))
         iInetFamily = PF_INET6;
     else /* concatination with if */
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
             InAddr.sin_len = sizeof(InAddr);
             pSockAddr = (struct sockaddr *)&InAddr;
         }
-#ifdef VBOX_WITH_NEW_LWIP
+#ifdef LWIP_IPV6
         else
         {
             struct sockaddr_in6 In6Addr = {0};
@@ -1006,7 +1006,7 @@ static DECLCALLBACK(int) drvvdINIPGetLocalAddress(VDSOCKET Sock, PRTNETADDR pAdd
             pAddr->uPort        = RT_N2H_U16(u.Ipv4.sin_port);
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
-#ifdef VBOX_WITH_NEW_LWIP
+#if LWIP_IPV6
         else if (   cbAddr == sizeof(struct sockaddr_in6)
             && u.Addr.sa_family == AF_INET6)
         {
@@ -1043,7 +1043,7 @@ static DECLCALLBACK(int) drvvdINIPGetPeerAddress(VDSOCKET Sock, PRTNETADDR pAddr
             pAddr->uPort        = RT_N2H_U16(u.Ipv4.sin_port);
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
-#ifdef VBOX_WITH_NEW_LWIP
+#if LWIP_IPV6
         else if (   cbAddr == sizeof(struct sockaddr_in6)
                  && u.Addr.sa_family == AF_INET6)
         {
