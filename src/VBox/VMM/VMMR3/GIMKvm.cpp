@@ -237,7 +237,7 @@ VMMR3_INT_DECL(void) gimR3KvmRelocate(PVM pVM, RTGCINTPTR offDelta)
 VMMR3_INT_DECL(void) gimR3KvmReset(PVM pVM)
 {
     VM_ASSERT_EMT0(pVM);
-    LogRel(("GIM: KVM: Resettings MSRs"));
+    LogRel(("GIM: KVM: Resettings MSRs\n"));
 
     /*
      * Reset MSRs.
