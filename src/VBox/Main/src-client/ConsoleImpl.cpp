@@ -3050,7 +3050,7 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
          * folder. */
 
         /* first, remove the given folder */
-        rc = removeSharedFolder(strName);
+        rc = i_removeSharedFolder(strName);
         if (FAILED(rc)) return rc;
 
         /* first, remove the machine or the global folder if there is any */
