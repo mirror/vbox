@@ -325,7 +325,6 @@ HRESULT Initialize(bool fGui)
 
     /* this is the first initialization */
     gXPCOMInitCount = 1;
-    bool const fInitEventQueues = true;
 
     /* prepare paths for registry files */
     char szCompReg[RTPATH_MAX];
@@ -558,7 +557,7 @@ HRESULT Shutdown()
         }
         else
         {
-            isOnMainThread = PR_TRUE;
+            isOnMainThread = RTThreadIsMain(RTThreadSelf());
             rc = NS_OK;
         }
 
