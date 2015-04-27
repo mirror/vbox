@@ -336,7 +336,7 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     { \
         if (_aSigned) \
             return ((int64_t) aVal) << (32 - _aShift); \
-        return ((int64_t) aVal - (_aMax >> 1)) << (32 - _aShift); \
+        return ((int64_t) aVal - ((_aMax >> 1) + 1)) << (32 - _aShift); \
     } \
     \
     /* Clips a single sample value to a specific output value. */ \
@@ -349,7 +349,7 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         \
         if (_aSigned) \
             return (_aType) (iVal >> (32 - _aShift)); \
-        return ((_aType) ((iVal >> (32 - _aShift)) + (_aMax >> 1))); \
+        return ((_aType) ((iVal >> (32 - _aShift)) + ((_aMax >> 1) + 1))); \
     } \
     \
     AUDMIXBUF_MACRO_FN uint32_t audioMixBufConvFrom##_aName##Stereo(PPDMAUDIOSAMPLE paDst, const void *pvSrc, uint32_t cbSrc, \
