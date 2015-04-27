@@ -60,7 +60,7 @@ static int tstSingle(RTTEST hTest)
     PDMAUDIOMIXBUF mb;
     RTTESTI_CHECK_RC_OK(audioMixBufInit(&mb, "Single", &props, cBufSize));
     RTTESTI_CHECK(audioMixBufSize(&mb) == cBufSize);
-    RTTESTI_CHECK(AUDIOMIXBUF_B2S(&mb,  audioMixBufSizeBytes(&mb)) == cBufSize);
+    RTTESTI_CHECK(AUDIOMIXBUF_B2S(&mb, audioMixBufSizeBytes(&mb)) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_S2B(&mb, audioMixBufSize(&mb)) == audioMixBufSizeBytes(&mb));
     RTTESTI_CHECK(audioMixBufFree(&mb) == cBufSize);
     RTTESTI_CHECK(AUDIOMIXBUF_S2B(&mb, audioMixBufFree(&mb)) == audioMixBufFreeBytes(&mb));
@@ -257,4 +257,3 @@ int main(int argc, char **argv)
      */
     return RTTestSummaryAndDestroy(hTest);
 }
-
