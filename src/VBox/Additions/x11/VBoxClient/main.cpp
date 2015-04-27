@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
@@ -249,18 +250,20 @@ void vboxClientUsage(const char *pcszFileName)
              "--checkhostversion|"
 #endif
              "--seamless [-d|--nodaemon]\n", pcszFileName);
-    RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
+    RTPrintf("Starts the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
-    RTPrintf("  --clipboard        start the shared clipboard service\n");
+    RTPrintf("  --clipboard        starts the shared clipboard service\n");
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    RTPrintf("  --draganddrop      start the drag and drop service\n");
+    RTPrintf("  --draganddrop      starts the drag and drop service\n");
 #endif
-    RTPrintf("  --display          start the display management service\n");
+    RTPrintf("  --display          starts the display management service\n");
 #ifdef VBOX_WITH_GUEST_PROPS
-    RTPrintf("  --checkhostversion start the host version notifier service\n");
+    RTPrintf("  --checkhostversion starts the host version notifier service\n");
 #endif
-    RTPrintf("  --seamless         start the seamless windows service\n");
-    RTPrintf("  -d, --nodaemon     continue running as a system service\n");
+    RTPrintf("  --seamless         starts the seamless windows service\n");
+    RTPrintf("  -d, --nodaemon     continues running as a system service\n");
+    RTPrintf("  -h, --help         shows this help text\n");
+    RTPrintf("  -V, --version      shows version information\n");
     RTPrintf("\n");
     exit(0);
 }
@@ -345,6 +348,11 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pcszFileName);
+            return 0;
+        }
+        else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version"))
+        {
+            RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
             return 0;
         }
         else
