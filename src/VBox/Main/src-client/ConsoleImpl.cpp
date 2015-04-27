@@ -3017,8 +3017,6 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
 {
     LogFlowThisFunc(("Entering for '%s'\n", aName.c_str()));
 
-    Utf8Str strName(aName);
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo see @todo in AttachUSBDevice() about the Paused state
@@ -3050,20 +3048,20 @@ HRESULT Console::removeSharedFolder(const com::Utf8Str &aName)
          * folder. */
 
         /* first, remove the given folder */
-        rc = i_removeSharedFolder(strName);
+        rc = i_removeSharedFolder(aName);
         if (FAILED(rc)) return rc;
 
         /* first, remove the machine or the global folder if there is any */
         SharedFolderDataMap::const_iterator it;
-        if (i_findOtherSharedFolder(strName, it))
+        if (i_findOtherSharedFolder(aName, it))
         {
-            rc = i_createSharedFolder(strName, it->second);
+            rc = i_createSharedFolder(aName, it->second);
             /* don't check rc here because we need to remove the console
              * folder from the collection even on failure */
         }
     }
 
-    m_mapSharedFolders.erase(strName);
+    m_mapSharedFolders.erase(aName);
 
     /* Notify console callbacks after the folder is removed from the list. */
     alock.release();
