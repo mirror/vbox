@@ -235,6 +235,102 @@ static int tstParentChild(RTTEST hTest)
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
 
+static int tstConversion(RTTEST hTest)
+{
+    unsigned        i;
+    uint32_t        cBufSize = 256;
+    PDMPCMPROPS     props;
+
+
+    RTTestSubF(hTest, "Sample conversion");
+
+    PDMAUDIOSTREAMCFG cfg_p =
+    {
+        44100,                   /* Hz */
+        1                        /* Channels */,
+        AUD_FMT_S16              /* Format */,
+        PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
+    };
+
+    int rc = drvAudioStreamCfgToProps(&cfg_p, &props);
+    AssertRC(rc);
+
+    PDMAUDIOMIXBUF parent;
+    RTTESTI_CHECK_RC_OK(audioMixBufInit(&parent, "Parent", &props, cBufSize));
+
+    /* Child uses half the sample rate; that ensures the mixing engine can't
+     * take shortcuts and performs conversion. Because conversion to double
+     * the sample rate effectively inserts one additional sample between every
+     * two source samples, N source samples will be converted to N * 2 - 1
+     * samples. However, the last source sample will be saved for later
+     * interpolation and not immediately output.
+     */
+    PDMAUDIOSTREAMCFG cfg_c =   /* Upmixing to parent */
+    {
+        22050,                   /* Hz */
+        1                        /* Channels */,
+        AUD_FMT_S16              /* Format */,
+        PDMAUDIOENDIANNESS_LITTLE /* ENDIANNESS */
+    };
+
+    rc = drvAudioStreamCfgToProps(&cfg_c, &props);
+    AssertRC(rc);
+
+    PDMAUDIOMIXBUF child;
+    RTTESTI_CHECK_RC_OK(audioMixBufInit(&child, "Child", &props, cBufSize));
+    RTTESTI_CHECK_RC_OK(audioMixBufLinkTo(&child, &parent));
+
+    /*
+     * Writing + mixing from child -> parent, sequential.
+     */
+    uint32_t cbBuf = 256;
+    char pvBuf[256];
+    int16_t samples[16] = { 0xAA, 0xBB, INT16_MIN, INT16_MIN + 1, INT16_MIN / 2, -3, -2, -1,
+                            0, 1, 2, 3, INT16_MAX / 2, INT16_MAX - 1, INT16_MAX, 0 };
+    uint32_t read, written, mixed, temp;
+
+    uint32_t cChildFree     = cBufSize;
+    uint32_t cChildMixed    = 0;
+    uint32_t cSamplesChild  = 16;
+    uint32_t cSamplesParent = cSamplesChild * 2 - 2;
+    uint32_t cSamplesRead   = 0;
+
+    RTTestPrintf(hTest, RTTESTLVL_DEBUG, "Conversion test %uHz %uch\n", cfg_c.uHz, cfg_c.cChannels);
+    RTTESTI_CHECK_RC_OK(audioMixBufWriteAt(&child, 0, &samples, sizeof(samples), &written));
+    RTTESTI_CHECK_MSG(written == cSamplesChild, ("Child: Expected %RU32 written samples, got %RU32\n", cSamplesChild, written));
+    RTTESTI_CHECK_RC_OK(audioMixBufMixToParent(&child, written, &mixed));
+    temp = audioMixBufProcessed(&parent);
+    RTTESTI_CHECK_MSG(audioMixBufMixed(&child) == temp, ("Child: Expected %RU32 mixed samples, got %RU32\n", audioMixBufMixed(&child), temp));
+
+    RTTESTI_CHECK(audioMixBufProcessed(&parent) == audioMixBufMixed(&child));
+
+    for (;;)
+    {
+        RTTESTI_CHECK_RC_OK_BREAK(audioMixBufReadCirc(&parent, pvBuf, cbBuf, &read));
+        if (!read)
+            break;
+        cSamplesRead += read;
+        audioMixBufFinish(&parent, read);
+    }
+    RTTESTI_CHECK_MSG(cSamplesRead == cSamplesParent, ("Parent: Expected %RU32 mixed samples, got %RU32\n", cSamplesParent, cSamplesRead));
+
+    /* Check that the samples came out unharmed. Every other sample is interpolated and we ignore it. */
+    int16_t *pSrc16 = &samples[0];
+    int16_t *pDst16 = (int16_t *)pvBuf;
+
+    for (i = 0; i < cSamplesChild; ++i)
+    {
+        RTTESTI_CHECK_MSG(*pSrc16 == *pDst16, ("index %u: Dst=%d, Src=%d\n", i, *pDst16, *pSrc16));
+        pSrc16 += 1;
+        pDst16 += 2;
+    }
+
+    RTTESTI_CHECK(audioMixBufProcessed(&parent) == 0);
+    RTTESTI_CHECK(audioMixBufMixed(&child) == 0);
+
+    return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
+}
+
 int main(int argc, char **argv)
 {
     RTR3InitExe(argc, &argv, 0);
@@ -251,6 +347,8 @@ int main(int argc, char **argv)
     rc = tstSingle(hTest);
     if (RT_SUCCESS(rc))
         rc = tstParentChild(hTest);
+    if (RT_SUCCESS(rc))
+        rc = tstConversion(hTest);
 
     /*
      * Summary

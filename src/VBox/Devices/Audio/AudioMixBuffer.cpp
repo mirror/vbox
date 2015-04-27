@@ -73,8 +73,12 @@
  * point arithmetic such that 65536 means 1.0 and 1 means 1/65536.
  *
  * For actual volume calculation, 33.31 fixed point is used. Maximum (or
- * unattenuated) volume is represented as 0x80000000; conveniently, this
+ * unattenuated) volume is represented as 0x40000000; conveniently, this
  * value fits into a uint32_t.
+ *
+ * To enable fast processing, the maximum volume must be a power of two
+ * and must not have a sign when converted to int32_t. While 0x80000000
+ * violates these constraints, 0x40000000 does not.
  */
 
 
@@ -113,6 +117,15 @@ uint32_t aVolumeConv[256] = {
     34219, 35734, 37316, 38968, 40693, 42495, 44376, 46341, /* 247 */
     48393, 50535, 52773, 55109, 57549, 60097, 62757, 65536, /* 255 */
 };
+
+/* Bit shift for fixed point conversion. */
+#define VOL_SHIFT       30
+
+/* Internal representation of 0dB volume (1.0 in fixed point). */
+#define VOL_0DB         (1 << VOL_SHIFT)
+
+AssertCompile(VOL_0DB <= 0x40000000);   /* Must always hold. */
+AssertCompile(VOL_0DB == 0x40000000);   /* For now -- when only attenuation is used. */
 
 /**
  * Structure for holding sample conversion parameters for
@@ -342,9 +355,9 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
     /* Clips a single sample value to a specific output value. */ \
     AUDMIXBUF_MACRO_FN _aType audioMixBufClipTo##_aName(int64_t iVal) \
     { \
-        if (iVal >= 0x7f000000) \
+        if (iVal >= 0x7fffffff) \
             return _aMax; \
-        else if (iVal < -2147483648LL) \
+        else if (iVal < -INT64_C(0x80000000)) \
             return _aMin; \
         \
         if (_aSigned) \
@@ -362,8 +375,8 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: l=%RI16, r=%RI16\n", paDst, *pSrc, *(pSrc + 1))); \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft ) >> 31; \
-            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uRight) >> 31; \
+            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft ) >> VOL_SHIFT; \
+            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uRight) >> VOL_SHIFT; \
             AUDMIXBUF_MACRO_LOG(("\t-> l=%RI64, r=%RI64\n", paDst->i64LSample, paDst->i64RSample)); \
             paDst++; \
         } \
@@ -381,7 +394,7 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: s=%RI16\n", paDst, *pSrc)); \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft) >> 31; \
+            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft) >> VOL_SHIFT; \
             paDst->i64RSample = paDst->i64LSample; \
             AUDMIXBUF_MACRO_LOG(("\t-> l=%RI64, r=%RI64\n", paDst->i64LSample, paDst->i64RSample)); \
             paDst++; \
@@ -417,7 +430,7 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         uint32_t cSamples = pOpts->cSamples; \
         while (cSamples--) \
         { \
-            *pDst++ = audioMixBufClipTo##_aName(pSrc->i64LSample + pSrc->i64RSample); \
+            *pDst++ = audioMixBufClipTo##_aName((pSrc->i64LSample + pSrc->i64RSample) / 2); \
             pSrc++; \
         } \
     }
@@ -505,8 +518,8 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             /* Interpolate. */ \
             int64_t iDstOffInt = pRate->dstOffset & UINT32_MAX; \
             \
-            samOut.i64LSample = (samLast.i64LSample * ((int64_t) UINT32_MAX - iDstOffInt) + samCur.i64LSample * iDstOffInt) >> 32; \
-            samOut.i64RSample = (samLast.i64RSample * ((int64_t) UINT32_MAX - iDstOffInt) + samCur.i64RSample * iDstOffInt) >> 32; \
+            samOut.i64LSample = (samLast.i64LSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + samCur.i64LSample * iDstOffInt) >> 32; \
+            samOut.i64RSample = (samLast.i64RSample * ((int64_t) (INT64_C(1) << 32) - iDstOffInt) + samCur.i64RSample * iDstOffInt) >> 32; \
             \
             paDst->i64LSample _aOp samOut.i64LSample; \
             paDst->i64RSample _aOp samOut.i64RSample; \
@@ -708,8 +721,8 @@ int audioMixBufInit(PPDMAUDIOMIXBUF pMixBuf, const char *pszName, PPDMPCMPROPS p
 
     /* Set initial volume to max. */
     pMixBuf->Volume.fMuted = false;
-    pMixBuf->Volume.uLeft  = 0x7FFFFFFF;
-    pMixBuf->Volume.uRight = 0x7FFFFFFF;
+    pMixBuf->Volume.uLeft  = VOL_0DB;
+    pMixBuf->Volume.uRight = VOL_0DB;
 
     /* Prevent division by zero.
      * Do a 1:1 conversion according to AUDIOMIXBUF_S2B_RATIO. */
@@ -1195,11 +1208,9 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
     LogFlowFunc(("%s: lVol=%RU32, rVol=%RU32\n", pMixBuf->pszName, pVol->uLeft, pVol->uRight));
 
     pMixBuf->Volume.fMuted = pVol->fMuted;
-    pMixBuf->Volume.uLeft  = (UINT64_C(0x80000000) * pVol->uLeft) / 255;
-    pMixBuf->Volume.uRight = (UINT64_C(0x80000000) * pVol->uRight) / 255;
     //@todo: Ensure that the input is in the correct range/initialized!
-    pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * UINT64_C(0x8000);
-    pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * UINT64_C(0x8000);
+    pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * UINT32_C(VOL_0DB >> 16);
+    pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * UINT32_C(VOL_0DB >> 16);
 
     LogFlowFunc(("\t-> lVol=%#RX32, rVol=%#RX32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }
