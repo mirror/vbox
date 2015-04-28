@@ -2687,11 +2687,12 @@
 # define RT_INLINE_ASM_USES_INTRIN 0
 #endif
 
-/** @def RT_COMPILER_SUPPORTS_LAMDA
- * If the defined, the compiler supports lamda expressions. */
+/** @def RT_COMPILER_SUPPORTS_LAMBDA
+ * If the defined, the compiler supports lambda expressions.   These expressions
+ * are useful for embedding assertions and type checks into macros. */
 #if defined(_MSC_VER) && defined(__cplusplus)
 # if _MSC_VER >= 1600 /* Visual C++ v10.0 / 2010 */
-#  define RT_COMPILER_SUPPORTS_LAMDA
+#  define RT_COMPILER_SUPPORTS_LAMBDA
 # endif
 #elif defined(__GNUC__) && defined(__cplusplus)
 /* 4.5 or later, I think, if in ++11 mode... */
