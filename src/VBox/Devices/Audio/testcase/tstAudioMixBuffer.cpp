@@ -128,6 +128,8 @@ static int tstSingle(RTTEST hTest)
     RTTESTI_CHECK(audioMixBufFreeBytes(&mb) == AUDIOMIXBUF_S2B(&mb, cBufSize - written_abs));
     RTTESTI_CHECK(audioMixBufProcessed(&mb) == written_abs);
 
+    audioMixBufDestroy(&mb);
+
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
 
@@ -232,6 +234,10 @@ static int tstParentChild(RTTEST hTest)
     RTTESTI_CHECK(audioMixBufMixed(&child1) == 0);
     RTTESTI_CHECK(audioMixBufMixed(&child2) == 0);
 
+    audioMixBufDestroy(&parent);
+    audioMixBufDestroy(&child1);
+    audioMixBufDestroy(&child2);
+
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
 
@@ -327,6 +333,9 @@ static int tstConversion(RTTEST hTest)
 
     RTTESTI_CHECK(audioMixBufProcessed(&parent) == 0);
     RTTESTI_CHECK(audioMixBufMixed(&child) == 0);
+    
+    audioMixBufDestroy(&parent);
+    audioMixBufDestroy(&child);
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
