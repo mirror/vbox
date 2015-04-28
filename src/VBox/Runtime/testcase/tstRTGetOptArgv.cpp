@@ -36,6 +36,223 @@
 #include <iprt/test.h>
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static const struct
+{
+    /** The input string. */
+    const char *pszInput;
+    /** Separators, NULL if default. */
+    const char *pszSeparators;
+    /** The number of arguments. */
+    int         cArgs;
+    /** Expected argument vector. */
+    const char *apszArgs[16];
+    /** Expected quoted string, bourne shell. */
+    const char *pszOutBourneSh;
+    /** Expected quoted string, MSC CRT. */
+    const char *pszOutMsCrt;
+} g_aBourneTests[] =
+{
+    {
+        "0 1 \"\"2'' '3' 4 5 '''''6' 7 8 9 10 11",
+        NULL,
+        12,
+        {
+             "0",
+             "1",
+             "2",
+             "3",
+             "4",
+             "5",
+             "6",
+             "7",
+             "8",
+             "9",
+             "10",
+             "11",
+             NULL, NULL, NULL, NULL,
+        },
+        "0 1 2 3 4 5 6 7 8 9 10 11",
+        "0 1 2 3 4 5 6 7 8 9 10 11"
+    },
+    {
+        "\t\" asdf \"  '\"'xyz  \"\t\"  '\n'  '\"'  \"'\"\n\r ",
+        NULL,
+        6,
+        {
+            " asdf ",
+            "\"xyz",
+            "\t",
+            "\n",
+            "\"",
+            "\'",
+            NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "' asdf ' '\"xyz' '\t' '\n' '\"' ''\"'\"''",
+        "\" asdf \" \"\\\"xyz\" \"\t\" \"\n\" \"\\\"\" '"
+    },
+    {
+        ":0::1::::2:3:4:5:",
+        ":",
+        6,
+        {
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "0 1 2 3 4 5",
+        "0 1 2 3 4 5"
+    },
+    {
+        "0:1;2:3;4:5",
+        ";;;;;;;;;;;;;;;;;;;;;;:",
+        6,
+        {
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "0 1 2 3 4 5",
+        "0 1 2 3 4 5"
+    },
+    {
+        "abcd 'a ' ' b' ' c '",
+        NULL,
+        4,
+        {
+            "abcd",
+            "a ",
+            " b",
+            " c ",
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "abcd 'a ' ' b' ' c '",
+        "abcd \"a \" \" b\" \" c \""
+    },
+    {
+        "'a\n\\b' 'de'\"'\"'fg' h ''\"'\"''",
+        NULL,
+        4,
+        {
+            "a\n\\b",
+            "de'fg",
+            "h",
+            "'",
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "'a\n\\b' 'de'\"'\"'fg' h ''\"'\"''",
+        "\"a\n\\b\" de'fg h '"
+    },
+    {
+        "arg1 \"arg2=\\\"zyx\\\"\"  'arg3=\\\\\\'",
+        NULL,
+        3,
+        {
+            "arg1",
+            "arg2=\"zyx\"",
+            "arg3=\\\\\\",
+            NULL,  NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "arg1 'arg2=\"zyx\"' 'arg3=\\\\\\'",
+        "arg1 \"arg2=\\\"zyx\\\"\" arg3=\\\\\\"
+    },
+};
+
+
+static void tst3(void)
+{
+    /*
+     * Bourne shell round-tripping.
+     */
+    RTTestISub("Round-trips / BOURNE_SH");
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aBourneTests); i++)
+    {
+        /* First */
+        char **papszArgs1 = NULL;
+        int    cArgs1     = -1;
+        int rc = RTGetOptArgvFromString(&papszArgs1, &cArgs1, g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
+        if (rc == VINF_SUCCESS)
+        {
+            if (cArgs1 != g_aBourneTests[i].cArgs)
+                RTTestIFailed("g_aBourneTests[%i]: #1=%d, expected %d", i, cArgs1, g_aBourneTests[i].cArgs);
+            for (int iArg = 0; iArg < cArgs1; iArg++)
+                if (strcmp(papszArgs1[iArg], g_aBourneTests[i].apszArgs[iArg]) != 0)
+                    RTTestIFailed("g_aBourneTests[%i]/#1: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s', '%s'))",
+                                  i, iArg, papszArgs1[iArg], g_aBourneTests[i].apszArgs[iArg],
+                                  g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
+            RTTESTI_CHECK_RETV(papszArgs1[cArgs1] == NULL);
+
+            /* Second */
+            char *pszArgs2 = NULL;
+            rc = RTGetOptArgvToString(&pszArgs2, papszArgs1, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+            if (rc == VINF_SUCCESS)
+            {
+                if (strcmp(pszArgs2, g_aBourneTests[i].pszOutBourneSh))
+                    RTTestIFailed("g_aBourneTests[%i]/2: '%s', expected '%s'", i, pszArgs2, g_aBourneTests[i].pszOutBourneSh);
+
+                /*
+                 * Third
+                 */
+                char **papszArgs3 = NULL;
+                int    cArgs3     = -1;
+                rc = RTGetOptArgvFromString(&papszArgs3, &cArgs3, pszArgs2, NULL);
+                if (rc == VINF_SUCCESS)
+                {
+                    if (cArgs3 != g_aBourneTests[i].cArgs)
+                        RTTestIFailed("g_aBourneTests[%i]/3: %d, expected %d", i, cArgs3, g_aBourneTests[i].cArgs);
+                    for (int iArg = 0; iArg < cArgs3; iArg++)
+                        if (strcmp(papszArgs3[iArg], g_aBourneTests[i].apszArgs[iArg]) != 0)
+                            RTTestIFailed("g_aBourneTests[%i]/3: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s',))",
+                                          i, iArg, papszArgs3[iArg], g_aBourneTests[i].apszArgs[iArg], pszArgs2);
+                    RTTESTI_CHECK_RETV(papszArgs3[cArgs3] == NULL);
+
+                    /*
+                     * Fourth
+                     */
+                    char *pszArgs4 = NULL;
+                    rc = RTGetOptArgvToString(&pszArgs4, papszArgs3, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+                    if (rc == VINF_SUCCESS)
+                    {
+                        if (strcmp(pszArgs4, pszArgs2))
+                            RTTestIFailed("g_aBourneTests[%i]/4: '%s' does not match #4='%s'", i, pszArgs2, pszArgs4);
+                        RTStrFree(pszArgs4);
+                    }
+                    else
+                        RTTestIFailed("g_aBourneTests[%i]/4: RTGetOptArgvToString() -> %Rrc", i, rc);
+                    RTGetOptArgvFree(papszArgs3);
+                }
+                else
+                    RTTestIFailed("g_aBourneTests[%i]/3: RTGetOptArgvFromString() -> %Rrc", i, rc);
+                RTStrFree(pszArgs2);
+            }
+            else
+                RTTestIFailed("g_aBourneTests[%i]/2: RTGetOptArgvToString() -> %Rrc", i, rc);
+            RTGetOptArgvFree(papszArgs1);
+        }
+        else
+            RTTestIFailed("g_aBourneTests[%i]/1: RTGetOptArgvFromString(,,'%s', '%s') -> %Rrc",
+                          i, g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators, rc);
+    }
+
+}
+
+
 static void tst2(void)
 {
     RTTestISub("RTGetOptArgvToString / MS_CRT");
@@ -77,68 +294,33 @@ static void tst2(void)
         RTStrFree(pszCmdLine);
     }
 
-
-    RTTestISub("RTGetOptArgvToString / BOURNE_SH");
-
-    static const struct
-    {
-        const char * const      apszArgs[5];
-        const char             *pszCmdLine;
-    } s_aBournShTests[] =
-    {
-        {
-            { "abcd", "a ", " b", " c ", NULL },
-            "abcd 'a ' ' b' ' c '"
-        },
-        {
-            { "a\n\\b", "de'fg", "h", "'", NULL },
-            "'a\n\\b' 'de'\"'\"'fg' h ''\"'\"''"
-        }
-    };
-
-    for (size_t i = 0; i < RT_ELEMENTS(s_aBournShTests); i++)
+    for (size_t i = 0; i < RT_ELEMENTS(g_aBourneTests); i++)
     {
         char *pszCmdLine = NULL;
-        int rc = RTGetOptArgvToString(&pszCmdLine, s_aBournShTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+        int rc = RTGetOptArgvToString(&pszCmdLine, g_aBourneTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-        if (strcmp(s_aBournShTests[i].pszCmdLine, pszCmdLine))
-            RTTestIFailed("g_aTest[%i] failed:\n"
+        if (strcmp(g_aBourneTests[i].pszOutMsCrt, pszCmdLine))
+            RTTestIFailed("g_aBourneTests[%i] failed:\n"
                           " got      |%s|\n"
                           " expected |%s|\n",
-                          i, pszCmdLine, s_aBournShTests[i].pszCmdLine);
+                          i, pszCmdLine, g_aBourneTests[i].pszOutMsCrt);
         RTStrFree(pszCmdLine);
     }
 
 
-    RTTestISub("RTGetOptArgvToString <-> RTGetOptArgvFromString");
 
-    for (size_t i = 0; i < RT_ELEMENTS(s_aBournShTests); i++)
+    RTTestISub("RTGetOptArgvToString / BOURNE_SH");
+
+    for (size_t i = 0; i < RT_ELEMENTS(g_aBourneTests); i++)
     {
         char *pszCmdLine = NULL;
-        int rc = RTGetOptArgvToString(&pszCmdLine, s_aBournShTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+        int rc = RTGetOptArgvToString(&pszCmdLine, g_aBourneTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-
-        char  **papszArgs;
-        int     cArgs;
-        rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, NULL);
-        RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-
-        size_t j = 0;
-        while (papszArgs[j] && s_aBournShTests[i].apszArgs[j])
-        {
-            if (strcmp(papszArgs[j], s_aBournShTests[i].apszArgs[j]))
-                RTTestIFailed("Test #%u, argument #%u mismatch:\n"
-                              " FromString: |%s| (got)\n"
-                              " ToString:   |%s| (expected)\n",
-                              i, j, papszArgs[j], s_aBournShTests[i].apszArgs[j]);
-
-            /* next */
-            j++;
-        }
-        RTTESTI_CHECK(papszArgs[j] == NULL);
-        RTTESTI_CHECK(s_aBournShTests[i].apszArgs[j] == NULL);
-
-        RTGetOptArgvFree(papszArgs);
+        if (strcmp(g_aBourneTests[i].pszOutBourneSh, pszCmdLine))
+            RTTestIFailed("g_aBourneTests[%i] failed:\n"
+                          " got      |%s|\n"
+                          " expected |%s|\n",
+                          i, pszCmdLine, g_aBourneTests[i].pszOutBourneSh);
         RTStrFree(pszCmdLine);
     }
 }
@@ -203,7 +385,37 @@ static void tst1(void)
     RTTESTI_CHECK_RETV(!strcmp(papszArgs[5], "5"));
     RTTESTI_CHECK_RETV(!papszArgs[6]);
     RTGetOptArgvFree(papszArgs);
+
+    /*
+     * Tests from the list.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aBourneTests); i++)
+    {
+        papszArgs = NULL;
+        cArgs = -1;
+        int rc = RTGetOptArgvFromString(&papszArgs, &cArgs, g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
+        if (rc == VINF_SUCCESS)
+        {
+            if (cArgs == g_aBourneTests[i].cArgs)
+            {
+                for (int iArg = 0; iArg < cArgs; iArg++)
+                    if (strcmp(papszArgs[iArg], g_aBourneTests[i].apszArgs[iArg]) != 0)
+                        RTTestIFailed("g_aBourneTests[%i]: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s', '%s'))",
+                                      i, iArg, papszArgs[iArg], g_aBourneTests[i].apszArgs[iArg],
+                                      g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
+                RTTESTI_CHECK_RETV(papszArgs[cArgs] == NULL);
+            }
+            else
+                RTTestIFailed("g_aBourneTests[%i]: cArgs=%u, expected %u for RTGetOptArgvFromString(,,'%s', '%s')",
+                              i, cArgs, g_aBourneTests[i].cArgs, g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
+            RTGetOptArgvFree(papszArgs);
+        }
+        else
+            RTTestIFailed("g_aBourneTests[%i]: RTGetOptArgvFromString(,,'%s', '%s') -> %Rrc",
+                          i, g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators, rc);
+    }
 }
+
 
 int main()
 {
@@ -221,6 +433,7 @@ int main()
      */
     tst1();
     tst2();
+    tst3();
 
     /*
      * Summary.
