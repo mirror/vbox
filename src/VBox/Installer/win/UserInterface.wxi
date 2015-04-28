@@ -294,8 +294,15 @@
             </Control>
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
         <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
+                <!--
+                uncomment next two lines if there is a need in wizard page VBoxSelectionNetworkTypeDlg
+                don't forget to comment one line after
+                -->
+                <!--
                 <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
                 <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"><![CDATA[VersionNT < 600]]></Publish>
+                -->
+                <Publish Event="NewDialog" Value="VBoxCustomize2Dlg"/>
         <?else ?>
                 <Publish Event="NewDialog" Value="VBoxVerifyReadyDlg">1</Publish>
         <?endif ?>
@@ -408,9 +415,15 @@
             </Control>
             <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Back)">
+                <!--
+                uncomment next two lines if there is a need in wizard page VBoxSelectionNetworkTypeDlg
+                don't forget to comment one line after
+                -->
+                <!--
                 <Publish Event="NewDialog" Value="VBoxSelectionNetworkTypeDlg"><![CDATA[VersionNT >= 600]]></Publish>
                 <Publish Event="NewDialog" Value="VBoxCustomizeDlg"><![CDATA[VersionNT < 600]]></Publish>
-                
+                -->
+                <Publish Event="NewDialog" Value="VBoxCustomizeDlg"/>
             </Control>
             <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17"
                 Text="!(loc.ButtonText_Cancel)">
