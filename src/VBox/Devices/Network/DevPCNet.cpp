@@ -1356,16 +1356,13 @@ static void pcnetUpdateRingHandlers(PPCNETSTATE pThis)
             PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
                                         pThis->RDRAPhysOld & ~PAGE_OFFSET_MASK);
 
-        rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                          PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                          pThis->GCRDRA & ~PAGE_OFFSET_MASK,
-                                          RT_ALIGN(pcnetRdraAddr(pThis, 0), PAGE_SIZE) - 1,
-                                          pcnetHandleRingWrite, pDevIns,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
-                                          pThis->pDevInsHC->pvInstanceDataHC,
-                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
-                                          pThis->pDevInsHC->pvInstanceDataRC,
-                                          "PCNet receive ring write access handler");
+        rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
+                                        pThis->GCRDRA & ~PAGE_OFFSET_MASK,
+                                        RT_ALIGN(pcnetRdraAddr(pThis, 0), PAGE_SIZE) - 1,
+                                        pThis->hNoPollingHandlerType, pDevIns,
+                                        pThis->pDevInsHC->pvInstanceDataHC,
+                                        pThis->pDevInsHC->pvInstanceDataRC,
+                                        "PCNet receive ring write access handler");
         AssertRC(rc);
 
         pThis->RDRAPhysOld = pThis->GCRDRA;
@@ -1395,16 +1392,14 @@ static void pcnetUpdateRingHandlers(PPCNETSTATE pThis)
                 PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns),
                                              pThis->TDRAPhysOld & ~PAGE_OFFSET_MASK);
 
-            rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                              PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                              pThis->GCTDRA & ~PAGE_OFFSET_MASK,
-                                              RT_ALIGN(pcnetTdraAddr(pThis, 0), PAGE_SIZE) - 1,
-                                              pcnetHandleRingWrite, pDevIns,
-                                              g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
-                                              pThis->pDevInsHC->pvInstanceDataHC,
-                                              g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
-                                              pThis->pDevInsHC->pvInstanceDataRC,
-                                              "PCNet transmit ring write access handler");
+            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
+                                            pThis->GCTDRA & ~PAGE_OFFSET_MASK,
+                                            RT_ALIGN(pcnetTdraAddr(pThis, 0), PAGE_SIZE) - 1,
+                                            pThis->hNoPollingHandlerType,
+                                            pDevIns,
+                                            pThis->pDevInsHC->pvInstanceDataHC,
+                                            pThis->pDevInsHC->pvInstanceDataRC,
+                                            "PCNet transmit ring write access handler");
             AssertRC(rc);
 
             pThis->TDRAPhysOld = pThis->GCTDRA;
@@ -4947,7 +4942,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->PciDev.config[0x3f] = 0xff;
 
     /*
-     * We use own critical section (historical reasons).
+     * We use our own critical section (historical reasons).
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "PCNet#%u", iInstance);
     AssertRCReturn(rc, rc);
@@ -4978,6 +4973,15 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_SUCCESS(rc))
         rc = PDMR3LdrGetSymbolRCLazy(PDMDevHlpGetVM(pDevIns), NULL, NULL, "EMInterpretInstruction", (RTGCPTR *)&pThis->pfnEMInterpretInstructionRC);
     AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
+
+    rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
+                                          pcnetHandleRingWrite,
+                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
+                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
+                                          "PCNet ring write access handler",
+                                          &pThis->hNoPollingHandlerType);
+    AssertRCReturn(rc, rc);
+
 #else
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, pcnetTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "PCNet Poll Timer", &pThis->pTimerPollR3);

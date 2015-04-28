@@ -132,16 +132,16 @@ static void remNotifyHandlerInsert(PVM pVM, PREMHANDLERNOTIFICATION pRec)
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
  *
  * @param   pVM             Pointer to the VM.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER;
-    Rec.u.PhysicalRegister.enmType = enmType;
+    Rec.u.PhysicalRegister.enmKind = enmKind;
     Rec.u.PhysicalRegister.GCPhys = GCPhys;
     Rec.u.PhysicalRegister.cb = cb;
     Rec.u.PhysicalRegister.fHasHCHandler = fHasHCHandler;
@@ -153,17 +153,17 @@ VMMDECL(void) REMNotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
  *
  * @param   pVM             Pointer to the VM.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER;
-    Rec.u.PhysicalDeregister.enmType = enmType;
+    Rec.u.PhysicalDeregister.enmKind = enmKind;
     Rec.u.PhysicalDeregister.GCPhys = GCPhys;
     Rec.u.PhysicalDeregister.cb = cb;
     Rec.u.PhysicalDeregister.fHasHCHandler = fHasHCHandler;
@@ -176,18 +176,18 @@ VMMDECL(void) REMNotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
  *
  * @param   pVM             Pointer to the VM.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhysOld       Old handler range address.
  * @param   GCPhysNew       New handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler have a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMHANDLERNOTIFICATION Rec;
     Rec.enmKind = REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY;
-    Rec.u.PhysicalModify.enmType = enmType;
+    Rec.u.PhysicalModify.enmKind = enmKind;
     Rec.u.PhysicalModify.GCPhysOld = GCPhysOld;
     Rec.u.PhysicalModify.GCPhysNew = GCPhysNew;
     Rec.u.PhysicalModify.cb = cb;

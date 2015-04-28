@@ -1199,29 +1199,6 @@ DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVM pVM, RTGCPHYS GCPhys)
 
 
 /**
- * Gets the page state for a physical handler.
- *
- * @returns The physical handler page state.
- * @param   pCur    The physical handler in question.
- */
-DECLINLINE(unsigned) pgmHandlerPhysicalCalcState(PPGMPHYSHANDLER pCur)
-{
-    switch (pCur->enmType)
-    {
-        case PGMPHYSHANDLERTYPE_PHYSICAL_WRITE:
-            return PGM_PAGE_HNDL_PHYS_STATE_WRITE;
-
-        case PGMPHYSHANDLERTYPE_MMIO:
-        case PGMPHYSHANDLERTYPE_PHYSICAL_ALL:
-            return PGM_PAGE_HNDL_PHYS_STATE_ALL;
-
-        default:
-            AssertFatalMsgFailed(("Invalid type %d\n", pCur->enmType));
-    }
-}
-
-
-/**
  * Gets the page state for a virtual handler.
  *
  * @returns The virtual handler page state.

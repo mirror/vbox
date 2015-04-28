@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,6 +39,7 @@
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
+#include <iprt/list-off32.h>
 #include <iprt/sha.h>
 
 
@@ -574,6 +575,48 @@ typedef struct PGMMAPPING *PPGMMAPPING;
 
 
 /**
+ * Physical page access handler type registration.
+ */
+typedef struct PGMPHYSHANDLERTYPEINT
+{
+    /** Number of references.   */
+    uint32_t volatile                   cRefs;
+    /** Magic number (PGMPHYSHANDLERTYPEINT_MAGIC). */
+    uint32_t                            u32Magic;
+    /** Link of handler types anchored in PGMTREES::HeadPhysHandlerTypes.   */
+    RTLISTOFF32NODE                     ListNode;
+    /** The kind of accesses we're handling. */
+    PGMPHYSHANDLERKIND                  enmKind;
+    /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
+    uint32_t                            uState;
+    /** Pointer to RC callback function. */
+    RCPTRTYPE(PFNPGMRCPHYSHANDLER)      pfnHandlerRC;
+    /** Explicit alignment padding. */
+    RTRCPTR                             RCPtrPadding;
+    /** Pointer to R3 callback function. */
+    R3PTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
+    /** Pointer to R0 callback function. */
+    R0PTRTYPE(PFNPGMR0PHYSHANDLER)      pfnHandlerR0;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)             pszDesc;
+} PGMPHYSHANDLERTYPEINT;
+/** Pointer to a physical access handler type registration. */
+typedef PGMPHYSHANDLERTYPEINT *PPGMPHYSHANDLERTYPEINT;
+/** Magic value for the physical handler callbacks (Robert A. Heinlein). */
+#define PGMPHYSHANDLERTYPEINT_MAGIC        UINT32_C(0x19070707)
+/** Magic value for the physical handler callbacks. */
+#define PGMPHYSHANDLERTYPEINT_MAGIC_DEAD   UINT32_C(0x19880508)
+
+/**
+ * Converts a handle to a pointer.
+ * @returns PPGMPHYSHANDLERTYPEINT
+ * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_hType         Physical access handler handle.
+ */
+#define PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMPHYSHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
+
+
+/**
  * Physical page access handler structure.
  *
  * This is used to keep track of physical address ranges
@@ -582,26 +625,23 @@ typedef struct PGMMAPPING *PPGMMAPPING;
 typedef struct PGMPHYSHANDLER
 {
     AVLROGCPHYSNODECORE                 Core;
-    /** Access type. */
-    PGMPHYSHANDLERTYPE                  enmType;
     /** Number of pages to update. */
     uint32_t                            cPages;
     /** Set if we have pages that have been aliased. */
     uint32_t                            cAliasedPages;
     /** Set if we have pages that have temporarily been disabled. */
     uint32_t                            cTmpOffPages;
-    /** Pointer to R3 callback function. */
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
-    /** User argument for R3 handlers. */
-    R3PTRTYPE(void *)                   pvUserR3;
-    /** Pointer to R0 callback function. */
-    R0PTRTYPE(PFNPGMR0PHYSHANDLER)      pfnHandlerR0;
-    /** User argument for R0 handlers. */
-    R0PTRTYPE(void *)                   pvUserR0;
-    /** Pointer to RC callback function. */
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)      pfnHandlerRC;
+    /** Registered handler type handle (heap offset). */
+    PGMPHYSHANDLERTYPE                  hType;
     /** User argument for RC handlers. */
     RCPTRTYPE(void *)                   pvUserRC;
+#if HC_ARCH_BITS == 64
+    RTRCPTR                             Padding0; /**< Explicit alignment padding. */
+#endif
+    /** User argument for R3 handlers. */
+    R3PTRTYPE(void *)                   pvUserR3;
+    /** User argument for R0 handlers. */
+    R0PTRTYPE(void *)                   pvUserR0;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 #ifdef VBOX_WITH_STATISTICS
@@ -611,6 +651,15 @@ typedef struct PGMPHYSHANDLER
 } PGMPHYSHANDLER;
 /** Pointer to a physical page access handler structure. */
 typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
+
+/**
+ * Gets the type record for a physical handler (no reference added).
+ * @returns PPGMPHYSHANDLERTYPEINT
+ * @param   a_pVM           Pointer to the cross context VM structure.
+ * @param   a_pPhysHandler  Pointer to the physical handler structure
+ *                          (PGMPHYSHANDLER).
+ */
+#define PGMPHYSHANDLER_GET_TYPE(a_pVM, a_pPhysHandler) PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pPhysHandler)->hType)
 
 
 /**
@@ -2313,18 +2362,8 @@ typedef struct PGMPOOL
     uint16_t                    iModifiedHead;
     /** The current number of modified pages. */
     uint16_t                    cModifiedPages;
-    /** Access handler, RC. */
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnAccessHandlerRC;
-    /** Access handler, R0. */
-    R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnAccessHandlerR0;
-    /** Access handler, R3. */
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
-    /** The access handler description (R3 ptr). */
-    R3PTRTYPE(const char *)         pszAccessHandler;
-# if HC_ARCH_BITS == 32
-    /** Alignment padding. */
-    uint32_t                    u32Padding2;
-# endif
+    /** Physical access handler type registration handle. */
+    PGMPHYSHANDLERTYPE          hAccessHandlerType;
     /** Next available slot (in aDirtyPages). */
     uint32_t                    idxFreeDirtyPage;
     /** Number of active dirty pages. */
@@ -2610,9 +2649,12 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
 
 
 /**
- * Trees are using self relative offsets as pointers.
- * So, all its data, including the root pointer, must be in the heap for HC and GC
- * to have the same layout.
+ * Roots and anchors for trees and list employing self relative offsets as
+ * pointers.
+ *
+ * When using self-relative offsets instead of pointers, the offsets needs to be
+ * the same in all offsets.  Thus the roots and anchors needs to live on the
+ * hyper heap just like the nodes.
  */
 typedef struct PGMTREES
 {
@@ -2624,6 +2666,9 @@ typedef struct PGMTREES
     AVLROGCPHYSTREE                 PhysToVirtHandlers;
     /** Virtual access handlers for the hypervisor (AVL range + GC ptr tree). */
     AVLROGCPTRTREE                  HyperVirtHandlers;
+    /** List of physical access handler types (offset pointers) of type
+     * PGMPHYSHANDLERTYPEINT.  This is needed for relocations. */
+    RTLISTOFF32ANCHOR               HeadPhysHandlerTypes;
 } PGMTREES;
 /** Pointer to PGM trees. */
 typedef PGMTREES *PPGMTREES;
@@ -3155,6 +3200,11 @@ typedef struct PGM
     RTGCPTR                         GCPtrMappingFixed;
     /** The address of the previous RAM range mapping. */
     RTGCPTR                         GCPtrPrevRamRangeMapping;
+
+    /** Physical access handler type for ROM protection. */
+    PGMPHYSHANDLERTYPE              hRomPhysHandlerType;
+    /** Alignment padding.   */
+    uint32_t                        u32Padding;
 
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
     RTGCPHYS                        GCPhys4MBPSEMask;
@@ -4058,6 +4108,8 @@ int             pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 int             pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
 
 #ifdef IN_RING3
+DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                           PGMACCESSTYPE enmAccessType, void *pvUser);
 void            pgmR3PhysRelinkRamRanges(PVM pVM);
 int             pgmR3PhysRamPreAllocate(PVM pVM);
 int             pgmR3PhysRamReset(PVM pVM);

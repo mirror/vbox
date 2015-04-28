@@ -87,6 +87,11 @@ VMMR3_INT_DECL(int) GIMR3Init(PVM pVM)
     AssertCompile(sizeof(pVM->gim.s) <= sizeof(pVM->gim.padding));
 
     /*
+     * Initialize members.
+     */
+    pVM->gim.s.hSemiReadOnlyMmio2Handler = NIL_PGMPHYSHANDLERTYPE;
+
+    /*
      * Register the saved state data unit.
      */
     int rc = SSMR3RegisterInternal(pVM, "GIM", 0 /* uInstance */, GIM_SAVED_STATE_VERSION, sizeof(GIM),
@@ -542,20 +547,28 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
     if (RT_SUCCESS(rc))
     {
         /*
-         * Install access-handlers for the mapped page to prevent (ignore) writes to it from the guest.
+         * Install access-handlers for the mapped page to prevent (ignore) writes to it
+         * from the guest.
          */
-        rc = PGMR3HandlerPhysicalRegister(pVM,
-                                          PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                          GCPhysRegion, GCPhysRegion + (pRegion->cbRegion - 1),
-                                          gimR3Mmio2WriteHandler,  NULL /* pvUserR3 */,
-                                          NULL /* pszModR0 */, NULL /* pszHandlerR0 */, NIL_RTR0PTR /* pvUserR0 */,
-                                          NULL /* pszModRC */, NULL /* pszHandlerRC */, NIL_RTRCPTR /* pvUserRC */,
-                                          pRegion->szDescription);
+        if (pVM->gim.s.hSemiReadOnlyMmio2Handler == NIL_PGMPHYSHANDLERTYPE)
+            rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
+                                                  gimR3Mmio2WriteHandler,
+                                                  NULL /* pszModR0 */, NULL /* pszHandlerR0 */,
+                                                  NULL /* pszModRC */, NULL /* pszHandlerRC */,
+                                                  "GIM read-only MMIO2 handler",
+                                                  &pVM->gim.s.hSemiReadOnlyMmio2Handler);
         if (RT_SUCCESS(rc))
         {
-            pRegion->fMapped    = true;
-            pRegion->GCPhysPage = GCPhysRegion;
-            return rc;
+            rc = PGMHandlerPhysicalRegister(pVM,  GCPhysRegion, GCPhysRegion + (pRegion->cbRegion - 1),
+                                            pVM->gim.s.hSemiReadOnlyMmio2Handler,
+                                            NULL /* pvUserR3 */, NIL_RTR0PTR /* pvUserR0 */, NIL_RTRCPTR /* pvUserRC */,
+                                            pRegion->szDescription);
+            if (RT_SUCCESS(rc))
+            {
+                pRegion->fMapped    = true;
+                pRegion->GCPhysPage = GCPhysRegion;
+                return rc;
+            }
         }
 
         PDMDevHlpMMIO2Unmap(pDevIns, pRegion->iRegion, GCPhysRegion);
@@ -579,7 +592,7 @@ VMMR3_INT_DECL(int) GIMR3Mmio2HandlerPhysicalRegister(PVM pVM, PGIMMMIO2REGION p
     AssertReturn(pRegion->fMapped, VERR_GIM_IPE_3);
 
     return PGMR3HandlerPhysicalRegister(pVM,
-                                        PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
+                                        PGMPHYSHANDLERKIND_WRITE,
                                         pRegion->GCPhysPage, pRegion->GCPhysPage + (pRegion->cbRegion - 1),
                                         gimR3Mmio2WriteHandler,  NULL /* pvUserR3 */,
                                         NULL /* pszModR0 */, NULL /* pszHandlerR0 */, NIL_RTR0PTR /* pvUserR0 */,

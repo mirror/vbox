@@ -181,46 +181,58 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     {
         pVM->iom.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->iom.s.pTreesR3);
         pVM->iom.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->iom.s.pTreesR3);
-        pVM->iom.s.pfnMMIOHandlerRC = NIL_RTGCPTR;
-        pVM->iom.s.pfnMMIOHandlerR0 = NIL_RTR0PTR;
 
         /*
-         * Info.
+         * Register the MMIO access handler type.
          */
-        DBGFR3InfoRegisterInternal(pVM, "ioport", "Dumps all IOPort ranges. No arguments.", &iomR3IOPortInfo);
-        DBGFR3InfoRegisterInternal(pVM, "mmio", "Dumps all MMIO ranges. No arguments.", &iomR3MMIOInfo);
+        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
+                                              IOMR3MMIOHandler,
+                                              NULL, "IOMMMIOHandler",
+                                              NULL, "IOMMMIOHandler",
+                                              "MMIO",
+                                              &pVM->iom.s.hMmioHandlerType);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
 
-        /*
-         * Statistics.
-         */
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the IOMMMIOHandler() body, only success calls.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access2",              STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access4",              STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access8",              STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZMMIOFailures,     STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/MMIOFailures",         STAMUNIT_OCCURENCES,     "Number of times IOMMMIOHandler() didn't service the request.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstMov,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOV",             STAMUNIT_TICKS_PER_CALL, "Profiling of the MOV instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstCmp,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/CMP",             STAMUNIT_TICKS_PER_CALL, "Profiling of the CMP instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstAnd,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/AND",             STAMUNIT_TICKS_PER_CALL, "Profiling of the AND instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstOr,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/OR",              STAMUNIT_TICKS_PER_CALL, "Profiling of the OR instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstXor,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XOR",             STAMUNIT_TICKS_PER_CALL, "Profiling of the XOR instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstBt,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/BT",              STAMUNIT_TICKS_PER_CALL, "Profiling of the BT instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstTest,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/TEST",            STAMUNIT_TICKS_PER_CALL, "Profiling of the TEST instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstXchg,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XCHG",            STAMUNIT_TICKS_PER_CALL, "Profiling of the XCHG instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstStos,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/STOS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the STOS instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstLods,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/LODS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the LODS instruction emulation.");
+            /*
+             * Info.
+             */
+            DBGFR3InfoRegisterInternal(pVM, "ioport", "Dumps all IOPort ranges. No arguments.", &iomR3IOPortInfo);
+            DBGFR3InfoRegisterInternal(pVM, "mmio", "Dumps all MMIO ranges. No arguments.", &iomR3MMIOInfo);
+
+            /*
+             * Statistics.
+             */
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the IOMMMIOHandler() body, only success calls.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access2",              STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access4",              STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access8",              STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZMMIOFailures,     STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/MMIOFailures",         STAMUNIT_OCCURENCES,     "Number of times IOMMMIOHandler() didn't service the request.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstMov,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOV",             STAMUNIT_TICKS_PER_CALL, "Profiling of the MOV instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstCmp,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/CMP",             STAMUNIT_TICKS_PER_CALL, "Profiling of the CMP instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstAnd,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/AND",             STAMUNIT_TICKS_PER_CALL, "Profiling of the AND instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstOr,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/OR",              STAMUNIT_TICKS_PER_CALL, "Profiling of the OR instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstXor,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XOR",             STAMUNIT_TICKS_PER_CALL, "Profiling of the XOR instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstBt,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/BT",              STAMUNIT_TICKS_PER_CALL, "Profiling of the BT instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstTest,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/TEST",            STAMUNIT_TICKS_PER_CALL, "Profiling of the TEST instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstXchg,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XCHG",            STAMUNIT_TICKS_PER_CALL, "Profiling of the XCHG instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstStos,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/STOS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the STOS instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstLods,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/LODS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the LODS instruction emulation.");
 #ifdef IOM_WITH_MOVS_SUPPORT
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstMovs,     STAMTYPE_PROFILE_ADV, "/IOM/RZ-MMIOHandler/Inst/MOVS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsToMMIO,   STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/ToMMIO",     STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - Mem2MMIO.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsFromMMIO, STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/FromMMIO",   STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2Mem.");
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsMMIO,     STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/MMIO2MMIO",  STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2MMIO.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovs,     STAMTYPE_PROFILE_ADV, "/IOM/RZ-MMIOHandler/Inst/MOVS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsToMMIO,   STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/ToMMIO",     STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - Mem2MMIO.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsFromMMIO, STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/FromMMIO",   STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2Mem.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsMMIO,     STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/MMIO2MMIO",  STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2MMIO.");
 #endif
-        STAM_REG(pVM, &pVM->iom.s.StatRZInstOther,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Inst/Other",           STAMUNIT_OCCURENCES,     "Other instructions counter.");
-        STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to IOMR3MMIOHandler.");
-        STAM_REG(pVM, &pVM->iom.s.StatInstIn,             STAMTYPE_COUNTER, "/IOM/IOWork/In",                           STAMUNIT_OCCURENCES,     "Counter of any IN instructions.");
-        STAM_REG(pVM, &pVM->iom.s.StatInstOut,            STAMTYPE_COUNTER, "/IOM/IOWork/Out",                          STAMUNIT_OCCURENCES,     "Counter of any OUT instructions.");
-        STAM_REG(pVM, &pVM->iom.s.StatInstIns,            STAMTYPE_COUNTER, "/IOM/IOWork/Ins",                          STAMUNIT_OCCURENCES,     "Counter of any INS instructions.");
-        STAM_REG(pVM, &pVM->iom.s.StatInstOuts,           STAMTYPE_COUNTER, "/IOM/IOWork/Outs",                         STAMUNIT_OCCURENCES,     "Counter of any OUTS instructions.");
+            STAM_REG(pVM, &pVM->iom.s.StatRZInstOther,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Inst/Other",           STAMUNIT_OCCURENCES,     "Other instructions counter.");
+            STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to IOMR3MMIOHandler.");
+            STAM_REG(pVM, &pVM->iom.s.StatInstIn,             STAMTYPE_COUNTER, "/IOM/IOWork/In",                           STAMUNIT_OCCURENCES,     "Counter of any IN instructions.");
+            STAM_REG(pVM, &pVM->iom.s.StatInstOut,            STAMTYPE_COUNTER, "/IOM/IOWork/Out",                          STAMUNIT_OCCURENCES,     "Counter of any OUT instructions.");
+            STAM_REG(pVM, &pVM->iom.s.StatInstIns,            STAMTYPE_COUNTER, "/IOM/IOWork/Ins",                          STAMUNIT_OCCURENCES,     "Counter of any INS instructions.");
+            STAM_REG(pVM, &pVM->iom.s.StatInstOuts,           STAMTYPE_COUNTER, "/IOM/IOWork/Outs",                         STAMUNIT_OCCURENCES,     "Counter of any OUTS instructions.");
+        }
     }
 
     /* Redundant, but just in case we change something in the future */
@@ -307,9 +319,6 @@ VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->iom.s.pTreesRC = MMHyperR3ToRC(pVM, pVM->iom.s.pTreesR3);
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeRC, true, iomR3RelocateIOPortCallback, &offDelta);
     RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesR3->MMIOTree,     true, iomR3RelocateMMIOCallback,   &offDelta);
-
-    if (pVM->iom.s.pfnMMIOHandlerRC != NIL_RTRCPTR)
-        pVM->iom.s.pfnMMIOHandlerRC += offDelta;
 
     /*
      * Reset the raw-mode cache (don't bother relocating it).
@@ -1378,20 +1387,6 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
                     VERR_INVALID_PARAMETER);
 
     /*
-     * Resolve the GC/R0 handler addresses lazily because of init order.
-     */
-    if (pVM->iom.s.pfnMMIOHandlerR0 == NIL_RTR0PTR)
-    {
-        if (!HMIsEnabled(pVM))
-        {
-            rc = PDMR3LdrGetSymbolRC(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerRC);
-            AssertLogRelRCReturn(rc, rc);
-        }
-        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
-        AssertLogRelRCReturn(rc, rc);
-    }
-
-    /*
      * Allocate new range record and initialize it.
      */
     PIOMMMIORANGE pRange;
@@ -1428,10 +1423,8 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
         /*
          * Try register it with PGM and then insert it into the tree.
          */
-        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange,
-                                   IOMR3MMIOHandler, pRange,
-                                   pVM->iom.s.pfnMMIOHandlerR0, MMHyperR3ToR0(pVM, pRange),
-                                   pVM->iom.s.pfnMMIOHandlerRC, MMHyperR3ToRC(pVM, pRange), pszDesc);
+        rc = PGMR3PhysMMIORegister(pVM, GCPhysStart, cbRange, pVM->iom.s.hMmioHandlerType,
+                                   pRange, MMHyperR3ToR0(pVM, pRange), MMHyperR3ToRC(pVM, pRange), pszDesc);
         if (RT_SUCCESS(rc))
         {
             IOM_LOCK_EXCL(pVM);

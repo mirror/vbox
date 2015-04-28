@@ -314,6 +314,12 @@ typedef struct
     /** External command to be executed in the FIFO thread. */
     uint8_t                     u8FIFOExtCommand;
     bool                        Padding6;
+# if defined(DEBUG_GMR_ACCESS) || defined(DEBUG_FIFO_ACCESS)
+    /** GMR debug access handler type handle. */
+    PGMPHYSHANDLERTYPE          hGmrAccessHandlerType;
+    /** FIFO debug access handler type handle. */
+    PGMPHYSHANDLERTYPE          hFifoAccessHandlerType;
+# endif
 } VMSVGAState;
 #endif /* VBOX_WITH_VMSVGA */
 
@@ -452,10 +458,13 @@ typedef struct VGAState {
 #ifdef VBOX_WITH_VMSVGA
     /* Whether the SVGA emulation is enabled or not. */
     bool                        fVMSVGAEnabled;
-    bool                        Padding1[1];
+    bool                        Padding1[1+4];
 #else
-    bool                        Padding1[2];
+    bool                        Padding1[2+4];
 #endif
+
+    /** Physical access type for the linear frame buffer dirty page tracking. */
+    PGMPHYSHANDLERTYPE          hLfbAccessHandlerType;
 
     /** The physical address the VRAM was assigned. */
     RTGCPHYS                    GCPhysVRAM;

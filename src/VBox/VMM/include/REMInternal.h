@@ -78,7 +78,7 @@ typedef struct REMHANDLERNOTIFICATION
         {
             RTGCPHYS            GCPhys;
             RTGCPHYS            cb;
-            PGMPHYSHANDLERTYPE  enmType;
+            PGMPHYSHANDLERKIND  enmKind;
             bool                fHasHCHandler;
         } PhysicalRegister;
 
@@ -86,7 +86,7 @@ typedef struct REMHANDLERNOTIFICATION
         {
             RTGCPHYS            GCPhys;
             RTGCPHYS            cb;
-            PGMPHYSHANDLERTYPE  enmType;
+            PGMPHYSHANDLERKIND  enmKind;
             bool                fHasHCHandler;
             bool                fRestoreAsRAM;
         } PhysicalDeregister;
@@ -96,7 +96,7 @@ typedef struct REMHANDLERNOTIFICATION
             RTGCPHYS            GCPhysOld;
             RTGCPHYS            GCPhysNew;
             RTGCPHYS            cb;
-            PGMPHYSHANDLERTYPE  enmType;
+            PGMPHYSHANDLERKIND  enmKind;
             bool                fHasHCHandler;
             bool                fRestoreAsRAM;
         } PhysicalModify;

@@ -115,9 +115,10 @@ static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint3
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32);
 
-static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
-static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler);
-static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
+static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
+static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler);
+static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM);
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -3089,7 +3090,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
             {
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_REGISTER:
                     remR3NotifyHandlerPhysicalRegister(pVM,
-                                                       pCur->u.PhysicalRegister.enmType,
+                                                       pCur->u.PhysicalRegister.enmKind,
                                                        pCur->u.PhysicalRegister.GCPhys,
                                                        pCur->u.PhysicalRegister.cb,
                                                        pCur->u.PhysicalRegister.fHasHCHandler);
@@ -3097,7 +3098,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_DEREGISTER:
                     remR3NotifyHandlerPhysicalDeregister(pVM,
-                                                         pCur->u.PhysicalDeregister.enmType,
+                                                         pCur->u.PhysicalDeregister.enmKind,
                                                          pCur->u.PhysicalDeregister.GCPhys,
                                                          pCur->u.PhysicalDeregister.cb,
                                                          pCur->u.PhysicalDeregister.fHasHCHandler,
@@ -3106,7 +3107,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
 
                 case REMHANDLERNOTIFICATIONKIND_PHYSICAL_MODIFY:
                     remR3NotifyHandlerPhysicalModify(pVM,
-                                                     pCur->u.PhysicalModify.enmType,
+                                                     pCur->u.PhysicalModify.enmKind,
                                                      pCur->u.PhysicalModify.GCPhysOld,
                                                      pCur->u.PhysicalModify.GCPhysNew,
                                                      pCur->u.PhysicalModify.cb,
@@ -3310,7 +3311,7 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
@@ -3318,10 +3319,11 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
  * @remark  MMR3PhysRomRegister assumes that this function will not apply the
  *          Handler memory type to memory which has no HC handler.
  */
-static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                               bool fHasHCHandler)
 {
-    Log(("REMR3NotifyHandlerPhysicalRegister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%d\n",
-          enmType, GCPhys, cb, fHasHCHandler));
+    Log(("REMR3NotifyHandlerPhysicalRegister: enmKind=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%d\n",
+         enmKind, GCPhys, cb, fHasHCHandler));
 
     VM_ASSERT_EMT(pVM);
     Assert(RT_ALIGN_T(GCPhys, PAGE_SIZE, RTGCPHYS) == GCPhys);
@@ -3331,7 +3333,7 @@ static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
     ASMAtomicIncU32(&pVM->rem.s.cIgnoreAll);
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
-    if (enmType == PGMPHYSHANDLERTYPE_MMIO)
+    if (enmKind == PGMPHYSHANDLERKIND_MMIO)
         cpu_register_physical_memory_offset(GCPhys, cb, pVM->rem.s.iMMIOMemType, GCPhys);
     else if (fHasHCHandler)
         cpu_register_physical_memory_offset(GCPhys, cb, pVM->rem.s.iHandlerMemType, GCPhys);
@@ -3344,7 +3346,7 @@ static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
  * Notification about a successful PGMR3HandlerPhysicalRegister() call.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
@@ -3352,27 +3354,29 @@ static void remR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmTy
  * @remark  MMR3PhysRomRegister assumes that this function will not apply the
  *          Handler memory type to memory which has no HC handler.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                   bool fHasHCHandler)
 {
     REMR3ReplayHandlerNotifications(pVM);
 
-    remR3NotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, cb, fHasHCHandler);
+    remR3NotifyHandlerPhysicalRegister(pVM, enmKind, GCPhys, cb, fHasHCHandler);
 }
 
 /**
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb,
+                                                 bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalDeregister: enmType=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
-          enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
+    Log(("REMR3NotifyHandlerPhysicalDeregister: enmKind=%d GCPhys=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool RAM=%08x\n",
+         enmKind, GCPhys, cb, fHasHCHandler, fRestoreAsRAM, MMR3PhysGetRamSize(pVM)));
     VM_ASSERT_EMT(pVM);
 
 
@@ -3380,7 +3384,7 @@ static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
 
     PDMCritSectEnter(&pVM->rem.s.CritSectRegister, VERR_SEM_BUSY);
     /** @todo this isn't right, MMIO can (in theory) be restored as RAM. */
-    if (enmType == PGMPHYSHANDLERTYPE_MMIO)
+    if (enmKind == PGMPHYSHANDLERKIND_MMIO)
         cpu_register_physical_memory_offset(GCPhys, cb, IO_MEM_UNASSIGNED, GCPhys);
     else if (fHasHCHandler)
     {
@@ -3405,16 +3409,16 @@ static void remR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enm
  * Notification about a successful PGMR3HandlerPhysicalDeregister() operation.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhys          Handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMR3ReplayHandlerNotifications(pVM);
-    remR3NotifyHandlerPhysicalDeregister(pVM, enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM);
+    remR3NotifyHandlerPhysicalDeregister(pVM, enmKind, GCPhys, cb, fHasHCHandler, fRestoreAsRAM);
 }
 
 
@@ -3422,19 +3426,19 @@ REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhysOld       Old handler range address.
  * @param   GCPhysNew       New handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
-    Log(("REMR3NotifyHandlerPhysicalModify: enmType=%d GCPhysOld=%RGp GCPhysNew=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
-          enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
+    Log(("REMR3NotifyHandlerPhysicalModify: enmKind=%d GCPhysOld=%RGp GCPhysNew=%RGp cb=%RGp fHasHCHandler=%RTbool fRestoreAsRAM=%RTbool\n",
+         enmKind, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM));
     VM_ASSERT_EMT(pVM);
-    AssertReleaseMsg(enmType != PGMPHYSHANDLERTYPE_MMIO, ("enmType=%d\n", enmType));
+    AssertReleaseMsg(enmKind != PGMPHYSHANDLERKIND_MMIO, ("enmKind=%d\n", enmKind));
 
     if (fHasHCHandler)
     {
@@ -3470,18 +3474,18 @@ static void remR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
  * Notification about a successful PGMR3HandlerPhysicalModify() call.
  *
  * @param   pVM             VM Handle.
- * @param   enmType         Handler type.
+ * @param   enmKind         Kind of access handler.
  * @param   GCPhysOld       Old handler range address.
  * @param   GCPhysNew       New handler range address.
  * @param   cb              Size of the handler range.
  * @param   fHasHCHandler   Set if the handler has a HC callback function.
  * @param   fRestoreAsRAM   Whether the to restore it as normal RAM or as unassigned memory.
  */
-REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
     REMR3ReplayHandlerNotifications(pVM);
 
-    remR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM);
+    remR3NotifyHandlerPhysicalModify(pVM, enmKind, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM);
 }
 
 /**

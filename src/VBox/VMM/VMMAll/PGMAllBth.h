@@ -178,6 +178,8 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
         PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhysFault);
         if (pCur)
         {
+            PPGMPHYSHANDLERTYPEINT pCurType = PGMPHYSHANDLER_GET_TYPE(pVM, pCur);
+
 #  ifdef PGM_SYNC_N_PAGES
             /*
              * If the region is write protected and we got a page not present fault, then sync
@@ -187,7 +189,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
              * ASSUMES that there is only one handler per page or that they have similar write properties.
              */
             if (   !(uErr & X86_TRAP_PF_P)
-                &&  pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE)
+                &&  pCurType->enmKind == PGMPHYSHANDLERKIND_WRITE)
             {
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                 rc = PGM_BTH_NAME(SyncPage)(pVCpu, pGstWalk->Pde, pvFault, PGM_SYNC_NR_PAGES, uErr);
@@ -210,7 +212,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
              * If the access was not thru a #PF(RSVD|...) resync the page.
              */
             if (   !(uErr & X86_TRAP_PF_RSVD)
-                && pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
+                && pCurType->enmKind != PGMPHYSHANDLERKIND_WRITE
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
                 && pGstWalk->Core.fEffectiveRW
                 && !pGstWalk->Core.fEffectiveUS /** @todo Remove pGstWalk->Core.fEffectiveUS and X86_PTE_US further down in the sync code. */
@@ -233,11 +235,11 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             }
 #  endif
 
-            AssertMsg(   pCur->enmType != PGMPHYSHANDLERTYPE_PHYSICAL_WRITE
-                      || (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE && (uErr & X86_TRAP_PF_RW)),
-                      ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enum=%d\n",
-                       pvFault, GCPhysFault, pPage, uErr, pCur->enmType));
-            if (pCur->enmType == PGMPHYSHANDLERTYPE_PHYSICAL_WRITE)
+            AssertMsg(   pCurType->enmKind != PGMPHYSHANDLERKIND_WRITE
+                      || (pCurType->enmKind == PGMPHYSHANDLERKIND_WRITE && (uErr & X86_TRAP_PF_RW)),
+                      ("Unexpected trap for physical handler: %08X (phys=%08x) pPage=%R[pgmpage] uErr=%X, enmKind=%d\n",
+                       pvFault, GCPhysFault, pPage, uErr, pCurType->enmKind));
+            if (pCurType->enmKind == PGMPHYSHANDLERKIND_WRITE)
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysWrite);
             else
             {
@@ -245,18 +247,18 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysAllOpt);
             }
 
-            if (pCur->CTX_SUFF(pfnHandler))
+            if (pCurType->CTX_SUFF(pfnHandler))
             {
                 PPGMPOOL            pPool      = pVM->pgm.s.CTX_SUFF(pPool);
                 void               *pvUser     = pCur->CTX_SUFF(pvUser);
 #  ifdef IN_RING0
-                PFNPGMR0PHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
+                PFNPGMR0PHYSHANDLER pfnHandler = pCurType->CTX_SUFF(pfnHandler);
 #  else
-                PFNPGMRCPHYSHANDLER pfnHandler = pCur->CTX_SUFF(pfnHandler);
+                PFNPGMRCPHYSHANDLER pfnHandler = pCurType->CTX_SUFF(pfnHandler);
 #  endif
 
                 STAM_PROFILE_START(&pCur->Stat, h);
-                if (pfnHandler != pPool->CTX_SUFF(pfnAccessHandler))
+                if (pCur->hType != pPool->hAccessHandlerType)
                 {
                     pgmUnlock(pVM);
                     *pfLockTaken = false;

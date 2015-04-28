@@ -319,13 +319,9 @@ typedef struct IOM
     /** Pointer to the trees - R0 ptr. */
     R0PTRTYPE(PIOMTREES)            pTreesR0;
 
-    /** The ring-0 address of IOMMMIOHandler. */
-    R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnMMIOHandlerR0;
-    /** The RC address of IOMMMIOHandler. */
-    RCPTRTYPE(PFNPGMRCPHYSHANDLER)  pfnMMIOHandlerRC;
-#if HC_ARCH_BITS == 64
-    RTRCPTR                         padding;
-#endif
+    /** MMIO physical access handler type.   */
+    PGMPHYSHANDLERTYPE              hMmioHandlerType;
+    uint32_t                        u32Padding;
 
     /** Lock serializing EMT access to IOM. */
 #ifdef IOM_WITH_CRIT_SECT_RW

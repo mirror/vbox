@@ -365,9 +365,9 @@ static DECLCALLBACKPTR(void, pfnREMR3ReplayHandlerNotifications)(PVM pVM);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamRegister)(PVM, RTGCPHYS, RTGCPHYS, unsigned);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRamDeregister)(PVM, RTGCPHYS, RTUINT);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyPhysRomRegister)(PVM, RTGCPHYS, RTUINT, void *, bool);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalModify)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, RTGCPHYS, bool, bool);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalRegister)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, bool);
-static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalDeregister)(PVM, PGMPHYSHANDLERTYPE, RTGCPHYS, RTGCPHYS, bool, bool);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalModify)(PVM, PGMPHYSHANDLERKIND, RTGCPHYS, RTGCPHYS, RTGCPHYS, bool, bool);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalRegister)(PVM, PGMPHYSHANDLERKIND, RTGCPHYS, RTGCPHYS, bool);
+static DECLCALLBACKPTR(void, pfnREMR3NotifyHandlerPhysicalDeregister)(PVM, PGMPHYSHANDLERKIND, RTGCPHYS, RTGCPHYS, bool, bool);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyInterruptSet)(PVM, PVMCPU);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyInterruptClear)(PVM, PVMCPU);
 static DECLCALLBACKPTR(void, pfnREMR3NotifyTimerPending)(PVM, PVMCPU);
@@ -483,7 +483,7 @@ static const REMPARMDESC g_aArgsNotifyPhysRomRegister[] =
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalModify[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERKIND), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
@@ -493,7 +493,7 @@ static const REMPARMDESC g_aArgsNotifyHandlerPhysicalModify[] =
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalRegister[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERKIND), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
@@ -501,7 +501,7 @@ static const REMPARMDESC g_aArgsNotifyHandlerPhysicalRegister[] =
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalDeregister[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERKIND), NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL },
@@ -2381,27 +2381,27 @@ REMR3DECL(void) REMR3NotifyPhysRamDeregister(PVM pVM, RTGCPHYS GCPhys, RTUINT cb
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyHandlerPhysicalRegister));
-    pfnREMR3NotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, cb, fHasHCHandler);
+    pfnREMR3NotifyHandlerPhysicalRegister(pVM, enmKind, GCPhys, cb, fHasHCHandler);
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalDeregister(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhys, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyHandlerPhysicalDeregister));
-    pfnREMR3NotifyHandlerPhysicalDeregister(pVM, enmType, GCPhys, cb, fHasHCHandler, fRestoreAsRAM);
+    pfnREMR3NotifyHandlerPhysicalDeregister(pVM, enmKind, GCPhys, cb, fHasHCHandler, fRestoreAsRAM);
 #endif
 }
 
-REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
+REMR3DECL(void) REMR3NotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERKIND enmKind, RTGCPHYS GCPhysOld, RTGCPHYS GCPhysNew, RTGCPHYS cb, bool fHasHCHandler, bool fRestoreAsRAM)
 {
 #ifndef USE_REM_STUBS
     Assert(VALID_PTR(pfnREMR3NotifyHandlerPhysicalModify));
-    pfnREMR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM);
+    pfnREMR3NotifyHandlerPhysicalModify(pVM, enmKind, GCPhysOld, GCPhysNew, cb, fHasHCHandler, fRestoreAsRAM);
 #endif
 }
 

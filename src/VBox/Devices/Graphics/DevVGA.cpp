@@ -5285,16 +5285,13 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
 int vgaR3RegisterVRAMHandler(PVGASTATE pVGAState, uint64_t cbFrameBuffer)
 {
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
-
     Assert(pVGAState->GCPhysVRAM);
 
-    int rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                          PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                          pVGAState->GCPhysVRAM, pVGAState->GCPhysVRAM + (cbFrameBuffer - 1),
-                                          vgaR3LFBAccessHandler, pVGAState,
-                                          g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pDevIns->pvInstanceDataR0,
-                                          g_DeviceVga.szRCMod, "vgaGCLFBAccessHandler", pDevIns->pvInstanceDataRC,
-                                          "VGA LFB");
+    int rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
+                                        pVGAState->GCPhysVRAM, pVGAState->GCPhysVRAM + (cbFrameBuffer - 1),
+                                        pVGAState->hLfbAccessHandlerType, pVGAState, pDevIns->pvInstanceDataR0,
+                                        pDevIns->pvInstanceDataRC, "VGA LFB");
+
     AssertRC(rc);
     return rc;
 }
@@ -5347,13 +5344,9 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            rc = PGMR3HandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns),
-                                              PGMPHYSHANDLERTYPE_PHYSICAL_WRITE,
-                                              GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
-                                              vgaR3LFBAccessHandler, pThis,
-                                              g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler", pDevIns->pvInstanceDataR0,
-                                              g_DeviceVga.szRCMod, "vgaRCLFBAccessHandler", pDevIns->pvInstanceDataRC,
-                                              "VGA LFB");
+            rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (pThis->vram_size - 1),
+                                            pThis->hLfbAccessHandlerType, pThis, pDevIns->pvInstanceDataR0,
+                                            pDevIns->pvInstanceDataRC, "VGA LFB");
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
@@ -6149,6 +6142,17 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 # endif
     }
 #endif
+
+    /*
+     * Register access handler types.
+     */
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
+                                          vgaR3LFBAccessHandler,
+                                          g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler",
+                                          g_DeviceVga.szRCMod, "vgaRCLFBAccessHandler",
+                                          "VGA LFB", &pThis->hLfbAccessHandlerType);
+    AssertRCReturn(rc, rc);
+
 
     /*
      * Register I/O ports.
