@@ -873,30 +873,46 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                 off2 = 0;
                             }
 
-                            if (fBase || (fUse & DISUSE_INDEX))
+                            int64_t off3 = off2;
+                            if (fBase || (fUse & (DISUSE_INDEX | DISUSE_RIPDISPLACEMENT32)))
                             {
-                                PUT_C(off2 >= 0 ? '+' : '-');
-                                if (off2 < 0)
-                                    off2 = -off2;
+                                PUT_C(off3 >= 0 ? '+' : '-');
+                                if (off3 < 0)
+                                    off3 = -off3;
                             }
                             if (fUse & DISUSE_DISPLACEMENT8)
-                                PUT_NUM_8( off2);
+                                PUT_NUM_8( off3);
                             else if (fUse & DISUSE_DISPLACEMENT16)
-                                PUT_NUM_16(off2);
+                                PUT_NUM_16(off3);
                             else if (fUse & DISUSE_DISPLACEMENT32)
-                                PUT_NUM_32(off2);
+                                PUT_NUM_32(off3);
                             else if (fUse & DISUSE_DISPLACEMENT64)
-                                PUT_NUM_64(off2);
+                                PUT_NUM_64(off3);
                             else
                             {
-                                PUT_NUM_32(off2);
-                                PUT_SZ(" wrt rip"); //??
+                                PUT_NUM_32(off3);
+                                PUT_SZ(" wrt rip (");
+                                off2 += pDis->uInstrAddr + pDis->cbInstr;
+                                PUT_NUM_64(off2);
+                                if (pfnGetSymbol)
+                                    PUT_SYMBOL((pDis->fPrefix & DISPREFIX_SEG)
+                                               ? DIS_FMT_SEL_FROM_REG(pDis->idxSegPrefix)
+                                               : DIS_FMT_SEL_FROM_REG(DISSELREG_DS),
+                                               pDis->uAddrMode == DISCPUMODE_64BIT
+                                               ? (uint64_t)off2
+                                               : pDis->uAddrMode == DISCPUMODE_32BIT
+                                               ? (uint32_t)off2
+                                               : (uint16_t)off2,
+                                               " = ",
+                                               ')');
+                                else
+                                    PUT_C(')');
                             }
                         }
 
                         if (DISUSE_IS_EFFECTIVE_ADDR(fUse))
                         {
-                            if (pfnGetSymbol && !fBase && !(fUse & DISUSE_INDEX) && off2 != 0)
+                            if (pfnGetSymbol && !fBase && !(fUse & (DISUSE_INDEX | DISUSE_RIPDISPLACEMENT32)) && off2 != 0)
                                 PUT_SYMBOL((pDis->fPrefix & DISPREFIX_SEG)
                                            ? DIS_FMT_SEL_FROM_REG(pDis->idxSegPrefix)
                                            : DIS_FMT_SEL_FROM_REG(DISSELREG_DS),
@@ -905,7 +921,8 @@ DISDECL(size_t) DISFormatYasmEx(PCDISSTATE pDis, char *pszBuf, size_t cchBuf, ui
                                            : pDis->uAddrMode == DISCPUMODE_32BIT
                                            ? (uint32_t)off2
                                            : (uint16_t)off2,
-                                           " (=", ')');
+                                           " (=",
+                                           ')');
                             PUT_C(']');
                         }
                         break;
