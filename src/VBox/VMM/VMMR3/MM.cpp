@@ -502,6 +502,18 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
 
 
 /**
+ * Checks if the both VM and UVM parts of MM have been initialized.
+ *
+ * @returns true if initialized, false if not.
+ * @param   pVM         Pointer to the cross context VM structure.
+ */
+VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM)
+{
+    return pVM->mm.s.pHyperHeapR3 != NULL;
+}
+
+
+/**
  * Execute state save operation.
  *
  * @returns VBox status code.

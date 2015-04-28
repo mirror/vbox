@@ -111,6 +111,7 @@ typedef enum MMTAG
     MM_TAG_PGM,
     MM_TAG_PGM_CHUNK_MAPPING,
     MM_TAG_PGM_HANDLERS,
+    MM_TAG_PGM_HANDLER_TYPES,
     MM_TAG_PGM_MAPPINGS,
     MM_TAG_PGM_PHYS,
     MM_TAG_PGM_POOL,
@@ -215,6 +216,8 @@ VMMDECL(void)       MMHyperHeapDump(PVM pVM);
 #endif
 VMMDECL(size_t)     MMHyperHeapGetFreeSize(PVM pVM);
 VMMDECL(size_t)     MMHyperHeapGetSize(PVM pVM);
+VMMDECL(void *)     MMHyperHeapOffsetToPtr(PVM pVM, uint32_t offHeap);
+VMMDECL(uint32_t)   MMHyperHeapPtrToOffset(PVM pVM, void *pv);
 VMMDECL(RTGCPTR)    MMHyperGetArea(PVM pVM, size_t *pcb);
 VMMDECL(bool)       MMHyperIsInsideArea(PVM pVM, RTGCPTR GCPtr);
 
@@ -250,6 +253,7 @@ VMMR3DECL(int)      MMR3InitPaging(PVM pVM);
 VMMR3DECL(int)      MMR3HyperInitFinalize(PVM pVM);
 VMMR3DECL(int)      MMR3Term(PVM pVM);
 VMMR3DECL(void)     MMR3TermUVM(PUVM pUVM);
+VMMR3_INT_DECL(bool) MMR3IsInitialized(PVM pVM);
 VMMR3DECL(int)      MMR3ReserveHandyPages(PVM pVM, uint32_t cHandyPages);
 VMMR3DECL(int)      MMR3IncreaseBaseReservation(PVM pVM, uint64_t cAddBasePages);
 VMMR3DECL(int)      MMR3AdjustFixedReservation(PVM pVM, int32_t cDeltaFixedPages, const char *pszDesc);

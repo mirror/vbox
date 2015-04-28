@@ -623,6 +623,7 @@ const char *mmGetTagName(MMTAG enmTag)
         TAG2STR(PGM);
         TAG2STR(PGM_CHUNK_MAPPING);
         TAG2STR(PGM_HANDLERS);
+        TAG2STR(PGM_HANDLER_TYPES);
         TAG2STR(PGM_MAPPINGS);
         TAG2STR(PGM_PHYS);
         TAG2STR(PGM_POOL);
