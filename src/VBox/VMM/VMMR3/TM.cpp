@@ -3116,8 +3116,9 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtEnable(PVM pVM, PVMCPU pVCp
         Assert(uRawNewTsc - pVCpu->tm.s.offTSCRawSrc >= uOldTsc); /* paranoia^256 */
     }
 
+    LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
+            tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
     pVM->tm.s.enmTSCMode = TMTSCMODE_REAL_TSC_OFFSET;
-    LogRel(("TM: Switched TSC mode. New enmTSCMode=%d (%s)\n", pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM)));
     return VINF_SUCCESS;
 }
 
@@ -3139,8 +3140,8 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtEnable(PVM pVM)
             rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, tmR3CpuTickParavirtEnable, NULL);
     }
     else
-        LogRel(("TM: Host/VM is not suitable for using TSC mode %d (%s). Request to change TSC mode ignored.\n",
-                TMTSCMODE_REAL_TSC_OFFSET, tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
+        LogRel(("TM: Host/VM is not suitable for using TSC mode '%s'. Request to change TSC mode ignored.\n",
+                tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
     pVM->tm.s.fParavirtTscEnabled = true;
     return rc;
 }
@@ -3173,8 +3174,10 @@ static DECLCALLBACK(VBOXSTRICTRC) tmR3CpuTickParavirtDisable(PVM pVM, PVMCPU pVC
            need it) while in pure TSC-offsetting mode. */
         pVCpu->tm.s.u64TSCLastSeen = uOldTsc;
     }
+
+    LogRel(("TM: Switching TSC mode from '%s' to '%s'\n", tmR3GetTSCModeNameEx(pVM->tm.s.enmTSCMode),
+            tmR3GetTSCModeNameEx(pVM->tm.s.enmOriginalTSCMode)));
     pVM->tm.s.enmTSCMode = pVM->tm.s.enmOriginalTSCMode;
-    LogRel(("TM: Switched TSC mode. New enmTSCMode=%d (%s)\n", pVM->tm.s.enmTSCMode, tmR3GetTSCModeName(pVM)));
     return VINF_SUCCESS;
 }
 
