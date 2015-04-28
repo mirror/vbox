@@ -1209,8 +1209,8 @@ void audioMixBufSetVolume(PPDMAUDIOMIXBUF pMixBuf, PPDMAUDIOVOLUME pVol)
 
     pMixBuf->Volume.fMuted = pVol->fMuted;
     //@todo: Ensure that the input is in the correct range/initialized!
-    pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * UINT32_C(VOL_0DB >> 16);
-    pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * UINT32_C(VOL_0DB >> 16);
+    pMixBuf->Volume.uLeft  = aVolumeConv[pVol->uLeft  & 0xFF] * (VOL_0DB >> 16);
+    pMixBuf->Volume.uRight = aVolumeConv[pVol->uRight & 0xFF] * (VOL_0DB >> 16);
 
     LogFlowFunc(("\t-> lVol=%#RX32, rVol=%#RX32\n", pMixBuf->Volume.uLeft, pMixBuf->Volume.uRight));
 }
