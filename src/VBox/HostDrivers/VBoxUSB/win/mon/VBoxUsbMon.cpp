@@ -67,7 +67,7 @@ typedef struct VBOXUSBHUB_PNPHOOK_COMPLETION
 #define VBOX_USB3PORT
 
 #ifdef VBOX_USB3PORT
-#define VBOXUSBMON_MAXDRIVERS 3
+#define VBOXUSBMON_MAXDRIVERS 5
 typedef struct VBOXUSB_PNPDRIVER
 {
     PDRIVER_OBJECT     DriverObject;
@@ -1136,12 +1136,56 @@ NTSTATUS _stdcall VBoxUsbMonPnPHook(IN PDEVICE_OBJECT pDevObj, IN PIRP pIrp)
 VBOX_PNPHOOKSTUB(0)
 VBOX_PNPHOOKSTUB(1)
 VBOX_PNPHOOKSTUB(2)
-AssertCompile(VBOXUSBMON_MAXDRIVERS == 3);
+VBOX_PNPHOOKSTUB(3)
+VBOX_PNPHOOKSTUB(4)
+AssertCompile(VBOXUSBMON_MAXDRIVERS == 5);
 
 typedef struct VBOXUSBMONHOOKDRIVERWALKER
 {
     PDRIVER_OBJECT pDrvObj;
 } VBOXUSBMONHOOKDRIVERWALKER, *PVBOXUSBMONHOOKDRIVERWALKER;
+
+/**
+ * Logs an error to the system event log.
+ *
+ * @param   ErrCode        Error to report to event log.
+ * @param   ReturnedStatus Error that was reported by the driver to the caller.
+ * @param   uErrId         Unique error id representing the location in the driver.
+ * @param   cbDumpData     Number of bytes at pDumpData.
+ * @param   pDumpData      Pointer to data that will be added to the message (see 'details' tab).
+ */
+static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG uErrId, USHORT cbDumpData, PVOID pDumpData)
+{
+    PIO_ERROR_LOG_PACKET pErrEntry;
+    
+
+    /* Truncate dumps that do not fit into IO_ERROR_LOG_PACKET. */
+    if (FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData) + cbDumpData > ERROR_LOG_MAXIMUM_SIZE)
+        cbDumpData = ERROR_LOG_MAXIMUM_SIZE - FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData);
+
+    pErrEntry = (PIO_ERROR_LOG_PACKET)IoAllocateErrorLogEntry(g_VBoxUsbMonGlobals.pDevObj,
+                                                              FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData) + cbDumpData);
+    if (pErrEntry)
+    {
+        uint8_t *pDump = (uint8_t *)pErrEntry->DumpData;
+        if (cbDumpData)
+            memcpy(pDump, pDumpData, cbDumpData);
+        pErrEntry->MajorFunctionCode = 0;
+        pErrEntry->RetryCount = 0;
+        pErrEntry->DumpDataSize = cbDumpData;
+        pErrEntry->NumberOfStrings = 0;
+        pErrEntry->StringOffset = 0;
+        pErrEntry->ErrorCode = ErrCode;
+        pErrEntry->UniqueErrorValue = uErrId;
+        pErrEntry->FinalStatus = ReturnedStatus;
+        pErrEntry->IoControlCode = 0;
+        IoWriteErrorLogEntry(pErrEntry);
+    }
+    else
+    {
+        LOG(("Failed to allocate error log entry (cb=%d)\n", FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData) + cbDumpData));
+    }
+}
 
 static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
@@ -1180,6 +1224,16 @@ static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pFile, PDEV
     }
     /* No empty slots! No reason to continue. */
     LOG(("No empty slots!\n"));
+    ANSI_STRING ansiDrvName;
+    NTSTATUS Status = RtlUnicodeStringToAnsiString(&ansiDrvName, &pDrvObj->DriverName, true);
+    if (Status != STATUS_SUCCESS)
+    {
+        ansiDrvName.Length = 0;
+        LOG(("RtlUnicodeStringToAnsiString failed with 0x%x", Status));
+    }
+    vboxUsbMonLogError(IO_ERR_INSUFFICIENT_RESOURCES, STATUS_SUCCESS, 1, ansiDrvName.Length, ansiDrvName.Buffer);
+    if (Status == STATUS_SUCCESS)
+        RtlFreeAnsiString(&ansiDrvName);
     return FALSE;
 }
 
@@ -1859,7 +1913,9 @@ NTSTATUS _stdcall DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
     VBOX_PNPHOOKSTUB_INIT(0);
     VBOX_PNPHOOKSTUB_INIT(1);
     VBOX_PNPHOOKSTUB_INIT(2);
-    AssertCompile(VBOXUSBMON_MAXDRIVERS == 3);
+    VBOX_PNPHOOKSTUB_INIT(3);
+    VBOX_PNPHOOKSTUB_INIT(4);
+    AssertCompile(VBOXUSBMON_MAXDRIVERS == 5);
 #endif /* VBOX_USB3PORT */
     KeInitializeEvent(&g_VBoxUsbMonGlobals.OpenSynchEvent, SynchronizationEvent, TRUE /* signaled */);
     IoInitializeRemoveLock(&g_VBoxUsbMonGlobals.RmLock, VBOXUSBMON_MEMTAG, 1, 100);

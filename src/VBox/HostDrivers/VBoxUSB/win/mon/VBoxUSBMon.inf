@@ -34,7 +34,7 @@ CopyFiles = VBoxUSBMonitor.CopyFiles
 VBoxUSBMon.sys
 
 [DefaultInstall.NT.Services]
-AddService = VBoxUSBMon, 0x00000002, VBoxUSBMon_Service_Inst
+AddService = VBoxUSBMon, 0x00000002, VBoxUSBMon_Service_Inst, VBoxUSBMon_EventLog_Inst
 
 [VBoxUSBMon_Service_Inst]
 DisplayName    = %VBoxUSBMon.SvcDesc%
@@ -43,6 +43,13 @@ ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
 StartType      = 1                  ; autostart to fix Vista problem
 ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxUSBMon.sys
+
+[VBoxUSBMon_EventLog_Inst]
+AddReg         = VBoxUSBMon_EventLog_AddReg
+
+[VBoxUSBMon_EventLog_AddReg]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll"
+HKR,,TypesSupported,0x00010001,7
 
 [SourceDisksNames]
 1 = %VBoxUSBMon.MediaDesc%
