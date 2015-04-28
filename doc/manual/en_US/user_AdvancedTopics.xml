@@ -3731,7 +3731,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
     <title>Encryption of disk images</title>
 
     <para>
-      Starting with VirtualBox 5.0 it is possible to encrypt the data stored in
+      Starting with VirtualBox 5.0, it is possible to encrypt the data stored in
       hard disk images transparently for the guest. It does not depend on a specific
       image format to be used. Images which have the data encrypted are not portable
       between VirtualBox and other virtualization software though.
@@ -3755,14 +3755,14 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       <itemizedlist>
 
         <listitem>
-          <para>This feature is currently closed source and requires the Oracle extension
+          <para>This feature is currently closed source and requires the VirtualBox extension
             pack to be installed to work.</para>
         </listitem>
 
         <listitem>
-          <para>Because encryption works only on the stored user data
-            it is not possible to check for metadata integrity of the disk image currently.
-            Attackers might take advantage of this to remove or insert blocks of database
+          <para>Since encryption works only on the stored user data,
+            it is currently not possible to check for metadata integrity of the disk image.
+            Attackers might take advantage of this to remove or insert blocks of data
             into the image or change certain metadata items such as the disk size.</para>
         </listitem>
 
@@ -3774,21 +3774,22 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
         <listitem>
           <para>The DEK is kept in memory while the VM is running to be able to
-            decrpt data read and encrypt data written by the guest. While this should
+            decrypt data read and encrypt data written by the guest. While this should
             be obvious the user needs to be aware of this because an attacker might be able
             to extract the key on a compromised host and get access to the data later.</para>
         </listitem>
 
         <listitem>
-          <para>When encrypting or decrypting the images the password is passed unencrypted
-            via the Main API from the frontend to VBoxSVC. This needs to be kept in mind
+          <para>When encrypting or decrypting the images, the password is passed unencrypted
+            via the Main API from the frontend to VBoxSVC. This needs to be kept in mind,
             especially when using third party frontends which make use of the webservice
             where the password might be transmitted unencrypted over the network.</para>
         </listitem>
 
         <listitem>
           <para>Encrypting images with differencing images is only possible if there
-            are no branches exisiting. This limitation will be lifted in the future.</para>
+            are no branches. This limitation may be addressed in a future
+            VirtualBox version.</para>
         </listitem>
 
       </itemizedlist>
@@ -3800,10 +3801,10 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
       <para>
         Encrypting disk images can be done either using the GUI or VBoxManage.
-        While the GUI is easier to use it works on a per VM basis and encrypts
+        While the GUI is easier to use, it works on a per VM basis and encrypts
         all disk images attached to the specific VM.
         With VBoxManage one can encrypt individual images (including all differencing
-        images). To encrypt an unencrypted medium with VBoxManage use:
+        images). To encrypt an unencrypted medium with VBoxManage, use:
       </para>
 
       <screen>VBoxManage encryptmedium "uuid|filename" --newpassword "file|-" --cipher "cipher id" --newpasswordid "id"</screen>
@@ -3831,9 +3832,9 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       <title>Starting a VM with encrypted images</title>
 
       <para>
-        When a VM is started using the GUI a dialog will open where the user
+        When a VM is started using the GUI, a dialog will open where the user
         needs to enter all passwords for all encrypted images attached to the VM.
-        If another frontend like VBoxHeadless is used the VM will be paused as soon
+        If another frontend like VBoxHeadless is used, the VM will be paused as soon
         as the guest tries to access an encrypted disk.
         The user needs to provide the passwords through VBoxManage using the following
         command:
@@ -3847,9 +3848,9 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
         used when encrypting the images. The user can optionally specify
         <computeroutput>--removeonsuspend "yes|no"</computeroutput> to specify whether
         to remove the password from VM memory when the VM is suspended. Before the VM can be
-        resumed the user needs to supply the passwords again. This is useful when
+        resumed, the user needs to supply the passwords again. This is useful when
         a VM is suspended by a host suspend event and the user doesn't want
-        that the password remains in memory.
+        the password to remain in memory.
       </para>
     </sect2>
 
@@ -3857,7 +3858,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
       <title>Decrypting encrypted images</title>
 
       <para>
-        In some circumstanes it might be required to decrypt previously encrypted
+        In some circumstances it might be required to decrypt previously encrypted
         images. This can be done in the GUI for a complete VM or using VBoxManage
         with the following command:
       </para>
