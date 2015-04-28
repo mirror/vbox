@@ -1040,7 +1040,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
         papszArgv[cArgs] = NULL;
 
         if (RT_SUCCESS(vrc))
-            vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+            vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
 
         if (papszArgv)
         {
