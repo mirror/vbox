@@ -111,48 +111,6 @@ static DECLCALLBACK(void) cpumR3InfoHost(PVM pVM, PCDBGFINFOHLP pHlp, const char
 *   Global Variables                                                           *
 *******************************************************************************/
 /** Saved state field descriptors for CPUMCTX. */
-static const SSMFIELD g_aCpumX87Fields[] =
-{
-    SSMFIELD_ENTRY(         X86FXSTATE, FCW),
-    SSMFIELD_ENTRY(         X86FXSTATE, FSW),
-    SSMFIELD_ENTRY(         X86FXSTATE, FTW),
-    SSMFIELD_ENTRY(         X86FXSTATE, FOP),
-    SSMFIELD_ENTRY(         X86FXSTATE, FPUIP),
-    SSMFIELD_ENTRY(         X86FXSTATE, CS),
-    SSMFIELD_ENTRY(         X86FXSTATE, Rsrvd1),
-    SSMFIELD_ENTRY(         X86FXSTATE, FPUDP),
-    SSMFIELD_ENTRY(         X86FXSTATE, DS),
-    SSMFIELD_ENTRY(         X86FXSTATE, Rsrvd2),
-    SSMFIELD_ENTRY(         X86FXSTATE, MXCSR),
-    SSMFIELD_ENTRY(         X86FXSTATE, MXCSR_MASK),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[0]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[1]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[2]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[3]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[4]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[5]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[6]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[7]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[0]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[1]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[2]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[3]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[4]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[5]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[6]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[7]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[8]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[9]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[10]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[11]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[12]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[13]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[14]),
-    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[15]),
-    SSMFIELD_ENTRY_TERM()
-};
-
-/** Saved state field descriptors for CPUMCTX. */
 static const SSMFIELD g_aCpumCtxFields[] =
 {
     SSMFIELD_ENTRY(         CPUMCTX, rdi),
@@ -246,8 +204,161 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, tr.u64Base),
     SSMFIELD_ENTRY(         CPUMCTX, tr.u32Limit),
     SSMFIELD_ENTRY(         CPUMCTX, tr.Attr),
+    SSMFIELD_ENTRY_VER(     CPUMCTX, aXcr[0],                           CPUM_SAVED_STATE_VERSION_XSAVE),
+    SSMFIELD_ENTRY_VER(     CPUMCTX, aXcr[1],                           CPUM_SAVED_STATE_VERSION_XSAVE),
+    SSMFIELD_ENTRY_VER(     CPUMCTX, fXStateMask,                       CPUM_SAVED_STATE_VERSION_XSAVE),
     SSMFIELD_ENTRY_TERM()
 };
+
+/** Saved state field descriptors for CPUMCTX. */
+static const SSMFIELD g_aCpumX87Fields[] =
+{
+    SSMFIELD_ENTRY(         X86FXSTATE, FCW),
+    SSMFIELD_ENTRY(         X86FXSTATE, FSW),
+    SSMFIELD_ENTRY(         X86FXSTATE, FTW),
+    SSMFIELD_ENTRY(         X86FXSTATE, FOP),
+    SSMFIELD_ENTRY(         X86FXSTATE, FPUIP),
+    SSMFIELD_ENTRY(         X86FXSTATE, CS),
+    SSMFIELD_ENTRY(         X86FXSTATE, Rsrvd1),
+    SSMFIELD_ENTRY(         X86FXSTATE, FPUDP),
+    SSMFIELD_ENTRY(         X86FXSTATE, DS),
+    SSMFIELD_ENTRY(         X86FXSTATE, Rsrvd2),
+    SSMFIELD_ENTRY(         X86FXSTATE, MXCSR),
+    SSMFIELD_ENTRY(         X86FXSTATE, MXCSR_MASK),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[0]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[1]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[2]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[3]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[4]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[5]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[6]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aRegs[7]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[0]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[1]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[2]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[3]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[4]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[5]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[6]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[7]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[8]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[9]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[10]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[11]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[12]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[13]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[14]),
+    SSMFIELD_ENTRY(         X86FXSTATE, aXMM[15]),
+    SSMFIELD_ENTRY_VER(     X86FXSTATE, au32RsrvdForSoftware[0],        CPUM_SAVED_STATE_VERSION_XSAVE), /* 32-bit/64-bit hack */
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEHDR. */
+static const SSMFIELD g_aCpumXSaveHdrFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEHDR,  bmXState),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEYMMHI. */
+static const SSMFIELD g_aCpumYmmHiFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[0]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[1]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[2]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[3]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[4]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[5]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[6]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[7]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[8]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[9]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[10]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[11]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[12]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[13]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[14]),
+    SSMFIELD_ENTRY(         X86XSAVEYMMHI, aYmmHi[15]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEBNDREGS. */
+static const SSMFIELD g_aCpumBndRegsFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEBNDREGS, aRegs[0]),
+    SSMFIELD_ENTRY(         X86XSAVEBNDREGS, aRegs[1]),
+    SSMFIELD_ENTRY(         X86XSAVEBNDREGS, aRegs[2]),
+    SSMFIELD_ENTRY(         X86XSAVEBNDREGS, aRegs[3]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEBNDCFG. */
+static const SSMFIELD g_aCpumBndCfgFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEBNDCFG, fConfig),
+    SSMFIELD_ENTRY(         X86XSAVEBNDCFG, fStatus),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEOPMASK. */
+static const SSMFIELD g_aCpumOpmaskFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[0]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[1]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[2]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[3]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[4]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[5]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[6]),
+    SSMFIELD_ENTRY(         X86XSAVEOPMASK, aKRegs[7]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEZMMHI256. */
+static const SSMFIELD g_aCpumZmmHi256Fields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[0]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[1]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[2]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[3]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[4]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[5]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[6]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[7]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[8]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[9]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[10]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[11]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[12]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[13]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[14]),
+    SSMFIELD_ENTRY(         X86XSAVEZMMHI256, aHi256Regs[15]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Saved state field descriptors for X86XSAVEZMM16HI. */
+static const SSMFIELD g_aCpumZmm16HiFields[] =
+{
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[0]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[1]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[2]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[3]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[4]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[5]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[6]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[7]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[8]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[9]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[10]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[11]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[12]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[13]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[14]),
+    SSMFIELD_ENTRY(         X86XSAVEZMM16HI, aRegs[15]),
+    SSMFIELD_ENTRY_TERM()
+};
+
+
 
 /** Saved state field descriptors for CPUMCTX in V4.1 before the hidden selector
  * registeres changed. */
@@ -427,6 +538,7 @@ static const SSMFIELD g_aCpumX87FieldsV16[] =
     SSMFIELD_ENTRY(         X86FXSTATE, aXMM[14]),
     SSMFIELD_ENTRY(         X86FXSTATE, aXMM[15]),
     SSMFIELD_ENTRY_IGNORE(  X86FXSTATE, au32RsrvdRest),
+    SSMFIELD_ENTRY_IGNORE(  X86FXSTATE, au32RsrvdForSoftware),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1025,25 +1137,45 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save.
      */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
-    {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper.pXStateR3->x87, sizeof(*pVCpu->cpum.s.Hyper.pXStateR3),
-                         SSMSTRUCT_FLAGS_NO_TAIL_MARKER, g_aCpumX87Fields, NULL);
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper),
-                         SSMSTRUCT_FLAGS_NO_LEAD_MARKER, g_aCpumCtxFields, NULL);
-    }
-
     SSMR3PutU32(pSSM, pVM->cCpus);
     SSMR3PutU32(pSSM, sizeof(pVM->aCpus[0].cpum.s.GuestMsrs.msr));
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[iCpu];
 
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest.pXStateR3->x87, sizeof(*pVCpu->cpum.s.Guest.pXStateR3),
-                         SSMSTRUCT_FLAGS_NO_TAIL_MARKER, g_aCpumX87Fields, NULL);
-        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest),
-                         SSMSTRUCT_FLAGS_NO_LEAD_MARKER, g_aCpumCtxFields, NULL);
+        SSMR3PutStructEx(pSSM, &pVCpu->cpum.s.Hyper,     sizeof(pVCpu->cpum.s.Hyper),     0, g_aCpumCtxFields, NULL);
+
+        PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
+        SSMR3PutStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
+        SSMR3PutStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87), 0, g_aCpumX87Fields, NULL);
+        if (pGstCtx->fXStateMask != 0)
+            SSMR3PutStructEx(pSSM, &pGstCtx->pXStateR3->Hdr, sizeof(pGstCtx->pXStateR3->Hdr), 0, g_aCpumXSaveHdrFields, NULL);
+        if (pGstCtx->fXStateMask & XSAVE_C_YMM)
+        {
+            PCX86XSAVEYMMHI pYmmHiCtx = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_YMM_BIT, PCX86XSAVEYMMHI);
+            SSMR3PutStructEx(pSSM, pYmmHiCtx, sizeof(*pYmmHiCtx), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumYmmHiFields, NULL);
+        }
+        if (pGstCtx->fXStateMask & XSAVE_C_BNDREGS)
+        {
+            PCX86XSAVEBNDREGS pBndRegs = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_BNDREGS_BIT, PCX86XSAVEBNDREGS);
+            SSMR3PutStructEx(pSSM, pBndRegs, sizeof(*pBndRegs), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumBndRegsFields, NULL);
+        }
+        if (pGstCtx->fXStateMask & XSAVE_C_BNDCSR)
+        {
+            PCX86XSAVEBNDCFG pBndCfg = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_BNDCSR_BIT, PCX86XSAVEBNDCFG);
+            SSMR3PutStructEx(pSSM, pBndCfg, sizeof(*pBndCfg), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumBndCfgFields, NULL);
+        }
+        if (pGstCtx->fXStateMask & XSAVE_C_ZMM_HI256)
+        {
+            PCX86XSAVEZMMHI256 pZmmHi256 = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_HI256_BIT, PCX86XSAVEZMMHI256);
+            SSMR3PutStructEx(pSSM, pZmmHi256, sizeof(*pZmmHi256), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmmHi256Fields, NULL);
+        }
+        if (pGstCtx->fXStateMask & XSAVE_C_ZMM_16HI)
+        {
+            PCX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PCX86XSAVEZMM16HI);
+            SSMR3PutStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
+        }
+
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
         AssertCompileSizeAlignment(pVCpu->cpum.s.GuestMsrs.msr, sizeof(uint64_t));
@@ -1071,10 +1203,13 @@ static DECLCALLBACK(int) cpumR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
+    int rc; /* Only for AssertRCReturn use. */
+
     /*
      * Validate version.
      */
-    if (    uVersion != CPUM_SAVED_STATE_VERSION
+    if (    uVersion != CPUM_SAVED_STATE_VERSION_XSAVE
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_GOOD_CPUID_COUNT
         &&  uVersion != CPUM_SAVED_STATE_VERSION_BAD_CPUID_COUNT
         &&  uVersion != CPUM_SAVED_STATE_VERSION_PUT_STRUCT
         &&  uVersion != CPUM_SAVED_STATE_VERSION_MEM
@@ -1100,6 +1235,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         else if (uVersion <= CPUM_SAVED_STATE_VERSION_VER3_0)
             SSMR3HandleSetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
+        /*
+         * Figure x86 and ctx field definitions to use for older states.
+         */
         uint32_t const  fLoad = uVersion > CPUM_SAVED_STATE_VERSION_MEM ? 0 : SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
         PCSSMFIELD      paCpumCtx1Fields = g_aCpumX87Fields;
         PCSSMFIELD      paCpumCtx2Fields = g_aCpumCtxFields;
@@ -1115,26 +1253,29 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         }
 
         /*
-         * Restore.
+         * The hyper state used to preceed the CPU count.  Starting with
+         * XSAVE it was moved down till after we've got the count.
          */
-        for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        if (uVersion < CPUM_SAVED_STATE_VERSION_XSAVE)
         {
-            PVMCPU   pVCpu = &pVM->aCpus[iCpu];
-            uint64_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
-            uint64_t uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
-            /** @todo drop the FPU bits here! */
-            SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper.pXStateR3->x87, sizeof(pVCpu->cpum.s.Hyper.pXStateR3->x87),
-                             fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
-            SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper),
-                             fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
-            pVCpu->cpum.s.Hyper.cr3 = uCR3;
-            pVCpu->cpum.s.Hyper.rsp = uRSP;
+            for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+            {
+                PVMCPU      pVCpu = &pVM->aCpus[iCpu];
+                X86FXSTATE  Ign;
+                SSMR3GetStructEx(pSSM, &Ign, sizeof(Ign), fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
+                uint64_t    uCR3  = pVCpu->cpum.s.Hyper.cr3;
+                uint64_t    uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
+                SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper),
+                                 fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
+                pVCpu->cpum.s.Hyper.cr3 = uCR3;
+                pVCpu->cpum.s.Hyper.rsp = uRSP;
+            }
         }
 
         if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
             uint32_t cCpus;
-            int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
             AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
                                   VERR_SSM_UNEXPECTED_DATA);
         }
@@ -1146,36 +1287,147 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
         uint32_t cbMsrs = 0;
         if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
         {
-            int rc = SSMR3GetU32(pSSM, &cbMsrs); AssertRCReturn(rc, rc);
+            rc = SSMR3GetU32(pSSM, &cbMsrs); AssertRCReturn(rc, rc);
             AssertLogRelMsgReturn(RT_ALIGN(cbMsrs, sizeof(uint64_t)) == cbMsrs, ("Size of MSRs is misaligned: %#x\n", cbMsrs),
                                   VERR_SSM_UNEXPECTED_DATA);
             AssertLogRelMsgReturn(cbMsrs <= sizeof(CPUMCTXMSRS) && cbMsrs > 0,  ("Size of MSRs is out of range: %#x\n", cbMsrs),
                                   VERR_SSM_UNEXPECTED_DATA);
         }
 
+        /*
+         * Do the per-CPU restoring.
+         */
         for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
         {
-            PVMCPU  pVCpu = &pVM->aCpus[iCpu];
-            SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Guest.pXStateR3->x87, sizeof(pVCpu->cpum.s.Guest.pXStateR3->x87),
-                             fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
-            SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest),
-                             fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
+            PVMCPU   pVCpu = &pVM->aCpus[iCpu];
+            PCPUMCTX pGstCtx = &pVCpu->cpum.s.Guest;
+
+            if (uVersion >= CPUM_SAVED_STATE_VERSION_XSAVE)
+            {
+                /*
+                 * The XSAVE saved state layout moved the hyper state down here.
+                 */
+                uint64_t    uCR3  = pVCpu->cpum.s.Hyper.cr3;
+                uint64_t    uRSP  = pVCpu->cpum.s.Hyper.rsp; /* see VMMR3Relocate(). */
+                rc = SSMR3GetStructEx(pSSM, &pVCpu->cpum.s.Hyper,     sizeof(pVCpu->cpum.s.Hyper),     0, g_aCpumCtxFields, NULL);
+                pVCpu->cpum.s.Hyper.cr3 = uCR3;
+                pVCpu->cpum.s.Hyper.rsp = uRSP;
+                AssertRCReturn(rc, rc);
+
+                /*
+                 * Start by restoring the CPUMCTX structure and the X86FXSAVE bits of the extended state.
+                 */
+                rc = SSMR3GetStructEx(pSSM, pGstCtx,                  sizeof(*pGstCtx),                0, g_aCpumCtxFields, NULL);
+                rc = SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87), 0, g_aCpumX87Fields, NULL);
+                AssertRCReturn(rc, rc);
+
+                /* Check that the xsave/xrstor mask is valid (invalid results in #GP). */
+                if (pGstCtx->fXStateMask != 0)
+                {
+                    AssertLogRelMsgReturn(!(pGstCtx->fXStateMask & ~pVM->cpum.s.fXStateGuestMask),
+                                          ("fXStateMask=%#RX64 fXStateGuestMask=%#RX64\n",
+                                           pGstCtx->fXStateMask, pVM->cpum.s.fXStateGuestMask),
+                                          VERR_CPUM_INCOMPATIBLE_XSAVE_COMP_MASK);
+                    AssertLogRelMsgReturn(pGstCtx->fXStateMask & XSAVE_C_X87,
+                                          ("fXStateMask=%#RX64\n", pGstCtx->fXStateMask), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                    AssertLogRelMsgReturn((pGstCtx->fXStateMask & (XSAVE_C_SSE | XSAVE_C_YMM)) != XSAVE_C_YMM,
+                                          ("fXStateMask=%#RX64\n", pGstCtx->fXStateMask), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                    AssertLogRelMsgReturn(   (pGstCtx->fXStateMask & (XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI)) == 0
+                                          ||    (pGstCtx->fXStateMask & (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI))
+                                             ==                         (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI),
+                                          ("fXStateMask=%#RX64\n", pGstCtx->fXStateMask), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                }
+
+                /* Check that the XCR0 mask is valid (invalid results in #GP). */
+                AssertLogRelMsgReturn(pGstCtx->aXcr[0] & XSAVE_C_X87, ("xcr0=%#RX64\n", pGstCtx->aXcr[0]), VERR_CPUM_INVALID_XCR0);
+                if (pGstCtx->aXcr[0] != XSAVE_C_X87)
+                {
+                    AssertLogRelMsgReturn(!(pGstCtx->aXcr[0] & ~(pGstCtx->fXStateMask | XSAVE_C_X87)),
+                                          ("xcr0=%#RX64 fXStateMask=%#RX64\n", pGstCtx->aXcr[0], pGstCtx->fXStateMask),
+                                          VERR_CPUM_INVALID_XCR0);
+                    AssertLogRelMsgReturn(pGstCtx->aXcr[0] & XSAVE_C_X87,
+                                          ("xcr0=%#RX64\n", pGstCtx->aXcr[0]), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                    AssertLogRelMsgReturn((pGstCtx->aXcr[0] & (XSAVE_C_SSE | XSAVE_C_YMM)) != XSAVE_C_YMM,
+                                          ("xcr0=%#RX64\n", pGstCtx->aXcr[0]), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                    AssertLogRelMsgReturn(   (pGstCtx->aXcr[0] & (XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI)) == 0
+                                          ||    (pGstCtx->aXcr[0] & (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI))
+                                             ==                     (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_OPMASK | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI),
+                                          ("xcr0=%#RX64\n", pGstCtx->aXcr[0]), VERR_CPUM_INVALID_XSAVE_COMP_MASK);
+                }
+
+                /* Check that the XCR1 is zero, as we don't implement it yet. */
+                AssertLogRelMsgReturn(!pGstCtx->aXcr[1], ("xcr1=%#RX64\n", pGstCtx->aXcr[1]), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+                /*
+                 * Restore the individual extended state components we support.
+                 */
+                if (pGstCtx->fXStateMask != 0)
+                {
+                    rc = SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->Hdr, sizeof(pGstCtx->pXStateR3->Hdr),
+                                          0, g_aCpumXSaveHdrFields, NULL);
+                    AssertRCReturn(rc, rc);
+                    AssertLogRelMsgReturn(!(pGstCtx->pXStateR3->Hdr.bmXState & ~pGstCtx->fXStateMask),
+                                          ("bmXState=%#RX64 fXStateMask=%#RX64\n",
+                                           pGstCtx->pXStateR3->Hdr.bmXState, pGstCtx->fXStateMask),
+                                          VERR_CPUM_INVALID_XSAVE_HDR);
+                }
+                if (pGstCtx->fXStateMask & XSAVE_C_YMM)
+                {
+                    PX86XSAVEYMMHI pYmmHiCtx = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_YMM_BIT, PX86XSAVEYMMHI);
+                    SSMR3GetStructEx(pSSM, pYmmHiCtx, sizeof(*pYmmHiCtx), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumYmmHiFields, NULL);
+                }
+                if (pGstCtx->fXStateMask & XSAVE_C_BNDREGS)
+                {
+                    PX86XSAVEBNDREGS pBndRegs = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_BNDREGS_BIT, PX86XSAVEBNDREGS);
+                    SSMR3GetStructEx(pSSM, pBndRegs, sizeof(*pBndRegs), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumBndRegsFields, NULL);
+                }
+                if (pGstCtx->fXStateMask & XSAVE_C_BNDCSR)
+                {
+                    PX86XSAVEBNDCFG pBndCfg = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_BNDCSR_BIT, PX86XSAVEBNDCFG);
+                    SSMR3GetStructEx(pSSM, pBndCfg, sizeof(*pBndCfg), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumBndCfgFields, NULL);
+                }
+                if (pGstCtx->fXStateMask & XSAVE_C_ZMM_HI256)
+                {
+                    PX86XSAVEZMMHI256 pZmmHi256 = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_HI256_BIT, PX86XSAVEZMMHI256);
+                    SSMR3GetStructEx(pSSM, pZmmHi256, sizeof(*pZmmHi256), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmmHi256Fields, NULL);
+                }
+                if (pGstCtx->fXStateMask & XSAVE_C_ZMM_16HI)
+                {
+                    PX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pGstCtx, XSAVE_C_ZMM_16HI_BIT, PX86XSAVEZMM16HI);
+                    SSMR3GetStructEx(pSSM, pZmm16Hi, sizeof(*pZmm16Hi), SSMSTRUCT_FLAGS_FULL_STRUCT, g_aCpumZmm16HiFields, NULL);
+                }
+            }
+            else
+            {
+                /*
+                 * Pre XSAVE saved state.
+                 */
+                SSMR3GetStructEx(pSSM, &pGstCtx->pXStateR3->x87, sizeof(pGstCtx->pXStateR3->x87),
+                                 fLoad | SSMSTRUCT_FLAGS_NO_TAIL_MARKER, paCpumCtx1Fields, NULL);
+                SSMR3GetStructEx(pSSM, pGstCtx, sizeof(*pGstCtx), fLoad | SSMSTRUCT_FLAGS_NO_LEAD_MARKER, paCpumCtx2Fields, NULL);
+            }
+
+            /*
+             * Restore a couple of flags and the MSRs.
+             */
             SSMR3GetU32(pSSM, &pVCpu->cpum.s.fUseFlags);
             SSMR3GetU32(pSSM, &pVCpu->cpum.s.fChanged);
+
             if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
-                SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], cbMsrs);
+                rc = SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], cbMsrs);
             else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
             {
                 SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
-                SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
+                rc = SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
             }
+            AssertRCReturn(rc, rc);
 
             /* REM and other may have cleared must-be-one fields in DR6 and
                DR7, fix these. */
-            pVCpu->cpum.s.Guest.dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
-            pVCpu->cpum.s.Guest.dr[6] |= X86_DR6_RA1_MASK;
-            pVCpu->cpum.s.Guest.dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
-            pVCpu->cpum.s.Guest.dr[7] |= X86_DR7_RA1_MASK;
+            pGstCtx->dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
+            pGstCtx->dr[6] |= X86_DR6_RA1_MASK;
+            pGstCtx->dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
+            pGstCtx->dr[7] |= X86_DR7_RA1_MASK;
         }
 
         /* Older states does not have the internal selector register flags
@@ -1245,120 +1497,9 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     /*
      * Guest CPUIDs.
      */
-    if (uVersion > CPUM_SAVED_STATE_VERSION_VER3_0)
+    if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_2)
         return cpumR3LoadCpuId(pVM, pSSM, uVersion);
-
-    /** @todo Merge the code below into cpumR3LoadCpuId when we've found out what is
-     *        actually required. */
-
-    /*
-     * Restore the CPUID leaves.
-     *
-     * Note that we support restoring less than the current amount of standard
-     * leaves because we've been allowed more is newer version of VBox.
-     */
-    uint32_t cElements;
-    int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements > RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmStd))
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdPatmStd[0]));
-
-    rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmExt))
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmExt[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmExt));
-
-    rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    if (cElements != RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdPatmCentaur))
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdPatmCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdPatmCentaur));
-
-    SSMR3GetMem(pSSM, &pVM->cpum.s.GuestInfo.DefCpuId, sizeof(pVM->cpum.s.GuestInfo.DefCpuId));
-
-    /*
-     * Check that the basic cpuid id information is unchanged.
-     */
-    /** @todo we should check the 64 bits capabilities too! */
-    uint32_t au32CpuId[8] = {0,0,0,0, 0,0,0,0};
-    ASMCpuIdExSlow(0, 0, 0, 0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
-    ASMCpuIdExSlow(1, 0, 0, 0, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
-    uint32_t au32CpuIdSaved[8];
-    rc = SSMR3GetMem(pSSM, &au32CpuIdSaved[0], sizeof(au32CpuIdSaved));
-    if (RT_SUCCESS(rc))
-    {
-        /* Ignore CPU stepping. */
-        au32CpuId[4]      &=  0xfffffff0;
-        au32CpuIdSaved[4] &=  0xfffffff0;
-
-        /* Ignore APIC ID (AMD specs). */
-        au32CpuId[5]      &= ~0xff000000;
-        au32CpuIdSaved[5] &= ~0xff000000;
-
-        /* Ignore the number of Logical CPUs (AMD specs). */
-        au32CpuId[5]      &= ~0x00ff0000;
-        au32CpuIdSaved[5] &= ~0x00ff0000;
-
-        /* Ignore some advanced capability bits, that we don't expose to the guest. */
-        au32CpuId[6]      &= ~(   X86_CPUID_FEATURE_ECX_DTES64
-                               |  X86_CPUID_FEATURE_ECX_VMX
-                               |  X86_CPUID_FEATURE_ECX_SMX
-                               |  X86_CPUID_FEATURE_ECX_EST
-                               |  X86_CPUID_FEATURE_ECX_TM2
-                               |  X86_CPUID_FEATURE_ECX_CNTXID
-                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
-                               |  X86_CPUID_FEATURE_ECX_PDCM
-                               |  X86_CPUID_FEATURE_ECX_DCA
-                               |  X86_CPUID_FEATURE_ECX_X2APIC
-                              );
-        au32CpuIdSaved[6] &= ~(   X86_CPUID_FEATURE_ECX_DTES64
-                               |  X86_CPUID_FEATURE_ECX_VMX
-                               |  X86_CPUID_FEATURE_ECX_SMX
-                               |  X86_CPUID_FEATURE_ECX_EST
-                               |  X86_CPUID_FEATURE_ECX_TM2
-                               |  X86_CPUID_FEATURE_ECX_CNTXID
-                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
-                               |  X86_CPUID_FEATURE_ECX_PDCM
-                               |  X86_CPUID_FEATURE_ECX_DCA
-                               |  X86_CPUID_FEATURE_ECX_X2APIC
-                              );
-
-        /* Make sure we don't forget to update the masks when enabling
-         * features in the future.
-         */
-        AssertRelease(!(pVM->cpum.s.aGuestCpuIdPatmStd[1].uEcx &
-                              (   X86_CPUID_FEATURE_ECX_DTES64
-                               |  X86_CPUID_FEATURE_ECX_VMX
-                               |  X86_CPUID_FEATURE_ECX_SMX
-                               |  X86_CPUID_FEATURE_ECX_EST
-                               |  X86_CPUID_FEATURE_ECX_TM2
-                               |  X86_CPUID_FEATURE_ECX_CNTXID
-                               |  X86_CPUID_FEATURE_ECX_TPRUPDATE
-                               |  X86_CPUID_FEATURE_ECX_PDCM
-                               |  X86_CPUID_FEATURE_ECX_DCA
-                               |  X86_CPUID_FEATURE_ECX_X2APIC
-                              )));
-        /* do the compare */
-        if (memcmp(au32CpuIdSaved, au32CpuId, sizeof(au32CpuIdSaved)))
-        {
-            if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
-                LogRel(("cpumR3LoadExec: CpuId mismatch! (ignored due to SSMAFTER_DEBUG_IT)\n"
-                        "Saved=%.*Rhxs\n"
-                        "Real =%.*Rhxs\n",
-                        sizeof(au32CpuIdSaved), au32CpuIdSaved,
-                        sizeof(au32CpuId), au32CpuId));
-            else
-            {
-                LogRel(("cpumR3LoadExec: CpuId mismatch!\n"
-                        "Saved=%.*Rhxs\n"
-                        "Real =%.*Rhxs\n",
-                        sizeof(au32CpuIdSaved), au32CpuIdSaved,
-                        sizeof(au32CpuId), au32CpuId));
-                rc = VERR_SSM_LOAD_CPUID_MISMATCH;
-            }
-        }
-    }
-
-    return rc;
+    return cpumR3LoadCpuIdPre32(pVM, pSSM, uVersion);
 }
 
 
@@ -1609,154 +1750,151 @@ static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGF
                     pszPrefix, pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
                     pszPrefix, pCtx->SysEnter.cs, pCtx->SysEnter.eip, pCtx->SysEnter.esp);
 
-            PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
-            pHlp->pfnPrintf(pHlp,
-                "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
-                "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
-                ,
-                pszPrefix, pFpuCtx->FCW,   pszPrefix, pFpuCtx->FSW, pszPrefix, pFpuCtx->FTW, pszPrefix, pFpuCtx->FOP,
-                pszPrefix, pFpuCtx->MXCSR, pszPrefix, pFpuCtx->MXCSR_MASK,
-                pszPrefix, pFpuCtx->FPUIP, pszPrefix, pFpuCtx->CS,  pszPrefix, pFpuCtx->Rsrvd1,
-                pszPrefix, pFpuCtx->FPUDP, pszPrefix, pFpuCtx->DS,  pszPrefix, pFpuCtx->Rsrvd2
-                );
-            unsigned iShift = (pFpuCtx->FSW >> 11) & 7;
-            for (unsigned iST = 0; iST < RT_ELEMENTS(pFpuCtx->aRegs); iST++)
-            {
-                unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pFpuCtx->aRegs);
-                unsigned uTag        = pFpuCtx->FTW & (1 << iFPR) ? 1 : 0;
-                char     chSign      = pFpuCtx->aRegs[0].au16[4] & 0x8000 ? '-' : '+';
-                unsigned iInteger    = (unsigned)(pFpuCtx->aRegs[0].au64[0] >> 63);
-                uint64_t u64Fraction = pFpuCtx->aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
-                unsigned uExponent   = pFpuCtx->aRegs[0].au16[4] & 0x7fff;
-                /** @todo This isn't entirenly correct and needs more work! */
-                pHlp->pfnPrintf(pHlp,
-                                "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u (*)",
-                                pszPrefix, iST, pszPrefix, iFPR,
-                                pFpuCtx->aRegs[0].au16[4], pFpuCtx->aRegs[0].au32[1], pFpuCtx->aRegs[0].au32[0],
-                                uTag, chSign, iInteger, u64Fraction, uExponent);
-                if (pFpuCtx->aRegs[0].au16[5] || pFpuCtx->aRegs[0].au16[6] || pFpuCtx->aRegs[0].au16[7])
-                    pHlp->pfnPrintf(pHlp, " res={%04RX16,%04RX16,%04RX16}\n",
-                                    pFpuCtx->aRegs[0].au16[5], pFpuCtx->aRegs[0].au16[6], pFpuCtx->aRegs[0].au16[7]);
-                else
-                    pHlp->pfnPrintf(pHlp, "\n");
-            }
-
-            pHlp->pfnPrintf(pHlp, "%sXCR0=%016RX64 %sXCR1=%016RX64 %sXSS=%016RX64 (fXStateMask=%016RX64)\n",
+            pHlp->pfnPrintf(pHlp, "%sxcr=%016RX64 %sxcr1=%016RX64 %sxss=%016RX64 (fXStateMask=%016RX64)\n",
                             pszPrefix, pCtx->aXcr[0], pszPrefix, pCtx->aXcr[1],
                             pszPrefix, UINT64_C(0) /** @todo XSS */, pCtx->fXStateMask);
-
-            /* XMM/YMM/ZMM registers. */
-            if (pCtx->fXStateMask & XSAVE_C_YMM)
+            if (pCtx->CTX_SUFF(pXState))
             {
-                PCX86XSAVEYMMHI pYmmHiCtx;
-                pYmmHiCtx = (PCX86XSAVEYMMHI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_YMM_BIT]);
-                if (!(pCtx->fXStateMask & XSAVE_C_ZMM_HI256))
-                    for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
-                        pHlp->pfnPrintf(pHlp, "%sYMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
-                                        pszPrefix, i, i < 10 ? " " : "",
-                                        pYmmHiCtx->aYmmHi[i].au32[3],
-                                        pYmmHiCtx->aYmmHi[i].au32[2],
-                                        pYmmHiCtx->aYmmHi[i].au32[1],
-                                        pYmmHiCtx->aYmmHi[i].au32[0],
-                                        pFpuCtx->aXMM[i].au32[3],
-                                        pFpuCtx->aXMM[i].au32[2],
-                                        pFpuCtx->aXMM[i].au32[1],
-                                        pFpuCtx->aXMM[i].au32[0]);
-                else
+                PX86FXSTATE pFpuCtx = &pCtx->CTX_SUFF(pXState)->x87;
+                pHlp->pfnPrintf(pHlp,
+                    "%sFCW=%04x %sFSW=%04x %sFTW=%04x %sFOP=%04x %sMXCSR=%08x %sMXCSR_MASK=%08x\n"
+                    "%sFPUIP=%08x %sCS=%04x %sRsrvd1=%04x  %sFPUDP=%08x %sDS=%04x %sRsvrd2=%04x\n"
+                    ,
+                    pszPrefix, pFpuCtx->FCW,   pszPrefix, pFpuCtx->FSW, pszPrefix, pFpuCtx->FTW, pszPrefix, pFpuCtx->FOP,
+                    pszPrefix, pFpuCtx->MXCSR, pszPrefix, pFpuCtx->MXCSR_MASK,
+                    pszPrefix, pFpuCtx->FPUIP, pszPrefix, pFpuCtx->CS,  pszPrefix, pFpuCtx->Rsrvd1,
+                    pszPrefix, pFpuCtx->FPUDP, pszPrefix, pFpuCtx->DS,  pszPrefix, pFpuCtx->Rsrvd2
+                    );
+                unsigned iShift = (pFpuCtx->FSW >> 11) & 7;
+                for (unsigned iST = 0; iST < RT_ELEMENTS(pFpuCtx->aRegs); iST++)
                 {
-                    PCX86XSAVEZMMHI256 pZmmHi256;
-                    pZmmHi256 = (PCX86XSAVEZMMHI256)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_HI256_BIT]);
+                    unsigned iFPR        = (iST + iShift) % RT_ELEMENTS(pFpuCtx->aRegs);
+                    unsigned uTag        = pFpuCtx->FTW & (1 << iFPR) ? 1 : 0;
+                    char     chSign      = pFpuCtx->aRegs[0].au16[4] & 0x8000 ? '-' : '+';
+                    unsigned iInteger    = (unsigned)(pFpuCtx->aRegs[0].au64[0] >> 63);
+                    uint64_t u64Fraction = pFpuCtx->aRegs[0].au64[0] & UINT64_C(0x7fffffffffffffff);
+                    unsigned uExponent   = pFpuCtx->aRegs[0].au16[4] & 0x7fff;
+                    /** @todo This isn't entirenly correct and needs more work! */
+                    pHlp->pfnPrintf(pHlp,
+                                    "%sST(%u)=%sFPR%u={%04RX16'%08RX32'%08RX32} t%d %c%u.%022llu ^ %u (*)",
+                                    pszPrefix, iST, pszPrefix, iFPR,
+                                    pFpuCtx->aRegs[0].au16[4], pFpuCtx->aRegs[0].au32[1], pFpuCtx->aRegs[0].au32[0],
+                                    uTag, chSign, iInteger, u64Fraction, uExponent);
+                    if (pFpuCtx->aRegs[0].au16[5] || pFpuCtx->aRegs[0].au16[6] || pFpuCtx->aRegs[0].au16[7])
+                        pHlp->pfnPrintf(pHlp, " res={%04RX16,%04RX16,%04RX16}\n",
+                                        pFpuCtx->aRegs[0].au16[5], pFpuCtx->aRegs[0].au16[6], pFpuCtx->aRegs[0].au16[7]);
+                    else
+                        pHlp->pfnPrintf(pHlp, "\n");
+                }
+
+                /* XMM/YMM/ZMM registers. */
+                if (pCtx->fXStateMask & XSAVE_C_YMM)
+                {
+                    PCX86XSAVEYMMHI pYmmHiCtx = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_YMM_BIT, PCX86XSAVEYMMHI);
+                    if (!(pCtx->fXStateMask & XSAVE_C_ZMM_HI256))
+                        for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
+                            pHlp->pfnPrintf(pHlp, "%sYMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                            pszPrefix, i, i < 10 ? " " : "",
+                                            pYmmHiCtx->aYmmHi[i].au32[3],
+                                            pYmmHiCtx->aYmmHi[i].au32[2],
+                                            pYmmHiCtx->aYmmHi[i].au32[1],
+                                            pYmmHiCtx->aYmmHi[i].au32[0],
+                                            pFpuCtx->aXMM[i].au32[3],
+                                            pFpuCtx->aXMM[i].au32[2],
+                                            pFpuCtx->aXMM[i].au32[1],
+                                            pFpuCtx->aXMM[i].au32[0]);
+                    else
+                    {
+                        PCX86XSAVEZMMHI256 pZmmHi256 = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_ZMM_HI256_BIT, PCX86XSAVEZMMHI256);
+                        for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
+                            pHlp->pfnPrintf(pHlp,
+                                            "%sZMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                            pszPrefix, i, i < 10 ? " " : "",
+                                            pZmmHi256->aHi256Regs[i].au32[7],
+                                            pZmmHi256->aHi256Regs[i].au32[6],
+                                            pZmmHi256->aHi256Regs[i].au32[5],
+                                            pZmmHi256->aHi256Regs[i].au32[4],
+                                            pZmmHi256->aHi256Regs[i].au32[3],
+                                            pZmmHi256->aHi256Regs[i].au32[2],
+                                            pZmmHi256->aHi256Regs[i].au32[1],
+                                            pZmmHi256->aHi256Regs[i].au32[0],
+                                            pYmmHiCtx->aYmmHi[i].au32[3],
+                                            pYmmHiCtx->aYmmHi[i].au32[2],
+                                            pYmmHiCtx->aYmmHi[i].au32[1],
+                                            pYmmHiCtx->aYmmHi[i].au32[0],
+                                            pFpuCtx->aXMM[i].au32[3],
+                                            pFpuCtx->aXMM[i].au32[2],
+                                            pFpuCtx->aXMM[i].au32[1],
+                                            pFpuCtx->aXMM[i].au32[0]);
+
+                        PCX86XSAVEZMM16HI pZmm16Hi = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_ZMM_16HI_BIT, PCX86XSAVEZMM16HI);
+                        for (unsigned i = 0; i < RT_ELEMENTS(pZmm16Hi->aRegs); i++)
+                            pHlp->pfnPrintf(pHlp,
+                                            "%sZMM%u=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                            pszPrefix, i + 16,
+                                            pZmm16Hi->aRegs[i].au32[15],
+                                            pZmm16Hi->aRegs[i].au32[14],
+                                            pZmm16Hi->aRegs[i].au32[13],
+                                            pZmm16Hi->aRegs[i].au32[12],
+                                            pZmm16Hi->aRegs[i].au32[11],
+                                            pZmm16Hi->aRegs[i].au32[10],
+                                            pZmm16Hi->aRegs[i].au32[9],
+                                            pZmm16Hi->aRegs[i].au32[8],
+                                            pZmm16Hi->aRegs[i].au32[7],
+                                            pZmm16Hi->aRegs[i].au32[6],
+                                            pZmm16Hi->aRegs[i].au32[5],
+                                            pZmm16Hi->aRegs[i].au32[4],
+                                            pZmm16Hi->aRegs[i].au32[3],
+                                            pZmm16Hi->aRegs[i].au32[2],
+                                            pZmm16Hi->aRegs[i].au32[1],
+                                            pZmm16Hi->aRegs[i].au32[0]);
+                    }
+                }
+                else
                     for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
                         pHlp->pfnPrintf(pHlp,
-                                        "%sZMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
+                                        i & 1
+                                        ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
+                                        : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
                                         pszPrefix, i, i < 10 ? " " : "",
-                                        pZmmHi256->aHi256Regs[i].au32[7],
-                                        pZmmHi256->aHi256Regs[i].au32[6],
-                                        pZmmHi256->aHi256Regs[i].au32[5],
-                                        pZmmHi256->aHi256Regs[i].au32[4],
-                                        pZmmHi256->aHi256Regs[i].au32[3],
-                                        pZmmHi256->aHi256Regs[i].au32[2],
-                                        pZmmHi256->aHi256Regs[i].au32[1],
-                                        pZmmHi256->aHi256Regs[i].au32[0],
-                                        pYmmHiCtx->aYmmHi[i].au32[3],
-                                        pYmmHiCtx->aYmmHi[i].au32[2],
-                                        pYmmHiCtx->aYmmHi[i].au32[1],
-                                        pYmmHiCtx->aYmmHi[i].au32[0],
                                         pFpuCtx->aXMM[i].au32[3],
                                         pFpuCtx->aXMM[i].au32[2],
                                         pFpuCtx->aXMM[i].au32[1],
                                         pFpuCtx->aXMM[i].au32[0]);
 
-                    PCX86XSAVEZMM16HI pZmm16Hi;
-                    pZmm16Hi = (PCX86XSAVEZMM16HI)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_ZMM_16HI_BIT]);
-                    for (unsigned i = 0; i < RT_ELEMENTS(pZmm16Hi->aRegs); i++)
-                        pHlp->pfnPrintf(pHlp,
-                                        "%sZMM%u=%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32''%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32'%08RX32\n",
-                                        pszPrefix, i + 16,
-                                        pZmm16Hi->aRegs[i].au32[15],
-                                        pZmm16Hi->aRegs[i].au32[14],
-                                        pZmm16Hi->aRegs[i].au32[13],
-                                        pZmm16Hi->aRegs[i].au32[12],
-                                        pZmm16Hi->aRegs[i].au32[11],
-                                        pZmm16Hi->aRegs[i].au32[10],
-                                        pZmm16Hi->aRegs[i].au32[9],
-                                        pZmm16Hi->aRegs[i].au32[8],
-                                        pZmm16Hi->aRegs[i].au32[7],
-                                        pZmm16Hi->aRegs[i].au32[6],
-                                        pZmm16Hi->aRegs[i].au32[5],
-                                        pZmm16Hi->aRegs[i].au32[4],
-                                        pZmm16Hi->aRegs[i].au32[3],
-                                        pZmm16Hi->aRegs[i].au32[2],
-                                        pZmm16Hi->aRegs[i].au32[1],
-                                        pZmm16Hi->aRegs[i].au32[0]);
+                if (pCtx->fXStateMask & XSAVE_C_OPMASK)
+                {
+                    PCX86XSAVEOPMASK pOpMask;
+                    pOpMask = (PCX86XSAVEOPMASK)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_OPMASK_BIT]);
+                    for (unsigned i = 0; i < RT_ELEMENTS(pOpMask->aKRegs); i += 4)
+                        pHlp->pfnPrintf(pHlp, "%sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64\n",
+                                        pszPrefix, i + 0, pOpMask->aKRegs[i + 0],
+                                        pszPrefix, i + 1, pOpMask->aKRegs[i + 1],
+                                        pszPrefix, i + 2, pOpMask->aKRegs[i + 2],
+                                        pszPrefix, i + 3, pOpMask->aKRegs[i + 3]);
                 }
-            }
-            else
-                for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->aXMM); i++)
-                    pHlp->pfnPrintf(pHlp,
-                                    i & 1
-                                    ? "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32\n"
-                                    : "%sXMM%u%s=%08RX32'%08RX32'%08RX32'%08RX32  ",
-                                    pszPrefix, i, i < 10 ? " " : "",
-                                    pFpuCtx->aXMM[i].au32[3],
-                                    pFpuCtx->aXMM[i].au32[2],
-                                    pFpuCtx->aXMM[i].au32[1],
-                                    pFpuCtx->aXMM[i].au32[0]);
 
-            if (pCtx->fXStateMask & XSAVE_C_OPMASK)
-            {
-                PCX86XSAVEOPMASK pOpMask;
-                pOpMask = (PCX86XSAVEOPMASK)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_OPMASK_BIT]);
-                for (unsigned i = 0; i < RT_ELEMENTS(pOpMask->aKRegs); i += 4)
-                    pHlp->pfnPrintf(pHlp, "%sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64  %sK%u=%016RX64\n",
-                                    pszPrefix, i + 0, pOpMask->aKRegs[i + 0],
-                                    pszPrefix, i + 1, pOpMask->aKRegs[i + 1],
-                                    pszPrefix, i + 2, pOpMask->aKRegs[i + 2],
-                                    pszPrefix, i + 3, pOpMask->aKRegs[i + 3]);
-            }
+                if (pCtx->fXStateMask & XSAVE_C_BNDREGS)
+                {
+                    PCX86XSAVEBNDREGS pBndRegs = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_BNDREGS_BIT, PCX86XSAVEBNDREGS);
+                    for (unsigned i = 0; i < RT_ELEMENTS(pBndRegs->aRegs); i += 2)
+                        pHlp->pfnPrintf(pHlp, "%sBNDREG%u=%016RX64/%016RX64  %sBNDREG%u=%016RX64/%016RX64\n",
+                                        pszPrefix, i, pBndRegs->aRegs[i].uLowerBound, pBndRegs->aRegs[i].uUpperBound,
+                                        pszPrefix, i + 1, pBndRegs->aRegs[i + 1].uLowerBound, pBndRegs->aRegs[i + 1].uUpperBound);
+                }
 
-            if (pCtx->fXStateMask & XSAVE_C_BNDREGS)
-            {
-                PCX86XSAVEBNDREGS pBndRegs;
-                pBndRegs = (PCX86XSAVEBNDREGS)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDREGS_BIT]);
-                for (unsigned i = 0; i < RT_ELEMENTS(pBndRegs->aRegs); i += 2)
-                    pHlp->pfnPrintf(pHlp, "%sBNDREG%u=%016RX64/%016RX64  %sBNDREG%u=%016RX64/%016RX64\n",
-                                    pszPrefix, i, pBndRegs->aRegs[i].uLowerBound, pBndRegs->aRegs[i].uUpperBound,
-                                    pszPrefix, i + 1, pBndRegs->aRegs[i + 1].uLowerBound, pBndRegs->aRegs[i + 1].uUpperBound);
-            }
+                if (pCtx->fXStateMask & XSAVE_C_BNDCSR)
+                {
+                    PCX86XSAVEBNDCFG pBndCfg = CPUMCTX_XSAVE_C_PTR(pCtx, XSAVE_C_BNDCSR_BIT, PCX86XSAVEBNDCFG);
+                    pHlp->pfnPrintf(pHlp, "%sBNDCFG.CONFIG=%016RX64 %sBNDCFG.STATUS=%016RX64\n",
+                                    pszPrefix, pBndCfg->fConfig, pszPrefix, pBndCfg->fStatus);
+                }
 
-            if (pCtx->fXStateMask & XSAVE_C_BNDCSR)
-            {
-                PCX86XSAVEBNDCFG pBndCfg;
-                pBndCfg = (PCX86XSAVEBNDCFG)((uint8_t *)pCtx->CTX_SUFF(pXState) + pCtx->aoffXState[XSAVE_C_BNDCSR_BIT]);
-                pHlp->pfnPrintf(pHlp, "%sBNDCFG.CONFIG=%016RX64 %sBNDCFG.STATUS=%016RX64\n",
-                                pszPrefix, pBndCfg->fConfig, pszPrefix, pBndCfg->fStatus);
+                for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->au32RsrvdRest); i++)
+                    if (pFpuCtx->au32RsrvdRest[i])
+                        pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
+                                        pszPrefix, i, pFpuCtx->au32RsrvdRest[i], RT_OFFSETOF(X86FXSTATE, au32RsrvdRest[i]) );
             }
-
-            for (unsigned i = 0; i < RT_ELEMENTS(pFpuCtx->au32RsrvdRest); i++)
-                if (pFpuCtx->au32RsrvdRest[i])
-                    pHlp->pfnPrintf(pHlp, "%sRsrvdRest[i]=%RX32 (offset=%#x)\n",
-                                    pszPrefix, i, pFpuCtx->au32RsrvdRest[i], RT_OFFSETOF(X86FXSTATE, au32RsrvdRest[i]) );
 
             pHlp->pfnPrintf(pHlp,
                 "%sEFER         =%016RX64\n"

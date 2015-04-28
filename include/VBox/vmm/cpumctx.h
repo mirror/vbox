@@ -422,6 +422,38 @@ typedef struct CPUMCTX
 AssertCompileSizeAlignment(CPUMCTX, 64);
 
 /**
+ * Calculates the pointer to the given extended state component.
+ *
+ * @returns Pointer of type @a a_PtrType
+ * @param   a_pCtx          Pointer to the context.
+ * @param   a_iCompBit      The extended state component bit number.  This bit
+ *                          must be set in CPUMCTX::fXStateMask.
+ * @param   a_PtrType       The pointer type of the extended state component.
+ *
+ */
+#if defined(VBOX_STRICT) && defined(RT_COMPILER_SUPPORTS_LAMDA)
+# define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
+    ([](PCCPUMCTX pCtx) -> a_PtrType \
+    { \
+        AssertCompile((a_iCompBit) < 64U); \
+        AssertMsg((pCtx)->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
+        AssertMsg((pCtx)->aoffXState[(a_iCompBit)] != UINT64_MAX, (#a_iCompBit "\n")); \
+        return (a_PtrType)((uint8_t *)(pCtx)->CTX_SUFF(pXState) + pCtx->aoffXState[(a_iCompBit)]); \
+    }(a_pCtx))
+#elif defined(VBOX_STRICT) && defined(__GNUC__)
+# define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
+    __extension__ ({ \
+                        AssertCompile((a_iCompBit) < 64U); \
+                        AssertMsg((a_pCtx)->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
+                        AssertMsg((a_pCtx)->aoffXState[(a_iCompBit)] != UINT64_MAX, (#a_iCompBit "\n")); \
+                        (a_PtrType)((uint8_t *)(a_pCtx)->CTX_SUFF(pXState) + pCtx->aoffXState[(a_iCompBit)]); \
+                   })
+#else
+# define CPUMCTX_XSAVE_C_PTR(a_pCtx, a_iCompBit, a_PtrType) \
+    ((a_PtrType)((uint8_t *)(a_pCtx)->CTX_SUFF(pXState) + pCtx->aoffXState[(a_iCompBit)]))
+#endif
+
+/**
  * Gets the CPUMCTXCORE part of a CPUMCTX.
  */
 # define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->rax)

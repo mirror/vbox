@@ -122,7 +122,11 @@ typedef uint64_t STAMCOUNTER;
 /** @name CPUM Saved State Version.
  * @{ */
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                16
+#define CPUM_SAVED_STATE_VERSION                CPUM_SAVED_STATE_VERSION_XSAVE
+/** The saved state version including XSAVE state. */
+#define CPUM_SAVED_STATE_VERSION_XSAVE          17
+/** The saved state version with good CPUID leaf count. */
+#define CPUM_SAVED_STATE_VERSION_GOOD_CPUID_COUNT 16
 /** CPUID changes with explode forgetting to update the leaf count on
  * restore, resulting in garbage being saved restoring+saving old states). */
 #define CPUM_SAVED_STATE_VERSION_BAD_CPUID_COUNT 15
@@ -525,6 +529,7 @@ int                 cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_
 int                 cpumR3InitCpuIdAndMsrs(PVM pVM);
 void                cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM);
 int                 cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion);
+int                 cpumR3LoadCpuIdPre32(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion);
 DECLCALLBACK(void)  cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 int                 cpumR3DbGetCpuInfo(const char *pszName, PCPUMINFO pInfo);
