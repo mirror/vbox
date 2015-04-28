@@ -199,8 +199,8 @@ UIWizardExportAppPageExpert::UIWizardExportAppPageExpert(const QStringList &sele
 void UIWizardExportAppPageExpert::sltVMSelectionChangeHandler()
 {
     /* Call to base-class: */
-    refreshApplianceSettingsWidget();
     refreshCurrentSettings();
+    refreshApplianceSettingsWidget();
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -257,8 +257,8 @@ void UIWizardExportAppPageExpert::initializePage()
     retranslateUi();
 
     /* Call to base-class: */
-    refreshApplianceSettingsWidget();
     refreshCurrentSettings();
+    refreshApplianceSettingsWidget();
 }
 
 bool UIWizardExportAppPageExpert::isComplete() const
