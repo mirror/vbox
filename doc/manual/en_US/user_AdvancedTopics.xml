@@ -3866,7 +3866,7 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
       <para>
         The only required parameter is the password the image was encrypted with.
-        The options are the same as for encrpting images.
+        The options are the same as for encrypting images.
       </para>
     </sect2>
   </sect1>
