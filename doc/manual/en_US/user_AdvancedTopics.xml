@@ -3727,4 +3727,148 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/SSE4.2 1</screen>
 
   </sect1>
 
+  <sect1 id="diskencryption">
+    <title>Encryption of disk images</title>
+
+    <para>
+      Starting with VirtualBox 5.0 it is possible to encrypt the data stored in
+      hard disk images transparently for the guest. It does not depend on a specific
+      image format to be used. Images which have the data encrypted are not portable
+      between VirtualBox and other virtualization software though.
+    </para>
+
+    <para>
+      VirtualBox uses the AES algorithm in XTS mode and supports 128 or 256 bit
+      data encryption keys (DEK).
+      The DEK is stored encrypted in the medium properties and is decrypted during
+      VM startup by entering a password which was chosen when the image was encrypted.
+    </para>
+
+    <sect2 id="diskencryption-limitations">
+      <title>Limitations</title>
+
+      <para>
+        There are some limitations the user needs to be aware of when using this
+        feature:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>This feature is currently closed source and requires the Oracle extension
+            pack to be installed to work.</para>
+        </listitem>
+
+        <listitem>
+          <para>Because encryption works only on the stored user data
+            it is not possible to check for metadata integrity of the disk image currently.
+            Attackers might take advantage of this to remove or insert blocks of database
+            into the image or change certain metadata items such as the disk size.</para>
+        </listitem>
+
+        <listitem>
+          <para>Exporting appliances which contain encrypted disk images is not
+            possible because the OVF specification doesn't support this.
+            All images are therefore decrypted during export.</para>
+        </listitem>
+
+        <listitem>
+          <para>The DEK is kept in memory while the VM is running to be able to
+            decrpt data read and encrypt data written by the guest. While this should
+            be obvious the user needs to be aware of this because an attacker might be able
+            to extract the key on a compromised host and get access to the data later.</para>
+        </listitem>
+
+        <listitem>
+          <para>When encrypting or decrypting the images the password is passed unencrypted
+            via the Main API from the frontend to VBoxSVC. This needs to be kept in mind
+            especially when using third party frontends which make use of the webservice
+            where the password might be transmitted unencrypted over the network.</para>
+        </listitem>
+
+        <listitem>
+          <para>Encrypting images with differencing images is only possible if there
+            are no branches exisiting. This limitation will be lifted in the future.</para>
+        </listitem>
+
+      </itemizedlist>
+
+    </sect2>
+
+    <sect2 id="diskencryption-encryption">
+      <title>Encrypting disk images</title>
+
+      <para>
+        Encrypting disk images can be done either using the GUI or VBoxManage.
+        While the GUI is easier to use it works on a per VM basis and encrypts
+        all disk images attached to the specific VM.
+        With VBoxManage one can encrypt individual images (including all differencing
+        images). To encrypt an unencrypted medium with VBoxManage use:
+      </para>
+
+      <screen>VBoxManage encryptmedium "uuid|filename" --newpassword "file|-" --cipher "cipher id" --newpasswordid "id"</screen>
+
+      <para>
+        To supply the encryption password point VBoxManage to the file where the
+        password is stored or specify <computeroutput>-</computeroutput> to let VBoxManage
+        ask you for the password on the command line.
+      </para>
+      <para>
+        The cipher parameter specifies the cipher to use for encryption and can be either
+        <computeroutput>AES-XTS128-PLAIN64</computeroutput> or <computeroutput>AES-XTS256-PLAIN64</computeroutput>.
+        The specified password identifier can be freely chosen by the user and is
+        used for correct identification when supplying multiple passwords during
+        VM startup.
+      </para>
+      <para>
+        If the user uses the same password when encrypting multiple images and also the
+        same password identifier, the user needs to supply the password only once during
+        VM startup.
+      </para>
+    </sect2>
+
+    <sect2 id="diskencryption-startvm">
+      <title>Starting a VM with encrypted images</title>
+
+      <para>
+        When a VM is started using the GUI a dialog will open where the user
+        needs to enter all passwords for all encrypted images attached to the VM.
+        If another frontend like VBoxHeadless is used the VM will be paused as soon
+        as the guest tries to access an encrypted disk.
+        The user needs to provide the passwords through VBoxManage using the following
+        command:
+      </para>
+
+      <screen>VBoxManage controlvm "uuid|vmname" addencpassword "id" "password" [--removeonsuspend "yes|no"]</screen>
+
+      <para>
+        The <computeroutput>id</computeroutput> parameter must be the same as the password identifier
+        supplied when encrypting the images. <computeroutput>password</computeroutput> is the password
+        used when encrypting the images. The user can optionally specify
+        <computeroutput>--removeonsuspend "yes|no"</computeroutput> to specify whether
+        to remove the password from VM memory when the VM is suspended. Before the VM can be
+        resumed the user needs to supply the passwords again. This is useful when
+        a VM is suspended by a host suspend event and the user doesn't want
+        that the password remains in memory.
+      </para>
+    </sect2>
+
+    <sect2 id="diskencryption-decryption">
+      <title>Decrypting encrypted images</title>
+
+      <para>
+        In some circumstanes it might be required to decrypt previously encrypted
+        images. This can be done in the GUI for a complete VM or using VBoxManage
+        with the following command:
+      </para>
+
+      <screen>VBoxManage encryptmedium "uuid|filename" --oldpassword "file|-"</screen>
+
+      <para>
+        The only required parameter is the password the image was encrypted with.
+        The options are the same as for encrpting images.
+      </para>
+    </sect2>
+  </sect1>
+
 </chapter>
