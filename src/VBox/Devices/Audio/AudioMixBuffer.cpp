@@ -523,13 +523,13 @@ AUDMIXBUF_CONVERT(U32 /* Name */, uint32_t, 0         /* Min */, UINT32_MAX /* M
             \
             paDst->i64LSample _aOp samOut.i64LSample; \
             paDst->i64RSample _aOp samOut.i64RSample; \
-            paDst++; \
             \
             AUDMIXBUF_MACRO_LOG(("\tlDelta=0x%RX64 (%RU64), iDstOffInt=0x%RX64 (%RI64), l=%RI64, r=%RI64 (cur l=%RI64, r=%RI64)\n", \
                                  lDelta, lDelta, iDstOffInt, iDstOffInt, \
                                  paDst->i64LSample, paDst->i64RSample, \
                                  samCur.i64LSample, samCur.i64RSample)); \
             \
+            paDst++; \
             pRate->dstOffset += pRate->dstInc; \
             \
             AUDMIXBUF_MACRO_LOG(("\t\tpRate->dstOffset=0x%RX32 (%RU32)\n", pRate->dstOffset, pRate->dstOffset >> 32)); \
