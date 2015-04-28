@@ -339,6 +339,8 @@ static int tstConversion8(RTTEST hTest)
     RTTESTI_CHECK(audioMixBufProcessed(&parent) == 0);
     RTTESTI_CHECK(audioMixBufMixed(&child) == 0);
 
+    audioMixBufDestroy(&parent);
+    audioMixBufDestroy(&child);
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
@@ -553,6 +555,9 @@ static int tstVolume(RTTEST hTest)
         ++pSrc16;
         ++pDst16;
     }
+
+    audioMixBufDestroy(&parent);
+    audioMixBufDestroy(&child);
 
     return RTTestSubErrorCount(hTest) ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
 }
