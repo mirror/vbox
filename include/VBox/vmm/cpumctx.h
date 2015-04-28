@@ -437,7 +437,7 @@ AssertCompileSizeAlignment(CPUMCTX, 64);
     { \
         AssertCompile((a_iCompBit) < 64U); \
         AssertMsg((pCtx)->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
-        AssertMsg((pCtx)->aoffXState[(a_iCompBit)] != UINT64_MAX, (#a_iCompBit "\n")); \
+        AssertMsg((pCtx)->aoffXState[(a_iCompBit)] != UINT16_MAX, (#a_iCompBit "\n")); \
         return (a_PtrType)((uint8_t *)(pCtx)->CTX_SUFF(pXState) + pCtx->aoffXState[(a_iCompBit)]); \
     }(a_pCtx))
 #elif defined(VBOX_STRICT) && defined(__GNUC__)
@@ -445,7 +445,7 @@ AssertCompileSizeAlignment(CPUMCTX, 64);
     __extension__ ({ \
                         AssertCompile((a_iCompBit) < 64U); \
                         AssertMsg((a_pCtx)->fXStateMask & RT_BIT_64(a_iCompBit), (#a_iCompBit "\n")); \
-                        AssertMsg((a_pCtx)->aoffXState[(a_iCompBit)] != UINT64_MAX, (#a_iCompBit "\n")); \
+                        AssertMsg((a_pCtx)->aoffXState[(a_iCompBit)] != UINT16_MAX, (#a_iCompBit "\n")); \
                         (a_PtrType)((uint8_t *)(a_pCtx)->CTX_SUFF(pXState) + pCtx->aoffXState[(a_iCompBit)]); \
                    })
 #else
