@@ -318,7 +318,7 @@ static int tstConversion(RTTEST hTest)
     int16_t *pSrc16 = &samples[0];
     int16_t *pDst16 = (int16_t *)pvBuf;
 
-    for (i = 0; i < cSamplesChild; ++i)
+    for (i = 0; i < cSamplesChild - 1; ++i)
     {
         RTTESTI_CHECK_MSG(*pSrc16 == *pDst16, ("index %u: Dst=%d, Src=%d\n", i, *pDst16, *pSrc16));
         pSrc16 += 1;
