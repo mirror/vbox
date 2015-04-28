@@ -32,6 +32,7 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/getopt.h>
+#include <iprt/ldr.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 
@@ -172,7 +173,84 @@ static const struct
         "arg1 'arg2=\"zyx\"' 'arg3=\\\\\\'",
         "arg1 \"arg2=\\\"zyx\\\"\" arg3=\\\\\\"
     },
+    {
+        " a\\\\\\\\b  d\"e f\"g h ij\t",
+        NULL,
+        4,
+        {
+            "a\\\\b",
+            "de fg",
+            "h",
+            "ij",
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
+        },
+        "'a\\\\b' 'de fg' h ij",
+        "a\\\\b \"de fg\" h ij",
+    }
 };
+
+
+
+static void tstCheckNativeMsCrtToArgv(const char *pszCmdLine, int cExpectedArgs, const char * const *papszExpectedArgs)
+{
+#ifdef RT_OS_WINDOWS
+    /*
+     * Resolve APIs.
+     */
+    static void     *(__stdcall * s_pfnLocalFree)(void *pvFree);
+    static PRTUTF16 *(__stdcall * s_pfnCommandLineToArgvW)(PCRTUTF16 pwszCmdLine, int *pcArgs);
+    if (!s_pfnCommandLineToArgvW)
+    {
+        *(void **)&s_pfnLocalFree = RTLdrGetSystemSymbol("kernel32.dll", "LocalFree");
+        RTTESTI_CHECK_RETV(s_pfnLocalFree != NULL);
+        *(void **)&s_pfnCommandLineToArgvW = RTLdrGetSystemSymbol("shell32.dll", "CommandLineToArgvW");
+        RTTESTI_CHECK_RETV(s_pfnCommandLineToArgvW != NULL);
+    }
+
+    /*
+     * Calc expected arguments if needed.
+     */
+    if (cExpectedArgs == -1)
+        for (cExpectedArgs = 0; papszExpectedArgs[cExpectedArgs]; cExpectedArgs++)
+        { /* nothing */ }
+
+    /*
+     * Convert input command line to UTF-16 and call native API.
+     */
+    RTUTF16 wszCmdLine[1024];
+    PRTUTF16 pwszCmdLine = &wszCmdLine[1];
+    RTTESTI_CHECK_RC_RETV(RTStrToUtf16Ex(pszCmdLine, RTSTR_MAX, &pwszCmdLine, 1023, NULL), VINF_SUCCESS);
+    wszCmdLine[0] = ' ';
+
+    int cArgs = -2;
+    PRTUTF16 *papwszArgs = s_pfnCommandLineToArgvW(wszCmdLine, &cArgs);
+
+    /*
+     * Check the result.
+     */
+    if (cArgs - 1 != cExpectedArgs)
+        RTTestIFailed("Native returns cArgs=%d, expected %d (cmdline=|%s|)", cArgs - 1, cExpectedArgs, pszCmdLine);
+    int cArgsCheck = RT_MIN(cArgs - 1, cExpectedArgs);
+    for (int i = 0; i < cArgsCheck; i++)
+    {
+        char *pszArg = NULL;
+        RTTESTI_CHECK_RC_RETV(RTUtf16ToUtf8(papwszArgs[i + 1], &pszArg), VINF_SUCCESS);
+        if (strcmp(pszArg, papszExpectedArgs[i]))
+            RTTestIFailed("Native returns argv[%i]='%s', expected '%s' (cmdline=|%s|)",
+                          i, pszArg, papszExpectedArgs[i], pszCmdLine);
+        RTStrFree(pszArg);
+    }
+
+    if (papwszArgs)
+        s_pfnLocalFree(papwszArgs);
+#else
+    NOREF(pszCmdLine);
+    NOREF(cExpectedArgs);
+    NOREF(papszExpectedArgs);
+#endif
+}
+
 
 
 static void tst3(void)
@@ -193,7 +271,7 @@ static void tst3(void)
                 RTTestIFailed("g_aBourneTests[%i]: #1=%d, expected %d", i, cArgs1, g_aBourneTests[i].cArgs);
             for (int iArg = 0; iArg < cArgs1; iArg++)
                 if (strcmp(papszArgs1[iArg], g_aBourneTests[i].apszArgs[iArg]) != 0)
-                    RTTestIFailed("g_aBourneTests[%i]/#1: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s', '%s'))",
+                    RTTestIFailed("g_aBourneTests[%i]/1: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s', '%s'))",
                                   i, iArg, papszArgs1[iArg], g_aBourneTests[i].apszArgs[iArg],
                                   g_aBourneTests[i].pszInput, g_aBourneTests[i].pszSeparators);
             RTTESTI_CHECK_RETV(papszArgs1[cArgs1] == NULL);
@@ -286,7 +364,9 @@ static void tst2(void)
         char *pszCmdLine = NULL;
         int rc = RTGetOptArgvToString(&pszCmdLine, s_aMscCrtTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-        if (strcmp(s_aMscCrtTests[i].pszCmdLine, pszCmdLine))
+        if (!strcmp(s_aMscCrtTests[i].pszCmdLine, pszCmdLine))
+            tstCheckNativeMsCrtToArgv(pszCmdLine, -1, s_aMscCrtTests[i].apszArgs);
+        else
             RTTestIFailed("g_aTest[%i] failed:\n"
                           " got      '%s'\n"
                           " expected '%s'\n",
@@ -299,7 +379,9 @@ static void tst2(void)
         char *pszCmdLine = NULL;
         int rc = RTGetOptArgvToString(&pszCmdLine, g_aBourneTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-        if (strcmp(g_aBourneTests[i].pszOutMsCrt, pszCmdLine))
+        if (!strcmp(g_aBourneTests[i].pszOutMsCrt, pszCmdLine))
+            tstCheckNativeMsCrtToArgv(pszCmdLine, g_aBourneTests[i].cArgs, g_aBourneTests[i].apszArgs);
+        else
             RTTestIFailed("g_aBourneTests[%i] failed:\n"
                           " got      |%s|\n"
                           " expected |%s|\n",
