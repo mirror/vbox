@@ -1413,6 +1413,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             SSMR3GetU32(pSSM, &pVCpu->cpum.s.fUseFlags);
             SSMR3GetU32(pSSM, &pVCpu->cpum.s.fChanged);
 
+            rc = VINF_SUCCESS;
             if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
                 rc = SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], cbMsrs);
             else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
