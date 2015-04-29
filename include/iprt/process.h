@@ -205,7 +205,13 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #define RTPROC_FLAGS_NO_WINDOW              RT_BIT(5)
 /** Search the PATH for the executable.  */
 #define RTPROC_FLAGS_SEARCH_PATH            RT_BIT(6)
-
+/** Don't quote and escape arguments on Windows and similar platforms where a
+ * command line is passed to the child process instead of an argument vector,
+ * just join up argv with a space between each.  Ignored on platforms
+ * passing argument the vector. */
+#define RTPROC_FLAGS_UNQUOTED_ARGS          RT_BIT(7)
+/** Valid flag mask. */
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0xff)
 /** @}  */
 
 
