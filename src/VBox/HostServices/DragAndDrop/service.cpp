@@ -319,6 +319,13 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
     LogFlowFunc(("Mode (%RU32) check rc=%Rrc\n", modeGet(), rc));
 #endif
 
+#define DO_HOST_CALLBACK();                                                     \
+    if (   RT_SUCCESS(rc)                                                       \
+        && m_pfnHostCallback)                                                   \
+    {                                                                           \
+        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data)); \
+    }
+
     if (rc == VINF_SUCCESS) /* Note: rc might be VINF_HGCM_ASYNC_EXECUTE! */
     {
         DnDClientMap::iterator itClient =  m_clientMap.find(u32ClientID);
@@ -390,9 +397,9 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 else
                 {
                     uint32_t uProtocol;
-                    paParms[0].getUInt32(&uProtocol); /* Get protocol version. */
-
-                    rc = pClient->setProtocol(uProtocol);
+                    rc = paParms[0].getUInt32(&uProtocol); /* Get protocol version. */
+                    if (RT_SUCCESS(rc))
+                        rc = pClient->setProtocol(uProtocol);
                     if (RT_SUCCESS(rc))
                     {
                         /** @todo Handle connection flags (paParms[1]). */
@@ -413,9 +420,8 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBHGACKOPDATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_ACK_OP;
-                    paParms[0].getUInt32(&data.uAction); /* Get drop action. */
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    rc = paParms[0].getUInt32(&data.uAction); /* Get drop action. */
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -430,9 +436,8 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     DragAndDropSvc::VBOXDNDCBHGREQDATADATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA;
                     uint32_t cTmp;
-                    paParms[0].getPointer((void**)&data.pszFormat, &cTmp);
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    rc = paParms[0].getPointer((void**)&data.pszFormat, &cTmp);
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -448,11 +453,12 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBHGEVTPROGRESSDATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_EVT_PROGRESS;
-                    paParms[0].getUInt32(&data.uStatus);
-                    paParms[1].getUInt32(&data.uPercentage);
-                    paParms[2].getUInt32(&data.rc);
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    rc = paParms[0].getUInt32(&data.uStatus);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[1].getUInt32(&data.uPercentage);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[2].getUInt32(&data.rc);
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -469,12 +475,15 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING;
-                    paParms[0].getUInt32(&data.uDefAction);
-                    paParms[1].getUInt32(&data.uAllActions);
-                    uint32_t cTmp;
-                    paParms[2].getPointer((void**)&data.pszFormat, &cTmp);
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    rc = paParms[0].getUInt32(&data.uDefAction);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[1].getUInt32(&data.uAllActions);
+                    if (RT_SUCCESS(rc))
+                    {
+                        uint32_t cTmp;
+                        rc = paParms[2].getPointer((void**)&data.pszFormat, &cTmp);
+                    }
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -489,10 +498,10 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBSNDDATADATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_SND_DATA;
-                    paParms[0].getPointer((void**)&data.pvData, &data.cbData);
-                    paParms[1].getUInt32(&data.cbTotalSize);
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    rc = paParms[0].getPointer((void**)&data.pvData, &data.cbData);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[1].getUInt32(&data.cbTotalSize);
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -509,13 +518,14 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     DragAndDropSvc::VBOXDNDCBSNDDIRDATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_SND_DIR;
                     uint32_t cTmp;
-                    paParms[0].getPointer((void**)&data.pszPath, &cTmp);
-                    paParms[1].getUInt32(&data.cbPath);
-                    paParms[2].getUInt32(&data.fMode);
+                    rc = paParms[0].getPointer((void**)&data.pszPath, &cTmp);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[1].getUInt32(&data.cbPath);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[2].getUInt32(&data.fMode);
 
                     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", data.pszPath, data.cbPath, data.fMode));
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -537,17 +547,19 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_HDR;
                     uint32_t cTmp;
                     /* paParms[0] is context ID; unused yet. */
-                    paParms[1].getPointer((void**)&data.pszFilePath, &cTmp);
-                    paParms[2].getUInt32(&data.cbFilePath);
-                    paParms[3].getUInt32(&data.fFlags);
-                    paParms[4].getUInt32(&data.fMode);
-                    paParms[5].getUInt64(&data.cbSize);
+                    rc = paParms[1].getPointer((void**)&data.pszFilePath, &cTmp);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[2].getUInt32(&data.cbFilePath);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[3].getUInt32(&data.fFlags);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[4].getUInt32(&data.fMode);
+                    if (RT_SUCCESS(rc))
+                        rc = paParms[5].getUInt64(&data.cbSize);
 
                     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x, cbSize=%RU64\n",
                                  data.pszFilePath, data.cbFilePath, data.fMode, data.cbSize));
-
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
@@ -571,13 +583,12 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             DragAndDropSvc::VBOXDNDCBSNDFILEDATADATA data;
                             data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_DATA;
                             /* paParms[0] is context ID; unused yet. */
-                            paParms[1].getPointer((void**)&data.pvData, &data.cbData);
-                            paParms[2].getUInt32(&data.cbData);
+                            rc = paParms[1].getPointer((void**)&data.pvData, &data.cbData);
+                            if (RT_SUCCESS(rc))
+                                rc = paParms[2].getUInt32(&data.cbData);
 
                             LogFlowFunc(("cbData=%RU32, pvData=0x%p\n", data.cbData, data.pvData));
-
-                            if (m_pfnHostCallback)
-                                rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                            DO_HOST_CALLBACK();
                         }
                         break;
                     }
@@ -597,17 +608,19 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                             DragAndDropSvc::VBOXDNDCBSNDFILEDATADATA data;
                             data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_SND_FILE_DATA;
                             uint32_t cTmp;
-                            paParms[0].getPointer((void**)&data.u.v1.pszFilePath, &cTmp);
-                            paParms[1].getUInt32(&data.u.v1.cbFilePath);
-                            paParms[2].getPointer((void**)&data.pvData, &cTmp);
-                            paParms[3].getUInt32(&data.cbData);
-                            paParms[4].getUInt32(&data.u.v1.fMode);
+                            rc = paParms[0].getPointer((void**)&data.u.v1.pszFilePath, &cTmp);
+                            if (RT_SUCCESS(rc))
+                                rc = paParms[1].getUInt32(&data.u.v1.cbFilePath);
+                            if (RT_SUCCESS(rc))
+                                rc = paParms[2].getPointer((void**)&data.pvData, &cTmp);
+                            if (RT_SUCCESS(rc))
+                                rc = paParms[3].getUInt32(&data.cbData);
+                            if (RT_SUCCESS(rc))
+                                rc = paParms[4].getUInt32(&data.u.v1.fMode);
 
                             LogFlowFunc(("pszFilePath=%s, cbData=%RU32, pvData=0x%p, fMode=0x%x\n",
                                          data.u.v1.pszFilePath, data.cbData, data.pvData, data.u.v1.fMode));
-
-                            if (m_pfnHostCallback)
-                                rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                            DO_HOST_CALLBACK();
                         }
                         break;
                     }
@@ -626,11 +639,11 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR;
 
                     uint32_t rcOp;
-                    paParms[0].getUInt32(&rcOp);
-                    data.rc = rcOp;
+                    rc = paParms[0].getUInt32(&rcOp);
+                    if (RT_SUCCESS(rc))
+                        data.rc = rcOp;
 
-                    if (m_pfnHostCallback)
-                        rc = m_pfnHostCallback(m_pvHostData, u32Function, &data, sizeof(data));
+                    DO_HOST_CALLBACK();
                 }
                 break;
             }
