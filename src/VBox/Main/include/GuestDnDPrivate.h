@@ -479,25 +479,25 @@ protected:
 
     int addMsg(GuestDnDMsg *pMsg)
     {
-        mData.m_lstOutgoing.push_back(pMsg);
+        mDataBase.m_lstOutgoing.push_back(pMsg);
         return VINF_SUCCESS;
     }
 
     GuestDnDMsg *nextMsg(void)
     {
-        if (mData.m_lstOutgoing.empty())
+        if (mDataBase.m_lstOutgoing.empty())
             return NULL;
-        return mData.m_lstOutgoing.front();
+        return mDataBase.m_lstOutgoing.front();
     }
 
     void removeNext(void)
     {
-        if (!mData.m_lstOutgoing.empty())
+        if (!mDataBase.m_lstOutgoing.empty())
         {
-            GuestDnDMsg *pMsg = mData.m_lstOutgoing.front();
+            GuestDnDMsg *pMsg = mDataBase.m_lstOutgoing.front();
             if (pMsg)
                 delete pMsg;
-            mData.m_lstOutgoing.pop_front();
+            mDataBase.m_lstOutgoing.pop_front();
         }
     }
 
@@ -518,7 +518,7 @@ protected:
         uint32_t                    mProtocolVersion;
         /** Outgoing message queue. */
         GuestDnDMsgList             m_lstOutgoing;
-    } mData;
+    } mDataBase;
 };
 #endif /* ____H_GUESTDNDPRIVATE */
 

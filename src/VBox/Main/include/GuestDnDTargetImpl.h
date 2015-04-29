@@ -82,11 +82,11 @@ protected:
 
 protected:
 
-    /** @name Attributes.
-     * @{ */
-    /** Maximum data block size (in bytes) the target can handle. */
-    uint32_t                   m_cbBlockSize;
-    /** @}  */
+    struct
+    {
+        /** Maximum data block size (in bytes) the target can handle. */
+        uint32_t mcbBlockSize;
+    } mData;
 };
 
 #endif /* !____H_GUESTDNDTARGETIMPL */

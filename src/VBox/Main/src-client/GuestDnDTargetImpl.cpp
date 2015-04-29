@@ -110,7 +110,7 @@ HRESULT GuestDnDTarget::FinalConstruct(void)
      * been hardcoded until now. */
     /* Note: Never ever rely on information from the guest; the host dictates what and
      *       how to do something, so try to negogiate a sensible value here later. */
-    m_cbBlockSize = _64K; /** @todo Make this configurable. */
+    mData.mcbBlockSize = _64K; /** @todo Make this configurable. */
 
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
@@ -260,7 +260,7 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Determine guest DnD protocol to use. */
-    GuestDnDBase::getProtocolVersion(&mData.mProtocolVersion);
+    GuestDnDBase::getProtocolVersion(&mDataBase.mProtocolVersion);
 
     /* Default action is ignoring. */
     DnDAction_T resAction = DnDAction_Ignore;
@@ -286,18 +286,17 @@ HRESULT GuestDnDTarget::enter(ULONG aScreenId, ULONG aX, ULONG aY,
     int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (RT_SUCCESS(rc))
     {
-        VBOXHGCMSVCPARM paParms[8];
-        int i = 0;
-        paParms[i++].setUInt32(aScreenId);
-        paParms[i++].setUInt32(aX);
-        paParms[i++].setUInt32(aY);
-        paParms[i++].setUInt32(uDefAction);
-        paParms[i++].setUInt32(uAllowedActions);
-        paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        paParms[i++].setUInt32(strFormats.length() + 1);
+        GuestDnDMsg Msg;
+        Msg.setType(DragAndDropSvc::HOST_DND_HG_EVT_ENTER);
+        Msg.setNextUInt32(aScreenId);
+        Msg.setNextUInt32(aX);
+        Msg.setNextUInt32(aY);
+        Msg.setNextUInt32(uDefAction);
+        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
+        Msg.setNextUInt32(strFormats.length() + 1);
 
-        rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_ENTER,
-                                      i, paParms);
+        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
@@ -352,18 +351,17 @@ HRESULT GuestDnDTarget::move(ULONG aScreenId, ULONG aX, ULONG aY,
     int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (RT_SUCCESS(rc))
     {
-        VBOXHGCMSVCPARM paParms[8];
-        int i = 0;
-        paParms[i++].setUInt32(aScreenId);
-        paParms[i++].setUInt32(aX);
-        paParms[i++].setUInt32(aY);
-        paParms[i++].setUInt32(uDefAction);
-        paParms[i++].setUInt32(uAllowedActions);
-        paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        paParms[i++].setUInt32(strFormats.length() + 1);
+        GuestDnDMsg Msg;
+        Msg.setType(DragAndDropSvc::HOST_DND_HG_EVT_MOVE);
+        Msg.setNextUInt32(aScreenId);
+        Msg.setNextUInt32(aX);
+        Msg.setNextUInt32(aY);
+        Msg.setNextUInt32(uDefAction);
+        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
+        Msg.setNextUInt32(strFormats.length() + 1);
 
-        rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_MOVE,
-                                      i, paParms);
+        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
@@ -445,18 +443,17 @@ HRESULT GuestDnDTarget::drop(ULONG aScreenId, ULONG aX, ULONG aY,
     int rc = GuestDnDInst()->adjustScreenCoordinates(aScreenId, &aX, &aY);
     if (RT_SUCCESS(rc))
     {
-        VBOXHGCMSVCPARM paParms[8];
-        int i = 0;
-        paParms[i++].setUInt32(aScreenId);
-        paParms[i++].setUInt32(aX);
-        paParms[i++].setUInt32(aY);
-        paParms[i++].setUInt32(uDefAction);
-        paParms[i++].setUInt32(uAllowedActions);
-        paParms[i++].setPointer((void*)strFormats.c_str(), strFormats.length() + 1);
-        paParms[i++].setUInt32(strFormats.length() + 1);
+        GuestDnDMsg Msg;
+        Msg.setType(DragAndDropSvc::HOST_DND_HG_EVT_DROPPED);
+        Msg.setNextUInt32(aScreenId);
+        Msg.setNextUInt32(aX);
+        Msg.setNextUInt32(aY);
+        Msg.setNextUInt32(uDefAction);
+        Msg.setNextUInt32(uAllowedActions);
+        Msg.setNextPointer((void*)strFormats.c_str(), strFormats.length() + 1);
+        Msg.setNextUInt32(strFormats.length() + 1);
 
-        rc = GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_DROPPED,
-                                      i, paParms);
+        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
             GuestDnDResponse *pResp = GuestDnDInst()->response();
@@ -668,7 +665,7 @@ int GuestDnDTarget::i_sendDirectory(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURI
     if (strPath.length() >= RTPATH_MAX) /* Note: Maximum is RTPATH_MAX on guest side. */
         return VERR_BUFFER_OVERFLOW;
 
-    LogFlowFunc(("Sending directory \"%s\" using protocol v%RU32 ...\n", strPath.c_str(), mData.mProtocolVersion));
+    LogFlowFunc(("Sending directory \"%s\" using protocol v%RU32 ...\n", strPath.c_str(), mDataBase.mProtocolVersion));
 
     pMsg->setType(DragAndDropSvc::HOST_DND_HG_SND_DIR);
     pMsg->setNextString(strPath.c_str());                  /* path */
@@ -689,7 +686,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("Sending \"%s\" (%RU32 bytes buffer) using protocol v%RU32 ...\n",
-                 strPathSrc.c_str(), m_cbBlockSize, mData.mProtocolVersion));
+                 strPathSrc.c_str(), mData.mcbBlockSize, mDataBase.mProtocolVersion));
 
     bool fOpen = aFile.IsOpen();
     if (!fOpen)
@@ -702,7 +699,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     bool fSendFileData = false;
     if (RT_SUCCESS(rc))
     {
-        if (mData.mProtocolVersion >= 2)
+        if (mDataBase.mProtocolVersion >= 2)
         {
             if (!fOpen)
             {
@@ -771,7 +768,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
 
     /* Protocol version 1 sends the file path *every* time with a new file chunk.
      * In protocol version 2 we only do this once with HOST_DND_HG_SND_FILE_HDR. */
-    if (mData.mProtocolVersion <= 1)
+    if (mDataBase.mProtocolVersion <= 1)
     {
         pMsg->setNextString(aFile.GetSourcePath().c_str());                  /* pvName */
         pMsg->setNextUInt32((uint32_t)(aFile.GetSourcePath().length() + 1)); /* cbName */
@@ -789,7 +786,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
     {
         pCtx->mData.cbProcessed += cbRead;
 
-        if (mData.mProtocolVersion <= 1)
+        if (mDataBase.mProtocolVersion <= 1)
         {
             pMsg->setNextPointer(pCtx->mURI.pvScratchBuf, cbRead);  /* pvData */
             pMsg->setNextUInt32(cbRead);                            /* cbData */
@@ -943,7 +940,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
         break; \
     }
 
-    void *pvBuf = RTMemAlloc(m_cbBlockSize);
+    void *pvBuf = RTMemAlloc(mData.mcbBlockSize);
     if (!pvBuf)
         return VERR_NO_MEMORY;
 
@@ -970,7 +967,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
     REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     REGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_DIR);
-    if (mData.mProtocolVersion >= 2)
+    if (mDataBase.mProtocolVersion >= 2)
         REGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR);
     REGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA);
 
@@ -980,7 +977,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
          * Set our scratch buffer.
          */
         pCtx->mURI.pvScratchBuf = pvBuf;
-        pCtx->mURI.cbScratchBuf = m_cbBlockSize;
+        pCtx->mURI.cbScratchBuf = mData.mcbBlockSize;
 
         /*
          * Extract URI list from byte data.
@@ -1046,7 +1043,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
     UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     UNREGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_DIR);
-    if (mData.mProtocolVersion >= 2)
+    if (mDataBase.mProtocolVersion >= 2)
         UNREGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR);
     UNREGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA);
 
