@@ -279,6 +279,7 @@ public:
     void cannotExportAppliance(const CMachine &machine, const QString &strPath, QWidget *pParent = 0) const;
     void cannotExportAppliance(const CProgress &progress, const QString &strPath, QWidget *pParent = 0) const;
     void cannotFindSnapshotByName(const CMachine &machine, const QString &strMachine, QWidget *pParent = 0) const;
+    void cannotAddDiskEncryptionPassword(const CAppliance &appliance, QWidget *pParent = 0);
 
     /* API: Runtime UI warnings: */
     void showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const;

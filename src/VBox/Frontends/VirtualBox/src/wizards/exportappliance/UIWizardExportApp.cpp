@@ -31,6 +31,7 @@
 # include "UIWizardExportAppPageBasic3.h"
 # include "UIWizardExportAppPageBasic4.h"
 # include "UIWizardExportAppPageExpert.h"
+# include "UIAddDiskEncryptionPasswordDialog.h"
 # include "UIMessageCenter.h"
 
 /* COM includes: */
@@ -131,6 +132,59 @@ bool UIWizardExportApp::exportAppliance()
 
 bool UIWizardExportApp::exportVMs(CAppliance &appliance)
 {
+    /* Get the map of the password IDs: */
+    EncryptedMediumMap encryptedMediums;
+    foreach (const QString &strPasswordId, appliance.GetPasswordIds())
+        foreach (const QString &strMediumId, appliance.GetMediumIdsForPasswordId(strPasswordId))
+            encryptedMediums.insert(strPasswordId, strMediumId);
+
+    /* Ask for the disk encryption passwords if necessary: */
+    if (!encryptedMediums.isEmpty())
+    {
+        /* Create corresponding dialog: */
+        QPointer<UIAddDiskEncryptionPasswordDialog> pDlg =
+             new UIAddDiskEncryptionPasswordDialog(this,
+                                                   window()->windowTitle(),
+                                                   encryptedMediums);
+
+        /* Execute the dialog: */
+        if (pDlg->exec() == QDialog::Accepted)
+        {
+            /* Acquire the passwords provided: */
+            const EncryptionPasswordMap encryptionPasswords = pDlg->encryptionPasswords();
+
+            /* Delete the dialog: */
+            delete pDlg;
+
+            /* Make sure the passwords were really provided: */
+            AssertReturn(!encryptionPasswords.isEmpty(), false);
+
+            /* Provide appliance with passwords if possible: */
+            appliance.AddPasswords(encryptionPasswords.keys().toVector(),
+                                   encryptionPasswords.values().toVector());
+            if (!appliance.isOk())
+            {
+                /* Warn the user about failure: */
+                msgCenter().cannotAddDiskEncryptionPassword(appliance);
+
+                return false;
+            }
+        }
+        else
+        {
+            /* Any modal dialog can be destroyed in own event-loop
+             * as a part of application termination procedure..
+             * We have to check if the dialog still valid. */
+            if (pDlg)
+            {
+                /* Delete the dialog: */
+                delete pDlg;
+            }
+
+            return false;
+        }
+    }
+
     /* Write the appliance: */
     QVector<KExportOptions> options;
     if (field("manifestSelected").toBool())

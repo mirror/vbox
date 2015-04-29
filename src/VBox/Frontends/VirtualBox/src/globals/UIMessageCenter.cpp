@@ -1680,6 +1680,13 @@ void UIMessageCenter::cannotFindSnapshotByName(const CMachine &machine, const QS
           formatErrorInfo(machine));
 }
 
+void UIMessageCenter::cannotAddDiskEncryptionPassword(const CAppliance &appliance, QWidget *pParent /* = 0 */)
+{
+    error(pParent, MessageType_Error,
+          tr("Bad password or authentication failure."),
+          formatErrorInfo(appliance));
+}
+
 void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, const QString &strErrorId, const QString &strErrorMsg) const
 {
     /* Prepare auto-confirm id: */
@@ -2085,7 +2092,7 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) c
 void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
 {
     error(0, MessageType_Error,
-          tr("Unable to enter password!"),
+          tr("Bad password or authentication failure."),
           formatErrorInfo(console));
 }
 
