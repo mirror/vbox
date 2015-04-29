@@ -55,6 +55,7 @@
 
 #include <VBox/VBoxVideoGuest.h>
 #include <VBox/VBoxVideo.h>
+#include "version-generated.h"
 
 #ifndef VBVA_SCREEN_F_BLANK
 # define VBVA_SCREEN_F_BLANK    0x0004
@@ -107,7 +108,7 @@ if (!(expr)) \
 #include "xf86str.h"
 #include "xf86Cursor.h"
 
-#define VBOX_VERSION            4000  /* Why? */
+#define VBOX_VERSION            VBOX_VERSION_MAJOR * 10000 + VBOX_VERSION_MINOR * 100 + VBOX_VERSION_BUILD
 #define VBOX_NAME               "VBoxVideo"
 #define VBOX_DRIVER_NAME        "vboxvideo"
 
@@ -128,8 +129,8 @@ extern void GlxSetVisualConfigs(int nconfigs, __GLXvisualConfig *configs,
                                 void **configprivs);
 #endif
 
-#define VBOX_VIDEO_MAJOR  1
-#define VBOX_VIDEO_MINOR  0
+#define VBOX_VIDEO_MAJOR  VBOX_VERSION_MAJOR
+#define VBOX_VIDEO_MINOR  VBOX_VERSION_MINOR
 #define VBOX_DRM_DRIVER_NAME  "vboxvideo"  /* For now, as this driver is basically a stub. */
 #define VBOX_DRI_DRIVER_NAME  "vboxvideo"  /* For starters. */
 #define VBOX_MAX_DRAWABLES    256          /* At random. */
