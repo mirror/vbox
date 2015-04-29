@@ -3892,10 +3892,10 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     DBGC_CMDHLP_REQ_UVM_RET(pCmdHlp, pCmd, pUVM);
     PVM pVM = pUVM->pVM;
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
-    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType != DBGCVAR_TYPE_STRING);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, paArgs[0].enmType == DBGCVAR_TYPE_STRING);
     if (cArgs == 2)
     {
-        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, paArgs[2].enmType != DBGCVAR_TYPE_STRING);
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, paArgs[1].enmType == DBGCVAR_TYPE_STRING);
         if (strcmp(paArgs[1].u.pszString, "nozero"))
             return DBGCCmdHlpFail(pCmdHlp, pCmd, "Invalid 2nd argument '%s', must be 'nozero'.\n", paArgs[1].u.pszString);
     }
