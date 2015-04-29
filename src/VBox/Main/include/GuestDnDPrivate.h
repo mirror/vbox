@@ -32,9 +32,47 @@ class GuestDnDSource;
 class GuestDnDTarget;
 class Progress;
 
-/** Array (vector) of guest DnD data. This might be an URI list, according
- *  to the format being set. */
-typedef std::vector<BYTE> GuestDnDData;
+class GuestDnDCallbackEvent
+{
+public:
+
+    GuestDnDCallbackEvent(void)
+        : mSemEvent(NIL_RTSEMEVENT)
+        , mRc(VINF_SUCCESS) { }
+
+    virtual ~GuestDnDCallbackEvent(void);
+
+public:
+
+    int Reset(void);
+
+    int Notify(int rc);
+
+    int Result(void) const { return mRc; }
+
+    int Wait(RTMSINTERVAL msTimeout);
+
+protected:
+
+    /** Event semaphore to notify on error/completion. */
+    RTSEMEVENT mSemEvent;
+    /** Callback result. */
+    int        mRc;
+};
+
+/**
+ * Structure for keeping the (URI) data to be sent/received.
+ */
+typedef struct GuestDnDData
+{
+    /** Array (vector) of guest DnD data. This might be an URI list, according
+     *  to the format being set. */
+    std::vector<BYTE>         vecData;
+    /** Overall size (in bytes) of data to send. */
+    uint64_t                  cbToProcess;
+    /** Overall size (in bytes) of processed file data. */
+    uint64_t                  cbProcessed;
+} GuestDnDData;
 
 /**
  * Context structure for sending data to the guest.
@@ -55,19 +93,13 @@ typedef struct SENDDATACTX
     /** Drag'n drop data to send.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
+    /** Callback event to use. */
+    GuestDnDCallbackEvent               mCallback;
     /** Struct for keeping data required for URI list processing. */
     struct
     {
         /** List of all URI objects to send. */
         DnDURIList                      lstURI;
-        /** Event semaphore to notify in case of callback completion. */
-        RTSEMEVENT                      SemEvent;
-        /** Overall size (in bytes) of data to send. */
-        uint64_t                        cbToProcess;
-        /** Overall number of processed URI objects. */
-        uint32_t                        cProcessed;
-        /** Overall size (in bytes) of processed file data. */
-        uint64_t                        cbProcessed;
         /** Pointer to scratch buffer to use for
          *  doing the actual chunk transfers. */
         void                           *pvScratchBuf;
@@ -98,8 +130,8 @@ typedef struct RECVDATACTX
     /** Drag'n drop received from the guest.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
-    /** Event semaphore to notify in case of callback completion. */
-    RTSEMEVENT                          SemEvent;
+    /** Callback event to use. */
+    GuestDnDCallbackEvent               mCallback;
     /** Struct for keeping data required for URI list processing. */
     struct
     {
@@ -110,12 +142,6 @@ typedef struct RECVDATACTX
         DnDURIList                      lstURI;
         /** Current object to receive. */
         DnDURIObject                    objURI;
-        /** Overall size (in bytes) of data to send. */
-        uint64_t                        cbToProcess;
-        /** Overall number of processed URI objects. */
-        uint32_t                        cProcessed;
-        /** Overall size (in bytes) of processed file data. */
-        uint64_t                        cbProcessed;
         /** List for holding created directories in the case of a rollback. */
         RTCList<RTCString>              lstDirs;
         /** List for holding created files in the case of a rollback. */
@@ -298,16 +324,8 @@ public:
     void setDefAction(uint32_t a) { m_defAction = a; }
     uint32_t defAction(void) const { return m_defAction; }
 
-    void setDropDir(const Utf8Str &strDropDir) { m_strDropDir = strDropDir; }
-    Utf8Str dropDir(void) const { return m_strDropDir; }
-
     void setFormat(const Utf8Str &strFormat) { m_strFormat = strFormat; }
     Utf8Str format(void) const { return m_strFormat; }
-
-    int dataAdd(const void *pvData, uint32_t cbData, uint32_t *pcbCurSize);
-    int dataSetStatus(size_t cbDataAdd, size_t cbDataTotal = 0);
-    const void *data(void) { return m_pvData; }
-    size_t size(void) const { return m_cbData; }
 
     void reset(void);
 
@@ -337,18 +355,6 @@ protected:
     uint32_t              m_allActions;
     Utf8Str               m_strFormat;
 
-    /** The actual MIME data.*/
-    void                 *m_pvData;
-    /** Size (in bytes) of MIME data. */
-    uint32_t              m_cbData;
-
-    size_t                m_cbDataCurrent;
-    size_t                m_cbDataTotal;
-    /** Dropped files directory on the host. */
-    Utf8Str               m_strDropDir;
-    /** URI object to use for reading/writing from/to files
-     *  and handling directories. */
-    DnDURIObject          m_URIObj;
     /** Pointer to IGuest parent object. */
     ComObjPtr<Guest>      m_parent;
     /** Pointer to associated progress object. Optional. */
@@ -495,11 +501,6 @@ protected:
         }
     }
 
-    /** Static callbacks.
-     * @{ */
-    //static DECLCALLBACK(int) i_getNextMsgCallback(GuestDnDBase *pThis, uint32_t *puMsg, uint32_t *pcParms, PVBOXHGCMSVCPARM paParms);
-    /** @}  */
-
 protected:
 
     /** @name Attributes.
@@ -519,6 +520,5 @@ protected:
         GuestDnDMsgList             m_lstOutgoing;
     } mData;
 };
-
 #endif /* ____H_GUESTDNDPRIVATE */
 

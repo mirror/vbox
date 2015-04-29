@@ -34,7 +34,8 @@
 #include <VBox/GuestHost/DragAndDrop.h>
 
 DnDURIList::DnDURIList(void)
-    : m_cbTotal(0)
+    : m_cTotal(0)
+    , m_cbTotal(0)
 {
 }
 
@@ -77,6 +78,7 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                                   : DnDURIObject::File,
                                   pcszPath, &pcszPath[cbBaseLen],
                                   objInfo.Attr.fMode, cbSize));
+    m_cTotal++;
     m_cbTotal += cbSize;
 #ifdef DEBUG_andy
     LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
@@ -256,6 +258,7 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
                               : pszFileName - pszFilePath;
                 char *pszRoot = &pszFilePath[cbBase];
                 m_lstRoot.append(pszRoot);
+                m_cTotal++;
 #ifdef DEBUG_andy
                 LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
                              pszFilePath, pszFileName, pszRoot));
@@ -355,7 +358,10 @@ int DnDURIList::RootFromURIData(const void *pvData, size_t cbData,
         {
             rc = DnDPathSanitize(pszFilePath, strlen(pszFilePath));
             if (RT_SUCCESS(rc))
+            {
                 m_lstRoot.append(pszFilePath);
+                m_cTotal++;
+            }
 
             RTStrFree(pszFilePath);
         }

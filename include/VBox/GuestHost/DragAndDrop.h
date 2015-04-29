@@ -93,6 +93,7 @@ public:
     int Open(Dest enmDest, uint64_t fOpen);
     int OpenEx(const RTCString &strPath, Type enmType, Dest enmDest, uint64_t fMode = 0, uint32_t fFlags = 0);
     int Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead);
+    void Reset(void);
     int Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten);
 
 public:
@@ -144,6 +145,7 @@ public:
     int RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags);
     RTCString RootToString(const RTCString &strBasePath = "", const RTCString &strSeparator = "\r\n");
     size_t RootCount(void) { return m_lstRoot.size(); }
+    uint32_t TotalCount(void) { return m_cTotal; }
     size_t TotalBytes(void) { return m_cbTotal; }
 
 protected:
@@ -158,6 +160,8 @@ protected:
     RTCList<RTCString>     m_lstRoot;
     /** List of all URI objects added. */
     RTCList<DnDURIObject>  m_lstTree;
+    /** Total number of all URI objects. */
+    uint32_t               m_cTotal;
     /** Total size of all URI objects, that is, the file
      *  size of all objects (in bytes). */
     size_t                 m_cbTotal;

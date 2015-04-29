@@ -86,6 +86,10 @@ protected:
     int i_receiveData(PRECVDATACTX pCtx);
     int i_receiveRawData(PRECVDATACTX pCtx);
     int i_receiveURIData(PRECVDATACTX pCtx);
+
+protected:
+
+    int i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd);
 };
 
 #endif /* !____H_GUESTDNDSOURCEIMPL */

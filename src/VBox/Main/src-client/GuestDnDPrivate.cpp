@@ -159,14 +159,40 @@
  *   (both in the host and the guest).
  */
 
+GuestDnDCallbackEvent::~GuestDnDCallbackEvent(void)
+{
+    if (NIL_RTSEMEVENT != mSemEvent)
+        RTSemEventDestroy(mSemEvent);
+}
+
+int GuestDnDCallbackEvent::Reset(void)
+{
+    int rc = VINF_SUCCESS;
+
+    if (NIL_RTSEMEVENT == mSemEvent)
+        rc = RTSemEventCreate(&mSemEvent);
+
+    mRc = VINF_SUCCESS;
+    return rc;
+}
+
+int GuestDnDCallbackEvent::Notify(int rc)
+{
+    mRc = rc;
+    return RTSemEventSignal(mSemEvent);
+}
+
+int GuestDnDCallbackEvent::Wait(RTMSINTERVAL msTimeout)
+{
+    return RTSemEventWait(mSemEvent, msTimeout);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 GuestDnDResponse::GuestDnDResponse(const ComObjPtr<Guest>& pGuest)
     : m_EventSem(NIL_RTSEMEVENT)
     , m_defAction(0)
     , m_allActions(0)
-    , m_pvData(0)
-    , m_cbData(0)
-    , m_cbDataCurrent(0)
-    , m_cbDataTotal(0)
     , m_parent(pGuest)
 {
     int rc = RTSemEventCreate(&m_EventSem);
@@ -180,32 +206,6 @@ GuestDnDResponse::~GuestDnDResponse(void)
 
     int rc = RTSemEventDestroy(m_EventSem);
     AssertRC(rc);
-}
-
-int GuestDnDResponse::dataAdd(const void *pvData, uint32_t cbData,
-                              uint32_t *pcbCurSize)
-{
-    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
-    AssertReturn(cbData, VERR_INVALID_PARAMETER);
-    /* pcbCurSize is optional. */
-
-    int rc = VINF_SUCCESS;
-
-    /** @todo Make reallocation scheme a bit smarter here. */
-    m_pvData = RTMemRealloc(m_pvData, m_cbData + cbData);
-    if (m_pvData)
-    {
-        memcpy(&static_cast<uint8_t*>(m_pvData)[m_cbData],
-               pvData, cbData);
-        m_cbData += cbData;
-
-        if (pcbCurSize)
-            *pcbCurSize = m_cbData;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
 }
 
 /* static */
@@ -251,21 +251,10 @@ void GuestDnDResponse::reset(void)
 {
     LogFlowThisFuncEnter();
 
-    m_defAction = 0;
+    m_defAction  = 0;
     m_allActions = 0;
 
-    m_strDropDir = "";
-    m_strFormat = "";
-
-    if (m_pvData)
-    {
-        RTMemFree(m_pvData);
-        m_pvData = NULL;
-    }
-
-    m_cbData        = 0;
-    m_cbDataCurrent = 0;
-    m_cbDataTotal   = 0;
+    m_strFormat  = "";
 }
 
 HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
@@ -289,7 +278,8 @@ bool GuestDnDResponse::isProgressCanceled(void) const
         HRESULT hr = m_progress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
     }
-    else fCanceled = TRUE;
+    else
+        fCanceled = TRUE;
 
     return RT_BOOL(fCanceled);
 }
@@ -335,7 +325,7 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
         hr = m_progress->COMGETTER(Canceled)(&fCanceled);
         AssertComRC(hr);
 
-        LogFlowFunc(("fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
+        LogFlowFunc(("Current: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
 
         if (!fCompleted)
         {
@@ -381,47 +371,17 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
                     break;
             }
         }
+
+        hr = m_progress->COMGETTER(Completed)(&fCompleted);
+        AssertComRC(hr);
+        hr = m_progress->COMGETTER(Canceled)(&fCanceled);
+        AssertComRC(hr);
+
+        LogFlowFunc(("New: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
     }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
-}
-
-int GuestDnDResponse::dataSetStatus(size_t cbDataAdd, size_t cbDataTotal /* = 0 */)
-{
-    if (cbDataTotal)
-    {
-#ifndef DEBUG_andy
-        AssertMsg(m_cbDataTotal <= cbDataTotal, ("New data size must not be smaller (%zu) than old value (%zu)\n",
-                                                 cbDataTotal, m_cbDataTotal));
-#endif
-        LogFlowFunc(("Updating total data size from %zu to %zu\n", m_cbDataTotal, cbDataTotal));
-        m_cbDataTotal = cbDataTotal;
-    }
-    AssertMsg(m_cbDataTotal, ("m_cbDataTotal must not be <= 0\n"));
-
-    m_cbDataCurrent += cbDataAdd;
-    unsigned int cPercentage = RT_MIN(m_cbDataCurrent * 100.0 / m_cbDataTotal, 100);
-
-    /** @todo Don't use anonymous enums (uint32_t). */
-    uint32_t uStatus = DragAndDropSvc::DND_PROGRESS_RUNNING;
-    Assert(m_cbDataCurrent <= m_cbDataTotal);
-    if (m_cbDataCurrent >= m_cbDataTotal) uStatus = DragAndDropSvc::DND_PROGRESS_COMPLETE;
-
-    LogFlowFunc(("Updating transfer status (%zu/%zu), status=%ld\n", m_cbDataCurrent, m_cbDataTotal, uStatus));
-    AssertMsg(m_cbDataCurrent <= m_cbDataTotal,
-              ("More data transferred (%zu) than initially announced (%zu), cbDataAdd=%zu\n",
-               m_cbDataCurrent, m_cbDataTotal, cbDataAdd));
-
-    int rc = setProgress(cPercentage, uStatus);
-
-    /** @todo For now we instantly confirm the cancel. Check if the
-     *        guest should first clean up stuff itself and than really confirm
-     *        the cancel request by an extra message. */
-    if (rc == VERR_CANCELLED) rc = setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 
 int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbParms)
@@ -838,38 +798,5 @@ int GuestDnDBase::getProtocolVersion(uint32_t *puVersion)
     *puVersion = uVer;
     return rc;
 }
-
-#if 0
-/**
- * Returns back information (message type + parameter count) of the current message in
- * the local outgoing message queue.
- *
- * @return  IPRT status code.
- * @param   pThis
- * @param   puMsg
- * @param   pcParms
- * @param   paParms
- */
-/* static */
-DECLCALLBACK(int) GuestDnDBase::i_getNextMsgCallback(GuestDnDBase *pThis, uint32_t *puMsg,
-                                                     uint32_t *pcParms, PVBOXHGCMSVCPARM paParms)
-{
-    AssertPtrReturn(pThis,   VERR_INVALID_POINTER);
-    AssertPtrReturn(puMsg,   VERR_INVALID_POINTER);
-    AssertPtrReturn(pcParms, VERR_INVALID_POINTER);
-    AssertPtrReturn(paParms, VERR_INVALID_POINTER);
-
-    if (pThis->mData.m_lstOutgoing.empty())
-        return VERR_NO_DATA;
-
-    GuestDnDMsg *pMsg = pThis->mData.m_lstOutgoing.front();
-    AssertPtr(pMsg);
-
-    *puMsg   = pMsg->uMsg;
-    *pcParms = pMsg->cParms;
-
-    return VINF_SUCCESS;
-}
-#endif
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 

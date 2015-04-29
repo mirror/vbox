@@ -498,11 +498,12 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser
         /* Nothing to do here anymore. */
     }
     else
-         rc = VERR_COM_INVALID_OBJECT_STATE;
+        rc = VERR_COM_INVALID_OBJECT_STATE;
 
     LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pTarget, rc));
 
-    delete pTask;
+    if (pTask)
+        delete pTask;
     return rc;
 }
 
@@ -543,11 +544,11 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
             PSENDDATACTX pSendCtx = new SENDDATACTX;
             RT_BZERO(pSendCtx, sizeof(SENDDATACTX));
 
-            pSendCtx->mpTarget  = this;
-            pSendCtx->mpResp    = pResp;
-            pSendCtx->mScreenID = aScreenId;
-            pSendCtx->mFormat   = aFormat;
-            pSendCtx->mData     = aData;
+            pSendCtx->mpTarget      = this;
+            pSendCtx->mpResp        = pResp;
+            pSendCtx->mScreenID     = aScreenId;
+            pSendCtx->mFormat       = aFormat;
+            pSendCtx->mData.vecData = aData;
 
             SendDataTask *pTask = new SendDataTask(this, pSendCtx);
             AssertReturn(pTask->isOk(), pTask->getRC());
@@ -627,7 +628,7 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx)
         {
             GuestDnDMsg Msg;
 
-            size_t cbDataTotal = pCtx->mData.size();
+            size_t cbDataTotal = pCtx->mData.vecData.size();
             DATA_IS_VALID_BREAK(cbDataTotal);
 
             /* Just copy over the raw data. */
@@ -635,7 +636,7 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx)
             Msg.setNextUInt32(pCtx->mScreenID);
             Msg.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
             Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
-            Msg.setNextPointer((void*)&pCtx->mData.front(), (uint32_t)cbDataTotal);
+            Msg.setNextPointer((void*)&pCtx->mData.vecData.front(), (uint32_t)cbDataTotal);
             Msg.setNextUInt32(cbDataTotal);
 
             LogFlowFunc(("%zu total bytes of raw data to transfer\n", cbDataTotal));
@@ -695,15 +696,15 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
     {
         LogFlowFunc(("Opening \"%s\" ...\n", strPathSrc.c_str()));
         rc = aFile.OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
-                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);           
+                          RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
     }
 
     bool fSendFileData = false;
-    if (RT_SUCCESS(rc)) 
+    if (RT_SUCCESS(rc))
     {
         if (mData.mProtocolVersion >= 2)
         {
-            if (!fOpen) 
+            if (!fOpen)
             {
                 /*
                  * Since protocol v2 the file header and the actual file contents are
@@ -786,7 +787,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
     int rc = aFile.Read(pCtx->mURI.pvScratchBuf, pCtx->mURI.cbScratchBuf, &cbRead);
     if (RT_SUCCESS(rc))
     {
-        pCtx->mURI.cbProcessed += cbRead;
+        pCtx->mData.cbProcessed += cbRead;
 
         if (mData.mProtocolVersion <= 1)
         {
@@ -823,6 +824,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
     int rc = VINF_SUCCESS;
+    bool fNotify = false;
 
     switch (uMsg)
     {
@@ -918,14 +920,10 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             break;
     }
 
-    if (RT_FAILURE(rc))
+    if (fNotify)
     {
-        if (pCtx->mURI.SemEvent != NIL_RTSEMEVENT)
-        {
-            LogFlowFunc(("Signalling ...\n"));
-            int rc2 = RTSemEventSignal(pCtx->mURI.SemEvent);
-            AssertRC(rc2);
-        }
+        int rc2 = pCtx->mCallback.Notify(rc);
+        AssertRC(rc2);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -956,6 +954,10 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
     if (RT_FAILURE(rc)) \
         return rc;
 
+    rc = pCtx->mCallback.Reset();
+    if (RT_FAILURE(rc))
+        return rc;
+
 #define UNREGISTER_CALLBACK(x) \
     rc = pCtx->mpResp->setCallback(x, NULL); \
     AssertRC(rc);
@@ -965,6 +967,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
      */
     /* Generic callbacks. */
     REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG);
+    REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     REGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_DIR);
     if (mData.mProtocolVersion >= 2)
@@ -979,21 +982,15 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
         pCtx->mURI.pvScratchBuf = pvBuf;
         pCtx->mURI.cbScratchBuf = m_cbBlockSize;
 
-        /* Create event semaphore. */
-        pCtx->mURI.SemEvent = NIL_RTSEMEVENT;
-        rc = RTSemEventCreate(&pCtx->mURI.SemEvent);
-        if (RT_FAILURE(rc))
-            break;
-
         /*
          * Extract URI list from byte data.
          */
         DnDURIList &lstURI = pCtx->mURI.lstURI; /* Use the URI list from the context. */
 
-        const char *pszList = (const char *)&pCtx->mData.front();
+        const char *pszList = (const char *)&pCtx->mData.vecData.front();
         URI_DATA_IS_VALID_BREAK(pszList);
 
-        uint32_t cbList = pCtx->mData.size();
+        uint32_t cbList = pCtx->mData.vecData.size();
         URI_DATA_IS_VALID_BREAK(cbList);
 
         RTCList<RTCString> lstURIOrg = RTCString(pszList, cbList).split("\r\n");
@@ -1006,9 +1003,8 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
         else
             break;
 
-        pCtx->mURI.cbProcessed = 0;
-        pCtx->mURI.cProcessed  = 0;
-        pCtx->mURI.cbToProcess = lstURI.TotalBytes();
+        pCtx->mData.cbProcessed = 0;
+        pCtx->mData.cbToProcess = lstURI.TotalBytes();
 
         /*
          * The first message always is the meta info for the data. The meta
@@ -1036,23 +1032,18 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
              * wait event.
              */
             LogFlowFunc(("Waiting for URI callback ...\n"));
-            rc = RTSemEventWait(pCtx->mURI.SemEvent, RT_INDEFINITE_WAIT);
-            LogFlowFunc(("URI callback done\n"));
+            rc = pCtx->mCallback.Wait(RT_INDEFINITE_WAIT);
+            LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
         }
 
     } while (0);
-
-     if (pCtx->mURI.SemEvent != NIL_RTSEMEVENT)
-     {
-         RTSemEventDestroy(pCtx->mURI.SemEvent);
-         pCtx->mURI.SemEvent = NIL_RTSEMEVENT;
-     }
 
     /*
      * Unregister callbacksagain.
      */
     /* Guest callbacks. */
     UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG);
+    UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */
     UNREGISTER_CALLBACK(DragAndDropSvc::HOST_DND_HG_SND_DIR);
     if (mData.mProtocolVersion >= 2)
@@ -1080,10 +1071,10 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
 
     int rc;
 
-    uint64_t cbTotal = pCtx->mURI.cbToProcess;
-    uint8_t uPercent = pCtx->mURI.cbProcessed * 100 / (cbTotal ? cbTotal : 1);
+    uint64_t cbTotal = pCtx->mData.cbToProcess;
+    uint8_t uPercent = pCtx->mData.cbProcessed * 100 / (cbTotal ? cbTotal : 1);
 
-    LogFlowFunc(("%RU64 / %RU64 -- %RU8%%\n", pCtx->mURI.cbProcessed, cbTotal, uPercent));
+    LogFlowFunc(("%RU64 / %RU64 -- %RU8%%\n", pCtx->mData.cbProcessed, cbTotal, uPercent));
 
     bool fComplete = (uPercent >= 100) || lstURI.IsEmpty();
 

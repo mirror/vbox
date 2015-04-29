@@ -163,8 +163,7 @@ int UIDnDDrag::RetrieveData(const CSession &session,
 
             if (RT_SUCCESS(rc))
             {
-                /* After we successfully retrieved data from
-                * the source, we query it from Main. */
+                /* After we successfully retrieved data from the source we query it from Main. */
                 QVector<uint8_t> vecData = dndSource.ReceiveData();
                 if (!vecData.isEmpty())
                 {

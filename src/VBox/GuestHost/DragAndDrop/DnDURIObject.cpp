@@ -197,6 +197,8 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                     LogFlowFunc(("Opening file \"%s\", rc=%Rrc\n", strPath.c_str(), rc));
                     if (RT_SUCCESS(rc))
                         rc = RTFileGetSize(u.m_hFile, &m_cbSize);
+                    if (RT_SUCCESS(rc))
+                        m_cbProcessed = 0;
                 }
                 else
                     rc = VINF_SUCCESS;
@@ -337,6 +339,18 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
 
     LogFlowFunc(("Returning strSourcePath=%s, cbRead=%zu, rc=%Rrc\n", m_strSrcPath.c_str(), cbRead, rc));
     return rc;
+}
+
+void DnDURIObject::Reset(void)
+{
+    Close();
+
+    m_Type        = Unknown;
+    m_strSrcPath  = "";
+    m_strTgtPath  = "";
+    m_fMode       = 0;
+    m_cbSize      = 0;
+    m_cbProcessed = 0;
 }
 
 int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
