@@ -1064,17 +1064,17 @@ static int gstcntlProcessResolveExecutable(const char *pszFileName,
  * @return IPRT status code.
  * @param  pszArgv0         First argument (argv0), either original or modified version.  Optional.
  * @param  papszArgs        Original argv command line from the host, starting at argv[1].
+ * @param  fFlags           The process creation flags pass to us from the host.
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-static int gstcntlProcessAllocateArgv(const char *pszArgv0,
-                                      const char * const *papszArgs,
-                                      bool fExpandArgs, char ***ppapszArgv)
+static int gstcntlProcessAllocateArgv(const char *pszArgv0, const char * const *papszArgs, uint32_t fFlags,
+                                      char ***ppapszArgv)
 {
     AssertPtrReturn(ppapszArgv, VERR_INVALID_POINTER);
 
-    VBoxServiceVerbose(3, "GstCntlProcessPrepareArgv: pszArgv0=%p, papszArgs=%p, fExpandArgs=%RTbool, ppapszArgv=%p\n",
-                       pszArgv0, papszArgs, fExpandArgs, ppapszArgv);
+    VBoxServiceVerbose(3, "GstCntlProcessPrepareArgv: pszArgv0=%p, papszArgs=%p, fFlags=%#x, ppapszArgv=%p\n",
+                       pszArgv0, papszArgs, fFlags, ppapszArgv);
 
     int rc = VINF_SUCCESS;
     uint32_t cArgs;
@@ -1095,17 +1095,41 @@ static int gstcntlProcessAllocateArgv(const char *pszArgv0,
                        cbSize, cArgs);
 #endif
 
-    size_t i = 0; /* Keep the argument counter in scope for cleaning up on failure. */
 
-    rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
+    /* HACK ALERT! Since we still don't allow the user to really specify the first
+                   argument separately from the executable image, we have to fudge
+                   a little in the unquoted argument case to deal with executables
+                   containing spaces. */
+    /** @todo Fix the stupid host/guest protocol so the user can do this for us! */
+    if (   !(fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
+        || !strpbrk(pszArgv0, " \t\n\r")
+        || pszArgv0[0] == '"')
+        rc = RTStrDupEx(&papszNewArgv[0], pszArgv0);
+    else
+    {
+        size_t cchArgv0 = strlen(pszArgv0);
+        rc = RTStrAllocEx(&papszNewArgv[0], 1 + cchArgv0 + 1 + 1);
+        if (RT_SUCCESS(rc))
+        {
+            char *pszDst = papszNewArgv[0];
+            *pszDst++ = '"';
+            memcpy(pszDst, pszArgv0, cchArgv0);
+            pszDst += cchArgv0;
+            *pszDst++ = '"';
+            *pszDst   = '\0';
+        }
+    }
     if (RT_SUCCESS(rc))
     {
-        for (; i < cArgs; i++)
+        size_t i;
+        for (i = 0; i < cArgs; i++)
         {
             char *pszArg;
 #if 0 /* Arguments expansion -- untested. */
-            if (fExpandArgs)
+            if (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS)
             {
+/** @todo r=bird: If you want this, we need a generic implementation, preferably in RTEnv or somewhere like that.  The marking
+ * up of the variables must be the same on all platforms.  */
                 /* According to MSDN the limit on older Windows version is 32K, whereas
                  * Vista+ there are no limits anymore. We still stick to 4K. */
                 char szExpanded[_4K];
@@ -1135,16 +1159,14 @@ static int gstcntlProcessAllocateArgv(const char *pszArgv0,
             papszNewArgv[cArgs + 1] = NULL;
 
             *ppapszArgv = papszNewArgv;
+            return VINF_SUCCESS;
         }
-    }
 
-    if (RT_FAILURE(rc))
-    {
-        for (i; i > 0; i--)
+        /* Failed, bail out. */
+        for (; i > 0; i--)
             RTStrFree(papszNewArgv[i]);
-        RTMemFree(papszNewArgv);
     }
-
+    RTMemFree(papszNewArgv);
     return rc;
 }
 
@@ -1238,9 +1260,6 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
     int  rc = VINF_SUCCESS;
     char szExecExp[RTPATH_MAX];
 
-    /* Do we need to expand environment variables in arguments? */
-    bool fExpandArgs = (fFlags & EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS) ? true  : false;
-
 #ifdef RT_OS_WINDOWS
     /*
      * If sysprep should be executed do this in the context of VBoxService, which
@@ -1294,8 +1313,7 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = gstcntlProcessAllocateArgv(szSysprepCmd /* argv0 */, papszArgs,
-                                            fExpandArgs, &papszArgsExp);
+            rc = gstcntlProcessAllocateArgv(szSysprepCmd /* argv0 */, papszArgs, fFlags, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 /* As we don't specify credentials for the sysprep process, it will
@@ -1335,9 +1353,11 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
+        /** @todo r-bird: pszExec != argv[0]! When are you going to get that?!? How many
+         * times does this need to be pointed out?  HOST/GUEST INTERFACE IS MISDESIGNED! */
         rc = gstcntlProcessAllocateArgv(pszExec /* Always use the unmodified executable name as argv0. */,
                                         papszArgs /* Append the rest of the argument vector (if any). */,
-                                        fExpandArgs, &papszArgsExp);
+                                        fFlags, &papszArgsExp);
         if (RT_FAILURE(rc))
         {
             /* Don't print any arguments -- may contain passwords or other sensible data! */
@@ -1352,6 +1372,8 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
                     uProcFlags |= RTPROC_FLAGS_HIDDEN;
                 if (fFlags & EXECUTEPROCESSFLAG_NO_PROFILE)
                     uProcFlags |= RTPROC_FLAGS_NO_PROFILE;
+                if (fFlags & EXECUTEPROCESSFLAG_UNQUOTED_ARGS)
+                    uProcFlags |= RTPROC_FLAGS_UNQUOTED_ARGS;
             }
 
             /* If no user name specified run with current credentials (e.g.
@@ -1590,7 +1612,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
                                 AssertPtr(pProcess->pSession);
                                 bool fNeedsImpersonation = !(pProcess->pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_FORK);
 
-                                rc = gstcntlProcessCreateProcess(pProcess->StartupInfo.szCmd, papszArgs, hEnv, pProcess->StartupInfo.uFlags,
+                                rc = gstcntlProcessCreateProcess(pProcess->StartupInfo.szCmd, papszArgs, hEnv,
+                                                                 pProcess->StartupInfo.uFlags,
                                                                  phStdIn, phStdOut, phStdErr,
                                                                  fNeedsImpersonation ? pProcess->StartupInfo.szUser : NULL,
                                                                  fNeedsImpersonation ? pProcess->StartupInfo.szPassword : NULL,

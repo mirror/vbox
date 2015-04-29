@@ -10216,6 +10216,9 @@
     >
     <desc>
       Guest process execution flags.
+      <note>The values are passed to the guest additions, so its not possible
+            to change (move) or reuse values.here.  See EXECUTEPROCESSFLAG_XXX
+            in GuestControlSvc.h.</note>
     </desc>
 
     <const name="None"                      value="0">
@@ -10242,6 +10245,13 @@
     </const>
     <const name="ExpandArguments"           value="64">
       <desc>Expands environment variables in process arguments.</desc>
+    </const>
+    <const name="UnquotedArguments"         value="128">
+      <desc>Work around for Windows and OS/2 applications not following normal
+        argument quoting and escaping rules. The arguments are passed to the
+        application without any extra quoting, just a single space between each.
+        <note>Present since VirtualBox 4.3.28 and 5.0 beta 3.</note>
+      </desc>
     </const>
   </enum>
 

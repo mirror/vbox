@@ -105,6 +105,9 @@ enum eProcessStatus
     PROC_STS_ERROR = 8
 };
 
+/** @todo r=bird: Most defines in this file needs to be scoped a little
+ *        better!  For instance INPUT_FLAG_NONE is very generic. */
+
 /**
  * Input flags, set by the host. This is needed for
  * handling flags on the guest side.
@@ -132,11 +135,10 @@ enum eProcessStatus
 /** Mask of valid flags. */
 #define DIRREMOVE_FLAG_VALID_MASK           UINT32_C(0x00000003)
 
-/**
- * Guest process creation flags.
- * Note: Has to match Main's ProcessCreateFlag_* flags!
+/** @name EXECUTEPROCESSFLAG_XXX Guest process creation flags.
+ * @note Has to match Main's ProcessCreateFlag_* flags!
  */
-#define EXECUTEPROCESSFLAG_NONE             0x0
+#define EXECUTEPROCESSFLAG_NONE             UINT32_C(0x0)
 #define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)
 #define EXECUTEPROCESSFLAG_IGNORE_ORPHANED  RT_BIT(1)
 #define EXECUTEPROCESSFLAG_HIDDEN           RT_BIT(2)
@@ -144,6 +146,8 @@ enum eProcessStatus
 #define EXECUTEPROCESSFLAG_WAIT_STDOUT      RT_BIT(4)
 #define EXECUTEPROCESSFLAG_WAIT_STDERR      RT_BIT(5)
 #define EXECUTEPROCESSFLAG_EXPAND_ARGUMENTS RT_BIT(6)
+#define EXECUTEPROCESSFLAG_UNQUOTED_ARGS    RT_BIT(7)
+/** @} */
 
 /**
  * Pipe handle IDs used internally for referencing to
