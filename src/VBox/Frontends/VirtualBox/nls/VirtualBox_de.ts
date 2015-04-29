@@ -900,15 +900,15 @@
     </message>
     <message>
         <source>&amp;Default Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Normaler Start</translation>
     </message>
     <message>
         <source>S&amp;eparate Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Abgekoppelter Start</translation>
     </message>
     <message>
         <source>Start the selected virtual machines with detachable GUI</source>
-        <translation type="unfinished"></translation>
+        <translation>Startet die virtuelle Maschine und erlaubt das Abkoppeln der GUI</translation>
     </message>
 </context>
 <context>
