@@ -22054,7 +22054,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVetoEvent" extends="IEvent"
-    uuid="9a1a4130-69fe-472f-ac10-c6fa25d75007"
+    uuid="7c5e945f-2354-4267-883f-2f417d216519"
     wsmap="managed"
     >
     <desc>Base abstract interface for veto events.</desc>
@@ -22088,6 +22088,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="result" type="wstring" dir="return" safearray="yes">
         <desc>
           Array of reasons for veto provided by different event handlers.
+        </desc>
+      </param>
+    </method>
+
+    <method name="addApproval">
+      <desc>
+        Adds an approval on this event.
+      </desc>
+      <param name="reason" type="wstring" dir="in">
+        <desc>
+          Reason for approval, could be null or empty string.
+        </desc>
+      </param>
+    </method>
+
+    <method name="isApproved">
+      <desc>
+        If this event was approved.
+      </desc>
+      <param name="result" type="boolean" dir="return" />
+    </method>
+
+    <method name="getApprovals">
+      <desc>
+        Current approval reason list, if size is 0 - no approvals.
+      </desc>
+      <param name="result" type="wstring" dir="return" safearray="yes">
+        <desc>
+          Array of reasons for approval provided by different event handlers.
         </desc>
       </param>
     </method>

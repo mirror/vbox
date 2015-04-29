@@ -555,6 +555,18 @@
     {
        return mEvent->GetVetos(ComSafeArrayOutArg(aVetos));
     }
+    STDMETHOD(AddApproval)(IN_BSTR aReason)
+    {
+        return mEvent->AddApproval(aReason);
+    }
+    STDMETHOD(IsApproved)(BOOL *aResult)
+    {
+       return mEvent->IsApproved(aResult);
+    }
+    STDMETHOD(GetApprovals)(ComSafeArrayOut(BSTR, aReasons))
+    {
+       return mEvent->GetApprovals(ComSafeArrayOutArg(aReasons));
+    }
 private:
     ComObjPtr<VBoxVetoEvent>      mEvent;
 ]]></xsl:text>

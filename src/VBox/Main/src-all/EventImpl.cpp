@@ -227,6 +227,7 @@ HRESULT VBoxEvent::waitProcessed(LONG aTimeout, BOOL *aResult)
 }
 
 typedef std::list<Utf8Str> VetoList;
+typedef std::list<Utf8Str> ApprovalList;
 struct VBoxVetoEvent::Data
 {
     Data() :
@@ -235,6 +236,7 @@ struct VBoxVetoEvent::Data
     ComObjPtr<VBoxEvent>    mEvent;
     BOOL                    mVetoed;
     VetoList                mVetoList;
+    ApprovalList            mApprovalList;
 };
 
 HRESULT VBoxVetoEvent::FinalConstruct()
@@ -271,6 +273,7 @@ HRESULT VBoxVetoEvent::init(IEventSource *aSource, VBoxEventType_T aType)
 
     m->mVetoed = FALSE;
     m->mVetoList.clear();
+    m->mApprovalList.clear();
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -349,6 +352,30 @@ HRESULT VBoxVetoEvent::getVetos(std::vector<com::Utf8Str> &aResult)
 
     return S_OK;
 
+}
+
+HRESULT VBoxVetoEvent::addApproval(const com::Utf8Str &aReason)
+{
+    // AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    m->mApprovalList.push_back(aReason);
+    return S_OK;
+}
+
+HRESULT VBoxVetoEvent::isApproved(BOOL *aResult)
+{
+    // AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    *aResult = !m->mApprovalList.empty();
+    return S_OK;
+}
+
+HRESULT VBoxVetoEvent::getApprovals(std::vector<com::Utf8Str> &aResult)
+{
+    // AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    aResult.resize(m->mApprovalList.size());
+    size_t i = 0;
+    for (ApprovalList::const_iterator it = m->mApprovalList.begin(); it != m->mApprovalList.end(); ++it, ++i)
+        aResult[i] = (*it);
+    return S_OK;
 }
 
 static const int FirstEvent = (int)VBoxEventType_LastWildcard + 1;

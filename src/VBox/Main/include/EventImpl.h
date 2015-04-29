@@ -78,6 +78,9 @@ private:
     HRESULT addVeto(const com::Utf8Str &aReason);
     HRESULT isVetoed(BOOL *aResult);
     HRESULT getVetos(std::vector<com::Utf8Str> &aResult);
+    HRESULT addApproval(const com::Utf8Str &aReason);
+    HRESULT isApproved(BOOL *aResult);
+    HRESULT getApprovals(std::vector<com::Utf8Str> &aResult);
 
     struct Data;
     Data* m;
