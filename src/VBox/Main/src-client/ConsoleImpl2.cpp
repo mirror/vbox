@@ -120,9 +120,6 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
-#if defined(RT_OS_DARWIN)
-# include "IOKit/IOKitLib.h"
-#endif
 
 
 /*******************************************************************************

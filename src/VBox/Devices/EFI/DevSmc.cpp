@@ -35,6 +35,9 @@
 # include <iprt/asm-amd64-x86.h>
 # include <iprt/once.h>
 #endif
+#if defined(RT_OS_DARWIN) && defined(IN_RING3)
+# include "IOKit/IOKitLib.h"
+#endif
 
 #include "VBoxDD.h"
 
@@ -500,6 +503,77 @@ PDMBOTHCBDECL(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uOperation, u
 }
 
 #endif /* IN_RING0 */
+
+#if defined(IN_RING3) && defined(RT_OS_DARWIN)
+
+/**
+ * Preferred method to retrieve the SMC key.
+ *
+ * @param   pabKey  where to store the key.
+ * @param   cbKey   size of the buffer.
+ */
+static int getSmcKeyOs(char *pabKey, uint32_t cbKey)
+{
+    /*
+     * Method as described in Amit Singh's article:
+     *   http://osxbook.com/book/bonus/chapter7/tpmdrmmyth/
+     */
+    typedef struct
+    {
+        uint32_t   key;
+        uint8_t    pad0[22];
+        uint32_t   datasize;
+        uint8_t    pad1[10];
+        uint8_t    cmd;
+        uint32_t   pad2;
+        uint8_t    data[32];
+    } AppleSMCBuffer;
+
+    AssertReturn(cbKey >= 65, VERR_INTERNAL_ERROR);
+
+    io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault,
+                                                       IOServiceMatching("AppleSMC"));
+    if (!service)
+        return VERR_NOT_FOUND;
+
+    io_connect_t    port = (io_connect_t)0;
+    kern_return_t   kr   = IOServiceOpen(service, mach_task_self(), 0, &port);
+    IOObjectRelease(service);
+
+    if (kr != kIOReturnSuccess)
+        return RTErrConvertFromDarwin(kr);
+
+    AppleSMCBuffer  inputStruct    = { 0, {0}, 32, {0}, 5, };
+    AppleSMCBuffer  outputStruct;
+    size_t          cbOutputStruct = sizeof(outputStruct);
+
+    for (int i = 0; i < 2; i++)
+    {
+        inputStruct.key = (uint32_t)(i == 0 ? 'OSK0' : 'OSK1');
+        kr = IOConnectCallStructMethod((mach_port_t)port,
+                                       (uint32_t)2,
+                                       (const void *)&inputStruct,
+                                       sizeof(inputStruct),
+                                       (void *)&outputStruct,
+                                       &cbOutputStruct);
+        if (kr != kIOReturnSuccess)
+        {
+            IOServiceClose(port);
+            return RTErrConvertFromDarwin(kr);
+        }
+
+        for (int j = 0; j < 32; j++)
+            pabKey[j + i*32] = outputStruct.data[j];
+    }
+
+    IOServiceClose(port);
+
+    pabKey[64] = 0;
+
+    return VINF_SUCCESS;
+}
+
+#endif /* IN_RING3 && RT_OS_DARWIN */
 
 #ifdef IN_RING3 /* For now. */
 
@@ -1345,7 +1419,18 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                    N_("Configuration error: Querying \"GetKeyFromRealSMC\" as a boolean failed"));
     if (fGetKeyFromRealSMC)
     {
-        rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*u64Arg*/);
+#ifdef RT_OS_DARWIN
+        rc = getSmcKeyOs(pThis->szOsk0And1, sizeof(pThis->szOsk0And1));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("SMC: Retrieving the SMC key from OS failed, trying to read it from hardware\n"));
+#endif
+            rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*u64Arg*/);
+#ifdef RT_OS_DARWIN
+        }
+        else
+            LogRel(("SMC: Successfully retrieved the SMC key from the OS\n"));
+#endif
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to query SMC value from the host"));
