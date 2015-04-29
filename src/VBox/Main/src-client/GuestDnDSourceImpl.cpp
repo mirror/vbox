@@ -29,6 +29,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/path.h>
+#include <iprt/uri.h>
 
 #include <iprt/cpp/utils.h> /* For unconst(). */
 
@@ -462,15 +463,16 @@ int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint3
                     {
                         pCtx->mData.cbProcessed = 0;
 
-                        /* Assign new total size which also includes all paths + file
-                         * data to receive from the guest. */
+                        /*
+                         * Assign new total size which also includes all file data to receive
+                         * from the guest.
+                         */
                         pCtx->mData.cbToProcess = cbTotalSize;
+
+                        LogFlowFunc(("URI data => cbToProcess=%RU64\n", pCtx->mData.cbToProcess));
                     }
                 }
             }
-
-            if (RT_SUCCESS(rc))
-                rc = i_updateProcess(pCtx, cbData);
         }
     }
     catch (std::bad_alloc &)
@@ -488,7 +490,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(cbPath,     VERR_INVALID_PARAMETER);
 
-    LogFlowFunc(("pszPath=%s, cbPath=%zu, fMode=0x%x\n", pszPath, cbPath, fMode));
+    LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", pszPath, cbPath, fMode));
 
     int rc;
     char *pszDir = RTPathJoinA(pCtx->mURI.strDropDir.c_str(), pszPath);
@@ -504,7 +506,35 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
          rc = VERR_NO_MEMORY;
 
     if (RT_SUCCESS(rc))
-        rc = i_updateProcess(pCtx, cbPath);
+    {
+        if (mDataBase.mProtocolVersion <= 2)
+        {
+            /*
+             * BUG: Protocol v1 does *not* send directory names in URI format,
+             *      however, if this in a root URI directory (which came with the initial
+             *      GUEST_DND_GH_SND_DATA message(s)) the total data announced was for
+             *      root directory names which came in URI format, as an URI list.
+             *
+             *      So construct an URI path locally to keep the accounting right.
+             */
+            char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
+                                           pszPath /* pszPath */,
+                                           NULL /* pszQuery */, NULL /* pszFragment */);
+            if (pszPathURI)
+            {
+                cbPath  = strlen(pszPathURI);
+                cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
+
+                LogFlowFunc(("URI pszPathURI=%s, cbPathURI=%RU32\n", pszPathURI, cbPath));
+                RTStrFree(pszPathURI);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+            rc = i_updateProcess(pCtx, cbPath);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

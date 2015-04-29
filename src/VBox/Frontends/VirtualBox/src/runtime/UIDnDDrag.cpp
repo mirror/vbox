@@ -146,8 +146,8 @@ int UIDnDDrag::RetrieveData(const CSession &session,
     int rc = VINF_SUCCESS;
     CGuest guest = session.GetConsole().GetGuest();
 
-    /* Start getting the data from the source. First inform the source we
-     * want the data in the specified MIME type. */
+    /* Start getting the data from the source. Request and transfer data
+     * from the source and display a moddal progress dialog while doing this. */
     CProgress progress = dndSource.Drop(strMimeType,
                                         UIDnDHandler::toVBoxDnDAction(dropAction));
     if (guest.isOk())
@@ -202,7 +202,7 @@ int UIDnDDrag::RetrieveData(const CSession &session,
             else
                 msgCenter().cannotDropData(progress, pParent);
         }
-        else
+        else /* Don't pop up a message. */
             rc = VERR_CANCELLED;
     }
     else
