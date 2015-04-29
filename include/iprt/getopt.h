@@ -437,8 +437,10 @@ RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszAr
 #define RTGETOPTARGV_CNV_QUOTE_MS_CRT       UINT32_C(0)
 /** Quote strings according to the Unix Bourne Shell. */
 #define RTGETOPTARGV_CNV_QUOTE_BOURNE_SH    UINT32_C(1)
+/** Don't quote any strings at all. */
+#define RTGETOPTARGV_CNV_UNQUOTED           UINT32_C(2)
 /** Mask for the quoting style. */
-#define RTGETOPTARGV_CNV_QUOTE_MASK         UINT32_C(1)
+#define RTGETOPTARGV_CNV_QUOTE_MASK         UINT32_C(3)
 /** @} */
 
 /**
