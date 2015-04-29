@@ -17808,7 +17808,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IAudioAdapter" extends="$unknown"
-    uuid="921873db-5f3f-4b69-91f9-7be9e535a2cb"
+    uuid="280cc7f7-eddc-48b6-9bbb-5b1e8d761c0e"
     wsmap="managed"
     >
     <desc>
@@ -17821,6 +17821,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         guest system. If disabled, the virtual guest hardware will
         not contain any audio adapter. Can only be changed when
         the VM is not running.
+      </desc>
+    </attribute>
+    <attribute name="enabledIn" type="boolean">
+      <desc>
+        Flag whether the audio adapter is enabled for audio
+        input. Only relevant if the adapter is enabled.
+      </desc>
+    </attribute>
+    <attribute name="enabledOut" type="boolean">
+      <desc>
+        Flag whether the audio adapter is enabled for audio
+        output. Only relevant if the adapter is enabled.
       </desc>
     </attribute>
     <attribute name="audioController" type="AudioControllerType">

@@ -56,6 +56,10 @@ private:
     // wrapped IAudioAdapter properties
     HRESULT getEnabled(BOOL *aEnabled);
     HRESULT setEnabled(BOOL aEnabled);
+    HRESULT getEnabledIn(BOOL *aEnabled);
+    HRESULT setEnabledIn(BOOL aEnabled);
+    HRESULT getEnabledOut(BOOL *aEnabled);
+    HRESULT setEnabledOut(BOOL aEnabled);
     HRESULT getAudioDriver(AudioDriverType_T *aAudioDriver);
     HRESULT setAudioDriver(AudioDriverType_T aAudioDriver);
     HRESULT getAudioController(AudioControllerType_T *aAudioController);

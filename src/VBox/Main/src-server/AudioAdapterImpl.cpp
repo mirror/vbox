@@ -234,6 +234,26 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
     return S_OK;
 }
 
+HRESULT AudioAdapter::getEnabledIn(BOOL *aEnabled)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT AudioAdapter::getEnabledOut(BOOL *aEnabled)
+{
+    return E_NOTIMPL;
+}
+
+HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
+{
+    return E_NOTIMPL;
+}
+
 HRESULT AudioAdapter::getAudioDriver(AudioDriverType_T *aAudioDriver)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
