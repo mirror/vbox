@@ -367,7 +367,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                 {
                     message.second << tr("The virtual machine is set up to use hardware graphics acceleration "
                                          "and the operating system hint is set to Windows Vista or later. "
-                                         "For best performance you should set the machine's video memory to at least b>%1</b>.")
+                                         "For best performance you should set the machine's video memory to at least <b>%1</b>.")
                                          .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 }
             }
