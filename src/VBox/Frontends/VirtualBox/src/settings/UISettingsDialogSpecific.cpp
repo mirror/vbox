@@ -60,6 +60,12 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#ifdef Q_WS_MAC
+# if MAC_LEOPARD_STYLE
+#  define VBOX_GUI_WITH_TOOLBAR_SETTINGS
+# endif
+#endif
+
 UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent,
                                                const QString &strCategory /* = QString() */,
                                                const QString &strControl /* = QString() */)
