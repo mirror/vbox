@@ -353,7 +353,7 @@ static const DEVSMCKEYDESC g_aSmcKeys[] =
 /** Do once for the SMC ring-0 static data (g_abOsk0And1, g_fHaveOsk). */
 static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
 /** Indicates whether we've successfully queried the OSK* keys. */
-static volatile bool g_fHaveOsk = false;
+static bool g_fHaveOsk = false;
 /** The OSK0 and OSK1 values. */
 static uint8_t  g_abOsk0And1[32+32];
 
