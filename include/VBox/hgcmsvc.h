@@ -107,8 +107,8 @@ typedef struct VBOXHGCMSVCPARM
         } pointer;
     } u;
 #ifdef __cplusplus
-    /** Extract a uint32_t value from an HGCM parameter structure */
-    int getUInt32 (uint32_t *u32)
+    /** Extract an uint32_t value from an HGCM parameter structure */
+    int getUInt32(uint32_t *u32)
     {
         AssertPtrReturn(u32, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
@@ -120,7 +120,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a uint64_t value from an HGCM parameter structure */
-    int getUInt64 (uint64_t *u64)
+    int getUInt64(uint64_t *u64)
     {
         AssertPtrReturn(u64, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
@@ -132,7 +132,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a pointer value from an HGCM parameter structure */
-    int getPointer (void **ppv, uint32_t *pcb)
+    int getPointer(void **ppv, uint32_t *pcb)
     {
         AssertPtrReturn(ppv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -147,7 +147,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a constant pointer value from an HGCM parameter structure */
-    int getPointer (const void **ppcv, uint32_t *pcb)
+    int getPointer(const void **ppcv, uint32_t *pcb)
     {
         AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -159,7 +159,7 @@ typedef struct VBOXHGCMSVCPARM
 
     /** Extract a pointer value to a non-empty buffer from an HGCM parameter
      * structure */
-    int getBuffer (void **ppv, uint32_t *pcb)
+    int getBuffer(void **ppv, uint32_t *pcb)
     {
         AssertPtrReturn(ppv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -180,7 +180,7 @@ typedef struct VBOXHGCMSVCPARM
 
     /** Extract a pointer value to a non-empty constant buffer from an HGCM
      * parameter structure */
-    int getBuffer (const void **ppcv, uint32_t *pcb)
+    int getBuffer(const void **ppcv, uint32_t *pcb)
     {
         AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
         AssertPtrReturn(pcb, VERR_INVALID_POINTER);
@@ -191,7 +191,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a string value from an HGCM parameter structure */
-    int getString (char **ppch, uint32_t *pcb)
+    int getString(char **ppch, uint32_t *pcb)
     {
         uint32_t cb = 0;
         char *pch = NULL;
@@ -210,7 +210,7 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a constant string value from an HGCM parameter structure */
-    int getString (const char **ppch, uint32_t *pcb)
+    int getString(const char **ppch, uint32_t *pcb)
     {
         char *pch = NULL;
         int rc = getString(&pch, pcb);
