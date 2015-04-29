@@ -1194,7 +1194,7 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
             dir = AMPLIFIER_IN;
             break;
         default:
-            AssertMsgFailed(("Invalid mixer control %ld\n", mt));
+            AssertMsgFailedReturn(("Invalid mixer control %ld\n", mt), VERR_INVALID_PARAMETER);
             break;
     }
 
