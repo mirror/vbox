@@ -923,7 +923,8 @@ int vboxPciOsDevRegisterIrqHandler(PVBOXRAWPCIINS pIns, PFNRAWPCIISR pfnHandler,
 #else
 
                      /* We don't allow interrupts sharing */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+                     /* XXX overhaul */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 1, 0)
                      IRQF_DISABLED, /* keep irqs disabled when calling the action handler */
 # else
                      0,
