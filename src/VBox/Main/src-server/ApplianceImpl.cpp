@@ -613,6 +613,20 @@ HRESULT Appliance::getPasswordIds(std::vector<com::Utf8Str> &aIdentifiers)
     return S_OK;
 }
 
+HRESULT Appliance::getMediumIdsForPasswordId(const com::Utf8Str &aPasswordId, std::vector<com::Guid> &aIdentifiers)
+{
+    HRESULT hrc = S_OK;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    std::map<com::Utf8Str, GUIDVEC>::const_iterator it = m->m_mapPwIdToMediumIds.find(aPasswordId);
+    if (it != m->m_mapPwIdToMediumIds.end())
+        aIdentifiers = it->second;
+    else
+        hrc = setError(E_FAIL, tr("The given password identifier is not associated with any medium"));
+
+    return hrc;
+}
+
 HRESULT Appliance::addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
                                 const std::vector<com::Utf8Str> &aPasswords)
 {

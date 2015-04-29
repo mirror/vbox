@@ -34,6 +34,8 @@ class VirtualSystemDescription;
 
 typedef std::pair<Utf8Str, Utf8Str> STRPAIR;
 
+typedef std::vector<com::Guid> GUIDVEC;
+
 /* Describe a location for the import/export. The location could be a file on a
  * local hard disk or a remote target based on the supported inet protocols. */
 struct LocationInfo
@@ -105,6 +107,8 @@ struct Appliance::Data
 
     /** Sequence of password identifiers to encrypt disk images during export. */
     std::vector<com::Utf8Str> m_vecPasswordIdentifiers;
+    /** Map to get all medium identifiers assoicated with a given password identifier. */
+    std::map<com::Utf8Str, GUIDVEC> m_mapPwIdToMediumIds;
     /** Secret key store used to hold the passwords during export. */
     SecretKeyStore            *m_pSecretKeyStore;
     /** Number of passwords provided. */

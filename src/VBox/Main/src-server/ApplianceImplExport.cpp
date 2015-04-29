@@ -358,12 +358,15 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                 rc = pBaseMedium->COMGETTER(Size)(&llSize);
                 if (FAILED(rc)) throw rc;
 
-                /* If the medium is encrypted add the key identifier to the */
+                /* If the medium is encrypted add the key identifier to the list. */
                 IMedium *iBaseMedium = pBaseMedium;
                 Medium *pBase = static_cast<Medium*>(iBaseMedium);
                 const com::Utf8Str strKeyId = pBase->i_getKeyId();
                 if (!strKeyId.isEmpty())
                 {
+                    IMedium *iMedium = pMedium;
+                    Medium *pMed = static_cast<Medium*>(iMedium);
+                    com::Guid mediumUuid = pMed->i_getId();
                     bool fKnown = false;
 
                     /* Check whether the ID is already in our sequence, add it otherwise. */
@@ -377,7 +380,20 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     }
 
                     if (!fKnown)
+                    {
+                        GUIDVEC vecMediumIds;
+
+                        vecMediumIds.push_back(mediumUuid);
                         pAppliance->m->m_vecPasswordIdentifiers.push_back(strKeyId);
+                        pAppliance->m->m_mapPwIdToMediumIds.insert(std::pair<com::Utf8Str, GUIDVEC>(strKeyId, vecMediumIds));
+                    }
+                    else
+                    {
+                        std::map<com::Utf8Str, GUIDVEC>::iterator it = pAppliance->m->m_mapPwIdToMediumIds.find(strKeyId);
+                        if (it == pAppliance->m->m_mapPwIdToMediumIds.end())
+                            throw setError(E_FAIL, tr("Internal error adding a medium UUID to the map"));
+                        it->second.push_back(mediumUuid);
+                    }
                 }
             }
             else if (   deviceType == DeviceType_DVD

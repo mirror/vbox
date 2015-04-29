@@ -105,6 +105,7 @@ private:
                   ComPtr<IProgress> &aProgress);
     HRESULT getWarnings(std::vector<com::Utf8Str> &aWarnings);
     HRESULT getPasswordIds(std::vector<com::Utf8Str> &aIdentifiers);
+    HRESULT getMediumIdsForPasswordId(const com::Utf8Str &aPasswordId, std::vector<com::Guid> &aIdentifiers);
     HRESULT addPasswords(const std::vector<com::Utf8Str> &aIdentifiers,
                          const std::vector<com::Utf8Str> &aPasswords);
 

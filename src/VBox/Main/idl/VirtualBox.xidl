@@ -2992,7 +2992,7 @@
 
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="d9432012-2740-499f-b3b3-0991da3679f3"
+    uuid="a529d52c-cf23-4936-9150-e8a6ce77fdad"
     wsmap="managed"
     >
     <desc>
@@ -3255,7 +3255,20 @@
       </desc>
 
       <param name="identifiers" type="wstring" dir="return" safearray="yes">
-        The list of password identifiers required on success.
+        The list of password identifiers required for export on success.
+      </param>
+    </method>
+
+    <method name="getMediumIdsForPasswordId">
+      <desc>
+        Returns a list of medium identifiers which use the given password identifier.
+      </desc>
+
+      <param name="passwordId" type="wstring" dir="in">
+        The password identifier to get the medium identifiers for.
+      </param>
+      <param name="identifiers" type="uuid" mod="string" dir="return" safearray="yes">
+        The list of medium identifiers returned on success.
       </param>
     </method>
 
@@ -14680,7 +14693,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="currentPassword" type="wstring" dir="in">
         <desc>
-          The olcurrentd password the medium is protected with. Use an empty string to indicate
+          The current password the medium is protected with. Use an empty string to indicate
           that the medium isn't encrypted.
         </desc>
       </param>
