@@ -252,7 +252,7 @@ VMMR3_INT_DECL(int)             gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t 
 
 VMMR3_INT_DECL(int)             gimR3KvmDisableSystemTime(PVM pVM);
 VMMR3_INT_DECL(int)             gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags);
-VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysSysTime, uint32_t uVersion);
+VMMR3_INT_DECL(int)             gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysSysTime);
 #endif /* IN_RING3 */
 
 VMM_INT_DECL(bool)              gimKvmIsParavirtTscEnabled(PVM pVM);

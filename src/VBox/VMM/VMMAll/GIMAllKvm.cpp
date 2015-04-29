@@ -254,9 +254,9 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             }
 
             /* Enable and populate the system-time struct. */
-            pKvmCpu->u64SystemTimeMsr     = uRawValue;
-            pKvmCpu->GCPhysSystemTime     = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
-            pKvmCpu->u32SystemTimeVersion = pKvmCpu->u32SystemTimeVersion + 2;
+            pKvmCpu->u64SystemTimeMsr      = uRawValue;
+            pKvmCpu->GCPhysSystemTime      = MSR_GIM_KVM_SYSTEM_TIME_GUEST_GPA(uRawValue);
+            pKvmCpu->u32SystemTimeVersion += 2;
             int rc = gimR3KvmEnableSystemTime(pVM, pVCpu, pKvmCpu, fFlags);
             if (RT_FAILURE(rc))
             {
@@ -278,8 +278,7 @@ VMM_INT_DECL(VBOXSTRICTRC) gimKvmWriteMsr(PVMCPU pVCpu, uint32_t idMsr, PCCPUMMS
             RTGCPHYS GCPhysWallClock = MSR_GIM_KVM_WALL_CLOCK_GUEST_GPA(uRawValue);
             if (RT_LIKELY(RT_ALIGN_64(GCPhysWallClock, 4) == GCPhysWallClock))
             {
-                uint32_t uVersion = 2;
-                int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock, uVersion);
+                int rc = gimR3KvmEnableWallClock(pVM, GCPhysWallClock);
                 if (RT_SUCCESS(rc))
                 {
                     pKvm->u64WallClockMsr     = uRawValue;

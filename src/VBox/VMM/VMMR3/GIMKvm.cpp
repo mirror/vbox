@@ -46,6 +46,17 @@
  */
 #define GIM_KVM_SAVED_STATE_VERSION         UINT32_C(1)
 
+/**
+ * VBox internal struct. to passback to EMT rendezvous callback while enabling
+ * the KVM wall-clock.
+ */
+typedef struct KVMWALLCLOCKINFO
+{
+    /** Guest physical address of the wall-clock struct.  */
+    RTGCPHYS GCPhysWallClock;
+} KVMWALLCLOCKINFO;
+/** Pointer to the wall-clock info. struct. */
+typedef KVMWALLCLOCKINFO *PKVMWALLCLOCKINFO;
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -437,7 +448,74 @@ VMMR3_INT_DECL(int) gimR3KvmDisableSystemTime(PVM pVM)
 
 
 /**
+ * @callback_method_impl{PFNVMMEMTRENDEZVOUS,
+ *      Worker for gimR3KvmEnableWallClock}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCPU pVCpu, void *pvData)
+{
+    Assert(pvData);
+    PKVMWALLCLOCKINFO pWallClockInfo  = (PKVMWALLCLOCKINFO)pvData;
+    RTGCPHYS          GCPhysWallClock = pWallClockInfo->GCPhysWallClock;
+
+    /*
+     * Read the wall-clock version (sequence) from the guest.
+     */
+    uint32_t uVersion;
+    Assert(PGMPhysIsGCPhysNormal(pVM, GCPhysWallClock));
+    int rc = PGMPhysSimpleReadGCPhys(pVM, &uVersion, GCPhysWallClock, sizeof(uVersion));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("GIM: KVM: Failed to read wall-clock struct. version at %#RGp. rc=%Rrc\n", GCPhysWallClock, rc));
+        return rc;
+    }
+
+    /*
+     * Ensure the version is incrementally even.
+     */
+    if (!(uVersion & 1))
+        ++uVersion;
+    ++uVersion;
+
+    /*
+     * Update wall-clock guest struct. with UTC information.
+     */
+    RTTIMESPEC TimeSpec;
+    int32_t    iSec;
+    int32_t    iNano;
+    TMR3UtcNow(pVM, &TimeSpec);
+    RTTimeSpecGetSecondsAndNano(&TimeSpec, &iSec, &iNano);
+
+    GIMKVMWALLCLOCK WallClock;
+    RT_ZERO(WallClock);
+    AssertCompile(sizeof(uVersion) == sizeof(WallClock.u32Version));
+    WallClock.u32Version = uVersion;
+    WallClock.u32Sec     = iSec;
+    WallClock.u32Nano    = iNano;
+
+    /*
+     * Write out the wall-clock struct. to guest memory.
+     */
+    Assert(!(WallClock.u32Version & 1));
+    rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysWallClock, &WallClock, sizeof(GIMKVMWALLCLOCK));
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("GIM: KVM: Enabled wall-clock struct. at %#RGp - u32Sec=%u u32Nano=%u uVersion=%#RU32\n", GCPhysWallClock,
+                WallClock.u32Sec, WallClock.u32Nano, WallClock.u32Version));
+    }
+    else
+        LogRel(("GIM: KVM: Failed to write wall-clock struct. at %#RGp. rc=%Rrc\n", GCPhysWallClock, rc));
+    return rc;
+}
+
+
+/**
  * Enables the KVM wall-clock structure.
+ *
+ * Since the wall-clock can be read by any VCPU but it is a global struct. in
+ * guest-memory, we do an EMT rendezvous here to be on the safe side. The
+ * alternative is to use an MMIO2 region and use the WallClock.u32Version field
+ * for transactional update. However, this MSR is rarely written to (typically
+ * once during bootup) it's currently not a performance issue.
  *
  * @returns VBox status code.
  * @param   pVM                Pointer to the VM.
@@ -447,32 +525,10 @@ VMMR3_INT_DECL(int) gimR3KvmDisableSystemTime(PVM pVM)
  * @remarks Don't do any release assertions here, these can be triggered by
  *          guest R0 code.
  */
-VMMR3_INT_DECL(int) gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysWallClock, uint32_t uVersion)
+VMMR3_INT_DECL(int) gimR3KvmEnableWallClock(PVM pVM, RTGCPHYS GCPhysWallClock)
 {
-    RTTIMESPEC TimeSpec;
-    int32_t    iSec;
-    int32_t    iNano;
-
-    TMR3UtcNow(pVM, &TimeSpec);
-    RTTimeSpecGetSecondsAndNano(&TimeSpec, &iSec, &iNano);
-
-    GIMKVMWALLCLOCK WallClock;
-    RT_ZERO(WallClock);
-    WallClock.u32Version = uVersion;
-    WallClock.u32Sec     = iSec;
-    WallClock.u32Nano    = iNano;
-
-    Assert(PGMPhysIsGCPhysNormal(pVM, GCPhysWallClock));
-    Assert(!(WallClock.u32Version & UINT32_C(1)));
-    int rc = PGMPhysSimpleWriteGCPhys(pVM, GCPhysWallClock, &WallClock, sizeof(GIMKVMWALLCLOCK));
-    if (RT_SUCCESS(rc))
-    {
-        LogRel(("GIM: KVM: Enabled wall-clock struct. at %#RGp - u32Sec=%u u32Nano=%u uVersion=%#RU32\n", GCPhysWallClock,
-                WallClock.u32Sec, WallClock.u32Nano, WallClock.u32Version));
-    }
-    else
-        LogRel(("GIM: KVM: Failed to write wall-clock struct. at %#RGp. rc=%Rrc\n", GCPhysWallClock, rc));
-
-    return rc;
+    KVMWALLCLOCKINFO WallClockInfo;
+    WallClockInfo.GCPhysWallClock = GCPhysWallClock;
+    return VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, gimR3KvmEnableWallClockCallback, &WallClockInfo);
 }
 
