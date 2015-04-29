@@ -1554,8 +1554,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
     try
     {
         // @todo: at this point we have to be in the right state!!!!
-        AssertStmt(   !Global::IsOnlineOrTransient(mData->mMachineState)
-                   || mData->mMachineState == MachineState_Snapshotting
+        AssertStmt(   mData->mMachineState == MachineState_Snapshotting
                    || mData->mMachineState == MachineState_OnlineSnapshotting
                    || mData->mMachineState == MachineState_LiveSnapshotting, throw E_FAIL);
         AssertStmt(task.m_machineStateBackup != mData->mMachineState, throw E_FAIL);
@@ -1569,17 +1568,13 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                            mUserData->s.strName.c_str());
         }
 
-        if (    !task.m_fTakingSnapshotOnline
-             && mData->mMachineState != MachineState_Saved)
-        {
-            /* save settings to ensure current changes are committed and
-             * hard disks are fixed up */
-            rc = i_saveSettings(NULL);
-                // no need to check for whether VirtualBox.xml needs changing since
-                // we can't have a machine XML rename pending at this point
-            if (FAILED(rc))
-                throw rc;
-        }
+        /* save settings to ensure current changes are committed and
+         * hard disks are fixed up */
+        rc = i_saveSettings(NULL);
+            // no need to check for whether VirtualBox.xml needs changing since
+            // we can't have a machine XML rename pending at this point
+        if (FAILED(rc))
+            throw rc;
 
         /* task.m_strStateFilePath is "" when the machine is offline or saved */
         if (task.m_fTakingSnapshotOnline)
@@ -1591,7 +1586,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
                 // creating a new online snapshot: we need a fresh saved state file
                 i_composeSavedStateFilename(task.m_strStateFilePath);
         }
-        else if (mData->mMachineState == MachineState_Saved)
+        else if (task.m_machineStateBackup == MachineState_Saved)
             // taking an offline snapshot from machine in "saved" state: use existing state file
             task.m_strStateFilePath = mSSData->strStateFilePath;
 
@@ -1651,14 +1646,6 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         // taking the snapshot after the diff images have been created.
 
         fBeganTakingSnapshot = true;
-
-        /* Check sanity: for offline snapshots there must not be a saved state
-         * file name. All other combinations are valid (though online snapshots
-         * without saved state file seems inconsistent - there are exotic use
-         * cases, which need to be explicitly enabled, see the code above. */
-        if (   !task.m_fTakingSnapshotOnline
-            && !task.m_strStateFilePath.isEmpty())
-            throw setError(E_FAIL, "Invalid state of saved state file");
 
         // STEP 3: save the VM state (if online)
         if (task.m_fTakingSnapshotOnline)
@@ -1728,8 +1715,11 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
         // have to postpone this to the end as i_finishTakingSnapshot() needs
         // it for various cleanup steps
-        task.m_pSnapshot->uninit();
-        task.m_pSnapshot.setNull();
+        if (task.m_pSnapshot)
+        {
+            task.m_pSnapshot->uninit();
+            task.m_pSnapshot.setNull();
+        }
     }
     Assert(alock.isWriteLockOnCurrentThread());
 
@@ -1844,8 +1834,6 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
     ComObjPtr<Snapshot> pOldFirstSnap = mData->mFirstSnapshot;
     ComObjPtr<Snapshot> pOldCurrentSnap = mData->mCurrentSnapshot;
 
-    bool fOnline = Global::IsOnline(task.m_machineStateBackup);
-
     HRESULT rc = S_OK;
 
     if (aSuccess)
@@ -1859,7 +1847,7 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
 
         int flSaveSettings = SaveS_Force;       // do not do a deep compare in machine settings,
                                                 // snapshots change, so we know we need to save
-        if (!fOnline)
+        if (!task.m_fTakingSnapshotOnline)
             /* the machine was powered off or saved when taking a snapshot, so
              * reset the mCurrentStateModified flag */
             flSaveSettings |= SaveS_ResetCurStateModified;
@@ -1870,7 +1858,7 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
     if (aSuccess && SUCCEEDED(rc))
     {
         /* associate old hard disks with the snapshot and do locking/unlocking*/
-        i_commitMedia(fOnline);
+        i_commitMedia(task.m_fTakingSnapshotOnline);
 
         /* inform callbacks */
         mParent->i_onSnapshotTaken(mData->mUuid,
@@ -1889,7 +1877,7 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
         mData->mCurrentSnapshot = pOldCurrentSnap;      // might have been changed above
 
         // delete the saved state file (it might have been already created)
-        if (fOnline)
+        if (task.m_fTakingSnapshotOnline)
             // no need to test for whether the saved state file is shared: an online
             // snapshot means that a new saved state file was created, which we must
             // clean up now

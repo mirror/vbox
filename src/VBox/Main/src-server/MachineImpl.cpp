@@ -9994,11 +9994,10 @@ void Machine::i_copyMachineDataToSettings(settings::MachineConfigFile &config)
 
     if (    mData->mMachineState == MachineState_Saved
          || mData->mMachineState == MachineState_Restoring
-            // when deleting a snapshot we may or may not have a saved state in the current state,
-            // so let's not assert here please
-         || (    (   mData->mMachineState == MachineState_DeletingSnapshot
-                  || mData->mMachineState == MachineState_DeletingSnapshotOnline
-                  || mData->mMachineState == MachineState_DeletingSnapshotPaused)
+            // when doing certain snapshot operations we may or may not have
+            // a saved state in the current state, so keep everything as is
+         || (    (   mData->mMachineState == MachineState_Snapshotting
+                  || mData->mMachineState == MachineState_DeletingSnapshot)
               && (!mSSData->strStateFilePath.isEmpty())
             )
         )
