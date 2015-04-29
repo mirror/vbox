@@ -87,8 +87,9 @@ private slots:
                                       const QString &strId = QString());
     void sltShowCloneMachineWizard();
     void sltPerformStartOrShowAction();
-    void sltPerformDefaultStart();
-    void sltPerformSeparateStart();
+    void sltPerformStartNormal();
+    void sltPerformStartHeadless();
+    void sltPerformStartDetachable();
     void sltPerformDiscardAction();
     void sltPerformPauseResumeAction(bool fPause);
     void sltPerformResetAction();

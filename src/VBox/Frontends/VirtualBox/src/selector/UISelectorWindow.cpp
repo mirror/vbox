@@ -469,7 +469,7 @@ void UISelectorWindow::sltPerformStartOrShowAction()
     }
 }
 
-void UISelectorWindow::sltPerformDefaultStart()
+void UISelectorWindow::sltPerformStartNormal()
 {
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
@@ -484,13 +484,11 @@ void UISelectorWindow::sltPerformDefaultStart()
 
         /* Launch/show current VM: */
         CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier ?
-                                            VBoxGlobal::LaunchMode_Headless :
-                                            VBoxGlobal::LaunchMode_Default);
+        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Default);
     }
 }
 
-void UISelectorWindow::sltPerformSeparateStart()
+void UISelectorWindow::sltPerformStartHeadless()
 {
     /* Get selected items: */
     QList<UIVMItem*> items = currentItems();
@@ -505,9 +503,26 @@ void UISelectorWindow::sltPerformSeparateStart()
 
         /* Launch/show current VM: */
         CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier ?
-                                            VBoxGlobal::LaunchMode_Headless :
-                                            VBoxGlobal::LaunchMode_Separate);
+        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Headless);
+    }
+}
+
+void UISelectorWindow::sltPerformStartDetachable()
+{
+    /* Get selected items: */
+    QList<UIVMItem*> items = currentItems();
+    AssertMsgReturnVoid(!items.isEmpty(), ("At least one item should be selected!\n"));
+
+    /* For every selected item: */
+    foreach (UIVMItem *pItem, items)
+    {
+        /* Check if current item could be started/showed: */
+        if (!isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, QList<UIVMItem*>() << pItem))
+            continue;
+
+        /* Launch/show current VM: */
+        CMachine machine = pItem->machine();
+        vboxGlobal().launchMachine(machine, VBoxGlobal::LaunchMode_Separate);
     }
 }
 
@@ -1308,12 +1323,14 @@ void UISelectorWindow::prepareMenuGroupStartOrShow(QMenu *pMenu)
         return;
 
     /* Populate 'Group' / 'Start or Show' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable));
 
     /* Remember action list: */
-    m_groupActions << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault)
-                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate);
+    m_groupActions << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)
+                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)
+                   << actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable);
 }
 
 void UISelectorWindow::prepareMenuMachineStartOrShow(QMenu *pMenu)
@@ -1323,12 +1340,14 @@ void UISelectorWindow::prepareMenuMachineStartOrShow(QMenu *pMenu)
         return;
 
     /* Populate 'Machine' / 'Start or Show' menu: */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless));
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable));
 
     /* Remember action list: */
-    m_machineActions << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault)
-                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate);
+    m_machineActions << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)
+                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)
+                     << actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable);
 }
 
 void UISelectorWindow::prepareMenuGroupClose(QMenu *pMenu)
@@ -1484,12 +1503,14 @@ void UISelectorWindow::prepareConnections()
     connect(actionPool()->action(UIActionIndexST_M_Machine_S_CreateShortcut), SIGNAL(triggered()), this, SLOT(sltPerformCreateShortcutAction()));
 
     /* 'Group/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault), SIGNAL(triggered()), this, SLOT(sltPerformDefaultStart()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate), SIGNAL(triggered()), this, SLOT(sltPerformSeparateStart()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal), SIGNAL(triggered()), this, SLOT(sltPerformStartNormal()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless), SIGNAL(triggered()), this, SLOT(sltPerformStartHeadless()));
+    connect(actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable), SIGNAL(triggered()), this, SLOT(sltPerformStartDetachable()));
 
     /* 'Machine/Start or Show' menu connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault), SIGNAL(triggered()), this, SLOT(sltPerformDefaultStart()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate), SIGNAL(triggered()), this, SLOT(sltPerformSeparateStart()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal), SIGNAL(triggered()), this, SLOT(sltPerformStartNormal()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless), SIGNAL(triggered()), this, SLOT(sltPerformStartHeadless()));
+    connect(actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable), SIGNAL(triggered()), this, SLOT(sltPerformStartDetachable()));
 
     /* 'Group/Close' menu connections: */
     connect(actionPool()->action(UIActionIndexST_M_Group_M_Close)->menu(), SIGNAL(aboutToShow()), this, SLOT(sltGroupCloseMenuAboutToShow()));
@@ -1670,13 +1691,15 @@ void UISelectorWindow::updateActionsAppearance()
 
     /* Enable/disable group-start-or-show actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault, items));
-    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless, items));
+    actionPool()->action(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable, items));
 
     /* Enable/disable machine-start-or-show actions: */
     actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault, items));
-    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless, items));
+    actionPool()->action(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable)->setEnabled(isActionEnabled(UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable, items));
 
     /* Enable/disable group-close actions: */
     actionPool()->action(UIActionIndexST_M_Group_M_Close)->setEnabled(isActionEnabled(UIActionIndexST_M_Group_M_Close, items));
@@ -1775,11 +1798,13 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, const QList<UIVMItem*> 
                    isItemsPoweredOff(items);
         }
         case UIActionIndexST_M_Group_M_StartOrShow:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartDefault:
-        case UIActionIndexST_M_Group_M_StartOrShow_S_StartSeparate:
+        case UIActionIndexST_M_Group_M_StartOrShow_S_StartNormal:
+        case UIActionIndexST_M_Group_M_StartOrShow_S_StartHeadless:
+        case UIActionIndexST_M_Group_M_StartOrShow_S_StartDetachable:
         case UIActionIndexST_M_Machine_M_StartOrShow:
-        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDefault:
-        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartSeparate:
+        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartNormal:
+        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartHeadless:
+        case UIActionIndexST_M_Machine_M_StartOrShow_S_StartDetachable:
         {
             return !m_pChooser->isGroupSavingInProgress() &&
                    isAtLeastOneItemCanBeStartedOrShowed(items);
