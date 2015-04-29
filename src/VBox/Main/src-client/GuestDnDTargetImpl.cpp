@@ -110,7 +110,7 @@ HRESULT GuestDnDTarget::FinalConstruct(void)
      * been hardcoded until now. */
     /* Note: Never ever rely on information from the guest; the host dictates what and
      *       how to do something, so try to negogiate a sensible value here later. */
-    m_cbBlockSize = _32K; /** @todo Make this configurable. */
+    m_cbBlockSize = _64K; /** @todo Make this configurable. */
 
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();

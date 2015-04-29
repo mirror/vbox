@@ -86,10 +86,12 @@ protected:
     int i_receiveData(PRECVDATACTX pCtx);
     int i_receiveRawData(PRECVDATACTX pCtx);
     int i_receiveURIData(PRECVDATACTX pCtx);
+    int i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd);
 
 protected:
 
-    int i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd);
+    /** Maximum data block size (in bytes) the source can handle. */
+    uint32_t m_cbBlockSize;
 };
 
 #endif /* !____H_GUESTDNDSOURCEIMPL */
