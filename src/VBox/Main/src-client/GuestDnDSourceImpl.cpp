@@ -510,8 +510,8 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
         if (mDataBase.mProtocolVersion <= 2)
         {
             /*
-             * BUG: Protocol v1 does *not* send directory names in URI format,
-             *      however, if this in a root URI directory (which came with the initial
+             * BUG: Protocol v1 does *not* send root directory names in URI format,
+             *      however, if this is a root URI directory (which came with the initial
              *      GUEST_DND_GH_SND_DATA message(s)) the total data announced was for
              *      root directory names which came in URI format, as an URI list.
              *
@@ -522,18 +522,21 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
                                            NULL /* pszQuery */, NULL /* pszFragment */);
             if (pszPathURI)
             {
-                cbPath  = strlen(pszPathURI);
-                cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
+                bool fHasPath = RTPathHasPath(pszPath); /* Use original data received. */
+                if (!fHasPath) /* Root path? */
+                {
+                    cbPath  = strlen(pszPathURI);
+                    cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
 
-                LogFlowFunc(("URI pszPathURI=%s, cbPathURI=%RU32\n", pszPathURI, cbPath));
+                    rc = i_updateProcess(pCtx, cbPath);
+                }
+
+                LogFlowFunc(("URI pszPathURI=%s, fHasPath=%RTbool, cbPath=%RU32\n", pszPathURI, fHasPath, cbPath));
                 RTStrFree(pszPathURI);
             }
             else
                 rc = VERR_NO_MEMORY;
         }
-
-        if (RT_SUCCESS(rc))
-            rc = i_updateProcess(pCtx, cbPath);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -598,6 +601,9 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             /* Note: Protocol v1 does not send any file sizes, so always 0. */
             if (mDataBase.mProtocolVersion >= 2)
                 rc = pCtx->mURI.objURI.SetSize(cbSize);
+
+            if (!cbSize) /* 0-byte file? Close again. */
+                pCtx->mURI.objURI.Close();
         }
         else
         {
