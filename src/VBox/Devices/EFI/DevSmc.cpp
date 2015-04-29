@@ -356,7 +356,7 @@ static const DEVSMCKEYDESC g_aSmcKeys[] =
 /** Do once for the SMC ring-0 static data (g_abOsk0And1, g_fHaveOsk). */
 static RTONCE   g_SmcR0Once = RTONCE_INITIALIZER;
 /** Indicates whether we've successfully queried the OSK* keys. */
-static bool g_fHaveOsk = false;
+static bool     g_fHaveOsk = false;
 /** The OSK0 and OSK1 values. */
 static uint8_t  g_abOsk0And1[32+32];
 
@@ -1411,7 +1411,7 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DeviceKey\" as a string failed"));
 
-    /* Query the key from the real hardware if asked to do so. */
+    /* Query the key from the OS / real hardware if asked to do so. */
     bool fGetKeyFromRealSMC;
     rc = CFGMR3QueryBoolDef(pCfg, "GetKeyFromRealSMC", &fGetKeyFromRealSMC, false);
     if (RT_FAILURE(rc))
@@ -1423,9 +1423,13 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         rc = getSmcKeyOs(pThis->szOsk0And1, sizeof(pThis->szOsk0And1));
         if (RT_FAILURE(rc))
         {
-            LogRel(("SMC: Retrieving the SMC key from OS failed, trying to read it from hardware\n"));
+            LogRel(("SMC: Retrieving the SMC key from the OS failed (%Rrc), trying to read it from hardware\n", rc));
 #endif
             rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*u64Arg*/);
+            if (RT_SUCCESS(rc))
+                LogRel(("SMC: Successfully retrieved the SMC key from hardware\n"));
+            else
+                LogRel(("SMC: Retrieving the SMC key from hardware failed(%Rrc)\n", rc));
 #ifdef RT_OS_DARWIN
         }
         else
