@@ -314,7 +314,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
                  "                              [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
                  "                              [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
-                 "                              [--dos2unix] [--unix2dos]\n"
+                 "                              [--dos2unix] [--unquoted-args] [--unix2dos]\n"
                  "                              [-- [<argument1>] ... [<argumentN>]]\n"
                  "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
@@ -1153,6 +1153,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
         { "--no-profile",                   GETOPTDEF_EXEC_NO_PROFILE,                RTGETOPT_REQ_NOTHING },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unix2dos",                     GETOPTDEF_EXEC_UNIX2DOS,                  RTGETOPT_REQ_NOTHING },
+        { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
         { "--wait-exit",                    GETOPTDEF_EXEC_WAITFOREXIT,               RTGETOPT_REQ_NOTHING },
         { "--wait-stdout",                  GETOPTDEF_EXEC_WAITFORSTDOUT,             RTGETOPT_REQ_NOTHING },
         { "--wait-stderr",                  GETOPTDEF_EXEC_WAITFORSTDERR,             RTGETOPT_REQ_NOTHING }
@@ -1225,6 +1226,10 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
                 case 'i':
                     strCmd = ValueUnion.psz;
+                    break;
+
+                case 'u':
+                    aCreateFlags.push_back(ProcessCreateFlag_UnquotedArguments);
                     break;
 
                 /** @todo Add a hidden flag. */
