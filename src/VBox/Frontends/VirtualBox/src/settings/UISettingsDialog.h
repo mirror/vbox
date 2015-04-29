@@ -96,10 +96,10 @@ protected:
     /** Defines configuration access level. */
     void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
 
-    /* Dialog title: */
+    /** Returns the dialog title extension. */
+    virtual QString titleExtension() const = 0;
+    /** Returns the dialog title. */
     virtual QString title() const = 0;
-    /* Dialog title extension: */
-    virtual QString titleExtension() const;
 
     /* Add settings page: */
     void addItem(const QString &strBigIcon, const QString &strMediumIcon, const QString &strSmallIcon,

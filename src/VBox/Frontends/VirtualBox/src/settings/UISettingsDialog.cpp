@@ -351,15 +351,6 @@ void UISettingsDialog::setConfigurationAccessLevel(ConfigurationAccessLevel newC
         pPage->setConfigurationAccessLevel(configurationAccessLevel());
 }
 
-QString UISettingsDialog::titleExtension() const
-{
-#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
-    return m_pSelector->itemText(m_pSelector->currentId());
-#else
-    return tr("Settings");
-#endif
-}
-
 void UISettingsDialog::addItem(const QString &strBigIcon,
                                const QString &strMediumIcon,
                                const QString &strSmallIcon,

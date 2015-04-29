@@ -279,6 +279,15 @@ void UISettingsDialogGlobal::retranslateUi()
     setWindowTitle(title());
 }
 
+QString UISettingsDialogGlobal::titleExtension() const
+{
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    return m_pSelector->itemText(m_pSelector->currentId());
+#else /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+    return tr("Preferences");
+#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+}
+
 QString UISettingsDialogGlobal::title() const
 {
     return tr("VirtualBox - %1").arg(titleExtension());
@@ -637,6 +646,15 @@ void UISettingsDialogMachine::retranslateUi()
 
     /* Set dialog's name: */
     setWindowTitle(title());
+}
+
+QString UISettingsDialogMachine::titleExtension() const
+{
+#ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
+    return m_pSelector->itemText(m_pSelector->currentId());
+#else /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+    return tr("Settings");
+#endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 }
 
 QString UISettingsDialogMachine::title() const
