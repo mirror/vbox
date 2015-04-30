@@ -593,7 +593,7 @@
     virtual machine. These interfaces require the guest operating system
     to recognize their presence and make use of them in order to leverage
     the benefits of communicating with the VirtualBox hypervisor.</para>
-    
+
     <para>Most mainstream, modern operating systems, including Windows and
     Linux, ship with support for one or more paravirtualization interfaces.
     Hence, there is typically no need to install additional software in the
