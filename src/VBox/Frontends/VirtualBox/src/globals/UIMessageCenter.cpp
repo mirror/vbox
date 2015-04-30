@@ -2399,35 +2399,35 @@ void UIMessageCenter::warnAboutExtPackInstalled(const QString &strPackName, QWid
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-void UIMessageCenter::cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Drag and drop operation from host to guest failed."),
           formatErrorInfo(dndTarget));
 }
 
-void UIMessageCenter::cannotDropDataToGuest(const CProgress &progress, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDropDataToGuest(const CProgress &progress, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Drag and drop operation from host to guest failed."),
           formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotCancelDropToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotCancelDropToGuest(const CDnDTarget &dndTarget, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Unable to cancel host to guest drag and drop operation."),
           formatErrorInfo(dndTarget));
 }
 
-void UIMessageCenter::cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Drag and drop operation from guest to host failed."),
           formatErrorInfo(dndSource));
 }
 
-void UIMessageCenter::cannotDropDataToHost(const CProgress &progress, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotDropDataToHost(const CProgress &progress, QWidget *pParent /* = 0 */) const
 {
     error(pParent, MessageType_Error,
           tr("Drag and drop operation from guest to host failed."),

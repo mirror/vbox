@@ -348,13 +348,12 @@ public:
     void warnAboutExtPackInstalled(const QString &strPackName, QWidget *pParent = 0) const;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    /* API: Drag and drop errors: Host -> Guest */
+    /* API: Drag and drop warnings: */
     void cannotDropDataToGuest(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
+    void cannotDropDataToGuest(const CProgress &progress, QWidget *pParent = 0) const;
     void cannotCancelDropToGuest(const CDnDTarget &dndTarget, QWidget *pParent = 0) const;
-    void cannotDropDataToGuest(const CProgress &progress, QWidget *pParent /* = 0*/) const;
-    /* API: Drag and drop errors: Guest -> Host */
     void cannotDropDataToHost(const CDnDSource &dndSource, QWidget *pParent = 0) const;
-    void cannotDropDataToHost(const CProgress &progress, QWidget *pParent /* = 0*/) const;
+    void cannotDropDataToHost(const CProgress &progress, QWidget *pParent = 0) const;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 
     /* API: License-viewer warnings: */
