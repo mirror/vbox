@@ -316,7 +316,7 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
     LogFlowFunc(("uStatus=%RU32, uPercentage=%RU32, rcOp=%Rrc\n",
                  uStatus, uPercentage, rcOp));
 
-    int vrc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
     if (!m_progress.isNull())
     {
         BOOL fCompleted;
@@ -382,8 +382,8 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
         LogFlowFunc(("New: fCompleted=%RTbool, fCanceled=%RTbool\n", fCompleted, fCanceled));
     }
 
-    LogFlowFuncLeaveRC(vrc);
-    return vrc;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t cbParms)

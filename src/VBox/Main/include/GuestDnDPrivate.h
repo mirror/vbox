@@ -19,6 +19,9 @@
 #ifndef ____H_GUESTDNDPRIVATE
 #define ____H_GUESTDNDPRIVATE
 
+#include <iprt/dir.h>
+#include <iprt/file.h>
+
 #include "VBox/hgcmsvc.h" /* For PVBOXHGCMSVCPARM. */
 #include "VBox/GuestHost/DragAndDrop.h"
 
@@ -65,6 +68,17 @@ protected:
  */
 typedef struct GuestDnDData
 {
+    GuestDnDData(void)
+        : cbToProcess(0)
+        , cbProcessed(0) { }
+
+    void Reset(void)
+    {
+        vecData.clear();
+        cbToProcess = 0;
+        cbProcessed = 0;
+    }
+
     /** Array (vector) of guest DnD data. This might be an URI list, according
      *  to the format being set. */
     std::vector<BYTE>         vecData;
@@ -72,7 +86,87 @@ typedef struct GuestDnDData
     uint64_t                  cbToProcess;
     /** Overall size (in bytes) of processed file data. */
     uint64_t                  cbProcessed;
+
 } GuestDnDData;
+
+/**
+ * Structure for keeping around URI (list) data.
+ */
+typedef struct GuestDnDURIData
+{
+    GuestDnDURIData(void)
+        : pvScratchBuf(NULL)
+        , cbScratchBuf(0) { }
+
+    virtual ~GuestDnDURIData(void)
+    {
+        Reset();
+    }
+
+    void Reset(void)
+    {
+        strDropDir = "";
+        lstURI.Clear();
+        lstDirs.clear();
+        lstFiles.clear();
+        if (pvScratchBuf)
+        {
+            RTMemFree(pvScratchBuf);
+            pvScratchBuf = NULL;
+        }
+        cbScratchBuf = 0;
+    }
+
+    int Rollback(void)
+    {
+        if (strDropDir.isEmpty())
+            return VINF_SUCCESS;
+
+        int rc = VINF_SUCCESS;
+        int rc2;
+
+        /* Rollback by removing any stuff created.
+         * Note: Only remove empty directories, never ever delete
+         *       anything recursive here! Steam (tm) knows best ... :-) */
+        for (size_t i = 0; i < lstFiles.size(); i++)
+        {
+            rc2 = RTFileDelete(lstFiles.at(i).c_str());
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+
+        for (size_t i = 0; i < lstDirs.size(); i++)
+        {
+            rc2 = RTDirRemove(lstDirs.at(i).c_str());
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+
+        rc2 = RTDirRemove(strDropDir.c_str());
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+
+        return rc;
+    }
+
+    /** Temporary drop directory on the host where to
+     *  put the files sent from the guest. */
+    com::Utf8Str                    strDropDir;
+    /** (Non-recursive) List of root URI objects to receive. */
+    DnDURIList                      lstURI;
+    /** Current object to receive. */
+    DnDURIObject                    objURI;
+    /** List for holding created directories in the case of a rollback. */
+    RTCList<RTCString>              lstDirs;
+    /** List for holding created files in the case of a rollback. */
+    RTCList<RTCString>              lstFiles;
+    /** Pointer to an optional scratch buffer to use for
+     *  doing the actual chunk transfers. */
+    void                           *pvScratchBuf;
+    /** Size (in bytes) of scratch buffer. */
+    size_t                          cbScratchBuf;
+
+} GuestDnDURIData;
 
 /**
  * Context structure for sending data to the guest.
@@ -93,19 +187,10 @@ typedef struct SENDDATACTX
     /** Drag'n drop data to send.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
+    /** URI data structure. */
+    GuestDnDURIData                     mURI;
     /** Callback event to use. */
     GuestDnDCallbackEvent               mCallback;
-    /** Struct for keeping data required for URI list processing. */
-    struct
-    {
-        /** List of all URI objects to send. */
-        DnDURIList                      lstURI;
-        /** Pointer to scratch buffer to use for
-         *  doing the actual chunk transfers. */
-        void                           *pvScratchBuf;
-        /** Size (in bytes) of scratch buffer. */
-        size_t                          cbScratchBuf;
-    } mURI;
 
 } SENDDATACTX, *PSENDDATACTX;
 
@@ -130,24 +215,10 @@ typedef struct RECVDATACTX
     /** Drag'n drop received from the guest.
      *  This can be arbitrary data or an URI list. */
     GuestDnDData                        mData;
+    /** URI data structure. */
+    GuestDnDURIData                     mURI;
     /** Callback event to use. */
     GuestDnDCallbackEvent               mCallback;
-    /** Struct for keeping data required for URI list processing. */
-    struct
-    {
-        /** Temporary drop directory on the host where to
-         *  put the files sent from the guest. */
-        com::Utf8Str                    strDropDir;
-        /** (Non-recursive) List of root URI objects to receive. */
-        DnDURIList                      lstURI;
-        /** Current object to receive. */
-        DnDURIObject                    objURI;
-        /** List for holding created directories in the case of a rollback. */
-        RTCList<RTCString>              lstDirs;
-        /** List for holding created files in the case of a rollback. */
-        RTCList<RTCString>              lstFiles;
-
-    } mURI;
 
 } RECVDATACTX, *PRECVDATACTX;
 

@@ -736,6 +736,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
                 LogFlowFunc(("Sending file header ...\n"));
                 LogRel2(("DnD: Transferring host file to guest: %s (%RU64 bytes, mode 0x%x)\n",
                          strPathSrc.c_str(), aFile.GetSize(), aFile.GetMode()));
+
+                /** @todo Set progress object title to current file being transferred? */
             }
             else
             {

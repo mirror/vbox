@@ -592,12 +592,15 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
                                       RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            /** @todo Unescpae path before printing. */
-            LogRel2(("DnD: Transferring guest file to host: %s\n", pCtx->mURI.objURI.GetDestPath().c_str()));
-
             /* Note: Protocol v1 does not send any file sizes, so always 0. */
             if (mDataBase.mProtocolVersion >= 2)
                 rc = pCtx->mURI.objURI.SetSize(cbSize);
+
+            /** @todo Unescpae path before printing. */
+            LogRel2(("DnD: Transferring guest file to host: %s (%RU64 bytes, mode 0x%x)\n",
+                     pCtx->mURI.objURI.GetDestPath().c_str(), pCtx->mURI.objURI.GetSize(), pCtx->mURI.objURI.GetMode()));
+
+            /** @todo Set progress object title to current file being transferred? */
 
             if (!cbSize) /* 0-byte file? Close again. */
                 pCtx->mURI.objURI.Close();
@@ -736,15 +739,12 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     /*
      * Reset any old data.
      */
-    pCtx->mData.vecData.clear();
-    pCtx->mData.cbToProcess = 0;
-    pCtx->mData.cbProcessed = 0;
-
-    pResp->reset();
-    pResp->resetProgress(m_pGuest);
+    pCtx->mData.Reset();
+    pCtx->mURI.Reset();
 
     /* Set the format we are going to retrieve to have it around
      * when retrieving the data later. */
+    pResp->reset();
     pResp->setFormat(pCtx->mFormat);
 
     bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
@@ -875,14 +875,16 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
     if (!pInst)
         return VERR_INVALID_POINTER;
 
-#define REGISTER_CALLBACK(x) \
+#define REGISTER_CALLBACK(x)                                    \
     rc = pResp->setCallback(x, i_receiveURIDataCallback, pCtx); \
-    if (RT_FAILURE(rc)) \
+    if (RT_FAILURE(rc))                                         \
         return rc;
 
-#define UNREGISTER_CALLBACK(x) \
-    rc = pResp->setCallback(x, NULL); \
-    AssertRC(rc);
+#define UNREGISTER_CALLBACK(x)                                  \
+    {                                                           \
+        int rc2 = pResp->setCallback(x, NULL);                  \
+        AssertRC(rc2);                                          \
+    }
 
     /*
      * Register callbacks.
@@ -926,6 +928,11 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
             LogFlowFunc(("Waiting for URI callback (%RU32ms timeout) ...\n", msTimeout));
             rc = pCtx->mCallback.Wait(msTimeout);
             LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
+            if (RT_SUCCESS(rc))
+            {
+                rc = pCtx->mCallback.Result();
+                LogFlowFunc(("Callback result is %Rrc\n", rc));
+            }
         }
 
     } while (0);
@@ -945,18 +952,9 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Rolling back ...\n"));
-
-        /* Rollback by removing any stuff created. */
-        for (size_t i = 0; i < pCtx->mURI.lstFiles.size(); ++i)
-            RTFileDelete(pCtx->mURI.lstFiles.at(i).c_str());
-        for (size_t i = 0; i < pCtx->mURI.lstDirs.size(); ++i)
-            RTDirRemove(pCtx->mURI.lstDirs.at(i).c_str());
+        int rc2 = pCtx->mURI.Rollback(); /** @todo Inform user on rollback failure? */
+        LogFlowFunc(("Rolling back ended with rc=%Rrc\n", rc2));
     }
-
-    /* Try removing (hopefully) empty drop directory in any case. */
-    if (pCtx->mURI.strDropDir.isNotEmpty())
-        RTDirRemove(pCtx->mURI.strDropDir.c_str());
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1120,8 +1118,8 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
         fNotify = true;
     }
 
-    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool\n",
-                 pCtx->mData.cbProcessed, pCtx->mData.cbToProcess, fNotify));
+    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool, rc=%Rrc\n",
+                 pCtx->mData.cbProcessed, pCtx->mData.cbToProcess, fNotify, rc));
 
     if (fNotify)
     {

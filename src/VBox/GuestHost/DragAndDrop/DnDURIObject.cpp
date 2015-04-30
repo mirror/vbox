@@ -36,7 +36,7 @@
 
 DnDURIObject::DnDURIObject(void)
     : m_Type(Unknown)
-    , m_fMode(0)
+    , m_fCreationMode(0)
     , m_cbSize(0)
     , m_cbProcessed(0)
 {
@@ -50,7 +50,7 @@ DnDURIObject::DnDURIObject(Type type,
     : m_Type(type)
     , m_strSrcPath(strSrcPath)
     , m_strTgtPath(strDstPath)
-    , m_fMode(fMode)
+    , m_fCreationMode(fMode)
     , m_cbSize(cbSize)
     , m_cbProcessed(0)
 {
@@ -198,7 +198,10 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                     if (RT_SUCCESS(rc))
                         rc = RTFileGetSize(u.m_hFile, &m_cbSize);
                     if (RT_SUCCESS(rc))
+                    {
+                        LogFlowFunc(("cbSize=%RU64, fMode=%RU32\n", m_cbSize, m_fCreationMode));
                         m_cbProcessed = 0;
+                    }
                 }
                 else
                     rc = VINF_SUCCESS;
@@ -344,12 +347,12 @@ void DnDURIObject::Reset(void)
 {
     Close();
 
-    m_Type        = Unknown;
-    m_strSrcPath  = "";
-    m_strTgtPath  = "";
-    m_fMode       = 0;
-    m_cbSize      = 0;
-    m_cbProcessed = 0;
+    m_Type          = Unknown;
+    m_strSrcPath    = "";
+    m_strTgtPath    = "";
+    m_fCreationMode = 0;
+    m_cbSize        = 0;
+    m_cbProcessed   = 0;
 }
 
 int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)

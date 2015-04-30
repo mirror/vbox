@@ -1317,12 +1317,11 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
     AssertReturn(obj.GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
 
     uint32_t cbBuf = _64K; /** @todo Make this configurable? */
-    void *pvBuf = RTMemAlloc(cbBuf);
+    void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
     if (!pvBuf)
         return VERR_NO_MEMORY;
 
     RTCString strPath = obj.GetDestPath();
-    LogFlowFunc(("strFile=%s (%zu), fMode=0x%x\n", strPath.c_str(), strPath.length(), obj.GetMode()));
 
     int rc = obj.Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
@@ -1331,7 +1330,8 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
         return rc;
     }
 
-    LogFlowFunc(("cbSize=%RU64, uProtocol=%RU32, uClientID=%RU32\n", obj.GetSize(), pCtx->uProtocol, pCtx->uClientID));
+    LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(), obj.GetSize(), obj.GetMode()));
+    LogFlowFunc(("uProtocol=%RU32, uClientID=%RU32\n", pCtx->uProtocol, pCtx->uClientID));
 
     if (pCtx->uProtocol >= 2) /* Protocol version 2 and up sends a file header first. */
     {
@@ -1429,6 +1429,8 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
             LogFlowFunc(("%RU64/%RU64 -- %RU8%%\n", cbWrittenTotal, obj.GetSize(), cbWrittenTotal * 100 / obj.GetSize()));
         };
     }
+
+    obj.Close();
 
     RTMemFree(pvBuf);
 

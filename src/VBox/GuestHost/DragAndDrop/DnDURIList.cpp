@@ -81,16 +81,17 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
     m_cTotal++;
     m_cbTotal += cbSize;
 #ifdef DEBUG_andy
-    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
-                 pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize, m_cbTotal));
+    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cTotal=%RU32, cbTotal=%zu\n",
+                 pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize, m_cTotal, m_cbTotal));
 #endif
 
-    PRTDIR hDir;
     /* We have to try to open even symlinks, cause they could
      * be symlinks to directories. */
+    PRTDIR hDir;
     rc = RTDirOpen(&hDir, pcszPath);
+
     /* The following error happens when this was a symlink
-     * to an file or a regular file. */
+     * to a file or a regular file. */
     if (   rc == VERR_PATH_NOT_FOUND
         || rc == VERR_NOT_A_DIRECTORY)
         return VINF_SUCCESS;
@@ -149,14 +150,16 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
                         m_lstTree.append(DnDURIObject(DnDURIObject::File,
                                                       pszNewFile, &pszNewFile[cbBaseLen],
                                                       objInfo1.Attr.fMode, cbSize));
+                        m_cTotal++;
                         m_cbTotal += cbSize;
+#ifdef DEBUG_andy
+                        LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cTotal=%RU32, cbTotal=%zu\n",
+                                     pszNewFile, &pszNewFile[cbBaseLen], objInfo1.Attr.fMode, cbSize, m_cTotal, m_cbTotal));
+#endif
                     }
                     else /* Handle symlink directories. */
                         rc = appendPathRecursive(pszNewFile, cbBaseLen, fFlags);
-#ifdef DEBUG_andy
-                    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cbTotal=%zu\n",
-                                 pszNewFile, &pszNewFile[cbBaseLen], objInfo1.Attr.fMode, cbSize, m_cbTotal));
-#endif
+
                     RTStrFree(pszNewFile);
                 }
                 else
@@ -165,6 +168,7 @@ int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
             }
 
             default:
+                /* Just ignore the rest. */
                 break;
         }
     }

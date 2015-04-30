@@ -76,7 +76,7 @@ public:
 
     const RTCString &GetSourcePath(void) const { return m_strSrcPath; }
     const RTCString &GetDestPath(void) const { return m_strTgtPath; }
-    uint64_t GetMode(void) const { return m_fMode; }
+    uint32_t GetMode(void) const { return m_fCreationMode; }
     uint64_t GetProcessed(void) const { return m_cbProcessed; }
     uint64_t GetSize(void) const { return m_cbSize; }
     Type GetType(void) const { return m_Type; }
@@ -109,8 +109,8 @@ protected:
     Type      m_Type;
     RTCString m_strSrcPath;
     RTCString m_strTgtPath;
-    /** File mode. */
-    uint32_t  m_fMode;
+    /** File creation mode. */
+    uint32_t  m_fCreationMode;
     /** Size (in bytes) to read/write. */
     uint64_t  m_cbSize;
     /** Bytes processed reading/writing. */
