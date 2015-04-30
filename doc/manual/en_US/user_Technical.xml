@@ -604,7 +604,7 @@
       <itemizedlist>
         <listitem>
           <para><emphasis role="bold">Minimal</emphasis>: Announces the
-          presence of a virtualized environment, additionally reports the
+          presence of a virtualized environment. Additionally, reports the
           TSC and APIC frequency to the guest operating system. This provider
           is mandatory for running any Mac OS X guests.</para>
         </listitem>
