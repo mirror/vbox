@@ -241,13 +241,17 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             emit sigCanShowWindow(fVeto, strReason);
             if (fVeto)
                 es.AddVeto(strReason);
+            else
+                es.AddApproval(strReason);
             break;
         }
         case KVBoxEventType_OnShowWindow:
         {
             CShowWindowEvent es(pEvent);
             /* Has to be done in place to give an answer: */
-            LONG64 winId;
+            LONG64 winId = es.GetWinId();
+            if (winId != 0)
+                break; /* Already set by some listener. */
             emit sigShowWindow(winId);
             es.SetWinId(winId);
             break;

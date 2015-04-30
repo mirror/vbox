@@ -234,7 +234,8 @@ public:
             {
                 ComPtr<IShowWindowEvent> swev = aEvent;
                 Assert(swev);
-                swev->COMSETTER(WinId)(0);
+                /* Ignore the event, WinId is either still zero or some other listener assigned it. */
+                NOREF(swev); /* swev->COMSETTER(WinId)(0); */
                 break;
             }
             case VBoxEventType_OnGuestPropertyChanged:

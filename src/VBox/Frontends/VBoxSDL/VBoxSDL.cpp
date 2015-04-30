@@ -528,6 +528,8 @@ public:
                 SDL_VERSION(&info.version);
                 if (!SDL_GetWMInfo(&info))
                     pCSWEv->AddVeto(NULL);
+                else
+                    pCSWEv->AddApproval(NULL);
 #endif
                 break;
             }
@@ -536,6 +538,10 @@ public:
             {
                 ComPtr<IShowWindowEvent> pSWEv = aEvent;
                 Assert(pSWEv);
+                LONG64 winId = 0;
+                pSWEv->COMGETTER(WinId)(&winId);
+                if (winId != 0)
+                    break; /* WinId already set by some other listener. */
 #ifndef RT_OS_DARWIN
                 SDL_SysWMinfo info;
                 SDL_VERSION(&info.version);
