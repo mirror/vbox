@@ -537,9 +537,11 @@
               modern ICH9 chipset, which supports PCI express, three PCI
               buses, PCI-to-PCI bridges and Message Signaled Interrupts
               (MSI). This allows modern operating systems to address more PCI
-              devices and no longer requires IRQ sharing. Note that the ICH9
-              support is experimental and not recommended for guest operating
-              systems which do not require it.</para>
+              devices and no longer requires IRQ sharing. Using the ICH9 chipset
+              it is also possible to configure up to 36 network cards (up to 8
+              network adapters with PIIX3). Note that the ICH9 support is
+              experimental and not recommended for guest operating systems which
+              do not require it.</para>
             </glossdef>
           </glossentry>
 

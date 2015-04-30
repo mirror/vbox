@@ -88,7 +88,7 @@
         </orderedlist></para>
     </sect2>
 
-    <sect2>
+    <sect2 id="collect-debug-info">
       <title>Collecting debugging information</title>
 
       <para>For problem determination, it is often important to collect

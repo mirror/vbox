@@ -531,12 +531,6 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <listitem>
-            <para><computeroutput>--rtcuseutc on|off</computeroutput>: This
-            option lets the real-time clock (RTC) operate in UTC time (see
-            <xref linkend="settings-motherboard" />).</para>
-          </listitem>
-
-          <listitem>
             <para><computeroutput>--cpuhotplug on|off</computeroutput>: This
             enables CPU hot-plugging. When enabled, virtual CPUs can be added
             to and removed from a virtual machine while it is running. See
@@ -663,6 +657,21 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <listitem>
+            <para><computeroutput>--accelerate2dvideo on|off</computeroutput>:
+            This enables, if the Guest Additions are installed, whether 2D video
+            acceleration should be available; see <xref
+            linkend="guestadd-2d" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--chipset piix3|ich9</computeroutput>:
+            By default VirtualBox emulates an Intel PIIX3 chipset. Usually there
+            is no reason to change the default setting unless it is required to
+            relax some of its constraints; see <xref
+            linkend="settings-motherboard" />.</para>
+          </listitem>
+
+          <listitem>
             <para>You can influence the BIOS logo that is displayed when a
             virtual machine starts up with a number of settings. Per default,
             a VirtualBox logo is displayed.</para>
@@ -705,6 +714,13 @@ Statistics update:  disabled</screen></para>
             ROM is used.
             </para>
           </listitem>
+          
+          <listitem>
+            <para><computeroutput>--biospxedebug on|off</computeroutput>:
+            This option enables additional debugging output when using the
+            Intel PXE boot ROM. The output will be written to the release log
+            file (<xref linkend="collect-debug-info" />.</para>
+          </listitem>
 
           <listitem>
             <para><computeroutput>--boot&lt;1-4&gt;
@@ -712,6 +728,19 @@ Statistics update:  disabled</screen></para>
             order for the virtual machine. There are four "slots", which the
             VM will try to access from 1 to 4, and for each of which you can
             set a device that the VM should attempt to boot from.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--rtcuseutc on|off</computeroutput>: This
+            option lets the real-time clock (RTC) operate in UTC time (see
+            <xref linkend="settings-motherboard" />).</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--biossystemtimeoffset &lt;ms&gt;</computeroutput>:
+            This allows you to set a fixed time offset of the guest relative to
+            the host time. The offset is specified in milliseconds. If the offset
+            is positive the guest time runs ahead the host time.</para>
           </listitem>
 
           <listitem>
@@ -737,25 +766,6 @@ Statistics update:  disabled</screen></para>
             <computeroutput>&lt;size&gt;</computeroutput> must be specified in
             megabytes. The default size is 0 megabytes. For details,
             see <xref linkend="guestadd-balloon" />.</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--lptmode&lt;1-N&gt;
-            &lt;Device&gt;</computeroutput>
-            Specifies the Device Name of the parallel port that
-            the Parallel Port feature will be using. Use this
-            <emphasis>before</emphasis> <computeroutput>--lpt</computeroutput>.
-            This feature is host operating system specific.</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--lpt&lt;1-N&gt;
-            &lt;I/O base&gt; &lt;IRQ&gt;</computeroutput>
-            Specifies the I/O address of the parallel port and the IRQ
-            number that the Parallel Port feature will be using. Use this
-            <emphasis>after</emphasis>
-            <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are
-			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
 
           <listitem>
@@ -1038,7 +1048,7 @@ Statistics update:  disabled</screen></para>
                   TCP socket is not created by VirtualBox,
                   but assumed to exist already.</para>
                 </listitem>
-                
+
                 <listitem>
                   <para><computeroutput>&lt;devicename&gt;</computeroutput>:
                   If, instead of the above, the device name of a physical
@@ -1051,6 +1061,25 @@ Statistics update:  disabled</screen></para>
                   to "wire" a real serial port to a virtual machine.</para>
                 </listitem>
               </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--lptmode&lt;1-N&gt;
+            &lt;Device&gt;</computeroutput>:
+            Specifies the Device Name of the parallel port that
+            the Parallel Port feature will be using. Use this
+            <emphasis>before</emphasis> <computeroutput>--lpt</computeroutput>.
+            This feature is host operating system specific.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--lpt&lt;1-N&gt;
+            &lt;I/O base&gt; &lt;IRQ&gt;</computeroutput>:
+            Specifies the I/O address of the parallel port and the IRQ
+            number that the Parallel Port feature will be using. Use this
+            <emphasis>after</emphasis>
+            <computeroutput>--lptmod</computeroutput>. I/O base address and IRQ are
+			the values that guest sees i.e. the values avalable under guest Device Manager.</para>
           </listitem>
 
           <listitem>
@@ -1712,8 +1741,8 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para><computeroutput>videocapscreens all|&lt;screen ID&gt; [&lt;screen ID&gt; ...]]</computeroutput> 
-        allows to specify which screens of the VM are being recorded. This setting 
+        <para><computeroutput>videocapscreens all|&lt;screen ID&gt; [&lt;screen ID&gt; ...]]</computeroutput>
+        allows to specify which screens of the VM are being recorded. This setting
         cannot be changed while video capturing is enabled.</para>
       </listitem>
 
@@ -1724,20 +1753,20 @@ Virtual system 0:
       </listitem>
 
       <listitem>
-        <para><computeroutput>videocapres &lt;width&gt; &lt;height&gt;</computeroutput> 
+        <para><computeroutput>videocapres &lt;width&gt; &lt;height&gt;</computeroutput>
         sets the resolution (in pixels) of the recorded video. This setting cannot be
         changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem> <!-- @todo r=andy Clarify rate. -->
-        <para><computeroutput>videocaprate &lt;rate&gt;</computeroutput> sets the 
-        bitrate in kilobits (kb) per second. Increasing this value makes the video 
-        look better for the cost of an increased file size. This setting cannot be 
+        <para><computeroutput>videocaprate &lt;rate&gt;</computeroutput> sets the
+        bitrate in kilobits (kb) per second. Increasing this value makes the video
+        look better for the cost of an increased file size. This setting cannot be
         changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
-        <para><computeroutput>videocapfps &lt;fps&gt;</computeroutput> sets the 
+        <para><computeroutput>videocapfps &lt;fps&gt;</computeroutput> sets the
         maximum number of frames per second (FPS) to be recorded. Frames with a
         higher frequency will be skipped. Reducing this value increases the number
         of skipped frames and reduces the file size. This setting cannot be changed
@@ -1745,25 +1774,25 @@ Virtual system 0:
       </listitem>
 
       <listitem> <!-- @todo r=andy Clarify time format. -->
-        <para><computeroutput>videocapmaxtime &lt;time&gt;</computeroutput> sets 
-        the maximum time the video capturing will take place since activation. 
-        The capturing stops when the defined time interval has elapsed. If this 
-        value is zero the capturing is not limited by time. This setting cannot 
+        <para><computeroutput>videocapmaxtime &lt;time&gt;</computeroutput> sets
+        the maximum time the video capturing will take place since activation.
+        The capturing stops when the defined time interval has elapsed. If this
+        value is zero the capturing is not limited by time. This setting cannot
         be changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
         <para><computeroutput>videocapmaxsize &lt;MB&gt;</computeroutput> limits
         the maximum size of the captured video file (in MB). The capturing stops
-        when file size has reached the specified size. If this value is zero 
+        when file size has reached the specified size. If this value is zero
         the capturing will not be limited by file size. This setting cannot be
         changed while video capturing is enabled.</para>
       </listitem>
 
       <listitem>
         <para><computeroutput>videocapopts &lt;key=value&gt; [&lt;key=value&gt; ...]</computeroutput>
-        can be used to specify additional video capturing options. These options 
-        only are for advanced users and must be specified in a comma-separated 
+        can be used to specify additional video capturing options. These options
+        only are for advanced users and must be specified in a comma-separated
         key=value format, e.g. <computeroutput>foo=bar,a=b</computeroutput>.
         This setting cannot be changed while video capturing is enabled.</para>
       </listitem>
@@ -4359,7 +4388,7 @@ Value: 2006.01.01</screen>
       <glossentry>
         <glossterm><computeroutput>create</computeroutput></glossterm>
         <glossdef>
-          <para>Ceates a new vboxnet&lt;N&gt; interface on the host OS. 
+          <para>Ceates a new vboxnet&lt;N&gt; interface on the host OS.
             This command is essential before you can attach VMs to host-only network.</para>
         </glossdef>
       </glossentry>
