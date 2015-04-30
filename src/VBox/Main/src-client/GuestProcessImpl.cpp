@@ -265,8 +265,7 @@ void GuestProcess::uninit(void)
         return;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    LogFlowThisFunc(("mCmd=%s, PID=%RU32\n",
-                     mData.mProcess.mCommand.c_str(), mData.mPID));
+    LogFlowThisFunc(("mExe=%s, PID=%RU32\n", mData.mProcess.mExecutable.c_str(), mData.mPID));
 
     /* Terminate process if not already done yet. */
     int guestRc = VINF_SUCCESS;
@@ -333,7 +332,7 @@ HRESULT GuestProcess::getExecutablePath(com::Utf8Str &aExecutablePath)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aExecutablePath = mData.mProcess.mCommand;
+    aExecutablePath = mData.mProcess.mExecutable;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -986,8 +985,8 @@ HRESULT GuestProcess::i_setErrorExternal(VirtualBoxBase *pInterface, int guestRc
 
 int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 {
-    LogFlowThisFunc(("uTimeoutMS=%RU32, procCmd=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
-                     uTimeoutMS, mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
+    LogFlowThisFunc(("uTimeoutMS=%RU32, procExe=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
+                     uTimeoutMS, mData.mProcess.mExecutable.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
                      mSession->i_getId()));
 
     /* Wait until the caller function (if kicked off by a thread)
@@ -1016,8 +1015,10 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 
     GuestSession *pSession = mSession;
     AssertPtr(pSession);
+    uint32_t const uProtocol = pSession->i_getProtocolVersion();
 
     const GuestCredentials &sessionCreds = pSession->i_getCredentials();
+
 
     /* Prepare arguments. */
     char *pszArgs = NULL;
@@ -1028,27 +1029,22 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     if (   RT_SUCCESS(vrc)
         && cArgs)
     {
-        char **papszArgv = (char**)RTMemAlloc((cArgs + 1) * sizeof(char*));
+        char const **papszArgv = (char const **)RTMemAlloc((cArgs + 1) * sizeof(papszArgv[0]));
         AssertReturn(papszArgv, VERR_NO_MEMORY);
 
-        for (size_t i = 0; i < cArgs && RT_SUCCESS(vrc); i++)
+        for (size_t i = 0; i < cArgs; i++)
         {
-            const char *pszCurArg = mData.mProcess.mArguments[i].c_str();
-            AssertPtr(pszCurArg);
-            vrc = RTStrDupEx(&papszArgv[i], pszCurArg);
+            papszArgv[i] = mData.mProcess.mArguments[i].c_str();
+            AssertPtr(papszArgv[i]);
         }
         papszArgv[cArgs] = NULL;
 
-        if (RT_SUCCESS(vrc))
+        if (uProtocol < UINT32_C(0xdeadbeef) ) /** @todo implement a way of sending argv[0], best idea is a new command. */
+            vrc = RTGetOptArgvToString(&pszArgs, papszArgv + 1, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+        else
             vrc = RTGetOptArgvToString(&pszArgs, papszArgv, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
 
-        if (papszArgv)
-        {
-            size_t i = 0;
-            while (papszArgv[i])
-                RTStrFree(papszArgv[i++]);
-            RTMemFree(papszArgv);
-        }
+        RTMemFree(papszArgv);
     }
 
     /* Calculate arguments size (in bytes). */
@@ -1064,15 +1060,12 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 
     if (RT_SUCCESS(vrc))
     {
-        AssertPtr(mSession);
-        uint32_t uProtocol = mSession->i_getProtocolVersion();
-
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[16];
         int i = 0;
         paParms[i++].setUInt32(pEvent->ContextID());
-        paParms[i++].setPointer((void*)mData.mProcess.mCommand.c_str(),
-                                (ULONG)mData.mProcess.mCommand.length() + 1);
+        paParms[i++].setPointer((void*)mData.mProcess.mExecutable.c_str(),
+                                (ULONG)mData.mProcess.mExecutable.length() + 1);
         paParms[i++].setUInt32(mData.mProcess.mFlags);
         paParms[i++].setUInt32((uint32_t)mData.mProcess.mArguments.size());
         paParms[i++].setPointer((void*)pszArgs, (uint32_t)cbArgs);
@@ -1763,7 +1756,7 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Reading from process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1797,13 +1790,13 @@ HRESULT GuestProcess::terminate()
             case VERR_NOT_SUPPORTED:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Terminating process \"%s\" (PID %RU32) not supported by installed Guest Additions"),
-                              mData.mProcess.mCommand.c_str(), mData.mPID);
+                              mData.mProcess.mExecutable.c_str(), mData.mPID);
                 break;
 
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Terminating process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1833,7 +1826,8 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor,
      */
     HRESULT hr = S_OK;
 
-    int guestRc; ProcessWaitResult_T waitResult;
+    int guestRc;
+    ProcessWaitResult_T waitResult;
     int vrc = i_waitFor(aWaitFor, aTimeoutMS, waitResult, &guestRc);
     if (RT_SUCCESS(vrc))
     {
@@ -1854,7 +1848,7 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor,
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Waiting for process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1906,7 +1900,7 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Writing to process \"%s\" (PID %RU32) failed: %Rrc"),
-                              mData.mProcess.mCommand.c_str(), mData.mPID, vrc);
+                              mData.mProcess.mExecutable.c_str(), mData.mPID, vrc);
                 break;
         }
     }
@@ -1955,8 +1949,8 @@ GuestProcessTool::~GuestProcessTool(void)
 int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo,
                            bool fAsync, int *pGuestRc)
 {
-    LogFlowThisFunc(("pGuestSession=%p, szCmd=%s, fAsync=%RTbool\n",
-                     pGuestSession, startupInfo.mCommand.c_str(), fAsync));
+    LogFlowThisFunc(("pGuestSession=%p, exe=%s, fAsync=%RTbool\n",
+                     pGuestSession, startupInfo.mExecutable.c_str(), fAsync));
 
     AssertPtrReturn(pGuestSession, VERR_INVALID_POINTER);
 
@@ -1966,7 +1960,7 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
     /* Make sure the process is hidden. */
     mStartupInfo.mFlags |= ProcessCreateFlag_Hidden;
 
-    int vrc = pSession->i_processCreateExInteral(mStartupInfo, pProcess);
+    int vrc = pSession->i_processCreateExInternal(mStartupInfo, pProcess);
     if (RT_SUCCESS(vrc))
         vrc = fAsync
             ? pProcess->i_startProcessAsync()

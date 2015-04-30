@@ -1499,6 +1499,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     /*
      * Prepare environment variables list.
      */
+/** @todo r=bird: you don't need to prepare this, do you? Why don't you replace
+ * the brilliant RTStrAPrintf call with RTEnvPutEx and drop the papszEnv related code? */
     char **papszEnv = NULL;
     uint32_t uNumEnvVars = 0; /* Initialize in case of failing ... */
     if (RT_SUCCESS(rc))

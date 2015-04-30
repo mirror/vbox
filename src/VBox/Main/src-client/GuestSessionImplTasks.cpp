@@ -308,8 +308,8 @@ int SessionTaskCopyTo::Run(void)
     }
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_CAT);
-    procInfo.mFlags   = ProcessCreateFlag_Hidden;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_CAT);
+    procInfo.mFlags      = ProcessCreateFlag_Hidden;
 
     /* Set arguments.*/
     procInfo.mArguments.push_back(Utf8StrFmt("--output=%s", mDest.c_str())); /** @todo Do we need path conversion? */
@@ -317,7 +317,7 @@ int SessionTaskCopyTo::Run(void)
     /* Startup process. */
     ComObjPtr<GuestProcess> pProcess; int guestRc;
     if (RT_SUCCESS(rc))
-        rc = pSession->i_processCreateExInteral(procInfo, pProcess);
+        rc = pSession->i_processCreateExInternal(procInfo, pProcess);
     if (RT_SUCCESS(rc))
     {
         Assert(!pProcess.isNull());
@@ -636,15 +636,15 @@ int SessionTaskCopyFrom::Run(void)
             GuestProcessStartupInfo procInfo;
             procInfo.mName = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" from guest to the host to \"%s\" (%RI64 bytes)"),
                                         mSource.c_str(), mDest.c_str(), objData.mObjectSize);
-            procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_CAT);
-            procInfo.mFlags     = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
+            procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_CAT);
+            procInfo.mFlags      = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
 
             /* Set arguments.*/
             procInfo.mArguments.push_back(mSource); /* Which file to output? */
 
             /* Startup process. */
             ComObjPtr<GuestProcess> pProcess;
-            rc = pSession->i_processCreateExInteral(procInfo, pProcess);
+            rc = pSession->i_processCreateExInternal(procInfo, pProcess);
             if (RT_SUCCESS(rc))
                 rc = pProcess->i_startProcess(30 * 1000 /* 30s timeout */,
                                               &guestRc);
@@ -1039,7 +1039,7 @@ int SessionTaskUpdateAdditions::i_runFileOnGuest(GuestSession *pSession, GuestPr
             case VERR_NOT_EQUAL: /** @todo Special guest control rc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Running update file \"%s\" on guest terminated with exit code %ld"),
-                                               procInfo.mCommand.c_str(), exitCode));
+                                               procInfo.mExecutable.c_str(), exitCode));
                 break;
 
             case VERR_GSTCTL_GUEST_ERROR:
@@ -1050,13 +1050,13 @@ int SessionTaskUpdateAdditions::i_runFileOnGuest(GuestSession *pSession, GuestPr
             case VERR_INVALID_STATE: /** @todo Special guest control rc needed! */
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Update file \"%s\" reported invalid running state"),
-                                               procInfo.mCommand.c_str()));
+                                               procInfo.mExecutable.c_str()));
                 break;
 
             default:
                 setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                     Utf8StrFmt(GuestSession::tr("Error while running update file \"%s\" on guest: %Rrc"),
-                                               procInfo.mCommand.c_str(), vrc));
+                                               procInfo.mExecutable.c_str(), vrc));
                 break;
         }
     }
@@ -1412,7 +1412,7 @@ int SessionTaskUpdateAdditions::Run(void)
                 /* We want to spend 40% total for all copying operations. So roughly
                  * calculate the specific percentage step of each copied file. */
                 uint8_t uOffset = 20; /* Start at 20%. */
-                uint8_t uStep = 40 / mFiles.size();
+                uint8_t uStep = 40 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
 
                 LogRel(("Copying over Guest Additions update files to the guest ...\n"));
 
@@ -1452,7 +1452,7 @@ int SessionTaskUpdateAdditions::Run(void)
                 /* We want to spend 35% total for all copying operations. So roughly
                  * calculate the specific percentage step of each copied file. */
                 uint8_t uOffset = 60; /* Start at 60%. */
-                uint8_t uStep = 35 / mFiles.size();
+                uint8_t uStep = 35 / (uint8_t)mFiles.size(); Assert(mFiles.size() <= 10);
 
                 LogRel(("Executing Guest Additions update files ...\n"));
 

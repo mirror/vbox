@@ -8,7 +8,7 @@ VirtualBox Validation Kit - Guest Control Tests.
 
 __copyright__ = \
 """
-Copyright (C) 2010-2014 Oracle Corporation
+Copyright (C) 2010-2015 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -261,7 +261,7 @@ class tdTestExec(tdTestGuestCtrlBase):
         tdTestGuestCtrlBase.__init__(self);
         self.oCreds = tdCtxCreds(sUser, sPassword, sDomain);
         self.sCmd = sCmd;
-        self.aArgs = aArgs;
+        self.aArgs = aArgs if aArgs is not None else [sCmd,];
         self.aEnv = aEnv;
         self.aFlags = aFlags or [];
         self.timeoutMS = timeoutMS;
@@ -997,9 +997,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                       % (oTest.sCmd, oTest.aFlags, oTest.timeoutMS, \
                          oTest.aArgs, oTest.aEnv));
         try:
-            curProc = oGuestSession.processCreate(oTest.sCmd, \
-                                                  oTest.aArgs, oTest.aEnv, \
-                                                  oTest.aFlags, oTest.timeoutMS);
+            curProc = oGuestSession.processCreate(oTest.sCmd,
+                                                  oTest.aArgs if self.oTstDrv.fpApiVer >= 5.0 else oTest.aArgs[1:],
+                                                  oTest.aEnv, oTest.aFlags, oTest.timeoutMS);
             if curProc is not None:
                 reporter.log2('Process start requested, waiting for start (%ldms) ...' % (oTest.timeoutMS,));
                 fWaitFor = [ vboxcon.ProcessWaitForFlag_Start ];
@@ -1510,7 +1510,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             sPassword = "password";
             sDomain = "";
             sCmd = "C:\\windows\\system32\\cmd.exe";
-            sArgs = [];
+            aArgs = [sCmd,];
 
         # Number of stale guest processes to create.
         cStaleProcs = 10;
@@ -1541,8 +1541,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log2('Starting stale processes');
             for i in range(0, cStaleProcs):
                 try:
-                    oGuestSession.processCreate(sCmd, \
-                                                sArgs, [], \
+                    oGuestSession.processCreate(sCmd,
+                                                aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:], [],
                                                 [ vboxcon.ProcessCreateFlag_WaitForStdOut ], \
                                                 30 * 1000);
                     # Note: Use a timeout in the call above for not letting the stale processes
@@ -1564,15 +1564,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 # Fire off non-stale processes and wait for termination.
                 #
                 if oTestVm.isWindows():
-                    sArgs = [ '/C', 'dir', '/S', 'C:\\Windows\\system'];
+                    aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows\\system'];
                 reporter.log2('Starting non-stale processes');
                 aaProcs = [];
                 for i in range(0, cStaleProcs):
                     try:
-                        oCurProc = oGuestSession.processCreate(sCmd, \
-                                                               sArgs, [], \
-                                                               [], \
-                                                               0); # Infinite timeout.
+                        oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                                                               [], [], 0); # Infinite timeout.
                         aaProcs.append(oCurProc);
                     except:
                         reporter.logXcpt('Creating non-stale process #%ld failed:' % (i,));
@@ -1616,14 +1614,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
                 # Fire off blocking processes which are terminated via terminate().
                 if oTestVm.isWindows():
-                    sArgs = [ '/C', 'dir', '/S', 'C:\\Windows'];
+                    aArgs = [ sCmd, '/C', 'dir', '/S', 'C:\\Windows'];
                 reporter.log2('Starting blocking processes');
                 aaProcs = [];
                 for i in range(0, cStaleProcs):
                     try:
-                        oCurProc = oGuestSession.processCreate(sCmd, \
-                                                               sArgs, [], \
-                                                               [], 30 * 1000);
+                        oCurProc = oGuestSession.processCreate(sCmd, aArgs if self.oTstDrv.fpApiVer >= 5.0 else aArgs[1:],
+                                                               [],  [], 30 * 1000);
                         # Note: Use a timeout in the call above for not letting the stale processes
                         #       hanging around forever.  This can happen if the installed Guest Additions
                         #       do not support terminating guest processes.
@@ -1697,62 +1694,62 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
 
         if oTestVm.isWindows():
+            sVBoxControl = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe";
             aaExec = [
                 # Basic executon.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32\\kernel32.dll' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\kernel32.dll' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32\\nonexist.dll' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32\\nonexist.dll' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', '/wrongparam' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', '/wrongparam' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # Paths with spaces.
                 ## @todo Get path of installed Guest Additions. Later.
-                [ tdTestExec(sCmd = "C:\\Program Files\\Oracle\\VirtualBox Guest Additions\\VBoxControl.exe",
-                             aArgs = [ 'version' ],
+                [ tdTestExec(sCmd = sVBoxControl, aArgs = [ sVBoxControl, 'version' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
                 # StdOut.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'stdout-non-existing' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdout-non-existing' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'stderr-non-existing' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stderr-non-existing' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # StdOut + StdErr.
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'c:\\windows\\system32' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'c:\\windows\\system32' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True) ],
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir', '/S', 'stdouterr-non-existing' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir', '/S', 'stdouterr-non-existing' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # FIXME: Failing tests.
                 # Environment variables.
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'set', 'TEST_NONEXIST' ],
+                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_NONEXIST' ],
                 #              sUser = sUser, sPassword = sPassword),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'set', 'windir' ],
+                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'windir' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'windir=C:\\WINDOWS\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, sBuf = 'TEST_FOO=BAR\r\n') ],
-                # [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'set', 'TEST_FOO' ],
+                # [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'set', 'TEST_FOO' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aEnv = [ 'TEST_FOO=BAR', 'TEST_BAZ=BAR' ],
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
@@ -1764,7 +1761,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
             # Manual test, not executed automatically.
             aaManual = [
-                [ tdTestExec(sCmd = sImageOut, aArgs = [ '/C', 'dir /S C:\\Windows' ],
+                [ tdTestExec(sCmd = sImageOut, aArgs = [ sImageOut, '/C', 'dir /S C:\\Windows' ],
                              sUser = sUser, sPassword = sPassword,
                              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                   tdTestResultExec(fRc = True, cbStdOut = 497917) ] ];
@@ -1921,64 +1918,64 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         if oTestVm.isWindows():
             aaTests.extend([
                 # Simple.
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'wrongcommand' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'wrongcommand' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'exit', '22' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'exit', '22' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 22) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'set', 'ERRORLEVEL=234' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=234' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'echo', '%WINDIR%' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'echo', '%WINDIR%' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'set', 'ERRORLEVEL=0' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'set', 'ERRORLEVEL=0' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\windows\\system32' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\windows\\system32\\kernel32.dll' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32\\kernel32.dll' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-file' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-dir\\' ],
+                [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
                              sUser = sUser, sPassword = sPassword),
                   tdTestResultExec(fRc = True, iExitCode = 1) ]
                 # FIXME: Failing tests.
                 # With stdout.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-file' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-dir\\' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-file' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-dir\\' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
                 #              sUser = sUser, sPassword = sPassword, aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
                 # With stdout/stderr.
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\windows\\system32' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\windows\\system32' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 0) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-file' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-file' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ],
-                # [ tdTestExec(sCmd = sImage, aArgs = [ '/C', 'dir', 'c:\\nonexisting-dir\\' ],
+                # [ tdTestExec(sCmd = sImage, aArgs = [ sImage, '/C', 'dir', 'c:\\nonexisting-dir\\' ],
                 #              sUser = sUser, sPassword = sPassword,
                 #              aFlags = [ vboxcon.ProcessCreateFlag_WaitForStdOut, vboxcon.ProcessCreateFlag_WaitForStdErr ]),
                 #   tdTestResultExec(fRc = True, iExitCode = 1) ]
@@ -2030,7 +2027,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # Create a process which never terminates and should timeout when
             # waiting for termination.
             try:
-                curProc = oGuestSession.processCreate(sImage, [], \
+                curProc = oGuestSession.processCreate(sImage, [sImage,] if self.oTstDrv.fpApiVer >= 5.0 else [], \
                                                       [], [], 30 * 1000);
                 reporter.log('Waiting for process 1 being started ...');
                 waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
@@ -2061,7 +2058,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             # guest because it ran out of execution time (5 seconds).
             if fRc:
                 try:
-                    curProc = oGuestSession.processCreate(sImage, [], \
+                    curProc = oGuestSession.processCreate(sImage, [sImage,] if self.oTstDrv.fpApiVer >= 5.0 else [], \
                                                           [], [], 5 * 1000);
                     reporter.log('Waiting for process 2 being started ...');
                     waitRes = curProc.waitForArray([ vboxcon.ProcessWaitForFlag_Start ], 30 * 1000);
@@ -3281,14 +3278,13 @@ class tdAddGuestCtrl(vbox.TestDriver):                                         #
         _ = oGuestSession.waitForArray(aWaitFor, 30 * 1000);
 
         sCmd = 'c:\\windows\\system32\\cmd.exe';
-        aArgs = [ '/C', 'dir', '/S', 'c:\\windows' ];
+        aArgs = [ sCmd, '/C', 'dir', '/S', 'c:\\windows' ];
         aEnv = [];
         aFlags = [];
 
         for _ in range(100):
-            oProc = oGuestSession.processCreate(sCmd,
-                                                aArgs, aEnv,
-                                                aFlags, 30 * 1000);
+            oProc = oGuestSession.processCreate(sCmd, aArgs if self.fpApiVer >= 5.0 else aArgs[1:],
+                                                aEnv, aFlags, 30 * 1000);
 
             aWaitFor = [ vboxcon.ProcessWaitForFlag_Terminate ];
             _ = oProc.waitForArray(aWaitFor, 30 * 1000);

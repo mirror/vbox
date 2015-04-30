@@ -660,8 +660,8 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
     int vrc = VINF_SUCCESS;
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
-    procInfo.mFlags   = ProcessCreateFlag_Hidden;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
+    procInfo.mFlags      = ProcessCreateFlag_Hidden;
 
     try
     {
@@ -815,8 +815,8 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
     int vrc = VINF_SUCCESS;
 
     GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+    procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
 
     try
     {
@@ -1216,8 +1216,8 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     GuestProcessStartupInfo procInfo;
     GuestProcessStream      streamOut;
 
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
-    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_RM);
+    procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
 
     try
     {
@@ -1373,8 +1373,8 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &
 
     /** @todo Merge this with IGuestFile::queryInfo(). */
     GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_STAT);
-    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
+    procInfo.mExecutable = Utf8Str(VBOXSERVICE_TOOL_STAT);
+    procInfo.mFlags      = ProcessCreateFlag_WaitForStdOut;
 
     try
     {
@@ -1836,17 +1836,19 @@ int GuestSession::i_processRemoveFromList(GuestProcess *pProcess)
 }
 
 /**
- * Creates but does *not* start the process yet. See GuestProcess::startProcess() or
- * GuestProcess::startProcessAsync() for that.
+ * Creates but does *not* start the process yet.
+ *
+ * See GuestProcess::startProcess() or GuestProcess::startProcessAsync() for
+ * starting the process.
  *
  * @return  IPRT status code.
  * @param   procInfo
  * @param   pProcess
  */
-int GuestSession::i_processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
+int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProcess)
 {
-    LogFlowFunc(("mCmd=%s, mFlags=%x, mTimeoutMS=%RU32\n",
-                 procInfo.mCommand.c_str(), procInfo.mFlags, procInfo.mTimeoutMS));
+    LogFlowFunc(("mExe=%s, mFlags=%x, mTimeoutMS=%RU32\n",
+                 procInfo.mExecutable.c_str(), procInfo.mFlags, procInfo.mTimeoutMS));
 #ifdef DEBUG
     if (procInfo.mArguments.size())
     {
@@ -3307,7 +3309,7 @@ HRESULT GuestSession::fileSetACL(const com::Utf8Str &aFile, const com::Utf8Str &
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::processCreate(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
                                     const std::vector<com::Utf8Str> &aEnvironment,
                                     const std::vector<ProcessCreateFlag_T> &aFlags,
                                     ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
@@ -3319,12 +3321,12 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aCommand, const std::vec
 
     std::vector<LONG> affinityIgnored;
 
-    return processCreateEx(aCommand, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
+    return processCreateEx(aExecutable, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
                            affinityIgnored, aGuestProcess);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::vector<com::Utf8Str> &aArguments,
+HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
                                       const std::vector<com::Utf8Str> &aEnvironment,
                                       const std::vector<ProcessCreateFlag_T> &aFlags, ULONG aTimeoutMS,
                                       ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,
@@ -3335,21 +3337,36 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::v
 #else
     LogFlowThisFuncEnter();
 
-    if (RT_UNLIKELY((aCommand.c_str()) == NULL || *(aCommand.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No command to execute specified"));
+    /*
+     * Must have an executable to execute.  If none is given, we try use the
+     * zero'th argument.
+     */
+    const char *pszExecutable = aExecutable.c_str();
+    if (RT_UNLIKELY(pszExecutable == NULL || *pszExecutable == '\0'))
+    {
+        if (aArguments.size() > 0)
+            pszExecutable = aArguments[0].c_str();
+        if (pszExecutable == NULL || *pszExecutable == '\0')
+            return setError(E_INVALIDARG, tr("No command to execute specified"));
+    }
 
+    /*
+     * Check the session.
+     */
     HRESULT hr = i_isReadyExternal();
     if (FAILED(hr))
         return hr;
 
+    /*
+     * Build the process startup info.
+     */
     GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = aCommand;
 
+    /* Executable and arguments. */
+    procInfo.mExecutable = pszExecutable;
     if (aArguments.size())
         for (size_t i = 0; i < aArguments.size(); i++)
             procInfo.mArguments.push_back(aArguments[i]);
-
-    int rc = VINF_SUCCESS;
 
     /*
      * Create the process environment:
@@ -3359,18 +3376,29 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::v
      */
     procInfo.mEnvironment = mData.mEnvironment; /* Apply original session environment. */
 
+    int rc = VINF_SUCCESS;
     if (aEnvironment.size())
         for (size_t i = 0; i < aEnvironment.size() && RT_SUCCESS(rc); i++)
+        {
+            /** @todo r=bird: What ARE you trying to do here??? The documentation is crystal
+             *        clear on that each entry contains ONE pair, however,
+             *        GuestEnvironment::Set(const Utf8Str &) here will split up the input
+             *        into any number of pairs, from what I can tell.  Such that for e.g.
+             *        "VBOX_LOG_DEST=file=/tmp/foobared.log" becomes "VBOX_LOG_DEST=file"
+             *        and "/tmp/foobared.log" - which I obviously don't want! */
             rc = procInfo.mEnvironment.Set(aEnvironment[i]);
+        }
 
     if (RT_SUCCESS(rc))
     {
+        /* Convert the flag array into a mask. */
         if (aFlags.size())
             for (size_t i = 0; i < aFlags.size(); i++)
                 procInfo.mFlags |= aFlags[i];
 
         procInfo.mTimeoutMS = aTimeoutMS;
 
+        /** @todo use RTCPUSET instead of archaic 64-bit variables! */
         if (aAffinity.size())
             for (size_t i = 0; i < aAffinity.size(); i++)
                 if (aAffinity[i])
@@ -3378,20 +3406,35 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aCommand, const std::v
 
         procInfo.mPriority = aPriority;
 
+        /*
+         * Create a guest process object.
+         */
         ComObjPtr<GuestProcess> pProcess;
-        rc = i_processCreateExInteral(procInfo, pProcess);
+        rc = i_processCreateExInternal(procInfo, pProcess);
         if (RT_SUCCESS(rc))
         {
             /* Return guest session to the caller. */
             HRESULT hr2 = pProcess.queryInterfaceTo(aGuestProcess.asOutParam());
-            if (FAILED(hr2))
-                rc = VERR_COM_OBJECT_NOT_FOUND;
-
-            if (RT_SUCCESS(rc))
+            if (SUCCEEDED(hr2))
+            {
+                /*
+                 * Start the process.
+                 */
                 rc = pProcess->i_startProcessAsync();
+                if (RT_FAILURE(rc))
+                {
+                    /** @todo r=bird: What happens to the interface that *aGuestProcess points to
+                     *        now?  Looks like a leak or an undocument hack of sorts... */
+                }
+            }
+            else
+                rc = VERR_COM_OBJECT_NOT_FOUND;
         }
     }
 
+    /** @todo you're better off doing this is 'else if (rc == xxx') statements,
+     *        since there is just one place where you'll get
+     *        VERR_MAX_PROCS_REACHED in the above code. */
     if (RT_FAILURE(rc))
     {
         switch (rc)

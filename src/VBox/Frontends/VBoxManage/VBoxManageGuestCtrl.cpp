@@ -45,6 +45,7 @@
 #include <iprt/path.h>
 #include <iprt/process.h> /* For RTProcSelf(). */
 #include <iprt/thread.h>
+#include <iprt/vfs.h>
 
 #include <map>
 #include <vector>
@@ -217,25 +218,6 @@ typedef struct DESTFILEENTRY
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> > DESTDIRMAP, *PDESTDIRMAP;
 typedef std::map< Utf8Str, std::vector<DESTFILEENTRY> >::iterator DESTDIRMAPITER, *PDESTDIRMAPITER;
 
-/**
- * Special exit codes for returning errors/information of a
- * started guest process to the command line VBoxManage was started from.
- * Useful for e.g. scripting.
- *
- * @note    These are frozen as of 4.1.0.
- */
-enum EXITCODEEXEC
-{
-    EXITCODEEXEC_SUCCESS        = RTEXITCODE_SUCCESS,
-    /* Process exited normally but with an exit code <> 0. */
-    EXITCODEEXEC_CODE           = 16,
-    EXITCODEEXEC_FAILED         = 17,
-    EXITCODEEXEC_TERM_SIGNAL    = 18,
-    EXITCODEEXEC_TERM_ABEND     = 19,
-    EXITCODEEXEC_TIMEOUT        = 20,
-    EXITCODEEXEC_DOWN           = 21,
-    EXITCODEEXEC_CANCELED       = 22
-};
 
 /*
  * Common getopt definitions, starting at 1000.
@@ -244,6 +226,21 @@ enum EXITCODEEXEC
 enum GETOPTDEF_COMMON
 {
     GETOPTDEF_COMMON_PASSWORD = 1000
+};
+
+/**
+ * Long option IDs for the guestcontrol run command.
+ */
+enum kGstCtrlRunOpt
+{
+    kGstCtrlRunOpt_IgnoreOrphanedProcesses = 1000,
+    kGstCtrlRunOpt_NoProfile,
+    kGstCtrlRunOpt_Dos2Unix,
+    kGstCtrlRunOpt_Unix2Dos,
+    kGstCtrlRunOpt_WaitForStdOut,
+    kGstCtrlRunOpt_NoWaitForStdOut,
+    kGstCtrlRunOpt_WaitForStdErr,
+    kGstCtrlRunOpt_NoWaitForStdErr
 };
 
 /**
@@ -289,11 +286,11 @@ enum GETOPTDEF_STAT
 {
 };
 
-enum OUTPUTTYPE
+enum kStreamTransform
 {
-    OUTPUTTYPE_UNDEFINED = 0,
-    OUTPUTTYPE_DOS2UNIX  = 10,
-    OUTPUTTYPE_UNIX2DOS  = 20
+    kStreamTransform_None = 0,
+    kStreamTransform_Dos2Unix,
+    kStreamTransform_Unix2Dos
 };
 
 static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *pszDir, bool *fExists);
@@ -306,16 +303,38 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                        "%s guestcontrol %s    <uuid|vmname>\n%s",
                  pcszSep1, pcszSep2,
                  uSubCmd == ~0U ? "\n" : "");
-    if (uSubCmd & USAGE_GSTCTRL_EXEC)
+    if (uSubCmd & USAGE_GSTCTRL_RUN)
         RTStrmPrintf(pStrm,
-                 "                              exec[ute]\n"
-                 "                              --image <path to program> --username <name>\n"
-                 "                              [--passwordfile <file> | --password <password>]\n"
-                 "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
-                 "                              [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
-                 "                              [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
-                 "                              [--dos2unix] [--unquoted-args] [--unix2dos]\n"
-                 "                              [-- [<argument1>] ... [<argumentN>]]\n"
+                     "                              run\n"
+                     "                              [--image <path to executable>] --username <name>\n"
+                     "                              [--passwordfile <file> | --password <password>]\n"
+                     "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
+                     "                              [--setenv <NAME>=<VALUE>] [--unset <NAME>]\n"
+                     "                              [--unquoted-args] [--no-wait-stdout|--wait-stdout]\n"
+                     "                              [--no-wait-stderr|--wait-stderr]\n"
+                     "                              [--dos2unix] [--unix2dos]\n"
+                     "                              [--] <program/arg0> [argument1] ... [argumentN]]\n"
+                     "\n");
+    if (uSubCmd & USAGE_GSTCTRL_START)
+        RTStrmPrintf(pStrm,
+                     "                              start\n"
+                     "                              [--image <path to executable>] --username <name>\n"
+                     "                              [--passwordfile <file> | --password <password>]\n"
+                     "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
+                     "                              [--setenv <NAME>=<VALUE>] [--unset <NAME>]\n"
+                     "                              [--unquoted-args] [--dos2unix] [--unix2dos]\n"
+                     "                              [--] <program/arg0> [argument1] ... [argumentN]]\n"
+                 "\n");
+    if (uSubCmd == USAGE_GSTCTRL_EXEC)
+        RTStrmPrintf(pStrm,
+                 "   {DEPRECATED}               exec[ute]\n"
+                 "   {DEPRECATED}               --image <path to program> --username <name>\n"
+                 "   {DEPRECATED}               [--passwordfile <file> | --password <password>]\n"
+                 "   {DEPRECATED}               [--domain <domain>] [--verbose] [--timeout <msec>]\n"
+                 "   {DEPRECATED}               [--environment \"<NAME>=<VALUE> [<NAME>=<VALUE>]\"]\n"
+                 "   {DEPRECATED}               [--wait-exit] [--wait-stdout] [--wait-stderr]\n"
+                 "   {DEPRECATED}               [--dos2unix] [--unquoted-args] [--unix2dos]\n"
+                 "   {DEPRECATED}               [-- [<argument1>] ... [<argumentN>]]\n"
                  "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
         RTStrmPrintf(pStrm,
@@ -534,53 +553,6 @@ const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus)
             break;
     }
     return "unknown";
-}
-
-static int ctrlExecProcessStatusToExitCode(ProcessStatus_T enmStatus, ULONG uExitCode)
-{
-    int vrc = EXITCODEEXEC_SUCCESS;
-    switch (enmStatus)
-    {
-        case ProcessStatus_Starting:
-            vrc = EXITCODEEXEC_SUCCESS;
-            break;
-        case ProcessStatus_Started:
-            vrc = EXITCODEEXEC_SUCCESS;
-            break;
-        case ProcessStatus_Paused:
-            vrc = EXITCODEEXEC_SUCCESS;
-            break;
-        case ProcessStatus_Terminating:
-            vrc = EXITCODEEXEC_SUCCESS;
-            break;
-        case ProcessStatus_TerminatedNormally:
-            vrc = !uExitCode ? EXITCODEEXEC_SUCCESS : EXITCODEEXEC_CODE;
-            break;
-        case ProcessStatus_TerminatedSignal:
-            vrc = EXITCODEEXEC_TERM_SIGNAL;
-            break;
-        case ProcessStatus_TerminatedAbnormally:
-            vrc = EXITCODEEXEC_TERM_ABEND;
-            break;
-        case ProcessStatus_TimedOutKilled:
-            vrc = EXITCODEEXEC_TIMEOUT;
-            break;
-        case ProcessStatus_TimedOutAbnormally:
-            vrc = EXITCODEEXEC_TIMEOUT;
-            break;
-        case ProcessStatus_Down:
-            /* Service/OS is stopping, process was killed, so
-             * not exactly an error of the started process ... */
-            vrc = EXITCODEEXEC_DOWN;
-            break;
-        case ProcessStatus_Error:
-            vrc = EXITCODEEXEC_FAILED;
-            break;
-        default:
-            AssertMsgFailed(("Unknown exit code (%u) from guest process returned!\n", enmStatus));
-            break;
-    }
-    return vrc;
 }
 
 const char *ctrlProcessWaitResultToText(ProcessWaitResult_T enmWaitResult)
@@ -829,6 +801,17 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
             { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
         };
 
+
+
+        /** @todo r=bird: This is just SOOOO hackish and fragile, especially wrt to the
+         * exec/run commands. If you don't have the full option syntax, there is no way
+         * you can safely tell an option from an option value. sigh.
+         * The way to do this is by a defines with the above s_aOptions entries, calling
+         * a common function in the default case of each option parser, and a routine to
+         * be called at the end of option parsing to open the session. */
+
+
+
         /*
          * Allocate per-command argv. This then only contains the specific arguments
          * the command needs.
@@ -1041,6 +1024,662 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
     return rcExit;
 }
 
+
+/** @name EXITCODEEXEC_XXX - Special run exit codes.
+ *
+ * Special exit codes for returning errors/information of a started guest
+ * process to the command line VBoxManage was started from.  Useful for e.g.
+ * scripting.
+ *
+ * ASSUMING that all platforms have at least 7-bits for the exit code we can do
+ * the following mapping:
+ *  - Guest exit code 0 is mapped to 0 on the host.
+ *  - Guest exit codes 1 thru 93 (0x5d) are displaced by 32, so that 1
+ *    becomes 33 (0x21) on the host and 93 becomes 125 (0x7d) on the host.
+ *  - Guest exit codes 94 (0x5e) and above are mapped to 126 (0x5e).
+ *
+ * We ASSUME that all VBoxManage status codes are in the range 0 thru 32.
+ *
+ * @note    These are frozen as of 4.1.0.
+ * @note    The guest exit code mappings was introduced with 5.0 and the 'run'
+ *          command, they are/was not supported by 'exec'.
+ * @sa      ctrlRunCalculateExitCode
+ */
+/** Process exited normally but with an exit code <> 0. */
+#define EXITCODEEXEC_CODE           ((RTEXITCODE)16)
+#define EXITCODEEXEC_FAILED         ((RTEXITCODE)17)
+#define EXITCODEEXEC_TERM_SIGNAL    ((RTEXITCODE)18)
+#define EXITCODEEXEC_TERM_ABEND     ((RTEXITCODE)19)
+#define EXITCODEEXEC_TIMEOUT        ((RTEXITCODE)20)
+#define EXITCODEEXEC_DOWN           ((RTEXITCODE)21)
+/** Execution was interrupt by user (ctrl-c). */
+#define EXITCODEEXEC_CANCELED       ((RTEXITCODE)22)
+/** The first mapped guest (non-zero) exit code. */
+#define EXITCODEEXEC_MAPPED_FIRST           33
+/** The last mapped guest (non-zero) exit code value (inclusive). */
+#define EXITCODEEXEC_MAPPED_LAST            125
+/** The number of exit codes from EXITCODEEXEC_MAPPED_FIRST to
+ * EXITCODEEXEC_MAPPED_LAST.  This is also the highest guest exit code number
+ * we're able to map. */
+#define EXITCODEEXEC_MAPPED_RANGE           (93)
+/** The guest exit code displacement value. */
+#define EXITCODEEXEC_MAPPED_DISPLACEMENT    32
+/** The guest exit code was too big to be mapped. */
+#define EXITCODEEXEC_MAPPED_BIG             ((RTEXITCODE)126)
+/** @} */
+
+/**
+ * Calculates the exit code of VBoxManage.
+ *
+ * @returns The exit code to return.
+ * @param   enmStatus           The guest process status.
+ * @param   uExitCode           The associated guest process exit code (where
+ *                              applicable).
+ * @param   fReturnExitCodes    Set if we're to use the 32-126 range for guest
+ *                              exit codes.
+ */
+static RTEXITCODE ctrlRunCalculateExitCode(ProcessStatus_T enmStatus, ULONG uExitCode, bool fReturnExitCodes)
+{
+    int vrc = RTEXITCODE_SUCCESS;
+    switch (enmStatus)
+    {
+        case ProcessStatus_TerminatedNormally:
+            if (uExitCode == 0)
+                return RTEXITCODE_SUCCESS;
+            if (!fReturnExitCodes)
+                return EXITCODEEXEC_CODE;
+            if (uExitCode <= EXITCODEEXEC_MAPPED_RANGE)
+                return (RTEXITCODE) (uExitCode + EXITCODEEXEC_MAPPED_DISPLACEMENT);
+            return EXITCODEEXEC_MAPPED_BIG;
+
+        case ProcessStatus_TerminatedAbnormally:
+            return EXITCODEEXEC_TERM_ABEND;
+        case ProcessStatus_TerminatedSignal:
+            return EXITCODEEXEC_TERM_SIGNAL;
+
+#if 0  /* see caller! */
+        case ProcessStatus_TimedOutKilled:
+            return EXITCODEEXEC_TIMEOUT;
+        case ProcessStatus_Down:
+            return EXITCODEEXEC_DOWN;   /* Service/OS is stopping, process was killed. */
+        case ProcessStatus_Error:
+            return EXITCODEEXEC_FAILED;
+
+        /* The following is probably for detached? */
+        case ProcessStatus_Starting:
+            return RTEXITCODE_SUCCESS;
+        case ProcessStatus_Started:
+            return RTEXITCODE_SUCCESS;
+        case ProcessStatus_Paused:
+            return RTEXITCODE_SUCCESS;
+        case ProcessStatus_Terminating:
+            return RTEXITCODE_SUCCESS; /** @todo ???? */
+#endif
+
+        default:
+            AssertMsgFailed(("Unknown exit status (%u/%u) from guest process returned!\n", enmStatus, uExitCode));
+            return RTEXITCODE_FAILURE;
+    }
+}
+
+
+/**
+ * Pumps guest output to the host.
+ *
+ * @return  IPRT status code.
+ * @param   pProcess        Pointer to appropriate process object.
+ * @param   hVfsIosDst      Where to write the data.
+ * @param   uHandle         Handle where to read the data from.
+ * @param   cMsTimeout      Timeout (in ms) to wait for the operation to
+ *                          complete.
+ */
+static int ctrlRunPumpOutput(IProcess *pProcess, RTVFSIOSTREAM hVfsIosDst, ULONG uHandle, RTMSINTERVAL cMsTimeout)
+{
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
+    Assert(hVfsIosDst != NIL_RTVFSIOSTREAM);
+
+    int vrc;
+
+    SafeArray<BYTE> aOutputData;
+    HRESULT hrc = pProcess->Read(uHandle, _64K, RT_MAX(cMsTimeout, 1), ComSafeArrayAsOutParam(aOutputData));
+    if (SUCCEEDED(hrc))
+    {
+        size_t cbOutputData = aOutputData.size();
+        if (cbOutputData == 0)
+            vrc = VINF_SUCCESS;
+        else
+        {
+            BYTE const *pbBuf = aOutputData.raw();
+            AssertPtr(pbBuf);
+
+            vrc = RTVfsIoStrmWrite(hVfsIosDst, pbBuf, cbOutputData, true /*fBlocking*/,  NULL);
+            if (RT_FAILURE(vrc))
+                RTMsgError("Unable to write output, rc=%Rrc\n", vrc);
+        }
+    }
+    else
+        vrc = ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+    return vrc;
+}
+
+
+/**
+ * Configures a host handle for pumping guest bits.
+ *
+ * @returns true if enabled and we successfully configured it.
+ * @param   fEnabled            Whether pumping this pipe is configured.
+ * @param   enmHandle           The IPRT standard handle designation.
+ * @param   pszName             The name for user messages.
+ * @param   enmTransformation   The transformation to apply.
+ * @param   phVfsIos            Where to return the resulting I/O stream handle.
+ */
+static bool ctrlRunSetupHandle(bool fEnabled, RTHANDLESTD enmHandle, const char *pszName,
+                               kStreamTransform enmTransformation, PRTVFSIOSTREAM phVfsIos)
+{
+    if (fEnabled)
+    {
+        int vrc = RTVfsIoStrmFromStdHandle(enmHandle, 0, true /*fLeaveOpen*/, phVfsIos);
+        if (RT_SUCCESS(vrc))
+        {
+            if (enmTransformation != kStreamTransform_None)
+            {
+                RTMsgWarning("Unsupported %s line ending conversion", pszName);
+                /** @todo Implement dos2unix and unix2dos stream filters. */
+            }
+            return true;
+        }
+        RTMsgWarning("Error getting %s handle: %Rrc", pszName, vrc);
+    }
+    return false;
+}
+
+
+/**
+ * Returns the remaining time (in ms) based on the start time and a set
+ * timeout value. Returns RT_INDEFINITE_WAIT if no timeout was specified.
+ *
+ * @return  RTMSINTERVAL    Time left (in ms).
+ * @param   u64StartMs      Start time (in ms).
+ * @param   cMsTimeout      Timeout value (in ms).
+ */
+static RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL cMsTimeout)
+{
+    if (!cMsTimeout || cMsTimeout == RT_INDEFINITE_WAIT) /* If no timeout specified, wait forever. */
+        return RT_INDEFINITE_WAIT;
+
+    uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
+    if (u64ElapsedMs >= cMsTimeout)
+        return 0;
+
+    return cMsTimeout - (RTMSINTERVAL)u64ElapsedMs;
+}
+
+/**
+ * Common handler for the 'run' and 'start' commands.
+ *
+ * @returns Command exit code.
+ * @param   pCtx        Guest session context.
+ * @param   fRunCmd     Set if it's 'run' clear if 'start'.
+ * @param   fHelp       The help flag for the command.
+ */
+static RTEXITCODE handleCtrlProcessRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t fHelp)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--environment",                  'E',                                      RTGETOPT_REQ_STRING  },
+        { "--executable",                   'e',                                      RTGETOPT_REQ_STRING  },
+        { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
+        { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
+        { "--ignore-operhaned-processes",   kGstCtrlRunOpt_IgnoreOrphanedProcesses,   RTGETOPT_REQ_NOTHING },
+        { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING },
+        { "--dos2unix",                     kGstCtrlRunOpt_Dos2Unix,                  RTGETOPT_REQ_NOTHING },
+        { "--unix2dos",                     kGstCtrlRunOpt_Unix2Dos,                  RTGETOPT_REQ_NOTHING },
+        { "--no-wait-stdout",               kGstCtrlRunOpt_NoWaitForStdOut,           RTGETOPT_REQ_NOTHING },
+        { "--wait-stdout",                  kGstCtrlRunOpt_WaitForStdOut,             RTGETOPT_REQ_NOTHING },
+        { "--no-wait-stderr",               kGstCtrlRunOpt_NoWaitForStdErr,           RTGETOPT_REQ_NOTHING },
+        { "--wait-stderr",                  kGstCtrlRunOpt_WaitForStdErr,             RTGETOPT_REQ_NOTHING },
+    };
+
+    int                     ch;
+    RTGETOPTUNION           ValueUnion;
+    RTGETOPTSTATE           GetState;
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv, s_aOptions, RT_ELEMENTS(s_aOptions),
+                 pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    com::SafeArray<ProcessCreateFlag_T>     aCreateFlags;
+    com::SafeArray<ProcessWaitForFlag_T>    aWaitFlags;
+    com::SafeArray<IN_BSTR>                 aArgs;
+    com::SafeArray<IN_BSTR>                 aEnv;
+    const char *                            pszImage            = NULL;
+    bool                                    fDetached           = false;
+    bool                                    fWaitForStdOut      = true;
+    bool                                    fWaitForStdErr      = true;
+    RTVFSIOSTREAM                           hVfsStdOut          = NIL_RTVFSIOSTREAM;
+    RTVFSIOSTREAM                           hVfsStdErr          = NIL_RTVFSIOSTREAM;
+    enum kStreamTransform                   enmStdOutTransform  = kStreamTransform_None;
+    enum kStreamTransform                   enmStdErrTransform  = kStreamTransform_None;
+    RTMSINTERVAL                            cMsTimeout          = 0;
+
+    try
+    {
+        /* Wait for process start in any case. This is useful for scripting VBoxManage
+         * when relying on its overall exit code. */
+        aWaitFlags.push_back(ProcessWaitForFlag_Start);
+
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        {
+            /* For options that require an argument, ValueUnion has received the value. */
+            switch (ch)
+            {
+                case 'E':
+                    if (   ValueUnion.psz[0] == '\0'
+                        || ValueUnion.psz[0] == '='
+                        || strchr(ValueUnion.psz, '=') == NULL)
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN,
+                                             "Invalid argument variable=value pair: '%s'", ValueUnion.psz);
+                    aEnv.push_back(Bstr(ValueUnion.psz).raw());
+                    break;
+
+                case kGstCtrlRunOpt_IgnoreOrphanedProcesses:
+                    aCreateFlags.push_back(ProcessCreateFlag_IgnoreOrphanedProcesses);
+                    break;
+
+                case kGstCtrlRunOpt_NoProfile:
+                    aCreateFlags.push_back(ProcessCreateFlag_NoProfile);
+                    break;
+
+                case 'i':
+                    pszImage = ValueUnion.psz;
+                    break;
+
+                case 'u':
+                    aCreateFlags.push_back(ProcessCreateFlag_UnquotedArguments);
+                    break;
+
+                /** @todo Add a hidden flag. */
+
+                case 't': /* Timeout */
+                    cMsTimeout = ValueUnion.u32;
+                    break;
+
+                case kGstCtrlRunOpt_Dos2Unix:
+                    enmStdErrTransform = enmStdOutTransform = kStreamTransform_Dos2Unix;
+                    break;
+                case kGstCtrlRunOpt_Unix2Dos:
+                    enmStdErrTransform = enmStdOutTransform = kStreamTransform_Unix2Dos;
+                    break;
+
+                case kGstCtrlRunOpt_WaitForStdOut:
+                    if (!fRunCmd)
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stdout");
+                    fWaitForStdOut = true;
+                    break;
+                case kGstCtrlRunOpt_NoWaitForStdOut:
+                    if (!fRunCmd)
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --no-wait-for-stdout");
+                    fWaitForStdOut = false;
+                    break;
+
+                case kGstCtrlRunOpt_WaitForStdErr:
+                    if (!fRunCmd)
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stderr");
+                    fWaitForStdErr = true;
+                    break;
+                case kGstCtrlRunOpt_NoWaitForStdErr:
+                    if (!fRunCmd)
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stderr");
+                    fWaitForStdErr = false;
+                    break;
+
+                case VINF_GETOPT_NOT_OPTION:
+                    aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                    if (!pszImage)
+                    {
+                        Assert(aArgs.size() == 1);
+                        pszImage = ValueUnion.psz;
+                    }
+                    break;
+
+                default:
+                    return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN, ch, &ValueUnion);
+
+            } /* switch */
+        } /* while RTGetOpt */
+
+        /* Must have something to execute. */
+        if (!pszImage || *pszImage)
+            return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN, "No executable specified!");
+
+        /*
+         * Finalize process creation and wait flags and input/output streams.
+         */
+        if (!fRunCmd)
+        {
+            aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
+            Assert(!fWaitForStdOut);
+            Assert(!fWaitForStdErr);
+        }
+        else
+        {
+            aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
+            fWaitForStdOut = ctrlRunSetupHandle(fWaitForStdOut, RTHANDLESTD_OUTPUT, "stdout", enmStdOutTransform, &hVfsStdOut);
+            if (fWaitForStdOut)
+            {
+                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
+                aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
+            }
+            fWaitForStdErr = ctrlRunSetupHandle(fWaitForStdErr, RTHANDLESTD_ERROR, "stderr", enmStdErrTransform, &hVfsStdErr);
+            if (fWaitForStdErr)
+            {
+                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
+                aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
+            }
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "VERR_NO_MEMORY\n");
+    }
+
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+    HRESULT rc;
+
+    try
+    {
+        do
+        {
+            /* Get current time stamp to later calculate rest of timeout left. */
+            uint64_t msStart = RTTimeMilliTS();
+
+            /*
+             * Create the process.
+             */
+            if (pCtx->fVerbose)
+            {
+                if (cMsTimeout == 0)
+                    RTPrintf("Starting guest process ...\n");
+                else
+                    RTPrintf("Starting guest process (within %ums)\n", cMsTimeout);
+            }
+            ComPtr<IGuestProcess> pProcess;
+            CHECK_ERROR_BREAK(pCtx->pGuestSession, ProcessCreate(Bstr(pszImage).raw(),
+                                                                 ComSafeArrayAsInParam(aArgs),
+                                                                 ComSafeArrayAsInParam(aEnv),
+                                                                 ComSafeArrayAsInParam(aCreateFlags),
+                                                                 ctrlExecGetRemainingTime(msStart, cMsTimeout),
+                                                                 pProcess.asOutParam()));
+
+            /*
+             * Explicitly wait for the guest process to be in a started state.
+             */
+            com::SafeArray<ProcessWaitForFlag_T> aWaitStartFlags;
+            aWaitStartFlags.push_back(ProcessWaitForFlag_Start);
+            ProcessWaitResult_T waitResult;
+            CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitStartFlags),
+                                                     ctrlExecGetRemainingTime(msStart, cMsTimeout), &waitResult));
+
+            ULONG uPID = 0;
+            CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
+            if (fRunCmd && pCtx->fVerbose)
+                RTPrintf("Process '%s' (PID %RU32) started\n", pszImage, uPID);
+            else if (!fRunCmd) /** @todo Introduce a --quiet option for not printing this. */
+            {
+                /* Just print plain PID to make it easier for scripts
+                 * invoking VBoxManage. */
+                RTPrintf("[%RU32 - Session %RU32]\n", uPID, pCtx->uSessionID);
+            }
+
+            /*
+             * Wait for process to exit/start...
+             */
+            RTMSINTERVAL    cMsTimeLeft = 1; /* Will be calculated. */
+            bool            fReadStdOut = false;
+            bool            fReadStdErr = false;
+            bool            fCompleted  = false;
+            bool            fCompletedStartCmd = false;
+            int             vrc         = VINF_SUCCESS;
+
+            while (   !fCompleted
+                   && cMsTimeLeft > 0)
+            {
+                cMsTimeLeft = ctrlExecGetRemainingTime(msStart, cMsTimeout);
+                CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitFlags),
+                                                         RT_MIN(500 /*ms*/, RT_MAX(cMsTimeLeft, 1 /*ms*/)),
+                                                         &waitResult));
+                switch (waitResult)
+                {
+                    case ProcessWaitResult_Start:
+                        fCompletedStartCmd = fCompleted = !fRunCmd; /* Only wait for startup if the 'start' command. */
+                        break;
+                    case ProcessWaitResult_StdOut:
+                        fReadStdOut = true;
+                        break;
+                    case ProcessWaitResult_StdErr:
+                        fReadStdErr = true;
+                        break;
+                    case ProcessWaitResult_Terminate:
+                        if (pCtx->fVerbose)
+                            RTPrintf("Process terminated\n");
+                        /* Process terminated, we're done. */
+                        fCompleted = true;
+                        break;
+                    case ProcessWaitResult_WaitFlagNotSupported:
+                        /* The guest does not support waiting for stdout/err, so
+                         * yield to reduce the CPU load due to busy waiting. */
+                        RTThreadYield();
+                        fReadStdOut = fReadStdErr = true;
+                        break;
+                    case ProcessWaitResult_Timeout:
+                    {
+                        /** @todo It is really unclear whether we will get stuck with the timeout
+                         *        result here if the guest side times out the process and fails to
+                         *        kill the process...  To be on the save side, double the IPC and
+                         *        check the process status every time we time out.  */
+                        ProcessStatus_T enmProcStatus;
+                        CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&enmProcStatus));
+                        if (   enmProcStatus == ProcessStatus_TimedOutKilled
+                            || enmProcStatus == ProcessStatus_TimedOutAbnormally)
+                            fCompleted = true;
+                        fReadStdOut = fReadStdErr = true;
+                        break;
+                    }
+                    case ProcessWaitResult_Status:
+                        /* ignore. */
+                        break;
+                    case ProcessWaitResult_Error:
+                        /* waitFor is dead in the water, I think, so better leave the loop. */
+                        vrc = VERR_CALLBACK_RETURN;
+                        break;
+
+                    case ProcessWaitResult_StdIn:   AssertFailed(); /* did ask for this! */ break;
+                    case ProcessWaitResult_None:    AssertFailed(); /* used. */ break;
+                    default:                        AssertFailed(); /* huh? */ break;
+                }
+
+                if (g_fGuestCtrlCanceled)
+                    break;
+
+                /*
+                 * Pump output as needed.
+                 */
+                if (fReadStdOut)
+                {
+                    cMsTimeLeft = ctrlExecGetRemainingTime(msStart, cMsTimeout);
+                    int vrc2 = ctrlRunPumpOutput(pProcess, hVfsStdOut, 1 /* StdOut */, cMsTimeLeft);
+                    if (RT_FAILURE(vrc2) && RT_SUCCESS(vrc))
+                        vrc = vrc2;
+                    fReadStdOut = false;
+                }
+                if (fReadStdErr)
+                {
+                    cMsTimeLeft = ctrlExecGetRemainingTime(msStart, cMsTimeout);
+                    int vrc2 = ctrlRunPumpOutput(pProcess, hVfsStdErr, 2 /* StdErr */, cMsTimeLeft);
+                    if (RT_FAILURE(vrc2) && RT_SUCCESS(vrc))
+                        vrc = vrc2;
+                    fReadStdErr = false;
+                }
+                if (   RT_FAILURE(vrc)
+                    || g_fGuestCtrlCanceled)
+                    break;
+
+                /*
+                 * Process events before looping.
+                 */
+                NativeEventQueue::getMainEventQueue()->processEventQueue(0);
+            } /* while */
+
+            /*
+             * Report status back to the user.
+             */
+            if (g_fGuestCtrlCanceled)
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Process execution aborted!\n");
+                rcExit = EXITCODEEXEC_CANCELED;
+            }
+            else if (fCompletedStartCmd)
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Process successfully started!\n");
+                rcExit = RTEXITCODE_SUCCESS;
+            }
+            else if (fCompleted)
+            {
+                ProcessStatus_T procStatus;
+                CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&procStatus));
+                if (   procStatus == ProcessStatus_TerminatedNormally
+                    || procStatus == ProcessStatus_TerminatedAbnormally
+                    || procStatus == ProcessStatus_TerminatedSignal)
+                {
+                    LONG lExitCode;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&lExitCode));
+                    if (pCtx->fVerbose)
+                        RTPrintf("Exit code=%u (Status=%u [%s])\n",
+                                 lExitCode, procStatus, ctrlProcessStatusToText(procStatus));
+
+                    rcExit = ctrlRunCalculateExitCode(procStatus, lExitCode, true /*fReturnExitCodes*/);
+                }
+                else if (   procStatus == ProcessStatus_TimedOutKilled
+                         || procStatus == ProcessStatus_TimedOutAbnormally)
+                {
+                    if (pCtx->fVerbose)
+                        RTPrintf("Process timed out (guest side) and\n",
+                                 procStatus == ProcessStatus_TimedOutAbnormally
+                                 ? " failed to terminate so far" : " was terminated");
+                    rcExit = EXITCODEEXEC_TIMEOUT;
+                }
+                else
+                {
+                    if (pCtx->fVerbose)
+                        RTPrintf("Process now is in status [%s] (unexpected)\n", ctrlProcessStatusToText(procStatus));
+                    rcExit = RTEXITCODE_FAILURE;
+                }
+            }
+            else if (RT_FAILURE_NP(vrc))
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Process monitor loop quit with vrc=%Rrc\n", vrc);
+                rcExit = RTEXITCODE_FAILURE;
+            }
+            else
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Process monitor loop timed out\n");
+                rcExit = EXITCODEEXEC_TIMEOUT;
+            }
+
+        } while (0);
+    }
+    catch (std::bad_alloc)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+
+    /*
+     * Decide what to do with the guest session.
+     *
+     * If it's the 'start' command where detach the guest process after
+     * starting, don't close the guest session it is part of, except on
+     * failure or ctrl-c.
+     *
+     * For the 'run' command the guest process quits with us.
+     */
+    if (!fRunCmd && SUCCEEDED(rc) && !g_fGuestCtrlCanceled)
+        pCtx->uFlags |= CTLCMDCTX_FLAGS_SESSION_DETACH;
+
+    /* Make sure we return failure on failure. */
+    if (FAILED(rc) && rcExit == RTEXITCODE_SUCCESS)
+        rcExit = RTEXITCODE_FAILURE;
+    return rcExit;
+}
+
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcessRun(PGCTLCMDCTX pCtx)
+{
+    return handleCtrlProcessRunCommon(pCtx, true /*fRunCmd*/, USAGE_GSTCTRL_RUN);
+}
+
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcessStart(PGCTLCMDCTX pCtx)
+{
+    return handleCtrlProcessRunCommon(pCtx, false /*fRunCmd*/, USAGE_GSTCTRL_START);
+}
+
+#if 1 /* Old exec code. */
+
+static int ctrlExecProcessStatusToExitCodeDeprecated(ProcessStatus_T enmStatus, ULONG uExitCode)
+{
+    int vrc = RTEXITCODE_SUCCESS;
+    switch (enmStatus)
+    {
+        case ProcessStatus_Starting:
+            vrc = RTEXITCODE_SUCCESS;
+            break;
+        case ProcessStatus_Started:
+            vrc = RTEXITCODE_SUCCESS;
+            break;
+        case ProcessStatus_Paused:
+            vrc = RTEXITCODE_SUCCESS;
+            break;
+        case ProcessStatus_Terminating:
+            vrc = RTEXITCODE_SUCCESS;
+            break;
+        case ProcessStatus_TerminatedNormally:
+            vrc = !uExitCode ? RTEXITCODE_SUCCESS : EXITCODEEXEC_CODE;
+            break;
+        case ProcessStatus_TerminatedSignal:
+            vrc = EXITCODEEXEC_TERM_SIGNAL;
+            break;
+        case ProcessStatus_TerminatedAbnormally:
+            vrc = EXITCODEEXEC_TERM_ABEND;
+            break;
+        case ProcessStatus_TimedOutKilled:
+            vrc = EXITCODEEXEC_TIMEOUT;
+            break;
+        case ProcessStatus_TimedOutAbnormally:
+            vrc = EXITCODEEXEC_TIMEOUT;
+            break;
+        case ProcessStatus_Down:
+            /* Service/OS is stopping, process was killed, so
+             * not exactly an error of the started process ... */
+            vrc = EXITCODEEXEC_DOWN;
+            break;
+        case ProcessStatus_Error:
+            vrc = EXITCODEEXEC_FAILED;
+            break;
+        default:
+            AssertMsgFailed(("Unknown exit code (%u) from guest process returned!\n", enmStatus));
+            break;
+    }
+    return vrc;
+}
+
+
 /**
  * Prints the desired guest output to a stream.
  *
@@ -1048,10 +1687,12 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
  * @param   pProcess        Pointer to appropriate process object.
  * @param   pStrmOutput     Where to write the data.
  * @param   uHandle         Handle where to read the data from.
- * @param   uTimeoutMS      Timeout (in ms) to wait for the operation to complete.
+ * @param   cMsTimeout      Timeout (in ms) to wait for the operation to
+ *                          complete.
+ * @remarks Obsolete.
  */
-static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
-                               ULONG uHandle, ULONG uTimeoutMS)
+static int ctrlExecPrintOutputDeprecated(IProcess *pProcess, PRTSTREAM pStrmOutput,
+                                         ULONG uHandle, RTMSINTERVAL cMsTimeout)
 {
     AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     AssertPtrReturn(pStrmOutput, VERR_INVALID_POINTER);
@@ -1059,11 +1700,9 @@ static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
     int vrc = VINF_SUCCESS;
 
     SafeArray<BYTE> aOutputData;
-    HRESULT rc = pProcess->Read(uHandle, _64K, uTimeoutMS,
+    HRESULT rc = pProcess->Read(uHandle, _64K, cMsTimeout,
                                 ComSafeArrayAsOutParam(aOutputData));
-    if (FAILED(rc))
-        vrc = ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-    else
+    if (SUCCEEDED(rc))
     {
         size_t cbOutputData = aOutputData.size();
         if (cbOutputData > 0)
@@ -1071,8 +1710,6 @@ static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
             BYTE *pBuf = aOutputData.raw();
             AssertPtr(pBuf);
             pBuf[cbOutputData - 1] = 0; /* Properly terminate buffer. */
-
-            /** @todo implement the dos2unix/unix2dos conversions */
 
             /*
              * If aOutputData is text data from the guest process' stdout or stderr,
@@ -1087,7 +1724,7 @@ static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
             {
                 cbOutputData = strlen(pszBufUTF8);
 
-                ULONG cbOutputDataPrint = cbOutputData;
+                ULONG cbOutputDataPrint = (ULONG)cbOutputData;
                 for (char *s = pszBufUTF8, *d = s;
                      s - pszBufUTF8 < (ssize_t)cbOutputData;
                      s++, d++)
@@ -1112,31 +1749,13 @@ static int ctrlExecPrintOutput(IProcess *pProcess, PRTSTREAM pStrmOutput,
                 RTMsgError("Unable to convert output, rc=%Rrc\n", vrc);
         }
     }
-
+    else
+        vrc = ctrlPrintError(pProcess, COM_IIDOF(IProcess));
     return vrc;
 }
 
-/**
- * Returns the remaining time (in ms) based on the start time and a set
- * timeout value. Returns RT_INDEFINITE_WAIT if no timeout was specified.
- *
- * @return  RTMSINTERVAL    Time left (in ms).
- * @param   u64StartMs      Start time (in ms).
- * @param   cMsTimeout      Timeout value (in ms).
- */
-inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL cMsTimeout)
-{
-    if (!cMsTimeout || cMsTimeout == RT_INDEFINITE_WAIT) /* If no timeout specified, wait forever. */
-        return RT_INDEFINITE_WAIT;
 
-    uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
-    if (u64ElapsedMs >= cMsTimeout)
-        return 0;
-
-    return cMsTimeout - (RTMSINTERVAL)u64ElapsedMs;
-}
-
-static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExecDeprecated(PGCTLCMDCTX pCtx)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -1174,10 +1793,10 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
     Utf8Str                              strCmd;
     com::SafeArray<ProcessCreateFlag_T>  aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T> aWaitFlags;
-    com::SafeArray<IN_BSTR>              aArgs;
+    com::SafeArray<IN_BSTR>              aArgsWithout0;
+    com::SafeArray<IN_BSTR>              aArgsWith0;
     com::SafeArray<IN_BSTR>              aEnv;
     RTMSINTERVAL                         cMsTimeout      = 0;
-    OUTPUTTYPE                           eOutputType     = OUTPUTTYPE_UNDEFINED;
     bool                                 fDetached       = true;
     int                                  vrc             = VINF_SUCCESS;
 
@@ -1193,13 +1812,6 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
             /* For options that require an argument, ValueUnion has received the value. */
             switch (ch)
             {
-                case GETOPTDEF_EXEC_DOS2UNIX:
-                    if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
-                                             "More than one output type (dos2unix/unix2dos) specified!");
-                    eOutputType = OUTPUTTYPE_DOS2UNIX;
-                    break;
-
                 case 'e': /* Environment */
                 {
                     char **papszArg;
@@ -1207,7 +1819,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
                     vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
                     if (RT_FAILURE(vrc))
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN,
                                              "Failed to parse environment value, rc=%Rrc", vrc);
                     for (int j = 0; j < cArgs; j++)
                         aEnv.push_back(Bstr(papszArg[j]).raw());
@@ -1239,11 +1851,9 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                     break;
 
                 case GETOPTDEF_EXEC_UNIX2DOS:
-                    if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
-                                             "More than one output type (dos2unix/unix2dos) specified!");
-                    eOutputType = OUTPUTTYPE_UNIX2DOS;
-                    break;
+                case GETOPTDEF_EXEC_DOS2UNIX:
+                    return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN,
+                                         "Output conversion not implemented yet!");
 
                 case GETOPTDEF_EXEC_WAITFOREXIT:
                     aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
@@ -1263,23 +1873,28 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
-                    if (aArgs.size() == 0 && strCmd.isEmpty())
+                    if (aArgsWithout0.size() == 0 && strCmd.isEmpty())
                         strCmd = ValueUnion.psz;
                     else
-                        aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                        aArgsWithout0.push_back(Bstr(ValueUnion.psz).raw());
                     break;
 
                 default:
                     /* Note: Necessary for handling non-options (after --) which
                      *       contain a single dash, e.g. "-- foo.exe -s". */
                     if (GetState.argc == GetState.iNext)
-                        aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                        aArgsWithout0.push_back(Bstr(ValueUnion.psz).raw());
                     else
-                        return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC, ch, &ValueUnion);
+                        return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN, ch, &ValueUnion);
                     break;
 
             } /* switch */
         } /* while RTGetOpt */
+
+        /* Create aArgsWith0 from strCmd and aArgsWithout0. */
+        aArgsWith0.push_back(Bstr(strCmd).raw());
+        for (size_t i = 0; i < aArgsWithout0.size(); i++)
+            aArgsWith0.push_back(aArgsWithout0[i]);
     }
     catch (std::bad_alloc &)
     {
@@ -1290,13 +1905,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize, rc=%Rrc\n", vrc);
 
     if (strCmd.isEmpty())
-        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN,
                              "No command to execute specified!");
-
-    /** @todo Any output conversion not supported yet! */
-    if (eOutputType != OUTPUTTYPE_UNDEFINED)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_EXEC,
-                             "Output conversion not implemented yet!");
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     HRESULT rc;
@@ -1325,7 +1935,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
              */
             ComPtr<IGuestProcess> pProcess;
             CHECK_ERROR_BREAK(pCtx->pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
-                                                                 ComSafeArrayAsInParam(aArgs),
+                                                                 ComSafeArrayAsInParam(aArgsWith0),
                                                                  ComSafeArrayAsInParam(aEnv),
                                                                  ComSafeArrayAsInParam(aCreateFlags),
                                                                  ctrlExecGetRemainingTime(u64StartMS, cMsTimeout),
@@ -1420,16 +2030,16 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                 if (fReadStdOut) /* Do we need to fetch stdout data? */
                 {
                     cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-                    vrc = ctrlExecPrintOutput(pProcess, g_pStdOut,
-                                              1 /* StdOut */, cMsTimeLeft);
+                    vrc = ctrlExecPrintOutputDeprecated(pProcess, g_pStdOut,
+                                                        1 /* StdOut */, cMsTimeLeft);
                     fReadStdOut = false;
                 }
 
                 if (fReadStdErr) /* Do we need to fetch stdout data? */
                 {
                     cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-                    vrc = ctrlExecPrintOutput(pProcess, g_pStdErr,
-                                              2 /* StdErr */, cMsTimeLeft);
+                    vrc = ctrlExecPrintOutputDeprecated(pProcess, g_pStdErr,
+                                                        2 /* StdErr */, cMsTimeLeft);
                     fReadStdErr = false;
                 }
 
@@ -1466,7 +2076,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                                 RTPrintf("Exit code=%u (Status=%u [%s])\n",
                                          exitCode, procStatus, ctrlProcessStatusToText(procStatus));
 
-                            rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
+                            rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCodeDeprecated(procStatus, exitCode);
                         }
                         else if (pCtx->fVerbose)
                             RTPrintf("Process now is in status [%s]\n", ctrlProcessStatusToText(procStatus));
@@ -1525,6 +2135,8 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
     return rcExit;
 }
+
+#endif /* Old exec code. */
 
 /**
  * Creates a copy context structure which then can be used with various
@@ -2717,7 +3329,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlCreateDirectory(PGCTLCMDCTX pCtx)
         }
     }
 
-    uint32_t cDirs = mapDirs.size();
+    size_t cDirs = mapDirs.size();
     if (!cDirs)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CREATEDIR,
                              "No directory to create specified!");
@@ -2780,7 +3392,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveDirectory(PGCTLCMDCTX pCtx)
         }
     }
 
-    uint32_t cDirs = mapDirs.size();
+    size_t cDirs = mapDirs.size();
     if (!cDirs)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEDIR,
                              "No directory to remove specified!");
@@ -2863,7 +3475,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveFile(PGCTLCMDCTX pCtx)
         }
     }
 
-    uint32_t cFiles = mapDirs.size();
+    size_t cFiles = mapDirs.size();
     if (!cFiles)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_REMOVEFILE,
                              "No file to remove specified!");
@@ -2941,7 +3553,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlRename(PGCTLCMDCTX pCtx)
     if (RT_FAILURE(vrc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize, rc=%Rrc\n", vrc);
 
-    uint32_t cSources = vecSources.size();
+    size_t cSources = vecSources.size();
     if (!cSources)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RENAME,
                              "No source(s) to move specified!");
@@ -3178,7 +3790,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlStat(PGCTLCMDCTX pCtx)
         }
     }
 
-    uint32_t cObjs = mapObjs.size();
+    size_t cObjs = mapObjs.size();
     if (!cObjs)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_STAT,
                              "No element(s) to check specified!");
@@ -3947,8 +4559,18 @@ int handleGuestControl(HandlerArg *pArg)
     if (   !RTStrICmp(pArg->argv[1], "exec")
         || !RTStrICmp(pArg->argv[1], "execute"))
     {
-        gctlCmd.pfnHandler = handleCtrlProcessExec;
+        gctlCmd.pfnHandler = handleCtrlProcessExecDeprecated;
         uUsage = USAGE_GSTCTRL_EXEC;
+    }
+    else if (!strcmp(pArg->argv[1], "run"))
+    {
+        gctlCmd.pfnHandler = handleCtrlProcessRun;
+        uUsage = USAGE_GSTCTRL_RUN;
+    }
+    else if (!strcmp(pArg->argv[1], "start"))
+    {
+        gctlCmd.pfnHandler = handleCtrlProcessStart;
+        uUsage = USAGE_GSTCTRL_START;
     }
     else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
     {

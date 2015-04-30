@@ -203,7 +203,7 @@ protected:
               fFlags(aFlags),
               mProcInfo(startupInfo)
         {
-            mProcInfo.mCommand = strDest;
+            mProcInfo.mExecutable = strDest;
             if (mProcInfo.mName.isEmpty())
                 mProcInfo.mName = strDest;
         }
@@ -431,7 +431,7 @@ public:
     int                     i_pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags,
                                                  int *pGuestRc);
     int                     i_processRemoveFromList(GuestProcess *pProcess);
-    int                     i_processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
+    int                     i_processCreateExInternal(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             i_processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);
     inline int              i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *pProcess);
     int                     i_sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);

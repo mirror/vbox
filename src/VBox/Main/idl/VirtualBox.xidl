@@ -10078,7 +10078,7 @@
 
       To wait for a guest process to terminate after it has been
       created by <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>
-      one would specify ProcessWaitResult_Terminate.
+      one would specify ProcessWaitFor_Terminate.
 
       If a guest process has been started with ProcessCreateFlag_WaitForStdOut
       a client can wait with ProcessWaitResult_StdOut for new data to arrive on
@@ -10106,15 +10106,12 @@
     </const>
     <const name="Timeout"               value="5">
       <desc>
-        The waiting operation timed out. This also will happen
-        when no event has been occurred matching the
-        current waiting flags in a <link to="IProcess::waitFor"/> call.
+        The waiting operation timed out. Also use if the guest process has
+        timed out on the guest side (kill attempted).
       </desc>
     </const>
     <const name="StdIn"                 value="6">
-      <desc>
-        The process signalled that stdin became available for writing
-        and that the process awaits input now.</desc>
+      <desc>The process signalled that stdin became available for writing.</desc>
     </const>
     <const name="StdOut"                value="7">
       <desc>Data on stdout became available for reading.</desc>
@@ -10212,7 +10209,7 @@
 
   <enum
     name="ProcessCreateFlag"
-    uuid="35192799-bfde-405d-9bea-c735ab9998e4"
+    uuid="be8c8dbd-4a76-e9ac-20df-468e86edf383"
     >
     <desc>
       Guest process execution flags.
@@ -10785,7 +10782,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="5b28703c-07b6-4fcb-afba-ac199b309752"
+    uuid="c899776d-41f7-7aee-7056-4bac979d58b7"
     wsmap="managed"
     >
     <desc>
@@ -11430,33 +11427,41 @@
           are still active and running, creating a new guest process will result in an
           appropriate error message.
 
-          If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
-          is / are set, the guest process will not exit until all data from the specified
-          stream(s) is / are read out.
+          If ProcessCreateFlag_WaitForStdOut and/or ProcessCreateFlag_WaitForStdErr
+          are set, the guest process will not exit until all data from the specified
+          streams are read out.
         </note>
 
         <result name="VBOX_E_IPRT_ERROR">
           Error creating guest process.
         </result>
       </desc>
-      <param name="command" type="wstring" dir="in">
+      <param name="executable" type="wstring" dir="in">
         <desc>
-          Full path name of the command to execute on the guest; the
-          commands has to exists in the guest VM in order to be executed.
+          Full path name of the file to execute on the guest.  The file has to
+          exists in the guest VM with executable right to the session user in
+          order to be executed. If empty/null, the first entry in the
+          @a arguments array will be used in stead (i.e. argv[0]).
         </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
-        <desc>Array of arguments passed to the execution command.</desc>
+        <desc>Array of arguments passed to the new process.
+          <note>
+            Starting with VirtualBox 5.0 this array starts with argument 0
+            instead of argument 1 as in previous versions.  Whether the zeroth
+            argument can be passed to the guest depends on the VBoxService
+            version running there.
+          </note>
+        </desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables that can be set while the command is being
-          executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.
+          Environment variables to set or unset for the guest process,
+          relative to the environment of the guest session.
 
-          This parameter can be used to override environment variables set by
-          the guest session, which will be applied to the newly started process
-          in any case.
+          The variables are in the traditional "NAME=VALUE" form with one pair
+          per array entry.  To unset a variable just leave out the equal sign
+          and the value ("NAME").
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -11485,24 +11490,32 @@
 
         See <link to="IGuestSession::processCreate"/> for more information.
       </desc>
-      <param name="command" type="wstring" dir="in">
+      <param name="executable" type="wstring" dir="in">
         <desc>
-          Full path name of the command to execute on the guest; the
-          commands has to exists in the guest VM in order to be executed.
+          Full path name of the file to execute on the guest.  The file has to
+          exists in the guest VM with executable right to the session user in
+          order to be executed.  If empty/null, the first entry in the
+          @a arguments array will be used in stead (i.e. argv[0]).
         </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
-        <desc>Array of arguments passed to the execution command.</desc>
+        <desc>Array of arguments passed to the new process.
+          <note>
+            Starting with VirtualBox 5.0 this array starts with argument 0
+            instead of argument 1 as in previous versions.  Whether the zeroth
+            argument can be passed to the guest depends on the VBoxService
+            version running there.
+          </note>
+        </desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables that can be set while the command is being
-          executed, in form of "NAME=VALUE"; one pair per entry. To unset a
-          variable just set its name ("NAME") without a value.
+          Environment variables to set or unset for the guest process,
+          relative to the environment of the guest session.
 
-          This parameter can be used to override environment variables set by
-          the guest session, which will be applied to the newly started process
-          in any case.
+          The variables are in the traditional "NAME=VALUE" form with one pair
+          per array entry.  To unset a variable just leave out the equal sign
+          and the value ("NAME").
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">

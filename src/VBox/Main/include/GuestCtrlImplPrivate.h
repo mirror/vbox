@@ -220,8 +220,9 @@ public:
 
     /** The process' friendly name. */
     Utf8Str                     mName;
-    /** The actual command to execute. */
-    Utf8Str                     mCommand;
+    /** The executable. */
+    Utf8Str                     mExecutable;
+    /** Arguments vector (starting with argument \#0). */
     ProcessArguments            mArguments;
     GuestEnvironment            mEnvironment;
     /** Process creation flags. */
