@@ -346,10 +346,13 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
 
     /*
      * Allocate and initialize the instance data.
+     *
+     * We align the size on pointer size here to make sure we get naturally
+     * aligned members in the critsect when the electric fence heap is active.
      */
     size_t cchName = strlen(pszName);
-    size_t cch = RT_OFFSETOF(RTLOCALIPCSERVERINT, szName[cchName + sizeof(RTLOCALIPC_WIN_PREFIX)]);
-    PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)RTMemAlloc(cch);
+    size_t cbThis = RT_OFFSETOF(RTLOCALIPCSERVERINT, szName[cchName + sizeof(RTLOCALIPC_WIN_PREFIX)]);
+    PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)RTMemAlloc(RT_ALIGN(cbThis, sizeof(void *)));
     if (!pThis)
         return VERR_NO_MEMORY;
     pThis->u32Magic = RTLOCALIPCSERVER_MAGIC;
