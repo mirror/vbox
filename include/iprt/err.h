@@ -1599,6 +1599,12 @@ RT_C_DECLS_END
 /** Unable to translate all the variables in the default environment due to
  * codeset issues (LANG / LC_ALL / LC_CTYPE). */
 #define VWRN_ENV_NOT_FULLY_TRANSLATED           (751)
+/** Invalid environment variable name. */
+#define VERR_ENV_INVALID_VAR_NAME               (-752)
+/** The environment variable is an unset record. */
+#define VINF_ENV_VAR_UNSET                      (753)
+/** The environment variable has been recorded as being unset. */
+#define VERR_ENV_VAR_UNSET                      (-753)
 /** @} */
 
 /** @name Multiprocessor Status Codes.

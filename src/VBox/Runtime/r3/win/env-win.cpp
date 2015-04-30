@@ -53,6 +53,8 @@ RTDECL(bool) RTEnvExist(const char *pszVar)
 
 RTDECL(bool) RTEnvExistsUtf8(const char *pszVar)
 {
+    AssertReturn(strchr(pszVar, '=') == NULL, false);
+
     PRTUTF16 pwszVar;
     int rc = RTStrToUtf16(pszVar, &pwszVar);
     AssertRCReturn(rc, false);
@@ -64,6 +66,7 @@ RTDECL(bool) RTEnvExistsUtf8(const char *pszVar)
 
 RTDECL(const char *) RTEnvGetBad(const char *pszVar)
 {
+    AssertReturn(strchr(pszVar, '=') == NULL, NULL);
     return getenv(pszVar);
 }
 
@@ -80,13 +83,14 @@ RTDECL(int) RTEnvGetUtf8(const char *pszVar, char *pszValue, size_t cbValue, siz
     AssertReturn(pszValue || !cbValue, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pcchActual, VERR_INVALID_POINTER);
     AssertReturn(pcchActual || (pszValue && cbValue), VERR_INVALID_PARAMETER);
+    AssertReturn(strchr(pszVar, '=') == NULL, VERR_ENV_INVALID_VAR_NAME);
 
     if (pcchActual)
         *pcchActual = 0;
 
     PRTUTF16 pwszVar;
     int rc = RTStrToUtf16(pszVar, &pwszVar);
-    AssertRCReturn(rc, false);
+    AssertRCReturn(rc, rc);
 
     /** @todo Consider _wgetenv_s or GetEnvironmentVariableW here to avoid the
      *        potential race with a concurrent _wputenv/_putenv. */
@@ -139,6 +143,8 @@ RTDECL(int) RTEnvPutUtf8(const char *pszVarEqualValue)
 
 RTDECL(int) RTEnvSetBad(const char *pszVar, const char *pszValue)
 {
+    AssertMsgReturn(strchr(pszVar, '=') == NULL, ("'%s'\n", pszVar), VERR_ENV_INVALID_VAR_NAME);
+
     /* make a local copy and feed it to putenv. */
     const size_t cchVar = strlen(pszVar);
     const size_t cchValue = strlen(pszValue);
@@ -166,6 +172,8 @@ RTDECL(int) RTEnvSet(const char *pszVar, const char *pszValue)
 
 RTDECL(int) RTEnvSetUtf8(const char *pszVar, const char *pszValue)
 {
+    AssertReturn(strchr(pszVar, '=') == NULL, VERR_ENV_INVALID_VAR_NAME);
+
     size_t cwcVar;
     int rc = RTStrCalcUtf16LenEx(pszVar, RTSTR_MAX, &cwcVar);
     if (RT_SUCCESS(rc))
@@ -203,7 +211,7 @@ RTDECL(int) RTEnvSetUtf8(const char *pszVar, const char *pszValue)
 
 RTDECL(int) RTEnvUnsetBad(const char *pszVar)
 {
-    AssertReturn(!strchr(pszVar, '='), VERR_INVALID_PARAMETER);
+    AssertReturn(strchr(pszVar, '=') == NULL, VERR_ENV_INVALID_VAR_NAME);
 
     /*
      * Check that it exists first.
@@ -243,6 +251,8 @@ RTDECL(int) RTEnvUnset(const char *pszVar)
 
 RTDECL(int) RTEnvUnsetUtf8(const char *pszVar)
 {
+    AssertReturn(strchr(pszVar, '=') == NULL, VERR_ENV_INVALID_VAR_NAME);
+
     size_t cwcVar;
     int rc = RTStrCalcUtf16LenEx(pszVar, RTSTR_MAX, &cwcVar);
     if (RT_SUCCESS(rc))
