@@ -77,6 +77,12 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T /* type */, IEvent
             break;
         }
 
+        case KVBoxEventType_OnEventSourceChanged:
+        {
+            emit sigEventSourceChange();
+            break;
+        }
+
         case KVBoxEventType_OnMachineStateChanged:
         {
             CMachineStateChangedEvent es(pEvent);

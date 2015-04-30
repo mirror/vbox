@@ -57,6 +57,8 @@ public:
 
 private slots:
 
+    /** Handles event-source state change (listener added or removed). */
+    void sltEventSourceChange();
     /* Handlers: Global-event stuff: */
     void sltStateChanged(QString strId);
     void sltSnapshotChanged(QString strId);
