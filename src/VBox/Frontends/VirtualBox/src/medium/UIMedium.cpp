@@ -143,13 +143,9 @@ void UIMedium::refresh()
     /* Reset cache parameters: */
     //m_strKey = nullID();
 
-    /* Reset name/location parameters: */
+    /* Reset name/location/size parameters: */
     m_strName = VBoxGlobal::tr("Empty", "medium");
     m_strLocation = m_strSize = m_strLogicalSize = QString("--");
-
-    /* Reset size parameters: */
-    m_strSize = QString();
-    m_strLogicalSize = QString();
 
     /* Reset hard drive related parameters: */
     m_strHardDiskType = QString();
