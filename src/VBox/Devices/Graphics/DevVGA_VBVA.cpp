@@ -1315,7 +1315,7 @@ int vbvaVHWACommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWA
 
             if(RT_SUCCESS(rc))
             {
-                rc = HGSMIHostCommandProcessAndFreeAsynch(pIns, pHostCmd, (pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ) != 0);
+                rc = HGSMIHostCommandSubmitAndFreeAsynch(pIns, pHostCmd, RT_BOOL(pCmd->Flags & VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ));
                 AssertRC(rc);
                 if(RT_SUCCESS(rc))
                 {

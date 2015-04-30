@@ -198,24 +198,10 @@ typedef struct HGSMIHOSTFIFOENTRY
 
     HGSMIINSTANCE *pIns;               /* Backlink to the HGSMI instance. */
 
-#if 0
-    /* removed to allow saved state handling */
-    /* The event which is signalled when the command has been processed by the host. */
-    RTSEMEVENTMULTI hEvent;
-#endif
-
     volatile uint32_t fl;              /* Status flags of the entry. */
 
     HGSMIOFFSET offBuffer;             /* Offset of the HGSMI buffer header in the HGSMI host heap:
                                         * [pIns->hostHeap.area.offBase .. offLast]. */
-
-#if 0
-    /* removed to allow saved state handling */
-    /* The command completion callback. */
-    PFNHGSMIHOSTFIFOCALLBACK pfnCallback;
-    void *pvCallback;
-#endif
-
 } HGSMIHOSTFIFOENTRY;
 
 
@@ -398,15 +384,9 @@ static bool hgsmiProcessHostCmdCompletion(HGSMIINSTANCE *pIns,
             RTListAppend(&pIns->hostFIFOProcessed, &pEntry->nodeEntry);
 
             hgsmiFIFOUnlock(pIns);
-#if 0
-            /* Inform the submitter. */
-            if (pEntry->pfnCallback)
-            {
-                pEntry->pfnCallback (pEntry->pvCallback);
-            }
-#else
+
             hgsmiHostCommandFreeCallback(pEntry);
-#endif
+
             return true;
         }
 
@@ -500,21 +480,6 @@ void HGSMIClearHostGuestFlags(HGSMIINSTANCE *pIns, uint32_t flags)
     AssertPtrReturnVoid(pIns->pHGFlags);
     ASMAtomicAndU32(&pIns->pHGFlags->u32HostFlags, (~flags));
 }
-
-#if 0
-static void hgsmiRaiseEvent (const HGSMIHOSTFIFOENTRY *pEntry)
-{
-    int rc = RTSemEventMultiSignal (pEntry->hEvent);
-    AssertRC(rc);
-}
-
-static int hgsmiWaitEvent (const HGSMIHOSTFIFOENTRY *pEntry)
-{
-    int rc = RTSemEventMultiWait (pEntry->hEvent, RT_INDEFINITE_WAIT);
-    AssertRC(rc);
-    return rc;
-}
-#endif
 
 /*
  * The host heap.
@@ -722,14 +687,6 @@ static int hgsmiHostFIFOAlloc (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY **ppEntry
     if (pEntry)
     {
         pEntry->fl = HGSMI_F_HOST_FIFO_ALLOCATED;
-#if 0
-        rc = RTSemEventMultiCreate (&pEntry->hEvent);
-
-        if (RT_FAILURE (rc))
-        {
-            RTMemFree (pEntry);
-        }
-#endif
     }
     else
     {
@@ -747,12 +704,6 @@ static int hgsmiHostFIFOAlloc (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY **ppEntry
 static void hgsmiHostFIFOFree (HGSMIINSTANCE *pIns, HGSMIHOSTFIFOENTRY *pEntry)
 {
     NOREF (pIns);
-#if 0
-    if (pEntry->hEvent)
-    {
-        RTSemEventMultiDestroy (pEntry->hEvent);
-    }
-#endif
     RTMemFree (pEntry);
 }
 
@@ -785,81 +736,58 @@ static int hgsmiHostCommandFreeByEntry (HGSMIHOSTFIFOENTRY *pEntry)
     return rc;
 }
 
-static int hgsmiHostCommandFree (HGSMIINSTANCE *pIns,
-                                                void *pvData)
+static int hgsmiHostCommandFree(HGSMIINSTANCE *pIns,
+                                void *pvData)
 {
-    int rc = VINF_SUCCESS;
-    if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
+    HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
+    HGSMIHOSTFIFOENTRY *pEntry = NULL;
+
+    int rc = hgsmiFIFOLock(pIns);
+    if (RT_SUCCESS(rc))
     {
-        HGSMIHOSTFIFOENTRY *pEntry = NULL;
-        HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
-
-        rc = hgsmiFIFOLock (pIns);
-        if(RT_SUCCESS(rc))
+        /* Search the Processed list for the given offBuffer. */
+        HGSMIHOSTFIFOENTRY *pIter;
+        RTListForEach(&pIns->hostFIFOProcessed, pIter, HGSMIHOSTFIFOENTRY, nodeEntry)
         {
-            /* Search the Processed list for the given offBuffer. */
-            HGSMIHOSTFIFOENTRY *pIter;
-            RTListForEach(&pIns->hostFIFOProcessed, pIter, HGSMIHOSTFIFOENTRY, nodeEntry)
+            Assert(pIter->fl == (HGSMI_F_HOST_FIFO_ALLOCATED | HGSMI_F_HOST_FIFO_PROCESSED));
+
+            if (pIter->offBuffer == offBuffer)
             {
-                Assert(pIter->fl == (HGSMI_F_HOST_FIFO_ALLOCATED | HGSMI_F_HOST_FIFO_PROCESSED));
-
-                if (pIter->offBuffer == offBuffer)
-                {
-                    pEntry = pIter;
-                    break;
-                }
-            }
-
-            if (pEntry)
-            {
-                RTListNodeRemove(&pEntry->nodeEntry);
-            }
-            else
-            {
-                AssertLogRelMsgFailed(("HGSMI[%s]: the host frees unprocessed FIFO entry: 0x%08X\n",
-                                       pIns->pszName, offBuffer));
-            }
-
-            hgsmiFIFOUnlock (pIns);
-
-            rc = hgsmiHostHeapLock (pIns);
-            if(RT_SUCCESS(rc))
-            {
-                /* Deallocate the host heap memory. */
-                hgsmiHostHeapDataFree(&pIns->hostHeap, pvData);
-
-                hgsmiHostHeapUnlock(pIns);
-            }
-
-            if(pEntry)
-            {
-                /* Deallocate the entry. */
-                hgsmiHostFIFOFree (pIns, pEntry);
+                pEntry = pIter;
+                break;
             }
         }
 
+        if (pEntry)
+        {
+            RTListNodeRemove(&pEntry->nodeEntry);
+        }
+        else
+        {
+            AssertLogRelMsgFailed(("HGSMI[%s]: the host frees unprocessed FIFO entry: 0x%08X\n",
+                                   pIns->pszName, offBuffer));
+        }
+
+        hgsmiFIFOUnlock (pIns);
+
+        rc = hgsmiHostHeapLock (pIns);
+        if (RT_SUCCESS(rc))
+        {
+            /* Deallocate the host heap memory. */
+            hgsmiHostHeapDataFree(&pIns->hostHeap, pvData);
+
+            hgsmiHostHeapUnlock(pIns);
+        }
+
+        if (pEntry)
+        {
+            /* Deallocate the entry. */
+            hgsmiHostFIFOFree(pIns, pEntry);
+        }
     }
-    else
-    {
-        AssertLogRelMsgFailed(("HGSMI[%s]: the host frees invalid FIFO entry: %p\n",
-                               pIns->pszName, pvData));
-        rc = VERR_INVALID_POINTER;
-    }
+
     return rc;
 }
-
-#if 0
-static DECLCALLBACK(void) hgsmiHostCommandRaiseEventCallback (void *pvCallback)
-{
-    /* Guest has processed the command. */
-    HGSMIHOSTFIFOENTRY *pEntry = (HGSMIHOSTFIFOENTRY *)pvCallback;
-
-    Assert(pEntry->fl == (HGSMI_F_HOST_FIFO_ALLOCATED | HGSMI_F_HOST_FIFO_PROCESSED));
-
-    /* This is a simple callback, just signal the event. */
-    hgsmiRaiseEvent (pEntry);
-}
-#endif
 
 static DECLCALLBACK(void) hgsmiHostCommandFreeCallback (void *pvCallback)
 {
@@ -872,39 +800,29 @@ static DECLCALLBACK(void) hgsmiHostCommandFreeCallback (void *pvCallback)
     hgsmiHostCommandFreeByEntry (pEntry);
 }
 
-static int hgsmiHostCommandWrite (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem
-#if 0
-        , PFNHGSMIHOSTFIFOCALLBACK pfnCallback, void **ppvContext
-#endif
-        )
+static int hgsmiHostCommandWrite(HGSMIINSTANCE *pIns,
+                                 HGSMIOFFSET offBuffer)
 {
-    HGSMIHOSTFIFOENTRY *pEntry;
-
     AssertPtrReturn(pIns->pHGFlags, VERR_WRONG_ORDER);
-    int rc = hgsmiHostFIFOAlloc (pIns, &pEntry);
 
-    if (RT_SUCCESS (rc))
+    HGSMIHOSTFIFOENTRY *pEntry;
+    int rc = hgsmiHostFIFOAlloc(pIns, &pEntry);
+
+    if (RT_SUCCESS(rc))
     {
         /* Initialize the new entry and add it to the FIFO. */
         pEntry->fl |= HGSMI_F_HOST_FIFO_QUEUED;
 
         pEntry->pIns = pIns;
-        pEntry->offBuffer = offMem;
-#if 0
-        pEntry->pfnCallback = pfnCallback;
-        pEntry->pvCallback = pEntry;
-#endif
+        pEntry->offBuffer = offBuffer;
 
         rc = hgsmiFIFOLock(pIns);
-        if (RT_SUCCESS (rc))
+        if (RT_SUCCESS(rc))
         {
-            RTListAppend(&pIns->hostFIFO, &pEntry->nodeEntry);
             ASMAtomicOrU32(&pIns->pHGFlags->u32HostFlags, HGSMIHOSTFLAGS_COMMANDS_PENDING);
+            RTListAppend(&pIns->hostFIFO, &pEntry->nodeEntry);
 
             hgsmiFIFOUnlock(pIns);
-#if 0
-            *ppvContext = pEntry;
-#endif
         }
         else
         {
@@ -919,67 +837,32 @@ static int hgsmiHostCommandWrite (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem
 /**
  * Append the shared memory block to the FIFO, inform the guest.
  *
- * @param pIns       Pointer to HGSMI instance,
- * @param pv         The HC memory pointer to the information.
- * @param ppvContext Where to store a pointer, which will allow the caller
- *                   to wait for the command completion.
- * @param            bDoIrq specifies whether the guest interrupt should be generated,
- * i.e. in case the command is not urgent(e.g. some guest command completion notification that does not require post-processing)
- * the command could be posted without raising an irq.
- *
+ * @param pIns       Pointer to HGSMI instance.
+ * @param pvData     The shared memory block data pointer.
+ * @param fDoIrq     Whether the guest interrupt should be generated, i.e. if the command is not
+ *                   urgent (e.g. some guest command completion notification that does not require
+ *                   post-processing) the command could be submitted without raising an irq.
  * @thread EMT
  */
-static int hgsmiHostCommandProcess (HGSMIINSTANCE *pIns, HGSMIOFFSET offBuffer,
-#if 0
-        PFNHGSMIHOSTFIFOCALLBACK pfnCallback, void **ppvContext,
-#endif
-        bool bDoIrq)
+static int hgsmiHostCommandSubmit(HGSMIINSTANCE *pIns,
+                                  void *pvData,
+                                  bool fDoIrq)
 {
-//    HGSMIOFFSET offMem;
-//
-//    int rc = hgsmiCheckMemPtr (pIns, pvMem, &offMem);
-//
-//    if (RT_SUCCESS (rc))
-//    {
-        /* Append the command to FIFO. */
-        int rc = hgsmiHostCommandWrite (pIns, offBuffer
-#if 0
-                , pfnCallback, ppvContext
-#endif
-                );
-
-        if (RT_SUCCESS (rc))
+    /* Append the command to FIFO. */
+    HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
+    int rc = hgsmiHostCommandWrite(pIns, offBuffer);
+    if (RT_SUCCESS(rc))
+    {
+        if (fDoIrq)
         {
-            if(bDoIrq)
-            {
-                /* Now guest can read the FIFO, the notification is informational. */
-                hgsmiNotifyGuest (pIns);
-            }
+            /* Now guest can read the FIFO, the notification is informational. */
+            hgsmiNotifyGuest(pIns);
         }
-//    }
-//    else
-//    {
-//        AssertFailed ();
-//    }
+    }
 
     return rc;
 }
-#if 0
-static void hgsmiWait (void *pvContext)
-{
-    HGSMIHOSTFIFOENTRY *pEntry = (HGSMIHOSTFIFOENTRY *)pvContext;
 
-    for (;;)
-    {
-        hgsmiWaitEvent (pEntry);
-
-        if (pEntry->fl & (HGSMI_F_HOST_FIFO_PROCESSED | HGSMI_F_HOST_FIFO_CANCELED))
-        {
-            return;
-        }
-    }
-}
-#endif
 /**
  * Allocate a shared memory buffer. The host can write command/data to the memory.
  * The allocated buffer contains the 'header', 'data' and the 'tail', but *ppvData
@@ -992,16 +875,17 @@ static void hgsmiWait (void *pvContext)
  * @param u8Channel      HGSMI channel.
  * @param u16ChannelInfo Command parameter.
  */
-int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
-                           void **ppvData,
-                           HGSMISIZE cbData,
-                           uint8_t u8Channel,
-                           uint16_t u16ChannelInfo)
+int HGSMIHostCommandAlloc(HGSMIINSTANCE *pIns,
+                          void **ppvData,
+                          HGSMISIZE cbData,
+                          uint8_t u8Channel,
+                          uint16_t u16ChannelInfo)
 {
-    LogFlowFunc (("pIns = %p, cbData = 0x%08X(%d)\n", pIns, cbData, cbData));
+    LogFlowFunc(("pIns = %p, cbData = %d, u8Channel %d, u16ChannelInfo 0x%04X\n",
+                 pIns, cbData, u8Channel, u16ChannelInfo));
 
-    int rc = hgsmiHostHeapLock (pIns);
-    if(RT_SUCCESS(rc))
+    int rc = hgsmiHostHeapLock(pIns);
+    if (RT_SUCCESS(rc))
     {
         void *pvData = hgsmiHostHeapDataAlloc(&pIns->hostHeap,
                                               cbData,
@@ -1015,7 +899,7 @@ int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
         }
         else
         {
-            LogRel(("HGSMI[%s]: host heap allocation failed %dbytes\n", pIns->pszName, cbData));
+            LogRel(("HGSMI[%s]: host heap allocation failed %d bytes\n", pIns->pszName, cbData));
             rc = VERR_NO_MEMORY;
         }
     }
@@ -1032,88 +916,58 @@ int HGSMIHostCommandAlloc (HGSMIINSTANCE *pIns,
  *
  * @param pIns   HGSMI instance,
  * @param pvData The pointer returned by 'HGSMIHostCommandAlloc'.
- * @param bDoIrq Specifies whether the guest interrupt should be generated.
+ * @param fDoIrq Specifies whether the guest interrupt should be generated.
  *               In case the command is not urgent (e.g. some guest command
  *               completion notification that does not require post-processing)
  *               the command could be posted without raising an irq.
  */
-int HGSMIHostCommandProcessAndFreeAsynch (PHGSMIINSTANCE pIns,
-                             void *pvData,
-                             bool bDoIrq)
+int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns,
+                                        void *pvData,
+                                        bool fDoIrq)
 {
-    LogFlowFunc(("pIns = %p, pvData = %p\n", pIns, pvData));
+    LogFlowFunc(("pIns = %p, pvData = %p, fDoIrq = %d\n", pIns, pvData, fDoIrq));
 
-#if 0
-    void *pvContext = NULL;
-#endif
-
-    HGSMIOFFSET offBuffer = HGSMIBufferOffsetFromData(&pIns->hostHeap.area, pvData);
-
-    int rc = hgsmiHostCommandProcess (pIns, offBuffer,
-#if 0
-            hgsmiHostCommandFreeCallback, &pvContext,
-#endif
-            bDoIrq);
-    AssertRC (rc);
-
-    LogFlowFunc(("rc = %Rrc\n", rc));
-
-    return rc;
-}
-#if 0
-/**
- * Submit the shared memory block to the guest.
- *
- * @param pIns  Pointer to HGSMI instance,
- * @param pvMem The pointer returned by 'HGSMIHostCommandAlloc'.
- */
-int HGSMIHostCommandProcess (HGSMIINSTANCE *pIns,
-                             void *pvMem)
-{
-    LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
-
-    VM_ASSERT_OTHER_THREAD(pIns->pVM);
-
-    void *pvContext = NULL;
-
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
-
-//    /* Have to forward to EMT because FIFO processing is there. */
-//    int rc = VMR3ReqCallVoid (pIns->pVM, &pReq, RT_INDEFINITE_WAIT,
-//                              (PFNRT) hgsmiHostCommandProcess,
-//                              3, pIns, offBuffer, &pvContext);
-
-    int rc = hgsmiHostCommandProcess (pIns, offBuffer,
-#if 0
-            hgsmiHostCommandRaiseEventCallback, &pvContext,
-#endif
-            true);
-    AssertReleaseRC (rc);
-
-    if (RT_SUCCESS (rc))
+    int rc;
+    if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
     {
-        /* Wait for completion. */
-        hgsmiWait (pvContext);
+        rc = hgsmiHostCommandSubmit(pIns, pvData, fDoIrq);
+    }
+    else
+    {
+        AssertLogRelMsgFailed(("HGSMI[%s]: host submits invalid command %p/%p\n",
+                               pIns->pszName, pvData, pIns->hostHeap.area.pu8Base));
+        rc = VERR_INVALID_POINTER;
     }
 
     LogFlowFunc(("rc = %Rrc\n", rc));
-
     return rc;
 }
-#endif
 
 /**
  * Free the shared memory block.
  *
- * @param pIns  Pointer to HGSMI instance,
- * @param pvMem The pointer returned by 'HGSMIHostCommandAlloc'.
+ * @param pIns   Pointer to HGSMI instance,
+ * @param pvData The pointer returned by 'HGSMIHostCommandAlloc'.
  */
-int HGSMIHostCommandFree (HGSMIINSTANCE *pIns,
-                          void *pvMem)
+int HGSMIHostCommandFree(HGSMIINSTANCE *pIns,
+                         void *pvData)
 {
-    LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
+    LogFlowFunc(("pIns = %p, pvData = %p\n", pIns, pvData));
 
-    return hgsmiHostCommandFree (pIns, pvMem);
+    int rc;
+    if (HGSMIAreaContainsPointer(&pIns->hostHeap.area, pvData))
+    {
+        rc = hgsmiHostCommandFree(pIns, pvData);
+    }
+    else
+    {
+        AssertLogRelMsgFailed(("HGSMI[%s]: the host frees invalid FIFO entry %p/%p\n",
+                               pIns->pszName, pvData, pIns->hostHeap.area.pu8Base));
+        rc = VERR_INVALID_POINTER;
+    }
+
+    LogFlowFunc(("rc = %Rrc\n", rc));
+    return rc;
 }
 
 static DECLCALLBACK(void *) hgsmiEnvAlloc(void *pvEnv, HGSMISIZE cb)

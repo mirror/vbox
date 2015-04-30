@@ -72,9 +72,6 @@ int HGSMIHostHeapSetup(PHGSMIINSTANCE pIns,
                        HGSMIOFFSET    offHeap,
                        HGSMISIZE      cbHeap);
 
-int HGSMISaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
-int HGSMILoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
-
 /*
  * Virtual hardware IO handlers.
  */
@@ -105,21 +102,18 @@ void HGSMIClearHostGuestFlags(PHGSMIINSTANCE pIns, uint32_t flags);
  */
 
 /* Allocate a buffer in the host heap. */
-int HGSMIHostCommandAlloc (PHGSMIINSTANCE pIns,
-                           void **ppvData,
-                           HGSMISIZE cbData,
-                           uint8_t u8Channel,
-                           uint16_t u16ChannelInfo);
+int HGSMIHostCommandAlloc(PHGSMIINSTANCE pIns,
+                          void **ppvData,
+                          HGSMISIZE cbData,
+                          uint8_t u8Channel,
+                          uint16_t u16ChannelInfo);
 
-int HGSMIHostCommandProcess (PHGSMIINSTANCE pIns,
-                             void *pvMem);
+int HGSMIHostCommandSubmitAndFreeAsynch(PHGSMIINSTANCE pIns,
+                                        void *pvData,
+                                        bool fDoIrq);
 
-int HGSMIHostCommandProcessAndFreeAsynch (PHGSMIINSTANCE pIns,
-                             void *pvData,
-                             bool bDoIrq);
-
-int HGSMIHostCommandFree (PHGSMIINSTANCE pIns,
-                          void *pvMem);
+int HGSMIHostCommandFree(PHGSMIINSTANCE pIns,
+                         void *pvData);
 
 int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Version);
 
