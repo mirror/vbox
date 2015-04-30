@@ -1270,10 +1270,10 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResultEx(uint32_t fWaitFlags,
                     else
                     {
                         /*
-                             * If ProcessCreateFlag_WaitForProcessStartOnly was specified on process creation the
-                             * caller is not interested in getting further process statuses -- so just don't notify
-                             * anything here anymore and return.
-                             */
+                         * If ProcessCreateFlag_WaitForProcessStartOnly was specified on process creation the
+                         * caller is not interested in getting further process statuses -- so just don't notify
+                         * anything here anymore and return.
+                         */
                         if (uProcFlags & ProcessCreateFlag_WaitForProcessStartOnly)
                             waitResult = ProcessWaitResult_Start;
                     }
@@ -1307,7 +1307,8 @@ ProcessWaitResult_T GuestProcess::i_waitFlagsToResultEx(uint32_t fWaitFlags,
 
     if (newStatus == ProcessStatus_Started)
     {
-        /* Filter out waits which are *not* supported using
+        /**
+         * Filter out waits which are *not* supported using
          * older guest control Guest Additions.
          *
          ** @todo ProcessWaitForFlag_Std* flags are not implemented yet.
