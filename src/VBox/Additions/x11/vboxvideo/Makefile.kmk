@@ -47,7 +47,7 @@ vboxvideo_xorg_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
 
-vboxvideo.c_DEPS = $(VBOX_SVN_REV_KMK)
+vboxvideo.c_DEPS = $(VBOX_SVN_REV_HEADER)
 
 #
 # vboxvideo_drv
