@@ -6696,8 +6696,10 @@ HRESULT Console::i_onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
             if (pCanShowEvent)
             {
                 BOOL fVetoed = FALSE;
+                BOOL fApproved = FALSE;
                 pCanShowEvent->IsVetoed(&fVetoed);
-                *aCanShow = !fVetoed;
+                pCanShowEvent->IsApproved(&fApproved);
+                *aCanShow = fApproved || !fVetoed;
             }
             else
             {
