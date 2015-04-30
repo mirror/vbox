@@ -158,6 +158,22 @@
         </glosslist>For example, to only install USB support along with the
       main binaries, do a: <screen>VirtualBox.exe -msiparams ADDLOCAL=VBoxApplication,VBoxUSB</screen>
       or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi ADDLOCAL=VBoxApplication,VBoxUSB</screen></para>
+
+      <para>
+      The user is able to choose between NDIS5 and NDIS6 host network filters drivers during
+      the installation. This is realized via a command line parameter
+      <computeroutput>NETWORKTYPE</computeroutput>.
+      The NDIS6 driver is default for Windows Vista and later. For older Windows versions,
+      the installer will automatically select the NDIS5 driver and this cannot be changed.
+      For Windows Vista and later the user can force to install the (legacy) NDIS5 host
+      network filter driver using <computeroutput>NETWORKTYPE=NDIS5</computeroutput>. For
+      example, to install the NDIS5 driver on Windows 7, do
+      <screen>VirtualBox.exe -msiparams NETWORKTYPE=NDIS5</screen>
+      or
+      <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NETWORKTYPE=NDIS5</screen>
+      </para>
+
+
     </sect2>
 
     <sect2>
@@ -174,18 +190,6 @@
 
       <para>Unattended installations can be performed using the standard MSI
       support.</para>
-
-      <para>
-      User is able to choose between NDIS5 or NDIS6 network devices during installation.
-      It is realized via command line argument NETWORKTYPE. 
-      NDIS6 is default option for Windows Vista and higher. 
-      User can force to install NDIS5 on Windows Vista using NETWORKTYPE=NDIS5.
-      NDIS5 is default option for Windows versions below than Vista. 
-      User can't force to install NDIS6 on Windows below than Vista using NETWORKTYPE=NDIS6 because this type of network device isn't supported there.
-
-      For example, install NDIS6, do a: <screen>VirtualBox.exe -msiparams NETWORKTYPE=NDIS6</screen> 
-      or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NETWORKTYPE=NDIS6</screen>
-      </para>
 
     </sect2>
   </sect1>
