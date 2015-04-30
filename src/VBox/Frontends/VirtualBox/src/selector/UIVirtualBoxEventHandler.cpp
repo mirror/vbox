@@ -81,7 +81,6 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
     /* Register listener for expected event-types: */
     QVector<KVBoxEventType> vboxEvents;
     vboxEvents
-        << KVBoxEventType_OnEventSourceChanged
         << KVBoxEventType_OnMachineStateChanged
         << KVBoxEventType_OnMachineDataChanged
         << KVBoxEventType_OnMachineRegistered
@@ -96,9 +95,6 @@ UIVirtualBoxEventHandler::UIVirtualBoxEventHandler()
     /* Prepare connections: */
     connect(pListener->getWrapped(), SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
             this, SIGNAL(sigVBoxSVCAvailabilityChange(bool)),
-            Qt::QueuedConnection);
-    connect(pListener->getWrapped(), SIGNAL(sigEventSourceChange()),
-            this, SIGNAL(sigEventSourceChange()),
             Qt::QueuedConnection);
     connect(pListener->getWrapped(), SIGNAL(sigMachineStateChange(QString, KMachineState)),
             this, SIGNAL(sigMachineStateChange(QString, KMachineState)),

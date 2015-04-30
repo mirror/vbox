@@ -154,12 +154,6 @@ UISelectorWindow::~UISelectorWindow()
     cleanupMenuBar();
 }
 
-void UISelectorWindow::sltEventSourceChange()
-{
-    /* Update actions: */
-    updateActionsAppearance();
-}
-
 void UISelectorWindow::sltStateChanged(QString)
 {
     /* Get current item: */
@@ -1557,7 +1551,6 @@ void UISelectorWindow::prepareConnections()
             this, SLOT(sltShowMachineSettingsDialog(const QString&, const QString&, const QString&)));
 
     /* Global event handlers: */
-    connect(gVBoxEvents, SIGNAL(sigEventSourceChange()), this, SLOT(sltEventSourceChange()));
     connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)), this, SLOT(sltStateChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)), this, SLOT(sltStateChanged(QString)));
     connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QString, QString)), this, SLOT(sltSnapshotChanged(QString)));

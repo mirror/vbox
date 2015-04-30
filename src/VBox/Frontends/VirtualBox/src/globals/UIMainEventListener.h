@@ -50,9 +50,6 @@ signals:
     /** Notifies about the VBoxSVC become @a fAvailable. */
     void sigVBoxSVCAvailabilityChange(bool fAvailable);
 
-    /** Notifies about event-source state change (listener added or removed). */
-    void sigEventSourceChange();
-
     /** Notifies about @a state change event for the machine with @a strId. */
     void sigMachineStateChange(QString strId, KMachineState state);
     /** Notifies about data change event for the machine with @a strId. */
