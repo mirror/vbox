@@ -352,7 +352,7 @@ RTDECL(int) RTLocalIpcServerCreate(PRTLOCALIPCSERVER phServer, const char *pszNa
      */
     size_t cchName = strlen(pszName);
     size_t cbThis = RT_OFFSETOF(RTLOCALIPCSERVERINT, szName[cchName + sizeof(RTLOCALIPC_WIN_PREFIX)]);
-    PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)RTMemAlloc(RT_ALIGN(cbThis, sizeof(void *)));
+    PRTLOCALIPCSERVERINT pThis = (PRTLOCALIPCSERVERINT)RTMemAllocVar(cbThis);
     if (!pThis)
         return VERR_NO_MEMORY;
     pThis->u32Magic = RTLOCALIPCSERVER_MAGIC;
