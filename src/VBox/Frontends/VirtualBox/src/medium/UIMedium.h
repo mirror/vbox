@@ -192,6 +192,8 @@ public:
 
     /** Returns the hard drive medium storage details. */
     QString storageDetails() const { return m_strStorageDetails; }
+    /** Returns the hard drive medium encryption password ID. */
+    QString encryptionPasswordID() const { return m_strEncryptionPasswordID; }
 
     /** Returns the medium usage data.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -335,6 +337,8 @@ private:
     QString m_strHardDiskFormat;
     /** Holds the hard drive medium storage details. */
     QString m_strStorageDetails;
+    /** Holds the hard drive medium encryption password ID. */
+    QString m_strEncryptionPasswordID;
 
     /** Holds the medium usage. */
     QString m_strUsage;

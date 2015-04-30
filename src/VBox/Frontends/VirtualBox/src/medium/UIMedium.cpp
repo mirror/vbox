@@ -90,6 +90,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_strHardDiskType = other.hardDiskType();
     m_strHardDiskFormat = other.hardDiskFormat();
     m_strStorageDetails = other.storageDetails();
+    m_strEncryptionPasswordID = other.encryptionPasswordID();
 
     m_strUsage = other.usage();
     m_strToolTip = other.tip();
@@ -154,6 +155,7 @@ void UIMedium::refresh()
     m_strHardDiskType = QString();
     m_strHardDiskFormat = QString();
     m_strStorageDetails = QString();
+    m_strEncryptionPasswordID = QString();
 
     /* Reset data parameters: */
     m_strUsage = QString();
@@ -244,15 +246,22 @@ void UIMedium::refresh()
                     parentMedium = parentMedium.GetParent();
                 }
 
-                /* Check whether this medium is encrypted: */
+                /* Refresh encryption attributes: */
                 if (m_strRootId != m_strId)
+                {
+                    m_strEncryptionPasswordID = root().encryptionPasswordID();
                     m_fEncrypted = root().isEncrypted();
+                }
                 else
                 {
                     QString strCipher;
                     CMedium medium(m_medium);
-                    medium.GetEncryptionSettings(strCipher);
-                    m_fEncrypted = medium.isOk();
+                    const QString strEncryptionPasswordID = medium.GetEncryptionSettings(strCipher);
+                    if (medium.isOk())
+                    {
+                        m_strEncryptionPasswordID = strEncryptionPasswordID;
+                        m_fEncrypted = true;
+                    }
                 }
             }
         }
