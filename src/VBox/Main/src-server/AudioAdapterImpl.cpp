@@ -236,21 +236,25 @@ HRESULT AudioAdapter::setEnabled(BOOL aEnabled)
 
 HRESULT AudioAdapter::getEnabledIn(BOOL *aEnabled)
 {
+    NOREF(aEnabled);
     return E_NOTIMPL;
 }
 
 HRESULT AudioAdapter::setEnabledIn(BOOL aEnabled)
 {
+    NOREF(aEnabled);
     return E_NOTIMPL;
 }
 
 HRESULT AudioAdapter::getEnabledOut(BOOL *aEnabled)
 {
+    NOREF(aEnabled);
     return E_NOTIMPL;
 }
 
 HRESULT AudioAdapter::setEnabledOut(BOOL aEnabled)
 {
+    NOREF(aEnabled);
     return E_NOTIMPL;
 }
 
