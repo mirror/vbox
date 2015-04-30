@@ -355,6 +355,8 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
 
     union
     {
+        /* Note: Protocol v1 sends the file name + file mode
+         *       every time a file data chunk is being sent. */
         struct
         {
             HGCMFunctionParameter pvName;       /* OUT ptr */
@@ -367,6 +369,7 @@ typedef struct VBOXDNDHGSENDFILEDATAMSG
         {
             /** Note: pvName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
             /** Note: cbName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
+            /** Context ID. Unused at the moment. */
             HGCMFunctionParameter uContext;     /* OUT uint32_t */
             HGCMFunctionParameter pvData;       /* OUT ptr */
             HGCMFunctionParameter cbData;       /* OUT uint32_t */
@@ -561,10 +564,13 @@ typedef struct VBOXDNDGHSENDFILEDATAMSG
         } v1;
         struct
         {
+            /** Note: pvName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
+            /** Note: cbName is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
             /** Context ID. Unused at the moment. */
             HGCMFunctionParameter uContext; /* OUT uint32_t */
             HGCMFunctionParameter pvData;   /* OUT ptr */
             HGCMFunctionParameter cbData;   /* OUT uint32_t */
+            /** Note: fMode is now part of the VBOXDNDHGSENDFILEHDRMSG message. */
         } v2;
     } u;
 

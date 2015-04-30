@@ -435,8 +435,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                 {
                     DragAndDropSvc::VBOXDNDCBHGREQDATADATA data;
                     data.hdr.u32Magic = DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA;
-                    uint32_t cTmp;
-                    rc = paParms[0].getPointer((void**)&data.pszFormat, &cTmp);
+                    rc = paParms[0].getPointer((void**)&data.pszFormat, &data.cbFormat);
                     DO_HOST_CALLBACK();
                 }
                 break;

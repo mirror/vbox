@@ -260,14 +260,16 @@ void GuestDnDResponse::reset(void)
 HRESULT GuestDnDResponse::resetProgress(const ComObjPtr<Guest>& pParent)
 {
     m_progress.setNull();
-    HRESULT rc = m_progress.createObject();
-    if (SUCCEEDED(rc))
+
+    HRESULT hr = m_progress.createObject();
+    if (SUCCEEDED(hr))
     {
-        rc = m_progress->init(static_cast<IGuest *>(pParent),
+        hr = m_progress->init(static_cast<IGuest *>(pParent),
                               Bstr(pParent->tr("Dropping data")).raw(),
                               TRUE /* aCancelable */);
     }
-    return rc;
+
+    return hr;
 }
 
 bool GuestDnDResponse::isProgressCanceled(void) const
@@ -733,6 +735,11 @@ void GuestDnD::toMainActions(uint32_t uActions,
 
 GuestDnDBase::GuestDnDBase(void)
 {
+    mDataBase.mfTransferIsPending = false;
+
+    /*
+     * Initialize public attributes.
+     */
     m_strFormats = GuestDnDInst()->defaultFormats();
 }
 

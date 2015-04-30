@@ -496,6 +496,8 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser
     else
         rc = VERR_COM_INVALID_OBJECT_STATE;
 
+    ASMAtomicWriteBool(&pTarget->mDataBase.mfTransferIsPending, false);
+
     LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pTarget, rc));
 
     if (pTask)
@@ -520,13 +522,22 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
-    /** @todo Add input validation. */
-    /** @todo Check if another sendData() call currently is being processed. */
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* Note: At the moment we only support one response at a time. */
+    /* Input validation. */
+    if (RT_UNLIKELY((aFormat.c_str()) == NULL || *(aFormat.c_str()) == '\0'))
+        return setError(E_INVALIDARG, tr("No data format specified"));
+    if (RT_UNLIKELY(!aData.size()))
+        return setError(E_INVALIDARG, tr("No data to send specified"));
+
+    /* Note: At the moment we only support one transfer at a time. */
+    if (ASMAtomicReadBool(&mDataBase.mfTransferIsPending))
+        return setError(E_INVALIDARG, tr("Another send operation already is in progress"));
+
+    ASMAtomicWriteBool(&mDataBase.mfTransferIsPending, true);
+
+    /* Dito. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
     AssertPtr(pResp);
 
@@ -548,8 +559,7 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
         SendDataTask *pTask = new SendDataTask(this, pSendCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
 
-        RTTHREAD sendThread;
-        int rc = RTThreadCreate(&sendThread, GuestDnDTarget::i_sendDataThread,
+        int rc = RTThreadCreate(NULL, GuestDnDTarget::i_sendDataThread,
                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
         if (RT_SUCCESS(rc))
         {
@@ -568,6 +578,8 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     {
         hr = setError(E_OUTOFMEMORY);
     }
+
+    /* Note: mDataBase.mfTransferIsPending will be set to false again by i_sendDataThread. */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
@@ -607,6 +619,9 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx)
     int rc;
 
     ASMAtomicWriteBool(&pCtx->mIsActive, true);
+
+    /* Clear all remaining outgoing messages. */
+    mDataBase.mListOutgoing.clear();
 
     do
     {
@@ -693,6 +708,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
         LogFlowFunc(("Opening \"%s\" ...\n", strPathSrc.c_str()));
         rc = aFile.OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
+        if (RT_FAILURE(rc))
+            LogRel2(("DnD: Error opening host file \"%s\", rc=%Rrc\n", strPathSrc.c_str(), rc));
     }
 
     bool fSendFileData = false;
@@ -717,6 +734,8 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
                 pMsg->setNextUInt64(aFile.GetSize());                              /* uSize */
 
                 LogFlowFunc(("Sending file header ...\n"));
+                LogRel2(("DnD: Transferring host file to guest: %s (%RU64 bytes, mode 0x%x)\n",
+                         strPathSrc.c_str(), aFile.GetSize(), aFile.GetMode()));
             }
             else
             {
@@ -799,6 +818,7 @@ int GuestDnDTarget::i_sendFileData(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIO
 
         if (aFile.IsComplete()) /* Done reading? */
         {
+            LogRel2(("DnD: File transfer to guest complete: %s\n", aFile.GetSourcePath().c_str()));
             LogFlowFunc(("File \"%s\" complete\n", aFile.GetSourcePath().c_str()));
             rc = VINF_EOF;
         }
@@ -820,7 +840,6 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
     int rc = VINF_SUCCESS;
-    bool fNotify = false;
 
     switch (uMsg)
     {
@@ -848,23 +867,25 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
                 }
 
                 if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_NO_DATA) /* All URI objects processed? */
-                    {
-                        /* Unregister this callback. */
-                        AssertPtr(pCtx->mpResp);
-                        int rc2 = pCtx->mpResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
-                        if (RT_FAILURE(rc2))
-                            LogFlowFunc(("Error: Unable to unregister callback for message %RU32, rc=%Rrc\n", uMsg, rc2));
-                    }
-
                     delete pMsg;
-                }
             }
             catch(std::bad_alloc & /*e*/)
             {
                 rc = VERR_NO_MEMORY;
             }
+            break;
+        }
+        case DragAndDropSvc::GUEST_DND_GH_EVT_ERROR:
+        {
+            DragAndDropSvc::PVBOXDNDCBEVTERRORDATA pCBData = reinterpret_cast<DragAndDropSvc::PVBOXDNDCBEVTERRORDATA>(pvParms);
+            AssertPtr(pCBData);
+            AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBEVTERRORDATA) == cbParms, VERR_INVALID_PARAMETER);
+            AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
+
+            pCtx->mpResp->reset();
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+            if (RT_SUCCESS(rc))
+                rc = pCBData->rc;
             break;
         }
         case DragAndDropSvc::HOST_DND_HG_SND_DIR:
@@ -916,9 +937,30 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             break;
     }
 
-    if (fNotify)
+    if (RT_FAILURE(rc))
     {
-        int rc2 = pCtx->mCallback.Notify(rc);
+        switch (rc)
+        {
+            case VERR_NO_DATA:
+                LogRel2(("DnD: Transfer complete\n"));
+                break;
+
+            case VERR_CANCELLED:
+                LogRel2(("DnD: Transfer canceled\n"));
+                break;
+
+            default:
+                LogRel(("DnD: Error %Rrc occurred, aborting transfer\n", rc));
+                break;
+        }
+
+        /* Unregister this callback. */
+        AssertPtr(pCtx->mpResp);
+        int rc2 = pCtx->mpResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
+        AssertRC(rc2);
+
+        /* Notify waiters. */
+        rc2 = pCtx->mCallback.Notify(rc);
         AssertRC(rc2);
     }
 

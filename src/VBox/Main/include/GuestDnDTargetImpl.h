@@ -84,6 +84,7 @@ protected:
 
     struct
     {
+        bool     mfTransferIsPending;
         /** Maximum data block size (in bytes) the target can handle. */
         uint32_t mcbBlockSize;
     } mData;

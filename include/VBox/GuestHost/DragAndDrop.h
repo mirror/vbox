@@ -110,7 +110,7 @@ protected:
     RTCString m_strSrcPath;
     RTCString m_strTgtPath;
     /** File mode. */
-    uint64_t  m_fMode;
+    uint32_t  m_fMode;
     /** Size (in bytes) to read/write. */
     uint64_t  m_cbSize;
     /** Bytes processed reading/writing. */

@@ -100,7 +100,6 @@ HRESULT GuestDnDSource::FinalConstruct(void)
     /* Note: Never ever rely on information from the guest; the host dictates what and
      *       how to do something, so try to negogiate a sensible value here later. */
     mData.mcbBlockSize    = _64K; /** @todo Make this configurable. */
-    mData.mfDropIsPending = false;
 
     LogFlowThisFunc(("\n"));
     return BaseFinalConstruct();
@@ -292,23 +291,22 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     ReturnComNotImplemented();
 #else /* VBOX_WITH_DRAG_AND_DROP */
 
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
     /* Input validation. */
     if (RT_UNLIKELY((aFormat.c_str()) == NULL || *(aFormat.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No drop format specified"));
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
     uint32_t uAction = GuestDnD::toHGCMAction(aAction);
-    /* If there is no usable action, ignore this request. */
-    if (isDnDIgnoreAction(uAction))
+    if (isDnDIgnoreAction(uAction)) /* If there is no usable action, ignore this request. */
         return S_OK;
 
     /* Note: At the moment we only support one transfer at a time. */
-    if (ASMAtomicReadBool(&mData.mfDropIsPending))
+    if (ASMAtomicReadBool(&mDataBase.mfTransferIsPending))
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
-    ASMAtomicWriteBool(&mData.mfDropIsPending, true);
+    ASMAtomicWriteBool(&mDataBase.mfTransferIsPending, true);
 
     /* Dito. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
@@ -328,8 +326,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
 
-        RTTHREAD recvThread;
-        int rc = RTThreadCreate(&recvThread, GuestDnDSource::i_receiveDataThread,
+        int rc = RTThreadCreate(NULL, GuestDnDSource::i_receiveDataThread,
                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndSrcRcvData");
         if (RT_SUCCESS(rc))
         {
@@ -346,7 +343,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
         hr = setError(E_OUTOFMEMORY);
     }
 
-    /* Note: mData.mfDropIsPending will be set to false again by i_receiveDataThread. */
+    /* Note: mDataBase.mfTransferIsPending will be set to false again by i_receiveDataThread. */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
@@ -364,8 +361,10 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (ASMAtomicReadBool(&mData.mfDropIsPending))
-        return setError(E_INVALIDARG, tr("Current drop operation still running"));
+    /* Don't allow receiving the actual data until our transfer
+     * actually is complete. */
+    if (ASMAtomicReadBool(&mDataBase.mfTransferIsPending))
+        return setError(E_INVALIDARG, tr("Current drop operation still in progress"));
 
     PRECVDATACTX pCtx = &mData.mRecvCtx;
 
@@ -506,12 +505,14 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
         if (mDataBase.mProtocolVersion <= 2)
         {
             /*
-             * BUG: Protocol v1 does *not* send root directory names in URI format,
-             *      however, if this is a root URI directory (which came with the initial
-             *      GUEST_DND_GH_SND_DATA message(s)) the total data announced was for
-             *      root directory names which came in URI format, as an URI list.
+             * Protocols v1/v2 do *not* send root element names (files/directories)
+             * in URI format. The initial GUEST_DND_GH_SND_DATA message(s) however
+             * did take those element names into account, but *with* URI decoration
+             * when it comes to communicating the total bytes being sent.
              *
-             *      So construct an URI path locally to keep the accounting right.
+             * So translate the path into a valid URI path and add the resulting
+             * length (+ "\r\n" and termination) to the total bytes received
+             * to keep the accounting right.
              */
             char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
                                            pszPath /* pszPath */,
@@ -592,7 +593,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
         if (RT_SUCCESS(rc))
         {
             /** @todo Unescpae path before printing. */
-            LogRel2(("DnD: Transferring file to host: %s\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogRel2(("DnD: Transferring guest file to host: %s\n", pCtx->mURI.objURI.GetDestPath().c_str()));
 
             /* Note: Protocol v1 does not send any file sizes, so always 0. */
             if (mDataBase.mProtocolVersion >= 2)
@@ -603,9 +604,45 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
         }
         else
         {
-            LogRel2(("DnD: Error opening/creating guest file \"%s\" on host, rc=%Rrc\n",
+            LogRel2(("DnD: Error opening/creating guest file '%s' on host, rc=%Rrc\n",
                      pCtx->mURI.objURI.GetDestPath().c_str(), rc));
             break;
+        }
+
+        if (mDataBase.mProtocolVersion <= 2)
+        {
+            /*
+             * Protocols v1/v2 do *not* send root element names (files/directories)
+             * in URI format. The initial GUEST_DND_GH_SND_DATA message(s) however
+             * did take those element names into account, but *with* URI decoration
+             * when it comes to communicating the total bytes being sent.
+             *
+             * So translate the path into a valid URI path and add the resulting
+             * length (+ "\r\n" and termination) to the total bytes received
+             * to keep the accounting right.
+             */
+            char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
+                                           pszPath /* pszPath */,
+                                           NULL /* pszQuery */, NULL /* pszFragment */);
+            if (pszPathURI)
+            {
+                bool fHasPath = RTPathHasPath(pszPath); /* Use original data received. */
+                if (!fHasPath) /* Root path? */
+                {
+                    cbPath  = strlen(pszPathURI);
+                    cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
+
+                    rc = i_updateProcess(pCtx, cbPath);
+                }
+
+                LogFlowFunc(("URI pszPathURI=%s, fHasPath=%RTbool, cbPath=%RU32\n", pszPathURI, fHasPath, cbPath));
+                RTStrFree(pszPathURI);
+            }
+            else
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
         }
 
     } while (0);
@@ -666,7 +703,7 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
             }
         }
         else
-            LogRel(("DnD: Error: Can't write guest file to host to \"%s\": %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+            LogRel(("DnD: Error writing guest file to host to \"%s\": %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
 
     } while (0);
 
@@ -748,13 +785,12 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
     else
         rc = VERR_COM_INVALID_OBJECT_STATE;
 
+    ASMAtomicWriteBool(&pSource->mDataBase.mfTransferIsPending, false);
+
     LogFlowFunc(("pSource=%p returning rc=%Rrc\n", (GuestDnDSource *)pSource, rc));
 
     if (pTask)
         delete pTask;
-
-    ASMAtomicWriteBool(&pSource->mData.mfDropIsPending, false);
-
     return rc;
 }
 
@@ -938,7 +974,6 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
     int rc = VINF_SUCCESS;
-    bool fNotify = false;
 
     switch (uMsg)
     {
@@ -973,9 +1008,6 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
     }
 
     if (RT_FAILURE(rc))
-        fNotify = true;
-
-    if (fNotify)
     {
         int rc2 = pCtx->mCallback.Notify(rc);
         AssertRC(rc2);

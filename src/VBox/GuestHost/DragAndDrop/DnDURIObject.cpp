@@ -194,7 +194,7 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                      * where the OS writes to the file while the destination side transfers
                      * it over. */
                     rc = RTFileOpen(&u.m_hFile, strPath.c_str(), fOpen);
-                    LogFlowFunc(("Opening file \"%s\", rc=%Rrc\n", strPath.c_str(), rc));
+                    LogFlowFunc(("strPath=%s, enmType=%ld, enmDest=%ld, rc=%Rrc\n", strPath.c_str(), enmType, enmDest, rc));
                     if (RT_SUCCESS(rc))
                         rc = RTFileGetSize(u.m_hFile, &m_cbSize);
                     if (RT_SUCCESS(rc))
@@ -219,7 +219,6 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
     if (RT_SUCCESS(rc))
         m_Type = enmType;
 
-    LogFlowFunc(("strPath=%s, enmType=%ld, enmDest=%ld, rc=%Rrc\n", strPath.c_str(), enmType, enmDest, rc));
     return rc;
 }
 

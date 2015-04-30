@@ -286,6 +286,7 @@ static int vbglR3DnDHGProcessSendFileMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
         }
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

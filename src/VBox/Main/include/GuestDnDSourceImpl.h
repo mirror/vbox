@@ -92,9 +92,6 @@ protected:
 
     struct
     {
-        /** Flag indicating whether a drop operation currently
-         *  is in progress or not. */
-        bool        mfDropIsPending;
         /** Maximum data block size (in bytes) the source can handle. */
         uint32_t    mcbBlockSize;
         /** The context for receiving data from the guest. */
