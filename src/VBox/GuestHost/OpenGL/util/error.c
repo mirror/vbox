@@ -156,7 +156,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         {
             int rc;
             rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE); CRASSERT(rc);
+# ifdef IN_GUEST
             rc = VbglR3Init();
+# endif
             LogRel(("crUtill DLL loaded.\n"));
 # if defined(DEBUG_misha)
             char aName[MAX_PATH];
@@ -169,7 +171,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         case DLL_PROCESS_DETACH:
         {
             LogRel(("crUtill DLL unloaded."));
+# ifdef IN_GUEST
             VbglR3Term();
+# endif
         }
 
         default:
