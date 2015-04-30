@@ -975,15 +975,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Default Start</source>
+        <source>&amp;Normal Start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>S&amp;eparate Start</source>
+        <source>&amp;Headless Start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Start the selected virtual machines with detachable GUI</source>
+        <source>Start the selected virtual machines in the background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Detachable Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machines with the option of continuing them in the background</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4387,10 +4395,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4467,6 +4471,10 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6616,7 +6624,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំណែ​ថ្មី​របស់ VirtualBox ត្រូវ​បាន​ចេញ​ផ្សាយ ! គឺ​កំណែ &lt;b&gt;%1&lt;/b&gt; ដែលអាច​រក​បាន​នៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ទាញ​យក​កំណែ​នេះ​ពី​តំណ​នេះ​ដោយ​ផ្ទាល់ ៖&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;កំណែ​ថ្មី​របស់ VirtualBox ត្រូវ​បាន​ចេញ​ផ្សាយ ! គឺ​កំណែ &lt;b&gt;%1&lt;/b&gt; ដែលអាច​រក​បាន​នៅ &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ទាញ​យក​កំណែ​នេះ​ពី​តំណ​នេះ​ដោយ​ផ្ទាល់ ៖&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -6700,7 +6708,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​បាន​កើត​ឡើង​ខណៈពេល​កំពុង​រត់​ម៉ាស៊ីននិម្មិត ហើយ​ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​ត្រូ​វបានបញ្ឈប់ ។&lt;/p&gt;&lt;p&gt;ចំពោះ​ជំនួយ សូមមើល​ផ្នែក​សហគមន៍​នៅ​លើ &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ឬ​កិច្ចសន្យា​គាំទ្រ​របស់​អ្នក ។ សូម​ផ្ដល់​នូវ​ខ្លឹមសារ​របស់​ឯកសារ​កំណត់ហេតុ &lt;tt&gt;VBox.log&lt;/tt&gt; ហើយ​នឹង​ឯកសារ​រូបភាព &lt;tt&gt;VBox.png&lt;/tt&gt; ដែល​អ្នក​អាច​រក​បាន​នៅ​ក្នុង​ថត &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ព្រមទាំង​សេចក្ដីពិពណ៌នា​នូវ​អ្វីដែល​អ្នក​កំពុង​ធ្វើ នៅពេល​កំហុស​កើត​ឡើង ។ ចំណាំ​ថា អ្នក​ក៏អាច​ចូលដំណើរការ​ឯកសារ​ខាង​លើ ដោយ​ជ្រើស &lt;b&gt;បង្ហាញ​កំណត់​ហេតុ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ម៉ាស៊ីន&lt;/b&gt; របស់​បង្អួច VirtualBox មេ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ប្រសិនបើ​​អ្នក​ចង់​បិទ​ម៉ាស៊ីន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ប្រសិន​បើ​អ្នក​ទុក​វា​សម្រាប់បំបាត់​កំហុស ។ សូម​ចំណាំថា​កា​របំបាត់​កំហុស​ទាមទារចំណេះដឹង និង​កម្មវិធី​ពិសេស ដូច្នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​ឲ្យ​ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ឥឡូវ ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;កំហុស​ធ្ងន់ធ្ងរ​បាន​កើត​ឡើង​ខណៈពេល​កំពុង​រត់​ម៉ាស៊ីននិម្មិត ហើយ​ការ​ប្រតិបត្តិ​ម៉ាស៊ីន​ត្រូ​វបានបញ្ឈប់ ។&lt;/p&gt;&lt;p&gt;ចំពោះ​ជំនួយ សូមមើល​ផ្នែក​សហគមន៍​នៅ​លើ &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; ឬ​កិច្ចសន្យា​គាំទ្រ​របស់​អ្នក ។ សូម​ផ្ដល់​នូវ​ខ្លឹមសារ​របស់​ឯកសារ​កំណត់ហេតុ &lt;tt&gt;VBox.log&lt;/tt&gt; ហើយ​នឹង​ឯកសារ​រូបភាព &lt;tt&gt;VBox.png&lt;/tt&gt; ដែល​អ្នក​អាច​រក​បាន​នៅ​ក្នុង​ថត &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ព្រមទាំង​សេចក្ដីពិពណ៌នា​នូវ​អ្វីដែល​អ្នក​កំពុង​ធ្វើ នៅពេល​កំហុស​កើត​ឡើង ។ ចំណាំ​ថា អ្នក​ក៏អាច​ចូលដំណើរការ​ឯកសារ​ខាង​លើ ដោយ​ជ្រើស &lt;b&gt;បង្ហាញ​កំណត់​ហេតុ&lt;/b&gt; ពី​ម៉ឺនុយ &lt;b&gt;ម៉ាស៊ីន&lt;/b&gt; របស់​បង្អួច VirtualBox មេ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ប្រសិនបើ​​អ្នក​ចង់​បិទ​ម៉ាស៊ីន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ប្រសិន​បើ​អ្នក​ទុក​វា​សម្រាប់បំបាត់​កំហុស ។ សូម​ចំណាំថា​កា​របំបាត់​កំហុស​ទាមទារចំណេះដឹង និង​កម្មវិធី​ពិសេស ដូច្នេះ​ត្រូវ​បានផ្ដល់​អនុសាសន៍​ឲ្យ​ចុច &lt;b&gt;យល់ព្រម&lt;/b&gt; ឥឡូវ ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
@@ -7704,10 +7712,6 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -7717,10 +7721,6 @@ medium</comment>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to enter password!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7737,6 +7737,22 @@ medium</comment>
     </message>
     <message>
         <source>Unable to cancel drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bad password or authentication failure.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8449,11 +8465,15 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;h3&gt;សូមស្វាគមន៍​​មក​កាន់ VirtualBox !&lt;/h3&gt;&lt;p&gt;ផ្នែកដែល​នៅ​សល់​របស់​បង្អួច​នេះ គឺជា​បញ្ជី​ម៉ាស៊ីន​និម្មិត​នៅ​ក្នុង​កុំព្យូទ័រ​របស់​អ្នក ។ បញ្ជី​ទទេ​ឥឡូវ​នេះ ពីព្រោះ​អ្នកមិនបានបង្កើត​ម៉ាស៊ីននិម្មិត​នៅ​ឡើយ​ទេ ។&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;ដើម្បី​បង្កើត​ម៉ាស៊ីន​និម្មិត ចុច​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ក្នុង​របារ​ឧបករណ៍​ដែល​មាននៅ​​ផ្នែក​ខាង​លើ​នៃ​បង្អួច ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច​គ្រាប់ចុច &lt;b&gt;%1&lt;/b&gt; ដើម្បីទទួល​បាន​ជំនួយ​ភ្លាមៗ ឬ​ចំពោះ​ព័ត៌មាន​បន្ថែម ​សូម​មើល &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; ។&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;h3&gt;សូមស្វាគមន៍​​មក​កាន់ VirtualBox !&lt;/h3&gt;&lt;p&gt;ផ្នែកដែល​នៅ​សល់​របស់​បង្អួច​នេះ គឺជា​បញ្ជី​ម៉ាស៊ីន​និម្មិត​នៅ​ក្នុង​កុំព្យូទ័រ​របស់​អ្នក ។ បញ្ជី​ទទេ​ឥឡូវ​នេះ ពីព្រោះ​អ្នកមិនបានបង្កើត​ម៉ាស៊ីននិម្មិត​នៅ​ឡើយ​ទេ ។&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;ដើម្បី​បង្កើត​ម៉ាស៊ីន​និម្មិត ចុច​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ក្នុង​របារ​ឧបករណ៍​ដែល​មាននៅ​​ផ្នែក​ខាង​លើ​នៃ​បង្អួច ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច​គ្រាប់ចុច &lt;b&gt;%1&lt;/b&gt; ដើម្បីទទួល​បាន​ជំនួយ​ភ្លាមៗ ឬ​ចំពោះ​ព័ត៌មាន​បន្ថែម ​សូម​មើល &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8484,7 +8504,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">កំណត់</translation>
+        <translation type="obsolete">កំណត់</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
@@ -8536,6 +8556,10 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>Display</source>
         <translation type="unfinished">បង្ហាញ​</translation>
+    </message>
+    <message>
+        <source>Preferences</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8599,6 +8623,10 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     <message>
         <source>User Interface</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings</source>
+        <translation type="unfinished">កំណត់</translation>
     </message>
 </context>
 <context>
