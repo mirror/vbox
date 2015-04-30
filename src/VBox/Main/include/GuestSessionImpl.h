@@ -413,8 +413,8 @@ public:
     int                     i_fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
     int                     i_fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize, int *pGuestRc);
     int                     i_fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
-    const GuestCredentials  &i_getCredentials(void);
-    const GuestEnvironment  &i_getEnvironment(void);
+    const GuestCredentials &i_getCredentials(void);
+    const GuestEnvironment &i_getEnvironment(void);
     EventSource            *i_getEventSource(void) { return mEventSource; }
     Utf8Str                 i_getName(void);
     ULONG                   i_getId(void) { return mData.mSession.mID; }
