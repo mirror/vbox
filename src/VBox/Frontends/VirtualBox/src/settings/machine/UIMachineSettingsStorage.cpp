@@ -865,6 +865,11 @@ QString AttachmentItem::attUsage() const
     return mAttUsage;
 }
 
+QString AttachmentItem::attEncryptionPasswordID() const
+{
+    return m_strAttEncryptionPasswordID;
+}
+
 void AttachmentItem::cache()
 {
     UIMedium medium = vboxGlobal().medium(mAttMediumId);
@@ -879,6 +884,7 @@ void AttachmentItem::cache()
     mAttSize = medium.size (true);
     mAttLogicalSize = medium.logicalSize (true);
     mAttLocation = medium.location (true);
+    m_strAttEncryptionPasswordID = QString("--");
     if (medium.isNull())
     {
         mAttFormat = QString("--");
@@ -891,6 +897,9 @@ void AttachmentItem::cache()
             {
                 mAttFormat = QString("%1 (%2)").arg(medium.hardDiskType(true)).arg(medium.hardDiskFormat(true));
                 mAttDetails = medium.storageDetails();
+                const QString strAttEncryptionPasswordID = medium.encryptionPasswordID();
+                if (!strAttEncryptionPasswordID.isNull())
+                    m_strAttEncryptionPasswordID = strAttEncryptionPasswordID;
                 break;
             }
             case KDeviceType_DVD:
@@ -1374,6 +1383,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                     return static_cast <AttachmentItem*> (item)->attUsage();
+            return QString();
+        }
+        case R_AttEncryptionPasswordID:
+        {
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(aIndex.internalPointer()))
+                if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
+                    return static_cast<AttachmentItem*>(pItem)->attEncryptionPasswordID();
             return QString();
         }
         case R_Margin:
@@ -2021,6 +2037,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbHDDetailsValue->setFullSizeSelection (true);
     mLbLocationValue->setFullSizeSelection (true);
     mLbUsageValue->setFullSizeSelection (true);
+    m_pLabelEncryptionValue->setFullSizeSelection(true);
 
     /* Setup connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
@@ -2780,6 +2797,7 @@ void UIMachineSettingsStorage::getInformation()
                 mLbHDDetailsValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttDetails).toString()));
                 mLbLocationValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttLocation).toString()));
                 mLbUsageValue->setText (compressText (mStorageModel->data (index, StorageModel::R_AttUsage).toString()));
+                m_pLabelEncryptionValue->setText(compressText(mStorageModel->data(index, StorageModel::R_AttEncryptionPasswordID).toString()));
 
                 /* Showing Attachment Page */
                 mSwRightPane->setCurrentIndex (2);
@@ -3964,6 +3982,8 @@ void UIMachineSettingsStorage::polishPage()
     mLbLocationValue->setEnabled(isMachineInValidMode());
     mLbUsage->setEnabled(isMachineInValidMode());
     mLbUsageValue->setEnabled(isMachineInValidMode());
+    m_pLabelEncryption->setEnabled(isMachineInValidMode());
+    m_pLabelEncryptionValue->setEnabled(isMachineInValidMode());
 
     /* Update action states: */
     updateActionsState();

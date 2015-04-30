@@ -139,6 +139,8 @@ public:
 
     /** Returns QString <i>storage details</i> of the wrapped UIMedium. */
     QString details() const { return m_medium.storageDetails(); }
+    /** Returns QString <i>encryption password ID</i> of the wrapped UIMedium. */
+    QString encryptionPasswordID() const { return m_medium.encryptionPasswordID(); }
 
     /** Returns QString <i>tool-tip</i> of the wrapped UIMedium. */
     QString toolTip() const { return m_medium.toolTip(); }
@@ -1204,7 +1206,7 @@ void UIMediumManager::prepareTab(UIMediumType type)
             /* Prepare tree-widget: */
             prepareTreeWidget(type, type == UIMediumType_HardDisk ? 3 : 2);
             /* Prepare information-container: */
-            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 6 : 3);
+            prepareInformationContainer(type, type == UIMediumType_HardDisk ? 7 : 3);
         }
     }
 }
@@ -1609,10 +1611,13 @@ void UIMediumManager::updateInformationFieldsHD()
     else
     {
         /* Acquire required details: */
-        QString strDetails = pCurrentItem->details();
-        QString strUsage = pCurrentItem->usage().isNull() ?
-                           formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
-                           formatFieldText(pCurrentItem->usage());
+        const QString strDetails = pCurrentItem->details();
+        const QString strUsage = pCurrentItem->usage().isNull() ?
+                                 formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Attached</i>"), false) :
+                                 formatFieldText(pCurrentItem->usage());
+        const QString strEncryptionPasswordID = pCurrentItem->encryptionPasswordID().isNull() ?
+                                                formatFieldText(QApplication::translate("VBoxMediaManagerDlg", "<i>Not&nbsp;Encrypted</i>"), false) :
+                                                formatFieldText(pCurrentItem->encryptionPasswordID());
         const QString strID = pCurrentItem->id();
         if (infoField(UIMediumType_HardDisk, 0))
             infoField(UIMediumType_HardDisk, 0)->setText(pCurrentItem->hardDiskType());
@@ -1625,7 +1630,9 @@ void UIMediumManager::updateInformationFieldsHD()
         if (infoField(UIMediumType_HardDisk, 4))
             infoField(UIMediumType_HardDisk, 4)->setText(strUsage);
         if (infoField(UIMediumType_HardDisk, 5))
-            infoField(UIMediumType_HardDisk, 5)->setText(strID);
+            infoField(UIMediumType_HardDisk, 5)->setText(strEncryptionPasswordID);
+        if (infoField(UIMediumType_HardDisk, 6))
+            infoField(UIMediumType_HardDisk, 6)->setText(strID);
     }
 
     /* Enable/disable information-panes container: */
@@ -1802,7 +1809,9 @@ void UIMediumManager::retranslateUi()
     if (infoLabel(UIMediumType_HardDisk, 4))
         infoLabel(UIMediumType_HardDisk, 4)->setText(QApplication::translate("VBoxMediaManagerDlg", "Attached to:"));
     if (infoLabel(UIMediumType_HardDisk, 5))
-        infoLabel(UIMediumType_HardDisk, 5)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
+        infoLabel(UIMediumType_HardDisk, 5)->setText(QApplication::translate("VBoxMediaManagerDlg", "Encrypted with key:"));
+    if (infoLabel(UIMediumType_HardDisk, 6))
+        infoLabel(UIMediumType_HardDisk, 6)->setText(QApplication::translate("VBoxMediaManagerDlg", "UUID:"));
 
     /* Translate CD tree-widget: */
     QTreeWidget *pTreeWidgetCD = treeWidget(UIMediumType_DVD);

@@ -373,6 +373,7 @@ public:
     QString attFormat() const;
     QString attDetails() const;
     QString attUsage() const;
+    QString attEncryptionPasswordID() const;
 
 private:
 
@@ -410,6 +411,7 @@ private:
     QString mAttFormat;
     QString mAttDetails;
     QString mAttUsage;
+    QString m_strAttEncryptionPasswordID;
 };
 
 /* Storage Model */
@@ -464,6 +466,7 @@ public:
         R_AttFormat,
         R_AttDetails,
         R_AttUsage,
+        R_AttEncryptionPasswordID,
 
         R_Margin,
         R_Spacing,

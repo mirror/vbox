@@ -570,7 +570,27 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="0" colspan="3" >
+        <item row="12" column="1">
+         <widget class="QLabel" name="m_pLabelEncryption">
+          <property name="text">
+           <string>Encrypted with key:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="2">
+         <widget class="QILabel" name="m_pLabelEncryptionValue">
+          <property name="sizePolicy">
+           <sizepolicy vsizetype="Preferred" hsizetype="Ignored">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0" colspan="3" >
          <spacer name="mSp6" >
           <property name="orientation" >
            <enum>Qt::Vertical</enum>
