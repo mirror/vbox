@@ -256,6 +256,7 @@ int UIDnDHandler::dragIsPending(CSession &session, CDnDSource &dndSource,
     else /* No format data from the guest arrived yet. */
         rc = VERR_NO_DATA;
 #else /* !VBOX_WITH_DRAG_AND_DROP_GH */
+    NOREF(dndSource);
     NOREF(session);
     NOREF(screenId);
     NOREF(pParent);
