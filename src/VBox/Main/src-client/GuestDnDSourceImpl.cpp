@@ -228,10 +228,8 @@ HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
 // implementation of wrapped IDnDTarget methods.
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
-                                      std::vector<com::Utf8Str> &aFormats,
-                                      std::vector<DnDAction_T> &aAllowedActions,
-                                      DnDAction_T *aDefaultAction)
+HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str> &aFormats,
+                                      std::vector<DnDAction_T> &aAllowedActions, DnDAction_T *aDefaultAction)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -281,15 +279,14 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId,
 
     if (RT_FAILURE(rc))
         hr = setError(VBOX_E_IPRT_ERROR,
-                      tr("Error retrieving drag'n drop pending status (%Rrc)\n"), rc);
+                      tr("Error retrieving drag and drop pending status (%Rrc)\n"), rc);
 
     LogFlowFunc(("hr=%Rhrc, defaultAction=0x%x\n", hr, defaultAction));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat,
-                             DnDAction_T aAction, ComPtr<IProgress> &aProgress)
+HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, ComPtr<IProgress> &aProgress)
 {
 #if !defined(VBOX_WITH_DRAG_AND_DROP) || !defined(VBOX_WITH_DRAG_AND_DROP_GH)
     ReturnComNotImplemented();
@@ -307,50 +304,49 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat,
     if (isDnDIgnoreAction(uAction))
         return S_OK;
 
+    /* Note: At the moment we only support one transfer at a time. */
     if (ASMAtomicReadBool(&mData.mfDropIsPending))
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
     ASMAtomicWriteBool(&mData.mfDropIsPending, true);
 
-    HRESULT hr = S_OK;
-
-    /* Note: At the moment we only support one response at a time. */
+    /* Dito. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
-    if (pResp)
+    AssertPtr(pResp);
+
+    HRESULT hr = pResp->resetProgress(m_pGuest);
+    if (FAILED(hr))
+        return hr;
+
+    try
     {
-        pResp->resetProgress(m_pGuest);
+        mData.mRecvCtx.mIsActive = false;
+        mData.mRecvCtx.mpSource  = this;
+        mData.mRecvCtx.mpResp    = pResp;
+        mData.mRecvCtx.mFormat   = aFormat;
 
-        int rc;
+        RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
+        AssertReturn(pTask->isOk(), pTask->getRC());
 
-        try
-        {
-            mData.mRecvCtx.mpSource = this;
-            mData.mRecvCtx.mpResp   = pResp;
-            mData.mRecvCtx.mFormat  = aFormat;
-
-            RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
-            AssertReturn(pTask->isOk(), pTask->getRC());
-
-            rc = RTThreadCreate(NULL, GuestDnDSource::i_receiveDataThread,
+        RTTHREAD recvThread;
+        int rc = RTThreadCreate(&recvThread, GuestDnDSource::i_receiveDataThread,
                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndSrcRcvData");
-            if (RT_SUCCESS(rc))
-            {
-                hr = pResp->queryProgressTo(aProgress.asOutParam());
-                ComAssertComRC(hr);
-
-                /* Note: pTask is now owned by the worker thread. */
-            }
-        }
-        catch(std::bad_alloc &)
+        if (RT_SUCCESS(rc))
         {
-            rc = VERR_NO_MEMORY;
+            hr = pResp->queryProgressTo(aProgress.asOutParam());
+            ComAssertComRC(hr);
+
+            /* Note: pTask is now owned by the worker thread. */
         }
-
-        /*if (RT_FAILURE(vrc)) @todo SetError(...) */
+        else
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread failed (%Rrc)"), rc);
     }
-    /** @todo SetError(...) */
+    catch(std::bad_alloc &)
+    {
+        hr = setError(E_OUTOFMEMORY);
+    }
 
-    ASMAtomicWriteBool(&mData.mfDropIsPending, false);
+    /* Note: mData.mfDropIsPending will be set to false again by i_receiveDataThread. */
 
     LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
@@ -679,7 +675,7 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
 }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
 
-int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx)
+int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -690,39 +686,40 @@ int GuestDnDSource::i_receiveData(PRECVDATACTX pCtx)
     GuestDnDResponse *pResp = pCtx->mpResp;
     AssertPtr(pCtx->mpResp);
 
+    /* Is this context already in receiving state? */
+    if (ASMAtomicReadBool(&pCtx->mIsActive))
+        return VERR_WRONG_ORDER;
+
     ASMAtomicWriteBool(&pCtx->mIsActive, true);
 
     int rc = pCtx->mCallback.Reset();
     if (RT_FAILURE(rc))
         return rc;
 
+    /*
+     * Reset any old data.
+     */
     pCtx->mData.vecData.clear();
     pCtx->mData.cbToProcess = 0;
     pCtx->mData.cbProcessed = 0;
 
-    do
+    pResp->reset();
+    pResp->resetProgress(m_pGuest);
+
+    /* Set the format we are going to retrieve to have it around
+     * when retrieving the data later. */
+    pResp->setFormat(pCtx->mFormat);
+
+    bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
+    LogFlowFunc(("strFormat=%s, uAction=0x%x, fHasURIList=%RTbool\n", pCtx->mFormat.c_str(), pCtx->mAction, fHasURIList));
+    if (fHasURIList)
     {
-        /* Reset any old data. */
-        pResp->reset();
-        pResp->resetProgress(m_pGuest);
-
-        /* Set the format we are going to retrieve to have it around
-         * when retrieving the data later. */
-        pResp->setFormat(pCtx->mFormat);
-
-        bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
-        LogFlowFunc(("strFormat=%s, uAction=0x%x, fHasURIList=%RTbool\n", pCtx->mFormat.c_str(), pCtx->mAction, fHasURIList));
-
-        if (fHasURIList)
-        {
-            rc = i_receiveURIData(pCtx);
-        }
-        else
-        {
-            rc = i_receiveRawData(pCtx);
-        }
-
-    } while (0);
+        rc = i_receiveURIData(pCtx, msTimeout);
+    }
+    else
+    {
+        rc = i_receiveRawData(pCtx, msTimeout);
+    }
 
     ASMAtomicWriteBool(&pCtx->mIsActive, false);
 
@@ -746,7 +743,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
     AutoCaller autoCaller(pSource);
     if (SUCCEEDED(autoCaller.rc()))
     {
-        rc = pSource->i_receiveData(pTask->getCtx());
+        rc = pSource->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT);
     }
     else
         rc = VERR_COM_INVALID_OBJECT_STATE;
@@ -755,10 +752,13 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
 
     if (pTask)
         delete pTask;
+
+    ASMAtomicWriteBool(&pSource->mData.mfDropIsPending, false);
+
     return rc;
 }
 
-int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx)
+int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -806,8 +806,8 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx)
              * Wait until our callback i_receiveRawDataCallback triggered the
              * wait event.
              */
-            LogFlowFunc(("Waiting for raw data callback ...\n"));
-            rc = pCtx->mCallback.Wait(RT_INDEFINITE_WAIT);
+            LogFlowFunc(("Waiting for raw data callback (%RU32ms timeout) ...\n", msTimeout));
+            rc = pCtx->mCallback.Wait(msTimeout);
             LogFlowFunc(("Raw callback done, rc=%Rrc\n", rc));
         }
 
@@ -826,7 +826,7 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx)
     return rc;
 }
 
-int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx)
+int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -887,8 +887,8 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx)
              * Wait until our callback i_receiveURIDataCallback triggered the
              * wait event.
              */
-            LogFlowFunc(("Waiting for URI callback ...\n"));
-            rc = pCtx->mCallback.Wait(RT_INDEFINITE_WAIT);
+            LogFlowFunc(("Waiting for URI callback (%RU32ms timeout) ...\n", msTimeout));
+            rc = pCtx->mCallback.Wait(msTimeout);
             LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
         }
 

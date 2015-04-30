@@ -412,8 +412,21 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBHGREQDATADATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_HG_REQ_DATA == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            setFormat(pCBData->pszFormat);
-            rc = notifyAboutGuestResponse();
+            if (   pCBData->cbFormat == 0
+                || pCBData->cbFormat >  _64K)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                setFormat(pCBData->pszFormat);
+
+                rc = VINF_SUCCESS;
+            }
+
+            int rc2 = notifyAboutGuestResponse();
+            if (RT_SUCCESS(rc))
+                rc = rc2;
             break;
         }
 
@@ -439,11 +452,23 @@ int GuestDnDResponse::onDispatch(uint32_t u32Function, void *pvParms, uint32_t c
             AssertReturn(sizeof(DragAndDropSvc::VBOXDNDCBGHACKPENDINGDATA) == cbParms, VERR_INVALID_PARAMETER);
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_ACK_PENDING == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
-            setFormat    (pCBData->pszFormat);
-            setDefAction (pCBData->uDefAction);
-            setAllActions(pCBData->uAllActions);
+            if (   pCBData->cbFormat == 0
+                || pCBData->cbFormat >  _64K)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                setFormat    (pCBData->pszFormat);
+                setDefAction (pCBData->uDefAction);
+                setAllActions(pCBData->uAllActions);
 
-            rc = notifyAboutGuestResponse();
+                rc = VINF_SUCCESS;
+            }
+
+            int rc2 = notifyAboutGuestResponse();
+            if (RT_SUCCESS(rc))
+                rc = rc2;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */

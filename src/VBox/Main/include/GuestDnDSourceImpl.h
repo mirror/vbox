@@ -83,9 +83,9 @@ protected:
 
 protected:
 
-    int i_receiveData(PRECVDATACTX pCtx);
-    int i_receiveRawData(PRECVDATACTX pCtx);
-    int i_receiveURIData(PRECVDATACTX pCtx);
+    int i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
+    int i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd);
 
 protected:

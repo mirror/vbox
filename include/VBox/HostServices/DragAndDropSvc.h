@@ -606,115 +606,117 @@ enum
 typedef struct VBOXDNDCBHEADERDATA
 {
     /** Magic number to identify the structure. */
-    uint32_t u32Magic;
+    uint32_t                    u32Magic;
     /** Context ID to identify callback data. */
-    uint32_t u32ContextID;
+    uint32_t                    u32ContextID;
 } VBOXDNDCBHEADERDATA, *PVBOXDNDCBHEADERDATA;
 
 typedef struct VBOXDNDCBHGGETNEXTHOSTMSG
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    uint32_t uMsg;
-    uint32_t cParms;
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uMsg;
+    uint32_t                    cParms;
 } VBOXDNDCBHGGETNEXTHOSTMSG, *PVBOXDNDCBHGGETNEXTHOSTMSG;
 
 typedef struct VBOXDNDCBHGGETNEXTHOSTMSGDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    uint32_t uMsg;
-    uint32_t cParms;
-    PVBOXHGCMSVCPARM paParms;
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uMsg;
+    uint32_t                    cParms;
+    PVBOXHGCMSVCPARM            paParms;
 } VBOXDNDCBHGGETNEXTHOSTMSGDATA, *PVBOXDNDCBHGGETNEXTHOSTMSGDATA;
 
 typedef struct VBOXDNDCBHGACKOPDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    uint32_t uAction;
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uAction;
 } VBOXDNDCBHGACKOPDATA, *PVBOXDNDCBHGACKOPDATA;
 
 typedef struct VBOXDNDCBHGREQDATADATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    char *pszFormat;
+    VBOXDNDCBHEADERDATA         hdr;
+    char                       *pszFormat;
+    uint32_t                    cbFormat;
 } VBOXDNDCBHGREQDATADATA, *PVBOXDNDCBHGREQDATADATA;
 
 typedef struct VBOXDNDCBHGEVTPROGRESSDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    uint32_t uPercentage;
-    uint32_t uStatus;
-    uint32_t rc;
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uPercentage;
+    uint32_t                    uStatus;
+    uint32_t                    rc;
 } VBOXDNDCBHGEVTPROGRESSDATA, *PVBOXDNDCBHGEVTPROGRESSDATA;
 
 typedef struct VBOXDNDCBGHACKPENDINGDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    uint32_t  uDefAction;
-    uint32_t  uAllActions;
-    char     *pszFormat;
+    VBOXDNDCBHEADERDATA         hdr;
+    uint32_t                    uDefAction;
+    uint32_t                    uAllActions;
+    char                       *pszFormat;
+    uint32_t                    cbFormat;
 } VBOXDNDCBGHACKPENDINGDATA, *PVBOXDNDCBGHACKPENDINGDATA;
 
 typedef struct VBOXDNDCBSNDDATADATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    void     *pvData;
-    uint32_t  cbData;
+    VBOXDNDCBHEADERDATA         hdr;
+    void                       *pvData;
+    uint32_t                    cbData;
     /** Total metadata size (in bytes). This is transmitted
      *  with every message because the size can change. */
-    uint32_t  cbTotalSize;
+    uint32_t                    cbTotalSize;
 } VBOXDNDCBSNDDATADATA, *PVBOXDNDCBSNDDATADATA;
 
 typedef struct VBOXDNDCBSNDDIRDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    char     *pszPath;
-    uint32_t  cbPath;
-    uint32_t  fMode;
+    VBOXDNDCBHEADERDATA         hdr;
+    char                       *pszPath;
+    uint32_t                    cbPath;
+    uint32_t                    fMode;
 } VBOXDNDCBSNDDIRDATA, *PVBOXDNDCBSNDDIRDATA;
 
 /*  Note: Only for protocol version 2 and up (>= VBox 5.0). */
 typedef struct VBOXDNDCBSNDFILEHDRDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
+    VBOXDNDCBHEADERDATA         hdr;
     /** File path (name). */
-    char     *pszFilePath;
+    char                       *pszFilePath;
     /** Size (in bytes) of file path. */
-    uint32_t  cbFilePath;
+    uint32_t                    cbFilePath;
     /** Total size (in bytes) of this file. */
-    uint64_t  cbSize;
+    uint64_t                    cbSize;
     /** File (creation) mode. */
-    uint32_t  fMode;
+    uint32_t                    fMode;
     /** Additional flags. Not used at the moment. */
-    uint32_t  fFlags;
+    uint32_t                    fFlags;
 } VBOXDNDCBSNDFILEHDRDATA, *PVBOXDNDCBSNDFILEHDRDATA;
 
 typedef struct VBOXDNDCBSNDFILEDATADATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA  hdr;
+    VBOXDNDCBHEADERDATA         hdr;
     /** Current file data chunk. */
-    void                *pvData;
+    void                       *pvData;
     /** Size (in bytes) of current data chunk. */
-    uint32_t             cbData;
+    uint32_t                    cbData;
     union
     {
         struct
         {
             /** File path (name). */
-            char     *pszFilePath;
+            char               *pszFilePath;
             /** Size (in bytes) of file path. */
-            uint32_t  cbFilePath;
+            uint32_t            cbFilePath;
             /** File (creation) mode. */
-            uint32_t  fMode;
+            uint32_t            fMode;
         } v1;
         /* Note: Protocol version 2 has the file attributes (name, size,
                  mode, ...) in the VBOXDNDCBSNDFILEHDRDATA structure. */
@@ -724,8 +726,8 @@ typedef struct VBOXDNDCBSNDFILEDATADATA
 typedef struct VBOXDNDCBEVTERRORDATA
 {
     /** Callback data header. */
-    VBOXDNDCBHEADERDATA hdr;
-    int32_t rc;
+    VBOXDNDCBHEADERDATA         hdr;
+    int32_t                     rc;
 } VBOXDNDCBEVTERRORDATA, *PVBOXDNDCBEVTERRORDATA;
 
 } /* namespace DragAndDropSvc */

@@ -150,7 +150,7 @@ int UIDnDDrag::RetrieveData(const CSession &session,
      * from the source and display a moddal progress dialog while doing this. */
     CProgress progress = dndSource.Drop(strMimeType,
                                         UIDnDHandler::toVBoxDnDAction(dropAction));
-    if (guest.isOk())
+    if (dndSource.isOk())
     {
         msgCenter().showModalProgressDialog(progress,
                                             tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
@@ -200,14 +200,14 @@ int UIDnDDrag::RetrieveData(const CSession &session,
                     rc = VERR_NO_DATA;
             }
             else
-                msgCenter().cannotDropData(progress, pParent);
+                msgCenter().cannotDropDataToHost(progress, pParent);
         }
         else /* Don't pop up a message. */
             rc = VERR_CANCELLED;
     }
     else
     {
-        msgCenter().cannotDropData(guest, pParent);
+        msgCenter().cannotDropDataToHost(dndSource, pParent);
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge; do a GetResultCode() to rc translation. */
     }
 

@@ -21,7 +21,6 @@
 *******************************************************************************/
 #include "GuestImpl.h"
 #include "GuestDnDTargetImpl.h"
-#include "VirtualBoxErrorInfoImpl.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
@@ -527,50 +526,50 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT hr = S_OK;
-    int vrc;
-
     /* Note: At the moment we only support one response at a time. */
     GuestDnDResponse *pResp = GuestDnDInst()->response();
-    if (pResp)
+    AssertPtr(pResp);
+
+    HRESULT hr = pResp->resetProgress(m_pGuest);
+    if (FAILED(hr))
+        return hr;
+
+    try
     {
-        pResp->resetProgress(m_pGuest);
+        PSENDDATACTX pSendCtx = new SENDDATACTX;
+        RT_BZERO(pSendCtx, sizeof(SENDDATACTX));
 
-        try
+        pSendCtx->mpTarget      = this;
+        pSendCtx->mpResp        = pResp;
+        pSendCtx->mScreenID     = aScreenId;
+        pSendCtx->mFormat       = aFormat;
+        pSendCtx->mData.vecData = aData;
+
+        SendDataTask *pTask = new SendDataTask(this, pSendCtx);
+        AssertReturn(pTask->isOk(), pTask->getRC());
+
+        RTTHREAD sendThread;
+        int rc = RTThreadCreate(&sendThread, GuestDnDTarget::i_sendDataThread,
+                                (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
+        if (RT_SUCCESS(rc))
         {
-            PSENDDATACTX pSendCtx = new SENDDATACTX;
-            RT_BZERO(pSendCtx, sizeof(SENDDATACTX));
+            hr = pResp->queryProgressTo(aProgress.asOutParam());
+            ComAssertComRC(hr);
 
-            pSendCtx->mpTarget      = this;
-            pSendCtx->mpResp        = pResp;
-            pSendCtx->mScreenID     = aScreenId;
-            pSendCtx->mFormat       = aFormat;
-            pSendCtx->mData.vecData = aData;
-
-            SendDataTask *pTask = new SendDataTask(this, pSendCtx);
-            AssertReturn(pTask->isOk(), pTask->getRC());
-
-            vrc = RTThreadCreate(NULL, GuestDnDTarget::i_sendDataThread,
-                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
-            if (RT_SUCCESS(vrc))
-            {
-                hr = pResp->queryProgressTo(aProgress.asOutParam());
-                ComAssertComRC(hr);
-
-                /* Note: pTask is now owned by the worker thread. */
-            }
-            else if (pSendCtx)
-                delete pSendCtx;
+            /* Note: pTask is now owned by the worker thread. */
         }
-        catch(std::bad_alloc &)
-        {
-            vrc = VERR_NO_MEMORY;
-        }
+        else
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Starting thread failed (%Rrc)"), rc);
 
-        /*if (RT_FAILURE(vrc)) ** @todo SetError(...) */
+        if (RT_FAILURE(rc))
+            delete pSendCtx;
     }
-    /** @todo SetError(...) */
+    catch(std::bad_alloc &)
+    {
+        hr = setError(E_OUTOFMEMORY);
+    }
 
+    LogFlowFunc(("Returning hr=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
@@ -962,7 +961,7 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
     /*
      * Register callbacks.
      */
-    /* Generic callbacks. */
+    /* Guest callbacks. */
     REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG);
     REGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GH_EVT_ERROR);
     /* Host callbacks. */

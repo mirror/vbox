@@ -479,10 +479,7 @@ void DragAndDropService::guestCall(VBOXHGCMCALLHANDLE callHandle, uint32_t u32Cl
                     if (RT_SUCCESS(rc))
                         rc = paParms[1].getUInt32(&data.uAllActions);
                     if (RT_SUCCESS(rc))
-                    {
-                        uint32_t cTmp;
-                        rc = paParms[2].getPointer((void**)&data.pszFormat, &cTmp);
-                    }
+                        rc = paParms[2].getPointer((void**)&data.pszFormat, &data.cbFormat);
                     DO_HOST_CALLBACK();
                 }
                 break;
