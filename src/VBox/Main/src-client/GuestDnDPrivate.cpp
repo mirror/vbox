@@ -830,5 +830,90 @@ int GuestDnDBase::getProtocolVersion(uint32_t *puVersion)
     *puVersion = uVer;
     return rc;
 }
+
+int GuestDnDBase::msgQueueAdd(GuestDnDMsg *pMsg)
+{
+    mDataBase.mListOutgoing.push_back(pMsg);
+    return VINF_SUCCESS;
+}
+
+GuestDnDMsg *GuestDnDBase::msgQueueGetNext(void)
+{
+    if (mDataBase.mListOutgoing.empty())
+        return NULL;
+    return mDataBase.mListOutgoing.front();
+}
+
+void GuestDnDBase::msgQueueRemoveNext(void)
+{
+    if (!mDataBase.mListOutgoing.empty())
+    {
+        GuestDnDMsg *pMsg = mDataBase.mListOutgoing.front();
+        if (pMsg)
+            delete pMsg;
+        mDataBase.mListOutgoing.pop_front();
+    }
+}
+
+void GuestDnDBase::msgQueueClear(void)
+{
+    GuestDnDMsgList::iterator itMsg = mDataBase.mListOutgoing.begin();
+    while (itMsg != mDataBase.mListOutgoing.end())
+    {
+        delete *itMsg;
+    }
+
+    mDataBase.mListOutgoing.clear();
+}
+
+int GuestDnDBase::sendCancel(void)
+{
+    LogFlowFunc(("Sending cancelation request to guest ...\n"));
+
+    GuestDnDMsg MsgCancel;
+    MsgCancel.setType(DragAndDropSvc::HOST_DND_HG_EVT_CANCEL);
+
+    return GuestDnDInst()->hostCall(MsgCancel.getType(), MsgCancel.getCount(), MsgCancel.getParms());
+}
+
+/** @todo GuestDnDResponse *pResp needs to go. */
+int GuestDnDBase::waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Event, GuestDnDResponse *pResp)
+{
+    int rc;
+
+    uint64_t tsStart = RTTimeMilliTS();
+    do
+    {
+        /*
+         * Wait until our desired callback triggered the
+         * wait event. As we don't want to block if the guest does not
+         * respond, so do busy waiting here.
+         */
+        rc = Event.Wait(500 /* ms */);
+        if (RT_SUCCESS(rc))
+        {
+            rc = Event.Result();
+            LogFlowFunc(("Callback done, result is %Rrc\n", rc));
+            break;
+        }
+        else if (rc == VERR_TIMEOUT) /* Continue waiting. */
+            rc = VINF_SUCCESS;
+
+        if (   msTimeout != RT_INDEFINITE_WAIT
+            && RTTimeMilliTS() - tsStart > msTimeout)
+        {
+            rc = VERR_TIMEOUT;
+        }
+        else if (pResp->isProgressCanceled())
+        {
+            pResp->setProgress(100 /* Percent */, DragAndDropSvc::DND_PROGRESS_CANCELLED);
+            rc = VERR_CANCELLED;
+        }
+
+    } while (RT_SUCCESS(rc));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 

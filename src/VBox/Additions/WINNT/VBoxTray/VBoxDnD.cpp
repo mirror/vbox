@@ -1423,7 +1423,7 @@ void VBoxDnDWnd::reset(void)
 
     /*
      * Note: Don't clear this->lstAllowedFormats at the moment, as this value is initialized
-     *       on class creation. We might later want to modify the allowed formats in runtime,
+     *       on class creation. We might later want to modify the allowed formats at runtime,
      *       so keep this in mind when implementing this.
      */
 
@@ -1664,7 +1664,9 @@ unsigned __stdcall VBoxDnDThread(void *pInstance)
             /* Old(er) hosts either are broken regarding DnD support or otherwise
              * don't support the stuff we do on the guest side, so make sure we
              * don't process invalid messages forever. */
-            if (cMsgSkippedInvalid++ > 3)
+            if (rc == VERR_INVALID_PARAMETER)
+                cMsgSkippedInvalid++;
+            if (cMsgSkippedInvalid > 32)
             {
                 LogRel(("DnD: Too many invalid/skipped messages from host, exiting ...\n"));
                 break;

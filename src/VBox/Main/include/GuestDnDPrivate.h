@@ -109,12 +109,17 @@ typedef struct GuestDnDURIData
         lstURI.Clear();
         lstDirs.clear();
         lstFiles.clear();
+#if 0 /* Currently the scratch buffer will be maintained elswewhere. */
         if (pvScratchBuf)
         {
             RTMemFree(pvScratchBuf);
             pvScratchBuf = NULL;
         }
         cbScratchBuf = 0;
+#else
+        pvScratchBuf = NULL;
+        cbScratchBuf = 0;
+#endif
     }
 
     int Rollback(void)
@@ -548,29 +553,16 @@ protected:
 
     int getProtocolVersion(uint32_t *puVersion);
 
-    int addMsg(GuestDnDMsg *pMsg)
-    {
-        mDataBase.mListOutgoing.push_back(pMsg);
-        return VINF_SUCCESS;
-    }
+    /** @name Functions for handling a simple host HGCM message queue.
+     * @{ */
+    int msgQueueAdd(GuestDnDMsg *pMsg);
+    GuestDnDMsg *msgQueueGetNext(void);
+    void msgQueueRemoveNext(void);
+    void msgQueueClear(void);
+    /** @}  */
 
-    GuestDnDMsg *nextMsg(void)
-    {
-        if (mDataBase.mListOutgoing.empty())
-            return NULL;
-        return mDataBase.mListOutgoing.front();
-    }
-
-    void removeNext(void)
-    {
-        if (!mDataBase.mListOutgoing.empty())
-        {
-            GuestDnDMsg *pMsg = mDataBase.mListOutgoing.front();
-            if (pMsg)
-                delete pMsg;
-            mDataBase.mListOutgoing.pop_front();
-        }
-    }
+    int sendCancel(void);
+    int waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Event, GuestDnDResponse *pResp);
 
 protected:
 

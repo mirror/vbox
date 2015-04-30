@@ -490,7 +490,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser
     AutoCaller autoCaller(pTarget);
     if (SUCCEEDED(autoCaller.rc()))
     {
-        rc = pTarget->i_sendData(pTask->getCtx());
+        rc = pTarget->i_sendData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
         /* Nothing to do here anymore. */
     }
     else
@@ -600,17 +600,9 @@ int GuestDnDTarget::i_cancelOperation(void)
     return GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_CANCEL, 0 /* cParms */, NULL /*paParms*/);
 }
 
-int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx)
+int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
-
-#define DATA_IS_VALID_BREAK(x) \
-    if (!x) \
-    { \
-        LogFlowFunc(("Invalid URI data value for \"" #x "\"\n")); \
-        rc = VERR_INVALID_PARAMETER; \
-        break; \
-    }
 
     GuestDnD *pInst = GuestDnDInst();
     if (!pInst)
@@ -623,43 +615,19 @@ int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx)
     /* Clear all remaining outgoing messages. */
     mDataBase.mListOutgoing.clear();
 
-    do
+    const char *pszFormat = pCtx->mFormat.c_str();
+    uint32_t cbFormat = pCtx->mFormat.length() + 1;
+
+    /* Do we need to build up a file tree? */
+    bool fHasURIList = DnDMIMEHasFileURLs(pszFormat, cbFormat);
+    if (fHasURIList)
     {
-        const char *pszFormat = pCtx->mFormat.c_str();
-        DATA_IS_VALID_BREAK(pszFormat);
-        uint32_t cbFormat = pCtx->mFormat.length() + 1;
-
-        /* Do we need to build up a file tree? */
-        bool fHasURIList = DnDMIMEHasFileURLs(pszFormat, cbFormat);
-        if (fHasURIList)
-        {
-            rc = i_sendURIData(pCtx);
-        }
-        else
-        {
-            GuestDnDMsg Msg;
-
-            size_t cbDataTotal = pCtx->mData.vecData.size();
-            DATA_IS_VALID_BREAK(cbDataTotal);
-
-            /* Just copy over the raw data. */
-            Msg.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
-            Msg.setNextUInt32(pCtx->mScreenID);
-            Msg.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-            Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
-            Msg.setNextPointer((void*)&pCtx->mData.vecData.front(), (uint32_t)cbDataTotal);
-            Msg.setNextUInt32(cbDataTotal);
-
-            LogFlowFunc(("%zu total bytes of raw data to transfer\n", cbDataTotal));
-
-            /* Make the initial call to the guest by sending the actual data. This might
-             * be an URI list which in turn can lead to more data to send afterwards. */
-            rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
-            if (RT_FAILURE(rc))
-                break;
-        }
-
-    } while (0);
+        rc = i_sendURIData(pCtx, msTimeout);
+    }
+    else
+    {
+        rc = i_sendRawData(pCtx, msTimeout);
+    }
 
     ASMAtomicWriteBool(&pCtx->mIsActive, false);
 
@@ -856,10 +824,11 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             try
             {
                 pMsg = new GuestDnDMsg();
+
                 rc = pThis->i_sendURIDataLoop(pCtx, pMsg);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = pThis->addMsg(pMsg);
+                    rc = pThis->msgQueueAdd(pMsg);
                     if (RT_SUCCESS(rc)) /* Return message type & required parameter count to the guest. */
                     {
                         LogFlowFunc(("GUEST_DND_GET_NEXT_HOST_MSG -> %RU32 (%RU32 params)\n", pMsg->getType(), pMsg->getCount()));
@@ -902,7 +871,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
 
             LogFlowFunc(("pCBData->uMsg=%RU32, paParms=%p, cParms=%RU32\n", pCBData->uMsg, pCBData->paParms, pCBData->cParms));
 
-            GuestDnDMsg *pMsg = pThis->nextMsg();
+            GuestDnDMsg *pMsg = pThis->msgQueueGetNext();
             if (pMsg)
             {
                 /*
@@ -912,6 +881,9 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
                     || pCBData->paParms == NULL
                     || pCBData->cParms  != pMsg->getCount())
                 {
+                    /* Start over. */
+                    pThis->msgQueueClear();
+
                     rc = VERR_INVALID_PARAMETER;
                 }
 
@@ -922,7 +894,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
                     if (RT_SUCCESS(rc))
                     {
                         pCBData->cParms = pMsg->getCount();
-                        pThis->removeNext();
+                        pThis->msgQueueRemoveNext();
                     }
                     else
                         LogFlowFunc(("Copying parameters failed with rc=%Rrc\n", rc));
@@ -970,7 +942,7 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
     return rc; /* Tell the guest. */
 }
 
-int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
+int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
     AssertPtr(pCtx->mpResp);
@@ -989,18 +961,20 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
 
     int rc;
 
-#define REGISTER_CALLBACK(x) \
+#define REGISTER_CALLBACK(x)                                        \
     rc = pCtx->mpResp->setCallback(x, i_sendURIDataCallback, pCtx); \
-    if (RT_FAILURE(rc)) \
+    if (RT_FAILURE(rc))                                             \
         return rc;
+
+#define UNREGISTER_CALLBACK(x)                        \
+    {                                                 \
+        int rc2 = pCtx->mpResp->setCallback(x, NULL); \
+        AssertRC(rc2);                                \
+    }
 
     rc = pCtx->mCallback.Reset();
     if (RT_FAILURE(rc))
         return rc;
-
-#define UNREGISTER_CALLBACK(x) \
-    rc = pCtx->mpResp->setCallback(x, NULL); \
-    AssertRC(rc);
 
     /*
      * Register callbacks.
@@ -1056,30 +1030,22 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
         RTCString strData = lstURI.RootToString().c_str();
         size_t    cbData  = strData.length() + 1; /* Include terminating zero. */
 
-        GuestDnDMsg Msg;
-        Msg.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
-        Msg.setNextUInt32(pCtx->mScreenID);
-        Msg.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
-        Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
-        Msg.setNextPointer((void*)strData.c_str(), (uint32_t)cbData);
-        Msg.setNextUInt32((uint32_t)cbData);
+        GuestDnDMsg MsgSndData;
+        MsgSndData.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
+        MsgSndData.setNextUInt32(pCtx->mScreenID);
+        MsgSndData.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
+        MsgSndData.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+        MsgSndData.setNextPointer((void*)strData.c_str(), (uint32_t)cbData);
+        MsgSndData.setNextUInt32((uint32_t)cbData);
 
-        rc = GuestDnDInst()->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
+        rc = GuestDnDInst()->hostCall(MsgSndData.getType(), MsgSndData.getCount(), MsgSndData.getParms());
         if (RT_SUCCESS(rc))
-        {
-            /*
-             * Wait until our callback i_sendURIDataCallback triggered the
-             * wait event.
-             */
-            LogFlowFunc(("Waiting for URI callback ...\n"));
-            rc = pCtx->mCallback.Wait(RT_INDEFINITE_WAIT);
-            LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
-        }
+            rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
 
     } while (0);
 
     /*
-     * Unregister callbacksagain.
+     * Unregister callbacks.
      */
     /* Guest callbacks. */
     UNREGISTER_CALLBACK(DragAndDropSvc::GUEST_DND_GET_NEXT_HOST_MSG);
@@ -1092,6 +1058,15 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx)
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
+
+    /*
+     * Now that we've cleaned up tell the guest side to cancel.
+     */
+    if (rc == VERR_CANCELLED)
+    {
+        int rc2 = sendCancel();
+        AssertRC(rc2);
+    }
 
     /* Destroy temporary scratch buffer. */
     if (pvBuf)
@@ -1170,18 +1145,38 @@ int GuestDnDTarget::i_sendURIDataLoop(PSENDDATACTX pCtx, GuestDnDMsg *pMsg)
         lstURI.RemoveFirst();
     }
 
-    if (   pCtx->mpResp
-        && pCtx->mpResp->isProgressCanceled())
-    {
-        LogFlowFunc(("Cancelling ...\n"));
-
-        rc = i_cancelOperation();
-        if (RT_SUCCESS(rc))
-            rc = VERR_CANCELLED;
-    }
-
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+int GuestDnDTarget::i_sendRawData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    NOREF(msTimeout);
+
+    GuestDnD *pInst = GuestDnDInst();
+    AssertPtr(pInst);
+
+    /* At the moment we only allow up to 64K raw data. */
+    size_t cbDataTotal = pCtx->mData.vecData.size();
+    if (   !cbDataTotal
+        || cbDataTotal > _64K)
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Just copy over the raw data. */
+    GuestDnDMsg Msg;
+    Msg.setType(DragAndDropSvc::HOST_DND_HG_SND_DATA);
+    Msg.setNextUInt32(pCtx->mScreenID);
+    Msg.setNextPointer((void *)pCtx->mFormat.c_str(), (uint32_t)pCtx->mFormat.length() + 1);
+    Msg.setNextUInt32((uint32_t)pCtx->mFormat.length() + 1);
+    Msg.setNextPointer((void*)&pCtx->mData.vecData.front(), (uint32_t)cbDataTotal);
+    Msg.setNextUInt32(cbDataTotal);
+
+    LogFlowFunc(("%zu total bytes of raw data to transfer\n", cbDataTotal));
+
+    return pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
 }
 
 HRESULT GuestDnDTarget::cancel(BOOL *aVeto)

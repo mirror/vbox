@@ -780,7 +780,7 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
     AutoCaller autoCaller(pSource);
     if (SUCCEEDED(autoCaller.rc()))
     {
-        rc = pSource->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT);
+        rc = pSource->i_receiveData(pTask->getCtx(), RT_INDEFINITE_WAIT /* msTimeout */);
     }
     else
         rc = VERR_COM_INVALID_OBJECT_STATE;
@@ -837,15 +837,7 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          * the host and therefore now waiting for the actual raw data. */
         rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
-        {
-            /*
-             * Wait until our callback i_receiveRawDataCallback triggered the
-             * wait event.
-             */
-            LogFlowFunc(("Waiting for raw data callback (%RU32ms timeout) ...\n", msTimeout));
-            rc = pCtx->mCallback.Wait(msTimeout);
-            LogFlowFunc(("Raw callback done, rc=%Rrc\n", rc));
-        }
+            rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
 
     } while (0);
 
@@ -857,6 +849,12 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
+
+    if (rc == VERR_CANCELLED)
+    {
+        int rc2 = sendCancel();
+        AssertRC(rc2);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -917,23 +915,10 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         Msg.setNextUInt32(pCtx->mAction);
 
         /* Make the initial call to the guest by telling that we initiated the "dropped" event on
-         * the host and therefore now waiting for the actual URI actual data. */
+         * the host and therefore now waiting for the actual URI data. */
         rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
-        {
-            /*
-             * Wait until our callback i_receiveURIDataCallback triggered the
-             * wait event.
-             */
-            LogFlowFunc(("Waiting for URI callback (%RU32ms timeout) ...\n", msTimeout));
-            rc = pCtx->mCallback.Wait(msTimeout);
-            LogFlowFunc(("URI callback done, rc=%Rrc\n", rc));
-            if (RT_SUCCESS(rc))
-            {
-                rc = pCtx->mCallback.Result();
-                LogFlowFunc(("Callback result is %Rrc\n", rc));
-            }
-        }
+            rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
 
     } while (0);
 
@@ -949,6 +934,12 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
+
+    if (rc == VERR_CANCELLED)
+    {
+        int rc2 = sendCancel();
+        AssertRC(rc2);
+    }
 
     if (RT_FAILURE(rc))
     {

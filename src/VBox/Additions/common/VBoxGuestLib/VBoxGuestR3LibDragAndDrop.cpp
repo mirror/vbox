@@ -551,7 +551,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                     break;
             }
 
-#if 0
+#if 0 /* Not used yet. */
             if (pCtx->uProtocol >= XXX)
             {
                 /*

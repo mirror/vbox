@@ -1183,7 +1183,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uAction)
     /*
      * Do we have a new window which now is under the cursor?
      */
-    if (   wndCursor != m_wndCur 
+    if (   wndCursor != m_wndCur
         && newVer    != -1)
     {
         LogFlowThisFunc(("Entering window=%#x\n", wndCursor));
@@ -1337,7 +1337,7 @@ int DragInstance::hgDataReceived(void *pvData, uint32_t cData)
     int xrc = XSendEvent(s.xselection.display, s.xselection.requestor, True, 0, &s);
     if (RT_UNLIKELY(xrc == 0))
     {
-        logError(("Error sending SelectionNotify event to window=%#x: %s\n", 
+        logError(("Error sending SelectionNotify event to window=%#x: %s\n",
                   s.xselection.requestor, gX11->xErrorToString(xrc).c_str()));
     }
 
@@ -1447,7 +1447,7 @@ int DragInstance::ghIsDnDPending(void)
                     XFree(ret);
                 }
 
-                /* 
+                /*
                  * Acknowledge the event by sending a status message back to the window.
                  */
                 XClientMessageEvent m;
@@ -1465,7 +1465,7 @@ int DragInstance::ghIsDnDPending(void)
                                  False, 0, reinterpret_cast<XEvent*>(&m));
                 if (RT_UNLIKELY(xRc == 0))
                 {
-                    logError(("Error sending enter XA_XdndStatus to current window=%#x: %s\n", 
+                    logError(("Error sending enter XA_XdndStatus to current window=%#x: %s\n",
                               m_wndCur, gX11->xErrorToString(xRc).c_str()));
                 }
             }
@@ -1491,7 +1491,7 @@ int DragInstance::ghIsDnDPending(void)
                                  False, 0, reinterpret_cast<XEvent*>(&m));
                 if (RT_UNLIKELY(xRc == 0))
                 {
-                    logError(("Error sending position XA_XdndStatus to current window=%#x: %s\n", 
+                    logError(("Error sending position XA_XdndStatus to current window=%#x: %s\n",
                               m_wndCur, gX11->xErrorToString(xRc).c_str()));
                 }
             }
@@ -1690,7 +1690,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, uint32_t uAction)
                     int xrc = XSendEvent(m_pDisplay, wndSource, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
                     if (RT_UNLIKELY(xrc == 0))
                     {
-                        logError(("Error sending XA_XdndFinished to proxy window=%#x: %s\n", 
+                        logError(("Error sending XA_XdndFinished to proxy window=%#x: %s\n",
                                   m_wndProxy, gX11->xErrorToString(xrc).c_str()));
                     }
                 }
@@ -2325,7 +2325,7 @@ int DragAndDropService::hgcmEventThread(RTTHREAD hThread, void *pvUser)
              * don't process invalid messages forever. */
             if (rc == VERR_INVALID_PARAMETER)
                 cMsgSkippedInvalid++;
-            if (cMsgSkippedInvalid > 3)
+            if (cMsgSkippedInvalid > 32)
             {
                 LogRel(("DnD: Too many invalid/skipped messages from host, exiting ...\n"));
                 break;
