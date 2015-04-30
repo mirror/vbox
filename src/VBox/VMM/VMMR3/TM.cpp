@@ -3140,7 +3140,7 @@ VMMR3_INT_DECL(int) TMR3CpuTickParavirtEnable(PVM pVM)
             rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, tmR3CpuTickParavirtEnable, NULL);
     }
     else
-        LogRel(("TM: Host/VM is not suitable for using TSC mode '%s'. Request to change TSC mode ignored.\n",
+        LogRel(("TM: Host/VM is not suitable for using TSC mode '%s', request to change TSC mode ignored\n",
                 tmR3GetTSCModeNameEx(TMTSCMODE_REAL_TSC_OFFSET)));
     pVM->tm.s.fParavirtTscEnabled = true;
     return rc;
