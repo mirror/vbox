@@ -502,6 +502,7 @@ rdpusb_process(STREAM s)
 			proxy->pvInstanceDataR3 = xmalloc(g_USBProxyDeviceHost.cbBackend);
 			if (!proxy->pvInstanceDataR3)
 			{
+				xfree (proxy);
 				error("RDPUSB: Out of memory allocating proxy backend data\n");
 				return;
 			}
