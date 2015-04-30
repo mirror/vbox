@@ -96,14 +96,12 @@ DECLEXPORT(void) crError(const char *pszFormat, ...)
     logMessageV("OpenGL Error: ", pszFormat, va);
     va_end(va);
 
-    /* Dump core or activate the debugger in debug builds. */
-    AssertFailed();
-
 #ifdef IN_GUEST
     /* Give things a chance to close down. */
-    //raise(SIGTERM);
-    //exit(1);
     ASMBreakpoint();
+#else
+    /* Dump core or activate the debugger in debug builds. */
+    AssertFailed();
 #endif
 }
 
