@@ -59,6 +59,7 @@
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include "version-generated.h"
 #include "product-generated.h"
+#include "revision-generated.h"
 
 /* Basic definitions and functions needed by all drivers. */
 #include "xf86.h"
@@ -339,7 +340,8 @@ static void setModeRandR12(ScrnInfoPtr pScrn, unsigned cScreen)
     /* Check that this code cannot trigger the resizing bug in X.Org Server 1.3.
      * See the work-around in PreInit. */
     xf86RandR12GetOriginalVirtualSize(pScrn, &originalX, &originalY);
-    VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, (""));
+    VBVXASSERT(originalX == VBOX_VIDEO_MAX_VIRTUAL && originalY == VBOX_VIDEO_MAX_VIRTUAL, ("OriginalSize=%dx%d",
+               originalX, originalY));
     for (i = cFirst; i < cLast; ++i)
         if (pVBox->pScreens[i].paCrtcs->mode.HDisplay != 0 && pVBox->pScreens[i].paCrtcs->mode.VDisplay != 0)
             vbvxSetMode(pScrn, i, pVBox->pScreens[i].paCrtcs->mode.HDisplay, pVBox->pScreens[i].paCrtcs->mode.VDisplay,
@@ -823,9 +825,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (flags & PROBE_DETECT)
         return (FALSE);
 
-    xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-               "VirtualBox guest additions video driver version "
-               VBOX_VERSION_STRING "\n");
+    xf86DrvMsg(pScrn->scrnIndex, X_INFO, "VirtualBox guest additions video driver version " VBOX_VERSION_STRING "r%d\n",
+               VBOX_SVN_REV);
 
     /* Get our private data from the ScrnInfoRec structure. */
     VBOXSetRec(pScrn);
