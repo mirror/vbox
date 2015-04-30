@@ -174,6 +174,19 @@
 
       <para>Unattended installations can be performed using the standard MSI
       support.</para>
+
+      <para>
+      User is able to choose between NDIS5 or NDIS6 network devices during installation.
+      It is realized via command line argument NETWORKTYPE. 
+      NDIS6 is default option for Windows Vista and higher. 
+      User can force to install NDIS5 on Windows Vista using NETWORKTYPE=NDIS5.
+      NDIS5 is default option for Windows versions below than Vista. 
+      User can't force to install NDIS6 on Windows below than Vista using NETWORKTYPE=NDIS6 because this type of network device isn't supported there.
+
+      For example, install NDIS6, do a: <screen>VirtualBox.exe -msiparams NETWORKTYPE=NDIS6</screen> 
+      or <screen>msiexec /i VirtualBox-&lt;version&gt;-MultiArch_&lt;x86|amd64&gt;.msi NETWORKTYPE=NDIS6</screen>
+      </para>
+
     </sect2>
   </sect1>
 
