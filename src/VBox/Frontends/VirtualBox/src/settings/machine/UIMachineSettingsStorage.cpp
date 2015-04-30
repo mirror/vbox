@@ -3398,6 +3398,9 @@ void UIMachineSettingsStorage::updateAdditionalObjects (KDeviceType aType)
 
     mLbHDDetails->setVisible (aType == KDeviceType_HardDisk);
     mLbHDDetailsValue->setVisible (aType == KDeviceType_HardDisk);
+
+    m_pLabelEncryption->setVisible(aType == KDeviceType_HardDisk);
+    m_pLabelEncryptionValue->setVisible(aType == KDeviceType_HardDisk);
 }
 
 QString UIMachineSettingsStorage::generateUniqueName (const QString &aTemplate) const
