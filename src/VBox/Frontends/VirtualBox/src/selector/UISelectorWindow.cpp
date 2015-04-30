@@ -469,9 +469,10 @@ void UISelectorWindow::sltPerformStartOrShowAction()
 
         /* Launch/show current VM: */
         CMachine machine = pItem->machine();
-        vboxGlobal().launchMachine(machine, qApp->keyboardModifiers() == Qt::ShiftModifier ?
-                                            VBoxGlobal::LaunchMode_Headless :
-                                            VBoxGlobal::LaunchMode_Default);
+        vboxGlobal().launchMachine(machine,
+                                   UIVMItem::isItemRunningHeadless(pItem)         ? VBoxGlobal::LaunchMode_Separate :
+                                   qApp->keyboardModifiers() == Qt::ShiftModifier ? VBoxGlobal::LaunchMode_Headless :
+                                                                                    VBoxGlobal::LaunchMode_Default);
     }
 }
 
@@ -1975,7 +1976,7 @@ bool UISelectorWindow::isAtLeastOneItemCanBeStartedOrShowed(const QList<UIVMItem
     foreach (UIVMItem *pItem, items)
     {
         if ((UIVMItem::isItemPoweredOff(pItem) && UIVMItem::isItemEditable(pItem)) ||
-            (UIVMItem::isItemStarted(pItem) && pItem->canSwitchTo()))
+            (UIVMItem::isItemStarted(pItem) && (pItem->canSwitchTo() || UIVMItem::isItemRunningHeadless(pItem))))
             return true;
     }
     return false;
