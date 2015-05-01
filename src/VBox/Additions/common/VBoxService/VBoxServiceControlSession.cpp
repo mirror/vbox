@@ -2266,8 +2266,9 @@ int GstCntlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t 
 }
 
 /**
- * Close all formerly opened guest session threads.
- * Note: Caller is responsible for locking!
+ * Close all open guest session threads.
+ *
+ * @note    Caller is responsible for locking!
  *
  * @return  IPRT status code.
  * @param   pList                   Which list to close the session threads for.
@@ -2283,13 +2284,13 @@ int GstCntlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags)
         if (RT_FAILURE(rc))
             VBoxServiceError("Cancelling pending waits failed; rc=%Rrc\n", rc);*/
 
-    PVBOXSERVICECTRLSESSIONTHREAD pSessionThread
-         = RTListGetFirst(pList, VBOXSERVICECTRLSESSIONTHREAD, Node);
+/** @todo r=bird: Why don't you use RTListForEachSafe here?? */
+    PVBOXSERVICECTRLSESSIONTHREAD pSessionThread = RTListGetFirst(pList, VBOXSERVICECTRLSESSIONTHREAD, Node);
     while (pSessionThread)
     {
         PVBOXSERVICECTRLSESSIONTHREAD pSessionThreadNext =
             RTListGetNext(pList, pSessionThread, VBOXSERVICECTRLSESSIONTHREAD, Node);
-        bool fLast = RTListNodeIsLast(pList, &pSessionThread->Node);
+        bool fLast = RTListNodeIsLast(pList, &pSessionThread->Node); /** @todo r=bird: This isn't necessary, pSessionThreadNext will be NULL! */
 
         int rc2 = GstCntlSessionThreadDestroy(pSessionThread, uFlags);
         if (RT_FAILURE(rc2))
@@ -2309,6 +2310,9 @@ int GstCntlSessionThreadDestroyAll(PRTLISTANCHOR pList, uint32_t uFlags)
     return rc;
 }
 
+/** @todo r=bird: This isn't a fork in the tranditional unix sense, so please
+ * don't confuse any unix guys by using the term.
+ * GstCntlSessionChildMain would be a good name.  */
 RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
@@ -2340,19 +2344,18 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
     g_Session.StartupInfo.uProtocol  = UINT32_MAX;
     g_Session.StartupInfo.uSessionID = UINT32_MAX;
 
-    int rc = VINF_SUCCESS;
-
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(rc))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
             case VBOXSERVICESESSIONOPT_LOG_FILE:
-                rc = RTStrCopy(g_szLogFile, sizeof(g_szLogFile), ValueUnion.psz);
+            {
+                int rc = RTStrCopy(g_szLogFile, sizeof(g_szLogFile), ValueUnion.psz);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Error copying log file name: %Rrc", rc);
                 break;
+            }
 #ifdef DEBUG
             case VBOXSERVICESESSIONOPT_DUMP_STDOUT:
                 uSessionFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
@@ -2363,7 +2366,7 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
                 break;
 #endif
             case VBOXSERVICESESSIONOPT_USERNAME:
-                /** @todo Information not needed right now, skip. */
+                /* Information not needed right now, skip. */
                 break;
 
             case VBOXSERVICESESSIONOPT_SESSION_ID:
@@ -2376,7 +2379,7 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 
 #ifdef DEBUG
             case VBOXSERVICESESSIONOPT_THREAD_ID:
-                /* Not handled. */
+                /* Not handled. Mainly for processs listing. */
                 break;
 #endif
             /** @todo Implement help? */
@@ -2387,17 +2390,15 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 
             case VINF_GETOPT_NOT_OPTION:
                 /* Ignore; might be "guestsession" main command. */
+                /** @todo r=bird: We DO NOT ignore stuff on the command line! */
                 break;
 
             default:
                 return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown command '%s'", ValueUnion.psz);
-                break; /* Never reached. */
         }
     }
 
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Initialization failed with rc=%Rrc", rc);
-
+    /* Check that we've got all the required options. */
     if (g_Session.StartupInfo.uProtocol == UINT32_MAX)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No protocol version specified");
 
@@ -2405,14 +2406,14 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No session ID specified");
 
     /* Init the session object. */
-    rc = GstCntlSessionInit(&g_Session, uSessionFlags);
+    int rc = GstCntlSessionInit(&g_Session, uSessionFlags);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_INIT, "Failed to initialize session object, rc=%Rrc\n", rc);
 
-    rc = VBoxServiceLogCreate(strlen(g_szLogFile) ? g_szLogFile : NULL);
+    rc = VBoxServiceLogCreate(g_szLogFile[0] ? g_szLogFile : NULL);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_INIT, "Failed to create log file \"%s\", rc=%Rrc\n",
-                              strlen(g_szLogFile) ? g_szLogFile : "<None>", rc);
+                              g_szLogFile[0] ? g_szLogFile : "<None>", rc);
 
     RTEXITCODE rcExit = gstcntlSessionForkWorker(&g_Session);
 
