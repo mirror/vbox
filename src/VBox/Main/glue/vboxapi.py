@@ -292,6 +292,19 @@ class PlatformBase(object):
         _ = sAttrib
         return None
 
+    def setArray(self, oInterface, sAttrib, aoArray):
+        """
+        Sets the value (aoArray) of the array attribute 'sAttrib' in
+        interface 'oInterface'.
+
+        This is for hiding platform specific differences in attributes
+        setting arrays.
+        """
+        _ = oInterface
+        _ = sAttrib
+        _ = aoArray
+        return None
+
     def initPerThread(self):
         """
         Does backend specific initialization for the calling thread.
@@ -550,6 +563,9 @@ class PlatformMSCOM(PlatformBase):
     def getArray(self, oInterface, sAttrib):
         return oInterface.__getattr__(sAttrib)
 
+    def setArray(self, oInterface, sAttrib, aoArray):
+        return oInterface.__setattr__(sAttrib, aoArray)
+
     def initPerThread(self):
         import pythoncom
         pythoncom.CoInitializeEx(0)
@@ -753,6 +769,9 @@ class PlatformXPCOM(PlatformBase):
     def getArray(self, oInterface, sAttrib):
         return oInterface.__getattr__('get' + ComifyName(sAttrib))()
 
+    def setArray(self, oInterface, sAttrib, aoArray):
+        return oInterface.__getattr__('set' + ComifyName(sAttrib))(aoArray)
+
     def initPerThread(self):
         import xpcom
         xpcom._xpcom.AttachThread()
@@ -877,6 +896,9 @@ class PlatformWEBSERVICE(PlatformBase):
 
     def getArray(self, oInterface, sAttrib):
         return oInterface.__getattr__(sAttrib)
+
+    def setArray(self, oInterface, sAttrib, aoArray):
+        return oInterface.__setattr__(sAttrib, aoArray)
 
     def waitForEvents(self, timeout):
         # Webservices cannot do that yet
@@ -1038,6 +1060,10 @@ class VirtualBoxManager(object):
     def getArray(self, oInterface, sAttrib):
         """ See PlatformBase::getArray(). """
         return self.platform.getArray(oInterface, sAttrib)
+
+    def setArray(self, oInterface, sAttrib, aoArray):
+        """ See PlatformBase::setArray(). """
+        return self.platform.setArray(oInterface, sAttrib, aoArray)
 
     def createListener(self, oImplClass, dArgs=None):
         """ See PlatformBase::createListener(). """
