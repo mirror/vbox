@@ -36,6 +36,7 @@
 #include "AutoCaller.h"
 #include "VirtualBoxErrorInfoImpl.h"
 #include "Logging.h"
+#include "Global.h"
 
 #include "VBox/com/ErrorInfo.h"
 #include "VBox/com/MultiResult.h"
@@ -167,13 +168,14 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
                                          const char *pcszComponent,
                                          Utf8Str aText,
                                          bool aWarning,
-                                         bool aLogIt)
+                                         bool aLogIt,
+                                         LONG aResultDetail /* = 0*/)
 {
     /* whether multi-error mode is turned on */
     bool preserve = MultiResult::isMultiEnabled();
 
     if (aLogIt)
-        LogRel(("%s [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%s}, preserve=%RTbool\n",
+        LogRel(("%s [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%s} aText={%s}, preserve=%RTbool aResultDetail=%d\n",
                 aWarning ? "WARNING" : "ERROR",
                 aResultCode,
                 aResultCode,
@@ -181,7 +183,8 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
                 pcszComponent,
                 aText.c_str(),
                 aWarning,
-                preserve));
+                preserve,
+                aResultDetail));
 
     /* these are mandatory, others -- not */
     AssertReturn((!aWarning && FAILED(aResultCode)) ||
@@ -258,7 +261,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
         Assert(SUCCEEDED(rc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
-        rc = info->init(aResultCode, aIID, pcszComponent, aText, curInfo);
+        rc = info->initEx(aResultCode, aResultDetail, aIID, pcszComponent, aText, curInfo);
         if (FAILED(rc)) break;
 
         ComPtr<IErrorInfo> err;
@@ -302,7 +305,7 @@ HRESULT VirtualBoxBase::setErrorInternal(HRESULT aResultCode,
             Assert(SUCCEEDED(rc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
-            rc = info->init(aResultCode, aIID, pcszComponent, Bstr(aText), curInfo);
+            rc = info->initEx(aResultCode, aResultDetail, aIID, pcszComponent, Bstr(aText), curInfo);
             if (FAILED(rc)) break;
 
             ComPtr<nsIException> ex;
@@ -500,6 +503,105 @@ HRESULT VirtualBoxBase::setError(const com::ErrorInfo &ei)
     AssertComRC(rc);
 
     return SUCCEEDED(rc) ? ei.getResultCode() : rc;
+}
+
+/**
+ * Converts the VBox status code a COM one and sets the error info.
+ *
+ * The VBox status code is made available to the API user via
+ * IVirtualBoxErrorInfo::resultDetail attribute.
+ *
+ * @param   vrc             The VBox status code.
+ * @return  COM status code appropriate for @a vrc.
+ *
+ * @sa      VirtualBoxBase::setError(HRESULT)
+ */
+HRESULT VirtualBoxBase::setErrorVrc(int vrc)
+{
+    return setErrorInternal(Global::vboxStatusCodeToCOM(vrc),
+                            this->getClassIID(),
+                            this->getComponentName(),
+                            Utf8Str("%Rrc", vrc),
+                            false /* aWarning */,
+                            true /* aLogIt */,
+                            vrc /* aResultDetail */);
+}
+
+/**
+ * Converts the VBox status code a COM one and sets the error info.
+ *
+ * @param   vrc             The VBox status code.
+ * @param   pcszMsgFmt      Error message format string.
+ * @param   ...             Argument specified in the @a pcszMsgFmt
+ * @return  COM status code appropriate for @a vrc.
+ *
+ * @sa      VirtualBoxBase::setError(HRESULT, const char *, ...)
+ */
+HRESULT VirtualBoxBase::setErrorVrc(int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    HRESULT hrc = setErrorInternal(Global::vboxStatusCodeToCOM(vrc),
+                                   this->getClassIID(),
+                                   this->getComponentName(),
+                                   Utf8Str(pcszMsgFmt, va),
+                                   false /* aWarning */,
+                                   true /* aLogIt */,
+                                   vrc /* aResultDetail */);
+    va_end(va);
+    return hrc;
+}
+
+/**
+ * Sets error info with both a COM status and an VBox status code.
+ *
+ * The VBox status code is made available to the API user via
+ * IVirtualBoxErrorInfo::resultDetail attribute.
+ *
+ * @param   hrc             The COM status code to return.
+ * @param   vrc             The VBox status code.
+ * @return  Most likely @hrc, see setErrorInternal.
+ *
+ * @sa      VirtualBoxBase::setError(HRESULT)
+ */
+HRESULT VirtualBoxBase::setErrorBoth(HRESULT hrc, int vrc)
+{
+    return setErrorInternal(hrc,
+                            this->getClassIID(),
+                            this->getComponentName(),
+                            Utf8Str("%Rrc", vrc),
+                            false /* aWarning */,
+                            true /* aLogIt */,
+                            vrc /* aResultDetail */);
+}
+
+/**
+ * Sets error info with a message and both a COM status and an VBox status code.
+ *
+ * The VBox status code is made available to the API user via
+ * IVirtualBoxErrorInfo::resultDetail attribute.
+ *
+ * @param   hrc             The COM status code to return.
+ * @param   vrc             The VBox status code.
+ * @param   pcszMsgFmt      Error message format string.
+ * @param   ...             Argument specified in the @a pcszMsgFmt
+ * @return  Most likely @hrc, see setErrorInternal.
+ *
+ * @sa      VirtualBoxBase::setError(HRESULT, const char *, ...)
+ */
+HRESULT VirtualBoxBase::setErrorBoth(HRESULT hrc, int vrc, const char *pcszMsgFmt, ...)
+{
+    va_list va;
+    va_start(va, pcszMsgFmt);
+    hrc = setErrorInternal(hrc,
+                           this->getClassIID(),
+                           this->getComponentName(),
+                           Utf8Str(pcszMsgFmt, va),
+                           false /* aWarning */,
+                           true /* aLogIt */,
+                           vrc /* aResultDetail */);
+    va_end(va);
+    return hrc;
 }
 
 /**

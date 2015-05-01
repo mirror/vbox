@@ -757,12 +757,17 @@ public:
                                     const char *aComponent,
                                     Utf8Str aText,
                                     bool aWarning,
-                                    bool aLogIt);
+                                    bool aLogIt,
+                                    LONG aResultDetail = 0);
     static void clearError(void);
 
     HRESULT setError(HRESULT aResultCode);
     HRESULT setError(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setError(const ErrorInfo &ei);
+    HRESULT setErrorVrc(int vrc);
+    HRESULT setErrorVrc(int vrc, const char *pcszMsgFmt, ...);
+    HRESULT setErrorBoth(HRESULT hrc, int vrc);
+    HRESULT setErrorBoth(HRESULT hrc, int vrc, const char *pcszMsgFmt, ...);
     HRESULT setWarning(HRESULT aResultCode, const char *pcsz, ...);
     HRESULT setErrorNoLog(HRESULT aResultCode, const char *pcsz, ...);
 
