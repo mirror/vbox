@@ -1770,9 +1770,11 @@ int GstCntlSessionProcessStartAllowed(const PVBOXSERVICECTRLSESSION pSession,
 
 
 /**
- * Creates a guest session. This will spawn a new VBoxService.exe instance under
- * behalf of the given user which then will act as a session host. On successful
- * open, the session will be added to the given session thread list.
+ * Creates a guest session.
+ *
+ * This will spawn a new VBoxService.exe instance under behalf of the given user
+ * which then will act as a session host. On successful open, the session will
+ * be added to the given session thread list.
  *
  * @return  IPRT status code.
  * @param   pList                   Which list to use to store the session thread in.
@@ -1859,6 +1861,36 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
         char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
         if (pszExeName)
         {
+/** @todo r=bird: A while back we had this variant in the guest props code:
+ *  @code
+ *      int rc = RTStrPrintf(....);
+ *      if (RT_SUCCESS(rc))
+ *  @endcode
+ *
+ *  Here we've got a new variant:
+ *  @code
+ *      if (!RTStrPrintf(szBuf, sizeof(szBuf),...))
+ *         return VERR_BUFFER_OVERFLOW;
+ *  @endcode
+ *  ... which is just as pointless.
+ *
+ *  According to the doxygen docs in iprt/string.h, RTStrPrintf returns "The
+ *  length of the returned string (in pszBuffer) excluding the terminator".
+ *
+ *  Which admittedly makes it a real bitch to check for buffer overflows, but is
+ *  a great help preventing memory corruption by careless use of the returned
+ *  value if it was outside the buffer range (negative error codes or required
+ *  buffer size).  We should probably add a new string formatter which API which
+ *  returns VERR_BUFFER_OVERFLOW on overflow and optionally a required buffer
+ *  size that you can use here...
+ *
+ *  However in most cases you don't need to because you make things way to
+ *  complicated (see the log file name mangling for instance).
+ *
+ *  Here, you just need to format two or three (#ifdef DEBUG) 32-bit numbers
+ *  which are no brainers, while the szUser can be used as is.  The trick is to
+ *  pass the and option and the option value separately.
+ */
             char szParmUserName[GUESTPROCESS_MAX_USER_LEN + 32];
             if (!fAnonymous)
             {
@@ -1981,6 +2013,12 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 if (   RT_SUCCESS(rc)
                     && g_Session.uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
                 {
+/** @todo r=bird: This amazing code can be replaced by
+ *  @code
+ *    papszArgs[iOptIdx++] = "--dump-stdout";
+ *  @endcode
+ *  which doesn't even need braces.
+ */
                     if (!RTStrPrintf(szParmDumpStdOut, sizeof(szParmDumpStdOut), "--dump-stdout"))
                         rc = VERR_BUFFER_OVERFLOW;
                     if (RT_SUCCESS(rc))
