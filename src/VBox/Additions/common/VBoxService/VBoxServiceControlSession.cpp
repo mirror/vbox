@@ -1823,7 +1823,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 
         /* Is this an anonymous session? */
         /* Anonymous sessions run with the same privileges as the main VBoxService executable. */
-        bool fAnonymous = !RT_BOOL(strlen(pSessionThread->StartupInfo.szUser));
+        bool const fAnonymous = pSessionThread->StartupInfo.szUser[0] == '\0';
         if (fAnonymous)
         {
             Assert(!strlen(pSessionThread->StartupInfo.szPassword));
