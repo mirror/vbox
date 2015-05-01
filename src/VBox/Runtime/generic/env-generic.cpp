@@ -1001,7 +1001,7 @@ RT_EXPORT_SYMBOL(RTEnvQueryUtf8Block);
 
 RTDECL(void) RTEnvFreeUtf8Block(char *pszzBlock)
 {
-    RTMemFree(RTEnvQueryUtf8Block);
+    RTMemFree(pszzBlock);
 }
 RT_EXPORT_SYMBOL(RTEnvFreeUtf8Block);
 
