@@ -80,6 +80,15 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone);
 RTDECL(int) RTEnvDestroy(RTENV Env);
 
 /**
+ * Resets the environment block to contain zero variables.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hEnv    Environment block handle.  RTENV_DEFAULT is not supported.
+ */
+RTDECL(int) RTEnvReset(RTENV hEnv);
+
+/**
  * Get the execve/spawnve/main envp.
  *
  * All returned strings are in the current process' codepage.
@@ -111,6 +120,30 @@ RTDECL(int) RTEnvQueryUtf16Block(RTENV hEnv, PRTUTF16 *ppwszzBlock);
  * @param   pwszzBlock      What RTEnvGetUtf16Block returned.  NULL is ignored.
  */
 RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock);
+
+/**
+ * Get a sorted, UTF-8 environment block.
+ *
+ * The environment block is a sequence of putenv formatted ("NAME=VALUE" or
+ * "NAME") zero terminated strings ending with an empty string (i.e. last string
+ * has two zeros).
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hEnv            Environment block handle.
+ * @param   fSorted         Whether to sort it, this will affect @a hEnv.
+ * @param   ppszzBlock      Where to return the environment block.  This must be
+ *                          freed by calling RTEnvFreeUtf8Block.
+ * @param   pcbBlock        Where to return the size of the block. Optional.
+ */
+RTDECL(int) RTEnvQueryUtf8Block(RTENV hEnv, bool fSorted, char **ppszzBlock, size_t *pcbBlock);
+
+/**
+ * Frees an environment block returned by RTEnvGetUtf8Block().
+ *
+ * @param   pszzBlock       What RTEnvGetUtf8Block returned.  NULL is ignored.
+ */
+RTDECL(void) RTEnvFreeUtf8Block(char *pszzBlock);
 
 /**
  * Checks if an environment variable exists in the default environment block.

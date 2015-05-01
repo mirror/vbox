@@ -349,6 +349,28 @@ RTDECL(int) RTEnvClone(PRTENV pEnv, RTENV EnvToClone)
 RT_EXPORT_SYMBOL(RTEnvClone);
 
 
+RTDECL(int) RTEnvReset(RTENV hEnv)
+{
+    PRTENVINTERNAL pIntEnv = hEnv;
+    AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+    AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+
+    RTENV_LOCK(pIntEnv);
+
+    size_t iVar = pIntEnv->cVars;
+    pIntEnv->cVars = 0;
+    while (iVar-- > 0)
+    {
+        RTMemFree(pIntEnv->papszEnv[iVar]);
+        pIntEnv->papszEnv[iVar] = NULL;
+    }
+
+    RTENV_UNLOCK(pIntEnv);
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTEnvReset);
+
+
 RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
 {
     int rc;
@@ -884,7 +906,7 @@ RTDECL(int) RTEnvQueryUtf16Block(RTENV hEnv, PRTUTF16 *ppwszzBlock)
         *ppwszzBlock = pwszzBlock;
     return rc;
 }
-RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);
+RT_EXPORT_SYMBOL(RTEnvQueryUtf16Block);
 
 
 RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock)
@@ -892,6 +914,96 @@ RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock)
     RTMemFree(pwszzBlock);
 }
 RT_EXPORT_SYMBOL(RTEnvFreeUtf16Block);
+
+
+RTDECL(int) RTEnvQueryUtf8Block(RTENV hEnv, bool fSorted, char **ppszzBlock, size_t *pcbBlock)
+{
+    RTENV           hClone  = NIL_RTENV;
+    PRTENVINTERNAL  pIntEnv;
+    int             rc;
+
+    /*
+     * Validate / simplify input.
+     */
+    if (hEnv == RTENV_DEFAULT)
+    {
+        rc = RTEnvClone(&hClone, RTENV_DEFAULT);
+        if (RT_FAILURE(rc))
+            return rc;
+        pIntEnv = hClone;
+    }
+    else
+    {
+        pIntEnv = hEnv;
+        AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+        rc = VINF_SUCCESS;
+    }
+
+    RTENV_LOCK(pIntEnv);
+
+    /*
+     * Sort it, if requested.
+     */
+    if (fSorted)
+        RTSortApvShell((void **)pIntEnv->papszEnv, pIntEnv->cVars, rtEnvSortCompare, pIntEnv);
+
+    /*
+     * Calculate the size. We add one extra terminator just to be on the safe side.
+     */
+    size_t cbBlock = 2;
+    for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+        cbBlock += strlen(pIntEnv->papszEnv[iVar]) + 1;
+
+    if (pcbBlock)
+        *pcbBlock = cbBlock - 1;
+
+    /*
+     * Allocate memory and copy out the variables.
+     */
+    char *pszzBlock;
+    char *pszz = pszzBlock = (char *)RTMemAlloc(cbBlock);
+    if (pszz)
+    {
+        size_t cbLeft = cbBlock;
+        for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+        {
+            size_t cb = strlen(pIntEnv->papszEnv[iVar]) + 1;
+            AssertBreakStmt(cb + 2 <= cbLeft, rc = VERR_INTERNAL_ERROR_3);
+            memcpy(pszz, pIntEnv->papszEnv[iVar], cb);
+            pszz   += cb;
+            cbLeft -= cb;
+        }
+        if (RT_SUCCESS(rc))
+        {
+            pszz[0] = '\0';
+            pszz[1] = '\0'; /* The extra one. */
+        }
+        else
+        {
+            RTMemFree(pszzBlock);
+            pszzBlock = NULL;
+        }
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    RTENV_UNLOCK(pIntEnv);
+
+    if (hClone != NIL_RTENV)
+        RTEnvDestroy(hClone);
+    if (RT_SUCCESS(rc))
+        *ppszzBlock = pszzBlock;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTEnvQueryUtf8Block);
+
+
+RTDECL(void) RTEnvFreeUtf8Block(char *pszzBlock)
+{
+    RTMemFree(RTEnvQueryUtf8Block);
+}
+RT_EXPORT_SYMBOL(RTEnvFreeUtf8Block);
 
 
 RTDECL(uint32_t) RTEnvCountEx(RTENV hEnv)
