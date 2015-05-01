@@ -10782,7 +10782,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="c899776d-41f7-7aee-7056-4bac979d58b7"
+    uuid="e1fa83fe-437d-3e3a-9278-4297f1ca95dd"
     wsmap="managed"
     >
     <desc>
@@ -11106,46 +11106,6 @@
       </param>
       <param name="acl" type="wstring" dir="in">
         <desc>Actual ACL string to set. Must comply with the guest OS.</desc>
-      </param>
-    </method>
-
-<!-- r=bird: Remove this it duplicates the 'environment' attribute. -->
-    <method name="environmentClear">
-      <desc>
-        Clears (deletes) all session environment variables.
-
-        <result name="VBOX_E_IPRT_ERROR">
-<!-- r=bird: No, it won't return this result, because you're just doing .clear() on a vector. -->
-          Error while clearing the session environment variables.
-        </result>
-      </desc>
-    </method>
-
-    <method name="environmentGet">
-<!-- r=bird: Remove this because the interface isn't suitable for returning
-'unset' or empty values, and it can easily be misunderstood.  Besides there is
-hardly a usecase for it as long as it just works on environment changes and
-there is the 'environment' attribute. -->
-      <desc>
-        Gets the value of an environment variable scheduled to be set.
-
-        <result name="VBOX_E_IPRT_ERROR">
-<!-- r=bird: Would never return this, only invalid input or out of memory. -->
-          Error while getting the value of the session environment variable.
-        </result>
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of session environment variable to get the value for.</desc>
-      </param>
-      <param name="value" type="wstring" dir="return">
-        <desc>
-          Value of the session environment variable specified.  If this variable
-          does not exist an empty value will be returned.
-          <note>
-            An empty value will also be return for a variable with an value or
-            a unset-variable entry.
-          </note>
-        </desc>
       </param>
     </method>
 

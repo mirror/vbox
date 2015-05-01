@@ -311,9 +311,6 @@ private:
                             const std::vector<PathRenameFlag_T> &aFlags);
     HRESULT directorySetACL(const com::Utf8Str &aPath,
                              const com::Utf8Str &aAcl);
-    HRESULT environmentClear();
-    HRESULT environmentGet(const com::Utf8Str &aName,
-                           com::Utf8Str &aValue);
     HRESULT environmentSet(const com::Utf8Str &aName,
                            const com::Utf8Str &aValue);
     HRESULT environmentUnset(const com::Utf8Str &aName);

@@ -1133,15 +1133,15 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = False;
                 break;
             try:
-                for (_, aEnv) in enumerate(curTest.aEnv): # Enumerate only will work with a sequence (e.g > 1 entries).
+                for (_, aEnv) in enumerate(curTest.aEnv):
                     aElems = aEnv.split('=');
-                    strKey = '';
+                    strKey = '';  ## @todo s/Key/Var/g
                     strValue = '';
                     if len(aElems) > 0:
                         strKey = aElems[0];
                     if len(aElems) == 2:
                         strValue = aElems[1];
-                    reporter.log2('Test #%d: Single key="%s", value="%s" (%d) ...' \
+                    reporter.log2('Test #%d: Single var="%s", value="%s" (%d) ...' \
                                   % (i, strKey, strValue, len(aElems)));
                     try:
                         curGuestSession.environmentSet(strKey, strValue); # No return (e.g. boolean) value available thru wrapper.
@@ -1156,30 +1156,35 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             break;
                         else:
                             reporter.log('Test #%d: API reported an error (single), good' % (i,));
-                    reporter.log2('Getting key="%s" ...' % (strKey,));
-                    try:
-                        strValue2 = curGuestSession.environmentGet(strKey);
-                        if      strKey.isalnum() \
-                            and strValue != strValue2:
-                            reporter.error('Test #%d failed: Got environment variable "%s", expected "%s" (key: "%s")' \
-                                           % (i, strValue2, strValue, strKey));
-                            fRc = False;
-                            break;
-                        # Getting back an empty value when specifying an invalid key is fine.
-                        reporter.log2('Got key "%s=%s"' % (strKey, strValue2));
-                    except UnicodeDecodeError: # Might happen on unusal values, fine.
-                        if strValue != strValue2:
-                            reporter.error('Test #%d failed: Got (undecoded) environment variable "%s", ' \
-                                           'expected "%s" (key: "%s")' \
-                                           % (i, strValue2, strValue, strKey));
-                            fRc = False;
-                            break;
-                    except:
-                        if     strKey == "" \
-                            or not strKey.isalnum():
-                            reporter.log('Test #%d: API reported an error (invalid key "%s"), good' % (i, strKey));
-                        else:
-                            reporter.errorXcpt('Test #%d failed: Getting environment variable:' % (i));
+                    ## @todo environmentGet() has been removed in 5.0 because it's not up to the task of returning all the
+                    ## putenv strings forms and gives the impression that the envrionment is something it isn't. This test
+                    ## should be rewritten using the attribute.  What's more, there should be an Unset test here, shouldn't
+                    ## there?
+                    #
+                    #reporter.log2('Getting key="%s" ...' % (strKey,));
+                    #try:
+                    #    strValue2 = curGuestSession.environmentGet(strKey);
+                    #    if      strKey.isalnum() \
+                    #        and strValue != strValue2:
+                    #        reporter.error('Test #%d failed: Got environment value "%s", expected "%s" (var: "%s")' \
+                    #                       % (i, strValue2, strValue, strKey));
+                    #        fRc = False;
+                    #        break;
+                    #    # Getting back an empty value when specifying an invalid key is fine.
+                    #    reporter.log2('Got key "%s=%s"' % (strKey, strValue2));
+                    #except UnicodeDecodeError: # Might happen on unusal values, fine.
+                    #    if strValue != strValue2:
+                    #        reporter.error('Test #%d failed: Got (undecoded) environment variable "%s", ' \
+                    #                       'expected "%s" (var: "%s")' \
+                    #                       % (i, strValue2, strValue, strKey));
+                    #        fRc = False;
+                    #        break;
+                    #except:
+                    #    if     strKey == "" \
+                    #        or not strKey.isalnum():
+                    #        reporter.log('Test #%d: API reported an error (invalid key "%s"), good' % (i, strKey));
+                    #    else:
+                    #        reporter.errorXcpt('Test #%d failed: Getting environment variable:' % (i));
                 if fRc is False:
                     continue;
                 # Set the same stuff again, this time all at once using the array.
@@ -1208,7 +1213,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                    % (i, len(curEnv), curEnv, curRes.cNumVars));
                     fRc = False;
                     break;
-                curGuestSession.environmentClear(); # No return (e.g. boolean) value available thru wrapper.
+
+                self.oTstDrv.oVBoxMgr.setArray(curGuestSession, 'environment', []);
                 curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
                 if len(curEnv) is not 0:
                     reporter.error('Test #%d failed: Session environment has %d vars, expected 0');

@@ -2903,55 +2903,6 @@ HRESULT GuestSession::directorySetACL(const com::Utf8Str &aPath, const com::Utf8
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-/** @todo remove this it duplicates the 'environment' attribute.   */
-HRESULT GuestSession::environmentClear()
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mData.mEnvironment.reset();
-
-    LogFlowThisFuncLeave();
-    return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-/** @todo Remove this because the interface isn't suitable for returning 'unset'
- *        or empty values, and it can easily be misunderstood.  Besides there
- *        is hardly a usecase for it as long as it just works on
- *        environment changes and there is the 'environment' attribute. */
-HRESULT GuestSession::environmentGet(const com::Utf8Str &aName, com::Utf8Str &aValue)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    HRESULT hrc;
-    if (RT_LIKELY(aName.isNotEmpty()))
-    {
-        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
-        {
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-            mData.mEnvironment.getVariable(aName, &aValue);
-            hrc = S_OK;
-        }
-        else
-            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
-    }
-    else
-        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
-
-    LogFlowThisFuncLeave();
-    return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
 HRESULT GuestSession::environmentSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
