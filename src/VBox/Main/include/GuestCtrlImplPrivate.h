@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2011-2013 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,8 +20,10 @@
 #define ____H_GUESTIMPLPRIVATE
 
 #include "ConsoleImpl.h"
+#include "Global.h"
 
 #include <iprt/asm.h>
+#include <iprt/env.h>
 #include <iprt/semaphore.h>
 
 #include <VBox/com/com.h>
@@ -59,48 +61,368 @@ struct GuestCredentials
 };
 
 
-typedef std::vector <Utf8Str> GuestEnvironmentArray;
-class GuestEnvironment
+
+/**
+ * Wrapper around the RTEnv API, unusable base class.
+ *
+ * @remarks Feel free to elevate this class to iprt/cpp/env.h as RTCEnv.
+ */
+class GuestEnvironmentBase
 {
 public:
+    /**
+     * Default constructor.
+     *
+     * The user must invoke one of the init methods before using the object.
+     */
+    GuestEnvironmentBase(void)
+        : m_hEnv(NIL_RTENV)
+    { }
 
-    int BuildEnvironmentBlock(void **ppvEnv, size_t *pcbEnv, uint32_t *pcEnvVars);
+    /**
+     * Destructor.
+     */
+    virtual ~GuestEnvironmentBase(void)
+    {
+        int rc = RTEnvDestroy(m_hEnv); AssertRC(rc);
+        m_hEnv = NIL_RTENV;
+    }
 
-    void Clear(void);
+    /**
+     * Initialize this as a normal environment block.
+     * @returns IPRT status code.
+     */
+    int initNormal(void)
+    {
+        AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
+        return RTEnvCreate(&m_hEnv);
+    }
 
-    int CopyFrom(const GuestEnvironmentArray &environment);
+    /**
+     * Returns the variable count.
+     * @return Number of variables.
+     * @sa      RTEnvCountEx
+     */
+    uint32_t count(void) const
+    {
+        return RTEnvCountEx(m_hEnv);
+    }
 
-    int CopyTo(GuestEnvironmentArray &environment);
+    /**
+     * Deletes the environment change record entirely.
+     *
+     * The count() method will return zero after this call.
+     *
+     * @sa      RTEnvReset
+     */
+    void reset(void)
+    {
+        int rc = RTEnvReset(m_hEnv);
+        AssertRC(rc);
+    }
 
-    static void FreeEnvironmentBlock(void *pvEnv);
+    /**
+     * Exports the environment change block as an array of putenv style strings.
+     *
+     *
+     * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+     * @param   pArray              The output array.
+     */
+    int queryPutEnvArray(std::vector<com::Utf8Str> *pArray) const
+    {
+        uint32_t cVars = RTEnvCountEx(m_hEnv);
+        try
+        {
+            pArray->resize(cVars);
+            for (uint32_t iVar = 0; iVar < cVars; iVar++)
+            {
+                const char *psz = RTEnvGetByIndexRawEx(m_hEnv, iVar);
+                AssertReturn(psz, VERR_INTERNAL_ERROR_3); /* someone is racing us! */
+                (*pArray)[iVar] = psz;
+            }
+            return VINF_SUCCESS;
+        }
+        catch (std::bad_alloc &)
+        {
+            return VERR_NO_MEMORY;
+        }
+    }
 
-    Utf8Str Get(const Utf8Str &strKey);
+    /**
+     * Applies an array of putenv style strings.
+     *
+     * @returns IPRT status code.
+     * @param   rArray              The array with the putenv style strings.
+     * @sa      RTEnvPutEnvEx
+     */
+    int applyPutEnvArray(const std::vector<com::Utf8Str> &rArray)
+    {
+        size_t cArray = rArray.size();
+        for (size_t i = 0; i < cArray; i++)
+        {
+            int rc = RTEnvPutEx(m_hEnv, rArray[i].c_str());
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        return VINF_SUCCESS;
+    }
 
-    Utf8Str Get(size_t nPos);
+    /**
+     * See RTEnvQueryUtf8Block for details.
+     * @returns IPRT status code.
+     * @param   ppszzBlock      Where to return the block pointer.
+     * @param   pcbBlock        Where to optionally return the block size.
+     * @sa      RTEnvQueryUtf8Block
+     */
+    int queryUtf8Block(char **ppszzBlock, size_t *pcbBlock)
+    {
+        return RTEnvQueryUtf8Block(m_hEnv, true /*fSorted*/, ppszzBlock, pcbBlock);
+    }
 
-    bool Has(const Utf8Str &strKey);
+    /**
+     * Frees what queryUtf8Block returned, NULL ignored.
+     * @sa      RTEnvFreeUtf8Block
+     */
+    static void freeUtf8Block(char *pszzBlock)
+    {
+        return RTEnvFreeUtf8Block(pszzBlock);
+    }
 
-    int Set(const Utf8Str &strKey, const Utf8Str &strValue);
+    /**
+     * Get an environment variable.
+     *
+     * @returns IPRT status code.
+     * @param   rName               The variable name.
+     * @param   pValue              Where to return the value.
+     * @sa      RTEnvGetEx
+     */
+    int getVariable(const com::Utf8Str &rName, com::Utf8Str *pValue) const
+    {
+        size_t cchNeeded;
+        int rc = RTEnvGetEx(m_hEnv, rName.c_str(), NULL, 0, &cchNeeded);
+        if (   RT_SUCCESS(rc)
+            || rc == VERR_BUFFER_OVERFLOW)
+        {
+            try
+            {
+                pValue->reserve(cchNeeded + 1);
+                rc = RTEnvGetEx(m_hEnv, rName.c_str(), pValue->mutableRaw(), pValue->capacity(), NULL);
+                pValue->jolt();
+            }
+            catch (std::bad_alloc &)
+            {
+                rc = VERR_NO_STR_MEMORY;
+            }
+        }
+        return rc;
+    }
 
-    int Set(const Utf8Str &strPair);
+    /**
+     * Set an environment variable.
+     *
+     * @returns IPRT status code.
+     * @param   rName               The variable name.
+     * @param   rValue              The value of the variable.
+     * @sa      RTEnvSetEx
+     */
+    int setVariable(const com::Utf8Str &rName, const com::Utf8Str &rValue)
+    {
+        return RTEnvSetEx(m_hEnv, rName.c_str(), rValue.c_str());
+    }
 
-    size_t Size(void);
+    /**
+     * Unset an environment variable.
+     *
+     * @returns IPRT status code.
+     * @param   rName               The variable name.
+     * @sa      RTEnvUnsetEx
+     */
+    int unsetVariable(const com::Utf8Str &rName)
+    {
+        return RTEnvUnsetEx(m_hEnv, rName.c_str());
+    }
 
-    int Unset(const Utf8Str &strKey);
+#if 0
+private:
+    /* No copy operator. */
+    GuestEnvironmentBase(const GuestEnvironmentBase &) { throw E_FAIL; }
+#else
+    /**
+     * Copy constructor.
+     * @throws HRESULT
+     */
+    GuestEnvironmentBase(const GuestEnvironmentBase &rThat, bool fChangeRecord)
+        : m_hEnv(NIL_RTENV)
+    {
+        int rc = cloneCommon(rThat, fChangeRecord);
+        if (RT_FAILURE(rc))
+            throw (Global::vboxStatusCodeToCOM(rc));
+    }
+#endif
 
+protected:
+    /**
+     * Common clone/copy method with type conversion abilities.
+     *
+     * @returns IPRT status code.
+     * @param   rThat           The object to clone.
+     * @param   fChangeRecord   Whether the this instance is a change record (true)
+     *                          or normal (false) environment.
+     */
+    int cloneCommon(const GuestEnvironmentBase &rThat, bool fChangeRecord)
+    {
+        int   rc = VINF_SUCCESS;
+        RTENV hNewEnv = NIL_RTENV;
+        if (rThat.m_hEnv != NIL_RTENV)
+        {
+            if (RTEnvIsChangeRecord(rThat.m_hEnv) == fChangeRecord)
+                rc = RTEnvClone(&hNewEnv, rThat.m_hEnv);
+            else
+            {
+                /* Need to type convert it. */
+                if (fChangeRecord)
+                    rc = RTEnvCreateChangeRecord(&hNewEnv);
+                else
+                    rc = RTEnvCreate(&hNewEnv);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTEnvApplyChanges(hNewEnv, rThat.m_hEnv);
+                    if (RT_FAILURE(rc))
+                        RTEnvDestroy(hNewEnv);
+                }
+            }
+
+        }
+        if (RT_SUCCESS(rc))
+        {
+            RTEnvDestroy(m_hEnv);
+            m_hEnv = hNewEnv;
+        }
+        return rc;
+    }
+
+
+    /** The environment change record. */
+    RTENV       m_hEnv;
+};
+
+
+#if 0 /* Not currently used. */
+/**
+ * Wrapper around the RTEnv API for a normal environment.
+ */
+class GuestEnvironment : public GuestEnvironmentBase
+{
 public:
+    /**
+     * Default constructor.
+     *
+     * The user must invoke one of the init methods before using the object.
+     */
+    GuestEnvironment(void)
+        : GuestEnvironmentBase()
+    { }
 
-    GuestEnvironment& operator=(const GuestEnvironmentArray &that);
+    /**
+     * Copy operator.
+     * @param   rThat       The object to copy.
+     * @throws HRESULT
+     */
+    GuestEnvironment(const GuestEnvironment &rThat)
+        : GuestEnvironmentBase(rThat, false /*fChangeRecord*/)
+    { }
 
-    GuestEnvironment& operator=(const GuestEnvironment &that);
+    /**
+     * Copy operator.
+     * @param   rThat       The object to copy.
+     * @throws HRESULT
+     */
+    GuestEnvironment(const GuestEnvironmentBase &rThat)
+        : GuestEnvironmentBase(rThat, false /*fChangeRecord*/)
+    { }
 
-protected:
+    /**
+     * Initialize this as a normal environment block.
+     * @returns IPRT status code.
+     */
+    int initNormal(void)
+    {
+        AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
+        return RTEnvCreate(&m_hEnv);
+    }
 
-    int appendToEnvBlock(const char *pszEnv, void **ppvList, size_t *pcbList, uint32_t *pcEnvVars);
+    /**
+     * Replaces this environemnt with that in @a rThat.
+     *
+     * @returns IPRT status code
+     * @param   rThat       The environment to copy. If it's a different type
+     *                      we'll convert the data to a normal environment block.
+     */
+    int copy(const GuestEnvironmentBase &rThat)
+    {
+        return cloneCommon(rThat, false /*fChangeRecord*/);
+    }
+};
+#endif /* unused */
 
-protected:
 
-    std::map <Utf8Str, Utf8Str> mEnvironment;
+/**
+ * Wrapper around the RTEnv API for a environment change record.
+ *
+ * This class is used as a record of changes to be applied to a different
+ * environment block (in VBoxService before launching a new process).
+ */
+class GuestEnvironmentChanges : public GuestEnvironmentBase
+{
+public:
+    /**
+     * Default constructor.
+     *
+     * The user must invoke one of the init methods before using the object.
+     */
+    GuestEnvironmentChanges(void)
+        : GuestEnvironmentBase()
+    { }
+
+    /**
+     * Copy operator.
+     * @param   rThat       The object to copy.
+     * @throws HRESULT
+     */
+    GuestEnvironmentChanges(const GuestEnvironmentChanges &rThat)
+        : GuestEnvironmentBase(rThat, true /*fChangeRecord*/)
+    { }
+
+    /**
+     * Copy operator.
+     * @param   rThat       The object to copy.
+     * @throws HRESULT
+     */
+    GuestEnvironmentChanges(const GuestEnvironmentBase &rThat)
+        : GuestEnvironmentBase(rThat, true /*fChangeRecord*/)
+    { }
+
+    /**
+     * Initialize this as a environment change record.
+     * @returns IPRT status code.
+     */
+    int initChangeRecord(void)
+    {
+        AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
+        return RTEnvCreateChangeRecord(&m_hEnv);
+    }
+
+    /**
+     * Replaces this environemnt with that in @a rThat.
+     *
+     * @returns IPRT status code
+     * @param   rThat       The environment to copy. If it's a different type
+     *                      we'll convert the data to a set of changes.
+     */
+    int copy(const GuestEnvironmentBase &rThat)
+    {
+        return cloneCommon(rThat, true /*fChangeRecord*/);
+    }
 };
 
 
@@ -224,7 +546,8 @@ public:
     Utf8Str                     mExecutable;
     /** Arguments vector (starting with argument \#0). */
     ProcessArguments            mArguments;
-    GuestEnvironment            mEnvironment;
+    /** The process environment change record.  */
+    GuestEnvironmentChanges     mEnvironment;
     /** Process creation flags. */
     uint32_t                    mFlags;
     ULONG                       mTimeoutMS;

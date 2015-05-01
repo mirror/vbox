@@ -182,6 +182,9 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
 #else
     AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
 
+    /*
+     * Initialize our data members from the input.
+     */
     mParent = pGuest;
 
     /* Copy over startup info. */
@@ -197,72 +200,67 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     mData.mCredentials.mPassword = guestCreds.mPassword;
     mData.mCredentials.mDomain = guestCreds.mDomain;
 
+    /* Initialize the remainder of the data. */
     mData.mRC = VINF_SUCCESS;
     mData.mStatus = GuestSessionStatus_Undefined;
     mData.mNumObjects = 0;
-
-    HRESULT hr;
-
-    int rc = i_queryInfo();
+    int rc = mData.mEnvironment.initNormal();
     if (RT_SUCCESS(rc))
     {
-        hr = unconst(mEventSource).createObject();
-        if (FAILED(hr))
-            rc = VERR_NO_MEMORY;
-        else
-        {
-            hr = mEventSource->init();
-            if (FAILED(hr))
-                rc = VERR_COM_UNEXPECTED;
-        }
+        rc = RTCritSectInit(&mWaitEventCritSect);
+        AssertRC(rc);
     }
-
+    if (RT_SUCCESS(rc))
+        rc = i_determineProtocolVersion();
     if (RT_SUCCESS(rc))
     {
-        try
+        /*
+         * <Replace this if you figure out what the code is doing.>
+         */
+        HRESULT hr = unconst(mEventSource).createObject();
+        if (SUCCEEDED(hr))
+            hr = mEventSource->init();
+        if (SUCCEEDED(hr))
         {
-            GuestSessionListener *pListener = new GuestSessionListener();
-            ComObjPtr<GuestSessionListenerImpl> thisListener;
-            hr = thisListener.createObject();
-            if (SUCCEEDED(hr))
-                hr = thisListener->init(pListener, this);
-
-            if (SUCCEEDED(hr))
+            try
             {
-                com::SafeArray <VBoxEventType_T> eventTypes;
-                eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
-                hr = mEventSource->RegisterListener(thisListener,
-                                                    ComSafeArrayAsInParam(eventTypes),
-                                                    TRUE /* Active listener */);
+                GuestSessionListener *pListener = new GuestSessionListener();
+                ComObjPtr<GuestSessionListenerImpl> thisListener;
+                hr = thisListener.createObject();
+                if (SUCCEEDED(hr))
+                    hr = thisListener->init(pListener, this);
                 if (SUCCEEDED(hr))
                 {
-                    mLocalListener = thisListener;
+                    com::SafeArray <VBoxEventType_T> eventTypes;
+                    eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
+                    hr = mEventSource->RegisterListener(thisListener,
+                                                        ComSafeArrayAsInParam(eventTypes),
+                                                        TRUE /* Active listener */);
+                    if (SUCCEEDED(hr))
+                    {
+                        mLocalListener = thisListener;
 
-                    rc = RTCritSectInit(&mWaitEventCritSect);
-                    AssertRC(rc);
+                        /*
+                         * Mark this object as operational and return success.
+                         */
+                        autoInitSpan.setSucceeded();
+                        LogFlowThisFunc(("mName=%s mID=%RU32 mIsInternal=%RTbool rc=VINF_SUCCESS\n",
+                                         mData.mSession.mName.c_str(), mData.mSession.mID, mData.mSession.mIsInternal));
+                        return VINF_SUCCESS;
+                    }
                 }
-                else
-                    rc = VERR_COM_UNEXPECTED;
             }
-            else
-                rc = VERR_COM_UNEXPECTED;
+            catch (std::bad_alloc &)
+            {
+                hr = E_OUTOFMEMORY;
+            }
         }
-        catch(std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        rc = Global::vboxStatusCodeFromCOM(hr);
     }
 
-    if (RT_SUCCESS(rc))
-    {
-        /* Confirm a successful initialization when it's the case. */
-        autoInitSpan.setSucceeded();
-    }
-    else
-        autoInitSpan.setFailed();
-
-    LogFlowThisFunc(("mName=%s, mID=%RU32, mIsInternal=%RTbool, rc=%Rrc\n",
-                     mData.mSession.mName.c_str(), mData.mSession.mID, mData.mSession.mIsInternal, rc));
+    autoInitSpan.setFailed();
+    LogThisFunc(("Failed! mName=%s mID=%RU32 mIsInternal=%RTbool => rc=%Rrc\n",
+                 mData.mSession.mName.c_str(), mData.mSession.mID, mData.mSession.mIsInternal, rc));
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -320,6 +318,8 @@ void GuestSession::uninit(void)
         itProcs->second->uninit();
     }
     mData.mProcesses.clear();
+
+    mData.mEnvironment.reset();
 
     AssertMsg(mData.mNumObjects == 0,
               ("mNumObjects=%RU32 when it should be 0\n", mData.mNumObjects));
@@ -470,17 +470,10 @@ HRESULT GuestSession::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    size_t cEnvVars = mData.mEnvironment.Size();
-    aEnvironment.resize(cEnvVars);
+    int vrc = mData.mEnvironment.queryPutEnvArray(&aEnvironment);
 
-    LogFlowThisFunc(("[%s]: cEnvVars=%RU32\n",
-                     mData.mSession.mName.c_str(), cEnvVars));
-
-    for (size_t i = 0; i < cEnvVars; i++)
-        aEnvironment[i] = mData.mEnvironment.Get(i);
-
-    LogFlowThisFuncLeave();
-    return S_OK;
+    LogFlowFuncLeaveRC(vrc);
+    return Global::vboxStatusCodeToCOM(vrc);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -493,14 +486,11 @@ HRESULT GuestSession::setEnvironment(const std::vector<com::Utf8Str> &aEnvironme
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int rc = VINF_SUCCESS;
-    for (size_t i = 0; i < aEnvironment.size() && RT_SUCCESS(rc); ++i)
-        if (!aEnvironment[i].isEmpty()) /* Silently skip empty entries. */
-            rc = mData.mEnvironment.Set(aEnvironment[i]);
+    mData.mEnvironment.reset();
+    int vrc = mData.mEnvironment.applyPutEnvArray(aEnvironment);
 
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(hr);
-    return hr;
+    LogFlowFuncLeaveRC(vrc);
+    return Global::vboxStatusCodeToCOM(vrc);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1415,11 +1405,6 @@ const GuestCredentials& GuestSession::i_getCredentials(void)
     return mData.mCredentials;
 }
 
-const GuestEnvironment& GuestSession::i_getEnvironment(void)
-{
-    return mData.mEnvironment;
-}
-
 Utf8Str GuestSession::i_getName(void)
 {
     return mData.mSession.mName;
@@ -2117,47 +2102,42 @@ int GuestSession::i_startTaskAsync(const Utf8Str &strTaskDesc,
 }
 
 /**
- * Queries/collects information prior to establishing a guest session.
- * This is necessary to know which guest control protocol version to use,
- * among other things (later).
+ * Determines the protocol version (sets mData.mProtocolVersion).
+ *
+ * This is called from the init method prior to to establishing a guest
+ * session.
  *
  * @return  IPRT status code.
  */
-int GuestSession::i_queryInfo(void)
+int GuestSession::i_determineProtocolVersion(void)
 {
     /*
-     * Try querying the guest control protocol version running on the guest.
-     * This is done using the Guest Additions version
+     * We currently do this based on the reported guest additions version,
+     * ASSUMING that VBoxService and VBoxDrv are at the same version.
      */
     ComObjPtr<Guest> pGuest = mParent;
-    Assert(!pGuest.isNull());
+    AssertReturn(!pGuest.isNull(), VERR_NOT_SUPPORTED);
+    uint32_t uGaVersion = pGuest->i_getAdditionsVersion();
 
-    uint32_t uVerAdditions = pGuest->i_getAdditionsVersion();
-    uint32_t uVBoxMajor    = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
-    uint32_t uVBoxMinor    = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
+    /* Everyone supports version one, if they support anything at all. */
+    mData.mProtocolVersion = 1;
 
-#ifdef DEBUG_andy
-    /* Hardcode the to-used protocol version; nice for testing side effects. */
-    mData.mProtocolVersion = 2;
-#else
-    mData.mProtocolVersion = (
-                              /* VBox 5.0 and up. */
-                                 uVBoxMajor  >= 5
-                              /* VBox 4.3 and up. */
-                              || (uVBoxMajor == 4 && uVBoxMinor >= 3))
-                           ? 2  /* Guest control 2.0. */
-                           : 1; /* Legacy guest control (VBox < 4.3). */
-    /* Build revision is ignored. */
-#endif
+    /* Guest control 2.0 was introduced with 4.3.0. */
+    if (uGaVersion >= VBOX_FULL_VERSION_MAKE(4,3,0))
+        mData.mProtocolVersion = 2; /* Guest control 2.0. */
 
-    LogFlowThisFunc(("uVerAdditions=%RU32 (%RU32.%RU32), mProtocolVersion=%RU32\n",
-                     uVerAdditions, uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
+    LogFlowThisFunc(("uGaVersion=%u.%u.%u => mProtocolVersion=%u\n",
+                     VBOX_FULL_VERSION_GET_MAJOR(uGaVersion), VBOX_FULL_VERSION_GET_MINOR(uGaVersion),
+                     VBOX_FULL_VERSION_GET_BUILD(uGaVersion), mData.mProtocolVersion));
 
-    /* Tell the user but don't bitch too often. */
-    /** @todo Find a bit nicer text. */
+    /*
+     * Inform the user about outdated guest additions (VM release log).
+     */
     if (mData.mProtocolVersion < 2)
-        LogRelMax(3, (tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
-                    uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
+        LogRelMax(3, (tr("Warning: Guest Additions v%u.%u.%u only supports the older guest control protocol version %u.\n"
+                         "         Please upgrade GAs to the current version to get full guest control capabilities.\n"),
+                      VBOX_FULL_VERSION_GET_MAJOR(uGaVersion), VBOX_FULL_VERSION_GET_MINOR(uGaVersion),
+                      VBOX_FULL_VERSION_GET_BUILD(uGaVersion), mData.mProtocolVersion));
 
     return VINF_SUCCESS;
 }
@@ -2923,6 +2903,7 @@ HRESULT GuestSession::directorySetACL(const com::Utf8Str &aPath, const com::Utf8
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+/** @todo remove this it duplicates the 'environment' attribute.   */
 HRESULT GuestSession::environmentClear()
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -2932,13 +2913,17 @@ HRESULT GuestSession::environmentClear()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mEnvironment.Clear();
+    mData.mEnvironment.reset();
 
     LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+/** @todo Remove this because the interface isn't suitable for returning 'unset'
+ *        or empty values, and it can easily be misunderstood.  Besides there
+ *        is hardly a usecase for it as long as it just works on
+ *        environment changes and there is the 'environment' attribute. */
 HRESULT GuestSession::environmentGet(const com::Utf8Str &aName, com::Utf8Str &aValue)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -2946,15 +2931,24 @@ HRESULT GuestSession::environmentGet(const com::Utf8Str &aName, com::Utf8Str &aV
 #else
     LogFlowThisFuncEnter();
 
-    if (RT_UNLIKELY(aName.c_str() == NULL) || *(aName.c_str()) == '\0')
-        return setError(E_INVALIDARG, tr("No value name specified"));
+    HRESULT hrc;
+    if (RT_LIKELY(aName.isNotEmpty()))
+    {
+        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    aValue =  mData.mEnvironment.Get(aName);
+            mData.mEnvironment.getVariable(aName, &aValue);
+            hrc = S_OK;
+        }
+        else
+            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+    }
+    else
+        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2965,16 +2959,26 @@ HRESULT GuestSession::environmentSet(const com::Utf8Str &aName, const com::Utf8S
 #else
     LogFlowThisFuncEnter();
 
-    if (RT_UNLIKELY((aName.c_str() == NULL) || *(aName.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No value name specified"));
+    HRESULT hrc;
+    if (RT_LIKELY(aName.isNotEmpty()))
+    {
+        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            int vrc = mData.mEnvironment.setVariable(aName, aValue);
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setErrorVrc(vrc);
+        }
+        else
+            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+    }
+    else
+        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    int rc = mData.mEnvironment.Set(aName, aValue);
-
-    HRESULT hr = RT_SUCCESS(rc) ? S_OK : VBOX_E_IPRT_ERROR;
-    LogFlowFuncLeaveRC(hr);
-    return hr;
+    LogFlowThisFuncLeave();
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2984,13 +2988,26 @@ HRESULT GuestSession::environmentUnset(const com::Utf8Str &aName)
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mData.mEnvironment.Unset(aName);
+    HRESULT hrc;
+    if (RT_LIKELY(aName.isNotEmpty()))
+    {
+        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            int vrc = mData.mEnvironment.unsetVariable(aName);
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setErrorVrc(vrc);
+        }
+        else
+            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+    }
+    else
+        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -3337,6 +3354,11 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
 #else
     LogFlowThisFuncEnter();
 
+    /** @todo r=bird: Check input better? aPriority is passed on to the guest
+     * without any validation.  Flags not existing in this vbox version are
+     * ignored, potentially doing something entirely different than what the
+     * caller had in mind. */
+
     /*
      * Must have an executable to execute.  If none is given, we try use the
      * zero'th argument.
@@ -3368,28 +3390,13 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
         for (size_t i = 0; i < aArguments.size(); i++)
             procInfo.mArguments.push_back(aArguments[i]);
 
-    /*
-     * Create the process environment:
-     * - Apply the session environment in a first step, and
-     * - Apply environment variables specified by this call to
-     *   have the chance of overwriting/deleting session entries.
-     */
-    procInfo.mEnvironment = mData.mEnvironment; /* Apply original session environment. */
-
-    int rc = VINF_SUCCESS;
-    if (aEnvironment.size())
-        for (size_t i = 0; i < aEnvironment.size() && RT_SUCCESS(rc); i++)
-        {
-            /** @todo r=bird: What ARE you trying to do here??? The documentation is crystal
-             *        clear on that each entry contains ONE pair, however,
-             *        GuestEnvironment::Set(const Utf8Str &) here will split up the input
-             *        into any number of pairs, from what I can tell.  Such that for e.g.
-             *        "VBOX_LOG_DEST=file=/tmp/foobared.log" becomes "VBOX_LOG_DEST=file"
-             *        and "/tmp/foobared.log" - which I obviously don't want! */
-            rc = procInfo.mEnvironment.Set(aEnvironment[i]);
-        }
-
-    if (RT_SUCCESS(rc))
+    /* Combine the environment changes associated with the ones passed in by
+       the caller, giving priority to the latter.  The changes are putenv style
+       and will be applied to the standard environment for the guest user. */
+    int vrc = procInfo.mEnvironment.copy(mData.mEnvironment);
+    if (RT_SUCCESS(vrc))
+        vrc = procInfo.mEnvironment.applyPutEnvArray(aEnvironment);
+    if (RT_SUCCESS(vrc))
     {
         /* Convert the flag array into a mask. */
         if (aFlags.size())
@@ -3410,49 +3417,38 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
          * Create a guest process object.
          */
         ComObjPtr<GuestProcess> pProcess;
-        rc = i_processCreateExInternal(procInfo, pProcess);
-        if (RT_SUCCESS(rc))
+        vrc = i_processCreateExInternal(procInfo, pProcess);
+        if (RT_SUCCESS(vrc))
         {
             /* Return guest session to the caller. */
-            HRESULT hr2 = pProcess.queryInterfaceTo(aGuestProcess.asOutParam());
-            if (SUCCEEDED(hr2))
+            hr = pProcess.queryInterfaceTo(aGuestProcess.asOutParam());
+            if (SUCCEEDED(hr))
             {
                 /*
                  * Start the process.
                  */
-                rc = pProcess->i_startProcessAsync();
-                if (RT_FAILURE(rc))
+                vrc = pProcess->i_startProcessAsync();
+                if (RT_SUCCESS(vrc))
                 {
-                    /** @todo r=bird: What happens to the interface that *aGuestProcess points to
-                     *        now?  Looks like a leak or an undocument hack of sorts... */
+                    LogFlowFuncLeaveRC(vrc);
+                    return S_OK;
                 }
+
+                hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
+                /** @todo r=bird: What happens to the interface that *aGuestProcess points to
+                 *        now?  Looks like a leak or an undocument hack of sorts... */
             }
-            else
-                rc = VERR_COM_OBJECT_NOT_FOUND;
         }
+        else if (vrc == VERR_MAX_PROCS_REACHED)
+            hr = setErrorVrc(vrc, tr("Maximum number of concurrent guest processes per session (%u) reached"),
+                             VBOX_GUESTCTRL_MAX_OBJECTS);
+        else
+            hr = setErrorVrc(vrc, tr("Failed to create guest process object: %Rrc"), vrc);
     }
+    else
+        hr = setErrorVrc(vrc, tr("Failed to set up the environment: %Rrc"), vrc);
 
-    /** @todo you're better off doing this is 'else if (rc == xxx') statements,
-     *        since there is just one place where you'll get
-     *        VERR_MAX_PROCS_REACHED in the above code. */
-    if (RT_FAILURE(rc))
-    {
-        switch (rc)
-        {
-            case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest processes per session (%ld) reached"),
-                                                    VBOX_GUESTCTRL_MAX_OBJECTS);
-                break;
-
-            /** @todo Add more errors here. */
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest process, rc=%Rrc"), rc);
-                break;
-        }
-    }
-
-    LogFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(vrc);
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

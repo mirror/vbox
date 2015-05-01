@@ -303,7 +303,7 @@ HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mData.mProcess.mEnvironment.CopyTo(aEnvironment);
+    mData.mProcess.mEnvironment.queryPutEnvArray(&aEnvironment);
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1053,10 +1053,10 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
         cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
     /* Prepare environment. */
-    void *pvEnv = NULL;
-    size_t cbEnv = 0;
+    size_t  cbEnvBlock;
+    char   *pszzEnvBlock;
     if (RT_SUCCESS(vrc))
-        vrc = mData.mProcess.mEnvironment.BuildEnvironmentBlock(&pvEnv, &cbEnv, NULL /* cEnv */);
+        vrc = mData.mProcess.mEnvironment.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
 
     if (RT_SUCCESS(vrc))
     {
@@ -1064,21 +1064,20 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
         VBOXHGCMSVCPARM paParms[16];
         int i = 0;
         paParms[i++].setUInt32(pEvent->ContextID());
-        paParms[i++].setPointer((void*)mData.mProcess.mExecutable.c_str(),
-                                (ULONG)mData.mProcess.mExecutable.length() + 1);
+        paParms[i++].setCppString(mData.mProcess.mExecutable);
         paParms[i++].setUInt32(mData.mProcess.mFlags);
         paParms[i++].setUInt32((uint32_t)mData.mProcess.mArguments.size());
-        paParms[i++].setPointer((void*)pszArgs, (uint32_t)cbArgs);
-        paParms[i++].setUInt32((uint32_t)mData.mProcess.mEnvironment.Size());
-        paParms[i++].setUInt32((uint32_t)cbEnv);
-        paParms[i++].setPointer((void*)pvEnv, (uint32_t)cbEnv);
+        paParms[i++].setPointer(pszArgs, (uint32_t)cbArgs);
+        paParms[i++].setUInt32(mData.mProcess.mEnvironment.count());
+        paParms[i++].setUInt32((uint32_t)cbEnvBlock);
+        paParms[i++].setPointer(pszzEnvBlock, (uint32_t)cbEnvBlock);
         if (uProtocol < 2)
         {
             /* In protocol v1 (VBox < 4.3) the credentials were part of the execution
              * call. In newer protocols these credentials are part of the opened guest
              * session, so not needed anymore here. */
-            paParms[i++].setPointer((void*)sessionCreds.mUser.c_str(), (ULONG)sessionCreds.mUser.length() + 1);
-            paParms[i++].setPointer((void*)sessionCreds.mPassword.c_str(), (ULONG)sessionCreds.mPassword.length() + 1);
+            paParms[i++].setCppString(sessionCreds.mUser);
+            paParms[i++].setCppString(sessionCreds.mPassword);
         }
         /*
          * If the WaitForProcessStartOnly flag is set, we only want to define and wait for a timeout
@@ -1097,7 +1096,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
              * so that makes up to 64 CPUs total. This can be more in the future. */
             paParms[i++].setUInt32(1);
             /* The actual CPU affinity blocks. */
-            paParms[i++].setPointer((void*)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
+            paParms[i++].setPointer((void *)&mData.mProcess.mAffinity, sizeof(mData.mProcess.mAffinity));
         }
 
         alock.release(); /* Drop the write lock before sending. */
@@ -1108,9 +1107,10 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
             int rc2 = i_setProcessStatus(ProcessStatus_Error, vrc);
             AssertRC(rc2);
         }
+
+        mData.mProcess.mEnvironment.freeUtf8Block(pszzEnvBlock);
     }
 
-    GuestEnvironment::FreeEnvironmentBlock(pvEnv);
     if (pszArgs)
         RTStrFree(pszArgs);
 
