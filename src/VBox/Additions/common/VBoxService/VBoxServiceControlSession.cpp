@@ -141,6 +141,9 @@ static int gstcntlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession,
     {
         uint32_t uFlagsRemRec = 0;
         bool fRecursive = false;
+/** @todo r=bird: Unnecessary variable fRecursive.  You can check for
+ * DIRREMOVE_FLAG_RECURSIVE directly in the flags when deciding which API to
+ * call. */
 
         if (!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK))
         {
@@ -150,7 +153,11 @@ static int gstcntlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession,
                  *       Play safe here. */
                 fRecursive = true;
             }
-
+/** @todo r=bird: Understand how APIs you use work (read docs, check constant,
+ * check code). If you check the actual values of RTDIRRMREC_F_CONTENT_AND_DIR
+ * and RTDIRRMREC_F_CONTENT_ONLY, you'd notice that the first one is 0 and the
+ * second is 1.  This code is a little confused about how it all works, though
+ * it ends up doing the right thing as if by accident almost. */
             if (uFlags & DIRREMOVE_FLAG_CONTENT_AND_DIR)
             {
                 /* Setting direct value is intentional. */
@@ -169,6 +176,8 @@ static int gstcntlSessionHandleDirRemove(PVBOXSERVICECTRLSESSION pSession,
         VBoxServiceVerbose(4, "[Dir %s]: Removing with uFlags=0x%x, fRecursive=%RTbool\n",
                            szDir, uFlags, fRecursive);
 
+/** @todo r=bird: Convoluted code flow. It would be shorter and easier to
+ * read if you moved this code up and into the flags-are-valid if body. */
         if (RT_SUCCESS(rc))
         {
             /** @todo Add own recursive function (or a new IPRT function w/ callback?) to
