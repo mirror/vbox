@@ -11152,7 +11152,7 @@ there is the 'environment' attribute. -->
     <method name="environmentSet">
       <desc>
         Schedules setting an environment variable when creating the next guest
-        process.  This affects the <link to="environment"/> attribute.
+        process.  This affects the <link to="IGuestSession::environment"/> attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the environment variable to set.  This cannot be empty
@@ -11166,7 +11166,7 @@ there is the 'environment' attribute. -->
     <method name="environmentUnset">
       <desc>
         Schedules unsetting (removing) an environment variable when creating
-        the next guest process.  This affects the <link to="environment"/>
+        the next guest process.  This affects the <link to="IGuestSession::environment"/>
         attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
