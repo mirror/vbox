@@ -248,6 +248,16 @@ typedef struct VBOXHGCMSVCPARM
         u.pointer.size = (uint32_t)strlen(psz) + 1;
     }
 
+#ifdef ___iprt_cpp_ministring_h
+    /** Set a const string value to an HGCM parameter structure */
+    void setCppString(const RTCString &rString)
+    {
+        type = VBOX_HGCM_SVC_PARM_PTR;
+        u.pointer.addr = (void *)rString.c_str();
+        u.pointer.size = (uint32_t)rString.length() + 1;
+    }
+#endif
+
 #ifdef VBOX_TEST_HGCM_PARMS
     /** Test the getString member function.  Indirectly tests the getPointer
      * and getBuffer APIs.
