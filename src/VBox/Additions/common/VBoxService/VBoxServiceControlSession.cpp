@@ -1852,7 +1852,9 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
         rc = RTCritSectInit(&pSessionThread->CritSect);
         AssertRC(rc);
 
-        /* Fork child doing the actual session handling. */
+        /*
+         * Spawn a child process for doing the actual session handling.
+         */
         char szExeName[RTPATH_MAX];
         char *pszExeName = RTProcGetExecutablePath(szExeName, sizeof(szExeName));
         if (pszExeName)
@@ -1882,7 +1884,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
             {
                 rc = VERR_BUFFER_OVERFLOW;
             }
-#endif /* DEBUG */
+#endif
             if (RT_SUCCESS(rc))
             {
                 int iOptIdx = 0; /* Current index in argument vector. */
@@ -1894,7 +1896,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 papszArgs[iOptIdx++] = szParmSessionProto;
 #ifdef DEBUG
                 papszArgs[iOptIdx++] = szParmThreadId;
-#endif /* DEBUG */
+#endif
                 if (!fAnonymous)
                     papszArgs[iOptIdx++] = szParmUserName;
 
@@ -1933,7 +1935,7 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                         {
                             rc2 = VERR_NO_MEMORY;
                         }
-#else
+#else /* DEBUG */
                         /* Include the session thread ID in the log file name. */
                         if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%RU32-%s",
                                          pSessionStartupInfo->uSessionID,
