@@ -4079,7 +4079,7 @@
 
     <attribute name="guestAddress" type="long" readonly="yes">
       <desc>
-        Address of device on the guest.
+        Address of device in the guest.
       </desc>
     </attribute>
 
@@ -9909,7 +9909,7 @@
     <const name="Locked"                  value="3">
       <desc>A guest user has locked its account. This might
         include running a password-protected screensaver
-        on the guest.
+        in the guest.
         <note>This property is not implemented yet!</note>
       </desc>
     </const>
@@ -9932,7 +9932,7 @@
           reporting contiguous idle times up to 49.7 days per user.</note>
         The event will be triggered if a guest user is not active for
         at least 5 seconds. This threshold can be adjusted by either altering
-        VBoxService's command line on the guest to
+        VBoxService's command line in the guest to
         <pre>--vminfo-user-idle-threshold &lt;ms&gt;</pre>
         , or by setting the per-VM guest property
         <pre>/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold &lt;ms&gt;</pre>
@@ -10107,7 +10107,7 @@
     <const name="Timeout"               value="5">
       <desc>
         The waiting operation timed out. Also use if the guest process has
-        timed out on the guest side (kill attempted).
+        timed out in the guest side (kill attempted).
       </desc>
     </const>
     <const name="StdIn"                 value="6">
@@ -10786,38 +10786,40 @@
     wsmap="managed"
     >
     <desc>
-      A guest session represents one impersonated user account on the guest, so
+      A guest session represents one impersonated user account in the guest, so
       every operation will use the same credentials specified when creating
       the session object via <link to="IGuest::createSession"/>.
 
       There can be a maximum of 32 sessions at once per VM, whereas session 0
-      is reserved for the root session. This root session is controlling all
-      other guest sessions and also is responsible for actions which require
-      system level privileges. Each guest session keeps track of its started
-      guest processes, opened guest files or guest directories.
-      To work on guest files or directories a guest session offers methods to open
-      or create such objects (see <link to="IGuestSession::fileOpen"/> or
+      is reserved for the root session.
+<!-- r=bird: Is the root session part of the maximum of 32?? Not really clear. -->
+      This root session is controlling all other guest sessions and also is
+      responsible for actions which require system level privileges.  Each
+      guest session keeps track of its started guest processes, opened guest
+      files or guest directories.  To work on guest files or directories a
+      guest session offers methods to open or create such objects (see
+      <link to="IGuestSession::fileOpen"/> or
       <link to="IGuestSession::directoryOpen"/> for example).
 
       When done with either of these objects, including the guest session itself,
       use the appropriate close() method to let the object do its cleanup work.
 
-      Every guest session has its own environment variable block which gets
-      automatically applied when starting a new guest process via
-      <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>.
-      To override (or unset) certain environment variables already set by the
-      guest session, one can specify a per-process environment block when using
-      one of the both above mentioned process creation calls.
+      A set of environment variables changes is associated with each session.
+      These are applied to the standard environment of the impersonated guest
+      user when creating a new guest process.  For additional flexibility the
+      <link to="IGuestSession::processCreate"/> and
+      <link to="IGuestSession::processCreateEx"/> methods allows you to specify
+      individual environment changes for each process you create.
     </desc>
 
     <attribute name="user" type="wstring" readonly="yes">
       <desc>Returns the user name used by this session to impersonate
-        users on the guest.
+        users in the guest.
       </desc>
     </attribute>
     <attribute name="domain" type="wstring" readonly="yes">
       <desc>Returns the domain name used by this session to impersonate
-        users on the guest.
+        users in the guest.
       </desc>
     </attribute>
     <attribute name="name" type="wstring" readonly="yes">
@@ -10828,6 +10830,7 @@
     </attribute>
     <attribute name="timeout" type="unsigned long">
       <desc>
+<!-- r=bird: Using 'Returns' for writable attributes is misleading. -->
         Returns the session timeout (in ms).
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -10842,8 +10845,13 @@
       <desc>Returns the current session status.</desc>
     </attribute>
     <attribute name="environment" type="wstring" safearray="yes">
+      <!-- r=bird: Would probably be a great idea to rename this attribute as
+                   it is misleading and will cause worse confusion if we ever
+                   expose the default environment for session (which arguably
+                   would be useful in many ways).   -->
       <desc>
-        Returns the current session environment.
+        The set of environment changes.  They are in putenv format, i.e.
+        "NAME=VALUE" for setting and "NAME" for unsetting.
       </desc>
     </attribute>
     <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
@@ -10872,7 +10880,7 @@
         Closes this session. All opened guest directories, files and
         processes which are not referenced by clients anymore will be
         closed. Guest processes which fall into this category and still
-        are running on the guest will be terminated automatically.
+        are running in the guest will be terminated automatically.
       </desc>
     </method>
 
@@ -10885,7 +10893,7 @@
         </result>
       </desc>
       <param name="source" type="wstring" dir="in">
-        <desc>Source file on the guest to copy to the host.</desc>
+        <desc>Source file in the guest to copy to the host.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
         <desc>Destination file name on the host.</desc>
@@ -10910,7 +10918,7 @@
         <desc>Source file on the host to copy to the guest.</desc>
       </param>
       <param name="dest" type="wstring" dir="in">
-        <desc>Destination file name on the guest.</desc>
+        <desc>Destination file name in the guest.</desc>
       </param>
       <param name="flags" type="CopyFileFlag" dir="in" safearray="yes">
         <desc>Copy flags; see <link to="CopyFileFlag"/> for more information.</desc>
@@ -10922,7 +10930,7 @@
 
     <method name="directoryCreate">
       <desc>
-        Create a directory on the guest.
+        Create a directory in the guest.
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while creating the directory.
@@ -10941,7 +10949,7 @@
 
     <method name="directoryCreateTemp">
       <desc>
-        Create a temporary directory on the guest.
+        Create a temporary directory in the guest.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           The operation is not possible as requested on this particular
@@ -10986,7 +10994,7 @@
 
     <method name="directoryExists">
       <desc>
-        Checks whether a directory exists on the guest or not.
+        Checks whether a directory exists in the guest or not.
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while checking existence of the directory specified.
@@ -11028,7 +11036,7 @@
 
     <method name="directoryQueryInfo">
       <desc>
-        Queries information of a directory on the guest.
+        Queries information about a directory in the guest.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           Directory to query information for was not found.
@@ -11072,7 +11080,7 @@
 
     <method name="directoryRename">
       <desc>
-        Renames a directory on the guest.
+        Renames a directory in the guest.
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Source directory to rename.</desc>
@@ -11101,21 +11109,28 @@
       </param>
     </method>
 
+<!-- r=bird: Remove this it duplicates the 'environment' attribute. -->
     <method name="environmentClear">
       <desc>
         Clears (deletes) all session environment variables.
 
         <result name="VBOX_E_IPRT_ERROR">
+<!-- r=bird: No, it won't return this result, because you're just doing .clear() on a vector. -->
           Error while clearing the session environment variables.
         </result>
       </desc>
     </method>
 
     <method name="environmentGet">
+<!-- r=bird: Remove this because the interface isn't suitable for returning
+'unset' or empty values, and it can easily be misunderstood.  Besides there is
+hardly a usecase for it as long as it just works on environment changes and
+there is the 'environment' attribute. -->
       <desc>
-        Gets the value of a session environment variable.
+        Gets the value of an environment variable scheduled to be set.
 
         <result name="VBOX_E_IPRT_ERROR">
+<!-- r=bird: Would never return this, only invalid input or out of memory. -->
           Error while getting the value of the session environment variable.
         </result>
       </desc>
@@ -11124,22 +11139,24 @@
       </param>
       <param name="value" type="wstring" dir="return">
         <desc>
-          Value of the session environment variable specified. If this variable
-          does not exist and empty value will be returned.
+          Value of the session environment variable specified.  If this variable
+          does not exist an empty value will be returned.
+          <note>
+            An empty value will also be return for a variable with an value or
+            a unset-variable entry.
+          </note>
         </desc>
       </param>
     </method>
 
     <method name="environmentSet">
       <desc>
-        Sets a session environment variable.
-
-        <result name="VBOX_E_IPRT_ERROR">
-          Error while setting the session environment variable.
-        </result>
+        Schedules setting an environment variable when creating the next guest
+        process.  This affects the <link to="environment"/> attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>Name of session environment variable to set.</desc>
+        <desc>Name of the environment variable to set.  This cannot be empty
+          nor can it contain any equal signs.</desc>
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>Value to set the session environment variable to.</desc>
@@ -11148,20 +11165,19 @@
 
     <method name="environmentUnset">
       <desc>
-        Unsets a session environment variable.
-
-        <result name="VBOX_E_IPRT_ERROR">
-          Error while unsetting the session environment variable.
-        </result>
+        Schedules unsetting (removing) an environment variable when creating
+        the next guest process.  This affects the <link to="environment"/>
+        attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>Name of session environment variable to unset (clear).</desc>
+        <desc>Name of the environment variable to unset.  This cannot be empty
+          nor can it contain any equal signs.</desc>
       </param>
     </method>
 
     <method name="fileCreateTemp">
       <desc>
-        Creates a temporary file on the guest.
+        Creates a temporary file in the guest.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           The operation is not possible as requested on this particular
@@ -11208,7 +11224,7 @@
 
     <method name="fileExists">
       <desc>
-        Checks whether a file exists on the guest or not.
+        Checks whether a file exists in the guest or not.
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while checking existence of the file specified.
@@ -11224,7 +11240,7 @@
 
     <method name="fileRemove">
       <desc>
-        Removes a single file on the guest.
+        Removes a single file in the guest.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           File to remove was not found.
@@ -11330,7 +11346,7 @@
         </desc>
       </param>
       <param name="sharingMode" type="wstring" dir="in">
-        <desc>The file sharing mode on the guest. This parameter
+        <desc>The file sharing mode in the guest. This parameter
           is not implemented yet. Pass an empty string here.</desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
@@ -11347,7 +11363,7 @@
 
     <method name="fileQueryInfo">
       <desc>
-        Queries information of a file on the guest.
+        Queries information about a file in the guest.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           File to query information for was not found.
@@ -11366,7 +11382,7 @@
 
     <method name="fileQuerySize">
       <desc>
-        Queries the size of a file on the guest.
+        Queries the size of a file in the guest.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           File to rename was not found.
@@ -11385,7 +11401,7 @@
 
     <method name="fileRename">
       <desc>
-        Renames a file on the guest.
+        Renames a file in the guest.
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Source file to rename.</desc>
@@ -11400,7 +11416,7 @@
 
     <method name="fileSetACL">
       <desc>
-        Sets the ACL (Access Control List) of a file on the guest.
+        Sets the ACL (Access Control List) of a file in the guest.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11416,20 +11432,20 @@
 
     <method name="processCreate">
       <desc>
-        Creates a new process running on the guest. The new process will be
+        Creates a new process running in the guest. The new process will be
         started asynchronously, meaning on return of this function it is not
-        guaranteed that the guest process is in a started state. To wait for
+        be guaranteed that the guest process is in a started state. To wait for
         successful startup, use the <link to="IProcess::waitFor"/> call.
 
         <note>
-          Starting at VirtualBox 4.2 guest process execution by default is limited
+          Starting at VirtualBox 4.2 guest process execution by is default limited
           to serve up to 255 guest processes at a time. If all 255 guest processes
-          are still active and running, creating a new guest process will result in an
-          appropriate error message.
+          are active and running, creating a new guest process will result in an
+          error.
 
           If ProcessCreateFlag_WaitForStdOut and/or ProcessCreateFlag_WaitForStdErr
-          are set, the guest process will not exit until all data from the specified
-          streams are read out.
+          are set, the guest process will not enter the terminated state until
+          all data from the specified streams have been read read.
         </note>
 
         <result name="VBOX_E_IPRT_ERROR">
@@ -11438,10 +11454,10 @@
       </desc>
       <param name="executable" type="wstring" dir="in">
         <desc>
-          Full path name of the file to execute on the guest.  The file has to
+          Full path to the file to execute in the guest.  The file has to
           exists in the guest VM with executable right to the session user in
-          order to be executed. If empty/null, the first entry in the
-          @a arguments array will be used in stead (i.e. argv[0]).
+          order to succeed.  If empty/null, the first entry in the
+          @a arguments array will be used instead (i.e. argv[0]).
         </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
@@ -11450,18 +11466,20 @@
             Starting with VirtualBox 5.0 this array starts with argument 0
             instead of argument 1 as in previous versions.  Whether the zeroth
             argument can be passed to the guest depends on the VBoxService
-            version running there.
+            version running there.  If you depend on this, check that the
+            <link to="IGuestSession::protocolVersion"/> is 3 or higher.
           </note>
         </desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables to set or unset for the guest process,
-          relative to the environment of the guest session.
+          Set of environment changes to complement
+          <link to="IGuestSession::environment"/>.  Takes precedence over
+          the session ones.  The changes are in putenv format, i.e.
+          "NAME=VALUE" for setting and "NAME" for unsetting.
 
-          The variables are in the traditional "NAME=VALUE" form with one pair
-          per array entry.  To unset a variable just leave out the equal sign
-          and the value ("NAME").
+          The changes are applied to the standard environment of the
+          impersonated guest user when creating the process.
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -11485,17 +11503,17 @@
 
     <method name="processCreateEx">
       <desc>
-        Creates a new process running on the guest. Extended version for
-        also setting the process priority and affinity.
+        Creates a new process running in the guest with the extended options
+        for setting the process priority and affinity.
 
         See <link to="IGuestSession::processCreate"/> for more information.
       </desc>
       <param name="executable" type="wstring" dir="in">
         <desc>
-          Full path name of the file to execute on the guest.  The file has to
+          Full path to the file to execute in the guest.  The file has to
           exists in the guest VM with executable right to the session user in
-          order to be executed.  If empty/null, the first entry in the
-          @a arguments array will be used in stead (i.e. argv[0]).
+          order to succeed.  If empty/null, the first entry in the
+          @a arguments array will be used instead (i.e. argv[0]).
         </desc>
       </param>
       <param name="arguments" type="wstring" dir="in" safearray="yes">
@@ -11504,24 +11522,26 @@
             Starting with VirtualBox 5.0 this array starts with argument 0
             instead of argument 1 as in previous versions.  Whether the zeroth
             argument can be passed to the guest depends on the VBoxService
-            version running there.
+            version running there.  If you depend on this, check that the
+            <link to="IGuestSession::protocolVersion"/> is 3 or higher.
           </note>
         </desc>
       </param>
       <param name="environment" type="wstring" dir="in" safearray="yes">
         <desc>
-          Environment variables to set or unset for the guest process,
-          relative to the environment of the guest session.
+          Set of environment changes to complement
+          <link to="IGuestSession::environment"/>.  Takes precedence over
+          the session ones.  The changes are in putenv format, i.e.
+          "NAME=VALUE" for setting and "NAME" for unsetting.
 
-          The variables are in the traditional "NAME=VALUE" form with one pair
-          per array entry.  To unset a variable just leave out the equal sign
-          and the value ("NAME").
+          The changes are applied to the standard environment of the
+          impersonated guest user when creating the process.
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
         <desc>
-          Process creation flags;
-          see <link to="ProcessCreateFlag"/> for more information.
+          Process creation flags, see <link to="ProcessCreateFlag"/> for
+          detailed description of available flags.
         </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
@@ -11534,13 +11554,20 @@
       </param>
       <param name="priority" type="ProcessPriority" dir="in">
         <desc>
-          Process priority to use for execution;
-          see see <link to="ProcessPriority"/> for more information.</desc>
+          Process priority to use for execution, see <link to="ProcessPriority"/>
+          for available priority levels.
+          <note>This is silently ignored if not supported by guest additions.</note>
+        </desc>
       </param>
       <param name="affinity" type="long" dir="in" safearray="yes">
         <desc>
-          Process affinity to use for execution. This parameter
-          is not implemented yet.
+          Processor affinity to set for the new process.  This is a list of
+          guest CPU numbers the process is allowed to run on.
+          <note>
+            This is silently ignored if the guest does not support setting the
+            affinity of processes, or if the guest additions does not implemet
+            this feature.
+          </note>
         </desc>
       </param>
       <param name="guestProcess" type="IGuestProcess" dir="return">
@@ -11562,7 +11589,7 @@
 
     <method name="symlinkCreate">
       <desc>
-        Creates a symbolic link on the guest.
+        Creates a symbolic link in the guest.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11584,7 +11611,7 @@
 
     <method name="symlinkExists">
       <desc>
-        Checks whether a symbolic link exists on the guest or not.
+        Checks whether a symbolic link exists in the guest.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11600,7 +11627,7 @@
 
     <method name="symlinkRead">
       <desc>
-        Reads a symbolic link on the guest.
+        Reads a symbolic link in the guest.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11623,7 +11650,7 @@
 
     <method name="symlinkRemoveDirectory">
       <desc>
-        Removes a symbolic link on the guest if it's a directory.
+        Removes a symbolic link in the guest if it's a directory.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11636,7 +11663,7 @@
 
     <method name="symlinkRemoveFile">
       <desc>
-        Removes a symbolic link on the guest if it's a file.
+        Removes a symbolic link in the guest if it's a file.
 
         <result name="E_NOTIMPL">
           The method is not implemented yet.
@@ -11713,8 +11740,14 @@
       </desc>
     </attribute>
     <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
+      <!-- r=bird: Would probably be a great idea to rename this attribute as
+                   it is misleading and will cause worse confusion if we ever
+                   expose the initial environment for processes.  -->
       <desc>
-        The environment block this process is using during execution.
+        The set of environment changes appled to the default environment when
+        starting the process.  The format is putenv style, i.e. "NAME=VALUE"
+        for variables that should be set and "NAME" for values that should be
+        unset (removed).  See also <link to="IGuestSession::environment"/>.
       </desc>
     </attribute>
     <attribute name="eventSource" type="IEventSource" readonly="yes">
@@ -11894,7 +11927,7 @@
     >
     <desc>
       Implementation of the <link to="IProcess" /> object
-      for processes on the guest.
+      for processes the host has started in the guest.
     </desc>
   </interface>
 
@@ -11947,7 +11980,7 @@
     >
     <desc>
       Implementation of the <link to="IDirectory" /> object
-      for directories on the guest.
+      for directories in the guest.
     </desc>
   </interface>
 
@@ -12162,7 +12195,7 @@
     >
     <desc>
       Implementation of the <link to="IFile" /> object
-      for files on the guest.
+      for files in the guest.
     </desc>
   </interface>
 
@@ -12493,11 +12526,11 @@
         To wait for successful startup, use the <link to="IGuestSession::waitFor"/>
         call.
 
-        A guest session represents one impersonated user account on the guest, so
+        A guest session represents one impersonated user account in the guest, so
         every operation will use the same credentials specified when creating
         the session object via <link to="IGuest::createSession"/>. Anonymous
         sessions, that is, sessions without specifying a valid
-        user account on the guest are not allowed due to security reasons.
+        user account in the guest are not allowed due to security reasons.
 
         There can be a maximum of 32 sessions at once per VM. Each session keeps
         track of its started guest processes, opened guest files or guest directories.
@@ -12605,7 +12638,7 @@
         <desc>
           Optional command line arguments to use for the Guest Additions
           installer. Useful for retrofitting features which weren't installed
-          before on the guest.
+          before in the guest.
         </desc>
       </param>
       <param name="flags" type="AdditionsUpdateFlag" dir="in" safearray="yes">
