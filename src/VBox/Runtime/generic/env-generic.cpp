@@ -399,6 +399,47 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
 RT_EXPORT_SYMBOL(RTEnvPutEx);
 
 
+/**
+ * Appends an already allocated string to papszEnv.
+ *
+ * @returns IPRT status code
+ * @param   pIntEnv             The environment block to append it to.
+ * @param   pszEntry            The string to add.  Already duplicated, caller
+ *                              does error cleanup.
+ */
+static int rtEnvIntAppend(PRTENVINTERNAL pIntEnv, char *pszEntry)
+{
+    /*
+     * Do we need to resize the array?
+     */
+    int rc = VINF_SUCCESS;
+    size_t iVar = pIntEnv->cVars;
+    if (iVar + 2 > pIntEnv->cAllocated)
+    {
+        void *pvNew = RTMemRealloc(pIntEnv->papszEnv, sizeof(char *) * (pIntEnv->cAllocated + RTENV_GROW_SIZE));
+        if (!pvNew)
+            rc = VERR_NO_MEMORY;
+        else
+        {
+            pIntEnv->papszEnv = (char **)pvNew;
+            pIntEnv->cAllocated += RTENV_GROW_SIZE;
+            for (size_t iNewVar = pIntEnv->cVars; iNewVar < pIntEnv->cAllocated; iNewVar++)
+                pIntEnv->papszEnv[iNewVar] = NULL;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Append it.
+         */
+        pIntEnv->papszEnv[iVar] = pszEntry;
+        pIntEnv->papszEnv[iVar + 1] = NULL; /* this isn't really necessary, but doesn't hurt. */
+        pIntEnv->cVars = iVar + 1;
+    }
+    return rc;
+}
+
+
 RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
 {
     AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
@@ -473,29 +514,10 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
             else
             {
                 /*
-                 * Adding a new variable. Resize the array if required
-                 * and then insert the new value at the end.
+                 * New variable, append it.
                  */
-                if (pIntEnv->cVars + 2 > pIntEnv->cAllocated)
-                {
-                    void *pvNew = RTMemRealloc(pIntEnv->papszEnv, sizeof(char *) * (pIntEnv->cAllocated + RTENV_GROW_SIZE));
-                    if (!pvNew)
-                        rc = VERR_NO_MEMORY;
-                    else
-                    {
-                        pIntEnv->papszEnv = (char **)pvNew;
-                        pIntEnv->cAllocated += RTENV_GROW_SIZE;
-                        for (size_t iNewVar = pIntEnv->cVars; iNewVar < pIntEnv->cAllocated; iNewVar++)
-                            pIntEnv->papszEnv[iNewVar] = NULL;
-                    }
-                }
-                if (RT_SUCCESS(rc))
-                {
-                    pIntEnv->papszEnv[iVar] = pszEntry;
-                    pIntEnv->papszEnv[iVar + 1] = NULL; /* this isn't really necessary, but doesn't hurt. */
-                    pIntEnv->cVars++;
-                    Assert(pIntEnv->cVars == iVar + 1);
-                }
+                Assert(pIntEnv->cVars == iVar);
+                rc = rtEnvIntAppend(pIntEnv, pszEntry);
             }
 
             RTENV_UNLOCK(pIntEnv);
@@ -572,6 +594,24 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
                 rc = VINF_SUCCESS;
                 /* no break, there could be more. */
             }
+
+        /*
+         * If this is a change record, we may need to add it.
+         */
+        if (rc == VINF_ENV_VAR_NOT_FOUND && pIntEnv->fPutEnvBlock)
+        {
+            char *pszEntry = (char *)RTMemDup(pszVar, cchVar + 1);
+            if (pszEntry)
+            {
+                rc = rtEnvIntAppend(pIntEnv, pszEntry);
+                if (RT_SUCCESS(rc))
+                    rc = VINF_ENV_VAR_NOT_FOUND;
+                else
+                    RTMemFree(pszEntry);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
 
         RTENV_UNLOCK(pIntEnv);
     }
