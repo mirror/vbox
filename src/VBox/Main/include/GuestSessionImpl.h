@@ -267,8 +267,9 @@ private:
     HRESULT setTimeout(ULONG aTimeout);
     HRESULT getProtocolVersion(ULONG *aProtocolVersion);
     HRESULT getStatus(GuestSessionStatus_T *aStatus);
-    HRESULT getEnvironment(std::vector<com::Utf8Str> &aEnvironment);
-    HRESULT setEnvironment(const std::vector<com::Utf8Str> &aEnvironment);
+    HRESULT getEnvironmentChanges(std::vector<com::Utf8Str> &aEnvironmentChanges);
+    HRESULT setEnvironmentChanges(const std::vector<com::Utf8Str> &aEnvironmentChanges);
+    HRESULT getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironmentBase);
     HRESULT getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcesses);
     HRESULT getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories);
     HRESULT getFiles(std::vector<ComPtr<IGuestFile> > &aFiles);
@@ -311,9 +312,13 @@ private:
                             const std::vector<PathRenameFlag_T> &aFlags);
     HRESULT directorySetACL(const com::Utf8Str &aPath,
                              const com::Utf8Str &aAcl);
-    HRESULT environmentSet(const com::Utf8Str &aName,
-                           const com::Utf8Str &aValue);
-    HRESULT environmentUnset(const com::Utf8Str &aName);
+    HRESULT environmentScheduleSet(const com::Utf8Str &aName,
+                                   const com::Utf8Str &aValue);
+    HRESULT environmentScheduleUnset(const com::Utf8Str &aName);
+    HRESULT environmentGetBaseVariable(const com::Utf8Str &aName,
+                                       com::Utf8Str &aValue);
+    HRESULT environmentDoesBaseVariableExist(const com::Utf8Str &aName,
+                                             BOOL *aExists);
     HRESULT fileCreateTemp(const com::Utf8Str &aTemplateName,
                            ULONG aMode,
                            const com::Utf8Str &aPath,
@@ -468,7 +473,11 @@ private:
         GuestSessionStatus_T        mStatus;
         /** The set of environment changes for the session for use when
          *  creating new guest processes. */
-        GuestEnvironmentChanges     mEnvironment;
+        GuestEnvironmentChanges     mEnvironmentChanges;
+        /** Pointer to the immutable base environment for the session.
+         * @note This is not allocated until the guest reports it to the host. It is
+         *       also shared with child processes. */
+        GuestEnvironment const     *mpBaseEnvironment;
         /** Directory objects bound to this session. */
         SessionDirectories          mDirectories;
         /** File objects bound to this session. */
@@ -487,6 +496,24 @@ private:
         /** The last returned session status
          *  returned from the guest side. */
         int                         mRC;
+
+        Data(void)
+            : mpBaseEnvironment(NULL)
+        { }
+        Data(const Data &rThat)
+            : mCredentials(rThat.mCredentials)
+            , mSession(rThat.mSession)
+            , mStatus(rThat.mStatus)
+            , mEnvironmentChanges(rThat.mEnvironmentChanges)
+            , mpBaseEnvironment(NULL)
+            , mDirectories(rThat.mDirectories)
+            , mFiles(rThat.mFiles)
+            , mProcesses(rThat.mProcesses)
+            , mProtocolVersion(rThat.mProtocolVersion)
+            , mTimeout(rThat.mTimeout)
+            , mNumObjects(rThat.mNumObjects)
+            , mRC(rThat.mRC)
+        { }
     } mData;
 };
 

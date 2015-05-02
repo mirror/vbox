@@ -204,7 +204,8 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     mData.mRC = VINF_SUCCESS;
     mData.mStatus = GuestSessionStatus_Undefined;
     mData.mNumObjects = 0;
-    int rc = mData.mEnvironment.initNormal();
+    mData.mpBaseEnvironment = NULL;
+    int rc = mData.mEnvironmentChanges.initChangeRecord();
     if (RT_SUCCESS(rc))
     {
         rc = RTCritSectInit(&mWaitEventCritSect);
@@ -319,7 +320,14 @@ void GuestSession::uninit(void)
     }
     mData.mProcesses.clear();
 
-    mData.mEnvironment.reset();
+    mData.mEnvironmentChanges.reset();
+
+    if (mData.mpBaseEnvironment)
+    {
+        GuestEnvironment *pBaseEnv = unconst(mData.mpBaseEnvironment);
+        mData.mpBaseEnvironment = NULL;
+        pBaseEnv->release();
+    }
 
     AssertMsg(mData.mNumObjects == 0,
               ("mNumObjects=%RU32 when it should be 0\n", mData.mNumObjects));
@@ -461,7 +469,7 @@ HRESULT GuestSession::getProtocolVersion(ULONG *aProtocolVersion)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
+HRESULT GuestSession::getEnvironmentChanges(std::vector<com::Utf8Str> &aEnvironmentChanges)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -470,14 +478,14 @@ HRESULT GuestSession::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    int vrc = mData.mEnvironment.queryPutEnvArray(&aEnvironment);
+    int vrc = mData.mEnvironmentChanges.queryPutEnvArray(&aEnvironmentChanges);
 
     LogFlowFuncLeaveRC(vrc);
     return Global::vboxStatusCodeToCOM(vrc);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::setEnvironment(const std::vector<com::Utf8Str> &aEnvironment)
+HRESULT GuestSession::setEnvironmentChanges(const std::vector<com::Utf8Str> &aEnvironmentChanges)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -486,11 +494,35 @@ HRESULT GuestSession::setEnvironment(const std::vector<com::Utf8Str> &aEnvironme
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mEnvironment.reset();
-    int vrc = mData.mEnvironment.applyPutEnvArray(aEnvironment);
+    mData.mEnvironmentChanges.reset();
+    int vrc = mData.mEnvironmentChanges.applyPutEnvArray(aEnvironmentChanges);
 
     LogFlowFuncLeaveRC(vrc);
     return Global::vboxStatusCodeToCOM(vrc);
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironmentBase)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HRESULT hrc;
+    if (mData.mpBaseEnvironment)
+    {
+        int vrc = mData.mpBaseEnvironment->queryPutEnvArray(&aEnvironmentBase);
+        hrc = Global::vboxStatusCodeToCOM(vrc);
+    }
+    else if (mData.mProtocolVersion < 99999)
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+    else
+        hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
+
+    LogFlowFuncLeave();
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -1916,7 +1948,7 @@ int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, C
         return VERR_COM_UNEXPECTED;
 
     rc = pProcess->init(mParent->i_getConsole() /* Console */, this /* Session */,
-                        uNewProcessID, procInfo);
+                        uNewProcessID, procInfo, mData.mpBaseEnvironment);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2903,7 +2935,7 @@ HRESULT GuestSession::directorySetACL(const com::Utf8Str &aPath, const com::Utf8
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::environmentSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
+HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2916,7 +2948,7 @@ HRESULT GuestSession::environmentSet(const com::Utf8Str &aName, const com::Utf8S
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            int vrc = mData.mEnvironment.setVariable(aName, aValue);
+            int vrc = mData.mEnvironmentChanges.setVariable(aName, aValue);
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
@@ -2933,7 +2965,7 @@ HRESULT GuestSession::environmentSet(const com::Utf8Str &aName, const com::Utf8S
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::environmentUnset(const com::Utf8Str &aName)
+HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2945,11 +2977,81 @@ HRESULT GuestSession::environmentUnset(const com::Utf8Str &aName)
         if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
         {
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            int vrc = mData.mEnvironment.unsetVariable(aName);
+            int vrc = mData.mEnvironmentChanges.unsetVariable(aName);
             if (RT_SUCCESS(vrc))
                 hrc = S_OK;
             else
                 hrc = setErrorVrc(vrc);
+        }
+        else
+            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+    }
+    else
+        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+
+    LogFlowThisFuncLeave();
+    return hrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com::Utf8Str &aValue)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+    HRESULT hrc;
+    if (RT_LIKELY(aName.isNotEmpty()))
+    {
+        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (mData.mpBaseEnvironment)
+            {
+                int vrc = mData.mpBaseEnvironment->getVariable(aName, &aValue);
+                if (RT_SUCCESS(vrc))
+                    hrc = S_OK;
+                else
+                    hrc = setErrorVrc(vrc);
+            }
+            else if (mData.mProtocolVersion < 99999)
+                hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+            else
+                hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
+        }
+        else
+            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+    }
+    else
+        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+
+    LogFlowThisFuncLeave();
+    return hrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName, BOOL *aExists)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+    *aExists = FALSE;
+    HRESULT hrc;
+    if (RT_LIKELY(aName.isNotEmpty()))
+    {
+        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
+        {
+            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            if (mData.mpBaseEnvironment)
+            {
+                hrc = S_OK;
+                *aExists = mData.mpBaseEnvironment->doesVariableExist(aName);
+            }
+            else if (mData.mProtocolVersion < 99999)
+                hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+            else
+                hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
         }
         else
             hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
@@ -3344,9 +3446,9 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
     /* Combine the environment changes associated with the ones passed in by
        the caller, giving priority to the latter.  The changes are putenv style
        and will be applied to the standard environment for the guest user. */
-    int vrc = procInfo.mEnvironment.copy(mData.mEnvironment);
+    int vrc = procInfo.mEnvironmentChanges.copy(mData.mEnvironmentChanges);
     if (RT_SUCCESS(vrc))
-        vrc = procInfo.mEnvironment.applyPutEnvArray(aEnvironment);
+        vrc = procInfo.mEnvironmentChanges.applyPutEnvArray(aEnvironment);
     if (RT_SUCCESS(vrc))
     {
         /* Convert the flag array into a mask. */

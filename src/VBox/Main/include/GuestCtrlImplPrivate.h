@@ -25,6 +25,7 @@
 #include <iprt/asm.h>
 #include <iprt/env.h>
 #include <iprt/semaphore.h>
+#include <iprt/cpp/utils.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/ErrorInfo.h>
@@ -77,6 +78,7 @@ public:
      */
     GuestEnvironmentBase(void)
         : m_hEnv(NIL_RTENV)
+        , m_cRefs(1)
     { }
 
     /**
@@ -84,18 +86,54 @@ public:
      */
     virtual ~GuestEnvironmentBase(void)
     {
+        Assert(m_cRefs <= 1);
         int rc = RTEnvDestroy(m_hEnv); AssertRC(rc);
         m_hEnv = NIL_RTENV;
     }
 
     /**
-     * Initialize this as a normal environment block.
-     * @returns IPRT status code.
+     * Retains a reference to this object.
+     * @returns New reference count.
+     * @remarks Sharing an object is currently only safe if no changes are made to
+     *          it because RTENV does not yet implement any locking.  For the only
+     *          purpose we need this, implementing IGuestProcess::environment by
+     *          using IGuestSession::environmentBase, that's fine as the session
+     *          base environment is immutable.
      */
-    int initNormal(void)
+    uint32_t retain(void)
     {
-        AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
-        return RTEnvCreate(&m_hEnv);
+        uint32_t cRefs = ASMAtomicIncU32(&m_cRefs);
+        Assert(cRefs > 1); Assert(cRefs < _1M);
+        return cRefs;
+
+    }
+    /** Useful shortcut. */
+    uint32_t retainConst(void) const { return unconst(this)->retain(); }
+
+    /**
+     * Releases a reference to this object, deleting the object when reaching zero.
+     * @returns New reference count.
+     */
+    uint32_t release(void)
+    {
+        uint32_t cRefs = ASMAtomicDecU32(&m_cRefs);
+        Assert(cRefs < _1M);
+        if (cRefs == 0)
+            delete this;
+        return cRefs;
+    }
+
+    /** Useful shortcut. */
+    uint32_t releaseConst(void) const { return unconst(this)->retain(); }
+
+    /**
+     * Checks if the environment has been successfully initialized or not.
+     *
+     * @returns @c true if initialized, @c false if not.
+     */
+    bool isInitialized(void) const
+    {
+        return m_hEnv != NIL_RTENV;
     }
 
     /**
@@ -168,6 +206,21 @@ public:
     }
 
     /**
+     * Applies the changes from another environment to this.
+     *
+     * @returns IPRT status code.
+     * @param   rChanges        Reference to an environment which variables will be
+     *                          imported and, if it's a change record, schedule
+     *                          variable unsets will be applied.
+     * @sa      RTEnvApplyChanges
+     */
+    int applyChanges(const GuestEnvironmentBase &rChanges)
+    {
+        return RTEnvApplyChanges(m_hEnv, rChanges.m_hEnv);
+    }
+
+
+    /**
      * See RTEnvQueryUtf8Block for details.
      * @returns IPRT status code.
      * @param   ppszzBlock      Where to return the block pointer.
@@ -218,6 +271,19 @@ public:
     }
 
     /**
+     * Checks if the given variable exists.
+     *
+     * @returns @c true if it exists, @c false if not or if it's an scheduled unset
+     *          in a environment change record.
+     * @param   rName               The variable name.
+     * @sa      RTEnvExistEx
+     */
+    bool doesVariableExist(const com::Utf8Str &rName) const
+    {
+        return RTEnvExistEx(m_hEnv, rName.c_str());
+    }
+
+    /**
      * Set an environment variable.
      *
      * @returns IPRT status code.
@@ -242,11 +308,7 @@ public:
         return RTEnvUnsetEx(m_hEnv, rName.c_str());
     }
 
-#if 0
-private:
-    /* No copy operator. */
-    GuestEnvironmentBase(const GuestEnvironmentBase &) { throw E_FAIL; }
-#else
+protected:
     /**
      * Copy constructor.
      * @throws HRESULT
@@ -258,9 +320,7 @@ private:
         if (RT_FAILURE(rc))
             throw (Global::vboxStatusCodeToCOM(rc));
     }
-#endif
 
-protected:
     /**
      * Common clone/copy method with type conversion abilities.
      *
@@ -303,11 +363,12 @@ protected:
 
 
     /** The environment change record. */
-    RTENV       m_hEnv;
+    RTENV               m_hEnv;
+    /** Reference counter. */
+    uint32_t volatile   m_cRefs;
 };
 
 
-#if 0 /* Not currently used. */
 /**
  * Wrapper around the RTEnv API for a normal environment.
  */
@@ -363,7 +424,6 @@ public:
         return cloneCommon(rThat, false /*fChangeRecord*/);
     }
 };
-#endif /* unused */
 
 
 /**
@@ -547,7 +607,7 @@ public:
     /** Arguments vector (starting with argument \#0). */
     ProcessArguments            mArguments;
     /** The process environment change record.  */
-    GuestEnvironmentChanges     mEnvironment;
+    GuestEnvironmentChanges     mEnvironmentChanges;
     /** Process creation flags. */
     uint32_t                    mFlags;
     ULONG                       mTimeoutMS;
@@ -979,14 +1039,25 @@ protected:
 
 protected:
 
-    /**
-     * Commom parameters for all derived objects, when then have
-     * an own mData structure to keep their specific data around.
-     */
-
+    /** @name Common parameters for all derived objects.  They have their own
+     * mData structure to keep their specific data around.
+     * @{ */
     /** Pointer to parent session. Per definition
      *  this objects *always* lives shorter than the
-     *  parent. */
+     *  parent.
+     * @todo r=bird: When wanting to use mSession in the
+     * IGuestProcess::getEnvironment() implementation I wanted to access
+     * GuestSession::mData::mpBaseEnvironment.  Seeing the comment in
+     * GuestProcess::terminate() saying:
+     *      "Now only API clients still can hold references to it."
+     * and recalling seeing similar things in VirtualBox.xidl or some such place,
+     * I'm wondering how this "per definition" behavior is enforced.  Is there any
+     * GuestProcess:uninit() call or similar magic that invalidates objects that
+     * GuestSession loses track of in place like GuestProcess::terminate() that I've
+     * failed to spot?
+     *
+     * Please enlighten me.
+     */
     GuestSession            *mSession;
     /** The object ID -- must be unique for each guest
      *  object and is encoded into the context ID. Must
@@ -995,6 +1066,7 @@ protected:
      *  For guest processes this is the internal PID,
      *  for guest files this is the internal file ID. */
     uint32_t                 mObjectID;
+    /** @} */
 };
-#endif // ____H_GUESTIMPLPRIVATE
+#endif // !____H_GUESTIMPLPRIVATE
 

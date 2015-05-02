@@ -5157,6 +5157,11 @@
         For details on the teleportation progress operation, see
         <link to="IConsole::powerUp"/>.
 
+<!-- TODO/r=bird: What about making @a environment into a smart array?  Guess
+this predates our safe array support by a year or so... Dmitry wrote the text here, right?
+Just rename it to @a environmentChanges and shorten the documentation to say the string
+are applied onto the server environment putenv style, i.e. "VAR=VALUE" for setting/replacing
+and "VAR" for unsetting. -->
         The @a environment argument is a string containing definitions of
         environment variables in the following format:
         <pre>
@@ -10241,7 +10246,13 @@
       <desc>The guest process waits until all data from stderr is read out.</desc>
     </const>
     <const name="ExpandArguments"           value="64">
-      <desc>Expands environment variables in process arguments.</desc>
+      <desc>Expands environment variables in process arguments.
+        <note>
+          This is not yet implemented and is currently silently ignored.
+          We will document the protocolVersion number for this feature once it
+          appears, so don't use it till then.
+        </note>
+      </desc>
     </const>
     <const name="UnquotedArguments"         value="128">
       <desc>Work around for Windows and OS/2 applications not following normal
@@ -10782,7 +10793,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="e1fa83fe-437d-3e3a-9278-4297f1ca95dd"
+    uuid="bb890975-4903-38f8-4bc2-f39341f95533"
     wsmap="managed"
     >
     <desc>
@@ -10794,22 +10805,38 @@
       is reserved for the root session.
 <!-- r=bird: Is the root session part of the maximum of 32?? Not really clear. -->
       This root session is controlling all other guest sessions and also is
-      responsible for actions which require system level privileges.  Each
-      guest session keeps track of its started guest processes, opened guest
-      files or guest directories.  To work on guest files or directories a
-      guest session offers methods to open or create such objects (see
-      <link to="IGuestSession::fileOpen"/> or
-      <link to="IGuestSession::directoryOpen"/> for example).
+      responsible for actions which require system level privileges.
+
+      Each guest session keeps track of the guest directories and files that
+      it opened as well as guest processes it has created.  To work on guest
+      files or directories a guest session offers methods to open or create
+      such objects (see <link to="IGuestSession::fileOpen"/> or
+      <link to="IGuestSession::directoryOpen"/> for instance).  Similarly,
+      there a methods for creating guest processes.
+
+      There can be up to 2048 objects (guest processes, files and directories)
+      a time per guest session.  Exceeding the limit will result in an error.
+<!-- @todo r=bird: Add specific VBOX_E_XXX error for this and document it here! -->
 
       When done with either of these objects, including the guest session itself,
       use the appropriate close() method to let the object do its cleanup work.
 
-      A set of environment variables changes is associated with each session.
-      These are applied to the standard environment of the impersonated guest
-      user when creating a new guest process.  For additional flexibility the
-      <link to="IGuestSession::processCreate"/> and
-      <link to="IGuestSession::processCreateEx"/> methods allows you to specify
-      individual environment changes for each process you create.
+      Closing a session via <link to="IGuestSession::close" /> will try to close
+      all the mentioned objects above unless these objects are still used by
+      a client.
+
+      A set of environment variables changes is associated with each session
+      (<link to="IGuestSession::environmentChanges"/>).  These are applied to
+      the base environment of the impersonated guest user when creating a new
+      guest process.  For additional flexibility the <link to="IGuestSession::processCreate"/>
+      and <link to="IGuestSession::processCreateEx"/> methods allows you to
+      specify individual environment changes for each process you create.
+      With newer guest addition versions, the base environment is also made
+      available via <link to="IGuestSession::environmentBase"/>.  (One reason
+      for why we record changes to a base environment instead of working
+      directly on an environment block is that we need to be compatible
+      with older guest additions.  Another reason is that this way it is always
+      possible to undo all the changes you've scheduled.)
     </desc>
 
     <attribute name="user" type="wstring" readonly="yes">
@@ -10844,14 +10871,34 @@
     <attribute name="status" type="GuestSessionStatus" readonly="yes">
       <desc>Returns the current session status.</desc>
     </attribute>
-    <attribute name="environment" type="wstring" safearray="yes">
-      <!-- r=bird: Would probably be a great idea to rename this attribute as
-                   it is misleading and will cause worse confusion if we ever
-                   expose the default environment for session (which arguably
-                   would be useful in many ways).   -->
+    <attribute name="environmentChanges" type="wstring" safearray="yes">
       <desc>
-        The set of environment changes.  They are in putenv format, i.e.
-        "NAME=VALUE" for setting and "NAME" for unsetting.
+        The set of scheduled environment changes to the base environment of the
+        session.  They are in putenv format, i.e. "VAR=VALUE" for setting and
+        "VAR" for unsetting.  One entry per variable (change).  The changes are
+        applied when creating new guest processes.
+
+        This is writable, so to undo all the scheduled changes, assign it an
+        empty array.
+      </desc>
+    </attribute>
+    <attribute name="environmentBase" type="wstring" safearray="yes" readonly="yes">
+      <desc>
+        The base environment of the session.  They are on the "VAR=VALUE" form,
+        one array entry per variable.
+        <!-- @todo/TODO/FIXME: This doesn't end up in the PDF.
+        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+          support the session base environment feature.  Support for this was
+          introduced with protocol version XXX.</result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+          yet to report the session base environment.</result> -->
+
+        Access fails with VBOX_E_NOT_SUPPORTED if the guest additions does not
+        support the session base environment feature.  Support for this was
+        introduced with protocol version XXXX.
+
+        Access fails with VBOX_E_INVALID_OBJECT_STATE if the guest additions
+        has yet to report the session base environment.
       </desc>
     </attribute>
     <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
@@ -11109,10 +11156,11 @@
       </param>
     </method>
 
-    <method name="environmentSet">
+    <method name="environmentScheduleSet">
       <desc>
         Schedules setting an environment variable when creating the next guest
-        process.  This affects the <link to="IGuestSession::environment"/> attribute.
+        process.  This affects the <link to="IGuestSession::environmentChanges"/>
+        attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the environment variable to set.  This cannot be empty
@@ -11123,15 +11171,59 @@
       </param>
     </method>
 
-    <method name="environmentUnset">
+    <method name="environmentScheduleUnset">
       <desc>
         Schedules unsetting (removing) an environment variable when creating
-        the next guest process.  This affects the <link to="IGuestSession::environment"/>
-        attribute.
+        the next guest process.  This affects the
+        <link to="IGuestSession::environmentChanges"/> attribute.
       </desc>
       <param name="name" type="wstring" dir="in">
         <desc>Name of the environment variable to unset.  This cannot be empty
           nor can it contain any equal signs.</desc>
+      </param>
+    </method>
+
+    <method name="environmentGetBaseVariable">
+      <desc>
+        Gets an environment variable from the session's base environment
+        (<link to="IGuestSession::environmentBase"/>).
+
+        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+          support the session base environment feature.  Support for this was
+          introduced with protocol version XXXX.</result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+          yet to report the session base environment.</result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the environment variable to   get.This cannot be empty
+          nor can it contain any equal signs.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>
+          The value of the variable.  Empty if not found.  To deal with
+          variables that may have empty values, use
+          <link to="IGuestSession::environmentDoesBaseVariableExist"/>.
+        </desc>
+      </param>
+    </method>
+
+    <method name="environmentDoesBaseVariableExist">
+      <desc>
+        Checks if the given environment variable exists in the session's base
+        environment (<link to="IGuestSession::environmentBase"/>).
+
+        <result name="VBOX_E_NOT_SUPPORTED">If the guest additions does not
+          support the session base environment feature.  Support for this was
+          introduced with protocol version XXXX.</result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">If the guest additions has
+          yet to report the session base environment.</result>
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the environment variable to look for.  This cannot be
+          empty nor can it contain any equal signs.</desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>TRUE if the variable exists, FALSE if not.</desc>
       </param>
     </method>
 
@@ -11431,15 +11523,18 @@
           </note>
         </desc>
       </param>
-      <param name="environment" type="wstring" dir="in" safearray="yes">
+      <param name="environmentChanges" type="wstring" dir="in" safearray="yes">
         <desc>
           Set of environment changes to complement
-          <link to="IGuestSession::environment"/>.  Takes precedence over
-          the session ones.  The changes are in putenv format, i.e.
-          "NAME=VALUE" for setting and "NAME" for unsetting.
+          <link to="IGuestSession::environmentChanges"/>.  Takes precedence
+          over the session ones.  The changes are in putenv format, i.e.
+          "VAR=VALUE" for setting and "VAR" for unsetting.
 
-          The changes are applied to the standard environment of the
-          impersonated guest user when creating the process.
+          The changes are applied to the base environment of the impersonated
+          guest user (<link to="IGuestSession::environmentBase"/>) when
+          creating the process.  (This is done on the guest side of things in
+          order to be compatible with older guest additions.  That is one of
+          the motivations for not passing in the whole environment here.)
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -11487,15 +11582,18 @@
           </note>
         </desc>
       </param>
-      <param name="environment" type="wstring" dir="in" safearray="yes">
+      <param name="environmentChanges" type="wstring" dir="in" safearray="yes">
         <desc>
           Set of environment changes to complement
-          <link to="IGuestSession::environment"/>.  Takes precedence over
-          the session ones.  The changes are in putenv format, i.e.
-          "NAME=VALUE" for setting and "NAME" for unsetting.
+          <link to="IGuestSession::environmentChanges"/>.  Takes precedence
+          over the session ones.  The changes are in putenv format, i.e.
+          "VAR=VALUE" for setting and "VAR" for unsetting.
 
-          The changes are applied to the standard environment of the
-          impersonated guest user when creating the process.
+          The changes are applied to the base environment of the impersonated
+          guest user (<link to="IGuestSession::environmentBase"/>) when
+          creating the process.  (This is done on the guest side of things in
+          order to be compatible with older guest additions.  That is one of
+          the motivations for not passing in the whole environment here.)
         </desc>
       </param>
       <param name="flags" type="ProcessCreateFlag" dir="in" safearray="yes">
@@ -11687,7 +11785,7 @@
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="5a4fe06d-8cb1-40ff-ac9e-9676e32f706e"
+    uuid="064cf1ca-4c0f-50b5-8f8e-e8b4bfa76c33"
     wsmap="managed"
     >
     <desc>
@@ -11700,14 +11798,8 @@
       </desc>
     </attribute>
     <attribute name="environment" type="wstring" readonly="yes" safearray="yes">
-      <!-- r=bird: Would probably be a great idea to rename this attribute as
-                   it is misleading and will cause worse confusion if we ever
-                   expose the initial environment for processes.  -->
       <desc>
-        The set of environment changes appled to the default environment when
-        starting the process.  The format is putenv style, i.e. "NAME=VALUE"
-        for variables that should be set and "NAME" for values that should be
-        unset (removed).  See also <link to="IGuestSession::environment"/>.
+        The initial process environment.  Not yet implemented.
       </desc>
     </attribute>
     <attribute name="eventSource" type="IEventSource" readonly="yes">
@@ -11882,7 +11974,7 @@
 
   <interface
     name="IGuestProcess" extends="IProcess"
-    uuid="dfa39a36-5d43-4840-a025-67ea956b3111"
+    uuid="1f3c2d60-4c09-d824-4ca1-579a2bda858f"
     wsmap="managed"
     >
     <desc>
@@ -12490,31 +12582,19 @@
         every operation will use the same credentials specified when creating
         the session object via <link to="IGuest::createSession"/>. Anonymous
         sessions, that is, sessions without specifying a valid
-        user account in the guest are not allowed due to security reasons.
+        user account in the guest are not allowed reasons of security.
 
-        There can be a maximum of 32 sessions at once per VM. Each session keeps
-        track of its started guest processes, opened guest files or guest directories.
-        To work on guest files or directories a guest session offers methods to open
-        or create such objects (see <link to="IGuestSession::fileOpen"/> or
-        <link to="IGuestSession::directoryOpen"/> for example).
+        There can be a maximum of 32 sessions at once per VM.  An error will
+        be returned if this has been reached. <!-- This should actually read:
+        VBOX_E_IPRT_ERROR will be return if this limit has been reached.
+        However, keep in mind that VBOX_E_IPRT_ERROR can be returned for about
+        88 unrelated reasons, so you don't know what happend unless you parse
+        the error text. (bird) -->
+<!-- @todo r=bird: Seriously, add an dedicated VBOX_E_MAX_GUEST_SESSIONS status
+for this condition.  Do the same for all other maximums and things that could be
+useful to the API client. -->
 
-        There can be up to 2048 objects (guest processes, files or directories)
-        a time per guest session. Exceeding the limit will result in an appropriate
-        error message.
-
-        When done with either of these objects, including the guest session itself,
-        use the appropriate close() method to let the object do its cleanup work.
-
-        Every guest session has its own environment variable block which gets
-        automatically applied when starting a new guest process via
-        <link to="IGuestSession::processCreate"/> or <link to="IGuestSession::processCreateEx"/>.
-        To override (or unset) certain environment variables already set by the
-        guest session, one can specify a per-process environment block when using
-        one of the both above mentioned process creation calls.
-
-        Closing a session via <link to="IGuestSession::close" /> will try to close
-        all the mentioned objects above unless these objects are still used by
-        a client.
+        For more information please consult <link to="IGuestSession"/>
       </desc>
       <param name="user" type="wstring" dir="in">
         <desc>

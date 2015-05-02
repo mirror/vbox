@@ -21,6 +21,8 @@
 #include "GuestCtrlImplPrivate.h"
 #include "GuestProcessWrap.h"
 
+#include <iprt/cpp/utils.h>
+
 class Console;
 class GuestSession;
 
@@ -36,7 +38,8 @@ public:
      * @{ */
     DECLARE_EMPTY_CTOR_DTOR(GuestProcess)
 
-    int     init(Console *aConsole, GuestSession *aSession, ULONG aProcessID, const GuestProcessStartupInfo &aProcInfo);
+    int     init(Console *aConsole, GuestSession *aSession, ULONG aProcessID,
+                 const GuestProcessStartupInfo &aProcInfo, const GuestEnvironment *pBaseEnv);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -136,6 +139,12 @@ private:
     {
         /** The process startup information. */
         GuestProcessStartupInfo  mProcess;
+        /** Reference to the immutable session base environment. NULL if the
+         * environment feature isn't supported.
+         * @remarks If there is proof that the uninit order of GuestSession and
+         *          this class is what GuestObjectBase claims, then this isn't
+         *          strictly necessary. */
+        GuestEnvironment const  *mpSessionBaseEnv;
         /** Exit code if process has been terminated. */
         LONG                     mExitCode;
         /** PID reported from the guest. */
@@ -145,6 +154,17 @@ private:
         /** The last returned process status
          *  returned from the guest side. */
         int                      mLastError;
+
+        Data(void) : mpSessionBaseEnv(NULL)
+        { }
+        ~Data(void)
+        {
+            if (mpSessionBaseEnv)
+            {
+                mpSessionBaseEnv->releaseConst();
+                mpSessionBaseEnv = NULL;
+            }
+        }
     } mData;
 };
 

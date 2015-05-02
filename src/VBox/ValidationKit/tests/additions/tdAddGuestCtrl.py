@@ -1069,7 +1069,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
 
     def testGuestCtrlSessionEnvironment(self, oSession, oTxsSession, oTestVm): # pylint: disable=R0914
         """
-        Tests the guest session environment.
+        Tests the guest session environment changes.
         """
 
         if oTestVm.isWindows():
@@ -1111,6 +1111,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
               tdTestResultSessionEnv(fRc = True, cNumVars = 1) ]
         ];
 
+        # The IGuestSession::environment attribute changed late in 5.0 development.
+        sEnvironmentChangesAttr = 'environmentChanges' if self.oTstDrv.fpApiVer >= 5.0 else 'environment';
+
         # Parameters.
         fRc = True;
         for (i, aTest) in enumerate(aaTests):
@@ -1126,7 +1129,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 fRc = False;
                 break;
             # Make sure environment is empty.
-            curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
+            curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, sEnvironmentChangesAttr);
             reporter.log2('Test #%d: Environment initially has %d elements' % (i, len(curEnv)));
             if len(curEnv) != 0:
                 reporter.error('Test #%d failed: Initial session environment has %d vars, expected 0' % (i, len(curEnv)));
@@ -1144,11 +1147,14 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     reporter.log2('Test #%d: Single var="%s", value="%s" (%d) ...' \
                                   % (i, strKey, strValue, len(aElems)));
                     try:
-                        curGuestSession.environmentSet(strKey, strValue); # No return (e.g. boolean) value available thru wrapper.
+                        if self.oTstDrv.fpApiVer >= 5.0:
+                            curGuestSession.environmentScheduleSet(strKey, strValue);
+                        else:
+                            curGuestSession.environmentSet(strKey, strValue);
                     except:
                         # Setting environment variables might fail (e.g. if empty name specified). Check.
                         reporter.logXcpt('Test #%d failed: Setting environment variable failed:' % (i,));
-                        curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
+                        curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, sEnvironmentChangesAttr);
                         if len(curEnv) is not curRes.cNumVars:
                             reporter.error('Test #%d failed: Session environment has %d vars, expected %d' \
                                            % (i, len(curEnv), curRes.cNumVars));
@@ -1157,7 +1163,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         else:
                             reporter.log('Test #%d: API reported an error (single), good' % (i,));
                     ## @todo environmentGet() has been removed in 5.0 because it's not up to the task of returning all the
-                    ## putenv strings forms and gives the impression that the envrionment is something it isn't. This test
+                    ## putenv strings forms and gives the impression that the environment is something it isn't. This test
                     ## should be rewritten using the attribute.  What's more, there should be an Unset test here, shouldn't
                     ## there?
                     #
@@ -1196,7 +1202,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         pass;
                     except:
                         # Setting environment variables might fail (e.g. if empty name specified). Check.
-                        curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
+                        curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, sEnvironmentChangesAttr);
                         if len(curEnv) is not curRes.cNumVars:
                             reporter.error('Test #%d failed: Session environment has %d vars, expected %d (array)' \
                                            % (i, len(curEnv), curRes.cNumVars));
@@ -1206,7 +1212,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                             reporter.log('Test #%d: API reported an error (array), good' % (i,));
                 ## @todo Get current system environment and add it to curRes.cNumVars before comparing!
                 reporter.log('Test #%d: Environment size' % (i,));
-                curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
+                curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, sEnvironmentChangesAttr);
                 reporter.log2('Test #%d: Environment (%d) -> %s' % (i, len(curEnv), curEnv));
                 if len(curEnv) != curRes.cNumVars:
                     reporter.error('Test #%d failed: Session environment has %d vars (%s), expected %d' \
@@ -1214,8 +1220,8 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                     fRc = False;
                     break;
 
-                self.oTstDrv.oVBoxMgr.setArray(curGuestSession, 'environment', []);
-                curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, 'environment');
+                self.oTstDrv.oVBoxMgr.setArray(curGuestSession, sEnvironmentChangesAttr, []);
+                curEnv = self.oTstDrv.oVBoxMgr.getArray(curGuestSession, sEnvironmentChangesAttr);
                 if len(curEnv) is not 0:
                     reporter.error('Test #%d failed: Session environment has %d vars, expected 0');
                     fRc = False;

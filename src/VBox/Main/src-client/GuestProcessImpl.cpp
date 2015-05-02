@@ -161,11 +161,11 @@ void GuestProcess::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestProcess::init(Console *aConsole, GuestSession *aSession,
-                       ULONG aProcessID, const GuestProcessStartupInfo &aProcInfo)
+int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcessID,
+                       const GuestProcessStartupInfo &aProcInfo, const GuestEnvironment *pBaseEnv)
 {
-    LogFlowThisFunc(("aConsole=%p, aSession=%p, aProcessID=%RU32\n",
-                     aConsole, aSession, aProcessID));
+    LogFlowThisFunc(("aConsole=%p, aSession=%p, aProcessID=%RU32 pBaseEnv=%p\n",
+                     aConsole, aSession, aProcessID, pBaseEnv));
 
     AssertPtrReturn(aConsole, VERR_INVALID_POINTER);
     AssertPtrReturn(aSession, VERR_INVALID_POINTER);
@@ -236,6 +236,9 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession,
     if (RT_SUCCESS(vrc))
     {
         mData.mProcess = aProcInfo;
+        mData.mpSessionBaseEnv = pBaseEnv;
+        if (pBaseEnv)
+            pBaseEnv->retainConst();
         mData.mExitCode = 0;
         mData.mPID = 0;
         mData.mLastError = VINF_SUCCESS;
@@ -273,6 +276,12 @@ void GuestProcess::uninit(void)
     /* Note: Don't return here yet; first uninit all other stuff in
      *       case of failure. */
 
+    if (mData.mpSessionBaseEnv)
+    {
+        mData.mpSessionBaseEnv->releaseConst();
+        mData.mpSessionBaseEnv = NULL;
+    }
+
     baseUninit();
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
@@ -297,15 +306,34 @@ HRESULT GuestProcess::getArguments(std::vector<com::Utf8Str> &aArguments)
 
 HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
+#ifndef VBOX_WTIH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
-    LogFlowThisFuncEnter();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mData.mProcess.mEnvironment.queryPutEnvArray(&aEnvironment);
-    return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);  /* (Paranoia since both environment objects are immutable.) */
+    HRESULT hrc;
+    if (mData.mpSessionBaseEnv)
+    {
+        int vrc;
+        if (mData.mProcess.mEnvironmentChanges.count() == 0)
+            vrc = mData.mpSessionBaseEnv->queryPutEnvArray(&aEnvironment);
+        else
+        {
+            GuestEnvironment TmpEnv;
+            vrc = TmpEnv.copy(*mData.mpSessionBaseEnv);
+            if (RT_SUCCESS(vrc))
+            {
+                vrc = TmpEnv.applyChanges(mData.mProcess.mEnvironmentChanges);
+                if (RT_SUCCESS(rc))
+                    vrc = TmpEnv.queryPutEnvArray(&aEnvironment);
+            }
+        }
+        hrc = Global::vboxStatusCodeToCOM(vrc);
+    }
+    else
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
+    LogFlowThisFuncLeave();
+    return hrc;
+#endif
 }
 
 HRESULT GuestProcess::getEventSource(ComPtr<IEventSource> &aEventSource)
@@ -1056,7 +1084,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     size_t  cbEnvBlock;
     char   *pszzEnvBlock;
     if (RT_SUCCESS(vrc))
-        vrc = mData.mProcess.mEnvironment.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
+        vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
 
     if (RT_SUCCESS(vrc))
     {
@@ -1068,7 +1096,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
         paParms[i++].setUInt32(mData.mProcess.mFlags);
         paParms[i++].setUInt32((uint32_t)mData.mProcess.mArguments.size());
         paParms[i++].setPointer(pszArgs, (uint32_t)cbArgs);
-        paParms[i++].setUInt32(mData.mProcess.mEnvironment.count());
+        paParms[i++].setUInt32(mData.mProcess.mEnvironmentChanges.count());
         paParms[i++].setUInt32((uint32_t)cbEnvBlock);
         paParms[i++].setPointer(pszzEnvBlock, (uint32_t)cbEnvBlock);
         if (uProtocol < 2)
@@ -1108,7 +1136,7 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
             AssertRC(rc2);
         }
 
-        mData.mProcess.mEnvironment.freeUtf8Block(pszzEnvBlock);
+        mData.mProcess.mEnvironmentChanges.freeUtf8Block(pszzEnvBlock);
     }
 
     if (pszArgs)
