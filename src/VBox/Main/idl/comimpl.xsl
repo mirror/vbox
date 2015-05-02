@@ -279,7 +279,7 @@
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
+  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:variable name="aTypeName">
       <xsl:call-template name="typeIdl2Back">
@@ -798,7 +798,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
+  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:variable name="aTypeName">
       <xsl:call-template name="typeIdl2Back">
@@ -836,7 +836,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     </xsl:otherwise>
   </xsl:choose>
 
-  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikEmptyInterfaces']">
+  <xsl:for-each select="key('G_keyInterfacesByName', $name)/attribute[@name != 'midlDoesNotLikeEmptyInterfaces']">
     <xsl:variable name="aName" select="concat('a_',@name)"/>
     <xsl:choose>
       <xsl:when test="@safearray='yes'">

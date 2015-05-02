@@ -11974,13 +11974,14 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestProcess" extends="IProcess"
-    uuid="1f3c2d60-4c09-d824-4ca1-579a2bda858f"
+    uuid="35cf4b3f-4453-4f3e-c9b8-5686939c80b6"
     wsmap="managed"
     >
     <desc>
       Implementation of the <link to="IProcess" /> object
       for processes the host has started in the guest.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21125,7 +21126,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       A new snapshot of the machine has been taken.
       <see><link to="ISnapshot"/></see>
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21144,7 +21145,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       <see><link to="ISnapshot"/></see>
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21156,7 +21157,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Snapshot of the given machine has been restored.
       <see><link to="ISnapshot"/></see>
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21168,7 +21169,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Snapshot properties (name and/or description) have been changed.
       <see><link to="ISnapshot"/></see>
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21327,7 +21328,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Interested callees should query IGuest attributes to
       find out what has changed.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21394,7 +21395,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <link to="IMachine::mediumAttachments">medium attachment</link>
       changes.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21888,7 +21889,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when a guest file changed its current offset.
     </desc>
 
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21917,7 +21918,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when data has been written to a guest file.
     </desc>
 
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21931,7 +21932,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Interested callees should use IVRDEServer methods and attributes to
       find out what has changed.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21944,7 +21945,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       should use <link to="IConsole::VRDEServerInfo">IVRDEServerInfo</link>
       attributes to find out what is the current status.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21955,7 +21956,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       Notification when video capture settings have changed.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -21969,7 +21970,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Interested callees should use IUSBController methods and attributes to
       find out what has changed.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -22277,7 +22278,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       remain valid at least until the next
       <link to="IConsole::state">machine state</link> change.
     </desc>
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -22644,7 +22645,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed" autogen="VBoxEvent" id="OnHostNameResolutionConfigurationChange"
     dtracename="HostNameResCfgChangeEvent"
     >
-    <attribute name="midlDoesNotLikEmptyInterfaces" readonly="yes" type="boolean"/>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">
