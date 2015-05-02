@@ -1080,14 +1080,16 @@ int GuestProcess::i_startProcess(uint32_t uTimeoutMS, int *pGuestRc)
     if (RT_SUCCESS(vrc))
         cbArgs = pszArgs ? strlen(pszArgs) + 1 : 0; /* Include terminating zero. */
 
-    /* Prepare environment. */
+    /* Prepare environment.  The guest service dislikes the empty string at the end, so drop it. */
     size_t  cbEnvBlock;
     char   *pszzEnvBlock;
     if (RT_SUCCESS(vrc))
         vrc = mData.mProcess.mEnvironmentChanges.queryUtf8Block(&pszzEnvBlock, &cbEnvBlock);
-
     if (RT_SUCCESS(vrc))
     {
+        Assert(cbEnvBlock > 0);
+        cbEnvBlock--;
+
         /* Prepare HGCM call. */
         VBOXHGCMSVCPARM paParms[16];
         int i = 0;
