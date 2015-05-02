@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,9 +28,9 @@
 
 #include <map>
 
-const char *ctrlFileStatusToText(FileStatus_T enmStatus);
-const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus);
-const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus);
+const char *gctlFileStatusToText(FileStatus_T enmStatus);
+const char *gctlProcessStatusToText(ProcessStatus_T enmStatus);
+const char *gctlGuestSessionStatusToText(GuestSessionStatus_T enmStatus);
 
 using namespace com;
 

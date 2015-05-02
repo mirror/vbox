@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2013 Oracle Corporation
+ * Copyright (C) 2013-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,14 @@
 #include <map>
 #include <vector>
 
+
+
+/*
+ * GuestListenerBase
+ * GuestListenerBase
+ * GuestListenerBase
+ */
+
 GuestListenerBase::GuestListenerBase(void)
     : mfVerbose(false)
 {
@@ -48,6 +56,13 @@ HRESULT GuestListenerBase::init(bool fVerbose)
     return S_OK;
 }
 
+
+
+/*
+ * GuestFileEventListener
+ * GuestFileEventListener
+ * GuestFileEventListener
+ */
 
 GuestFileEventListener::GuestFileEventListener(void)
 {
@@ -85,8 +100,7 @@ STDMETHODIMP GuestFileEventListener::HandleEvent(VBoxEventType_T aType, IEvent *
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(Id)(&uID));
 
                 RTPrintf("File ID=%RU32 \"%s\" changed status to [%s]\n",
-                         uID, Utf8Str(strPath).c_str(),
-                         ctrlFileStatusToText(fileSts));
+                         uID, Utf8Str(strPath).c_str(), gctlFileStatusToText(fileSts));
 
             } while (0);
             break;
@@ -98,6 +112,13 @@ STDMETHODIMP GuestFileEventListener::HandleEvent(VBoxEventType_T aType, IEvent *
 
     return S_OK;
 }
+
+
+/*
+ * GuestProcessEventListener
+ * GuestProcessEventListener
+ * GuestProcessEventListener
+ */
 
 GuestProcessEventListener::GuestProcessEventListener(void)
 {
@@ -135,8 +156,7 @@ STDMETHODIMP GuestProcessEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
 
                 RTPrintf("Process PID=%RU32 \"%s\" changed status to [%s]\n",
-                         uPID, Utf8Str(strPath).c_str(),
-                         ctrlProcessStatusToText(procSts));
+                         uPID, Utf8Str(strPath).c_str(), gctlProcessStatusToText(procSts));
 
             } while (0);
             break;
@@ -148,6 +168,13 @@ STDMETHODIMP GuestProcessEventListener::HandleEvent(VBoxEventType_T aType, IEven
 
     return S_OK;
 }
+
+
+/*
+ * GuestSessionEventListener
+ * GuestSessionEventListener
+ * GuestSessionEventListener
+ */
 
 GuestSessionEventListener::GuestSessionEventListener(void)
 {
@@ -355,8 +382,7 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
                 CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
 
                 RTPrintf("Session ID=%RU32 \"%s\" changed status to [%s]\n",
-                         uID, Utf8Str(strName).c_str(),
-                         ctrlSessionStatusToText(sessSts));
+                         uID, Utf8Str(strName).c_str(), gctlGuestSessionStatusToText(sessSts));
 
             } while (0);
             break;
@@ -368,6 +394,13 @@ STDMETHODIMP GuestSessionEventListener::HandleEvent(VBoxEventType_T aType, IEven
 
     return S_OK;
 }
+
+
+/*
+ * GuestEventListener
+ * GuestEventListener
+ * GuestEventListener
+ */
 
 GuestEventListener::GuestEventListener(void)
 {
@@ -480,5 +513,6 @@ STDMETHODIMP GuestEventListener::HandleEvent(VBoxEventType_T aType, IEvent *aEve
 
     return S_OK;
 }
+
 #endif /* !VBOX_ONLY_DOCS */
 
