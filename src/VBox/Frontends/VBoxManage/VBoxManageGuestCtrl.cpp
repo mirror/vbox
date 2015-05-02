@@ -354,7 +354,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYTO)
         RTStrmPrintf(pStrm,
-                 "                              copyto|cp\n" COMMON_OPTION_HELP
+                 "                              copyto\n" COMMON_OPTION_HELP
                  "                              [--dryrun] [--follow] [--recursive]\n"
                  "                              <host source> <guest dest> "
                  "\n");
@@ -4196,7 +4196,6 @@ int handleGuestControl(HandlerArg *pArg)
         { "start",              gctlHandleStart,            USAGE_GSTCTRL_START,     0, },
         { "copyfrom",           gctlHandleCopyFrom,         USAGE_GSTCTRL_COPYFROM,  0, },
         { "copyto",             gctlHandleCopyTo,           USAGE_GSTCTRL_COPYTO,    0, },
-        { "cp",                 gctlHandleCopyTo,           USAGE_GSTCTRL_COPYTO,    0, },
 
         { "mkdir",              handleCtrtMkDir,            USAGE_GSTCTRL_MKDIR,     0, },
         { "md",                 handleCtrtMkDir,            USAGE_GSTCTRL_MKDIR,     0, },
