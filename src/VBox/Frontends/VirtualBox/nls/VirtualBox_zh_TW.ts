@@ -5254,18 +5254,6 @@
         <translation>&lt;p&gt;從 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; 下載 &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; 磁碟映像檔案成功並在本機儲存為 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您希望註冊此磁碟映像檔案並放入到虛擬光碟機嗎?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Drag and drop operation failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed while dropping data.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bad password or authentication failure.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5279,6 +5267,18 @@
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8114,6 +8114,11 @@
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
         <comment>medium</comment>
         <translation>這個基礎硬碟機使用以下差異硬碟機間接附加:</translation>
+    </message>
+    <message>
+        <source>Encrypted</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

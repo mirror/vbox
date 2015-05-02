@@ -8962,18 +8962,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Дисковото изображение &lt;b&gt;VirtualBox Виртуални Добавки&lt;/b&gt; е свалено успешно от &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; и запазено локално в &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Искате ли да регистрирате това дисково изображение и да го вкарате във виртуалното оптично устройство?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Drag and drop operation failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed while dropping data.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bad password or authentication failure.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8987,6 +8975,18 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13975,6 +13975,11 @@ p, li { white-space: pre-wrap; }
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
         <comment>medium</comment>
         <translation>Този основен твърд диск е свързан индиректно, като се използва следният различаващ твърд диск:</translation>
+    </message>
+    <message>
+        <source>Encrypted</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

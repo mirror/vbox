@@ -9403,18 +9403,6 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Drag and drop operation failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed while dropping data.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Bad password or authentication failure.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -9428,6 +9416,18 @@ serial ports</comment>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14812,6 +14812,11 @@ Version %1</translation>
     </message>
     <message>
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted</source>
         <comment>medium</comment>
         <translation type="unfinished"></translation>
     </message>
