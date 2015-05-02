@@ -228,6 +228,15 @@ public:
         return (m_p == NULL);
     }
 
+    /**
+     * Returns true if the pointer is not NULL.
+     */
+    bool isNotNull() const
+    {
+        return (m_p != NULL);
+    }
+
+
     bool operator<(T* p) const
     {
         return m_p < p;
