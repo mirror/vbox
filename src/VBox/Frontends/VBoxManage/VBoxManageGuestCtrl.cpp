@@ -309,11 +309,11 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "                              [--image <path to executable>] --username <name>\n"
                      "                              [--passwordfile <file> | --password <password>]\n"
                      "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
-                     "                              [--setenv <NAME>=<VALUE>] [--unset <NAME>]\n"
-                     "                              [--unquoted-args] [--no-wait-stdout|--wait-stdout]\n"
+                     "                              [--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--no-wait-stdout|--wait-stdout]\n"
                      "                              [--no-wait-stderr|--wait-stderr]\n"
                      "                              [--dos2unix] [--unix2dos]\n"
-                     "                              [--] <program/arg0> [argument1] ... [argumentN]]\n"
+                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
                      "\n");
     if (uSubCmd & USAGE_GSTCTRL_START)
         RTStrmPrintf(pStrm,
@@ -321,9 +321,9 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "                              [--image <path to executable>] --username <name>\n"
                      "                              [--passwordfile <file> | --password <password>]\n"
                      "                              [--domain <domain>] [--verbose] [--timeout <msec>]\n"
-                     "                              [--setenv <NAME>=<VALUE>] [--unset <NAME>]\n"
-                     "                              [--unquoted-args] [--dos2unix] [--unix2dos]\n"
-                     "                              [--] <program/arg0> [argument1] ... [argumentN]]\n"
+                     "                              [--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--dos2unix] [--unix2dos]\n"
+                     "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
                  "\n");
     if (uSubCmd == USAGE_GSTCTRL_EXEC)
         RTStrmPrintf(pStrm,
@@ -1231,7 +1231,7 @@ static RTEXITCODE handleCtrlProcessRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uin
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--environment",                  'E',                                      RTGETOPT_REQ_STRING  },
+        { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
         { "--executable",                   'e',                                      RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
@@ -1256,9 +1256,8 @@ static RTEXITCODE handleCtrlProcessRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uin
     com::SafeArray<IN_BSTR>                 aArgs;
     com::SafeArray<IN_BSTR>                 aEnv;
     const char *                            pszImage            = NULL;
-    bool                                    fDetached           = false;
-    bool                                    fWaitForStdOut      = true;
-    bool                                    fWaitForStdErr      = true;
+    bool                                    fWaitForStdOut      = fRunCmd;
+    bool                                    fWaitForStdErr      = fRunCmd;
     RTVFSIOSTREAM                           hVfsStdOut          = NIL_RTVFSIOSTREAM;
     RTVFSIOSTREAM                           hVfsStdErr          = NIL_RTVFSIOSTREAM;
     enum kStreamTransform                   enmStdOutTransform  = kStreamTransform_None;
@@ -1278,10 +1277,9 @@ static RTEXITCODE handleCtrlProcessRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uin
             {
                 case 'E':
                     if (   ValueUnion.psz[0] == '\0'
-                        || ValueUnion.psz[0] == '='
-                        || strchr(ValueUnion.psz, '=') == NULL)
+                        || ValueUnion.psz[0] == '=')
                         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RUN,
-                                             "Invalid argument variable=value pair: '%s'", ValueUnion.psz);
+                                             "Invalid argument variable[=value]: '%s'", ValueUnion.psz);
                     aEnv.push_back(Bstr(ValueUnion.psz).raw());
                     break;
 
