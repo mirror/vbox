@@ -514,6 +514,14 @@ private:
             , mNumObjects(rThat.mNumObjects)
             , mRC(rThat.mRC)
         { }
+        ~Data(void)
+        {
+            if (mpBaseEnvironment)
+            {
+                mpBaseEnvironment->releaseConst();
+                mpBaseEnvironment = NULL;
+            }
+        }
     } mData;
 };
 

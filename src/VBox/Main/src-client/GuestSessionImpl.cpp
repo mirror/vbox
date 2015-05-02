@@ -324,9 +324,8 @@ void GuestSession::uninit(void)
 
     if (mData.mpBaseEnvironment)
     {
-        GuestEnvironment *pBaseEnv = unconst(mData.mpBaseEnvironment);
+        mData.mpBaseEnvironment->releaseConst();
         mData.mpBaseEnvironment = NULL;
-        pBaseEnv->release();
     }
 
     AssertMsg(mData.mNumObjects == 0,
@@ -1570,6 +1569,25 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
 
         case GUEST_SESSION_NOTIFYTYPE_STARTED:
             sessionStatus = GuestSessionStatus_Started;
+#if 0 /** @todo If we get some environment stuff along with this kind notification: */
+            const char *pszzEnvBlock = ...;
+            uint32_t    cbEnvBlock   = ...;
+            if (!mData.mpBaseEnvironment)
+            {
+                GuestEnvironment *pBaseEnv;
+                try { pBaseEnv = new GuestEnvironment(); } catch (std::bad_alloc &) { pBaseEnv = NULL; }
+                if (pBaseEnv)
+                {
+                    int vrc = pBaseEnv->initNormal();
+                    if (RT_SUCCESS(vrc))
+                        vrc = pBaseEnv->copyUtf8Block(pszzEnvBlock, cbEnvBlock);
+                    if (RT_SUCCESS(vrc))
+                        mData.mpBaseEnvironment = pBaseEnv;
+                    else
+                        pBaseEnv->release();
+                }
+            }
+#endif
             break;
 
         case GUEST_SESSION_NOTIFYTYPE_TEN:

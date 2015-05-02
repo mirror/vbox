@@ -242,6 +242,53 @@ public:
     }
 
     /**
+     * Applies a block on the format returned by queryUtf8Block.
+     *
+     * @returns IPRT status code.
+     * @param   pszzBlock           Pointer to the block.
+     * @param   cbBlock             The size of the block.
+     * @param   fNoEqualMeansUnset  Whether the lack of a '=' (equal) sign in a
+     *                              string means it should be unset (@c true), or if
+     *                              it means the variable should be defined with an
+     *                              empty value (@c false, the default).
+     * @todo move this to RTEnv!
+     */
+    int copyUtf8Block(const char *pszzBlock, size_t cbBlock, bool fNoEqualMeansUnset = false)
+    {
+        int rc = VINF_SUCCESS;
+        while (cbBlock > 0 && *pszzBlock != '\0')
+        {
+            const char *pszEnd = (const char *)memchr(pszzBlock, '\0', cbBlock);
+            if (!pszEnd)
+                return VERR_BUFFER_UNDERFLOW;
+            int rc2;
+            if (fNoEqualMeansUnset || strchr(pszzBlock, '='))
+                rc2 = RTEnvPutEx(m_hEnv, pszzBlock);
+            else
+                rc2 = RTEnvSetEx(m_hEnv, pszzBlock, "");
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+
+            /* Advance. */
+            cbBlock -= pszEnd - pszzBlock;
+            if (cbBlock < 2)
+                return VERR_BUFFER_UNDERFLOW;
+            cbBlock--;
+            pszzBlock = pszEnd + 1;
+        }
+
+        /* The remainder must be zero padded. */
+        if (RT_SUCCESS(rc))
+        {
+            if (ASMMemIsAll8(pszzBlock, cbBlock, 0))
+                return VINF_SUCCESS;
+            return VERR_TOO_MUCH_DATA;
+        }
+        return rc;
+    }
+
+
+    /**
      * Get an environment variable.
      *
      * @returns IPRT status code.
