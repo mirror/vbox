@@ -829,8 +829,10 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
         DWORD dwErr = GetLastError();
         /* Only return if we *really* don't have a valid handle value,
          * everything else is fine here ... */
-        if (dwErr != ERROR_INVALID_HANDLE)
+        if (dwErr == ERROR_INVALID_HANDLE)
             return RTErrConvertFromWin32(dwErr);
+        RT_ZERO(Data);
+        Data.dwFileAttributes = RTFS_DOS_NT_DEVICE;
     }
 
     /*
