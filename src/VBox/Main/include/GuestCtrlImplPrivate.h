@@ -362,6 +362,7 @@ protected:
      */
     GuestEnvironmentBase(const GuestEnvironmentBase &rThat, bool fChangeRecord)
         : m_hEnv(NIL_RTENV)
+        , m_cRefs(1)
     {
         int rc = cloneCommon(rThat, fChangeRecord);
         if (RT_FAILURE(rc))
@@ -414,6 +415,8 @@ protected:
     /** Reference counter. */
     uint32_t volatile   m_cRefs;
 };
+
+class GuestEnvironmentChanges;
 
 
 /**
@@ -470,6 +473,26 @@ public:
     {
         return cloneCommon(rThat, false /*fChangeRecord*/);
     }
+
+    /**
+     * @copydoc copy()
+     */
+    GuestEnvironment &operator=(const GuestEnvironmentBase &rThat)
+    {
+        int rc = cloneCommon(rThat, true /*fChangeRecord*/);
+        if (RT_FAILURE(rc))
+            throw (Global::vboxStatusCodeToCOM(rc));
+        return *this;
+    }
+
+    /** @copydoc copy() */
+    GuestEnvironment &operator=(const GuestEnvironment &rThat)
+    {   return operator=((const GuestEnvironmentBase &)rThat); }
+
+    /** @copydoc copy() */
+    GuestEnvironment &operator=(const GuestEnvironmentChanges &rThat)
+    {   return operator=((const GuestEnvironmentBase &)rThat); }
+
 };
 
 
@@ -530,6 +553,25 @@ public:
     {
         return cloneCommon(rThat, true /*fChangeRecord*/);
     }
+
+    /**
+     * @copydoc copy()
+     */
+    GuestEnvironmentChanges &operator=(const GuestEnvironmentBase &rThat)
+    {
+        int rc = cloneCommon(rThat, true /*fChangeRecord*/);
+        if (RT_FAILURE(rc))
+            throw (Global::vboxStatusCodeToCOM(rc));
+        return *this;
+    }
+
+    /** @copydoc copy() */
+    GuestEnvironmentChanges &operator=(const GuestEnvironmentChanges &rThat)
+    {   return operator=((const GuestEnvironmentBase &)rThat); }
+
+    /** @copydoc copy() */
+    GuestEnvironmentChanges &operator=(const GuestEnvironment &rThat)
+    {   return operator=((const GuestEnvironmentBase &)rThat); }
 };
 
 
