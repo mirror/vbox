@@ -4242,6 +4242,10 @@ int handleGuestControl(HandlerArg *pArg)
      */
     if (pArg->argc >= 2)
     {
+        /** @todo bird: From a syntax diagram point of view, it's tempting to start
+         *        common option parsing here, stop on the first non-option and using
+         *        it as the command.  We will of course allow common options after
+         *        the command, no problems. */
         const char *pszCmd = pArg->argv[1];
         uint32_t    iCmd;
         for (iCmd = 0; iCmd < RT_ELEMENTS(s_aCmdDefs); iCmd++)
