@@ -125,7 +125,6 @@
 # define USAGE_GSTCTRL_STAT         RT_BIT(12)
 # define USAGE_GSTCTRL_UPDATEGA     RT_BIT(13)
 # define USAGE_GSTCTRL_WATCH        RT_BIT(14)
-# define USAGE_GSTCTRL_EXEC         RT_BIT(31) /**< @deprecated Remember to remove. */
 #endif
 
 typedef uint64_t USAGECATEGORY;
