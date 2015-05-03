@@ -42,7 +42,7 @@ Display* stubGetWindowDisplay(WindowInfo *pWindow)
 /**
  * Returns -1 on error
  */
-GLint APIENTRY crCreateContext( const char *dpyName, GLint visBits )
+GLint APIENTRY crCreateContext(char *dpyName, GLint visBits)
 {
     ContextInfo *context;
     stubInit();
