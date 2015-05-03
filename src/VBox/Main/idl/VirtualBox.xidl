@@ -10914,7 +10914,7 @@ and "VAR" for unsetting. -->
     <attribute name="pathStyle" type="PathStyle" readonly="yes">
       <desc>
         The style of paths used by the guest.  Handy for giving the right kind
-        of path specifications to <link to="fileOpen"/> and similar methods.
+        of path specifications to <link to="IGuestSession::fileOpen"/> and similar methods.
       </desc>
     </attribute>
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
