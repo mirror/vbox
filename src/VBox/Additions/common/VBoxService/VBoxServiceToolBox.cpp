@@ -1519,6 +1519,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     int rc = VINF_SUCCESS;
     bool fVerbose = false;
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_LONG; /* Use long mode by default. */
+    uint32_t fQueryInfoFlags = RTPATH_F_ON_LINK;
 
     /* Init file list. */
     RTLISTANCHOR fileList;
@@ -1531,9 +1532,13 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
         switch (ch)
         {
             case 'f':
-            case 'L':
                 RTMsgError("Sorry, option '%s' is not implemented yet!\n", ValueUnion.pDef->pszLong);
                 rc = VERR_INVALID_PARAMETER;
+                break;
+
+            case 'L':
+                fQueryInfoFlags &= ~RTPATH_F_ON_LINK;
+                fQueryInfoFlags |= RTPATH_F_FOLLOW_LINK;
                 break;
 
             case VBOXSERVICETOOLBOXOPT_MACHINE_READABLE:
@@ -1555,6 +1560,11 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
 
             case VINF_GETOPT_NOT_OPTION:
                 {
+/** @todo r=bird: The whole fileList is unecessary because you're using
+ * RTGETOPTINIT_FLAGS_OPTS_FIRST.  You can obviously do the processing right
+ * here, but you could also just drop down and rewind GetState.iNext by one and
+ * continue there. */
+
                     /* Add file(s) to buffer. This enables processing multiple files
                      * at once.
                      *
@@ -1584,13 +1594,13 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
         {
             RTFSOBJINFO objInfo;
-            int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo,
-                                        RTFSOBJATTRADD_UNIX, RTPATH_F_ON_LINK /* @todo Follow link? */);
+            int rc2 = RTPathQueryInfoEx(pNodeIt->pszName, &objInfo, RTFSOBJATTRADD_UNIX, fQueryInfoFlags);
             if (RT_FAILURE(rc2))
             {
+/** @todo r=bird: You can get a number of other errors here, like access denied. */
                 if (!(fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE))
-                    RTMsgError("Cannot stat for '%s': No such file or directory\n",
-                               pNodeIt->pszName);
+                    RTMsgError("Cannot stat for '%s': No such file or directory (%Rrc)\n",
+                               pNodeIt->pszName, rc);
                 rc = VERR_FILE_NOT_FOUND;
                 /* Do not break here -- process every element in the list
                  * and keep failing rc. */
