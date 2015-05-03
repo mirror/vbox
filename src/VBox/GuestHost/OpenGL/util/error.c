@@ -96,13 +96,17 @@ DECLEXPORT(void) crError(const char *pszFormat, ...)
     logMessageV("OpenGL Error: ", pszFormat, va);
     va_end(va);
 
-#ifdef IN_GUEST
-    /* Give things a chance to close down. */
+#ifdef DEBUG
+    /* Let's interrupt App execution only on debug builds and return
+     * bad status to upper level on release ones. */
+# ifdef IN_GUEST
+    /* Trigger debugger's breakpoint handler. */
     ASMBreakpoint();
-#else
+# else
     /* Dump core or activate the debugger in debug builds. */
     AssertFailed();
-#endif
+# endif
+#endif /* DEBUG */
 }
 
 DECLEXPORT(void) crWarning(const char *pszFormat, ...)
