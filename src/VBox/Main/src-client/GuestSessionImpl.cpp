@@ -548,6 +548,31 @@ HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcess
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    VBOXOSTYPE enmOsType = mParent->i_getGuestOSType();
+    if (    enmOsType < VBOXOSTYPE_DOS)
+    {
+        *aPathStyle = PathStyle_Unknown;
+        LogFlowFunc(("returns PathStyle_Unknown\n"));
+    }
+    else if (enmOsType < VBOXOSTYPE_Linux)
+    {
+        *aPathStyle = PathStyle_DOS;
+        LogFlowFunc(("returns PathStyle_DOS\n"));
+    }
+    else
+    {
+        *aPathStyle = PathStyle_UNIX;
+        LogFlowFunc(("returns PathStyle_UNIX\n"));
+    }
+    return S_OK;
+#endif
+}
+
 HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -733,11 +758,12 @@ inline bool GuestSession::i_directoryExists(uint32_t uDirID, ComObjPtr<GuestDire
     return false;
 }
 
-int GuestSession::i_directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
+int GuestSession::i_directoryQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks,
+                                               GuestFsObjData &objData, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+    LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfoInternal(strPath, objData, pGuestRc);
+    int vrc = i_fsQueryInfoInternal(strPath, fFollowSymlinks, objData, pGuestRc);
     if (RT_SUCCESS(vrc))
     {
         vrc = objData.mType == FsObjType_Directory
@@ -1359,11 +1385,11 @@ int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
     return rc;
 }
 
-int GuestSession::i_fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
+int GuestSession::i_fileQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+    LogFlowThisFunc(("strPath=%s fFollowSymlinks=%RTbool\n", strPath.c_str(), fFollowSymlinks));
 
-    int vrc = i_fsQueryInfoInternal(strPath, objData, pGuestRc);
+    int vrc = i_fsQueryInfoInternal(strPath, fFollowSymlinks, objData, pGuestRc);
     if (RT_SUCCESS(vrc))
     {
         vrc = objData.mType == FsObjType_File
@@ -1379,14 +1405,23 @@ int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSi
     AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
 
     GuestFsObjData objData;
-    int vrc = i_fileQueryInfoInternal(strPath, objData, pGuestRc);
+    int vrc = i_fileQueryInfoInternal(strPath, false /*fFollowSymlinks*/, objData, pGuestRc);
     if (RT_SUCCESS(vrc))
         *pllSize = objData.mObjectSize;
 
     return vrc;
 }
 
-int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
+/**
+ * <Someone write documentation, pretty please!>
+ *
+ * @param   pGuestRc        Optional.  Will be set to VINF_SUCCESS,
+ *                          VERR_NOT_EQUAL or VERR_INVALID_STATE if the
+ *                          process completed.  May probably be set to a lot of
+ *                          other things.  Not sure if these things are related
+ *                          to the process we ran or what, really.  :-(
+ */
+int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
@@ -1408,7 +1443,8 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &
         vrc = VERR_NO_MEMORY;
     }
 
-    int guestRc; GuestCtrlStreamObjects stdOut;
+    int guestRc;
+    GuestCtrlStreamObjects stdOut;
     if (RT_SUCCESS(vrc))
         vrc = GuestProcessTool::i_runEx(this, procInfo,
                                         &stdOut, 1 /* cStrmOutObjects */,
@@ -2647,7 +2683,7 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL *aExists)
     HRESULT hr = S_OK;
 
     GuestFsObjData objData; int guestRc;
-    int rc = i_directoryQueryInfoInternal(aPath, objData, &guestRc);
+    int rc = i_directoryQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
     if (RT_SUCCESS(rc))
         *aExists = objData.mType == FsObjType_Directory;
     else
@@ -2743,7 +2779,7 @@ HRESULT GuestSession::directoryQueryInfo(const com::Utf8Str &aPath, ComPtr<IGues
     HRESULT hr = S_OK;
 
     GuestFsObjData objData; int guestRc;
-    int vrc = i_directoryQueryInfoInternal(aPath, objData, &guestRc);
+    int vrc = i_directoryQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
     if (RT_SUCCESS(vrc))
     {
         if (objData.mType == FsObjType_Directory)
@@ -3106,7 +3142,7 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL *aExists)
         return setError(E_INVALIDARG, tr("No file to check existence for specified"));
 
     GuestFsObjData objData; int guestRc;
-    int vrc = i_fileQueryInfoInternal(aPath, objData, &guestRc);
+    int vrc = i_fileQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
     if (RT_SUCCESS(vrc))
     {
         *aExists = TRUE;
@@ -3267,7 +3303,7 @@ HRESULT GuestSession::fileQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsOb
     HRESULT hr = S_OK;
 
     GuestFsObjData objData; int guestRc;
-    int vrc = i_fileQueryInfoInternal(aPath, objData, &guestRc);
+    int vrc = i_fileQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
     if (RT_SUCCESS(vrc))
     {
         ComObjPtr<GuestFsObjInfo> pFsObjInfo;
@@ -3386,6 +3422,7 @@ HRESULT GuestSession::fileRename(const com::Utf8Str &aSource, const com::Utf8Str
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
+
 HRESULT GuestSession::fileSetACL(const com::Utf8Str &aFile, const com::Utf8Str &aAcl)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -3394,6 +3431,77 @@ HRESULT GuestSession::fileSetACL(const com::Utf8Str &aFile, const com::Utf8Str &
     LogFlowThisFuncEnter();
 
     ReturnComNotImplemented();
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::fsExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    HRESULT hrc = S_OK;
+    *aExists = false;
+    if (RT_LIKELY(aPath.isNotEmpty()))
+    {
+        GuestFsObjData objData;
+        int rcGuest;
+        int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &rcGuest);
+        if (RT_SUCCESS(vrc))
+            *aExists = TRUE;
+        else if (   vrc == VERR_NOT_A_FILE
+                 || vrc == VERR_PATH_NOT_FOUND
+                 || vrc == VERR_FILE_NOT_FOUND
+                 || vrc == VERR_INVALID_NAME)
+            hrc = S_OK; /* Ignore these vrc values. */
+        else if (vrc == VERR_GSTCTL_GUEST_ERROR) /** @todo What _is_ rcGuest, really? Stuff like VERR_NOT_A_FILE too?? */
+            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+        else
+            hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+    }
+    /* else: If the file name is empty, there is no way it can exists. So, don't
+       be a tedious and return E_INVALIDARG, simply return FALSE. */
+    LogFlowThisFuncLeave();
+    return hrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::fsQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    HRESULT hrc = S_OK;
+    if (RT_LIKELY(aPath.isNotEmpty()))
+    {
+        GuestFsObjData Info;
+        int rcGuest;
+        int vrc = i_fsQueryInfoInternal(aPath, aFollowSymlinks != FALSE, Info, &rcGuest);
+        if (RT_SUCCESS(vrc))
+        {
+            ComObjPtr<GuestFsObjInfo> ptrFsObjInfo;
+            hrc = ptrFsObjInfo.createObject();
+            if (SUCCEEDED(hrc))
+            {
+                vrc = ptrFsObjInfo->init(Info);
+                if (RT_SUCCESS(vrc))
+                    hrc = ptrFsObjInfo.queryInterfaceTo(aInfo.asOutParam());
+                else
+                    hrc = setErrorVrc(vrc);
+            }
+        }
+        else if (vrc == VERR_GSTCTL_GUEST_ERROR)
+            hrc = GuestProcess::i_setErrorExternal(this, rcGuest);
+        else
+            hrc = setErrorVrc(vrc, tr("Querying file information for \"%s\" failed: %Rrc"), aPath.c_str(), vrc);
+    }
+    /* else: If the file name is empty, there is no way it can exists. So, don't
+       be a tedious and return E_INVALIDARG, simply return FALSE. */
+    LogFlowThisFuncLeave();
+    return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

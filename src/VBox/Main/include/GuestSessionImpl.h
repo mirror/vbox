@@ -271,6 +271,7 @@ private:
     HRESULT setEnvironmentChanges(const std::vector<com::Utf8Str> &aEnvironmentChanges);
     HRESULT getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironmentBase);
     HRESULT getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcesses);
+    HRESULT getPathStyle(PathStyle_T *aPathStyle);
     HRESULT getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories);
     HRESULT getFiles(std::vector<ComPtr<IGuestFile> > &aFiles);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
@@ -348,6 +349,12 @@ private:
                        const std::vector<PathRenameFlag_T> &aFlags);
     HRESULT fileSetACL(const com::Utf8Str &aFile,
                        const com::Utf8Str &aAcl);
+    HRESULT fsExists(const com::Utf8Str &aPath,
+                     BOOL aFollowSymlinks,
+                     BOOL *pfExists);
+    HRESULT fsQueryInfo(const com::Utf8Str &aPath,
+                        BOOL aFollowSymlinks,
+                        ComPtr<IGuestFsObjInfo> &aInfo);
     HRESULT processCreate(const com::Utf8Str &aCommand,
                           const std::vector<com::Utf8Str> &aArguments,
                           const std::vector<com::Utf8Str> &aEnvironment,
@@ -403,7 +410,7 @@ public:
                                                        Utf8Str &strName, int *pGuestRc);
     int                     i_directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
                                                     ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
-    int                     i_directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
+    int                     i_directoryQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
     int                     i_dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     i_dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
@@ -413,9 +420,9 @@ public:
     int                     i_fileRemoveFromList(GuestFile *pFile);
     int                     i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc);
     int                     i_fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pGuestRc);
-    int                     i_fileQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
+    int                     i_fileQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
     int                     i_fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize, int *pGuestRc);
-    int                     i_fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
+    int                     i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSymlinks, GuestFsObjData &objData, int *pGuestRc);
     const GuestCredentials &i_getCredentials(void);
     EventSource            *i_getEventSource(void) { return mEventSource; }
     Utf8Str                 i_getName(void);

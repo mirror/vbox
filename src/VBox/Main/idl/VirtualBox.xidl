@@ -10367,6 +10367,29 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
+    name="PathStyle"
+    uuid="97303a5b-42e8-0a55-d16f-d2a92c295261"
+    >
+    <desc>
+      The path style of a system.
+      (Values matches the RTPATH_STR_F_STYLE_XXX defines in iprt/path.h!)
+    </desc>
+    <const name="DOS"     value="1">
+      <desc>DOS-style paths with forward and backward slashes, drive
+      letters and UNC.  Known from DOS, OS/2 and Windows.</desc>
+    </const>
+    <const name="UNIX"    value="2">
+      <desc>UNIX-style paths with forward slashes only.</desc>
+    </const>
+    <const name="Unknown" value="8">
+      <desc>
+        The path style is not known, most likely because the guest additions
+        aren't active yet.
+      </desc>
+    </const>
+  </enum>
+
+  <enum
     name="FileStatus"
     uuid="8c86468b-b97b-4080-8914-e29f5b0abd2c"
     >
@@ -10775,7 +10798,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="bb890975-4903-38f8-4bc2-f39341f95533"
+    uuid="c003c35e-4dc4-4111-4771-51befc3c1d30"
     wsmap="managed"
     >
     <desc>
@@ -10886,6 +10909,12 @@ and "VAR" for unsetting. -->
     <attribute name="processes" type="IGuestProcess" readonly="yes" safearray="yes">
       <desc>
         Returns all current guest processes.
+      </desc>
+    </attribute>
+    <attribute name="pathStyle" type="PathStyle" readonly="yes">
+      <desc>
+        The style of paths used by the guest.  Handy for giving the right kind
+        of path specifications to <link to="fileOpen"/> and similar methods.
       </desc>
     </attribute>
     <attribute name="directories" type="IGuestDirectory" readonly="yes" safearray="yes">
@@ -11461,6 +11490,57 @@ and "VAR" for unsetting. -->
       </param>
       <param name="acl" type="wstring" dir="in">
         <desc>Actual ACL string to set. Must comply with the guest OS.</desc>
+      </param>
+    </method>
+
+    <method name="fsExists">
+      <desc>
+        Checks whether a file system object (file, directory, etc) exists in
+        the guest or not.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while checking existence of the file specified.
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>Path to the file system object to check the existance of.</desc>
+      </param>
+      <param name="followSymlinks" type="boolean" dir="in">
+        <desc>
+           If @c true symbolic links will be followed and the target must
+           exists and be accessible, otherwise, if @c false we'll be happy
+           with a dangling symbolic link.
+         </desc>
+      </param>
+      <param name="exists" type="boolean" dir="return">
+        <desc>Returns @c true if the file exists, @c false if not.</desc>
+      </param>
+    </method>
+
+    <method name="fsQueryInfo">
+      <desc>
+        Queries information about a file system object (file, directory, etc)
+        in the guest.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          The file system object was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while querying information.
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>Path to the file system object to gather information about</desc>
+      </param>
+      <param name="followSymlinks" type="boolean" dir="in">
+        <desc>
+           Information about symbolic links is returned if @c false.  Otherwise,
+           symbolic links are followed and the returned information concerns
+           itself with the symlink target if @c true.
+         </desc>
+      </param>
+      <param name="info" type="IGuestFsObjInfo" dir="return">
+        <desc><link to="IGuestFsObjInfo"/> object containing the information.</desc>
       </param>
     </method>
 

@@ -98,6 +98,7 @@ public:
 #ifdef VBOX_WITH_GUEST_CONTROL
     int         i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     uint32_t    i_getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
+    VBOXOSTYPE  i_getGuestOSType(void) { return mData.mOSType; }
     int         i_sessionRemove(GuestSession *pSession);
     int         i_sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds,
                                 ComObjPtr<GuestSession> &pGuestSession);
@@ -177,10 +178,11 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsRunLevel(AdditionsRunLevelType_None)
+        Data() : mOSType(VBOXOSTYPE_Unknown),  mAdditionsRunLevel(AdditionsRunLevelType_None)
             , mAdditionsVersionFull(0), mAdditionsRevision(0), mAdditionsFeatures(0)
         { }
 
+        VBOXOSTYPE                  mOSType;        /**@< For internal used. VBOXOSTYPE_Unknown if not reported. */
         Utf8Str                     mOSTypeId;
         FacilityMap                 mFacilityMap;
         AdditionsRunLevelType_T     mAdditionsRunLevel;

@@ -62,7 +62,7 @@ int GuestFsObjInfo::init(const GuestFsObjData &objData)
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
-    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL); /** @todo r=bird: returning COM or IPRT status codes here?*/
 
     mData = objData;
 
