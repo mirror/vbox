@@ -42,6 +42,11 @@ packSPUInit( int id, SPU *child, SPU *self,
     crInitMutex(&_PackMutex);
 #endif
 
+#ifdef CHROMIUM_THREADSAFE
+    crInitTSD(&_PackerTSD);
+    crInitTSD(&_PackTSD);
+#endif
+
     pack_spu.id = id;
 
     packspuSetVBoxConfiguration( child );
@@ -98,15 +103,14 @@ packSPUCleanup(void)
         }
     }
 
+#ifdef CHROMIUM_THREADSAFE
     crFreeTSD(&_PackerTSD);
     crFreeTSD(&_PackTSD);
-    
-#ifdef CHROMIUM_THREADSAFE
     crUnlockMutex(&_PackMutex);
 # ifndef WINDOWS
     crFreeMutex(&_PackMutex);
 # endif
-#endif
+#endif /* CHROMIUM_THREADSAFE */
     return 1;
 }
 
