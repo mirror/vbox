@@ -617,7 +617,7 @@ HRESULT VFSExplorer::entryList(std::vector<com::Utf8Str> &aNames,
         const VFSExplorer::Data::DirEntry &entry = (*it);
         aNames[i] = entry.name;
         aTypes[i] = entry.type;
-        aSizes[i] = entry.type;
+        aSizes[i] = entry.size;
         aModes[i] = entry.mode;
     }
 
