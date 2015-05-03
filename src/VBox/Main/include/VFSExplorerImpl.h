@@ -76,7 +76,7 @@ private:
     Data *m;
 
     /* Private member methods */
-    VFSFileType_T i_RTToVFSFileType(int aType) const;
+    FsObjType_T i_iprtToVfsObjType(RTFMODE aType) const;
 
     HRESULT i_updateFS(TaskVFSExplorer *aTask);
     HRESULT i_deleteFS(TaskVFSExplorer *aTask);

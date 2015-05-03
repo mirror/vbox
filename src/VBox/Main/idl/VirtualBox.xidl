@@ -2812,25 +2812,6 @@
     <const name="WebDav" value="4" />
   </enum>
 
-  <enum
-    name="VFSFileType"
-    uuid="714333cd-44e2-415f-a245-d378fa9b1242"
-    >
-    <desc>
-      File types known by VFSExplorer.
-    </desc>
-
-    <const name="Unknown" value="1" />
-    <const name="Fifo" value="2" />
-    <const name="DevChar" value="3" />
-    <const name="Directory" value="4" />
-    <const name="DevBlock" value="5" />
-    <const name="File" value="6" />
-    <const name="SymLink" value="7" />
-    <const name="Socket" value="8" />
-    <const name="WhiteOut" value="9" />
-  </enum>
-
   <interface
     name="IVFSExplorer" extends="$unknown"
     uuid="fb220201-2fd3-47e2-a5dc-2c2431d833cc"
@@ -2891,7 +2872,7 @@
       </param>
 
       <param name="types" type="unsigned long" safearray="yes" dir="out">
-        <desc>The list of types for the entries.</desc>
+        <desc>The list of types for the entries <link to="FSObjType"/>.</desc>
       </param>
 
       <param name="sizes" type="long long" safearray="yes" dir="out">
@@ -10418,38 +10399,39 @@ and "VAR" for unsetting. -->
 
   <enum
     name="FsObjType"
-    uuid="a1ed437c-b3c3-4ca2-b19c-4239d658d5e8"
+    uuid="34a0d1aa-491e-e209-e150-84964d6cee5f"
     >
     <desc>
-      File system object type.
+      File system object (file) types.
     </desc>
-
-    <const name="Undefined"             value="0">
-      <desc>Type is undefined / unknown.</desc>
+    <const name="Unknown"   value="1">
+      <desc>Used either if the object has type that is not in this enum, or
+        if the type has not yet been determined or set.</desc>
     </const>
-    <const name="FIFO"                  value="1">
-      <desc>Named pipe.</desc>
+    <const name="Fifo"      value="2">
+      <desc>FIFO or named pipe, depending on the platform/terminology.</desc>
     </const>
-    <const name="DevChar"               value="10">
+    <const name="DevChar"   value="3">
       <desc>Character device.</desc>
     </const>
-    <const name="DevBlock"              value="11">
-      <desc>Block device.</desc>
-    </const>
-    <const name="Directory"             value="50">
+    <const name="Directory" value="4">
       <desc>Directory.</desc>
     </const>
-    <const name="File"                  value="80">
-      <desc>File.</desc>
+    <const name="DevBlock"  value="5">
+      <desc>Block device.</desc>
     </const>
-    <const name="Symlink"               value="100">
-      <desc>Symlink.</desc>
+    <const name="File"      value="6">
+      <desc>Regular file.</desc>
     </const>
-    <const name="Socket"                value="200">
+    <const name="Symlink"   value="7">
+      <desc>Symbolic link.</desc>
+    </const>
+    <const name="Socket"    value="8">
       <desc>Socket.</desc>
     </const>
-    <const name="Whiteout"              value="400">
-      <desc>Whiteout.</desc>
+    <const name="WhiteOut"  value="9">
+      <desc>A white-out file.  Found in union mounts where it is used for
+        hiding files after deletion, I think. </desc>
     </const>
   </enum>
 
@@ -12256,7 +12238,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="4047ba30-7006-4966-ae86-94164e5e20eb"
+    uuid="37b30bc6-4506-58e4-bc43-fbbca92b4548"
     wsmap="managed"
     >
     <desc>
@@ -12366,7 +12348,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestFsObjInfo" extends="IFsObjInfo"
-    uuid="7cf2d77d-4222-8e33-1065-cab345173300"
+    uuid="6620db85-44e0-ca69-e9e0-d4907ceccbe5"
     wsmap="managed"
     >
     <desc>
