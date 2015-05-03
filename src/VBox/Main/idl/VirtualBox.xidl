@@ -10611,14 +10611,14 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestDnDSource" extends="IDnDSource"
-    uuid="280955c0-de67-4297-8179-6274a82a2fc0"
+    uuid="dedfb5d9-4c1b-edf7-fdf3-c1be6827dc28"
     wsmap="managed"
     >
-
     <desc>
       Implementation of the <link to="IDnDSource" /> object
       for source drag'n drop operations on the guest.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -10784,11 +10784,11 @@ and "VAR" for unsetting. -->
     uuid="50ce4b51-0ff7-46b7-a138-3c6e5ac946b4"
     wsmap="managed"
     >
-
     <desc>
       Implementation of the <link to="IDnDTarget" /> object
       for target drag'n drop operations on the guest.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -12028,13 +12028,14 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestDirectory" extends="IDirectory"
-    uuid="af4a8ce0-0725-42b7-8826-46e3c7ba7357"
+    uuid="cc830458-4974-a19c-4dc6-cc98c2269626"
     wsmap="managed"
     >
     <desc>
       Implementation of the <link to="IDirectory" /> object
       for directories in the guest.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -12243,13 +12244,14 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestFile" extends="IFile"
-    uuid="60661aec-145f-4d11-b80e-8ea151598093"
+    uuid="b68f642c-49db-d699-db5c-bcb01c08e95f"
     wsmap="managed"
     >
     <desc>
       Implementation of the <link to="IFile" /> object
       for files in the guest.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -12364,13 +12366,14 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestFsObjInfo" extends="IFsObjInfo"
-    uuid="d5cf678e-3484-4e4a-ac55-329e15462e18"
+    uuid="7cf2d77d-4222-8e33-1065-cab345173300"
     wsmap="managed"
     >
     <desc>
       Represents the guest implementation of the
       <link to="IFsObjInfo" /> object.
     </desc>
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -22608,9 +22611,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!-- base class for modification events -->
-  <interface name="INATNetworkAlterEvent" extends="INATNetworkChangedEvent"
-             uuid="3f5a0822-163a-43b1-ad16-8d58b0ef6e75"
-             wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkAlter"/>
+  <interface
+    name="INATNetworkAlterEvent" extends="INATNetworkChangedEvent"
+    uuid="d947adf5-4022-dc80-5535-6fb116815604"
+    wsmap="managed" autogen="VBoxEvent" id="OnNATNetworkAlter"
+    >
+    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
+  </interface>
 
   <interface name="INATNetworkCreationDeletionEvent" extends="INATNetworkAlterEvent"
              uuid="8d984a7e-b855-40b8-ab0c-44d3515b4528"

@@ -509,6 +509,15 @@ public:
         </xsl:call-template>
     </xsl:variable>
 
+    <!-- interface santiy check, prevents crashes -->
+    <xsl:if test="(count(attribute) + count(method)) = 0">
+        <xsl:message terminate="yes">
+            Interface <xsl:value-of select="@name"/> is empty which causes midl generated proxy
+            stubs to crash. Please add a dummy:<xsl:value-of select="$G_sNewLine"/>
+              &lt;attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/&gt;
+        </xsl:message>
+    </xsl:if>
+
     <xsl:choose>
         <xsl:when test="$generating = 'sources'">
             <xsl:if test="(position() mod 2) = $reminder">
