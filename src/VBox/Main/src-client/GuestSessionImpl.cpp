@@ -732,6 +732,7 @@ int GuestSession::i_directoryCreateInternal(const Utf8Str &strPath, uint32_t uMo
             else
                 vrc = VERR_BUFFER_OVERFLOW;
         }
+        procInfo.mArguments.push_back("--"); /* '--version' is a valid directory name. */
         procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
     }
     catch (std::bad_alloc)
@@ -875,6 +876,7 @@ int GuestSession::i_objectCreateTempInternal(const Utf8Str &strTemplate, const U
             procInfo.mArguments.push_back(Utf8Str("-t"));
             procInfo.mArguments.push_back(strPath);
         }
+        procInfo.mArguments.push_back("--"); /* strTemplate could be '--help'. */
         procInfo.mArguments.push_back(strTemplate);
     }
     catch (std::bad_alloc)
@@ -1269,6 +1271,7 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
     try
     {
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
         procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
     }
     catch (std::bad_alloc)
@@ -1436,6 +1439,9 @@ int GuestSession::i_fsQueryInfoInternal(const Utf8Str &strPath, bool fFollowSyml
     {
         /* Construct arguments. */
         procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        if (fFollowSymlinks)
+            procInfo.mArguments.push_back(Utf8Str("-L"));
+        procInfo.mArguments.push_back("--"); /* strPath could be '--help', which is a valid filename. */
         procInfo.mArguments.push_back(strPath);
     }
     catch (std::bad_alloc)
