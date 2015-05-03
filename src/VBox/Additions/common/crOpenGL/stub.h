@@ -336,7 +336,7 @@ extern void stubCheckXExtensions(WindowInfo *pWindow);
 #endif
 
 
-extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextType type, unsigned long shareCtx
+extern ContextInfo *stubNewContext(char *dpyName, GLint visBits, ContextType type, unsigned long shareCtx
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
         , struct VBOXUHGSMI *pHgsmi
 #endif
