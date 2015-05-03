@@ -781,7 +781,7 @@ typedef void (APIENTRY *crWindowSizeProc)(GLint window, GLint w, GLint h);
 typedef void (APIENTRY *crWindowPositionProc)(GLint window, GLint x, GLint y);
 typedef void (APIENTRY *crWindowShowProc)( GLint window, GLint flag );
 
-extern GLint APIENTRY crCreateContext(const char *dpyName, GLint visBits);
+extern GLint APIENTRY crCreateContext(char *dpyName, GLint visBits);
 extern void APIENTRY crDestroyContext(GLint context);
 extern void APIENTRY crMakeCurrent(GLint window, GLint context);
 extern GLint APIENTRY crGetCurrentContext(void);
