@@ -72,12 +72,12 @@ using namespace com;
 #define GCTLCMD_COMMON_OPT_DOMAIN           996 /**< The --domain option number. */
 /** Common option definitions. */
 #define GCTLCMD_COMMON_OPTION_DEFS() \
-    { "--username",            GCTLCMD_COMMON_OPT_USER,         RTGETOPT_REQ_STRING  }, \
-    { "--passwordfile",        GCTLCMD_COMMON_OPT_PASSWORD_FILE,RTGETOPT_REQ_STRING  }, \
-    { "--password",            GCTLCMD_COMMON_OPT_PASSWORD,     RTGETOPT_REQ_STRING  }, \
-    { "--domain",              GCTLCMD_COMMON_OPT_DOMAIN,       RTGETOPT_REQ_STRING  }, \
-    { "--quiet",               'q',                             RTGETOPT_REQ_NOTHING }, \
-    { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING },
+        { "--username",             GCTLCMD_COMMON_OPT_USER,            RTGETOPT_REQ_STRING  }, \
+        { "--passwordfile",         GCTLCMD_COMMON_OPT_PASSWORD_FILE,   RTGETOPT_REQ_STRING  }, \
+        { "--password",             GCTLCMD_COMMON_OPT_PASSWORD,        RTGETOPT_REQ_STRING  }, \
+        { "--domain",               GCTLCMD_COMMON_OPT_DOMAIN,          RTGETOPT_REQ_STRING  }, \
+        { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING }, \
+        { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
 
 /** Handles common options in the typical option parsing switch. */
 #define GCTLCMD_COMMON_OPTION_CASES(a_pCtx, a_ch, a_pValueUnion) \
@@ -127,7 +127,7 @@ typedef struct GCTLCMDDEF
      *
      * @param   pCtx            Pointer to command context to use.
      */
-    DECLR3CALLBACKMEMBER(RTEXITCODE, pfnHandler, (struct GCTLCMDCTX *pCtx));
+    DECLR3CALLBACKMEMBER(RTEXITCODE, pfnHandler, (struct GCTLCMDCTX *pCtx, int argc, char **argv));
 
     /** The command usage flags. */
     uint32_t    fCmdUsage;
@@ -160,6 +160,8 @@ typedef struct GCTLCMDCTX
     /** The VM name or UUID. */
     const char *pszVmNameOrUuid;
 
+    /** Whether we've done the post option parsing init already. */
+    bool fPostOptionParsingInited;
     /** Whether we've locked the VM session. */
     bool fLockedVmSession;
     /** Whether to detach (@c true) or close the session. */
@@ -288,14 +290,6 @@ enum GETOPTDEF_EXEC
     GETOPTDEF_EXEC_WAITFORSTDERR
 };
 
-enum GETOPTDEF_COPY
-{
-    GETOPTDEF_COPY_DRYRUN = 1000,
-    GETOPTDEF_COPY_FOLLOW,
-    GETOPTDEF_COPY_TARGETDIR
-};
-
-
 enum kStreamTransform
 {
     kStreamTransform_None = 0,
@@ -315,23 +309,27 @@ static int gctlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *psz
 
 void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2, uint32_t uSubCmd)
 {
-    RTStrmPrintf(pStrm,
-                       "%s guestcontrol %s    <uuid|vmname>\n%s",
-                 pcszSep1, pcszSep2,
-                 uSubCmd == ~0U ? "\n" : "");
+    const uint32_t fAnonSubCmds = USAGE_GSTCTRL_CLOSESESSION
+                                | USAGE_GSTCTRL_LIST
+                                | USAGE_GSTCTRL_CLOSEPROCESS
+                                | USAGE_GSTCTRL_CLOSESESSION
+                                | USAGE_GSTCTRL_UPDATEGA
+                                | USAGE_GSTCTRL_WATCH;
+
     /*                0         1         2         3         4         5         6         7         8XXXXXXXXXX */
     /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
-#define COMMON_OPTION_HELP \
-                     "                              [--username <name>] [--domain <domain>]\n" \
-                     "                              [--passwordfile <file> | --password <password>]\n" \
-                     "                              [--verbose|-v] [--quiet|-q]\n"
-#define COMMON_OPTION_HELP_ANON \
-                     "                              [--verbose|-v] [--quiet|-q]\n"
+    if (~fAnonSubCmds & uSubCmd)
+        RTStrmPrintf(pStrm,
+                     "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n"
+                     "                              [--username <name>] [--domain <domain>]\n"
+                     "                              [--passwordfile <file> | --password <password>]\n%s",
+                     pcszSep1, pcszSep2, uSubCmd == ~0U ? "\n" : "");
     if (uSubCmd & USAGE_GSTCTRL_RUN)
         RTStrmPrintf(pStrm,
-                     "                              run\n" COMMON_OPTION_HELP
-                     "                              [--image <path to executable>] [--timeout <msec>]\n"
-                     "                              [--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              run [common-options]\n"
+                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
+                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--ignore-operhaned-processes] [--no-profile]\n"
                      "                              [--no-wait-stdout|--wait-stdout]\n"
                      "                              [--no-wait-stderr|--wait-stderr]\n"
                      "                              [--dos2unix] [--unix2dos]\n"
@@ -339,88 +337,107 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                      "\n");
     if (uSubCmd & USAGE_GSTCTRL_START)
         RTStrmPrintf(pStrm,
-                     "                              start\n" COMMON_OPTION_HELP
-                     "                              [--image <path to executable>] [--timeout <msec>]\n"
-                     "                              [--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              start [common-options]\n"
+                     "                              [--exe <path to executable>] [--timeout <msec>]\n"
+                     "                              [-E|--putenv <NAME>[=<VALUE>]] [--unquoted-args]\n"
+                     "                              [--ignore-operhaned-processes] [--no-profile]\n"
                      "                              -- <program/arg0> [argument1] ... [argumentN]]\n"
-                 "\n");
-    /*            0         1         2         3         4         5         6         7         8XXXXXXXXXX */
-    /*            0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYFROM)
         RTStrmPrintf(pStrm,
-                 "                              copyfrom\n" COMMON_OPTION_HELP
-                 "                              [--dryrun] [--follow] [--recursive]\n"
-                 "                              <guest source> <host dest>\n"
-                 "\n");
+                     "                              copyfrom [common-options]\n"
+                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              <guest-src0> [guest-src1 [...]] <host-dst>\n"
+                     "\n"
+                     "                              copyfrom [common-options]\n"
+                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--target-directory <host-dst-dir>]\n"
+                     "                              <guest-src0> [guest-src1 [...]]\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_COPYTO)
         RTStrmPrintf(pStrm,
-                 "                              copyto\n" COMMON_OPTION_HELP
-                 "                              [--dryrun] [--follow] [--recursive]\n"
-                 "                              <host source> <guest dest> "
-                 "\n");
+                     "                              copyto [common-options]\n"
+                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              <host-src0> [host-src1 [...]] <guest-dst>\n"
+                     "\n"
+                     "                              copyto [common-options]\n"
+                     "                              [--dryrun] [--follow] [-R|--recursive]\n"
+                     "                              [--target-directory <guest-dst>]\n"
+                     "                              <host-src0> [host-src1 [...]]\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_MKDIR)
         RTStrmPrintf(pStrm,
-                 "                              mkdir|md|createdir[ectory]\n" COMMON_OPTION_HELP
-                 "                              [--parents] [--mode <mode>]\n"
-                 "                              <guest directory> [...]\n"
-                 "\n");
+                     "                              mkdir|createdir[ectory] [common-options]\n"
+                     "                              [--parents] [--mode <mode>]\n"
+                     "                              <guest directory> [...]\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_RMDIR)
         RTStrmPrintf(pStrm,
-                 "                              rmdir|removedir[ectory]\n" COMMON_OPTION_HELP
-                 "                              [--recursive|-R|-r]\n"
-                 "                              <guest directory> [...]\n"
-                 "\n");
+                     "                              rmdir|removedir[ectory] [common-options]\n"
+                     "                              [-R|--recursive]\n"
+                     "                              <guest directory> [...]\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_RM)
         RTStrmPrintf(pStrm,
-                 "                              removefile|rm\n" COMMON_OPTION_HELP
-                 "                              <guest file> [...]\n"
-                 "\n");
+                     "                              removefile|rm [common-options] [-f|--force]\n"
+                     "                              <guest file> [...]\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_MV)
         RTStrmPrintf(pStrm,
-                 "                              mv|move|ren[ame]\n" COMMON_OPTION_HELP
-                 "                              <source> [source1 [...]] <dest>\n"
-                 "\n");
+                     "                              mv|move|ren[ame] [common-options]\n"
+                     "                              <source> [source1 [...]] <dest>\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_MKTEMP)
         RTStrmPrintf(pStrm,
-                 "                              mktemp|createtemp[orary]\n" COMMON_OPTION_HELP
-                 "                              [--secure] [--mode <mode>] [--tmpdir <directory>]\n"
-                 "                              <template>\n"
-                 "\n");
+                     "                              mktemp|createtemp[orary] [common-options]\n"
+                     "                              [--secure] [--mode <mode>] [--tmpdir <directory>]\n"
+                     "                              <template>\n"
+                     "\n");
     if (uSubCmd & USAGE_GSTCTRL_STAT)
         RTStrmPrintf(pStrm,
-                 "                              stat\n" COMMON_OPTION_HELP
-                 "                              <file> [...]\n"
-                 "\n");
+                     "                              stat [common-options]\n"
+                     "                              <file> [...]\n"
+                     "\n");
 
-    /* Command not requiring authentication. */
-    if (uSubCmd & USAGE_GSTCTRL_LIST)
+    /*
+     * Command not requiring authentication.
+     */
+    if (fAnonSubCmds & uSubCmd)
+    {
+        /*                0         1         2         3         4         5         6         7         8XXXXXXXXXX */
+        /*                0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890 */
         RTStrmPrintf(pStrm,
-                 "                              list <all|sessions|processes|files>\n" COMMON_OPTION_HELP_ANON
-                 "\n");
-    if (uSubCmd & USAGE_GSTCTRL_CLOSEPROCESS)
-        RTStrmPrintf(pStrm,
-                 "                              closeprocess\n" COMMON_OPTION_HELP_ANON
-                 "                              <   --session-id <ID>\n"
-                 "                                | --session-name <name or pattern>\n"
-                 "                              <PID1> [PID1 [...]]\n"
-                 "\n");
-    if (uSubCmd & USAGE_GSTCTRL_CLOSESESSION)
-        RTStrmPrintf(pStrm,
-                 "                              closesession\n" COMMON_OPTION_HELP_ANON
-                 "                              <  --all | --session-id <ID>\n"
-                 "                                | --session-name <name or pattern> >\n"
-                 "\n");
-    if (uSubCmd & USAGE_GSTCTRL_UPDATEGA)
-        RTStrmPrintf(pStrm,
-                 "                              updatega|updateguestadditions|updateadditions\n" COMMON_OPTION_HELP_ANON
-                 "                              [--source <guest additions .ISO>]\n"
-                 "                              [--wait-start]\n"
-                 "                              [-- [<argument1>] ... [<argumentN>]]\n"
-                 "\n");
-    if (uSubCmd & USAGE_GSTCTRL_WATCH)
-        RTStrmPrintf(pStrm,
-                 "                              watch\n" COMMON_OPTION_HELP_ANON
-                 "\n");
+                     "%s guestcontrol %s    <uuid|vmname> [--verbose|-v] [--quiet|-q]\n%s",
+                     pcszSep1, pcszSep2, uSubCmd == ~0U ? "\n" : "");
+        if (uSubCmd & USAGE_GSTCTRL_LIST)
+            RTStrmPrintf(pStrm,
+                     "                              list <all|sessions|processes|files> [common-opts]\n"
+                     "\n");
+        if (uSubCmd & USAGE_GSTCTRL_CLOSEPROCESS)
+            RTStrmPrintf(pStrm,
+                     "                              closeprocess [common-options]\n"
+                     "                              <   --session-id <ID>\n"
+                     "                                | --session-name <name or pattern>\n"
+                     "                              <PID1> [PID1 [...]]\n"
+                     "\n");
+        if (uSubCmd & USAGE_GSTCTRL_CLOSESESSION)
+            RTStrmPrintf(pStrm,
+                     "                              closesession [common-options]\n"
+                     "                              <  --all | --session-id <ID>\n"
+                     "                                | --session-name <name or pattern> >\n"
+                     "\n");
+        if (uSubCmd & USAGE_GSTCTRL_UPDATEGA)
+            RTStrmPrintf(pStrm,
+                     "                              updatega|updateguestadditions|updateadditions\n"
+                     "                              [--source <guest additions .ISO>]\n"
+                     "                              [--wait-start] [common-options]\n"
+                     "                              [-- [<argument1>] ... [<argumentN>]]\n"
+                     "\n");
+        if (uSubCmd & USAGE_GSTCTRL_WATCH)
+            RTStrmPrintf(pStrm,
+                     "                              watch [common-options]\n"
+                     "\n");
+    }
 }
 
 #ifndef VBOX_ONLY_DOCS
@@ -707,15 +724,11 @@ static int gctlPrintProgressError(ComPtr<IProgress> pProgress)
  *           informing the user of course).
  * @param   pCtx                The command context to init.
  * @param   pArg                The handle argument package.
- * @param   pCmdDef             The command definition.
  */
-static RTEXITCODE gctrCmdCtxInit(PGCTLCMDCTX pCtx, HandlerArg *pArg, PCGCTLCMDDEF pCmdDef)
+static RTEXITCODE gctrCmdCtxInit(PGCTLCMDCTX pCtx, HandlerArg *pArg)
 {
-    Assert(pArg->argc >= 2);
     RT_ZERO(*pCtx);
     pCtx->pArg = pArg;
-    pCtx->pCmdDef = pCmdDef;
-    pCtx->pszVmNameOrUuid = pArg->argv[0];
 
     /*
      * The user name defaults to the host one, if we can get at it.
@@ -755,40 +768,36 @@ static RTEXITCODE gctlCtxSetOption(PGCTLCMDCTX pCtx, int ch, PRTGETOPTUNION pVal
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     switch (ch)
     {
-        case 'u': /* User name */
-            if (!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
+        case GCTLCMD_COMMON_OPT_USER: /* User name */
+            if (!pCtx->pCmdDef || !(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
                 pCtx->strUsername = pValueUnion->psz;
             else
-                return errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fCmdUsage,
-                                     "The --username|-u option is not valid with this command");
+                RTMsgWarning("The --username|-u option is ignored by '%s'", pCtx->pCmdDef->pszName);
             break;
 
         case GCTLCMD_COMMON_OPT_PASSWORD: /* Password */
-            if (!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
+            if (!pCtx->pCmdDef || !(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
             {
                 if (pCtx->strPassword.isNotEmpty())
                     RTMsgWarning("Password is given more than once.");
                 pCtx->strPassword = pValueUnion->psz;
             }
             else
-                return errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fCmdUsage,
-                                     "The --password option is not valid with this command");
+                RTMsgWarning("The --password option is ignored by '%s'", pCtx->pCmdDef->pszName);
             break;
 
-        case 'p': /* Password file */
-            if (!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
+        case GCTLCMD_COMMON_OPT_PASSWORD_FILE: /* Password file */
+            if (!pCtx->pCmdDef || !(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
                 rcExit = readPasswordFile(pValueUnion->psz, &pCtx->strPassword);
             else
-                return errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fCmdUsage,
-                                     "The --password-file|-p option is not valid with this command");
+                RTMsgWarning("The --password-file|-p option is ignored by '%s'", pCtx->pCmdDef->pszName);
             break;
 
-        case 'd': /* domain */
-            if (!(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
+        case GCTLCMD_COMMON_OPT_DOMAIN: /* domain */
+            if (!pCtx->pCmdDef || !(pCtx->pCmdDef->fCmdCtx & GCTLCMDCTX_F_SESSION_ANONYMOUS))
                 pCtx->strDomain = pValueUnion->psz;
             else
-                return errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fCmdUsage,
-                                     "The --domain option is not valid with this command");
+                RTMsgWarning("The --domain option is ignored by '%s'", pCtx->pCmdDef->pszName);
             break;
 
         case 'v': /* --verbose */
@@ -973,9 +982,13 @@ static RTEXITCODE gctlCtxInitGuestSession(PGCTLCMDCTX pCtx)
  * @param   pCtx            The guest control command context.
  *                          GCTCMDCTX::pGuestSession and GCTLCMDCTX::uSessionID
  *                          will be set.
+ * @remarks Can safely be called multiple times, will only do work once.
  */
-static RTEXITCODE gctlCtxPostArgParsingInit(PGCTLCMDCTX pCtx)
+static RTEXITCODE gctlCtxPostOptionParsingInit(PGCTLCMDCTX pCtx)
 {
+    if (pCtx->fPostOptionParsingInited)
+        return RTEXITCODE_SUCCESS;
+
     /*
      * Check that the user name isn't empty when we need it.
      */
@@ -1004,6 +1017,8 @@ static RTEXITCODE gctlCtxPostArgParsingInit(PGCTLCMDCTX pCtx)
     }
     else
         rcExit = errorSyntaxEx(USAGE_GUESTCONTROL, pCtx->pCmdDef->fCmdUsage, "No user name specified!");
+
+    pCtx->fPostOptionParsingInited = rcExit == RTEXITCODE_SUCCESS;
     return rcExit;
 }
 
@@ -1274,10 +1289,12 @@ static RTMSINTERVAL gctlRunGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL cM
  *
  * @returns Command exit code.
  * @param   pCtx        Guest session context.
+ * @param   argc        The argument count.
+ * @param   argv        The argument vector for this command.
  * @param   fRunCmd     Set if it's 'run' clear if 'start'.
  * @param   fHelp       The help flag for the command.
  */
-static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t fHelp)
+static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, int argc, char **argv, bool fRunCmd, uint32_t fHelp)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -1299,11 +1316,12 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t f
     {
         GCTLCMD_COMMON_OPTION_DEFS()
         { "--putenv",                       'E',                                      RTGETOPT_REQ_STRING  },
-        { "--executable",                   'e',                                      RTGETOPT_REQ_STRING  },
+        { "--exe",                          'e',                                      RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unquoted-args",                'u',                                      RTGETOPT_REQ_NOTHING },
         { "--ignore-operhaned-processes",   kGstCtrlRunOpt_IgnoreOrphanedProcesses,   RTGETOPT_REQ_NOTHING },
         { "--no-profile",                   kGstCtrlRunOpt_NoProfile,                 RTGETOPT_REQ_NOTHING },
+        /* run only: 6 - options */
         { "--dos2unix",                     kGstCtrlRunOpt_Dos2Unix,                  RTGETOPT_REQ_NOTHING },
         { "--unix2dos",                     kGstCtrlRunOpt_Unix2Dos,                  RTGETOPT_REQ_NOTHING },
         { "--no-wait-stdout",               kGstCtrlRunOpt_NoWaitForStdOut,           RTGETOPT_REQ_NOTHING },
@@ -1312,11 +1330,14 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t f
         { "--wait-stderr",                  kGstCtrlRunOpt_WaitForStdErr,             RTGETOPT_REQ_NOTHING },
     };
 
+    /** @todo stdin handling.   */
+
     int                     ch;
     RTGETOPTUNION           ValueUnion;
     RTGETOPTSTATE           GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    size_t                  cOptions =
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions) - (fRunCmd ? 0 : 6),
+                 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     com::SafeArray<ProcessCreateFlag_T>     aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T>    aWaitFlags;
@@ -1374,32 +1395,31 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t f
                     cMsTimeout = ValueUnion.u32;
                     break;
 
+                /* run only options: */
                 case kGstCtrlRunOpt_Dos2Unix:
+                    Assert(fRunCmd);
                     enmStdErrTransform = enmStdOutTransform = kStreamTransform_Dos2Unix;
                     break;
                 case kGstCtrlRunOpt_Unix2Dos:
+                    Assert(fRunCmd);
                     enmStdErrTransform = enmStdOutTransform = kStreamTransform_Unix2Dos;
                     break;
 
                 case kGstCtrlRunOpt_WaitForStdOut:
-                    if (!fRunCmd)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stdout");
+                    Assert(fRunCmd);
                     fWaitForStdOut = true;
                     break;
                 case kGstCtrlRunOpt_NoWaitForStdOut:
-                    if (!fRunCmd)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --no-wait-for-stdout");
+                    Assert(fRunCmd);
                     fWaitForStdOut = false;
                     break;
 
                 case kGstCtrlRunOpt_WaitForStdErr:
-                    if (!fRunCmd)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stderr");
+                    Assert(fRunCmd);
                     fWaitForStdErr = true;
                     break;
                 case kGstCtrlRunOpt_NoWaitForStdErr:
-                    if (!fRunCmd)
-                        return errorSyntaxEx(USAGE_GUESTCONTROL, fHelp, "Invalid option --wait-for-stderr");
+                    Assert(fRunCmd);
                     fWaitForStdErr = false;
                     break;
 
@@ -1453,7 +1473,7 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t f
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "VERR_NO_MEMORY\n");
     }
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -1689,15 +1709,15 @@ static RTEXITCODE gctlHandleRunCommon(PGCTLCMDCTX pCtx, bool fRunCmd, uint32_t f
 }
 
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleRun(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleRun(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleRunCommon(pCtx, true /*fRunCmd*/, USAGE_GSTCTRL_RUN);
+    return gctlHandleRunCommon(pCtx, argc, argv, true /*fRunCmd*/, USAGE_GSTCTRL_RUN);
 }
 
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleStart(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleStart(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleRunCommon(pCtx, false /*fRunCmd*/, USAGE_GSTCTRL_START);
+    return gctlHandleRunCommon(pCtx, argc, argv, false /*fRunCmd*/, USAGE_GSTCTRL_START);
 }
 
 
@@ -2582,7 +2602,7 @@ static void gctlCopyFreeSourceRoot(char *pszSourceRoot)
     RTStrFree(pszSourceRoot);
 }
 
-static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
+static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool fHostToGuest)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -2600,6 +2620,12 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
      * what and how to implement the file enumeration/recursive lookup, like VBoxManage
      * does in here.
      */
+    enum GETOPTDEF_COPY
+    {
+        GETOPTDEF_COPY_DRYRUN = 1000,
+        GETOPTDEF_COPY_FOLLOW,
+        GETOPTDEF_COPY_TARGETDIR
+    };
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
@@ -2612,11 +2638,10 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     Utf8Str strSource;
-    Utf8Str strDest;
+    const char *pszDst = NULL;
     uint32_t fFlags = CopyFileFlag_None;
     bool fCopyRecursive = false;
     bool fDryRun = false;
@@ -2625,7 +2650,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
     SOURCEVEC vecSources;
 
     int vrc = VINF_SUCCESS;
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -2645,26 +2670,28 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
                 break;
 
             case GETOPTDEF_COPY_TARGETDIR:
-                strDest = ValueUnion.psz;
+                pszDst = ValueUnion.psz;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-            {
                 /* Last argument and no destination specified with
                  * --target-directory yet? Then use the current
                  * (= last) argument as destination. */
                 if (   pCtx->pArg->argc == GetState.iNext
-                    && strDest.isEmpty())
-                {
-                    strDest = ValueUnion.psz;
-                }
+                    && pszDst == NULL)
+                    pszDst = ValueUnion.psz;
                 else
                 {
-                    /* Save the source directory. */
-                    vecSources.push_back(SOURCEFILEENTRY(ValueUnion.psz));
+                    try
+                    {   /* Save the source directory. */
+                        vecSources.push_back(SOURCEFILEENTRY(ValueUnion.psz));
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory");
+                    }
                 }
                 break;
-            }
 
             default:
                 return errorGetOptEx(USAGE_GUESTCONTROL, uUsage, ch, &ValueUnion);
@@ -2672,14 +2699,12 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
     }
 
     if (!vecSources.size())
-        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage,
-                             "No source(s) specified!");
+        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, "No source(s) specified!");
 
-    if (strDest.isEmpty())
-        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage,
-                             "No destination specified!");
+    if (pszDst == NULL)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, uUsage, "No destination specified!");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -2709,8 +2734,6 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
         return RTEXITCODE_FAILURE;
     }
 
-    /* If the destination is a path, (try to) create it. */
-    const char *pszDest = strDest.c_str();
 /** @todo r=bird: RTPathFilename and RTPathStripFilename won't work
  * correctly on non-windows hosts when the guest is from the DOS world (Windows,
  * OS/2, DOS).  The host doesn't know about DOS slashes, only UNIX slashes and
@@ -2722,20 +2745,20 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
  *
  * @bugref{6344}
  */
-    if (!RTPathFilename(pszDest))
+    if (!RTPathFilename(pszDst))
     {
-        vrc = gctlCopyDirCreate(pContext, pszDest);
+        vrc = gctlCopyDirCreate(pContext, pszDst);
     }
     else
     {
         /* We assume we got a file name as destination -- so strip
          * the actual file name and make sure the appropriate
          * directories get created. */
-        char *pszDestDir = RTStrDup(pszDest);
-        AssertPtr(pszDestDir);
-        RTPathStripFilename(pszDestDir);
-        vrc = gctlCopyDirCreate(pContext, pszDestDir);
-        RTStrFree(pszDestDir);
+        char *pszDstDir = RTStrDup(pszDst);
+        AssertPtr(pszDstDir);
+        RTPathStripFilename(pszDstDir);
+        vrc = gctlCopyDirCreate(pContext, pszDstDir);
+        RTStrFree(pszDstDir);
     }
 
     if (RT_SUCCESS(vrc))
@@ -2799,24 +2822,20 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
                 if (fSourceIsFile)
                 {
                     /* Single file. */
-                    char *pszDestFile;
-                    vrc = gctlCopyTranslatePath(pszSourceRoot, pszSource,
-                                                strDest.c_str(), &pszDestFile);
+                    char *pszDstFile;
+                    vrc = gctlCopyTranslatePath(pszSourceRoot, pszSource, pszDst, &pszDstFile);
                     if (RT_SUCCESS(vrc))
                     {
-                        vrc = gctlCopyFileToDest(pContext, pszSource,
-                                                 pszDestFile, 0 /* Flags */);
-                        RTStrFree(pszDestFile);
+                        vrc = gctlCopyFileToDest(pContext, pszSource, pszDstFile, 0 /* Flags */);
+                        RTStrFree(pszDstFile);
                     }
                     else
-                        RTMsgError("Unable to translate path for \"%s\", rc=%Rrc\n",
-                                   pszSource, vrc);
+                        RTMsgError("Unable to translate path for \"%s\", rc=%Rrc\n", pszSource, vrc);
                 }
                 else
                 {
                     /* Directory (with filter?). */
-                    vrc = gctlCopyDirToDest(pContext, pszSource, pszFilter,
-                                            strDest.c_str(), fFlags);
+                    vrc = gctlCopyDirToDest(pContext, pszSource, pszFilter, pszDst, fFlags);
                 }
             }
 
@@ -2847,17 +2866,17 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleCopyFrom(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleCopyFrom(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleCopy(pCtx, false /* Guest to host */);
+    return gctlHandleCopy(pCtx, argc, argv, false /* Guest to host */);
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleCopyTo(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleCopyTo(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
-    return gctlHandleCopy(pCtx, true /* Host to guest */);
+    return gctlHandleCopy(pCtx, argc, argv, true /* Host to guest */);
 }
 
-static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -2871,14 +2890,14 @@ static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2,
-                 RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     SafeArray<DirectoryCreateFlag_T> dirCreateFlags;
-    uint32_t fDirMode = 0; /* Default mode. */
-    DESTDIRMAP mapDirs;
+    uint32_t    fDirMode     = 0; /* Default mode. */
+    uint32_t    cDirsCreated = 0;
+    RTEXITCODE  rcExit       = RTEXITCODE_SUCCESS;
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -2894,7 +2913,44 @@ static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
+                if (cDirsCreated == 0)
+                {
+                    /*
+                     * First non-option - no more options now.
+                     */
+                    rcExit = gctlCtxPostOptionParsingInit(pCtx);
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+                    if (pCtx->cVerbose > 1)
+                        RTPrintf("Creating %RU32 directories...\n", argc - GetState.iNext + 1);
+                }
+                if (g_fGuestCtrlCanceled)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "mkdir was interrupted by Ctrl-C (%u left)\n",
+                                          argc - GetState.iNext + 1);
+
+                /*
+                 * Create the specified directory.
+                 *
+                 * On failure we'll change the exit status to failure and
+                 * continue with the next directory that needs creating. We do
+                 * this because we only create new things, and because this is
+                 * how /bin/mkdir works on unix.
+                 */
+                cDirsCreated++;
+                if (pCtx->cVerbose > 1)
+                    RTPrintf("Creating directory \"%s\" ...\n", ValueUnion.psz);
+                try
+                {
+                    HRESULT rc;
+                    CHECK_ERROR(pCtx->pGuestSession, DirectoryCreate(Bstr(ValueUnion.psz).raw(),
+                                                                     fDirMode, ComSafeArrayAsInParam(dirCreateFlags)));
+                    if (FAILED(rc))
+                        rcExit = RTEXITCODE_FAILURE;
+                }
+                catch (std::bad_alloc &)
+                {
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory\n");
+                }
                 break;
 
             default:
@@ -2902,57 +2958,32 @@ static DECLCALLBACK(RTEXITCODE) handleCtrtMkDir(PGCTLCMDCTX pCtx)
         }
     }
 
-    size_t cDirs = mapDirs.size();
-    if (!cDirs)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_MKDIR,
-                             "No directory to create specified!");
-
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;
-
-    /*
-     * Create the directories.
-     */
-    HRESULT rc = S_OK;
-    if (pCtx->cVerbose > 1)
-        RTPrintf("Creating %RU32 directories ...\n", cDirs);
-
-    DESTDIRMAPITER it = mapDirs.begin();
-    while (   (it != mapDirs.end())
-           && !g_fGuestCtrlCanceled)
-    {
-        if (pCtx->cVerbose > 1)
-            RTPrintf("Creating directory \"%s\" ...\n", it->first.c_str());
-
-        CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryCreate(Bstr(it->first).raw(),
-                                               fDirMode, ComSafeArrayAsInParam(dirCreateFlags)));
-        it++;
-    }
-
-    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    if (!cDirsCreated)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_MKDIR, "No directory to create specified!");
+    return rcExit;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx)
+
+static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
-        { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING }
+        { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    bool fRecursive = false;
-    DESTDIRMAP mapDirs;
+    bool        fRecursive  = false;
+    uint32_t    cDirRemoved = 0;
+    RTEXITCODE  rcExit      = RTEXITCODE_SUCCESS;
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -2964,92 +2995,115 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRmDir(PGCTLCMDCTX pCtx)
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-                mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
+            {
+                if (cDirRemoved == 0)
+                {
+                    /*
+                     * First non-option - no more options now.
+                     */
+                    rcExit = gctlCtxPostOptionParsingInit(pCtx);
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+                    if (pCtx->cVerbose > 1)
+                        RTPrintf("Removing %RU32 directorie%ss...\n", argc - GetState.iNext + 1, fRecursive ? "trees" : "");
+                }
+                if (g_fGuestCtrlCanceled)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "rmdir was interrupted by Ctrl-C (%u left)\n",
+                                          argc - GetState.iNext + 1);
+
+                cDirRemoved++;
+                HRESULT rc;
+                if (!fRecursive)
+                {
+                    /*
+                     * Remove exactly one directory.
+                     */
+                    if (pCtx->cVerbose > 1)
+                        RTPrintf("Removing directory \"%s\" ...\n", ValueUnion.psz);
+                    try
+                    {
+                        CHECK_ERROR(pCtx->pGuestSession, DirectoryRemove(Bstr(ValueUnion.psz).raw()));
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory\n");
+                    }
+                }
+                else
+                {
+                    /*
+                     * Remove the directory and anything under it, that means files
+                     * and everything.  This is in the tradition of the Windows NT
+                     * CMD.EXE "rmdir /s" operation, a tradition which jpsoft's TCC
+                     * strongly warns against (and half-ways questions the sense of).
+                     */
+                    if (pCtx->cVerbose > 1)
+                        RTPrintf("Recursively removing directory \"%s\" ...\n", ValueUnion.psz);
+                    try
+                    {
+                        /** @todo Make flags configurable. */
+                        com::SafeArray<DirectoryRemoveRecFlag_T> aRemRecFlags;
+                        aRemRecFlags.push_back(DirectoryRemoveRecFlag_ContentAndDir);
+
+                        ComPtr<IProgress> ptrProgress;
+                        CHECK_ERROR(pCtx->pGuestSession, DirectoryRemoveRecursive(Bstr(ValueUnion.psz).raw(),
+                                                                                  ComSafeArrayAsInParam(aRemRecFlags),
+                                                                                  ptrProgress.asOutParam()));
+                        if (SUCCEEDED(rc))
+                        {
+                            if (pCtx->cVerbose > 1)
+                                rc = showProgress(ptrProgress);
+                            else
+                                rc = ptrProgress->WaitForCompletion(-1 /* indefinitely */);
+                            if (SUCCEEDED(rc))
+                                CHECK_PROGRESS_ERROR(ptrProgress, ("Directory deletion failed"));
+                            ptrProgress.setNull();
+                        }
+                    }
+                    catch (std::bad_alloc &)
+                    {
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory during recursive rmdir\n");
+                    }
+                }
+
+                /*
+                 * This command returns immediately on failure since it's destructive in nature.
+                 */
+                if (FAILED(rc))
+                    return RTEXITCODE_FAILURE;
                 break;
+            }
 
             default:
                 return errorGetOptEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RMDIR, ch, &ValueUnion);
         }
     }
 
-    size_t cDirs = mapDirs.size();
-    if (!cDirs)
-        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RMDIR,
-                             "No directory to remove specified!");
-
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;
-
-    /*
-     * Remove the directories.
-     */
-    HRESULT rc = S_OK;
-    if (pCtx->cVerbose > 1)
-        RTPrintf("Removing %RU32 directories ...\n", cDirs);
-
-    DESTDIRMAPITER it = mapDirs.begin();
-    while (   (it != mapDirs.end())
-           && !g_fGuestCtrlCanceled)
-    {
-        if (pCtx->cVerbose > 1)
-            RTPrintf("%s directory \"%s\" ...\n",
-                     fRecursive ? "Recursively removing" : "Removing",
-                     it->first.c_str());
-        try
-        {
-            if (fRecursive)
-            {
-                com::SafeArray<DirectoryRemoveRecFlag_T> aRemRecFlags;
-                /** @todo Make flags configurable. */
-                aRemRecFlags.push_back(DirectoryRemoveRecFlag_ContentAndDir);
-
-                ComPtr<IProgress> pProgress;
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRemoveRecursive(Bstr(it->first).raw(),
-                                                                                ComSafeArrayAsInParam(aRemRecFlags),
-                                                                                pProgress.asOutParam()));
-                if (pCtx->cVerbose > 1)
-                    rc = showProgress(pProgress);
-                else
-                    rc = pProgress->WaitForCompletion(-1 /* No timeout */);
-                if (SUCCEEDED(rc))
-                    CHECK_PROGRESS_ERROR(pProgress, ("Directory deletion failed"));
-
-                pProgress.setNull();
-            }
-            else
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRemove(Bstr(it->first).raw()));
-        }
-        catch (std::bad_alloc)
-        {
-            rc = E_OUTOFMEMORY;
-            break;
-        }
-
-        it++;
-    }
-
-    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    if (!cDirRemoved)
+        return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RMDIR, "No directory to remove specified!");
+    return rcExit;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         GCTLCMD_COMMON_OPTION_DEFS()
+        { "--force",                         'f',                                       RTGETOPT_REQ_NOTHING, },
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    DESTDIRMAP mapDirs;
+    uint32_t    cFilesDeleted   = 0;
+    RTEXITCODE  rcExit          = RTEXITCODE_SUCCESS;
+    bool        fForce         = true;
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -3057,7 +3111,43 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx)
             GCTLCMD_COMMON_OPTION_CASES(pCtx, ch, &ValueUnion);
 
             case VINF_GETOPT_NOT_OPTION:
-                mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
+                if (cFilesDeleted == 0)
+                {
+                    /*
+                     * First non-option - no more options now.
+                     */
+                    rcExit = gctlCtxPostOptionParsingInit(pCtx);
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+                    if (pCtx->cVerbose > 1)
+                        RTPrintf("Removing %RU32 file(s)...\n", argc - GetState.iNext + 1);
+                }
+                if (g_fGuestCtrlCanceled)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "rm was interrupted by Ctrl-C (%u left)\n",
+                                          argc - GetState.iNext + 1);
+
+                /*
+                 * Remove the specified file.
+                 *
+                 * On failure we will by default stop, however, the force option will
+                 * by unix traditions force us to ignore errors and continue.
+                 */
+                cFilesDeleted++;
+                if (pCtx->cVerbose > 1)
+                    RTPrintf("Removing file \"%s\" ...\n", ValueUnion.psz);
+                try
+                {
+                    /** @todo How does IGuestSession::FileRemove work with read-only files? Do we
+                     *        need to do some chmod or whatever to better emulate the --force flag? */
+                    HRESULT rc;
+                    CHECK_ERROR(pCtx->pGuestSession, FileRemove(Bstr(ValueUnion.psz).raw()));
+                    if (FAILED(rc) && !fForce)
+                        return RTEXITCODE_FAILURE;
+                }
+                catch (std::bad_alloc &)
+                {
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Out of memory\n");
+                }
                 break;
 
             default:
@@ -3065,37 +3155,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx)
         }
     }
 
-    size_t cFiles = mapDirs.size();
-    if (!cFiles)
+    if (!cFilesDeleted && !fForce)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_RM, "No file to remove specified!");
-
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return rcExit;
-
-    /*
-     * Create the directories.
-     */
-    HRESULT rc = S_OK;
-    if (pCtx->cVerbose > 1)
-        RTPrintf("Removing %RU32 file(s) ...\n", cFiles);
-
-    DESTDIRMAPITER it = mapDirs.begin();
-    while (   (it != mapDirs.end())
-           && !g_fGuestCtrlCanceled)
-    {
-        if (pCtx->cVerbose > 1)
-            RTPrintf("Removing file \"%s\" ...\n", it->first.c_str());
-
-        CHECK_ERROR_BREAK(pCtx->pGuestSession, FileRemove(Bstr(it->first).raw()));
-
-        it++;
-    }
-
-    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    return rcExit;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3107,14 +3172,13 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int vrc = VINF_SUCCESS;
 
     bool fDryrun = false;
     std::vector< Utf8Str > vecSources;
-    Utf8Str strDest;
+    const char *pszDst = NULL;
     com::SafeArray<PathRenameFlag_T> aRenameFlags;
 
     try
@@ -3135,7 +3199,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
 
                 case VINF_GETOPT_NOT_OPTION:
                     vecSources.push_back(Utf8Str(ValueUnion.psz));
-                    strDest = ValueUnion.psz;
+                    pszDst = ValueUnion.psz;
                     break;
 
                 default:
@@ -3159,7 +3223,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_MV,
                              "No destination specified!");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -3172,7 +3236,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
     if (cSources > 1)
     {
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(strDest).raw(), pFsObjInfo.asOutParam());
+        rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(pszDst).raw(), pFsObjInfo.asOutParam());
         if (FAILED(rc))
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Destination must be a directory when specifying multiple sources\n");
     }
@@ -3189,9 +3253,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
     {
         bool fSourceIsDirectory = false;
         Utf8Str strCurSource = (*it);
-        Utf8Str strCurDest = strDest;
 
         /** @todo Slooooow, but works for now. */
+        /** @todo r=bird: Need an interface for querying info on a file system
+         *        object, not just files or directories exclusively.  You also may
+         *        want to take symbolic links into account somewhere along the line,
+         *        though preferrably on the guest end of things... */
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
         rc = pCtx->pGuestSession->FileQueryInfo(Bstr(strCurSource).raw(), pFsObjInfo.asOutParam());
         if (FAILED(rc))
@@ -3211,24 +3278,29 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
         if (pCtx->cVerbose > 1)
             RTPrintf("Renaming %s \"%s\" to \"%s\" ...\n",
                      fSourceIsDirectory ? "directory" : "file",
-                     strCurSource.c_str(), strCurDest.c_str());
+                     strCurSource.c_str(), pszDst);
 
         if (!fDryrun)
         {
             if (fSourceIsDirectory)
             {
                 CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRename(Bstr(strCurSource).raw(),
-                                                                       Bstr(strCurDest).raw(),
+                                                                       Bstr(pszDst).raw(),
                                                                        ComSafeArrayAsInParam(aRenameFlags)));
 
                 /* Break here, since it makes no sense to rename mroe than one source to
                  * the same directory. */
+/** @todo r=bird: You are being kind of windowsy (or just DOSish) about the 'sense' part here,
+ * while being totaly buggy about the behavior. 'VBoxGuest guestcontrol ren dir1 dir2 dstdir' will
+ * stop after 'dir1' and SILENTLY ignore dir2.  If you tried this on Windows, you'd see an error
+ * being displayed.  If you 'man mv' on a nearby unixy system, you'd see that they've made perfect
+ * sense out of any situation with more than one source. */
                 it = vecSources.end();
                 break;
             }
             else
                 CHECK_ERROR_BREAK(pCtx->pGuestSession, FileRename(Bstr(strCurSource).raw(),
-                                                                  Bstr(strCurDest).raw(),
+                                                                  Bstr(pszDst).raw(),
                                                                   ComSafeArrayAsInParam(aRenameFlags)));
         }
 
@@ -3244,7 +3316,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx)
     return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3260,8 +3332,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     Utf8Str strTemplate;
     uint32_t fMode = 0; /* Default mode. */
@@ -3317,7 +3388,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_MKTEMP,
                              "Creating temporary files is currently not supported!");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -3362,7 +3433,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMkTemp(PGCTLCMDCTX pCtx)
     return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3378,12 +3449,11 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     DESTDIRMAP mapObjs;
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -3411,7 +3481,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_STAT,
                              "No element(s) to check specified!");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -3472,7 +3542,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx)
     return rcExit;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3494,8 +3564,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     int vrc = VINF_SUCCESS;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -3557,7 +3626,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
 
-        RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+        RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
         if (rcExit != RTEXITCODE_SUCCESS)
             return rcExit;
 
@@ -3599,7 +3668,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleUpdateAdditions(PGCTLCMDCTX pCtx)
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3611,8 +3680,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     bool fSeenListArg   = false;
     bool fListAll       = false;
@@ -3654,7 +3722,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_LIST, "Missing list name");
     Assert(fListAll || fListSessions);
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -3769,7 +3837,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleList(PGCTLCMDCTX pCtx)
     return rcExit;
 }
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3783,8 +3851,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     std::vector < uint32_t > vecPID;
     ULONG ulSessionID = UINT32_MAX;
@@ -3853,7 +3920,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CLOSEPROCESS,
                              "Either session ID or name (pattern) must be specified");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -3954,7 +4021,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseProcess(PGCTLCMDCTX pCtx)
 }
 
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -3973,13 +4040,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     ULONG ulSessionID = UINT32_MAX;
     Utf8Str strSessionName;
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -4016,7 +4082,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx)
         return errorSyntaxEx(USAGE_GUESTCONTROL, USAGE_GSTCTRL_CLOSESESSION,
                              "Either session ID or name (pattern) must be specified");
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -4080,7 +4146,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleCloseSession(PGCTLCMDCTX pCtx)
 }
 
 
-static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx)
+static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char **argv)
 {
     AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
@@ -4095,10 +4161,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pCtx->pArg->argc, pCtx->pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions),
-                 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
@@ -4114,7 +4179,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx)
     /** @todo Specify categories to watch for. */
     /** @todo Specify a --timeout for waiting only for a certain amount of time? */
 
-    RTEXITCODE rcExit = gctlCtxPostArgParsingInit(pCtx);
+    RTEXITCODE rcExit = gctlCtxPostOptionParsingInit(pCtx);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
@@ -4234,37 +4299,69 @@ int handleGuestControl(HandlerArg *pArg)
     };
 
     /*
-     * Lookup the command and invoke the handler.
+     * VBoxManage guestcontrol [common-options] <VM> [common-options] <sub-command> ...
      *
-     * Our Argument expectations:
-     *      argv[0] is the VM name.
-     *      argv[1] is the guest control command.
+     * Parse common options and VM name until we find a sub-command.  Allowing
+     * the user  to put the user and password related options before the
+     * sub-command makes it easier to edit the command line when doing several
+     * operations with the same guest user account.  (Accidentally, it also
+     * makes the syntax diagram shorter and easier to read.)
      */
-    if (pArg->argc >= 2)
+    GCTLCMDCTX CmdCtx;
+    RTEXITCODE rcExit = gctrCmdCtxInit(&CmdCtx, pArg);
+    if (rcExit == RTEXITCODE_SUCCESS)
     {
-        /** @todo bird: From a syntax diagram point of view, it's tempting to start
-         *        common option parsing here, stop on the first non-option and using
-         *        it as the command.  We will of course allow common options after
-         *        the command, no problems. */
-        const char *pszCmd = pArg->argv[1];
-        uint32_t    iCmd;
-        for (iCmd = 0; iCmd < RT_ELEMENTS(s_aCmdDefs); iCmd++)
-            if (strcmp(s_aCmdDefs[iCmd].pszName, pszCmd) == 0)
+        static const RTGETOPTDEF s_CommonOptions[] = { GCTLCMD_COMMON_OPTION_DEFS() };
+
+        int ch;
+        RTGETOPTUNION ValueUnion;
+        RTGETOPTSTATE GetState;
+        RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_CommonOptions, RT_ELEMENTS(s_CommonOptions), 0, 0 /* No sorting! */);
+
+        while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        {
+            switch (ch)
             {
-                GCTLCMDCTX CmdCtx;
-                RTEXITCODE rcExit = gctrCmdCtxInit(&CmdCtx, pArg, &s_aCmdDefs[iCmd]);
-                if (rcExit == RTEXITCODE_SUCCESS)
-                {
-                    rcExit = s_aCmdDefs[iCmd].pfnHandler(&CmdCtx);
+                GCTLCMD_COMMON_OPTION_CASES(&CmdCtx, ch, &ValueUnion);
 
-                    gctlCtxTerm(&CmdCtx);
-                }
-                return rcExit;
+                case VINF_GETOPT_NOT_OPTION:
+                    /* First comes the VM name or UUID. */
+                    if (!CmdCtx.pszVmNameOrUuid)
+                        CmdCtx.pszVmNameOrUuid = ValueUnion.psz;
+                    /*
+                     * The sub-command is next.  Look it up and invoke it.
+                     * Note! Currently no warnings about user/password options (like we'll do later on)
+                     *       for GCTLCMDCTX_F_SESSION_ANONYMOUS commands. No reason to be too pedantic.
+                     */
+                    else
+                    {
+                        const char *pszCmd = ValueUnion.psz;
+                        uint32_t    iCmd;
+                        for (iCmd = 0; iCmd < RT_ELEMENTS(s_aCmdDefs); iCmd++)
+                            if (strcmp(s_aCmdDefs[iCmd].pszName, pszCmd) == 0)
+                            {
+                                CmdCtx.pCmdDef = &s_aCmdDefs[iCmd];
+
+                                rcExit = s_aCmdDefs[iCmd].pfnHandler(&CmdCtx, pArg->argc - GetState.iNext + 1,
+                                                                     &pArg->argv[GetState.iNext - 1]);
+
+                                gctlCtxTerm(&CmdCtx);
+                                return rcExit;
+                            }
+                        return errorSyntax(USAGE_GUESTCONTROL, "Unknown sub-command: '%s'", pszCmd);
+                    }
+                    break;
+
+                default:
+                    return errorGetOpt(USAGE_GUESTCONTROL, ch, &ValueUnion);
             }
-
-        return errorSyntax(USAGE_GUESTCONTROL, "Unknown sub-command: '%s'", pszCmd);
+        }
+        if (CmdCtx.pszVmNameOrUuid)
+            rcExit = errorSyntax(USAGE_GUESTCONTROL, "Missing sub-command");
+        else
+            rcExit = errorSyntax(USAGE_GUESTCONTROL, "Missing VM name and sub-command");
     }
-    return errorSyntax(USAGE_GUESTCONTROL, "Missing sub-command");
+    return rcExit;
 }
 #endif /* !VBOX_ONLY_DOCS */
 
