@@ -2872,7 +2872,7 @@
       </param>
 
       <param name="types" type="unsigned long" safearray="yes" dir="out">
-        <desc>The list of types for the entries.</desc>
+        <desc>The list of types for the entries. <link to="FsObjType"/></desc>
       </param>
 
       <param name="sizes" type="long long" safearray="yes" dir="out">
