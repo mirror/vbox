@@ -293,7 +293,7 @@ $(addprefix $(VBOX_LNX_ADD_INST_KMOD_DIR),$(VBOX_LNX_ADD_KMOD_DIRS)): \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*) \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*) \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/%*/*/*/*/*) \
-		$(VBOX_VERSION_STAMP) \
+		$(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_HEADER) \
 		| $$(dir $$(patsubst $$(PERCENT)/,$$(PERCENT),$$@))
 	$(call MSG_INST_DIR,$<,$@)
 	$(QUIET)$(RM) -Rf $(filter-out $(VBOX_LNX_ADD_INST_KMOD_DIR_MOD),$(wildcard $(VBOX_LNX_ADD_INST_KMOD_DIR)*/))

@@ -182,7 +182,7 @@ $(PATH_STAGE_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*) \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*/*) \
 		$(wildcard $(PATH_STAGE_BIN)/additions/src/*/*/*/*) \
-		$(VBOX_VERSION_STAMP)
+		$(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_HEADER)
 	pkg_create \
 		-I $(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/install.sh \
 		-c $(VBOX_PATH_FREEBSD_ADDITION_INSTALLER)/pkg-comment \
