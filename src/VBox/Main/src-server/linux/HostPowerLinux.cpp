@@ -98,13 +98,14 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
     {
         DBusMessage *pMessage = NULL;
 
-        do {
+        for (;;)
+        {
             DBusMessageIter args;
             dbus_bool_t fSuspend;
 
             pMessage = dbus_connection_pop_message(pPowerObj->mpConnection);
             if (pMessage == NULL)
-                continue;
+                break;
             /* The systemd-logind interface notification. */
             if (   dbus_message_is_signal(pMessage, "org.freedesktop.login1.Manager", "PrepareForSleep")
                 && dbus_message_iter_init(pMessage, &args)
@@ -116,7 +117,7 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
                 if (fSuspend)
                     pPowerObj->notify(Reason_HostSuspend);
                 else
-                    pPowerObj->notify(Reason_HostResume);            
+                    pPowerObj->notify(Reason_HostResume);
             }
             /* The UPowerd interface notifications.  Sleeping is the older one,
              * NotifySleep the newer.  This gives us one second grace before the
@@ -129,7 +130,7 @@ DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD 
                 pPowerObj->notify(Reason_HostResume);
             /* Free local resources held for the message. */
             dbus_message_unref(pMessage);
-        } while (pMessage != NULL);
+        }
     }
     /* Close the socket or whatever underlying the connection. */
     dbus_connection_close(pPowerObj->mpConnection);
