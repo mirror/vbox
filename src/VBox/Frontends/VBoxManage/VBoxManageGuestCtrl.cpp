@@ -3266,7 +3266,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
         Utf8Str strCurSource = (*it);
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        FsObjType enmObjType;
+        FsObjType_T enmObjType;
         rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strCurSource).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
         if (SUCCEEDED(rc))
             rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
