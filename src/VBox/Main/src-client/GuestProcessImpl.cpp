@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestProcessImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -174,10 +177,6 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcess
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-#ifndef VBOX_WITH_GUEST_CONTROL
-    autoInitSpan.setSucceeded();
-    return VINF_SUCCESS;
-#else
     HRESULT hr;
 
     int vrc = bindToSession(aConsole, aSession, aProcessID /* Object ID */);
@@ -253,7 +252,6 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession, ULONG aProcess
 
     autoInitSpan.setFailed();
     return vrc;
-#endif
 }
 
 /**
@@ -267,7 +265,6 @@ void GuestProcess::uninit(void)
     if (autoUninitSpan.uninitDone())
         return;
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     LogFlowThisFunc(("mExe=%s, PID=%RU32\n", mData.mProcess.mExecutable.c_str(), mData.mPID));
 
     /* Terminate process if not already done yet. */
@@ -286,22 +283,17 @@ void GuestProcess::uninit(void)
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
                      vrc, guestRc));
-#endif
 }
 
 // implementation of public getters/setters for attributes
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestProcess::getArguments(std::vector<com::Utf8Str> &aArguments)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     aArguments = mData.mProcess.mArguments;
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
@@ -338,9 +330,6 @@ HRESULT GuestProcess::getEnvironment(std::vector<com::Utf8Str> &aEnvironment)
 
 HRESULT GuestProcess::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     // no need to lock - lifetime constant
@@ -348,14 +337,10 @@ HRESULT GuestProcess::getEventSource(ComPtr<IEventSource> &aEventSource)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getExecutablePath(com::Utf8Str &aExecutablePath)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -363,14 +348,10 @@ HRESULT GuestProcess::getExecutablePath(com::Utf8Str &aExecutablePath)
     aExecutablePath = mData.mProcess.mExecutable;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getExitCode(LONG *aExitCode)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -378,14 +359,10 @@ HRESULT GuestProcess::getExitCode(LONG *aExitCode)
     *aExitCode = mData.mExitCode;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getName(com::Utf8Str &aName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -393,14 +370,10 @@ HRESULT GuestProcess::getName(com::Utf8Str &aName)
     aName = mData.mProcess.mName;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getPID(ULONG *aPID)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -408,14 +381,10 @@ HRESULT GuestProcess::getPID(ULONG *aPID)
     *aPID = mData.mPID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::getStatus(ProcessStatus_T *aStatus)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -423,7 +392,6 @@ HRESULT GuestProcess::getStatus(ProcessStatus_T *aStatus)
     *aStatus = mData.mStatus;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // private methods
@@ -1755,9 +1723,6 @@ int GuestProcess::i_writeData(uint32_t uHandle, uint32_t uFlags,
 
 HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (aToRead == 0)
@@ -1796,15 +1761,10 @@ HRESULT GuestProcess::read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, std::
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::terminate()
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     HRESULT hr = S_OK;
 
     int guestRc;
@@ -1841,17 +1801,12 @@ HRESULT GuestProcess::terminate()
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::waitFor(ULONG aWaitFor,
                               ULONG aTimeoutMS,
                               ProcessWaitResult_T *aReason)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     /*
      * Note: Do not hold any locks here while waiting!
      */
@@ -1886,15 +1841,11 @@ HRESULT GuestProcess::waitFor(ULONG aWaitFor,
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWaitFor,
                                    ULONG aTimeoutMS, ProcessWaitResult_T *aReason)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     /*
      * Note: Do not hold any locks here while waiting!
      */
@@ -1903,15 +1854,11 @@ HRESULT GuestProcess::waitForArray(const std::vector<ProcessWaitForFlag_T> &aWai
         fWaitFor |= aWaitFor[i];
 
     return WaitFor(fWaitFor, aTimeoutMS, aReason);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE> &aData,
                             ULONG aTimeoutMS, ULONG *aWritten)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
@@ -1942,15 +1889,11 @@ HRESULT GuestProcess::write(ULONG aHandle, ULONG aFlags, const std::vector<BYTE>
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestProcess::writeArray(ULONG aHandle, const std::vector<ProcessInputFlag_T> &aFlags,
                                  const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /*
@@ -1961,7 +1904,6 @@ HRESULT GuestProcess::writeArray(ULONG aHandle, const std::vector<ProcessInputFl
         fWrite |= aFlags[i];
 
     return write(aHandle, fWrite, aData, aTimeoutMS, aWritten);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 ///////////////////////////////////////////////////////////////////////////////

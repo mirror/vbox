@@ -50,7 +50,13 @@
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/log.h>
 
+
+/*
+ * This #ifdef goes almost to the end of the file where there are a couple of
+ * IGuest method implementations.
+ */
 #ifdef VBOX_WITH_GUEST_CONTROL
+
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////

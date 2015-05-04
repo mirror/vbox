@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestFileImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -145,10 +148,6 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-#ifndef VBOX_WITH_GUEST_CONTROL
-    autoInitSpan.setSucceeded();
-    return VINF_SUCCESS;
-#else
     int vrc = bindToSession(pConsole, pSession, uFileID /* Object ID */);
     if (RT_SUCCESS(vrc))
     {
@@ -215,7 +214,6 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -231,9 +229,7 @@ void GuestFile::uninit(void)
 
     LogFlowThisFuncEnter();
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     baseUninit();
-#endif
     LogFlowThisFuncLeave();
 }
 
@@ -242,112 +238,77 @@ void GuestFile::uninit(void)
 
 HRESULT GuestFile::getCreationMode(ULONG *aCreationMode)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aCreationMode = mData.mOpenInfo.mCreationMode;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getOpenAction(FileOpenAction_T *aOpenAction)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOpenAction = mData.mOpenInfo.mOpenAction;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     /* No need to lock - lifetime constant. */
     mEventSource.queryInterfaceTo(aEventSource.asOutParam());
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getFileName(com::Utf8Str &aFileName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aFileName = mData.mOpenInfo.mFileName;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getId(ULONG *aId)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aId = mData.mID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getInitialSize(LONG64 *aInitialSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aInitialSize = mData.mInitialSize;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getOffset(LONG64 *aOffset)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aOffset = mData.mOffCurrent;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getAccessMode(FileAccessMode_T *aAccessMode)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aAccessMode = mData.mOpenInfo.mAccessMode;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::getStatus(FileStatus_T *aStatus)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -355,7 +316,6 @@ HRESULT GuestFile::getStatus(FileStatus_T *aStatus)
     *aStatus = mData.mStatus;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // private methods
@@ -1223,9 +1183,6 @@ int GuestFile::i_writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestFile::close()
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /* Close file on guest. */
@@ -1250,32 +1207,20 @@ HRESULT GuestFile::close()
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::querySize(LONG64 *aSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
 
@@ -1308,14 +1253,10 @@ HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aDat
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
 
@@ -1347,14 +1288,10 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOffset)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
@@ -1398,32 +1335,20 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::setACL(const com::Utf8Str &aAcl, ULONG aMode)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::setSize(LONG64 aSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
@@ -1446,15 +1371,11 @@ HRESULT GuestFile::write(const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG aTimeoutMS, ULONG *aWritten)
 
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hr = S_OK;
@@ -1477,6 +1398,5 @@ HRESULT GuestFile::writeAt(LONG64 aOffset, const std::vector<BYTE> &aData, ULONG
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,6 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestFsObjInfoImpl.h"
 #include "GuestCtrlImplPrivate.h"
 
@@ -91,230 +94,136 @@ void GuestFsObjInfo::uninit(void)
 
 HRESULT GuestFsObjInfo::getAccessTime(LONG64 *aAccessTime)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aAccessTime = mData.mAccessTime;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getAllocatedSize(LONG64 *aAllocatedSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aAllocatedSize = mData.mAllocatedSize;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getBirthTime(LONG64 *aBirthTime)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aBirthTime = mData.mBirthTime;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getChangeTime(LONG64 *aChangeTime)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aChangeTime = mData.mChangeTime;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 
 
 HRESULT GuestFsObjInfo::getDeviceNumber(ULONG *aDeviceNumber)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aDeviceNumber = mData.mDeviceNumber;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getFileAttributes(com::Utf8Str &aFileAttributes)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     aFileAttributes = mData.mFileAttrs;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getGenerationId(ULONG *aGenerationId)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aGenerationId = mData.mGenerationID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getGID(ULONG *aGID)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aGID = mData.mGID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getGroupName(com::Utf8Str &aGroupName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     aGroupName = mData.mGroupName;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getHardLinks(ULONG *aHardLinks)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aHardLinks = mData.mNumHardLinks;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getModificationTime(LONG64 *aModificationTime)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aModificationTime = mData.mModificationTime;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getName(com::Utf8Str &aName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     aName = mData.mName;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getNodeId(LONG64 *aNodeId)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aNodeId = mData.mNodeID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getNodeIdDevice(ULONG *aNodeIdDevice)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aNodeIdDevice = mData.mNodeIDDevice;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getObjectSize(LONG64 *aObjectSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aObjectSize = mData.mObjectSize;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getType(FsObjType_T *aType)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aType = mData.mType;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getUID(ULONG *aUID)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aUID = mData.mUID;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getUserFlags(ULONG *aUserFlags)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     *aUserFlags = mData.mUserFlags;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestFsObjInfo::getUserName(com::Utf8Str &aUserName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     aUserName = mData.mUserName;
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
+

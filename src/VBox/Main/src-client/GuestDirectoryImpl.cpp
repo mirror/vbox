@@ -1,11 +1,10 @@
-
 /* $Id$ */
 /** @file
  * VirtualBox Main - Guest directory handling.
  */
 
 /*
- * Copyright (C) 2012-2013 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +19,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestDirectoryImpl.h"
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
@@ -72,10 +74,6 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-#ifndef VBOX_WITH_GUEST_CONTROL
-    autoInitSpan.setSucceeded();
-    return VINF_SUCCESS;
-#else
     int vrc = bindToSession(pConsole, pSession, uDirID /* Object ID */);
     if (RT_SUCCESS(vrc))
     {
@@ -123,7 +121,6 @@ int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
         autoInitSpan.setFailed();
 
     return vrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -264,9 +261,6 @@ HRESULT GuestDirectory::i_setErrorExternal(VirtualBoxBase *pInterface, int guest
 /////////////////////////////////////////////////////////////////////////////
 HRESULT GuestDirectory::close()
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
@@ -304,14 +298,10 @@ HRESULT GuestDirectory::close()
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
@@ -406,6 +396,5 @@ HRESULT GuestDirectory::read(ComPtr<IFsObjInfo> &aObjInfo)
 
     LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2012-2014 Oracle Corporation
+ * Copyright (C) 2012-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,6 +20,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "GuestImpl.h"
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
 #include "VirtualBoxErrorInfoImpl.h"
@@ -176,10 +179,6 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), VERR_OBJECT_DESTROYED);
 
-#ifndef VBOX_WITH_GUEST_CONTROL
-    autoInitSpan.setSucceeded();
-    return VINF_SUCCESS;
-#else
     AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
 
     /*
@@ -263,7 +262,6 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     LogThisFunc(("Failed! mName=%s mID=%RU32 mIsInternal=%RTbool => rc=%Rrc\n",
                  mData.mSession.mName.c_str(), mData.mSession.mID, mData.mSession.mIsInternal, rc));
     return rc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -281,7 +279,6 @@ void GuestSession::uninit(void)
 
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("Closing directories (%zu total)\n",
@@ -332,7 +329,7 @@ void GuestSession::uninit(void)
               ("mNumObjects=%RU32 when it should be 0\n", mData.mNumObjects));
 
     baseUninit();
-#endif /* VBOX_WITH_GUEST_CONTROL */
+
     LogFlowFuncLeaveRC(rc);
 }
 
@@ -341,10 +338,6 @@ void GuestSession::uninit(void)
 
 HRESULT GuestSession::getUser(com::Utf8Str &aUser)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -353,14 +346,10 @@ HRESULT GuestSession::getUser(com::Utf8Str &aUser)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getDomain(com::Utf8Str &aDomain)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -369,14 +358,10 @@ HRESULT GuestSession::getDomain(com::Utf8Str &aDomain)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getName(com::Utf8Str &aName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -385,14 +370,10 @@ HRESULT GuestSession::getName(com::Utf8Str &aName)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getId(ULONG *aId)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -401,14 +382,10 @@ HRESULT GuestSession::getId(ULONG *aId)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getStatus(GuestSessionStatus_T *aStatus)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -417,14 +394,10 @@ HRESULT GuestSession::getStatus(GuestSessionStatus_T *aStatus)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getTimeout(ULONG *aTimeout)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -433,14 +406,10 @@ HRESULT GuestSession::getTimeout(ULONG *aTimeout)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::setTimeout(ULONG aTimeout)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -449,14 +418,10 @@ HRESULT GuestSession::setTimeout(ULONG aTimeout)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getProtocolVersion(ULONG *aProtocolVersion)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -465,14 +430,10 @@ HRESULT GuestSession::getProtocolVersion(ULONG *aProtocolVersion)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getEnvironmentChanges(std::vector<com::Utf8Str> &aEnvironmentChanges)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -481,14 +442,10 @@ HRESULT GuestSession::getEnvironmentChanges(std::vector<com::Utf8Str> &aEnvironm
 
     LogFlowFuncLeaveRC(vrc);
     return Global::vboxStatusCodeToCOM(vrc);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::setEnvironmentChanges(const std::vector<com::Utf8Str> &aEnvironmentChanges)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -498,14 +455,10 @@ HRESULT GuestSession::setEnvironmentChanges(const std::vector<com::Utf8Str> &aEn
 
     LogFlowFuncLeaveRC(vrc);
     return Global::vboxStatusCodeToCOM(vrc);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironmentBase)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -522,14 +475,10 @@ HRESULT GuestSession::getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironment
 
     LogFlowFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcesses)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -545,14 +494,10 @@ HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcess
 
     LogFlowFunc(("mProcesses=%zu\n", aProcesses.size()));
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     VBOXOSTYPE enmOsType = mParent->i_getGuestOSType();
     if (    enmOsType < VBOXOSTYPE_DOS)
     {
@@ -570,7 +515,6 @@ HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
         LogFlowFunc(("returns PathStyle_UNIX\n"));
     }
     return S_OK;
-#endif
 }
 
 HRESULT GuestSession::getCurrentDirectory(com::Utf8Str &aCurrentDirectory)
@@ -585,9 +529,6 @@ HRESULT GuestSession::setCurrentDirectory(const com::Utf8Str &aCurrentDirectory)
 
 HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -603,14 +544,10 @@ HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDir
 
     LogFlowFunc(("mDirectories=%zu\n", aDirectories.size()));
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getFiles(std::vector<ComPtr<IGuestFile> > &aFiles)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -623,14 +560,10 @@ HRESULT GuestSession::getFiles(std::vector<ComPtr<IGuestFile> > &aFiles)
     LogFlowFunc(("mDirectories=%zu\n", aFiles.size()));
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     // no need to lock - lifetime constant
@@ -638,7 +571,6 @@ HRESULT GuestSession::getEventSource(ComPtr<IEventSource> &aEventSource)
 
     LogFlowThisFuncLeave();
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // private methods
@@ -2457,9 +2389,6 @@ int GuestSession::i_waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFl
 
 HRESULT GuestSession::close()
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     AutoCaller autoCaller(this);
@@ -2492,7 +2421,6 @@ HRESULT GuestSession::close()
     }
 
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2505,10 +2433,6 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
                                         const std::vector<FileCopyFlag_T> &aFlags,
                                         ComPtr<IProgress> &aProgress)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
@@ -2548,16 +2472,11 @@ HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
                                       const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
@@ -2600,7 +2519,6 @@ HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Ut
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -2624,9 +2542,6 @@ HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const co
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
                                       const std::vector<DirectoryCreateFlag_T> &aFlags)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -2671,15 +2586,11 @@ HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath,
                                           BOOL aSecure, com::Utf8Str &aDirectory)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aTemplateName.c_str()) == NULL || *(aTemplateName.c_str()) == '\0'))
@@ -2709,14 +2620,10 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -2746,15 +2653,11 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSym
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8Str &aFilter,
                                     const std::vector<DirectoryOpenFlag_T> &aFlags, ComPtr<IGuestDirectory> &aDirectory)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -2807,14 +2710,10 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -2850,15 +2749,11 @@ HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const std::vector<DirectoryRemoveRecFlag_T> &aFlags,
                                                ComPtr<IProgress> &aProgress)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -2918,14 +2813,10 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hrc;
@@ -2948,14 +2839,10 @@ HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const co
 
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
@@ -2977,14 +2864,10 @@ HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com::Utf8Str &aValue)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
     HRESULT hrc;
     if (RT_LIKELY(aName.isNotEmpty()))
@@ -3013,14 +2896,10 @@ HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com:
 
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName, BOOL *aExists)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
     *aExists = FALSE;
     HRESULT hrc;
@@ -3047,27 +2926,16 @@ HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName
 
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aMode, const com::Utf8Str &aPath, BOOL aSecure,
                                      ComPtr<IGuestFile> &aFile)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
 /** @todo r=bird: Treat empty file with a FALSE return. */
@@ -3103,26 +2971,18 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
     return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, 0 /* aOffset */, aFile);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                  FileSharingMode_T aSharingMode, ULONG aCreationMode, LONG64 aOffset, ComPtr<IGuestFile> &aFile)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -3212,14 +3072,10 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymlinks, LONG64 *aSize)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
@@ -3246,14 +3102,10 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymli
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hrc = S_OK;
@@ -3279,14 +3131,10 @@ HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlink
        be a tedious and return E_INVALIDARG, simply return FALSE. */
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     HRESULT hrc = S_OK;
@@ -3317,14 +3165,10 @@ HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSyml
        be a tedious and return E_INVALIDARG, simply return FALSE. */
     LogFlowThisFuncLeave();
     return hrc;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY(aPath.isEmpty()))
@@ -3350,16 +3194,12 @@ HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
                                   const com::Utf8Str &aDestination,
                                   const std::vector<FsObjRenameFlag_T> &aFlags)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     if (RT_UNLIKELY(aSource.isEmpty()))
@@ -3412,7 +3252,6 @@ HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
@@ -3432,16 +3271,12 @@ HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::
                                     const std::vector<ProcessCreateFlag_T> &aFlags,
                                     ULONG aTimeoutMS, ComPtr<IGuestProcess> &aGuestProcess)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     std::vector<LONG> affinityIgnored;
 
     return processCreateEx(aExecutable, aArguments, aEnvironment, aFlags, aTimeoutMS, ProcessPriority_Default,
                            affinityIgnored, aGuestProcess);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
@@ -3450,9 +3285,6 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
                                       ProcessPriority_T aPriority, const std::vector<LONG> &aAffinity,
                                       ComPtr<IGuestProcess> &aGuestProcess)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /** @todo r=bird: Check input better? aPriority is passed on to the guest
@@ -3551,15 +3383,11 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::processGet(ULONG aPid, ComPtr<IGuestProcess> &aGuestProcess)
 
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFunc(("PID=%RU32\n", aPid));
 
     if (aPid == 0)
@@ -3581,49 +3409,27 @@ HRESULT GuestSession::processGet(ULONG aPid, ComPtr<IGuestProcess> &aGuestProces
 
     LogFlowThisFunc(("aProcess=%p, hr=%Rhrc\n", (IGuestProcess*)aGuestProcess, hr));
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::symlinkCreate(const com::Utf8Str &aSource, const com::Utf8Str &aTarget, SymlinkType_T aType)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::symlinkExists(const com::Utf8Str &aSymlink, BOOL *aExists)
 
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vector<SymlinkReadFlag_T> &aFlags,
                                   com::Utf8Str &aTarget)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWaitResult_T *aReason)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /*
@@ -3660,15 +3466,11 @@ HRESULT GuestSession::waitFor(ULONG aWaitFor, ULONG aTimeoutMS, GuestSessionWait
 
     LogFlowFuncLeaveRC(vrc);
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> &aWaitFor, ULONG aTimeoutMS,
                                    GuestSessionWaitResult_T *aReason)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /*
@@ -3679,6 +3481,5 @@ HRESULT GuestSession::waitForArray(const std::vector<GuestSessionWaitForFlag_T> 
         fWaitFor |= aWaitFor[i];
 
     return WaitFor(fWaitFor, aTimeoutMS, aReason);
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
