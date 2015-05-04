@@ -91,6 +91,7 @@ HostPowerServiceLinux::~HostPowerServiceLinux()
 
 DECLCALLBACK(int) HostPowerServiceLinux::powerChangeNotificationThread(RTTHREAD hThreadSelf, void *pInstance)
 {
+    NOREF(hThreadSelf);
     HostPowerServiceLinux *pPowerObj = static_cast<HostPowerServiceLinux *>(pInstance);
 
     Log(("HostPowerServiceLinux: Thread started\n"));
