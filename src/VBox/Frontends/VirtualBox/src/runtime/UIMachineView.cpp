@@ -1442,7 +1442,6 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 
 void UIMachineView::dragIsPending(void)
 {
-    /* At the moment we only support guest->host DnD. */
     /** @todo Add guest->guest DnD functionality here by getting
      *        the source of guest B (when copying from B to A). */
     CDnDSource dndSource = static_cast<CDnDSource>(guest().GetDnDSource());

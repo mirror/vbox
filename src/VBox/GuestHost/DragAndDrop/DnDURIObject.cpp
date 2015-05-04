@@ -36,7 +36,7 @@
 
 DnDURIObject::DnDURIObject(void)
     : m_Type(Unknown)
-    , m_fCreationMode(0)
+    , m_fMode(0)
     , m_cbSize(0)
     , m_cbProcessed(0)
 {
@@ -50,7 +50,7 @@ DnDURIObject::DnDURIObject(Type type,
     : m_Type(type)
     , m_strSrcPath(strSrcPath)
     , m_strTgtPath(strDstPath)
-    , m_fCreationMode(fMode)
+    , m_fMode(fMode)
     , m_cbSize(cbSize)
     , m_cbProcessed(0)
 {
@@ -154,15 +154,15 @@ bool DnDURIObject::IsOpen(void) const
     return fIsOpen;
 }
 
-int DnDURIObject::Open(Dest enmDest, uint64_t fOpen)
+int DnDURIObject::Open(Dest enmDest, uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */)
 {
     return OpenEx(  enmDest == Source
                   ? m_strSrcPath : m_strTgtPath
-                  , m_Type, enmDest, fOpen, 0 /* fFlag s*/);
+                  , m_Type, enmDest, fOpen, fMode, 0 /* fFlags */);
 }
 
 int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
-                         uint64_t fOpen /* = 0 */, uint32_t fFlags /* = 0 */)
+                         uint64_t fOpen /* = 0 */, uint32_t fMode /* = 0 */, uint32_t fFlags /* = 0 */)
 {
     int rc = VINF_SUCCESS;
 
@@ -197,9 +197,14 @@ int DnDURIObject::OpenEx(const RTCString &strPath, Type enmType, Dest enmDest,
                     LogFlowFunc(("strPath=%s, enmType=%ld, enmDest=%ld, rc=%Rrc\n", strPath.c_str(), enmType, enmDest, rc));
                     if (RT_SUCCESS(rc))
                         rc = RTFileGetSize(u.m_hFile, &m_cbSize);
+                    if (RT_SUCCESS(rc)
+                        && fMode)
+                    {
+                        rc = RTFileSetMode(u.m_hFile, fMode);
+                    }
                     if (RT_SUCCESS(rc))
                     {
-                        LogFlowFunc(("cbSize=%RU64, fMode=%RU32\n", m_cbSize, m_fCreationMode));
+                        LogFlowFunc(("cbSize=%RU64, fMode=%RU32\n", m_cbSize, m_fMode));
                         m_cbProcessed = 0;
                     }
                 }
@@ -292,8 +297,6 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
     {
         case File:
         {
-            bool fDone = false;
-
             rc = OpenEx(m_strSrcPath, File, Source,
                         /* Use some sensible defaults. */
                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
@@ -306,17 +309,12 @@ int DnDURIObject::Read(void *pvBuf, size_t cbBuf, uint32_t *pcbRead)
                     Assert(m_cbProcessed <= m_cbSize);
 
                     /* End of file reached or error occurred? */
-                    if (m_cbProcessed == m_cbSize)
+                    if (   m_cbSize
+                        && m_cbProcessed == m_cbSize)
                     {
                         rc = VINF_EOF;
-                        fDone = true;
                     }
                 }
-                else
-                    fDone = true;
-
-                if (fDone)
-                    closeInternal();
             }
 
             break;
@@ -350,7 +348,7 @@ void DnDURIObject::Reset(void)
     m_Type          = Unknown;
     m_strSrcPath    = "";
     m_strTgtPath    = "";
-    m_fCreationMode = 0;
+    m_fMode = 0;
     m_cbSize        = 0;
     m_cbProcessed   = 0;
 }
@@ -368,8 +366,6 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
     {
         case File:
         {
-            bool fDone = false;
-
             rc = OpenEx(m_strTgtPath, File, Target,
                         /* Use some sensible defaults. */
                         RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE | RTFILE_O_WRITE, 0 /* fFlags */);
@@ -378,11 +374,6 @@ int DnDURIObject::Write(const void *pvBuf, size_t cbBuf, uint32_t *pcbWritten)
                 rc = RTFileWrite(u.m_hFile, pvBuf, cbBuf, &cbWritten);
                 if (RT_SUCCESS(rc))
                     m_cbProcessed += cbWritten;
-                else
-                    fDone = true;
-
-                if (fDone)
-                    closeInternal();
             }
 
             break;

@@ -371,28 +371,16 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
     uint32_t cbTmpData = _64K; /** @todo Make this configurable? */
     void *pvTmpData = RTMemAlloc(cbTmpData);
     if (!pvTmpData)
-        rc = VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
-    /* Create and query the (unique) drop target directory. */
-    DnDURIList lstURI;
-    char szDropDir[RTPATH_MAX];
+    /* Create and query the (unique) drop target directory in the user's temporary directory. */
+    DNDDIRDROPPEDFILES dirDroppedFiles;
+    const char *pszDropDir;
+    rc = DnDDirDroppedFilesCreateAndOpenTemp(&dirDroppedFiles);
     if (RT_SUCCESS(rc))
-        rc = DnDDirCreateDroppedFiles(szDropDir, sizeof(szDropDir));
+        pszDropDir = DnDDirDroppedFilesGetDirAbs(&dirDroppedFiles);
 
-    if (RT_FAILURE(rc))
-    {
-        int rc2 = VbglR3DnDHGSetProgress(pCtx, DragAndDropSvc::DND_PROGRESS_ERROR, 100 /* Percent */, rc);
-        AssertRC(rc2);
-
-        if (pvTmpData)
-            RTMemFree(pvTmpData);
-        return rc;
-    }
-
-    /* Lists for holding created files & directories in the case of a rollback. */
-    RTCList<RTCString> guestDirList;
-    RTCList<RTCString> guestFileList;
-
+    DnDURIList lstURI;
     DnDURIObject objFile(DnDURIObject::File);
 
     char szPathName[RTPATH_MAX] = { 0 };
@@ -404,7 +392,6 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
     {
         uint32_t uNextMsg;
         uint32_t cNextParms;
-        LogFlowFunc(("Waiting for new message ...\n"));
         rc = vbglR3DnDQueryNextHostMessageType(pCtx, &uNextMsg, &cNextParms, false /* fWait */);
         if (RT_SUCCESS(rc))
         {
@@ -422,118 +409,109 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
                     LogFlowFunc(("HOST_DND_HG_SND_DIR pszPathName=%s, cbPathName=%RU32, fMode=0x%x, rc=%Rrc\n",
                                  szPathName, cbPathName, fMode, rc));
 
-                    /*
-                     * Important: HOST_DND_HG_SND_DIR sends the path (directory) name without URI specifications, that is,
-                     *            only the pure name! To match the accounting though we have to translate the pure name into
-                     *            a valid URI again.
-                     *
-                     ** @todo     Fix this URI translation!
-                     */
-                    RTCString strPath(szPathName);
-                    if (RT_SUCCESS(rc))
-                        rc = objFile.RebaseURIPath(strPath);
-                    if (RT_SUCCESS(rc))
+                    char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
+                    if (pszPathAbs)
                     {
-                        rc = DnDPathSanitize(szPathName, sizeof(szPathName));
-                        char *pszNewDir = RTPathJoinA(szDropDir, szPathName);
-                        if (pszNewDir)
-                        {
-                            rc = RTDirCreate(pszNewDir, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
-                            RTStrFree(pszNewDir);
-                        }
-                        else
-                            rc = VERR_NO_MEMORY;
-
+                        rc = RTDirCreate(pszPathAbs, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRWXU, 0);
                         if (RT_SUCCESS(rc))
-                        {
-                            if (!guestDirList.contains(strPath))
-                                guestDirList.append(strPath);
-                        }
+                            rc = DnDDirDroppedAddDir(&dirDroppedFiles, pszPathAbs);
+
+                        RTStrFree(pszPathAbs);
                     }
+                    else
+                        rc = VERR_NO_MEMORY;
                     break;
                 }
                 case DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR:
-                {
-                    rc = vbglR3DnDHGProcessSendFileHdrMessage(pCtx,
-                                                              szPathName,
-                                                              sizeof(szPathName),
-                                                              &fFlags,
-                                                              &fMode,
-                                                              &cbDataToRead);
-                    LogFlowFunc(("HOST_DND_HG_SND_FILE_HDR pszPathName=%s, fFlags=0x%x, fMode=0x%x, cbDataToRead=%RU64, rc=%Rrc\n",
-                                 szPathName, fFlags, fMode, cbDataToRead, rc));
-
-                    cbDataWritten = 0;
-                    break;
-                }
                 case DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA:
                 {
-                    rc = vbglR3DnDHGProcessSendFileMessage(pCtx,
-                                                           szPathName,
-                                                           sizeof(szPathName),
-                                                           &cbPathName,
-                                                           pvTmpData,
-                                                           cbTmpData,
-                                                           &cbDataRecv,
-                                                           &fMode);
-                    LogFlowFunc(("HOST_DND_HG_SND_FILE_DATA pszPathName=%s, cbPathName=%RU32, pvData=0x%p, cbDataRecv=%RU32, fMode=0x%x, rc=%Rrc\n",
-                                 szPathName, cbPathName, pvTmpData, cbDataRecv, fMode, rc));
-
-                    /*
-                     * Important: HOST_DND_HG_SND_FILE sends the path (directory) name without URI specifications, that is,
-                     *            only the pure name! To match the accounting though we have to translate the pure name into
-                     *            a valid URI again.
-                     *
-                     ** @todo     Fix this URI translation!
-                     */
-                    RTCString strPath(szPathName);
-                    if (RT_SUCCESS(rc))
-                        rc = objFile.RebaseURIPath(strPath);
-                    if (RT_SUCCESS(rc))
+                    if (uNextMsg == DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR)
+                        rc = vbglR3DnDHGProcessSendFileHdrMessage(pCtx,
+                                                                  szPathName,
+                                                                  sizeof(szPathName),
+                                                                  &fFlags,
+                                                                  &fMode,
+                                                                  &cbDataToRead);
+                    else
+                        rc = vbglR3DnDHGProcessSendFileMessage(pCtx,
+                                                               szPathName,
+                                                               sizeof(szPathName),
+                                                               &cbPathName,
+                                                               pvTmpData,
+                                                               cbTmpData,
+                                                               &cbDataRecv,
+                                                               &fMode);
+                    if (   RT_SUCCESS(rc)
+                        && (   uNextMsg == DragAndDropSvc::HOST_DND_HG_SND_FILE_HDR
+                             /* Protocol v1 always sends the file name, so try opening every time. */
+                            || pCtx->uProtocol <= 1)
+                       )
                     {
-                        rc = DnDPathSanitize(szPathName, sizeof(szPathName));
-                        if (RT_SUCCESS(rc))
+                        char *pszPathAbs = RTPathJoinA(pszDropDir, szPathName);
+                        if (pszPathAbs)
                         {
-                            char *pszPathAbs = RTPathJoinA(szDropDir, szPathName);
-                            if (pszPathAbs)
+                            LogFlowFunc(("Opening pszPathName=%s, cbPathName=%RU32, fMode=0x%x, cbSize=%RU64\n",
+                                         szPathName, cbPathName, fMode, cbDataToRead));
+
+                            uint64_t fOpen = RTFILE_O_WRITE | RTFILE_O_DENY_ALL;
+                            if (pCtx->uProtocol <= 1)
+                                fOpen |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
+                            else
+                                fOpen |= RTFILE_O_CREATE_REPLACE;
+
+                            /* Is there already a file open, e.g. in transfer? */
+                            if (!objFile.IsOpen())
                             {
-                                RTFILE hFile;
-                                /** @todo r=andy Keep the file open and locked during the actual file transfer. Otherwise this will
-                                 *               create all sorts of funny races because we don't know if the guest has
-                                 *               modified the file in between the file data send calls.
-                                 *
-                                 *               See HOST_DND_HG_SND_FILE_HDR for a good place to do this. */
-                                rc = RTFileOpen(&hFile, pszPathAbs,
-                                                RTFILE_O_WRITE | RTFILE_O_APPEND | RTFILE_O_DENY_ALL | RTFILE_O_OPEN_CREATE);
+
+                                RTCString strPathAbs(pszPathAbs);
+                                rc = objFile.OpenEx(strPathAbs, DnDURIObject::File, DnDURIObject::Target, fOpen,
+                                                    (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    /** @todo r=andy Not very safe to assume that we were last appending to the current file. */
-                                    rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, NULL);
+                                    rc = DnDDirDroppedAddFile(&dirDroppedFiles, strPathAbs.c_str());
                                     if (RT_SUCCESS(rc))
                                     {
-                                        rc = RTFileWrite(hFile, pvTmpData, cbDataRecv, 0);
-                                        if (RT_SUCCESS(rc))
-                                        {
-                                            if (fMode & RTFS_UNIX_MASK) /* Valid UNIX mode? */
-                                                rc = RTFileSetMode(hFile, (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
+                                        cbDataWritten = 0;
 
-                                            cbDataWritten += cbDataRecv;
-                                            Assert(cbDataWritten <= cbDataToRead);
-                                        }
+                                        if (pCtx->uProtocol >= 2) /* Set the expected file size. */
+                                            objFile.SetSize(cbDataToRead);
                                     }
-
-                                    RTFileClose(hFile);
-
-                                    if (!guestFileList.contains(pszPathAbs)) /* Add the file to (rollback) list. */
-                                        guestFileList.append(pszPathAbs);
                                 }
-                                else
-                                    LogFlowFunc(("Opening file failed with rc=%Rrc\n", rc));
-
-                                RTStrFree(pszPathAbs);
                             }
                             else
-                                rc = VERR_NO_MEMORY;
+                                rc = VERR_WRONG_ORDER;
+
+                            RTStrFree(pszPathAbs);
+                        }
+                        else
+                            rc = VERR_NO_MEMORY;
+                    }
+
+                    if (   RT_SUCCESS(rc)
+                        && uNextMsg == DragAndDropSvc::HOST_DND_HG_SND_FILE_DATA)
+                    {
+                        bool fClose = false;
+
+                        uint32_t cbWritten;
+                        rc = objFile.Write(pvTmpData, cbDataRecv, &cbWritten);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (pCtx->uProtocol >= 2)
+                            {
+                                /* Data transfer complete? Close the file. */
+                                fClose = objFile.IsComplete();
+                            }
+                            else
+                                fClose = true; /* Always close the file after each chunk. */
+
+                            cbDataWritten += cbWritten;
+                            Assert(cbDataWritten <= cbDataToRead);
+                        }
+
+                        if (fClose)
+                        {
+                            LogFlowFunc(("Closing file\n"));
+                            objFile.Close();
                         }
                     }
                     break;
@@ -606,13 +584,6 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
             }
 #endif
         }
-        else
-        {
-            /* All URI data processed? */
-            if (rc == VERR_NO_DATA)
-                rc = VINF_SUCCESS;
-            break;
-        }
 
         if (RT_FAILURE(rc))
             break;
@@ -621,19 +592,19 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
 
     LogFlowFunc(("Loop ended with %Rrc\n", rc));
 
+    /* All URI data processed? */
+    if (rc == VERR_NO_DATA)
+        rc = VINF_SUCCESS;
+
     if (pvTmpData)
         RTMemFree(pvTmpData);
 
-    /* Cleanup on failure or if the user has canceled the operation. */
+    /* Cleanup on failure or if the user has canceled the operation or
+     * something else went wrong. */
     if (RT_FAILURE(rc))
     {
-        LogFlowFunc(("Rolling back ...\n"));
-
-        /* Rollback by removing any stuff created. */
-        for (size_t i = 0; i < guestFileList.size(); ++i)
-            RTFileDelete(guestFileList.at(i).c_str());
-        for (size_t i = 0; i < guestDirList.size(); ++i)
-            RTDirRemove(guestDirList.at(i).c_str());
+        int rc2 = DnDDirDroppedFilesRollback(&dirDroppedFiles);
+        AssertRC(rc2); /* Not fatal, don't report back to host. */
     }
     else
     {
@@ -646,7 +617,7 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
             /* Cleanup the old data and write the new data back to the event. */
             RTMemFree(pvData);
 
-            RTCString strData = lstURI.RootToString(szDropDir);
+            RTCString strData = lstURI.RootToString(pszDropDir);
             LogFlowFunc(("cbDataToRead: %zu -> %zu\n", cbDataToRead, strData.length() + 1));
 
             pvData       = RTStrDupN(strData.c_str(), strData.length());
@@ -662,10 +633,14 @@ static int vbglR3DnDHGProcessURIMessages(PVBGLR3GUESTDNDCMDCTX  pCtx,
         /** @todo Compare the URI list with the dirs/files we really transferred. */
     }
 
-    /* Try removing the (empty) drop directory in any case. */
-    int rc2 = RTDirRemove(szDropDir);
-    if (RT_FAILURE(rc2))
-        LogFunc(("Warning: Unable to remove drop directory \"%s\": %Rrc\n", szDropDir, rc2));
+    /*
+     * Close the dropped files directory.
+     * Don't try to remove it here, however, as the files are being needed
+     * by the client's drag'n drop operation lateron.
+     */
+    int rc2 = DnDDirDroppedFilesClose(&dirDroppedFiles, false);
+    if (RT_FAILURE(rc2)) /* Not fatal, don't report back to host. */
+        LogFlowFunc(("Closing dropped files directory failed with %Rrc\n", rc2));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -871,6 +846,7 @@ static int vbglR3DnDHGProcessSendDataMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
          * VBoxTray) small by not having too much redundant code. */
         AssertPtr(pcbFormatRecv);
         if (DnDMIMEHasFileURLs(pszFormat, *pcbFormatRecv))
+        {
             rc = vbglR3DnDHGProcessURIMessages(pCtx,
                                                puScreenId,
                                                pszFormat,
@@ -879,8 +855,18 @@ static int vbglR3DnDHGProcessSendDataMessage(PVBGLR3GUESTDNDCMDCTX pCtx,
                                                ppvData,
                                                cbData,
                                                pcbDataRecv);
+        }
         else
             rc = VERR_NOT_SUPPORTED;
+
+        if (RT_FAILURE(rc))
+        {
+            if (RT_FAILURE(rc))
+            {
+                int rc2 = VbglR3DnDHGSetProgress(pCtx, DragAndDropSvc::DND_PROGRESS_ERROR, 100 /* Percent */, rc);
+                AssertRC(rc2);
+            }
+        }
     }
 
     return rc;

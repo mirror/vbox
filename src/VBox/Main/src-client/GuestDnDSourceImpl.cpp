@@ -224,7 +224,7 @@ HRESULT GuestDnDSource::getProtocolVersion(ULONG *aProtocolVersion)
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
-// implementation of wrapped IDnDTarget methods.
+// implementation of wrapped IDnDSource methods.
 /////////////////////////////////////////////////////////////////////////////
 
 HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str> &aFormats,
@@ -275,10 +275,6 @@ HRESULT GuestDnDSource::dragIsPending(ULONG uScreenId, std::vector<com::Utf8Str>
         if (aDefaultAction)
             *aDefaultAction = defaultAction;
     }
-
-    if (RT_FAILURE(rc))
-        hr = setError(VBOX_E_IPRT_ERROR,
-                      tr("Error retrieving drag and drop pending status (%Rrc)\n"), rc);
 
     LogFlowFunc(("hr=%Rhrc, defaultAction=0x%x\n", hr, defaultAction));
     return hr;
@@ -382,7 +378,7 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
         bool fHasURIList = DnDMIMENeedsDropDir(pCtx->mFormat.c_str(), pCtx->mFormat.length());
         if (fHasURIList)
         {
-            Utf8Str strURIs = pCtx->mURI.lstURI.RootToString(pCtx->mURI.strDropDir);
+            Utf8Str strURIs = pCtx->mURI.lstURI.RootToString(RTCString(DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
             cbData = strURIs.length();
 
             LogFlowFunc(("Found %zu root URIs (%zu bytes)\n", pCtx->mURI.lstURI.RootCount(), cbData));
@@ -488,7 +484,7 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     LogFlowFunc(("pszPath=%s, cbPath=%RU32, fMode=0x%x\n", pszPath, cbPath, fMode));
 
     int rc;
-    char *pszDir = RTPathJoinA(pCtx->mURI.strDropDir.c_str(), pszPath);
+    char *pszDir = RTPathJoinA(DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir), pszPath);
     if (pszDir)
     {
         rc = RTDirCreateFullPath(pszDir, fMode);
@@ -570,7 +566,7 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
         }
 
         char pszPathAbs[RTPATH_MAX];
-        rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pCtx->mURI.strDropDir.c_str(), pszPath);
+        rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir), pszPath);
         if (RT_FAILURE(rc))
         {
             LogFlowFunc(("Warning: Rebasing current file failed with rc=%Rrc\n", rc));
@@ -587,9 +583,9 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
         LogFunc(("Rebased to: %s\n", pszPathAbs));
 
         /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-        /** @todo Add fMode to opening flags. */
         rc = pCtx->mURI.objURI.OpenEx(pszPathAbs, DnDURIObject::File, DnDURIObject::Target,
-                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
+                                      (fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
         if (RT_SUCCESS(rc))
         {
             /* Note: Protocol v1 does not send any file sizes, so always 0. */
@@ -897,13 +893,12 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     do
     {
-        char szDropDir[RTPATH_MAX];
-        rc = DnDDirCreateDroppedFiles(szDropDir, sizeof(szDropDir));
-        LogFlowFunc(("rc=%Rrc, szDropDir=%s\n", rc, szDropDir));
+        rc = DnDDirDroppedFilesCreateAndOpenTemp(&pCtx->mURI.mDropDir);
         if (RT_FAILURE(rc))
             break;
-
-        pCtx->mURI.strDropDir = szDropDir; /** @todo Keep directory handle open? */
+        LogFlowFunc(("strDropDir=%s\n", rc, DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
+        if (RT_FAILURE(rc))
+            break;
 
         /*
          * Receive the URI list.
@@ -935,17 +930,23 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
 
+    int rc2;
+
     if (rc == VERR_CANCELLED)
     {
-        int rc2 = sendCancel();
+        rc2 = sendCancel();
         AssertRC(rc2);
     }
 
     if (RT_FAILURE(rc))
     {
-        int rc2 = pCtx->mURI.Rollback(); /** @todo Inform user on rollback failure? */
+        rc2 = DnDDirDroppedFilesRollback(&pCtx->mURI.mDropDir); /** @todo Inform user on rollback failure? */
         LogFlowFunc(("Rolling back ended with rc=%Rrc\n", rc2));
     }
+
+    rc2 = DnDDirDroppedFilesClose(&pCtx->mURI.mDropDir, RT_FAILURE(rc) ? true : false /* fRemove */);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

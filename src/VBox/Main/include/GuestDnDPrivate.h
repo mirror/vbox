@@ -105,10 +105,7 @@ typedef struct GuestDnDURIData
 
     void Reset(void)
     {
-        strDropDir = "";
         lstURI.Clear();
-        lstDirs.clear();
-        lstFiles.clear();
 #if 0 /* Currently the scratch buffer will be maintained elswewhere. */
         if (pvScratchBuf)
         {
@@ -122,49 +119,11 @@ typedef struct GuestDnDURIData
 #endif
     }
 
-    int Rollback(void)
-    {
-        if (strDropDir.isEmpty())
-            return VINF_SUCCESS;
-
-        int rc = VINF_SUCCESS;
-        int rc2;
-
-        /* Rollback by removing any stuff created.
-         * Note: Only remove empty directories, never ever delete
-         *       anything recursive here! Steam (tm) knows best ... :-) */
-        for (size_t i = 0; i < lstFiles.size(); i++)
-        {
-            rc2 = RTFileDelete(lstFiles.at(i).c_str());
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
-
-        for (size_t i = 0; i < lstDirs.size(); i++)
-        {
-            rc2 = RTDirRemove(lstDirs.at(i).c_str());
-            if (RT_SUCCESS(rc))
-                rc = rc2;
-        }
-
-        rc2 = RTDirRemove(strDropDir.c_str());
-        if (RT_SUCCESS(rc))
-            rc = rc2;
-
-        return rc;
-    }
-
-    /** Temporary drop directory on the host where to
-     *  put the files sent from the guest. */
-    com::Utf8Str                    strDropDir;
+    DNDDIRDROPPEDFILES              mDropDir;
     /** (Non-recursive) List of root URI objects to receive. */
     DnDURIList                      lstURI;
     /** Current object to receive. */
     DnDURIObject                    objURI;
-    /** List for holding created directories in the case of a rollback. */
-    RTCList<RTCString>              lstDirs;
-    /** List for holding created files in the case of a rollback. */
-    RTCList<RTCString>              lstFiles;
     /** Pointer to an optional scratch buffer to use for
      *  doing the actual chunk transfers. */
     void                           *pvScratchBuf;

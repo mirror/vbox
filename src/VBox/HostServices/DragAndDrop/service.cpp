@@ -711,38 +711,7 @@ int DragAndDropService::hostCall(uint32_t u32Function,
     {
         if (m_clientMap.size()) /* At least one client on the guest connected? */
         {
-            /*
-             * Did the host call something which needs immediate processing?
-             * Prepend the message instead of appending to the command queue then.
-             */
-            bool fAppend;
-            switch (u32Function)
-            {
-                /* Cancelling the drag'n drop operation has higher priority than
-                 * processing already buffered messages. */
-                case DragAndDropSvc::HOST_DND_HG_EVT_CANCEL:
-                    fAppend = false;
-                    break;
-
-                default:
-                    fAppend = true;
-                    break;
-            }
-
-            /*
-             * If we prepending the message (instead of appending) this mean we need
-             * to re-schedule the message queue in order to get the new command executed as
-             * soon as possible.
-             */
-            bool fReschedule = !fAppend;
-
-            rc = m_pManager->addMessage(u32Function, cParms, paParms, fAppend);
-            if (   RT_SUCCESS(rc)
-                && fReschedule)
-            {
-                rc = m_pManager->doReschedule();
-            }
-
+            rc = m_pManager->addMessage(u32Function, cParms, paParms, true /* fAppend */);
             if (RT_SUCCESS(rc))
             {
                 if (m_clientQueue.size()) /* Any clients in our queue ready for processing the next command? */

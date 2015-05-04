@@ -335,8 +335,7 @@ void DnDURIList::RemoveFirst(void)
     m_lstTree.removeFirst();
 }
 
-int DnDURIList::RootFromURIData(const void *pvData, size_t cbData,
-                                uint32_t fFlags)
+int DnDURIList::RootFromURIData(const void *pvData, size_t cbData, uint32_t fFlags)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn(cbData, VERR_INVALID_PARAMETER);
@@ -379,7 +378,7 @@ int DnDURIList::RootFromURIData(const void *pvData, size_t cbData,
     return rc;
 }
 
-RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
+RTCString DnDURIList::RootToString(const RTCString &strPathBase /* = "" */,
                                    const RTCString &strSeparator /* = "\r\n" */)
 {
     RTCString strRet;
@@ -389,18 +388,16 @@ RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
 #ifdef DEBUG_andy
         LogFlowFunc(("pszCurRoot=%s\n", pszCurRoot));
 #endif
-        if (strBasePath.isNotEmpty())
+        if (strPathBase.isNotEmpty())
         {
-            char *pszPath = RTPathJoinA(strBasePath.c_str(), pszCurRoot);
+            char *pszPath = RTPathJoinA(strPathBase.c_str(), pszCurRoot);
             if (pszPath)
             {
                 char *pszPathURI = RTUriFileCreate(pszPath);
                 if (pszPathURI)
                 {
                     strRet += RTCString(pszPathURI) + strSeparator;
-#ifdef DEBUG_andy
                     LogFlowFunc(("URI: %s\n", strRet.c_str()));
-#endif
                     RTStrFree(pszPathURI);
                 }
                 else
@@ -416,9 +413,7 @@ RTCString DnDURIList::RootToString(const RTCString &strBasePath /* = "" */,
             if (pszPathURI)
             {
                 strRet += RTCString(pszPathURI) + strSeparator;
-#ifdef DEBUG_andy
                 LogFlowFunc(("URI: %s\n", strRet.c_str()));
-#endif
                 RTStrFree(pszPathURI);
             }
             else
