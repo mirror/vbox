@@ -253,14 +253,14 @@ HRESULT GuestFile::getCreationMode(ULONG *aCreationMode)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestFile::getDisposition(com::Utf8Str &aDisposition)
+HRESULT GuestFile::getOpenAction(FileOpenAction_T *aOpenAction)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aDisposition = mData.mOpenInfo.mDisposition;
+    *aOpenAction = mData.mOpenInfo.mOpenAction;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -330,14 +330,14 @@ HRESULT GuestFile::getOffset(LONG64 *aOffset)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestFile::getOpenMode(com::Utf8Str &aOpenMode)
+HRESULT GuestFile::getAccessMode(FileAccessMode_T *aAccessMode)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aOpenMode = mData.mOpenInfo.mOpenMode;
+    *aAccessMode = mData.mOpenInfo.mAccessMode;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -693,9 +693,10 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("strFile=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%RU32, uOffset=%RU64\n",
-                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mOpenMode.c_str(),
-                     mData.mOpenInfo.mDisposition.c_str(), mData.mOpenInfo.mCreationMode, mData.mOpenInfo.mInitialOffset));
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, uOffset=%RU64\n",
+                     mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mpszAccessMode,
+                     mData.mOpenInfo.mOpenAction, mData.mOpenInfo.mpszOpenAction, mData.mOpenInfo.mCreationMode,
+                     mData.mOpenInfo.mInitialOffset));
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -720,12 +721,9 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
     paParms[i++].setUInt32(pEvent->ContextID());
     paParms[i++].setPointer((void*)mData.mOpenInfo.mFileName.c_str(),
                             (ULONG)mData.mOpenInfo.mFileName.length() + 1);
-    paParms[i++].setPointer((void*)mData.mOpenInfo.mOpenMode.c_str(),
-                            (ULONG)mData.mOpenInfo.mOpenMode.length() + 1);
-    paParms[i++].setPointer((void*)mData.mOpenInfo.mDisposition.c_str(),
-                            (ULONG)mData.mOpenInfo.mDisposition.length() + 1);
-    paParms[i++].setPointer((void*)mData.mOpenInfo.mSharingMode.c_str(),
-                            (ULONG)mData.mOpenInfo.mSharingMode.length() + 1);
+    paParms[i++].setString(mData.mOpenInfo.mpszAccessMode);
+    paParms[i++].setString(mData.mOpenInfo.mpszOpenAction);
+    paParms[i++].setString(""); /** @todo sharing mode. */
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
     paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
 
@@ -1264,6 +1262,15 @@ HRESULT GuestFile::queryInfo(ComPtr<IFsObjInfo> &aObjInfo)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+HRESULT GuestFile::querySize(LONG64 *aSize)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    ReturnComNotImplemented();
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 HRESULT GuestFile::read(ULONG aToRead, ULONG aTimeoutMS, std::vector<BYTE> &aData)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1343,7 +1350,7 @@ HRESULT GuestFile::readAt(LONG64 aOffset, ULONG aToRead, ULONG aTimeoutMS, std::
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestFile::seek(LONG64 aOffset, FileSeekType_T aWhence)
+HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOffset)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -1355,12 +1362,16 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekType_T aWhence)
     GUEST_FILE_SEEKTYPE eSeekType;
     switch (aWhence)
     {
-        case FileSeekType_Set:
+        case FileSeekOrigin_Set:
             eSeekType = GUEST_FILE_SEEKTYPE_BEGIN;
             break;
 
-        case FileSeekType_Current:
+        case FileSeekOrigin_Current:
             eSeekType = GUEST_FILE_SEEKTYPE_CURRENT;
+            break;
+
+        case FileSeekOrigin_End:
+            eSeekType = GUEST_FILE_SEEKTYPE_END;
             break;
 
         default:
@@ -1368,9 +1379,12 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekType_T aWhence)
             break; /* Never reached. */
     }
 
+    uint64_t uNewOffset;
     int vrc = i_seekAt(aOffset, eSeekType,
-                       30 * 1000 /* 30s timeout */, NULL /* puOffset */);
-    if (RT_FAILURE(vrc))
+                       30 * 1000 /* 30s timeout */, &uNewOffset);
+    if (RT_SUCCESS(vrc))
+        *aNewOffset = RT_MIN(uNewOffset, (uint64_t)INT64_MAX);
+    else
     {
         switch (vrc)
         {
@@ -1387,7 +1401,16 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekType_T aWhence)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestFile::setACL(const com::Utf8Str &aAcl)
+HRESULT GuestFile::setACL(const com::Utf8Str &aAcl, ULONG aMode)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    ReturnComNotImplemented();
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestFile::setSize(LONG64 aSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

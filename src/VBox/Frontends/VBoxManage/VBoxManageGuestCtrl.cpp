@@ -1721,6 +1721,18 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStart(PGCTLCMDCTX pCtx, int argc, char
 }
 
 
+/** bird: This is just a code conversion tool, flags are better defined by
+ *        the preprocessor, in general.  But the code was using obsoleted
+ *        main flags for internal purposes (in a uint32_t) without passing them
+ *        along, or it seemed that way.  Enum means compiler checks types. */
+enum gctlCopyFlags
+{
+    kGctlCopyFlags_None         = 0,
+    kGctlCopyFlags_Recursive    = RT_BIT(1),
+    kGctlCopyFlags_FollowLinks  = RT_BIT(2)
+};
+
+
 /**
  * Creates a copy context structure which then can be used with various
  * guest control copy functions. Needs to be free'd with gctlCopyContextFree().
@@ -1976,11 +1988,11 @@ static int gctlCopyDirExists(PCOPYCONTEXT pContext, bool fOnGuest,
     if (fOnGuest)
     {
         BOOL fDirExists = FALSE;
-        HRESULT rc = pContext->pCmdCtx->pGuestSession->DirectoryExists(Bstr(pszDir).raw(), &fDirExists);
-        if (FAILED(rc))
-            vrc = gctlPrintError(pContext->pCmdCtx->pGuestSession, COM_IIDOF(IGuestSession));
+        HRESULT rc = pContext->pCmdCtx->pGuestSession->DirectoryExists(Bstr(pszDir).raw(), FALSE /*followSymlinks*/, &fDirExists);
+        if (SUCCEEDED(rc))
+            *fExists = fDirExists != FALSE;
         else
-            *fExists = fDirExists ? true : false;
+            vrc = gctlPrintError(pContext->pCmdCtx->pGuestSession, COM_IIDOF(IGuestSession));
     }
     else
         *fExists = RTDirExists(pszDir);
@@ -2043,11 +2055,11 @@ static int gctlCopyFileExists(PCOPYCONTEXT pContext, bool bOnGuest,
     if (bOnGuest)
     {
         BOOL fFileExists = FALSE;
-        HRESULT rc = pContext->pCmdCtx->pGuestSession->FileExists(Bstr(pszFile).raw(), &fFileExists);
-        if (FAILED(rc))
-            vrc = gctlPrintError(pContext->pCmdCtx->pGuestSession, COM_IIDOF(IGuestSession));
+        HRESULT rc = pContext->pCmdCtx->pGuestSession->FileExists(Bstr(pszFile).raw(), FALSE /*followSymlinks*/, &fFileExists);
+        if (SUCCEEDED(rc))
+            *fExists = fFileExists != FALSE;
         else
-            *fExists = fFileExists ? true : false;
+            vrc = gctlPrintError(pContext->pCmdCtx->pGuestSession, COM_IIDOF(IGuestSession));
     }
     else
         *fExists = RTFileExists(pszFile);
@@ -2095,16 +2107,16 @@ static int gctlCopyFileExistsOnSource(PCOPYCONTEXT pContext, const char *pszFile
  * @param   pContext                Pointer to current copy control context.
  * @param   pszFileSource           Source file to copy to the destination.
  * @param   pszFileDest             Name of copied file on the destination.
- * @param   fFlags                  Copy flags. No supported at the moment and needs
- *                                  to be set to 0.
+ * @param   enmFlags                Copy flags. No supported at the moment and
+ *                                  needs to be set to 0.
  */
 static int gctlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
-                              const char *pszFileDest, uint32_t fFlags)
+                              const char *pszFileDest, gctlCopyFlags enmFlags)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFileSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
-    AssertReturn(!fFlags, VERR_INVALID_POINTER); /* No flags supported yet. */
+    AssertReturn(enmFlags == kGctlCopyFlags_None, VERR_INVALID_PARAMETER); /* No flags supported yet. */
 
     if (pContext->pCmdCtx->cVerbose > 1)
         RTPrintf("Copying \"%s\" to \"%s\" ...\n",
@@ -2118,17 +2130,17 @@ static int gctlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     HRESULT rc;
     if (pContext->fHostToGuest)
     {
-        SafeArray<CopyFileFlag_T> copyFlags;
-        rc = pContext->pCmdCtx->pGuestSession->CopyTo(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
-                                               ComSafeArrayAsInParam(copyFlags),
-                                               pProgress.asOutParam());
+        SafeArray<FileCopyFlag_T> copyFlags;
+        rc = pContext->pCmdCtx->pGuestSession->FileCopyToGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
+                                                               ComSafeArrayAsInParam(copyFlags),
+                                                               pProgress.asOutParam());
     }
     else
     {
-        SafeArray<CopyFileFlag_T> copyFlags;
-        rc = pContext->pCmdCtx->pGuestSession->CopyFrom(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
-                                               ComSafeArrayAsInParam(copyFlags),
-                                               pProgress.asOutParam());
+        SafeArray<FileCopyFlag_T> copyFlags;
+        rc = pContext->pCmdCtx->pGuestSession->FileCopyFromGuest(Bstr(pszFileSource).raw(), Bstr(pszFileDest).raw(),
+                                                                 ComSafeArrayAsInParam(copyFlags),
+                                                                 pProgress.asOutParam());
     }
 
     if (FAILED(rc))
@@ -2157,13 +2169,13 @@ static int gctlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
  * @param   pszSource               Source directory on the host to copy to the guest.
  * @param   pszFilter               DOS-style wildcard filter (?, *).  Optional.
  * @param   pszDest                 Destination directory on the guest.
- * @param   fFlags                  Copy flags, such as recursive copying.
+ * @param   enmFlags                Copy flags, such as recursive copying.
  * @param   pszSubDir               Current sub directory to handle. Needs to NULL and only
  *                                  is needed for recursion.
  */
 static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                               const char *pszSource, const char *pszFilter,
-                              const char *pszDest, uint32_t fFlags,
+                              const char *pszDest, enum gctlCopyFlags enmFlags,
                               const char *pszSubDir /* For recursion. */)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
@@ -2228,7 +2240,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                     if (pContext->pCmdCtx->cVerbose > 1)
                         RTPrintf("Directory: %s\n", DirEntry.szName);
 
-                    if (fFlags & CopyFileFlag_Recursive)
+                    if (enmFlags & kGctlCopyFlags_Recursive)
                     {
                         char *pszNewSub = NULL;
                         if (pszSubDir)
@@ -2243,7 +2255,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                         {
                             vrc = gctlCopyDirToGuest(pContext,
                                                      pszSource, pszFilter,
-                                                     pszDest, fFlags, pszNewSub);
+                                                     pszDest, enmFlags, pszNewSub);
                             RTStrFree(pszNewSub);
                         }
                         else
@@ -2253,8 +2265,8 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                 }
 
                 case RTDIRENTRYTYPE_SYMLINK:
-                    if (   (fFlags & CopyFileFlag_Recursive)
-                        && (fFlags & CopyFileFlag_FollowLinks))
+                    if (   (enmFlags & kGctlCopyFlags_Recursive)
+                        && (enmFlags & kGctlCopyFlags_FollowLinks))
                     {
                         /* Fall through to next case is intentional. */
                     }
@@ -2297,7 +2309,7 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
                             if (RT_SUCCESS(vrc))
                             {
                                 vrc = gctlCopyFileToDest(pContext, pszFileSource,
-                                                        pszFileDest, 0 /* Flags */);
+                                                         pszFileDest, kGctlCopyFlags_None);
                                 RTStrFree(pszFileDest);
                             }
                             RTStrFree(pszFileSource);
@@ -2326,13 +2338,13 @@ static int gctlCopyDirToGuest(PCOPYCONTEXT pContext,
  * @param   pszSource               Source directory on the guest to copy to the host.
  * @param   pszFilter               DOS-style wildcard filter (?, *).  Optional.
  * @param   pszDest                 Destination directory on the host.
- * @param   fFlags                  Copy flags, such as recursive copying.
+ * @param   enmFlags                Copy flags, such as recursive copying.
  * @param   pszSubDir               Current sub directory to handle. Needs to NULL and only
  *                                  is needed for recursion.
  */
 static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                              const char *pszSource, const char *pszFilter,
-                             const char *pszDest, uint32_t fFlags,
+                             const char *pszDest, gctlCopyFlags enmFlags,
                              const char *pszSubDir /* For recursion. */)
 {
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
@@ -2395,7 +2407,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                     RTPrintf("Directory: %s\n", strDir.c_str());
                 }
 
-                if (fFlags & CopyFileFlag_Recursive)
+                if (enmFlags & kGctlCopyFlags_Recursive)
                 {
                     Utf8Str strDir(strName);
                     char *pszNewSub = NULL;
@@ -2410,7 +2422,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                     {
                         vrc = gctlCopyDirToHost(pContext,
                                                 pszSource, pszFilter,
-                                                pszDest, fFlags, pszNewSub);
+                                                pszDest, enmFlags, pszNewSub);
                         RTStrFree(pszNewSub);
                     }
                     else
@@ -2420,8 +2432,8 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
             }
 
             case FsObjType_Symlink:
-                if (   (fFlags & CopyFileFlag_Recursive)
-                    && (fFlags & CopyFileFlag_FollowLinks))
+                if (   (enmFlags & kGctlCopyFlags_Recursive)
+                    && (enmFlags & kGctlCopyFlags_FollowLinks))
                 {
                     /* Fall through to next case is intentional. */
                 }
@@ -2467,7 +2479,7 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
                         if (RT_SUCCESS(vrc))
                         {
                             vrc = gctlCopyFileToDest(pContext, pszFileSource,
-                                                    pszFileDest, 0 /* Flags */);
+                                                     pszFileDest, kGctlCopyFlags_None);
                             RTStrFree(pszFileDest);
                         }
                         RTStrFree(pszFileSource);
@@ -2532,17 +2544,17 @@ static int gctlCopyDirToHost(PCOPYCONTEXT pContext,
  * @param   pszFilter               DOS-style wildcard filter (?, *).  Optional.
  * @param   pszDest                 Destination directory where to copy in the source
  *                                  source directory.
- * @param   fFlags                  Copy flags, such as recursive copying.
+ * @param   enmFlags                Copy flags, such as recursive copying.
  */
 static int gctlCopyDirToDest(PCOPYCONTEXT pContext,
                              const char *pszSource, const char *pszFilter,
-                             const char *pszDest, uint32_t fFlags)
+                             const char *pszDest, enum gctlCopyFlags enmFlags)
 {
     if (pContext->fHostToGuest)
         return gctlCopyDirToGuest(pContext, pszSource, pszFilter,
-                                  pszDest, fFlags, NULL /* Sub directory, only for recursion. */);
+                                  pszDest, enmFlags, NULL /* Sub directory, only for recursion. */);
     return gctlCopyDirToHost(pContext, pszSource, pszFilter,
-                             pszDest, fFlags, NULL /* Sub directory, only for recursion. */);
+                             pszDest, enmFlags, NULL /* Sub directory, only for recursion. */);
 }
 
 /**
@@ -2642,7 +2654,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
 
     Utf8Str strSource;
     const char *pszDst = NULL;
-    uint32_t fFlags = CopyFileFlag_None;
+    enum gctlCopyFlags enmFlags = kGctlCopyFlags_None;
     bool fCopyRecursive = false;
     bool fDryRun = false;
     uint32_t uUsage = fHostToGuest ? USAGE_GSTCTRL_COPYTO : USAGE_GSTCTRL_COPYFROM;
@@ -2662,11 +2674,11 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 break;
 
             case GETOPTDEF_COPY_FOLLOW:
-                fFlags |= CopyFileFlag_FollowLinks;
+                enmFlags = (enum gctlCopyFlags)((uint32_t)enmFlags | kGctlCopyFlags_FollowLinks);
                 break;
 
             case 'R': /* Recursive processing */
-                fFlags |= CopyFileFlag_Recursive;
+                enmFlags = (enum gctlCopyFlags)((uint32_t)enmFlags | kGctlCopyFlags_Recursive);
                 break;
 
             case GETOPTDEF_COPY_TARGETDIR:
@@ -2826,7 +2838,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                     vrc = gctlCopyTranslatePath(pszSourceRoot, pszSource, pszDst, &pszDstFile);
                     if (RT_SUCCESS(vrc))
                     {
-                        vrc = gctlCopyFileToDest(pContext, pszSource, pszDstFile, 0 /* Flags */);
+                        vrc = gctlCopyFileToDest(pContext, pszSource, pszDstFile, kGctlCopyFlags_None);
                         RTStrFree(pszDstFile);
                     }
                     else
@@ -2835,7 +2847,7 @@ static RTEXITCODE gctlHandleCopy(PGCTLCMDCTX pCtx, int argc, char **argv, bool f
                 else
                 {
                     /* Directory (with filter?). */
-                    vrc = gctlCopyDirToDest(pContext, pszSource, pszFilter, pszDst, fFlags);
+                    vrc = gctlCopyDirToDest(pContext, pszSource, pszFilter, pszDst, enmFlags);
                 }
             }
 
@@ -3137,10 +3149,10 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleRm(PGCTLCMDCTX pCtx, int argc, char **
                     RTPrintf("Removing file \"%s\" ...\n", ValueUnion.psz);
                 try
                 {
-                    /** @todo How does IGuestSession::FileRemove work with read-only files? Do we
+                    /** @todo How does IGuestSession::FsObjRemove work with read-only files? Do we
                      *        need to do some chmod or whatever to better emulate the --force flag? */
                     HRESULT rc;
-                    CHECK_ERROR(pCtx->pGuestSession, FileRemove(Bstr(ValueUnion.psz).raw()));
+                    CHECK_ERROR(pCtx->pGuestSession, FsObjRemove(Bstr(ValueUnion.psz).raw()));
                     if (FAILED(rc) && !fForce)
                         return RTEXITCODE_FAILURE;
                 }
@@ -3179,12 +3191,12 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     bool fDryrun = false;
     std::vector< Utf8Str > vecSources;
     const char *pszDst = NULL;
-    com::SafeArray<PathRenameFlag_T> aRenameFlags;
+    com::SafeArray<FsObjRenameFlag_T> aRenameFlags;
 
     try
     {
         /** @todo Make flags configurable. */
-        aRenameFlags.push_back(PathRenameFlag_NoReplace);
+        aRenameFlags.push_back(FsObjRenameFlag_NoReplace);
 
         while (   (ch = RTGetOpt(&GetState, &ValueUnion))
                && RT_SUCCESS(vrc))
@@ -3235,9 +3247,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
     if (cSources > 1)
     {
-        ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(pszDst).raw(), pFsObjInfo.asOutParam());
-        if (FAILED(rc))
+        BOOL fExists = FALSE;
+        rc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), FALSE /*followSymlinks*/, &fExists);
+        if (FAILED(rc) || !fExists)
             return RTMsgErrorExit(RTEXITCODE_FAILURE, "Destination must be a directory when specifying multiple sources\n");
     }
 
@@ -3251,21 +3263,13 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
     while (   (it != vecSources.end())
            && !g_fGuestCtrlCanceled)
     {
-        bool fSourceIsDirectory = false;
         Utf8Str strCurSource = (*it);
 
-        /** @todo Slooooow, but works for now. */
-        /** @todo r=bird: Need an interface for querying info on a file system
-         *        object, not just files or directories exclusively.  You also may
-         *        want to take symbolic links into account somewhere along the line,
-         *        though preferrably on the guest end of things... */
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        rc = pCtx->pGuestSession->FileQueryInfo(Bstr(strCurSource).raw(), pFsObjInfo.asOutParam());
-        if (FAILED(rc))
-        {
-            rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(strCurSource).raw(), pFsObjInfo.asOutParam());
-            fSourceIsDirectory = SUCCEEDED(rc);
-        }
+        FsObjType enmObjType;
+        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strCurSource).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
+        if (SUCCEEDED(rc))
+            rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
         if (FAILED(rc))
         {
             if (pCtx->cVerbose > 1)
@@ -3277,16 +3281,16 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
         if (pCtx->cVerbose > 1)
             RTPrintf("Renaming %s \"%s\" to \"%s\" ...\n",
-                     fSourceIsDirectory ? "directory" : "file",
+                     enmObjType == FsObjType_Directory ? "directory" : "file",
                      strCurSource.c_str(), pszDst);
 
         if (!fDryrun)
         {
-            if (fSourceIsDirectory)
+            if (enmObjType == FsObjType_Directory)
             {
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRename(Bstr(strCurSource).raw(),
-                                                                       Bstr(pszDst).raw(),
-                                                                       ComSafeArrayAsInParam(aRenameFlags)));
+                CHECK_ERROR_BREAK(pCtx->pGuestSession, FsObjRename(Bstr(strCurSource).raw(),
+                                                                   Bstr(pszDst).raw(),
+                                                                   ComSafeArrayAsInParam(aRenameFlags)));
 
                 /* Break here, since it makes no sense to rename mroe than one source to
                  * the same directory. */
@@ -3299,9 +3303,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
                 break;
             }
             else
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, FileRename(Bstr(strCurSource).raw(),
-                                                                  Bstr(pszDst).raw(),
-                                                                  ComSafeArrayAsInParam(aRenameFlags)));
+                CHECK_ERROR_BREAK(pCtx->pGuestSession, FsObjRename(Bstr(strCurSource).raw(),
+                                                                   Bstr(pszDst).raw(),
+                                                                   ComSafeArrayAsInParam(aRenameFlags)));
         }
 
         it++;
@@ -3497,10 +3501,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
             RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        rc = pCtx->pGuestSession->FileQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
-        if (FAILED(rc))
-            rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
-
+        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(it->first).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
         if (FAILED(rc))
         {
             /* If there's at least one element which does not exist on the guest,
@@ -3513,7 +3514,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
         else
         {
             FsObjType_T objType;
-            pFsObjInfo->COMGETTER(Type)(&objType);
+            pFsObjInfo->COMGETTER(Type)(&objType); /** @todo What about error checking? */
             switch (objType)
             {
                 case FsObjType_File:

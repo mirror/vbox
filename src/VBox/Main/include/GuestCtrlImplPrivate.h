@@ -598,13 +598,16 @@ struct GuestFileOpenInfo
 {
     /** The filename. */
     Utf8Str                 mFileName;
-    /** Then file's opening mode. */
-    Utf8Str                 mOpenMode;
-    /** The file's disposition mode. */
-    Utf8Str                 mDisposition;
-    /** The file's sharing mode.
-     **@todo Not implemented yet.*/
-    Utf8Str                 mSharingMode;
+    /** The file access mode. */
+    FileAccessMode_T        mAccessMode;
+    /** String translation of mFileAccessMode for the GAs. */
+    const char             *mpszAccessMode;
+    /** The file open action.  */
+    FileOpenAction_T        mOpenAction;
+    /** String translation of mOpenAction for the GAs. */
+    const char             *mpszOpenAction;
+    /** The file sharing mode. */
+    FileSharingMode_T       mSharingMode;
     /** Octal creation mode. */
     uint32_t                mCreationMode;
     /** The initial offset on open. */

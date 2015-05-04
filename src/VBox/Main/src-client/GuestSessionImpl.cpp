@@ -573,6 +573,16 @@ HRESULT GuestSession::getPathStyle(PathStyle_T *aPathStyle)
 #endif
 }
 
+HRESULT GuestSession::getCurrentDirectory(com::Utf8Str &aCurrentDirectory)
+{
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::setCurrentDirectory(const com::Utf8Str &aCurrentDirectory)
+{
+    ReturnComNotImplemented();
+}
+
 HRESULT GuestSession::getDirectories(std::vector<ComPtr<IGuestDirectory> > &aDirectories)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -1289,9 +1299,9 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
                                      ComObjPtr<GuestFile> &pFile, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%x, uOffset=%RU64\n",
-                     openInfo.mFileName.c_str(), openInfo.mOpenMode.c_str(), openInfo.mDisposition.c_str(),
-                     openInfo.mCreationMode, openInfo.mInitialOffset));
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, uOffset=%RU64\n",
+                     openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mpszAccessMode,
+                     openInfo.mOpenAction, openInfo.mpszOpenAction, openInfo.mCreationMode, openInfo.mInitialOffset));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1403,12 +1413,12 @@ int GuestSession::i_fileQueryInfoInternal(const Utf8Str &strPath, bool fFollowSy
     return vrc;
 }
 
-int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, int64_t *pllSize, int *pGuestRc)
+int GuestSession::i_fileQuerySizeInternal(const Utf8Str &strPath, bool fFollowSymlinks, int64_t *pllSize, int *pGuestRc)
 {
     AssertPtrReturn(pllSize, VERR_INVALID_POINTER);
 
     GuestFsObjData objData;
-    int vrc = i_fileQueryInfoInternal(strPath, false /*fFollowSymlinks*/, objData, pGuestRc);
+    int vrc = i_fileQueryInfoInternal(strPath, fFollowSymlinks, objData, pGuestRc);
     if (RT_SUCCESS(vrc))
         *pllSize = objData.mObjectSize;
 
@@ -2485,9 +2495,15 @@ HRESULT GuestSession::close()
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
-                               const std::vector<CopyFileFlag_T> &aFlags,
-                               ComPtr<IProgress> &aProgress)
+HRESULT GuestSession::fileCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
+                               const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::fileCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+                                        const std::vector<FileCopyFlag_T> &aFlags,
+                                        ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2500,12 +2516,13 @@ HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &
     if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    uint32_t fFlags = CopyFileFlag_None;
+    uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
     }
+/** @todo r=bird: fend off flags we don't implement here!  */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2534,8 +2551,8 @@ HRESULT GuestSession::copyFrom(const com::Utf8Str &aSource, const com::Utf8Str &
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aDest, const std::vector<CopyFileFlag_T> &aFlags,
-                             ComPtr<IProgress> &aProgress)
+HRESULT GuestSession::fileCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
+                                      const std::vector<FileCopyFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2548,12 +2565,13 @@ HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aD
     if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No destination specified"));
 
-    uint32_t fFlags = CopyFileFlag_None;
+    uint32_t fFlags = FileCopyFlag_None;
     if (aFlags.size())
     {
         for (size_t i = 0; i < aFlags.size(); i++)
             fFlags |= aFlags[i];
     }
+/** @todo r=bird: fend off flags we don't implement here!  */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2583,6 +2601,24 @@ HRESULT GuestSession::copyTo(const com::Utf8Str &aSource, const com::Utf8Str &aD
 
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::directoryCopy(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
+                                    const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::directoryCopyFromGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
+                                             const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::directoryCopyToGuest(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
+                                           const std::vector<DirectoryCopyFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+    ReturnComNotImplemented();
 }
 
 HRESULT GuestSession::directoryCreate(const com::Utf8Str &aPath, ULONG aMode,
@@ -2676,7 +2712,7 @@ HRESULT GuestSession::directoryCreateTemp(const com::Utf8Str &aTemplateName, ULO
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL *aExists)
+HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2689,11 +2725,13 @@ HRESULT GuestSession::directoryExists(const com::Utf8Str &aPath, BOOL *aExists)
     HRESULT hr = S_OK;
 
     GuestFsObjData objData; int guestRc;
-    int rc = i_directoryQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
+    int rc = i_directoryQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &guestRc);
     if (RT_SUCCESS(rc))
         *aExists = objData.mType == FsObjType_Directory;
     else
     {
+        /** @todo r=bird: Looks like this code raises errors if the directory doesn't
+         *        exist... That's of course not right. */
         switch (rc)
         {
             case VERR_GSTCTL_GUEST_ERROR:
@@ -2772,61 +2810,6 @@ HRESULT GuestSession::directoryOpen(const com::Utf8Str &aPath, const com::Utf8St
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::directoryQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsObjInfo> &aInfo)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No directory to query information for specified"));
-
-    HRESULT hr = S_OK;
-
-    GuestFsObjData objData; int guestRc;
-    int vrc = i_directoryQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
-    if (RT_SUCCESS(vrc))
-    {
-        if (objData.mType == FsObjType_Directory)
-        {
-            ComObjPtr<GuestFsObjInfo> pFsObjInfo;
-            hr = pFsObjInfo.createObject();
-            if (FAILED(hr)) return hr;
-
-            vrc = pFsObjInfo->init(objData);
-            if (RT_SUCCESS(vrc))
-            {
-                hr = pFsObjInfo.queryInterfaceTo(aInfo.asOutParam());
-                if (FAILED(hr)) return hr;
-            }
-        }
-    }
-
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
-                break;
-
-            case VERR_NOT_A_DIRECTORY:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Element \"%s\" exists but is not a directory"),
-                                                    aPath.c_str());
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Querying directory information for \"%s\" failed: %Rrc"),
-                              aPath.c_str(), vrc);
-                break;
-        }
-    }
-
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
 HRESULT GuestSession::directoryRemove(const com::Utf8Str &aPath)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -2881,6 +2864,9 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No directory to remove recursively specified"));
 
+/** @todo r=bird: Must check that the flags matches the hardcoded behavior
+ *        further down!! */
+
     HRESULT hr = i_isReadyExternal();
     if (FAILED(hr))
         return hr;
@@ -2932,66 +2918,6 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
     }
 
     return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::directoryRename(const com::Utf8Str &aSource,
-                                      const com::Utf8Str &aDest,
-                                      const std::vector<PathRenameFlag_T> &aFlags)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source directory to rename specified"));
-
-    if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination directory to rename the source to specified"));
-
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
-
-    /* No flags; only remove the directory when empty. */
-    uint32_t uFlags = 0;
-
-    int guestRc;
-    int vrc = i_pathRenameInternal(aSource, aDest, uFlags, &guestRc);
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Handling renaming guest directories not supported by installed Guest Additions"));
-                break;
-
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Renaming guest directory failed: %Rrc"), guestRc);
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest directory \"%s\" failed: %Rrc"),
-                              aSource.c_str(), vrc);
-                break;
-        }
-    }
-
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::directorySetACL(const com::Utf8Str &aPath, const com::Utf8Str &aAcl)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -3137,18 +3063,19 @@ HRESULT GuestSession::fileCreateTemp(const com::Utf8Str &aTemplateName, ULONG aM
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL *aExists)
+HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
 
+/** @todo r=bird: Treat empty file with a FALSE return. */
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No file to check existence for specified"));
 
     GuestFsObjData objData; int guestRc;
-    int vrc = i_fileQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
+    int vrc = i_fileQueryInfoInternal(aPath, aFollowSymlinks != FALSE, objData, &guestRc);
     if (RT_SUCCESS(vrc))
     {
         *aExists = TRUE;
@@ -3163,6 +3090,8 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL *aExists)
             hr = GuestProcess::i_setErrorExternal(this, guestRc);
             break;
 
+/** @todo r=bird: what about VERR_PATH_NOT_FOUND and VERR_FILE_NOT_FOUND?
+ *        Where does that get converted to *aExists = FALSE? */
         case VERR_NOT_A_FILE:
             *aExists = FALSE;
             break;
@@ -3177,58 +3106,19 @@ HRESULT GuestSession::fileExists(const com::Utf8Str &aPath, BOOL *aExists)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileRemove(const com::Utf8Str &aPath)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No file to remove specified"));
-
-    HRESULT hr = S_OK;
-
-    int guestRc;
-    int vrc = i_fileRemoveInternal(aPath, &guestRc);
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing file \"%s\" failed: %Rrc"),
-                              aPath.c_str(), vrc);
-                break;
-        }
-    }
-
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition,
+HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
                                ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
     LogFlowThisFuncEnter();
-
-    Utf8Str strSharingMode = ""; /* Sharing mode is ignored. */
-
-    return fileOpenEx(aPath, aOpenMode, aDisposition, strSharingMode, aCreationMode,
-                      0 /* aOffset */, aFile);
+    return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, 0 /* aOffset */, aFile);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, const com::Utf8Str &aOpenMode, const com::Utf8Str &aDisposition,
-                                 const com::Utf8Str &aSharingMode, ULONG aCreationMode, LONG64 aOffset,
-                                 ComPtr<IGuestFile> &aFile)
-
+HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
+                                 FileSharingMode_T aSharingMode, ULONG aCreationMode, LONG64 aOffset, ComPtr<IGuestFile> &aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3237,37 +3127,67 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, const com::Utf8Str &
 
     if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
         return setError(E_INVALIDARG, tr("No file to open specified"));
-    if (RT_UNLIKELY((aOpenMode.c_str()) == NULL || *(aOpenMode.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No open mode specified"));
-    if (RT_UNLIKELY((aDisposition.c_str()) == NULL || *(aDisposition.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No disposition mode specified"));
-    /* aSharingMode is optional. */
 
     HRESULT hr = i_isReadyExternal();
     if (FAILED(hr))
         return hr;
 
-    /** @todo Validate creation mode. */
-    uint32_t uCreationMode = 0;
-
     GuestFileOpenInfo openInfo;
     openInfo.mFileName = aPath;
-    openInfo.mOpenMode = aOpenMode;
-    openInfo.mDisposition = aDisposition;
-    openInfo.mSharingMode = aSharingMode;
     openInfo.mCreationMode = aCreationMode;
     openInfo.mInitialOffset = aOffset;
 
-    uint64_t uFlagsIgnored;
-    int vrc = RTFileModeToFlagsEx(openInfo.mOpenMode.c_str(),
-                                  openInfo.mDisposition.c_str(),
-                                  openInfo.mSharingMode.c_str(),
-                                  &uFlagsIgnored);
-    if (RT_FAILURE(vrc))
-        return setError(E_INVALIDARG, tr("Invalid open mode / disposition / sharing mode specified"));
+    /* convert + validate aAccessMode to the old format. */
+    openInfo.mAccessMode = aAccessMode;
+    switch (aAccessMode)
+    {
+        case (FileAccessMode_T)FileAccessMode_ReadOnly:  openInfo.mpszAccessMode = "r"; break;
+        case (FileAccessMode_T)FileAccessMode_WriteOnly: openInfo.mpszAccessMode = "w"; break;
+        case (FileAccessMode_T)FileAccessMode_ReadWrite: openInfo.mpszAccessMode = "r+"; break;
+        case (FileAccessMode_T)FileAccessMode_AppendOnly:
+            /* fall thru */
+        case (FileAccessMode_T)FileAccessMode_AppendRead:
+            return setError(E_NOTIMPL, tr("Append access modes are not yet implemented"));
+        default:
+            return setError(E_INVALIDARG, tr("Unknown FileAccessMode value %u (%#x)"), aAccessMode, aAccessMode);
+    }
 
-    ComObjPtr <GuestFile> pFile; int guestRc;
-    vrc = i_fileOpenInternal(openInfo, pFile, &guestRc);
+    /* convert + validate aOpenAction to the old format. */
+    openInfo.mOpenAction = aOpenAction;
+    switch (aOpenAction)
+    {
+        case (FileOpenAction_T)FileOpenAction_OpenExisting:          openInfo.mpszOpenAction = "oe"; break;
+        case (FileOpenAction_T)FileOpenAction_OpenOrCreate:          openInfo.mpszOpenAction = "oc"; break;
+        case (FileOpenAction_T)FileOpenAction_CreateNew:             openInfo.mpszOpenAction = "ce"; break;
+        case (FileOpenAction_T)FileOpenAction_CreateOrReplace:       openInfo.mpszOpenAction = "ca"; break;
+        case (FileOpenAction_T)FileOpenAction_OpenExistingTruncated: openInfo.mpszOpenAction = "ot"; break;
+        case (FileOpenAction_T)FileOpenAction_AppendOrCreate:
+            openInfo.mpszOpenAction = "ca"; /** @todo get rid of this one and implement AppendOnly/AppendRead. */
+            break;
+        default:
+            return setError(E_INVALIDARG, tr("Unknown FileOpenAction value %u (%#x)"), aAccessMode, aAccessMode);
+    }
+
+    /* validate aSharingMode */
+    openInfo.mSharingMode = aSharingMode;
+    switch (aSharingMode)
+    {
+        case (FileSharingMode_T)FileSharingMode_All: /* OK */ break;
+        case (FileSharingMode_T)FileSharingMode_Read:
+        case (FileSharingMode_T)FileSharingMode_Write:
+        case (FileSharingMode_T)FileSharingMode_ReadWrite:
+        case (FileSharingMode_T)FileSharingMode_Delete:
+        case (FileSharingMode_T)FileSharingMode_ReadDelete:
+        case (FileSharingMode_T)FileSharingMode_WriteDelete:
+            return setError(E_NOTIMPL, tr("Only FileSharingMode_All is currently implemented"));
+
+        default:
+            return setError(E_INVALIDARG, tr("Unknown FileOpenAction value %u (%#x)"), aAccessMode, aAccessMode);
+    }
+
+    ComObjPtr <GuestFile> pFile;
+    int guestRc;
+    int vrc = i_fileOpenInternal(openInfo, pFile, &guestRc);
     if (RT_SUCCESS(vrc))
         /* Return directory object to the caller. */
         hr = pFile.queryInterfaceTo(aFile.asOutParam());
@@ -3295,58 +3215,7 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, const com::Utf8Str &
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileQueryInfo(const com::Utf8Str &aPath, ComPtr<IGuestFsObjInfo> &aInfo)
-
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aPath.c_str()) == NULL || *(aPath.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No file to query information for specified"));
-
-    HRESULT hr = S_OK;
-
-    GuestFsObjData objData; int guestRc;
-    int vrc = i_fileQueryInfoInternal(aPath, false /*fFollowSymlinks*/, objData, &guestRc);
-    if (RT_SUCCESS(vrc))
-    {
-        ComObjPtr<GuestFsObjInfo> pFsObjInfo;
-        hr = pFsObjInfo.createObject();
-        if (FAILED(hr)) return hr;
-
-        vrc = pFsObjInfo->init(objData);
-        if (RT_SUCCESS(vrc))
-        {
-            hr = pFsObjInfo.queryInterfaceTo(aInfo.asOutParam());
-            if (FAILED(hr)) return hr;
-        }
-    }
-
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_GSTCTL_GUEST_ERROR:
-                hr = GuestProcess::i_setErrorExternal(this, guestRc);
-                break;
-
-            case VERR_NOT_A_FILE:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Element exists but is not a file"));
-                break;
-
-            default:
-               hr = setError(VBOX_E_IPRT_ERROR, tr("Querying file information failed: %Rrc"), vrc);
-               break;
-        }
-    }
-
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, LONG64 *aSize)
+HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, BOOL aFollowSymlinks, LONG64 *aSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3359,7 +3228,7 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, LONG64 *aSize)
     HRESULT hr = S_OK;
 
     int64_t llSize; int guestRc;
-    int vrc = i_fileQuerySizeInternal(aPath, &llSize, &guestRc);
+    int vrc = i_fileQuerySizeInternal(aPath, aFollowSymlinks != FALSE,  &llSize, &guestRc);
     if (RT_SUCCESS(vrc))
         *aSize = llSize;
     else
@@ -3380,67 +3249,7 @@ HRESULT GuestSession::fileQuerySize(const com::Utf8Str &aPath, LONG64 *aSize)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fileRename(const com::Utf8Str &aSource, const com::Utf8Str &aDest,
-                                 const std::vector<PathRenameFlag_T> &aFlags)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    if (RT_UNLIKELY((aSource.c_str()) == NULL || *(aSource.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No source file to rename specified"));
-
-    if (RT_UNLIKELY((aDest.c_str()) == NULL || *(aDest.c_str()) == '\0'))
-        return setError(E_INVALIDARG, tr("No destination file to rename the source to specified"));
-
-    HRESULT hr = i_isReadyExternal();
-    if (FAILED(hr))
-        return hr;
-
-    /* No flags; only remove the directory when empty. */
-    uint32_t uFlags = 0;
-
-    int guestRc;
-    int vrc = i_pathRenameInternal(aSource, aDest, uFlags, &guestRc);
-    if (RT_FAILURE(vrc))
-    {
-        switch (vrc)
-        {
-            case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Handling renaming guest files not supported by installed Guest Additions"));
-                break;
-
-            case VERR_GSTCTL_GUEST_ERROR:
-                /** @todo Proper guestRc to text translation needed. */
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Renaming guest file failed: %Rrc"), guestRc);
-                break;
-
-            default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest file \"%s\" failed: %Rrc"),
-                              aSource.c_str(), vrc);
-                break;
-        }
-    }
-
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::fileSetACL(const com::Utf8Str &aFile, const com::Utf8Str &aAcl)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::fsExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
+HRESULT GuestSession::fsObjExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, BOOL *aExists)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3473,7 +3282,7 @@ HRESULT GuestSession::fsExists(const com::Utf8Str &aPath, BOOL aFollowSymlinks, 
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-HRESULT GuestSession::fsQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
+HRESULT GuestSession::fsObjQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlinks, ComPtr<IGuestFsObjInfo> &aInfo)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -3510,6 +3319,113 @@ HRESULT GuestSession::fsQueryInfo(const com::Utf8Str &aPath, BOOL aFollowSymlink
     return hrc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
+
+HRESULT GuestSession::fsObjRemove(const com::Utf8Str &aPath)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY(aPath.isEmpty()))
+        return setError(E_INVALIDARG, tr("Empty path specified"));
+
+    HRESULT hr = S_OK;
+
+    int guestRc;
+    int vrc = i_fileRemoveInternal(aPath, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = GuestProcess::i_setErrorExternal(this, guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing file \"%s\" failed: %Rrc"),
+                              aPath.c_str(), vrc);
+                break;
+        }
+    }
+
+    return hr;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::fsObjRename(const com::Utf8Str &aSource,
+                                  const com::Utf8Str &aDestination,
+                                  const std::vector<FsObjRenameFlag_T> &aFlags)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    if (RT_UNLIKELY(aSource.isEmpty()))
+        return setError(E_INVALIDARG, tr("No source path specified"));
+
+    if (RT_UNLIKELY(aDestination.isEmpty()))
+        return setError(E_INVALIDARG, tr("No destination path specified"));
+
+    HRESULT hr = i_isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    /* Combine, validate and convert flags. */
+    uint32_t fApiFlags = 0;
+    for (size_t i = 0; i < aFlags.size(); i++)
+        fApiFlags |= aFlags[i];
+    if (fApiFlags & ~((uint32_t)FsObjRenameFlag_NoReplace | (uint32_t)FsObjRenameFlag_Replace))
+        return setError(E_INVALIDARG, tr("Unknown rename flag: %#x"), fApiFlags);
+
+    AssertCompile(FsObjRenameFlag_NoReplace == 0);
+    AssertCompile(FsObjRenameFlag_Replace != 0);
+    uint32_t fBackend;
+    if ((fApiFlags & ((uint32_t)FsObjRenameFlag_NoReplace | (uint32_t)FsObjRenameFlag_Replace)) == FsObjRenameFlag_Replace)
+        fBackend = PATHRENAME_FLAG_REPLACE;
+    else
+        fBackend = PATHRENAME_FLAG_NO_REPLACE;
+
+    /* Call worker to do the job. */
+    int guestRc;
+    int vrc = i_pathRenameInternal(aSource, aDestination, fBackend, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Handling renaming guest directories not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Renaming guest directory failed: %Rrc"), guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest directory \"%s\" failed: %Rrc"),
+                              aSource.c_str(), vrc);
+                break;
+        }
+    }
+
+    return hr;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT GuestSession::fsObjMove(const com::Utf8Str &aSource, const com::Utf8Str &aDestination,
+                                const std::vector<FsObjMoveFlags_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+    ReturnComNotImplemented();
+}
+
+HRESULT GuestSession::fsObjSetACL(const com::Utf8Str &aPath, BOOL aFollowSymlinks, const com::Utf8Str &aAcl, ULONG aMode)
+{
+    ReturnComNotImplemented();
+}
+
 
 HRESULT GuestSession::processCreate(const com::Utf8Str &aExecutable, const std::vector<com::Utf8Str> &aArguments,
                                     const std::vector<com::Utf8Str> &aEnvironment,
@@ -3693,28 +3609,6 @@ HRESULT GuestSession::symlinkExists(const com::Utf8Str &aSymlink, BOOL *aExists)
 
 HRESULT GuestSession::symlinkRead(const com::Utf8Str &aSymlink, const std::vector<SymlinkReadFlag_T> &aFlags,
                                   com::Utf8Str &aTarget)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::symlinkRemoveDirectory(const com::Utf8Str &aPath)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
-    LogFlowThisFuncEnter();
-
-    ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_CONTROL */
-}
-
-HRESULT GuestSession::symlinkRemoveFile(const com::Utf8Str &aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();

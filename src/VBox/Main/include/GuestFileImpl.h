@@ -71,23 +71,24 @@ public:
 
 private:
 
-    /** Wrapped @name IGuestFile properties.
+    /** @name Wrapped IGuestFile properties.
      * @{ */
     HRESULT getCreationMode(ULONG *aCreationMode);
-    HRESULT getDisposition(com::Utf8Str &aDisposition);
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);
-    HRESULT getFileName(com::Utf8Str &aFileName);
     HRESULT getId(ULONG *aId);
     HRESULT getInitialSize(LONG64 *aInitialSize);
-    HRESULT getOpenMode(com::Utf8Str &aOpenMode);
     HRESULT getOffset(LONG64 *aOffset);
     HRESULT getStatus(FileStatus_T *aStatus);
+    HRESULT getFileName(com::Utf8Str &aFileName);
+    HRESULT getAccessMode(FileAccessMode_T *aAccessMode);
+    HRESULT getOpenAction(FileOpenAction_T *aOpenAction);
     /** @}  */
 
-    /** Wrapped @name IGuestFile methods.
+    /** @name Wrapped IGuestFile methods.
      * @{ */
     HRESULT close();
     HRESULT queryInfo(ComPtr<IFsObjInfo> &aObjInfo);
+    HRESULT querySize(LONG64 *aSize);
     HRESULT read(ULONG aToRead,
                  ULONG aTimeoutMS,
                  std::vector<BYTE> &aData);
@@ -96,8 +97,11 @@ private:
                    ULONG aTimeoutMS,
                    std::vector<BYTE> &aData);
     HRESULT seek(LONG64 aOffset,
-                 FileSeekType_T aWhence);
-    HRESULT setACL(const com::Utf8Str &aAcl);
+                 FileSeekOrigin_T aWhence,
+                 LONG64 *aNewOffset);
+    HRESULT setACL(const com::Utf8Str &aAcl,
+                   ULONG aMode);
+    HRESULT setSize(LONG64 aSize);
     HRESULT write(const std::vector<BYTE> &aData,
                   ULONG aTimeoutMS,
                   ULONG *aWritten);

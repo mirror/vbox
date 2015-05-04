@@ -4294,10 +4294,8 @@ AuthResult AUTHCALL AuthEntry(
                 xreflabel="IGuestSession::symlinkExists()" />,
                 <xref linkend="IGuestSession__symlinkRead"
                 xreflabel="IGuestSession::symlinkRead()" />,
-                <xref linkend="IGuestSession__symlinkRemoveDirectory"
-                xreflabel="IGuestSession::symlinkRemoveDirectory()" /> and
-                <xref linkend="IGuestSession__symlinkRemoveFile"
-                xreflabel="IGuestSession::symlinkRemoveFile()" /> are not
+                IGuestSession::symlinkRemoveDirectory() and
+                IGuestSession::symlinkRemoveFile() are not
                 implemented yet.</para>
               </listitem>
               <listitem><para>The directory APIs
@@ -4305,10 +4303,8 @@ AuthResult AUTHCALL AuthEntry(
                 xreflabel="IGuestSession::directoryRemove()" />,
                 <xref linkend="IGuestSession__directoryRemoveRecursive"
                 xreflabel="IGuestSession::directoryRemoveRecursive()" />,
-                <xref linkend="IGuestSession__directoryRename"
-                xreflabel="IGuestSession::directoryRename()" /> and
-                <xref linkend="IGuestSession__directorySetACL"
-                xreflabel="IGuestSession::directorySetACL()" /> are not
+                IGuestSession::directoryRename() and
+                IGuestSession::directorySetACL() are not
                 implemented yet.</para>
               </listitem>
               <listitem><para>The temporary file creation API
