@@ -215,40 +215,36 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
     PVRDESTREAMOUT pVRDEStrmOut = (PVRDESTREAMOUT)pHstStrmOut;
     AssertPtrReturn(pVRDEStrmOut, VERR_INVALID_POINTER);
 
-    /*
-     * Just call the VRDP server with the data.
-     */
     uint32_t live = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
     uint64_t now = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
     uint64_t ticks = now  - pVRDEStrmOut->old_ticks;
     uint64_t ticks_per_second = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
 
+    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
     uint32_t cSamplesPlayed = (int)((2 * ticks * pHstStrmOut->Props.uHz + ticks_per_second) / ticks_per_second / 2);
-    if (!cSamplesPlayed)
+
+    /* Don't play more than available. */
+    if (cSamplesPlayed > live)
         cSamplesPlayed = live;
+
+    /* Remember when samples were consumed. */
+    pVRDEStrmOut->old_ticks = now;
 
     VRDEAUDIOFORMAT format = VRDE_AUDIO_FMT_MAKE(pHstStrmOut->Props.uHz,
                                                  pHstStrmOut->Props.cChannels,
                                                  pHstStrmOut->Props.cBits,
                                                  pHstStrmOut->Props.fSigned);
 
-    pVRDEStrmOut->old_ticks = now;
-
-    int cSamplesToSend = live;
-
-/*  if (!cSamplesToSend)
-    {
-        if (pcSamplesPlayed)
-            pcSamplesPlayed = 0;
-
-        return 0;
-    }*/
+    int cSamplesToSend = cSamplesPlayed;
 
     LogFlowFunc(("uFreq=%RU32, cChan=%RU8, cBits=%RU8, fSigned=%RTbool, enmFormat=%ld, cSamplesToSend=%RU32\n",
                  pHstStrmOut->Props.uHz, pHstStrmOut->Props.cChannels,
                  pHstStrmOut->Props.cBits, pHstStrmOut->Props.fSigned,
                  format, cSamplesToSend));
 
+    /*
+     * Call the VRDP server with the data.
+     */
     uint32_t cReadTotal = 0;
 
     PPDMAUDIOSAMPLE pSamples;
