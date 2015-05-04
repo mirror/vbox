@@ -21,12 +21,14 @@
 *******************************************************************************/
 #include "GuestImpl.h"
 #include "GuestDnDTargetImpl.h"
+#include "ConsoleImpl.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
 
 #include <algorithm>        /* For std::find(). */
 
+#include <iprt/asm.h>
 #include <iprt/file.h>
 #include <iprt/dir.h>
 #include <iprt/path.h>

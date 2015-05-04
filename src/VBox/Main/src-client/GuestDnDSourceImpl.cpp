@@ -22,10 +22,12 @@
 #include "GuestImpl.h"
 #include "GuestDnDSourceImpl.h"
 #include "GuestDnDPrivate.h"
+#include "ConsoleImpl.h"
 
 #include "Global.h"
 #include "AutoCaller.h"
 
+#include <iprt/asm.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/path.h>

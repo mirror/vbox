@@ -20,6 +20,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "GuestImpl.h"
+#ifndef VBOX_WITH_GUEST_CONTROL
+# error "VBOX_WITH_GUEST_CONTROL must defined in this file"
+#endif
 #include "GuestSessionImpl.h"
 #include "GuestCtrlImplPrivate.h"
 

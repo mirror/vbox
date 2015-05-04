@@ -16,8 +16,9 @@
  */
 
 #include "GuestImpl.h"
-#include "GuestSessionImpl.h"
-
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include "GuestSessionImpl.h"
+#endif
 #include "Global.h"
 #include "ConsoleImpl.h"
 #include "ProgressImpl.h"
@@ -108,13 +109,9 @@ HRESULT Guest::init(Console *aParent)
                               &Guest::i_staticUpdateStats, this);
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc)\n", vrc));
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     hr = unconst(mEventSource).createObject();
     if (SUCCEEDED(hr))
         hr = mEventSource->init();
-#else
-    hr = S_OK;
-#endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     try
@@ -184,9 +181,7 @@ void Guest::uninit()
     unconst(mDnDTarget).setNull();
 #endif
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     unconst(mEventSource).setNull();
-#endif
     unconst(mParent) = NULL;
 
     LogFlowFuncLeave();
@@ -516,9 +511,6 @@ HRESULT Guest::getDnDTarget(ComPtr<IGuestDnDTarget> &aDnDTarget)
 
 HRESULT Guest::getEventSource(ComPtr<IEventSource> &aEventSource)
 {
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else
     LogFlowThisFuncEnter();
 
     /* No need to lock - lifetime constant. */
@@ -526,7 +518,6 @@ HRESULT Guest::getEventSource(ComPtr<IEventSource> &aEventSource)
 
     LogFlowFuncLeaveRC(S_OK);
     return S_OK;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 HRESULT Guest::getFacilities(std::vector<ComPtr<IAdditionsFacility> > &aFacilities)
@@ -543,6 +534,7 @@ HRESULT Guest::getFacilities(std::vector<ComPtr<IAdditionsFacility> > &aFaciliti
 
 HRESULT Guest::getSessions(std::vector<ComPtr<IGuestSession> > &aSessions)
 {
+#ifdef VBOX_WITH_GUEST_CONTROL
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     aSessions.resize(mData.mGuestSessions.size());
@@ -551,6 +543,9 @@ HRESULT Guest::getSessions(std::vector<ComPtr<IGuestSession> > &aSessions)
         it->second.queryInterfaceTo(aSessions[i].asOutParam());
 
     return S_OK;
+#else
+    ReturnComNotImplemented();
+#endif
 }
 
 BOOL Guest::i_isPageFusionEnabled()
@@ -996,11 +991,11 @@ void Guest::i_facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacil
  * @param   aUser               Guest user name.
  * @param   aDomain             Domain of guest user account. Optional.
  * @param   enmState            New state to indicate.
- * @param   puDetails           Pointer to state details. Optional.
+ * @param   pbDetails           Pointer to state details. Optional.
  * @param   cbDetails           Size (in bytes) of state details. Pass 0 if not used.
  */
 void Guest::i_onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState,
-                                const uint8_t *puDetails, uint32_t cbDetails)
+                                const uint8_t *pbDetails, uint32_t cbDetails)
 {
     LogFlowThisFunc(("\n"));
 

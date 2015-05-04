@@ -26,12 +26,15 @@
 #include <VBox/vmm/stam.h>
 
 #include "AdditionsFacilityImpl.h"
-#include "GuestCtrlImplPrivate.h"
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include "GuestCtrlImplPrivate.h"
+# include "GuestSessionImpl.h"
+#endif
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "GuestDnDSourceImpl.h"
 # include "GuestDnDTargetImpl.h"
 #endif
-#include "GuestSessionImpl.h"
+#include "EventImpl.h"
 #include "HGCM.h"
 
 typedef enum
@@ -71,8 +74,8 @@ public:
 #ifdef VBOX_WITH_GUEST_CONTROL
     /** Static callback for handling guest control notifications. */
     static DECLCALLBACK(int) i_notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvData, uint32_t cbData);
-    static DECLCALLBACK(void) i_staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
 #endif
+    static DECLCALLBACK(void) i_staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     /** @}  */
 
 public:
@@ -95,10 +98,10 @@ public:
     {
         return setErrorInternal(aResultCode, getStaticClassIID(), getStaticComponentName(), aText, false, true);
     }
-#ifdef VBOX_WITH_GUEST_CONTROL
-    int         i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     uint32_t    i_getAdditionsVersion(void) { return mData.mAdditionsVersionFull; }
     VBOXOSTYPE  i_getGuestOSType(void) { return mData.mOSType; }
+#ifdef VBOX_WITH_GUEST_CONTROL
+    int         i_dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int         i_sessionRemove(GuestSession *pSession);
     int         i_sessionCreate(const GuestSessionStartupInfo &ssInfo, const GuestCredentials &guestCreds,
                                 ComObjPtr<GuestSession> &pGuestSession);
@@ -173,8 +176,10 @@ private:
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::iterator FacilityMapIter;
     typedef std::map< AdditionsFacilityType_T, ComObjPtr<AdditionsFacility> >::const_iterator FacilityMapIterConst;
 
+#ifdef VBOX_WITH_GUEST_CONTROL
     /** Map for keeping the guest sessions. The primary key marks the guest session ID. */
     typedef std::map <uint32_t, ComObjPtr<GuestSession> > GuestSessions;
+#endif
 
     struct Data
     {
@@ -191,8 +196,10 @@ private:
         uint32_t                    mAdditionsRevision;
         uint32_t                    mAdditionsFeatures;
         Utf8Str                     mInterfaceVersion;
+#ifdef VBOX_WITH_GUEST_CONTROL
         GuestSessions               mGuestSessions;
         uint32_t                    mNextSessionID;
+#endif
     } mData;
 
     ULONG                           mMemoryBalloonSize;
@@ -207,13 +214,13 @@ private:
 
     const ComObjPtr<Console>        mParent;
 
-#ifdef VBOX_WITH_GUEST_CONTROL
     /**
      * This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and
      * internally there is a lock providing the necessary serialization.
      */
     const ComObjPtr<EventSource>    mEventSource;
+#ifdef VBOX_WITH_GUEST_CONTROL
     /** General extension callback for guest control. */
     HGCMSVCEXTHANDLE                mhExtCtrl;
 #endif

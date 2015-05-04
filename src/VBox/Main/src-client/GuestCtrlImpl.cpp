@@ -16,8 +16,10 @@
  */
 
 #include "GuestImpl.h"
-#include "GuestSessionImpl.h"
-#include "GuestCtrlImplPrivate.h"
+#ifdef VBOX_WITH_GUEST_CONTROL
+# include "GuestSessionImpl.h"
+# include "GuestCtrlImplPrivate.h"
+#endif
 
 #include "Global.h"
 #include "ConsoleImpl.h"
@@ -48,11 +50,11 @@
 #define LOG_GROUP LOG_GROUP_GUEST_CONTROL
 #include <VBox/log.h>
 
+#ifdef VBOX_WITH_GUEST_CONTROL
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOX_WITH_GUEST_CONTROL
 /**
  * Static callback function for receiving updates on guest control commands
  * from the guest. Acts as a dispatcher for the actual class instance.
@@ -110,110 +112,6 @@ DECLCALLBACK(int) Guest::i_notifyCtrlDispatcher(void    *pvExtension,
 
     LogFlowFunc(("Returning rc=%Rrc\n", rc));
     return rc;
-}
-#endif /* VBOX_WITH_GUEST_CONTROL */
-
-HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vector<com::Utf8Str> &aArguments,
-                                    const std::vector<AdditionsUpdateFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
-{
-#ifndef VBOX_WITH_GUEST_CONTROL
-    ReturnComNotImplemented();
-#else /* VBOX_WITH_GUEST_CONTROL */
-
-    /* Validate flags. */
-    uint32_t fFlags = AdditionsUpdateFlag_None;
-    if (aFlags.size())
-        for (size_t i = 0; i < aFlags.size(); ++i)
-            fFlags |= aFlags[i];
-
-    if (fFlags && !(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
-        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
-
-    int rc = VINF_SUCCESS;
-
-    ProcessArguments aArgs;
-    aArgs.resize(0);
-
-    if (aArguments.size())
-    {
-        try
-        {
-            for (size_t i = 0; i < aArguments.size(); ++i)
-                aArgs.push_back(aArguments[i]);
-        }
-        catch(std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-        }
-    }
-
-    HRESULT hr = S_OK;
-
-    /*
-     * Create an anonymous session. This is required to run the Guest Additions
-     * update process with administrative rights.
-     */
-    GuestSessionStartupInfo startupInfo;
-    startupInfo.mName = "Updating Guest Additions";
-
-    GuestCredentials guestCreds;
-    RT_ZERO(guestCreds);
-
-    ComObjPtr<GuestSession> pSession;
-    if (RT_SUCCESS(rc))
-        rc = i_sessionCreate(startupInfo, guestCreds, pSession);
-    if (RT_FAILURE(rc))
-    {
-        switch (rc)
-        {
-            case VERR_MAX_PROCS_REACHED:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest sessions (%ld) reached"),
-                              VBOX_GUESTCTRL_MAX_SESSIONS);
-                break;
-
-            /** @todo Add more errors here. */
-
-           default:
-                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
-                break;
-        }
-    }
-    else
-    {
-        Assert(!pSession.isNull());
-        int guestRc;
-        rc = pSession->i_startSessionInternal(&guestRc);
-        if (RT_FAILURE(rc))
-        {
-            /** @todo Handle guestRc! */
-
-            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not open guest session: %Rrc"), rc);
-        }
-        else
-        {
-            try
-            {
-                ComObjPtr<Progress> pProgress;
-                SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
-                                                                                   aSource, aArgs, fFlags);
-                rc = pSession->i_startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
-                if (RT_SUCCESS(rc))
-                {
-                    /* Return progress to the caller. */
-                    hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
-                }
-                else
-                    hr = setError(VBOX_E_IPRT_ERROR,
-                                  tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
-            }
-            catch(std::bad_alloc &)
-            {
-                hr = E_OUTOFMEMORY;
-            }
-        }
-    }
-    return hr;
-#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 // private methods
@@ -469,6 +367,9 @@ inline bool Guest::i_sessionExists(uint32_t uSessionID)
     return (itSessions == mData.mGuestSessions.end()) ? false : true;
 }
 
+#endif /* VBOX_WITH_GUEST_CONTROL */
+
+
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 HRESULT Guest::createSession(const com::Utf8Str &aUser, const com::Utf8Str &aPassword, const com::Utf8Str &aDomain,
@@ -570,6 +471,109 @@ HRESULT Guest::findSession(const com::Utf8Str &aSessionName, std::vector<ComPtr<
     return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND,
                          tr("Could not find sessions with name '%s'"),
                          aSessionName.c_str());
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+HRESULT Guest::updateGuestAdditions(const com::Utf8Str &aSource, const std::vector<com::Utf8Str> &aArguments,
+                                    const std::vector<AdditionsUpdateFlag_T> &aFlags, ComPtr<IProgress> &aProgress)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else /* VBOX_WITH_GUEST_CONTROL */
+
+    /* Validate flags. */
+    uint32_t fFlags = AdditionsUpdateFlag_None;
+    if (aFlags.size())
+        for (size_t i = 0; i < aFlags.size(); ++i)
+            fFlags |= aFlags[i];
+
+    if (fFlags && !(fFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly))
+        return setError(E_INVALIDARG, tr("Unknown flags (%#x)"), fFlags);
+
+    int rc = VINF_SUCCESS;
+
+    ProcessArguments aArgs;
+    aArgs.resize(0);
+
+    if (aArguments.size())
+    {
+        try
+        {
+            for (size_t i = 0; i < aArguments.size(); ++i)
+                aArgs.push_back(aArguments[i]);
+        }
+        catch(std::bad_alloc &)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
+    HRESULT hr = S_OK;
+
+    /*
+     * Create an anonymous session. This is required to run the Guest Additions
+     * update process with administrative rights.
+     */
+    GuestSessionStartupInfo startupInfo;
+    startupInfo.mName = "Updating Guest Additions";
+
+    GuestCredentials guestCreds;
+    RT_ZERO(guestCreds);
+
+    ComObjPtr<GuestSession> pSession;
+    if (RT_SUCCESS(rc))
+        rc = i_sessionCreate(startupInfo, guestCreds, pSession);
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_MAX_PROCS_REACHED:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Maximum number of concurrent guest sessions (%ld) reached"),
+                              VBOX_GUESTCTRL_MAX_SESSIONS);
+                break;
+
+            /** @todo Add more errors here. */
+
+           default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Could not create guest session: %Rrc"), rc);
+                break;
+        }
+    }
+    else
+    {
+        Assert(!pSession.isNull());
+        int guestRc;
+        rc = pSession->i_startSessionInternal(&guestRc);
+        if (RT_FAILURE(rc))
+        {
+            /** @todo Handle guestRc! */
+
+            hr = setError(VBOX_E_IPRT_ERROR, tr("Could not open guest session: %Rrc"), rc);
+        }
+        else
+        {
+            try
+            {
+                ComObjPtr<Progress> pProgress;
+                SessionTaskUpdateAdditions *pTask = new SessionTaskUpdateAdditions(pSession /* GuestSession */,
+                                                                                   aSource, aArgs, fFlags);
+                rc = pSession->i_startTaskAsync(tr("Updating Guest Additions"), pTask, pProgress);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Return progress to the caller. */
+                    hr = pProgress.queryInterfaceTo(aProgress.asOutParam());
+                }
+                else
+                    hr = setError(VBOX_E_IPRT_ERROR,
+                                  tr("Starting task for updating Guest Additions on the guest failed: %Rrc"), rc);
+            }
+            catch(std::bad_alloc &)
+            {
+                hr = E_OUTOFMEMORY;
+            }
+        }
+    }
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
