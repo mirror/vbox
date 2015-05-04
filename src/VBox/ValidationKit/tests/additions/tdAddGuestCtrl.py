@@ -339,6 +339,28 @@ class tdTestFileReadWrite(tdTestGuestCtrlBase):
         self.cbToReadWrite = cbToReadWrite;
         self.aBuf = aBuf;
 
+    def getOpenAction(self):
+        """ Converts string disposition to open action enum. """
+        if self.sDisposition == 'oe': return vboxcon.FileOpenAction_OpenExisting;
+        if self.sDisposition == 'oc': return vboxcon.FileOpenAction_OpenOrCreate;
+        if self.sDisposition == 'ce': return vboxcon.FileOpenAction_CreateNew;
+        if self.sDisposition == 'ca': return vboxcon.FileOpenAction_CreateOrReplace;
+        if self.sDisposition == 'ot': return vboxcon.FileOpenAction_OpenExistingTruncated;
+        if self.sDisposition == 'oa': return vboxcon.FileOpenAction_AppendOrCreate;
+        raise base.GenError(self.sDisposition);
+
+    def getAccessMode(self):
+        """ Converts open mode to access mode enum. """
+        if self.sOpenMode == 'r':  return vboxcon.FileOpenMode_ReadOnly;
+        if self.sOpenMode == 'w':  return vboxcon.FileOpenMode_WriteOnly;
+        if self.sOpenMode == 'w+': return vboxcon.FileOpenMode_ReadWrite;
+        if self.sOpenMode == 'r+': return vboxcon.FileOpenMode_ReadWrite;
+        raise base.GenError(self.sOpenMode);
+
+    def getSharingMode(self):
+        """ Converts the sharing mode. """
+        return vboxcon.FileSharingMode_All;
+
 class tdTestSession(tdTestGuestCtrlBase):
     """
     Test the guest session handling.
@@ -656,7 +678,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fRc = True; # Be optimistic.
         try:
             reporter.log2('Copying guest file "%s" to host "%s"' % (sSrc, sDst));
-            curProgress = oGuestSession.copyFrom(sSrc, sDst, aFlags);
+            if self.oTstDrv.fpApiVer >= 5.0:
+                curProgress = oGuestSession.fileCopyFromGuest(sSrc, sDst, aFlags);
+            else:
+                curProgress = oGuestSession.copyFrom(sSrc, sDst, aFlags);
             if curProgress is not None:
                 oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self, "gctrlCopyFrm");
                 try:
@@ -683,7 +708,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         fRc = True; # Be optimistic.
         try:
             reporter.log2('Copying host file "%s" to guest "%s"' % (sSrc, sDst));
-            curProgress = oGuestSession.copyTo(sSrc, sDst, aFlags);
+            if self.oTstDrv.fpApiVer >= 5.0:
+                curProgress = oGuestSession.fileCopyToGuest(sSrc, sDst, aFlags);
+            else:
+                curProgress = oGuestSession.copyTo(sSrc, sDst, aFlags);
             if curProgress is not None:
                 oProgress = vboxwrappers.ProgressWrapper(curProgress, self.oTstDrv.oVBoxMgr, self, "gctrlCopyTo");
                 try:
@@ -864,7 +892,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         try:
             oGuestSession.directoryCreate(oTest.sDirectory, \
                                           oTest.fMode, oTest.aFlags);
-            fDirExists = oGuestSession.directoryExists(oTest.sDirectory);
+            if self.oTstDrv.fpApiVer >= 5.0:
+                fDirExists = oGuestSession.directoryExists(oTest.sDirectory, False);
+            else:
+                fDirExists = oGuestSession.directoryExists(oTest.sDirectory);
             if      fDirExists is False \
                 and oRes.fRc is True:
                 # Directory does not exist but we want it to.
@@ -1424,7 +1455,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             reporter.log2('Opening stale files');
             for i in range(0, cStaleFiles):
                 try:
-                    oGuestSession.fileOpen(sFile, "r", "oe", 0);
+                    if self.oTstDrv.fpApiVer >= 5.0:
+                        oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly, vboxcon.FileOpenAction_OpenExisting, 0);
+                    else:
+                        oGuestSession.fileOpen(sFile, "r", "oe", 0);
                     # Note: Use a timeout in the call above for not letting the stale processes
                     #       hanging around forever.  This can happen if the installed Guest Additions
                     #       do not support terminating guest processes.
@@ -1447,7 +1481,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 aaFiles = [];
                 for i in range(0, cStaleFiles):
                     try:
-                        oCurFile = oGuestSession.fileOpen(sFile, "r", "oe", 0);
+                        if self.oTstDrv.fpApiVer >= 5.0:
+                            oCurFile = oGuestSession.fileOpen(sFile, vboxcon.FileAccessMode_ReadOnly,
+                                                              vboxcon.FileOpenAction_OpenExisting, 0);
+                        else:
+                            oCurFile = oGuestSession.fileOpen(sFile, "r", "oe", 0);
                         aaFiles.append(oCurFile);
                     except:
                         reporter.errorXcpt('Opening non-stale file #%ld failed:' % (i,));
@@ -2334,7 +2372,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
             curTest.closeSession();
             if sDirTemp  != "":
                 reporter.log2('Temporary directory is: %s' % (sDirTemp,));
-                fExists = curGuestSession.directoryExists(sDirTemp);
+                if self.oTstDrv.fpApiVer >= 5.0:
+                    fExists = curGuestSession.directoryExists(sDirTemp, False);
+                else:
+                    fExists = curGuestSession.directoryExists(sDirTemp);
                 if fExists is False:
                     reporter.error('Test #%d failed: Temporary directory "%s" does not exists' % (i, sDirTemp));
                     fRc = False;
@@ -2478,7 +2519,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                curGuestSession.fileRemove(curTest.sFile);
+                if self.oTstDrv.fpApiVer >= 5.0:
+                    curGuestSession.fsObjRemove(curTest.sFile);
+                else:
+                    curGuestSession.fileRemove(curTest.sFile);
             except:
                 if curRes.fRc is True:
                     reporter.errorXcpt('Removing file "%s" failed:' % (curTest.sFile,));
@@ -2550,7 +2594,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
             fileObjInfo = None;
             try:
-                fileObjInfo = curGuestSession.fileQueryInfo(curTest.sFile);
+                if self.oTstDrv.fpApiVer >= 5.0:
+                    fileObjInfo = curGuestSession.fsObjQueryInfo(curTest.sFile, True);
+                else:
+                    fileObjInfo = curGuestSession.fileQueryInfo(curTest.sFile);
             except:
                 if curRes.fRc is True:
                     reporter.errorXcpt('Querying file information for "%s" failed:' % (curTest.sFile,));
@@ -2673,8 +2720,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
             try:
                 if curTest.cbOffset > 0:
-                    curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                         curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
+                    if self.oTstDrv.fpApiVer >= 5.0:
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
+                                                             curTest.getSharingMode(), curTest.lCreationMode, curTest.cbOffset);
+                    else:
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                                                             curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
                     curOffset = long(curFile.offset);
                     resOffset = long(curTest.cbOffset);
                     if curOffset != resOffset:
@@ -2682,8 +2733,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                        % (i, curOffset, resOffset));
                         fRc = False;
                 else:
-                    curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                       curTest.lCreationMode);
+                    if self.oTstDrv.fpApiVer >= 5.0:
+                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
+                                                           curTest.lCreationMode);
+                    else:
+                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                                                           curTest.lCreationMode);
                 if  fRc \
                 and curTest.cbToReadWrite > 0:
                     ## @todo Split this up in 64K reads. Later.
@@ -2778,8 +2833,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 break;
             try:
                 if curTest.cbOffset > 0:
-                    curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                         curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
+                    if self.oTstDrv.fpApiVer >= 5.0:
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
+                                                             curTest.getSharingMode(), curTest.cbOffset);
+                    else:
+                        curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                                                             curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
                     curOffset = long(curFile.offset);
                     resOffset = long(curTest.cbOffset);
                     if curOffset != resOffset:
@@ -2787,8 +2846,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                        % (i, curOffset, resOffset));
                         fRc = False;
                 else:
-                    curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
-                                                       curTest.lCreationMode);
+                    if self.oTstDrv.fpApiVer >= 5.0:
+                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
+                                                           curTest.lCreationMode);
+                    else:
+                        curFile = curGuestSession.fileOpen(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
+                                                           curTest.lCreationMode);
                 if  fRc \
                 and curTest.cbToReadWrite > 0:
                     ## @todo Split this up in 64K writes. Later.
@@ -2803,7 +2866,10 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                         # Verify written content by seeking back to the initial offset and
                         # re-read & compare the written data.
                         try:
-                            curFile.seek(-(curTest.cbToReadWrite), vboxcon.FileSeekType_Current);
+                            if self.oTstDrv.fpApiVer >= 5.0:
+                                curFile.seek(-(curTest.cbToReadWrite), vboxcon.FileSeekOrigin_Current);
+                            else:
+                                curFile.seek(-(curTest.cbToReadWrite), vboxcon.FileSeekType_Current);
                         except:
                             reporter.logXcpt('Seeking back to initial write position failed:');
                             fRc = False;
