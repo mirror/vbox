@@ -10516,7 +10516,7 @@ and "VAR" for unsetting. -->
     <const name="AppendOrCreate"          value="99">
       <desc>Opens an existing file and places the file pointer at the end of
         the file, creates the file if it does not exist.  This action implies
-        write access. (Was "ca".)
+        write access. (Was "oa".)
         <note>
           <!-- @todo r=bird: See iprt/file.h, RTFILE_O_APPEND - not an action/disposition!
               Moving the file pointer to the end, is almost fine, but impliying 'write' access
