@@ -60,6 +60,7 @@ typedef struct NULLAUDIOSTREAMOUT
 {
     /** Note: Always must come first! */
     PDMAUDIOHSTSTRMOUT hw;
+    uint64_t u64TicksLast;
 } NULLAUDIOSTREAMOUT;
 
 typedef struct NULLAUDIOSTREAMIN
@@ -133,6 +134,8 @@ static DECLCALLBACK(int) drvHostNullAudioInitOut(PPDMIHOSTAUDIO pInterface,
     int rc = drvAudioStreamCfgToProps(pCfg, &pHstStrmOut->Props);
     if (RT_SUCCESS(rc))
     {
+        NULLAUDIOSTREAMOUT *pNullStrmOut = (NULLAUDIOSTREAMOUT *)pHstStrmOut;
+        pNullStrmOut->u64TicksLast = 0;
         if (pcSamples)
             *pcSamples = _1K;
     }
@@ -150,8 +153,27 @@ static DECLCALLBACK(bool) drvHostNullAudioIsEnabled(PPDMIHOSTAUDIO pInterface, P
 static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDIOHSTSTRMOUT pHstStrmOut,
                                                  uint32_t *pcSamplesPlayed)
 {
-    /* Always pretend consuming all samples available at this time. */
-    const uint32_t cSamplesPlayed = audioMixBufSize(&pHstStrmOut->MixBuf);
+    PDRVHOSTNULLAUDIO pDrv = RT_FROM_MEMBER(pInterface, DRVHOSTNULLAUDIO, IHostAudio);
+    NULLAUDIOSTREAMOUT *pNullStrmOut = (NULLAUDIOSTREAMOUT *)pHstStrmOut;
+
+    /* Consume as many samples as would be played at the current frequency since last call. */
+    uint32_t csLive = drvAudioHstOutSamplesLive(pHstStrmOut, NULL /* pcStreamsLive */);
+    uint64_t u64TicksNow = PDMDrvHlpTMGetVirtualTime(pDrv->pDrvIns);
+    uint64_t u64TicksElapsed = u64TicksNow  - pNullStrmOut->u64TicksLast;
+    uint64_t u64TicksFreq = PDMDrvHlpTMGetVirtualFreq(pDrv->pDrvIns);
+
+    /* Remember when samples were consumed. */
+    pNullStrmOut->u64TicksLast = u64TicksNow;
+
+    /* Minimize the rounding error by adding 0.5: samples = int((u64TicksElapsed * samplesFreq) / u64TicksFreq + 0.5).
+     * If rounding is not taken into account then the playback rate will be consistently lower that expected.
+     */
+    uint64_t cSamplesPlayed = (2 * u64TicksElapsed * pHstStrmOut->Props.uHz + u64TicksFreq) / u64TicksFreq / 2;
+
+    /* Don't play more than available. */
+    if (cSamplesPlayed > csLive)
+        cSamplesPlayed = csLive;
+
     audioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesPlayed);
 
     if (pcSamplesPlayed)
