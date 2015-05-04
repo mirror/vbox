@@ -4041,6 +4041,139 @@ AuthResult AUTHCALL AuthEntry(
           </itemizedlist></para>
         </listitem>
 
+        <listitem><para>IGuestSession, IGuestFile and IGuestProcess interfaces were changed as follows:
+          <itemizedlist>
+            <listitem>
+              <para>Replaced IGuestSession::directoryQueryInfo and IGuestSession::fileQueryInfo with a new
+                 <xref linkend="IGuestSession__fsObjQueryInfo" xreflabel="IGuestSession::fsObjQueryInfo"/> method
+                 that works on any type of file system object.</para>
+            </listitem>
+            <listitem>
+              <para>Replaced IGuestSession::fileRemove, IGuestSession::symlinkRemoveDirectory and
+                 IGuestSession::symlinkRemoveFile with a new
+                 <xref linkend="IGuestSession__fsObjRemove" xreflabel="IGuestSession::fsObjRemove"/> method that works
+                 on any type of file system object except directories. (fileRemove also worked on any type of object too,
+                 though that was not the intent of the method.)</para>
+            </listitem>
+            <listitem>
+              <para>Replaced IGuestSession::directoryRename and IGuestSession::directoryRename with a new
+                 <xref linkend="IGuestSession__fsObjRename" xreflabel="IGuestSession::fsObjRename"/> method that works
+                 on any type of file system object. (directoryRename and fileRename may already have worked for any kind
+                 of object, but that was never the intent of the methods.)</para>
+            </listitem>
+            <listitem>
+              <para>Replaced the unimplemented IGuestSession::directorySetACL and IGuestSession::fileSetACL with a new
+                 <xref linkend="IGuestSession__fsObjSetACL" xreflabel="IGuestSession::fsObjSetACL"/> method that works
+                 on all type of file system object. Also added a UNIX-style mode parameter as an alternative to the ACL.</para>
+            </listitem>
+            <listitem>
+              <para>Replaced IGuestSession::fileRemove, IGuestSession::symlinkRemoveDirectory and
+                 IGuestSession::symlinkRemoveFile with a new
+                 <xref linkend="IGuestSession__fsObjRemove" xreflabel="IGuestSession::fsObjRemove"/> method that works
+                 on any type of file system object except directories (fileRemove also worked on any type of object,
+                 though that was not the intent of the method.)</para>
+            </listitem>
+            <listitem>
+              <para>Renamed IGuestSession::copyTo to <xref linkend="IGuestSession__fileCopyToGuest"
+                 xreflabel="IGuestSession::fileCopyToGuest"/>.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed IGuestSession::copyFrom to <xref linkend="IGuestSession__fileCopyFromGuest"
+                 xreflabel="IGuestSession::fileCopyFromGuest"/>.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed the CopyFileFlag enum to <xref linkend="FileCopyFlag" xreflabel="FileCopyFlag"/>.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed the IGuestSession::environment attribute to <xref linkend="IGuestSession__environmentChanges"
+                xreflabel="IGuestSession::environmentChanges"/> to better reflect what it does.</para>
+            </listitem>
+            <listitem>
+              <para>Changed the <xref linkend="IProcess__environment" xreflabel="IGuestProcess::environment"/> to
+               a stub returning E_NOTIMPL since it wasn't doing what was advertised (returned changes, not the
+               actual environment).</para>
+            </listitem>
+            <listitem>
+              <para>Renamed IGuestSession::environmentSet to <xref linkend="IGuestSession__environmentScheduleSet"
+                xreflabel="IGuestSession::environmentScheduleSet"/> to better reflect what it does.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed IGuestSession::environmentUnset to <xref linkend="IGuestSession__environmentScheduleUnset"
+                xreflabel="IGuestSession::environmentScheduleUnset"/> to better reflect what it does.</para>
+            </listitem>
+            <listitem>
+              <para>Removed IGuestSession::environmentGet it was only getting changes while giving the impression it was
+                actual environment variables, and it did not represent scheduled unset operations.</para>
+            </listitem>
+            <listitem>
+              <para>Removed IGuestSession::environmentClear as it duplicates assigning an empty array to the
+                <xref linkend="IGuestSession__environmentChanges" xreflabel="IGuestSession::environmentChanges"/> (formerly
+                known as IGuestSession::environment).</para>
+            </listitem>
+            <listitem>
+              <para>Changed the <xref linkend="IGuestSession__processCreate" xreflabel="IGuestSession::processCreate"/> and
+              <xref linkend="IGuestSession__processCreateEx" xreflabel="IGuestSession::processCreateEx"/> methods to accept
+              arguments starting with argument zero (argv[0]) instead of argument one (argv[1]). (Not yet implemented on the
+              guest additions side, so argv[0] will probably be ignored for a short while.)</para>
+            </listitem>
+
+            <listitem>
+              <para>Added a followSymlink parameter to the following methods:<itemizedlist>
+                <listitem><para><xref linkend="IGuestSession__directoryExists"
+                  xreflabel="IGuestSession::directoryExists"/></para></listitem>
+                <listitem><para><xref linkend="IGuestSession__fileExists"
+                  xreflabel="IGuestSession::fileExists"/></para></listitem>
+                <listitem><para><xref linkend="IGuestSession__fileQuerySize"
+                  xreflabel="IGuestSession::fileQuerySize"/></para></listitem>
+              </itemizedlist></para>
+            </listitem>
+            <listitem>
+              <para>The parameters to the <xref linkend="IGuestSession__fileOpen" xreflabel="IGuestSession::fileOpen"/>
+                and <xref linkend="IGuestSession__fileOpenEx" xreflabel="IGuestSession::fileOpenEx"/> methods were
+                altered:<itemizedlist>
+                <listitem><para>The openMode string parameter was replaced by the enum
+                  <xref linkend="FileAccessMode" xreflabel="FileAccessMode"/> and renamed to accessMode.</para></listitem>
+                <listitem><para>The disposition string parameter was replaced by the enum
+                  <xref linkend="FileOpenAction" xreflabel="FileOpenAction"/> and renamed to openAction.</para></listitem>
+                <listitem><para>The unimplemented sharingMode string parameter was replaced by the enum
+                  <xref linkend="FileSharingMode" xreflabel="FileSharingMode"/> (fileOpenEx only).</para></listitem>
+              </itemizedlist></para>
+            </listitem>
+
+            <listitem>
+              <para><xref linkend="IFile__seek" xreflabel="IGuestFile::seek"/> now returns the new offset.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed the FileSeekType enum used by <xref linkend="IFile__seek" xreflabel="IGuestFile::seek"/>
+                to <xref linkend="FileSeekOrigin" xreflabel="FileSeekOrigin"/> and added the missing End value.</para>
+            </listitem>
+            <listitem>
+              <para>Extended the unimplemented <xref linkend="IFile__setACL" xreflabel="IGuestFile::setACL"/>
+                method with a UNIX-style mode parameter as an alternative to the ACL.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed the IFile::openMode attribute to <xref linkend="IFile__accessMode" xreflabel="IFile::accessMode"/>
+                and change the type from string to <xref linkend="FileAccessMode" xreflabel="FileAccessMode"/> to reflect
+                the changes to the fileOpen methods.</para>
+            </listitem>
+            <listitem>
+              <para>Renamed the IGuestFile::disposition attribute to <xref linkend="IFile__openAction"
+                xreflabel="IFile::openAction"/> and change the type from string to <xref linkend="FileOpenAction"
+                xreflabel="FileOpenAction"/> to reflect the changes to the fileOpen methods.</para>
+            </listitem>
+
+            <!-- Non-incompatible things worth mentioning (stubbed methods/attrs aren't worth it). -->
+            <listitem>
+              <para>Added <xref linkend="IGuestSession__pathStyle" xreflabel="IGuestSession::pathStyle"/> attribute.</para>
+            </listitem>
+            <listitem>
+              <para>Added <xref linkend="IGuestSession__fsObjExists" xreflabel="IGuestSession::fsObjExists"/> attribute.</para>
+            </listitem>
+
+          </itemizedlist>
+          </para>
+        </listitem>
+
         <listitem><para>
           IConsole::GetDeviceActivity() returns information about multiple devices.
         </para></listitem>
