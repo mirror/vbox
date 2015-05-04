@@ -520,9 +520,10 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
 	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
 	$(QUIET)$(SED) -n \
-        -e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
-        $(basename $@).log
+		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+		$(basename $@).log
 
 ##@todo restore this when above has been converted to INSTALLS target.	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
@@ -564,9 +565,10 @@ $(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
 	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
+	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
 	$(QUIET)$(SED) -n \
-        -e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
-        $(basename $<).log
+		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+		$(basename $<).log
 	$(QUIET)$(CP) $(<D)/SDKRef.pdf $@
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
