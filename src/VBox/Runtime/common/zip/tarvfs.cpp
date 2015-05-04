@@ -77,7 +77,8 @@ typedef struct RTZIPTARREADER
     uint32_t                cZeroHdrs;
     /** The state machine state. */
     RTZIPTARREADERSTATE     enmState;
-    /** The type of the previous TAR header. */
+    /** The type of the previous TAR header.
+     * @remarks Same a enmType for the first header in the TAR stream. */
     RTZIPTARTYPE            enmPrevType;
     /** The type of the current TAR header. */
     RTZIPTARTYPE            enmType;
@@ -458,7 +459,11 @@ static int rtZipTarReaderParseNextHeader(PRTZIPTARREADER pThis, PCRTZIPTARHDR pH
         return rc;
     }
     if (fFirst)
+    {
         pThis->enmType = enmType;
+        if (pThis->enmPrevType == RTZIPTARTYPE_INVALID)
+            pThis->enmPrevType = enmType;
+    }
 
     /*
      * Handle the header by type.
