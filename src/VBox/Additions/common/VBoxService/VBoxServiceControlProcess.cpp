@@ -1492,7 +1492,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
     char **papszArgs;
     uint32_t uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
     rc = RTGetOptArgvFromString(&papszArgs, (int*)&uNumArgs,
-                                (pProcess->StartupInfo.uNumArgs > 0) ? pProcess->StartupInfo.szArgs : "", NULL);
+                                (pProcess->StartupInfo.uNumArgs > 0) ? pProcess->StartupInfo.szArgs : "",
+                                RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
     /* Did we get the same result? */
     Assert(pProcess->StartupInfo.uNumArgs == uNumArgs);
 

@@ -220,7 +220,8 @@ static int rtGetOptSkipDelimiters(const char **ppszSrc, const char *pszSeparator
 }
 
 
-RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *pszCmdLine, const char *pszSeparators)
+RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *pszCmdLine,
+                                   uint32_t fFlags, const char *pszSeparators)
 {
     /*
      * Some input validation.
@@ -228,6 +229,8 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
     AssertPtr(pszCmdLine);
     AssertPtr(pcArgs);
     AssertPtr(ppapszArgv);
+    AssertReturn(   fFlags == RTGETOPTARGV_CNV_QUOTE_BOURNE_SH
+                 || fFlags == RTGETOPTARGV_CNV_QUOTE_MS_CRT, VERR_INVALID_FLAGS);
     if (!pszSeparators)
         pszSeparators = " \t\n\r";
     else
@@ -271,46 +274,103 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
         /*
          * Parse and copy the string over.
          */
-        RTUNICP CpQuote = 0;
         RTUNICP Cp;
-        for (;;)
+        if ((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_BOURNE_SH)
         {
-            rc = RTStrGetCpEx(&pszSrc, &Cp);
-            if (RT_FAILURE(rc) || !Cp)
-                break;
-            if (!CpQuote)
+            /*
+             * Bourne shell style.
+             */
+            RTUNICP CpQuote = 0;
+            for (;;)
             {
-                if (Cp == '"' || Cp == '\'')
-                    CpQuote = Cp;
-                else if (rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
+                rc = RTStrGetCpEx(&pszSrc, &Cp);
+                if (RT_FAILURE(rc) || !Cp)
+                    break;
+                if (!CpQuote)
+                {
+                    if (Cp == '"' || Cp == '\'')
+                        CpQuote = Cp;
+                    else if (rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
+                        break;
+                    else if (Cp != '\\')
+                        pszDst = RTStrPutCp(pszDst, Cp);
+                    else
+                    {
+                        /* escaped char */
+                        rc = RTStrGetCpEx(&pszSrc, &Cp);
+                        if (RT_FAILURE(rc) || !Cp)
+                            break;
+                        pszDst = RTStrPutCp(pszDst, Cp);
+                    }
+                }
+                else if (CpQuote != Cp)
+                {
+                    if (Cp != '\\' || CpQuote == '\'')
+                        pszDst = RTStrPutCp(pszDst, Cp);
+                    else
+                    {
+                        /* escaped char */
+                        rc = RTStrGetCpEx(&pszSrc, &Cp);
+                        if (RT_FAILURE(rc) || !Cp)
+                            break;
+                        pszDst = RTStrPutCp(pszDst, Cp);
+                    }
+                }
+                else
+                    CpQuote = 0;
+            }
+        }
+        else
+        {
+            /*
+             * Microsoft CRT style.
+             */
+            Assert((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+            bool fInQuote;
+            for (;;)
+            {
+                rc = RTStrGetCpEx(&pszSrc, &Cp);
+                if (RT_FAILURE(rc) || !Cp)
+                    break;
+                if (Cp == '"')
+                    fInQuote = !fInQuote;
+                else if (!fInQuote && rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
                     break;
                 else if (Cp != '\\')
                     pszDst = RTStrPutCp(pszDst, Cp);
                 else
                 {
-                    /* escaped char */
-                    rc = RTStrGetCpEx(&pszSrc, &Cp);
-                    if (RT_FAILURE(rc) || !Cp)
-                        break;
-                    pszDst = RTStrPutCp(pszDst, Cp);
+                    /* A backslash sequence is only relevant if followed by
+                       a double quote, then it will work like an escape char. */
+                    size_t cQuotes = 1;
+                    while (*pszSrc == '\\')
+                    {
+                        cQuotes++;
+                        pszSrc++;
+                    }
+                    if (*pszSrc != '"')
+                        /* Not an escape sequence.  */
+                        while (cQuotes-- > 0)
+                            pszDst = RTStrPutCp(pszDst, '\\');
+                    else
+                    {
+                        /* Escape sequence.  Output half of the slashes.  If odd
+                           number, output the escaped double quote . */
+                        while (cQuotes >= 2)
+                        {
+                            pszDst = RTStrPutCp(pszDst, '\\');
+                            cQuotes -= 2;
+                        }
+                        if (!cQuotes)
+                            fInQuote = !fInQuote;
+                        else
+                            pszDst = RTStrPutCp(pszDst, '"');
+                        pszSrc++;
+                    }
                 }
             }
-            else if (CpQuote != Cp)
-            {
-                if (Cp != '\\' || CpQuote == '\'')
-                    pszDst = RTStrPutCp(pszDst, Cp);
-                else
-                {
-                    /* escaped char */
-                    rc = RTStrGetCpEx(&pszSrc, &Cp);
-                    if (RT_FAILURE(rc) || !Cp)
-                        break;
-                    pszDst = RTStrPutCp(pszDst, Cp);
-                }
-            }
-            else
-                CpQuote = 0;
         }
+
         *pszDst++ = '\0';
         if (RT_FAILURE(rc) || !Cp)
             break;

@@ -1937,7 +1937,7 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPST
 
     int    cArgs;
     char **papszArgs;
-    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, NULL);
+    rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, RTGETOPTARGV_CNV_QUOTE_MS_CRT, NULL);
     if (RT_SUCCESS(rc))
     {
 

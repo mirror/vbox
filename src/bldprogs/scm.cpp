@@ -481,7 +481,7 @@ static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLin
 {
     int    cArgs;
     char **papszArgs;
-    int rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszLine, NULL);
+    int rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszLine, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
     if (RT_SUCCESS(rc))
     {
         RTGETOPTUNION   ValueUnion;

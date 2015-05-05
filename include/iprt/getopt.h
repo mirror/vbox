@@ -401,11 +401,14 @@ RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
  *                          freed by calling RTGetOptArgvFree.
  * @param   pcArgs          Where to return the argument count.
  * @param   pszCmdLine      The string to parse.
+ * @param   fFlags          A combination of the RTGETOPTARGV_CNV_XXX flags,
+ *                          except RTGETOPTARGV_CNV_UNQUOTED is not supported.
  * @param   pszSeparators   String containing the argument separators. If NULL,
  *                          then space, tab, line feed (\\n) and return (\\r)
  *                          are used.
  */
-RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *pszCmdLine, const char *pszSeparators);
+RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *pszCmdLine, uint32_t fFlags,
+                                   const char *pszSeparators);
 
 /**
  * Frees and argument vector returned by RTGetOptStringToArgv.
