@@ -2759,8 +2759,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     pelmCPUChild->getAttributeValue("count", hw.cCPUs);
             }
 
-            pelmCPUChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
-            pelmCPUChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
+            pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
+            pelmHwChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
 
             const xml::ElementNode *pelmCPUChild;
             if (hw.fCpuHotPlug)
@@ -2806,7 +2806,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", fSyntheticCpu);
                 hw.uCpuIdPortabilityLevel = fSyntheticCpu ? 1 : 0;
             }
-            pelmCPUChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
+            pelmHwChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
