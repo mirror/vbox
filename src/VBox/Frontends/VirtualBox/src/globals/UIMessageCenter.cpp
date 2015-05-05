@@ -2065,8 +2065,8 @@ void UIMessageCenter::cannotToggleNetworkAdapterCable(const CNetworkAdapter &ada
 {
     error(0, MessageType_Error,
           fConnect ?
-              tr("Failed to connect network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disconnect network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName),
+              tr("Failed to connect the network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disconnect the network adapter cable of the virtual machine <b>%1</b>.").arg(strMachineName),
           formatErrorInfo(adapter));
 }
 
