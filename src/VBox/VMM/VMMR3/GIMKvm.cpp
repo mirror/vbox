@@ -515,7 +515,9 @@ static DECLCALLBACK(VBOXSTRICTRC) gimR3KvmEnableWallClockCallback(PVM pVM, PVMCP
  * guest-memory, we do an EMT rendezvous here to be on the safe side. The
  * alternative is to use an MMIO2 region and use the WallClock.u32Version field
  * for transactional update. However, this MSR is rarely written to (typically
- * once during bootup) it's currently not a performance issue.
+ * once during bootup) it's currently not a performance issue especially since
+ * we're already in ring-3. If we really wanted better performance in this code
+ * path, we should be doing it in ring-0.
  *
  * @returns VBox status code.
  * @param   pVM                Pointer to the VM.
