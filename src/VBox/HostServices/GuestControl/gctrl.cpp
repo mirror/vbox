@@ -58,7 +58,7 @@ int gctrlPrepareExecArgv(char *pszArgs, void **ppvList, uint32_t *pcbList, uint3
 {
     char **ppaArg;
     int iArgs;
-    int rc = RTGetOptArgvFromString(&ppaArg, &iArgs, pszArgs, NULL);
+    int rc = RTGetOptArgvFromString(&ppaArg, &iArgs, pszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH, NULL);
     if (RT_SUCCESS(rc))
     {
         char *pszTemp = NULL;
