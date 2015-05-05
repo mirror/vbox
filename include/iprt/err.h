@@ -2392,7 +2392,7 @@ RT_C_DECLS_END
 /** Internal SPC error: Bad object moniker choice value. */
 #define VERR_CR_SPC_BAD_MONIKER_CHOICE                          (-23411)
 /** Internal SPC error: Bad object moniker data pointer. */
-#define VERR_CR_SPC_MONIKER_BAD_DATA                            (-23412)
+#define VERR_CR_SPC_MONIKER_BAD_DATA                             (-23412)
 /** Multiple PE image page hash tables. */
 #define VERR_CR_SPC_PEIMAGE_MULTIPLE_HASH_TABS                  (-23413)
 /** Unknown SPC PE image attribute. */
