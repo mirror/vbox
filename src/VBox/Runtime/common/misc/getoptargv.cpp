@@ -326,7 +326,7 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
              * Microsoft CRT style.
              */
             Assert((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_MS_CRT);
-            bool fInQuote;
+            bool fInQuote = false;
             for (;;)
             {
                 rc = RTStrGetCpEx(&pszSrc, &Cp);
