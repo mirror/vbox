@@ -836,7 +836,6 @@ vbe_biosfn_return_protected_mode_interface:
   mov es, di
   mov di, offset vesa_pm_start
   mov cx, vesa_pm_end - vesa_pm_start
-  sub cx, di
   mov ax, 004Fh
   ret
 _fail:
