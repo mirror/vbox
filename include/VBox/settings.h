@@ -920,6 +920,7 @@ struct Hardware
     CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
     bool                fHPETEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
     uint32_t            ulCpuExecutionCap;      // requires settings version 1.11 (VirtualBox 3.3)
+    uint32_t            uCpuIdPortabilityLevel; // requires settings version 1.15 (VirtualBox 5.0)
 
     CpuIdLeafsList      llCpuIdLeafs;
 
