@@ -2759,8 +2759,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     pelmCPUChild->getAttributeValue("count", hw.cCPUs);
             }
 
-            pelmHwChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
-            pelmHwChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
+            pelmCPUChild->getAttributeValue("hotplug", hw.fCpuHotPlug);
+            pelmCPUChild->getAttributeValue("executionCap", hw.ulCpuExecutionCap);
 
             const xml::ElementNode *pelmCPUChild;
             if (hw.fCpuHotPlug)
