@@ -192,9 +192,10 @@ Machine::HWData::HWData()
     mPAEEnabled = false;
 #endif
     mLongMode =  HC_ARCH_BITS == 64 ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
-    mSyntheticCpu = false;
     mTripleFaultReset = false;
     mHPETEnabled = false;
+    mCpuExecutionCap = 100; /* Maximum CPU execution cap by default. */
+    mCpuIdPortabilityLevel = 0;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder[0] = DeviceType_Floppy;
@@ -219,9 +220,6 @@ Machine::HWData::HWData()
 
     mIOCacheEnabled = true;
     mIOCacheSize    = 5; /* 5MB */
-
-    /* Maximum CPU execution cap by default. */
-    mCpuExecutionCap = 100;
 }
 
 Machine::HWData::~HWData()
@@ -1584,6 +1582,29 @@ HRESULT Machine::setCPUHotPlugEnabled(BOOL aCPUHotPlugEnabled)
     return rc;
 }
 
+HRESULT Machine::getCPUIDPortabilityLevel(ULONG *aCPUIDPortabilityLevel)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aCPUIDPortabilityLevel = mHWData->mCpuIdPortabilityLevel;
+
+    return S_OK;
+}
+
+HRESULT Machine::setCPUIDPortabilityLevel(ULONG aCPUIDPortabilityLevel)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT hrc = i_checkStateDependency(MutableStateDep);
+    if (SUCCEEDED(hrc))
+    {
+        i_setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mCpuIdPortabilityLevel = aCPUIDPortabilityLevel;
+    }
+    return hrc;
+}
+
 HRESULT Machine::getEmulatedUSBCardReaderEnabled(BOOL *aEmulatedUSBCardReaderEnabled)
 {
 #ifdef VBOX_WITH_USB_CARDREADER
@@ -2140,10 +2161,6 @@ HRESULT Machine::getCPUProperty(CPUPropertyType_T aProperty, BOOL *aValue)
             *aValue = mHWData->mPAEEnabled;
             break;
 
-        case CPUPropertyType_Synthetic:
-            *aValue = mHWData->mSyntheticCpu;
-            break;
-
         case CPUPropertyType_LongMode:
             if (mHWData->mLongMode == settings::Hardware::LongMode_Enabled)
                 *aValue = TRUE;
@@ -2200,12 +2217,6 @@ HRESULT Machine::setCPUProperty(CPUPropertyType_T aProperty, BOOL aValue)
             i_setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mPAEEnabled = !!aValue;
-            break;
-
-        case CPUPropertyType_Synthetic:
-            i_setModified(IsModified_MachineData);
-            mHWData.backup();
-            mHWData->mSyntheticCpu = !!aValue;
             break;
 
         case CPUPropertyType_LongMode:
@@ -8798,12 +8809,12 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
         mHWData->mHWVirtExUXEnabled           = data.fUnrestrictedExecution;
         mHWData->mHWVirtExForceEnabled        = data.fHardwareVirtForce;
         mHWData->mPAEEnabled                  = data.fPAE;
-        mHWData->mSyntheticCpu                = data.fSyntheticCpu;
         mHWData->mLongMode                    = data.enmLongMode;
         mHWData->mTripleFaultReset            = data.fTripleFaultReset;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
         mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
+        mHWData->mCpuIdPortabilityLevel       = data.uCpuIdPortabilityLevel;
 
         // cpu
         if (mHWData->mCPUHotPlugEnabled)
@@ -10124,25 +10135,11 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         data.fHardwareVirtForce     = !!mHWData->mHWVirtExForceEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.enmLongMode            = mHWData->mLongMode;
-        data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
         data.fTripleFaultReset      = !!mHWData->mTripleFaultReset;
-
-        /* Standard and Extended CPUID leafs. */
-        data.llCpuIdLeafs.clear();
-        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); ++idx)
-        {
-            if (mHWData->mCpuIdStdLeafs[idx].ulId != UINT32_MAX)
-                data.llCpuIdLeafs.push_back(mHWData->mCpuIdStdLeafs[idx]);
-        }
-        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); ++idx)
-        {
-            if (mHWData->mCpuIdExtLeafs[idx].ulId != UINT32_MAX)
-                data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
-        }
-
-        data.cCPUs             = mHWData->mCPUCount;
-        data.fCpuHotPlug       = !!mHWData->mCPUHotPlugEnabled;
-        data.ulCpuExecutionCap = mHWData->mCpuExecutionCap;
+        data.cCPUs                  = mHWData->mCPUCount;
+        data.fCpuHotPlug            = !!mHWData->mCPUHotPlugEnabled;
+        data.ulCpuExecutionCap      = mHWData->mCpuExecutionCap;
+        data.uCpuIdPortabilityLevel = mHWData->mCpuIdPortabilityLevel;
 
         data.llCpus.clear();
         if (data.fCpuHotPlug)
@@ -10157,6 +10154,15 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
                 }
             }
         }
+
+        /* Standard and Extended CPUID leafs. */
+        data.llCpuIdLeafs.clear();
+        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); ++idx)
+            if (mHWData->mCpuIdStdLeafs[idx].ulId != UINT32_MAX)
+                data.llCpuIdLeafs.push_back(mHWData->mCpuIdStdLeafs[idx]);
+        for (unsigned idx = 0; idx < RT_ELEMENTS(mHWData->mCpuIdExtLeafs); ++idx)
+            if (mHWData->mCpuIdExtLeafs[idx].ulId != UINT32_MAX)
+                data.llCpuIdLeafs.push_back(mHWData->mCpuIdExtLeafs[idx]);
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;

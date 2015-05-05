@@ -1962,7 +1962,6 @@ Hardware::Hardware()
           fVPID(true),
           fUnrestrictedExecution(true),
           fHardwareVirtForce(false),
-          fSyntheticCpu(false),
           fTripleFaultReset(false),
           fPAE(false),
           enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
@@ -1970,6 +1969,7 @@ Hardware::Hardware()
           fCpuHotPlug(false),
           fHPETEnabled(false),
           ulCpuExecutionCap(100),
+          uCpuIdPortabilityLevel(0),
           ulMemorySizeMB((uint32_t)-1),
           graphicsControllerType(GraphicsControllerType_VBoxVGA),
           ulVRAMSizeMB(8),
@@ -2036,13 +2036,13 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fVPID                     == h.fVPID)
                   && (fUnrestrictedExecution    == h.fUnrestrictedExecution)
                   && (fHardwareVirtForce        == h.fHardwareVirtForce)
-                  && (fSyntheticCpu             == h.fSyntheticCpu)
                   && (fPAE                      == h.fPAE)
                   && (enmLongMode               == h.enmLongMode)
                   && (fTripleFaultReset         == h.fTripleFaultReset)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
                   && (ulCpuExecutionCap         == h.ulCpuExecutionCap)
+                  && (uCpuIdPortabilityLevel    == h.uCpuIdPortabilityLevel)
                   && (fHPETEnabled              == h.fHPETEnabled)
                   && (llCpus                    == h.llCpus)
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
@@ -2801,7 +2801,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 hw.enmLongMode = Hardware::LongMode_Legacy;
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
+            {
+                bool fSyntheticCpu = false;
+                pelmCPUChild->getAttributeValue("enabled", fSyntheticCpu);
+                hw.uCpuIdPortabilityLevel = fSyntheticCpu ? 1 : 0;
+            }
+            pelmCPUChild->getAttributeValue("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
@@ -4094,13 +4099,13 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
     if (m->sv >= SettingsVersion_v1_14 && hw.enmLongMode != Hardware::LongMode_Legacy)
         pelmCPU->createChild("LongMode")->setAttribute("enabled", hw.enmLongMode == Hardware::LongMode_Enabled);
 
-    if (hw.fSyntheticCpu)
-        pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     if (hw.fTripleFaultReset)
         pelmCPU->createChild("TripleFaultReset")->setAttribute("enabled", hw.fTripleFaultReset);
     pelmCPU->setAttribute("count", hw.cCPUs);
     if (hw.ulCpuExecutionCap != 100)
         pelmCPU->setAttribute("executionCap", hw.ulCpuExecutionCap);
+    if (hw.uCpuIdPortabilityLevel != 0)
+        pelmCPU->setAttribute("CpuIdPortabilityLevel", hw.uCpuIdPortabilityLevel);
 
     /* Always save this setting as we have changed the default in 4.0 (on for large memory 64-bit systems). */
     pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
@@ -5500,75 +5505,77 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         // setting, USB storage controller, xHCI and serial port TCP backend.
 
         /*
-         * Check whether a paravirtualization provider other than "Legacy" is used, if so bump the version.
+         * Check simple configuration bits first, loopy stuff afterwards.
          */
-        if (hardwareMachine.paravirtProvider != ParavirtProvider_Legacy)
-            m->sv = SettingsVersion_v1_15;
-        else
+        if (   hardwareMachine.paravirtProvider != ParavirtProvider_Legacy
+            || hardwareMachine.uCpuIdPortabilityLevel != 0)
         {
-            /*
-             * Check whether the hotpluggable flag of all storage devices differs
-             * from the default for old settings.
-             * AHCI ports are hotpluggable by default every other device is not.
-             * Also check if there are USB storage controllers.
-             */
-            for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
-                 it != storageMachine.llStorageControllers.end();
-                 ++it)
+            m->sv = SettingsVersion_v1_15;
+            return;
+        }
+
+        /*
+         * Check whether the hotpluggable flag of all storage devices differs
+         * from the default for old settings.
+         * AHCI ports are hotpluggable by default every other device is not.
+         * Also check if there are USB storage controllers.
+         */
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end();
+             ++it)
+        {
+            const StorageController &sctl = *it;
+
+            if (sctl.controllerType == StorageControllerType_USB)
             {
-                const StorageController &sctl = *it;
-
-                if (sctl.controllerType == StorageControllerType_USB)
-                {
-                    m->sv = SettingsVersion_v1_15;
-                    return;
-                }
-
-                for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
-                     it2 != sctl.llAttachedDevices.end();
-                     ++it2)
-                {
-                    const AttachedDevice &att = *it2;
-
-                    if (   (   att.fHotPluggable
-                            && sctl.controllerType != StorageControllerType_IntelAhci)
-                        || (   !att.fHotPluggable
-                            && sctl.controllerType == StorageControllerType_IntelAhci))
-                    {
-                        m->sv = SettingsVersion_v1_15;
-                        return;
-                    }
-                }
+                m->sv = SettingsVersion_v1_15;
+                return;
             }
 
-            /*
-             * Check if there is an xHCI (USB3) USB controller.
-             */
-            for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
-                 it != hardwareMachine.usbSettings.llUSBControllers.end();
-                 ++it)
+            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                 it2 != sctl.llAttachedDevices.end();
+                 ++it2)
             {
-                const USBController &ctrl = *it;
-                if (ctrl.enmType == USBControllerType_XHCI)
+                const AttachedDevice &att = *it2;
+
+                if (   (   att.fHotPluggable
+                        && sctl.controllerType != StorageControllerType_IntelAhci)
+                    || (   !att.fHotPluggable
+                        && sctl.controllerType == StorageControllerType_IntelAhci))
                 {
                     m->sv = SettingsVersion_v1_15;
                     return;
                 }
             }
+        }
 
-            /*
-             * Check if any serial port uses the TCP backend.
-             */
-            for (SerialPortsList::const_iterator it = hardwareMachine.llSerialPorts.begin();
-                 it != hardwareMachine.llSerialPorts.end();
-                 ++it)
+        /*
+         * Check if there is an xHCI (USB3) USB controller.
+         */
+        for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
+             it != hardwareMachine.usbSettings.llUSBControllers.end();
+             ++it)
+        {
+            const USBController &ctrl = *it;
+            if (ctrl.enmType == USBControllerType_XHCI)
             {
-                const SerialPort &port = *it;
-                if (port.portMode == PortMode_TCP)
-                {
-                    m->sv = SettingsVersion_v1_15;
-                    return;
-                }
+                m->sv = SettingsVersion_v1_15;
+                return;
+            }
+        }
+
+        /*
+         * Check if any serial port uses the TCP backend.
+         */
+        for (SerialPortsList::const_iterator it = hardwareMachine.llSerialPorts.begin();
+             it != hardwareMachine.llSerialPorts.end();
+             ++it)
+        {
+            const SerialPort &port = *it;
+            if (port.portMode == PortMode_TCP)
+            {
+                m->sv = SettingsVersion_v1_15;
+                return;
             }
         }
     }

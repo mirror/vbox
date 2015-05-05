@@ -944,7 +944,7 @@
 
   <enum
     name="CPUPropertyType"
-    uuid="52bc41f4-a279-45da-88ab-3a1d86fb73eb"
+    uuid="ed4094c1-d00e-483a-93e9-7163549ebd6e"
     >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
@@ -960,19 +960,13 @@
         is not available, it will not be reported.
       </desc>
     </const>
-    <const name="Synthetic"             value="2">
-      <desc>
-        This setting determines whether VirtualBox will expose a synthetic CPU to the guest to allow
-        teleporting between host systems that differ significantly.
-      </desc>
-    </const>
-    <const name="LongMode"             value="3">
+    <const name="LongMode"              value="2">
       <desc>
         This setting determines whether VirtualBox will advertise long mode
         (i.e. 64-bit guest support) and let the guest enter it.
       </desc>
     </const>
-    <const name="TripleFaultReset"     value="4">
+    <const name="TripleFaultReset"      value="3">
       <desc>
         This setting determines whether a triple fault within a guest will trigger an internal
         error condition and stop the VM (default) or reset the virtual CPU and continue execution.
@@ -4175,7 +4169,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="bfe5287a-5fbc-4ceb-9f0e-7fb317e78681"
+    uuid="701464d0-7284-42e9-b7b3-894cf31536b7"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -4390,6 +4384,18 @@
         is percentage of host CPU cycles per second. The valid range
         is 1 - 100. 100 (the default) implies no limit.
       </desc>
+    </attribute>
+
+    <attribute name="CPUIDPortabilityLevel" type="unsigned long">
+      <desc>Virtual CPUID portability level, the higher number the fewer newer
+        or vendor specific CPU feature is reported to the guest (via the CPUID
+        instruction).  The default level of zero (0) means that all virtualized
+        feautres supported by the host is pass thru to the guest.  While the
+        three (3) is currently the level supressing the most features.
+
+        Exactly which of the CPUID features are left out by the VMM at which
+        level is subject to change with each major version.
+        </desc>
     </attribute>
 
     <attribute name="memorySize" type="unsigned long">

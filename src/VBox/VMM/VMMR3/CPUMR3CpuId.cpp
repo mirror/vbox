@@ -2102,7 +2102,6 @@ typedef uint8_t CPUMISAEXTCFG;
  */
 typedef struct CPUMCPUIDCONFIG
 {
-    bool            fSyntheticCpu;
     bool            fNt4LeafLimit;
     bool            fInvariantTsc;
 
@@ -3510,21 +3509,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 {
     int rc;
 
-    /** @cfgm{/CPUM/SyntheticCpu, boolean, false}
-     * Enables the Synthetic CPU.  The Vendor ID and Processor Name are
-     * completely overridden by VirtualBox custom strings.  Some
-     * CPUID information is withheld, like the cache info.
-     *
-     * This is obsoleted by PortableCpuIdLevel. */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SyntheticCpu", &pConfig->fSyntheticCpu, false);
-    AssertRCReturn(rc, rc);
-
     /** @cfgm{/CPUM/PortableCpuIdLevel, 8-bit, 0, 3, 0}
      * When non-zero CPUID features that could cause portability issues will be
      * stripped.  The higher the value the more features gets stripped.  Higher
      * values should only be used when older CPUs are involved since it may
      * harm performance and maybe also cause problems with specific guests. */
-    rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pVM->cpum.s.u8PortableCpuIdLevel, pConfig->fSyntheticCpu ? 1 : 0);
+    rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pVM->cpum.s.u8PortableCpuIdLevel, 0);
     AssertLogRelRCReturn(rc, rc);
 
     /** @cfgm{/CPUM/GuestCpuName, string}
