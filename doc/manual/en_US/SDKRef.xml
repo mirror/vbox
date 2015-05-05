@@ -4137,6 +4137,9 @@ AuthResult AUTHCALL AuthEntry(
                   <xref linkend="FileOpenAction" xreflabel="FileOpenAction"/> and renamed to openAction.</para></listitem>
                 <listitem><para>The unimplemented sharingMode string parameter was replaced by the enum
                   <xref linkend="FileSharingMode" xreflabel="FileSharingMode"/> (fileOpenEx only).</para></listitem>
+                <listitem><para>Added a flags parameter taking a list of <xref linkend="FileOpenExFlags"
+                  xreflabel="FileOpenExFlags"/> values (fileOpenEx only).</para></listitem>
+                <listitem><para>Removed the offset parameter (fileOpenEx only).</para></listitem>
               </itemizedlist></para>
             </listitem>
 
@@ -4145,7 +4148,8 @@ AuthResult AUTHCALL AuthEntry(
             </listitem>
             <listitem>
               <para>Renamed the FileSeekType enum used by <xref linkend="IFile__seek" xreflabel="IGuestFile::seek"/>
-                to <xref linkend="FileSeekOrigin" xreflabel="FileSeekOrigin"/> and added the missing End value.</para>
+                to <xref linkend="FileSeekOrigin" xreflabel="FileSeekOrigin"/> and added the missing End value
+                and renaming the Set to Begin.</para>
             </listitem>
             <listitem>
               <para>Extended the unimplemented <xref linkend="IFile__setACL" xreflabel="IGuestFile::setACL"/>

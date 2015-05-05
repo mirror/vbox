@@ -352,7 +352,7 @@ private:
                        FileOpenAction_T aOpenAction,
                        FileSharingMode_T aSharingMode,
                        ULONG aCreationMode,
-                       LONG64 aOffset,
+                       const std::vector<FileOpenExFlags_T> &aFlags,
                        ComPtr<IGuestFile> &aFile);
     HRESULT fileQuerySize(const com::Utf8Str &aPath,
                           BOOL aFollowSymlinks,

@@ -9980,14 +9980,14 @@ and "VAR" for unsetting. -->
 
   <enum
     name="FileSeekOrigin"
-    uuid="939ba94f-497a-4119-ebd3-d193e176c98e"
+    uuid="ad32f789-4279-4530-979c-f16892e1c263"
     >
     <desc>
       What a file seek (<link to="IFile::seek"/>) is relative to.
     </desc>
 
-    <const name="Set"                   value="0">
-      <desc>Seek from the start of the file.</desc>
+    <const name="Begin"                 value="0">
+      <desc>Seek from the beginning of the file.</desc>
     </const>
     <const name="Current"               value="1">
       <desc>Seek from the current file position.</desc>
@@ -10558,6 +10558,18 @@ and "VAR" for unsetting. -->
   </enum>
 
   <enum
+    name="FileOpenExFlags"
+    uuid="9d62017b-ddd3-4e5a-a08e-14d1c23bbac1"
+    >
+    <desc>
+      Open flags for <link to="IGuestSession::fileOpenEx"/>.
+    </desc>
+    <const name="None"        value="0">
+      <desc>No flag set.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="FileStatus"
     uuid="8c86468b-b97b-4080-8914-e29f5b0abd2c"
     >
@@ -10967,7 +10979,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="91306653-4e3a-88cb-a809-85ae64ceb4fd"
+    uuid="3cbf62cf-c9cd-48c6-9623-d1dbe54ca557"
     wsmap="managed"
     >
     <desc>
@@ -11681,10 +11693,8 @@ and "VAR" for unsetting. -->
           OS dependent.  The API does the best it can on each OS.
         </desc>
       </param>
-<!-- r=bird: Use case for the 'offset' parameter, please? I see no possible rational, especially with readAt/writeAt/seek handy.
-             Or is this an alternative way of doing "append" accessMode?  Anyway, it's pretty harmless... -->
-      <param name="offset" type="long long" dir="in">
-        <desc>The initial read/write offset (in bytes).</desc>
+      <param name="flags" type="FileOpenExFlags" dir="in" safearray="yes">
+        <desc>Zero or more <link to="FileOpenExFlags"/> values. </desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
         <desc><link to="IGuestFile"/> object representing the opened file.</desc>

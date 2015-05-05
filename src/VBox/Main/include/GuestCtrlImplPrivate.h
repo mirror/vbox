@@ -609,8 +609,8 @@ struct GuestFileOpenInfo
     FileSharingMode_T       mSharingMode;
     /** Octal creation mode. */
     uint32_t                mCreationMode;
-    /** The initial offset on open. */
-    uint64_t                mInitialOffset;
+    /** Extended open flags (currently none defined). */
+    uint32_t                mfOpenEx;
 };
 
 

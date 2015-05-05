@@ -1231,9 +1231,9 @@ int GuestSession::i_fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 int GuestSession::i_fileOpenInternal(const GuestFileOpenInfo &openInfo,
                                      ComObjPtr<GuestFile> &pFile, int *pGuestRc)
 {
-    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, uOffset=%RU64\n",
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32 mfOpenEx=%RU32\n",
                      openInfo.mFileName.c_str(), openInfo.mAccessMode, openInfo.mpszAccessMode,
-                     openInfo.mOpenAction, openInfo.mpszOpenAction, openInfo.mCreationMode, openInfo.mInitialOffset));
+                     openInfo.mOpenAction, openInfo.mpszOpenAction, openInfo.mCreationMode, openInfo.mfOpenEx));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2977,11 +2977,13 @@ HRESULT GuestSession::fileOpen(const com::Utf8Str &aPath, FileAccessMode_T aAcce
                                ULONG aCreationMode, ComPtr<IGuestFile> &aFile)
 {
     LogFlowThisFuncEnter();
-    return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, 0 /* aOffset */, aFile);
+    const std::vector<FileOpenExFlags_T> EmptyFlags;
+    return fileOpenEx(aPath, aAccessMode, aOpenAction, FileSharingMode_All, aCreationMode, EmptyFlags, aFile);
 }
 
 HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAccessMode, FileOpenAction_T aOpenAction,
-                                 FileSharingMode_T aSharingMode, ULONG aCreationMode, LONG64 aOffset, ComPtr<IGuestFile> &aFile)
+                                 FileSharingMode_T aSharingMode, ULONG aCreationMode,
+                                 const std::vector<FileOpenExFlags_T> &aFlags, ComPtr<IGuestFile> &aFile)
 {
     LogFlowThisFuncEnter();
 
@@ -2995,7 +2997,6 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
     GuestFileOpenInfo openInfo;
     openInfo.mFileName = aPath;
     openInfo.mCreationMode = aCreationMode;
-    openInfo.mInitialOffset = aOffset;
 
     /* convert + validate aAccessMode to the old format. */
     openInfo.mAccessMode = aAccessMode;
@@ -3044,6 +3045,14 @@ HRESULT GuestSession::fileOpenEx(const com::Utf8Str &aPath, FileAccessMode_T aAc
         default:
             return setError(E_INVALIDARG, tr("Unknown FileOpenAction value %u (%#x)"), aAccessMode, aAccessMode);
     }
+
+    /* Combine and validate flags. */
+    uint32_t fOpenEx = 0;
+    for (size_t i = 0; i < aFlags.size(); i++)
+        fOpenEx = aFlags[i];
+    if (fOpenEx)
+        return setError(E_INVALIDARG, tr("Unsupported FileOpenExFlags values in aFlags (%#x)"), fOpenEx);
+    openInfo.mfOpenEx = fOpenEx;
 
     ComObjPtr <GuestFile> pFile;
     int guestRc;

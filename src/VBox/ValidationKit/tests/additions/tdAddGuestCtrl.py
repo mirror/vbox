@@ -2719,10 +2719,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                if curTest.cbOffset > 0:
+                if curTest.cbOffset > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), curTest.lCreationMode, curTest.cbOffset);
+                                                             curTest.getSharingMode(), curTest.lCreationMode, []);
+                        curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
                     else:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
                                                              curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);
@@ -2832,10 +2833,11 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 reporter.error('Test #%d failed: Could not create session' % (i,));
                 break;
             try:
-                if curTest.cbOffset > 0:
+                if curTest.cbOffset > 0: # The offset parameter is gone.
                     if self.oTstDrv.fpApiVer >= 5.0:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.getAccessMode(), curTest.getOpenAction(),
-                                                             curTest.getSharingMode(), curTest.cbOffset);
+                                                             curTest.getSharingMode(), []);
+                        curFile.seek(curTest.cbOffset, vboxcon.FileSeekOrigin_Begin);
                     else:
                         curFile = curGuestSession.fileOpenEx(curTest.sFile, curTest.sOpenMode, curTest.sDisposition, \
                                                              curTest.sSharingMode, curTest.lCreationMode, curTest.cbOffset);

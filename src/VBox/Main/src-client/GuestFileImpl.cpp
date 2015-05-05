@@ -474,16 +474,9 @@ int GuestFile::i_onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOST
             {
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
 
-                {
-                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-                    AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
-                              ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
-                              VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
-
-                    /* Set the initial offset. On the guest the whole opening operation
-                     * would fail if an initial seek isn't possible. */
-                    mData.mOffCurrent = mData.mOpenInfo.mInitialOffset;
-                }
+                AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
+                          ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
+                           VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
 
                 /* Set the process status. */
                 int rc2 = i_setFileStatus(FileStatus_Open, guestRc);
@@ -653,10 +646,10 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, uOffset=%RU64\n",
+    LogFlowThisFunc(("strFile=%s, enmAccessMode=%d (%s) enmOpenAction=%d (%s) uCreationMode=%RU32, mfOpenEx=%RU32\n",
                      mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mAccessMode, mData.mOpenInfo.mpszAccessMode,
                      mData.mOpenInfo.mOpenAction, mData.mOpenInfo.mpszOpenAction, mData.mOpenInfo.mCreationMode,
-                     mData.mOpenInfo.mInitialOffset));
+                     mData.mOpenInfo.mfOpenEx));
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -685,7 +678,8 @@ int GuestFile::i_openFile(uint32_t uTimeoutMS, int *pGuestRc)
     paParms[i++].setString(mData.mOpenInfo.mpszOpenAction);
     paParms[i++].setString(""); /** @todo sharing mode. */
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
-    paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
+    paParms[i++].setUInt64(0 /* initial offset */);
+    /** @todo Next protocol version: add flags, replace strings, remove initial offset. */
 
     alock.release(); /* Drop write lock before sending. */
 
@@ -1299,7 +1293,7 @@ HRESULT GuestFile::seek(LONG64 aOffset, FileSeekOrigin_T aWhence, LONG64 *aNewOf
     GUEST_FILE_SEEKTYPE eSeekType;
     switch (aWhence)
     {
-        case FileSeekOrigin_Set:
+        case FileSeekOrigin_Begin:
             eSeekType = GUEST_FILE_SEEKTYPE_BEGIN;
             break;
 
