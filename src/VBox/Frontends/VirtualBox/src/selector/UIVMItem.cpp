@@ -449,7 +449,8 @@ bool UIVMItem::isItemSaved(UIVMItem *pItem)
 /* static */
 bool UIVMItem::isItemPoweredOff(UIVMItem *pItem)
 {
-    if (pItem->accessible() &&
+    if (pItem &&
+        pItem->accessible() &&
         (pItem->machineState() == KMachineState_PoweredOff ||
          pItem->machineState() == KMachineState_Saved ||
          pItem->machineState() == KMachineState_Teleported ||
