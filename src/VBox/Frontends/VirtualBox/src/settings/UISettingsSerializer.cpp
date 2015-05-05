@@ -88,21 +88,27 @@ void UISettingsSerializer::start(Priority priority /* = InheritPriority */)
 
 void UISettingsSerializer::sltHandleProcessedPage(int iPageId)
 {
+    /* Make sure such page present: */
+    AssertReturnVoid(m_pages.contains(iPageId));
+
+    /* Get the page being processed: */
+    UISettingsPage *pSettingsPage = m_pages.value(iPageId);
+
     /* If serializer loads settings: */
     if (m_direction == Load)
     {
-        /* If such page present: */
-        if (m_pages.contains(iPageId))
-        {
-            /* We should fetch internal page cache: */
-            UISettingsPage *pSettingsPage = m_pages[iPageId];
-            pSettingsPage->setValidatorBlocked(true);
-            pSettingsPage->getFromCache();
-            pSettingsPage->setValidatorBlocked(false);
-        }
+        /* We should fetch internal page cache: */
+        pSettingsPage->setValidatorBlocked(true);
+        pSettingsPage->getFromCache();
+        pSettingsPage->setValidatorBlocked(false);
     }
-    /* Notify listeners about page postprocessed: */
-    emit sigNotifyAboutPagePostprocessed(iPageId);
+
+    /* Add processed page into corresponding map: */
+    m_pagesDone.insert(iPageId, pSettingsPage);
+
+    /* Notify listeners about process reached n%: */
+    const int iValue = 100 * m_pagesDone.size() / m_pages.size();
+    emit sigNotifyAboutProcessProgressChanged(iValue);
 }
 
 void UISettingsSerializer::sltHandleProcessedPages()
@@ -121,8 +127,9 @@ void UISettingsSerializer::sltHandleProcessedPages()
         foreach (UISettingsPage *pPage, m_pages.values())
             pPage->revalidate();
     }
-    /* Notify listeners about pages postprocessed: */
-    emit sigNotifyAboutPagesPostprocessed();
+
+    /* Notify listeners about process reached 100%: */
+    emit sigNotifyAboutProcessProgressChanged(100);
 }
 
 void UISettingsSerializer::run()
@@ -231,10 +238,8 @@ void UISettingsSerializerProgress::prepare()
     AssertPtrReturnVoid(m_pSerializer);
     {
         /* Install progress handler: */
-        connect(m_pSerializer, SIGNAL(sigNotifyAboutPagePostprocessed(int)),
-                this, SLOT(sltAdvanceProgressValue()));
-        connect(m_pSerializer, SIGNAL(sigNotifyAboutPagesPostprocessed()),
-                this, SLOT(sltAdvanceProgressValue()));
+        connect(m_pSerializer, SIGNAL(sigNotifyAboutProcessProgressChanged(int)),
+                this, SLOT(sltHandleProcessProgressChange(int)));
         connect(m_pSerializer, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
                 this, SLOT(sltHandleOperationProgressChange(ulong, QString, ulong, ulong)));
         connect(m_pSerializer, SIGNAL(sigOperationProgressError(QString)),
@@ -285,11 +290,9 @@ void UISettingsSerializerProgress::prepare()
                 {
                     /* Configure progress bar: */
                     m_pBarOperationProgress->setMinimumWidth(300);
-                    m_pBarOperationProgress->setMaximum(m_pSerializer->pageCount() + 1);
+                    m_pBarOperationProgress->setMaximum(100);
                     m_pBarOperationProgress->setMinimum(0);
                     m_pBarOperationProgress->setValue(0);
-                    connect(m_pBarOperationProgress, SIGNAL(valueChanged(int)),
-                            this, SLOT(sltProgressValueChanged(int)));
                     /* Add bar into layout: */
                     pLayoutProgress->addWidget(m_pBarOperationProgress);
                 }
@@ -355,17 +358,12 @@ void UISettingsSerializerProgress::sltStartProcess()
     m_pSerializer->start();
 }
 
-void UISettingsSerializerProgress::sltAdvanceProgressValue()
+void UISettingsSerializerProgress::sltHandleProcessProgressChange(int iValue)
 {
-    /* Advance the operation progress bar: */
+    /* Update the operation progress-bar with incoming value: */
     AssertPtrReturnVoid(m_pBarOperationProgress);
-    m_pBarOperationProgress->setValue(m_pBarOperationProgress->value() + 1);
-}
-
-void UISettingsSerializerProgress::sltProgressValueChanged(int iValue)
-{
+    m_pBarOperationProgress->setValue(iValue);
     /* Hide the progress-dialog upon reaching the 100% progress: */
-    AssertPtrReturnVoid(m_pBarOperationProgress);
     if (iValue == m_pBarOperationProgress->maximum())
         hide();
 }
