@@ -64,7 +64,7 @@
 #define VERR_OUT_OF_SELECTOR_BOUNDS         (-1010)
 /** Invalid selector. Usually beyond table limits. */
 #define VERR_INVALID_SELECTOR               (-1011)
-/** Invalid requested privilegde level. */
+/** Invalid requested privilege level. */
 #define VERR_INVALID_RPL                    (-1012)
 /** PML4 entry not present. */
 #define VERR_PAGE_MAP_LEVEL4_NOT_PRESENT    (-1013)
@@ -100,7 +100,7 @@
  */
 /** First scheduling related status code. */
 #define VINF_EM_FIRST                       1100
-/** Indicating that the VM is being terminated and that the the execution
+/** Indicating that the VM is being terminated and that the execution
  * shall stop. */
 #define VINF_EM_TERMINATE                   1100
 /** Hypervisor code was stepped.
@@ -130,7 +130,7 @@
 /** Indicating that the VM is being turned off and that the EM should
  * exit to the VM awaiting the destruction request. */
 #define VINF_EM_OFF                         1109
-/** Indicating that the VM has been suspended and that the the thread
+/** Indicating that the VM has been suspended and that the thread
  * should wait for request telling it what to do next. */
 #define VINF_EM_SUSPEND                     1110
 /** Indicating that the VM has been reset and that scheduling goes
@@ -262,7 +262,7 @@
 /** Someone (including the caller) was already attached as
  * debugger to the VM. */
 #define VERR_DBGF_ALREADY_ATTACHED          (-1201)
-/** Tried to hald a debugger which was already halted.
+/** Tried to halt a debugger which was already halted.
  * (This is a warning and not an error.) */
 #define VWRN_DBGF_ALREADY_HALTED            1202
 /** The DBGF has no more free breakpoint slots. */
@@ -571,7 +571,7 @@
 #define VERR_PGM_PHYS_PAGE_MAP_IPE_4            (-1674)
 /** Too many loops looking for a page to reuse. */
 #define VERR_PGM_POOL_TOO_MANY_LOOPS            (-1675)
-/** Internal procesing error related to guest mappings. */
+/** Internal processing error related to guest mappings. */
 #define VERR_PGM_MAPPING_IPE                    (-1676)
 /** An attempt was made to grow an already maxed out page pool. */
 #define VERR_PGM_POOL_MAXED_OUT_ALREADY         (-1677)
@@ -613,7 +613,7 @@
 #define VERR_CPUM_RAISE_GP_0                    (-1750)
 /** Incompatible CPUM configuration. */
 #define VERR_CPUM_INCOMPATIBLE_CONFIG           (-1751)
-/** CPUMR3DisasmInstrCPU unexpectedly failed to determin the hidden
+/** CPUMR3DisasmInstrCPU unexpectedly failed to determine the hidden
  * parts of the CS register. */
 #define VERR_CPUM_HIDDEN_CS_LOAD_ERROR          (-1752)
 /** Couldn't find the end of CPUID sub-leaves. */
@@ -686,9 +686,9 @@
 #define VERR_SSM_INTEGRITY_REC_TERM             (-1823)
 /** Termination record CRC mismatch. */
 #define VERR_SSM_INTEGRITY_REC_TERM_CRC         (-1824)
-/** Decompression interity error.  */
+/** Decompression integrity error.  */
 #define VERR_SSM_INTEGRITY_DECOMPRESSION        (-1825)
-/** Saved state directory iintegrity error.  */
+/** Saved state directory wintertides error.  */
 #define VERR_SSM_INTEGRITY_DIR                  (-1826)
 /** The saved state directory magic is wrong. */
 #define VERR_SSM_INTEGRITY_DIR_MAGIC            (-1827)
@@ -714,7 +714,7 @@
  * Normally caused by hardware changes on the host, but could also be caused by
  * changes in the BIOS setup. */
 #define VERR_SSM_LOAD_CPUID_MISMATCH            (-1842)
-/** The RAM size differes between the saved state and the VM config. */
+/** The RAM size differs between the saved state and the VM config. */
 #define VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH      (-1843)
 /** The state doesn't match the VM configuration in one or another way.
  * (There are certain PCI reconfiguration which the OS could potentially
@@ -817,7 +817,7 @@
  * the interface user screwed up, or we've got corruption/broken logic. */
 #define VERR_VM_REQUEST_STATE                   (-1902)
 /** Invalid VM request packet.
- * One or more of the the VM controlled packet members didn't contain the correct
+ * One or more of the VM controlled packet members didn't contain the correct
  * values. Some thing's broken. */
 #define VERR_VM_REQUEST_INVALID_PACKAGE         (-1903)
 /** The status field has not been updated yet as the request is still
@@ -926,7 +926,7 @@
 #define VERR_CFGM_NOT_BYTES                 (-2108)
 /** The specified string / bytes buffer was to small. Specify a larger one and retry. */
 #define VERR_CFGM_NOT_ENOUGH_SPACE          (-2109)
-/** The path of a new node contained slashs or was empty. */
+/** The path of a new node contained slashes or was empty. */
 #define VERR_CFGM_INVALID_NODE_PATH         (-2160)
 /** A new node couldn't be inserted because one with the same name exists. */
 #define VERR_CFGM_NODE_EXISTS               (-2161)
@@ -995,7 +995,7 @@
  */
 /** No active trap. Cannot query or reset a non-existing trap. */
 #define VERR_TRPM_NO_ACTIVE_TRAP            (-2400)
-/** Active trap. Cannot assert a new trap when when one is already active. */
+/** Active trap. Cannot assert a new trap when one is already active. */
 #define VERR_TRPM_ACTIVE_TRAP               (-2401)
 /** Reason for leaving RC: Guest tried to write to our IDT - fatal.
  * The VM will be terminated assuming the worst, i.e. that the
@@ -1249,7 +1249,7 @@
 /** A attach or prepare mount call failed because the driver already
  * had a driver attached. */
 #define VERR_PDM_DRIVER_ALREADY_ATTACHED            (-2820)
-/** An attempt on deattaching a driver without anyone actually being attached, or
+/** An attempt on detaching a driver without anyone actually being attached, or
  * performing any other operation on an attached driver. */
 #define VERR_PDM_NO_DRIVER_ATTACHED                 (-2821)
 /** The attached driver configuration is missing the 'Driver' attribute. */
@@ -1267,7 +1267,7 @@
 /** A module name is too long. */
 #define VERR_PDM_MODULE_NAME_TOO_LONG               (-2827)
 /** Driver name clash. Another driver with the same name as the
- * one begin registred exists. */
+ * one being registered exists. */
 #define VERR_PDM_DRIVER_NAME_CLASH                  (-2828)
 /** The version of the driver registration structure is unknown
  * to this VBox version. Either mixing incompatible versions or
@@ -1298,7 +1298,7 @@
 /** The guest bit mask didn't match the guest being loaded. */
 #define VERR_PDM_INVALID_DEVICE_HOST_BITS           (-2838)
 /** Device name clash. Another device with the same name as the
- * one begin registred exists. */
+ * one being registered exists. */
 #define VERR_PDM_DEVICE_NAME_CLASH                  (-2839)
 /** The device wasn't found. There was no registered device
  * by that name. */
@@ -1349,7 +1349,7 @@
 /** Invalid entry in the device registration structure. */
 #define VERR_PDM_INVALID_USB_REGISTRATION           (-2857)
 /** Driver name clash. Another driver with the same name as the
- * one begin registred exists. */
+ * one being registered exists. */
 #define VERR_PDM_USB_NAME_CLASH                     (-2858)
 /** The USB hub is already registered. */
 #define VERR_PDM_USB_HUB_EXISTS                     (-2859)
@@ -2367,7 +2367,7 @@
 /** Syntax error - you hit a debugger feature which isn't implemented yet.
  * (Feel free to help implement it.) */
 #define VERR_DBGC_PARSE_NOT_IMPLEMENTED             (VERR_DBGC_PARSE_LOWEST + 20)
-/** Syntax error - Couldn't staisfy a request for a sepcific result type. */
+/** Syntax error - Couldn't satisfy a request for a specific result type. */
 #define VERR_DBGC_PARSE_BAD_RESULT_TYPE             (VERR_DBGC_PARSE_LOWEST + 21)
 /** Syntax error - Cannot read symbol value, it is a set-only symbol. */
 #define VERR_DBGC_PARSE_WRITEONLY_SYMBOL            (VERR_DBGC_PARSE_LOWEST + 22)
@@ -2380,147 +2380,147 @@
 /** @} */
 
 
-/** @name Support driver/library shared verfication status codes.
+/** @name Support driver/library shared verification status codes.
  * @{  */
-/** Process Verficiation Failure: The memory content does not match the image
+/** Process Verification Failure: The memory content does not match the image
  *  file. */
 #define VERR_SUP_VP_MEMORY_VS_FILE_MISMATCH          (-5600)
-/** Process Verficiation Failure: The memory protection of a image file section
+/** Process Verification Failure: The memory protection of a image file section
  *  does not match what the section header prescribes. */
 #define VERR_SUP_VP_SECTION_PROTECTION_MISMATCH      (-5601)
-/** Process Verficiation Failure: One of the section in the image file is not
+/** Process Verification Failure: One of the section in the image file is not
  *  mapped into memory. */
 #define VERR_SUP_VP_SECTION_NOT_MAPPED               (-5602)
-/** Process Verficiation Failure: One of the section in the image file is not
+/** Process Verification Failure: One of the section in the image file is not
  *  fully mapped into memory. */
 #define VERR_SUP_VP_SECTION_NOT_FULLY_MAPPED         (-5603)
-/** Process Verficiation Failure: Bad file alignment value in image header. */
+/** Process Verification Failure: Bad file alignment value in image header. */
 #define VERR_SUP_VP_BAD_FILE_ALIGNMENT_VALUE         (-5604)
-/** Process Verficiation Failure: Bad image base in header. */
+/** Process Verification Failure: Bad image base in header. */
 #define VERR_SUP_VP_BAD_IMAGE_BASE                   (-5605)
-/** Process Verficiation Failure: Bad image signature. */
+/** Process Verification Failure: Bad image signature. */
 #define VERR_SUP_VP_BAD_IMAGE_SIGNATURE              (-5606)
-/** Process Verficiation Failure: Bad image size. */
+/** Process Verification Failure: Bad image size. */
 #define VERR_SUP_VP_BAD_IMAGE_SIZE                   (-5607)
-/** Process Verficiation Failure: Bad new-header offset in the MZ header. */
+/** Process Verification Failure: Bad new-header offset in the MZ header. */
 #define VERR_SUP_VP_BAD_MZ_OFFSET                    (-5608)
-/** Process Verficiation Failure: Bad optional header field. */
+/** Process Verification Failure: Bad optional header field. */
 #define VERR_SUP_VP_BAD_OPTIONAL_HEADER              (-5609)
-/** Process Verficiation Failure: Bad section alignment value in image
+/** Process Verification Failure: Bad section alignment value in image
  *  header. */
 #define VERR_SUP_VP_BAD_SECTION_ALIGNMENT_VALUE      (-5610)
-/** Process Verficiation Failure: Bad section raw data size. */
+/** Process Verification Failure: Bad section raw data size. */
 #define VERR_SUP_VP_BAD_SECTION_FILE_SIZE            (-5611)
-/** Process Verficiation Failure: Bad virtual section address. */
+/** Process Verification Failure: Bad virtual section address. */
 #define VERR_SUP_VP_BAD_SECTION_RVA                  (-5612)
-/** Process Verficiation Failure: Bad virtual section size. */
+/** Process Verification Failure: Bad virtual section size. */
 #define VERR_SUP_VP_BAD_SECTION_VIRTUAL_SIZE         (-5613)
-/** Process Verficiation Failure: Bad size of image header. */
+/** Process Verification Failure: Bad size of image header. */
 #define VERR_SUP_VP_BAD_SIZE_OF_HEADERS              (-5614)
-/** Process Verficiation Failure: The process is being debugged. */
+/** Process Verification Failure: The process is being debugged. */
 #define VERR_SUP_VP_DEBUGGED                         (-5615)
-/** Process Verficiation Failure: A DLL was found more than once. */
+/** Process Verification Failure: A DLL was found more than once. */
 #define VERR_SUP_VP_DUPLICATE_DLL_MAPPING            (-5616)
-/** Process Verficiation Failure: Image section region is too large. */
+/** Process Verification Failure: Image section region is too large. */
 #define VERR_SUP_VP_EMPTY_REGION_TOO_LARGE           (-5617)
-/** Process Verficiation Failure: Exectuable file name and process image name
+/** Process Verification Failure: Executable file name and process image name
  *  does not match up. */
 #define VERR_SUP_VP_EXE_VS_PROC_NAME_MISMATCH        (-5618)
-/** Process Verficiation Failure: Found executable memory allocated in the
+/** Process Verification Failure: Found executable memory allocated in the
  *  process.  There is only supposed be executable memory associated with
  *  image file mappings (DLLs & EXE). */
 #define VERR_SUP_VP_FOUND_EXEC_MEMORY                (-5619)
-/** Process Verficiation Failure: There is more than one known executable mapped
+/** Process Verification Failure: There is more than one known executable mapped
  *  into the process. */
 #define VERR_SUP_VP_FOUND_MORE_THAN_ONE_EXE_MAPPING  (-5620)
-/** Process Verficiation Failure: Error closing image file handle. */
+/** Process Verification Failure: Error closing image file handle. */
 #define VERR_SUP_VP_IMAGE_FILE_CLOSE_ERROR           (-5621)
-/** Process Verficiation Failure: Error opening image file. */
+/** Process Verification Failure: Error opening image file. */
 #define VERR_SUP_VP_IMAGE_FILE_OPEN_ERROR            (-5622)
-/** Process Verficiation Failure: Error reading image file header. */
+/** Process Verification Failure: Error reading image file header. */
 #define VERR_SUP_VP_IMAGE_HDR_READ_ERROR             (-5623)
-/** Process Verficiation Failure: Image mapping is bogus as the first region
+/** Process Verification Failure: Image mapping is bogus as the first region
  *  has different AllocationBase and BaseAddress values, indicating that a
  *  section was unmapped or otherwise tampered with. */
 #define VERR_SUP_VP_IMAGE_MAPPING_BASE_ERROR         (-5624)
-/** Process Verficiation Failure: Error reading process memory for comparing
+/** Process Verification Failure: Error reading process memory for comparing
  *  with disk data. */
 #define VERR_SUP_VP_MEMORY_READ_ERROR                (-5625)
-/** Process Verficiation Failure: Found no executable mapped into the process
+/** Process Verification Failure: Found no executable mapped into the process
  *  address space. */
 #define VERR_SUP_VP_NO_FOUND_NO_EXE_MAPPING          (-5626)
-/** Process Verficiation Failure: An image mapping failed to report a name. */
+/** Process Verification Failure: An image mapping failed to report a name. */
 #define VERR_SUP_VP_NO_IMAGE_MAPPING_NAME            (-5627)
-/** Process Verficiation Failure: No KERNE32.DLL mapping found.  This is
+/** Process Verification Failure: No KERNE32.DLL mapping found.  This is
  *  impossible. */
 #define VERR_SUP_VP_NO_KERNEL32_MAPPING              (-5628)
-/** Process Verficiation Failure: Error allocating memory. */
+/** Process Verification Failure: Error allocating memory. */
 #define VERR_SUP_VP_NO_MEMORY                        (-5629)
-/** Process Verficiation Failure: Erorr allocating state memory or querying
+/** Process Verification Failure: Error allocating state memory or querying
  *  the system32 path. */
 #define VERR_SUP_VP_NO_MEMORY_STATE                  (-5630)
-/** Process Verficiation Failure: No NTDLL.DLL mapping found.  This is
+/** Process Verification Failure: No NTDLL.DLL mapping found.  This is
  *  impossible. */
 #define VERR_SUP_VP_NO_NTDLL_MAPPING                 (-5631)
-/** Process Verficiation Failure: A DLL residing outside System32 was found
+/** Process Verification Failure: A DLL residing outside System32 was found
  *  in the process. */
 #define VERR_SUP_VP_NON_SYSTEM32_DLL                 (-5632)
-/** Process Verficiation Failure: An unknown and unwanted DLL was found loaded
+/** Process Verification Failure: An unknown and unwanted DLL was found loaded
  *  into the process. */
 #define VERR_SUP_VP_NOT_KNOWN_DLL_OR_EXE             (-5633)
-/** Process Verficiation Failure: The name of an image file changes between
+/** Process Verification Failure: The name of an image file changes between
  *  mapping regions. */
 #define VERR_SUP_VP_NT_MAPPING_NAME_CHANGED          (-5634)
-/** Process Verficiation Failure: Error querying process name. */
+/** Process Verification Failure: Error querying process name. */
 #define VERR_SUP_VP_NT_QI_PROCESS_NM_ERROR           (-5635)
-/** Process Verficiation Failure: Error querying thread information. */
+/** Process Verification Failure: Error querying thread information. */
 #define VERR_SUP_VP_NT_QI_THREAD_ERROR               (-5636)
-/** Process Verficiation Failure: Error query virtual memory information. */
+/** Process Verification Failure: Error query virtual memory information. */
 #define VERR_SUP_VP_NT_QI_VIRTUAL_MEMORY_ERROR       (-5637)
-/** Process Verficiation Failure: Error query virtual memory mapping name. */
+/** Process Verification Failure: Error query virtual memory mapping name. */
 #define VERR_SUP_VP_NT_QI_VIRTUAL_MEMORY_NM_ERROR    (-5638)
-/** Process Verficiation Failure: Error determining the full path of
+/** Process Verification Failure: Error determining the full path of
  *  System32. */
 #define VERR_SUP_VP_SYSTEM32_PATH                    (-5639)
-/** Process Verficiation Failure: The process has more than one thread. */
+/** Process Verification Failure: The process has more than one thread. */
 #define VERR_SUP_VP_THREAD_NOT_ALONE                 (-5640)
-/** Process Verficiation Failure: The image mapping is too large (>= 2GB). */
+/** Process Verification Failure: The image mapping is too large (>= 2GB). */
 #define VERR_SUP_VP_TOO_HIGH_REGION_RVA              (-5641)
-/** Process Verficiation Failure: The memory region is too large (>= 2GB). */
+/** Process Verification Failure: The memory region is too large (>= 2GB). */
 #define VERR_SUP_VP_TOO_LARGE_REGION                 (-5642)
-/** Process Verficiation Failure: There are too many DLLs loaded. */
+/** Process Verification Failure: There are too many DLLs loaded. */
 #define VERR_SUP_VP_TOO_MANY_DLLS_LOADED             (-5643)
-/** Process Verficiation Failure: An image has too many regions. */
+/** Process Verification Failure: An image has too many regions. */
 #define VERR_SUP_VP_TOO_MANY_IMAGE_REGIONS           (-5644)
-/** Process Verficiation Failure: The process has too many virtual memory
+/** Process Verification Failure: The process has too many virtual memory
  *  regions. */
 #define VERR_SUP_VP_TOO_MANY_MEMORY_REGIONS          (-5645)
-/** Process Verficiation Failure: An image has too many sections. */
+/** Process Verification Failure: An image has too many sections. */
 #define VERR_SUP_VP_TOO_MANY_SECTIONS                (-5646)
-/** Process Verficiation Failure: An image is targeting an unexpected
+/** Process Verification Failure: An image is targeting an unexpected
  *  machine/CPU. */
 #define VERR_SUP_VP_UNEXPECTED_IMAGE_MACHINE         (-5647)
-/** Process Verficiation Failure: Unexpected section protection flag
+/** Process Verification Failure: Unexpected section protection flag
  *  combination. */
 #define VERR_SUP_VP_UNEXPECTED_SECTION_FLAGS         (-5648)
-/** Process Verficiation Failure: Expected the process and exe to have forced
+/** Process Verification Failure: Expected the process and exe to have forced
  * integrity checking enabled (verifying signatures). */
 #define VERR_SUP_VP_EXE_MISSING_FORCE_INTEGRITY     (-5649)
-/** Process Verficiation Failure: Expected the process and exe to have dynamic
+/** Process Verification Failure: Expected the process and exe to have dynamic
  * base enabled. */
 #define VERR_SUP_VP_EXE_MISSING_DYNAMIC_BASE        (-5650)
-/** Process Verficiation Failure: Expected the process and exe to advertise
+/** Process Verification Failure: Expected the process and exe to advertise
  * NX compatibility. */
 #define VERR_SUP_VP_EXE_MISSING_NX_COMPAT           (-5651)
-/** Process Verficiation Failure: The DllCharacteristics of the process
+/** Process Verification Failure: The DllCharacteristics of the process
  * does not match the value in the optional header in the exe file. */
 #define VERR_SUP_VP_DLL_CHARECTERISTICS_MISMATCH    (-5652)
-/** Process Verficiation Failure: The ImageCharacteristics of the process
+/** Process Verification Failure: The ImageCharacteristics of the process
  * does not match the value in the file header in the exe file. */
 #define VERR_SUP_VP_IMAGE_CHARECTERISTICS_MISMATCH  (-5653)
-/** Process Verficiation Failure: Error querying image information. */
+/** Process Verification Failure: Error querying image information. */
 #define VERR_SUP_VP_NT_QI_PROCESS_IMG_INFO_ERROR    (-5654)
-/** Process Verficiation Failure: Error querying debug port. */
+/** Process Verification Failure: Error querying debug port. */
 #define VERR_SUP_VP_NT_QI_PROCESS_DBG_PORT_ERROR    (-5655)
 /** WinVerifyTrust failed with an unexpected status code when using the
  * catalog-file approach. */
@@ -2536,7 +2536,7 @@
 #define VERR_SUP_VP_UNEXPECTED_VALID_PATH_COUNT     (-5660)
 /** The image is required to force integrity checks. */
 #define VERR_SUP_VP_SIGNATURE_CHECKS_NOT_ENFORCED   (-5661)
-/** Process Verficiation Failure: Symantec Endpoint Protection must be
+/** Process Verification Failure: Symantec Endpoint Protection must be
  * disabled for the VirtualBox VM processes.
  * http://www.symantec.com/connect/articles/creating-application-control-exclusions-symantec-endpoint-protection-121 */
 #define VERR_SUP_VP_SYSFER_DLL                      (-5662)
@@ -2548,7 +2548,7 @@
 #define VERR_SUP_VP_FREE_VIRTUAL_MEMORY_FAILED      (-5664)
 /** Process Purification Failure: Both NtUnmapViewOfSetion and
  *  NtProtectVirtualMemory failed to get rid of or passify an non-image
- *  exectuable mapping. */
+ *  executable mapping. */
 #define VERR_SUP_VP_UNMAP_AND_PROTECT_FAILED        (-5665)
 /** Process Purification Failure: Unknown memory type of executable memory.   */
 #define VERR_SUP_VP_UNKOWN_MEM_TYPE                 (-5666)
@@ -2559,7 +2559,7 @@
 /** Stub process not found so it cannot be revalidated when vboxdrv is opened
  * by the VM process. */
 #define VERR_SUP_VP_STUB_NOT_FOUND                  (-5669)
-/** Error openeing the stub process for revalidation when vboxdrv is opened by
+/** Error opening the stub process for revalidation when vboxdrv is opened by
  *  the VM process. */
 #define VERR_SUP_VP_STUB_OPEN_ERROR                 (-5670)
 /** Stub process thread not found during revalidation upon vboxdrv opening by
