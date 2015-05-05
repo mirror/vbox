@@ -296,7 +296,13 @@ static DECLCALLBACK(int) drvR3NetShaperDownCfg_SetLinkState(PPDMINETWORKCONFIG p
 static DECLCALLBACK(RTR0PTR) drvR3NetShaperIBaseR0_QueryInterface(PPDMIBASER0 pInterface, const char *pszIID)
 {
     PDRVNETSHAPER pThis = RT_FROM_MEMBER(pInterface, DRVNETSHAPER, IBaseR0);
-    PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpR0);
+    /*
+     * We need to check if the underlying driver supports R0. If it does not,
+     * then it is useless and even harmful to support R0 here, as we will end up
+     * returning errors when a network adapter tries to allocate a buffer in R0.
+     */
+    if (pThis->pIBelowNetR0)
+        PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMINETWORKUP, &pThis->INetworkUpR0);
     return NIL_RTR0PTR;
 }
 
