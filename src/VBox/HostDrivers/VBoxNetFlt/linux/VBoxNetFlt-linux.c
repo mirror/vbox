@@ -27,8 +27,11 @@
 #include <linux/etherdevice.h>
 #include <linux/rtnetlink.h>
 #include <linux/miscdevice.h>
+#include <linux/inetdevice.h>
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
+#include <net/if_inet6.h>
+#include <net/addrconf.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -1856,6 +1859,74 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     return rc;
 }
 
+static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
+{
+    PVBOXNETFLTINS     pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv4);
+    struct net_device *pDev;
+    struct in_ifaddr  *ifa   = (struct in_ifaddr *)ptr;
+    int                rc    = NOTIFY_OK;
+
+    pDev = vboxNetFltLinuxRetainNetDev(pThis);
+    Log(("VBoxNetFlt: %s: IPv4 event %s(0x%lx): addr %RTnaipv4 mask %RTnaipv4\n",
+         pDev ? netdev_name(pDev) : "<???>",
+         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
+         ifa->ifa_address, ifa->ifa_mask));
+
+    if (pDev != NULL)
+        vboxNetFltLinuxReleaseNetDev(pThis, pDev);
+
+    if (pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        bool fAdded;
+        if (ulEventType == NETDEV_UP)
+            fAdded = true;
+        else if (ulEventType == NETDEV_DOWN)
+            fAdded = false;
+        else
+            return NOTIFY_OK;
+            
+        pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded,
+                                                 kIntNetAddrType_IPv4, &ifa->ifa_local);
+    }
+
+    return rc;
+}
+
+
+static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
+{
+    PVBOXNETFLTINS       pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv6);
+    struct net_device   *pDev;
+    struct inet6_ifaddr *ifa   = (struct inet6_ifaddr *)ptr;
+    int                  rc    = NOTIFY_OK;
+
+    pDev = vboxNetFltLinuxRetainNetDev(pThis);
+    Log(("VBoxNetFlt: %s: IPv6 event %s(0x%lx): %RTnaipv6\n",
+         pDev ? netdev_name(pDev) : "<???>",
+         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
+         &ifa->addr));
+
+    if (pDev != NULL)
+        vboxNetFltLinuxReleaseNetDev(pThis, pDev);
+
+    if (pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        bool fAdded;
+        if (ulEventType == NETDEV_UP)
+            fAdded = true;
+        else if (ulEventType == NETDEV_DOWN)
+            fAdded = false;
+        else
+            return NOTIFY_OK;
+            
+        pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded,
+                                                 kIntNetAddrType_IPv6, &ifa->addr);
+    }
+
+    return rc;
+}
+
+
 bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 {
     return !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
@@ -2052,6 +2123,10 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
              ));
         dev_put(pDev);
     }
+
+    unregister_inet6addr_notifier(&pThis->u.s.NotifierIPv6);
+    unregister_inetaddr_notifier(&pThis->u.s.NotifierIPv4);
+
     Log(("vboxNetFltOsDeleteInstance: this=%p: Notifier removed.\n", pThis));
     unregister_netdevice_notifier(&pThis->u.s.Notifier);
     module_put(THIS_MODULE);
@@ -2078,6 +2153,79 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     if (   pThis->fDisconnectedFromHost
         || !try_module_get(THIS_MODULE))
         return VERR_INTNET_FLT_IF_FAILED;
+
+    if (pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        struct net *net = dev_net(pThis->u.s.pDev);
+        struct net_device *dev;
+
+        rcu_read_lock();
+        for_each_netdev_rcu(net, dev)
+        {
+            struct in_device *in_dev;
+            struct inet6_dev *in6_dev;
+
+            /*
+             * IPv4
+             */
+            in_dev = __in_dev_get_rcu(dev);
+            if (in_dev != NULL)
+            {
+                for_ifa(in_dev) {
+                    if (ifa->ifa_address == htonl(INADDR_LOOPBACK))
+                        goto continue_netdev;
+
+                    Log(("%s: %s: IPv4: addr %RTnaipv4 mask %RTnaipv4\n",
+                         __FUNCTION__, netdev_name(dev),
+                         ifa->ifa_address, ifa->ifa_mask));
+
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
+                        /* :fAdded */ true, kIntNetAddrType_IPv4, &ifa->ifa_address);
+                } endfor_ifa(in_dev);
+            }
+
+            /*
+             * IPv6
+             */
+            in6_dev = __in6_dev_get(dev);
+            if (in6_dev != NULL)
+            {
+                struct inet6_ifaddr *ifa;
+
+                read_lock_bh(&in6_dev->lock);
+                list_for_each_entry(ifa, &in6_dev->addr_list, if_list)
+                {
+                    Log(("%s: %s: IPv6: addr %RTnaipv6/%u\n",
+                         __FUNCTION__, netdev_name(dev),
+                         &ifa->addr, (unsigned)ifa->prefix_len));
+
+                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
+                        /* :fAdded */ true, kIntNetAddrType_IPv6, &ifa->addr);
+                }
+                read_unlock_bh(&in6_dev->lock);
+            }
+
+          continue_netdev:
+            /* continue */;
+        }
+	rcu_read_unlock();
+
+        Log(("%s: pfnNotifyHostAddress is set, register notifiers\n", __FUNCTION__));
+
+        pThis->u.s.NotifierIPv4.notifier_call = vboxNetFltLinuxNotifierIPv4Callback;
+        err = register_inetaddr_notifier(&pThis->u.s.NotifierIPv4);
+        if (err)
+            LogRel(("%s: failed to register IPv4 notifier: error %d\n",
+                    __FUNCTION__, err));
+
+        pThis->u.s.NotifierIPv6.notifier_call = vboxNetFltLinuxNotifierIPv6Callback;
+        err = register_inet6addr_notifier(&pThis->u.s.NotifierIPv6);
+        if (err)
+            LogRel(("%s: failed to register IPv6 notifier: error %d\n",
+                    __FUNCTION__, err));
+    }
+    else
+        Log(("%s: uwe: pfnNotifyHostAddress is NULL\n", __FUNCTION__));
 
     return VINF_SUCCESS;
 }

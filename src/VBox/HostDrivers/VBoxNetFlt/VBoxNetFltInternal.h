@@ -153,6 +153,8 @@ typedef struct VBOXNETFLTINS
             bool volatile fSetPromiscuous;
             /** The MAC address of the interface. */
             RTMAC MacAddr;
+            /** PF_SYSTEM socket to listen for events (XXX: globals?) */
+            socket_t pSysSock;
             /** @} */
 # elif defined(RT_OS_LINUX)
             /** @name Linux instance data
@@ -170,7 +172,9 @@ typedef struct VBOXNETFLTINS
             bool volatile fPacketHandler;
             /** The MAC address of the interface. */
             RTMAC MacAddr;
-            struct notifier_block Notifier;
+            struct notifier_block Notifier; /* netdevice */
+            struct notifier_block NotifierIPv4;
+            struct notifier_block NotifierIPv6;
             struct packet_type    PacketType;
 #  ifndef VBOXNETFLT_LINUX_NO_XMIT_QUEUE
             struct sk_buff_head   XmitQueue;

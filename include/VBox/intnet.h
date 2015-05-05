@@ -386,6 +386,26 @@ typedef enum INTNETSWDECISION
 } INTNETSWDECISION;
 
 
+/**
+ * Network layer address type.
+ */
+typedef enum INTNETADDRTYPE
+{
+    /** The invalid 0 entry. */
+    kIntNetAddrType_Invalid = 0,
+    /** IP version 4. */
+    kIntNetAddrType_IPv4,
+    /** IP version 6. */
+    kIntNetAddrType_IPv6,
+    /** IPX. */
+    kIntNetAddrType_IPX,
+    /** The end of the valid values. */
+    kIntNetAddrType_End,
+    /** The usual 32-bit hack. */
+    kIntNetAddrType_32BitHack = 0x7fffffff
+} INTNETADDRTYPE;
+
+
 /** Pointer to the interface side of a trunk port. */
 typedef struct INTNETTRUNKIFPORT *PINTNETTRUNKIFPORT;
 
@@ -576,6 +596,23 @@ typedef struct INTNETTRUNKSWPORT
     DECLR0CALLBACKMEMBER(void, pfnReportNoPreemptDsts,(PINTNETTRUNKSWPORT pSwitchPort, uint32_t fNoPreemptDsts));
 
     /**
+     * Notifications about changes to host IP addresses.
+     *
+     * This is used by networks bridged to wifi that share mac with
+     * the host.  Host reports changes to its IP addresses so that L3
+     * switching can ingore guests spoofing host's own IP addresses
+     *
+     * This callback may be null to indicate we are not interested.
+     *
+     * @param   pSwitchPort         Pointer to this structure.
+     * @param   fAdded              Whether address is added of removed.
+     * @param   enmType             Address type.
+     * @param   pvAddr              Pointer to the address.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnNotifyHostAddress,(PINTNETTRUNKSWPORT pSwitchPort, bool fAdded,
+                                                     INTNETADDRTYPE enmType, const void *pvAddr));
+
+    /**
      * OS triggered trunk disconnect.
      *
      * The caller shall must be busy when calling this method to prevent racing the
@@ -602,7 +639,7 @@ typedef struct INTNETTRUNKSWPORT
 } INTNETTRUNKSWPORT;
 
 /** Version number for the INTNETTRUNKIFPORT::u32Version and INTNETTRUNKIFPORT::u32VersionEnd fields. */
-# define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf003)
+# define INTNETTRUNKSWPORT_VERSION   UINT32_C(0xA2CDf004)
 
 
 /**
