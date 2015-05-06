@@ -1343,6 +1343,10 @@ struct SessionMachine::TakeSnapshotTask
     {
         if (fTakingSnapshotOnline)
             m_pDirectControl = m->mData->mSession.mDirectControl;
+        // If the VM is already paused then there's no point trying to pause
+        // again during taking an (always online) snapshot.
+        if (m_machineStateBackup == MachineState_Paused)
+            m_fPause = false;
     }
 
     void handler()
