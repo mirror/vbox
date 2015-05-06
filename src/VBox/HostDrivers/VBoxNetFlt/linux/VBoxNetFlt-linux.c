@@ -2174,8 +2174,16 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         struct net *net = VBOX_DEV_NET(pThis->u.s.pDev);
         struct net_device *dev;
 
+#if !defined(for_each_netdev_rcu) /* introduced in 2.6.33 */
+        read_lock(&dev_base_lock);
+#endif
         rcu_read_lock();
+
+#if !defined(for_each_netdev_rcu)
+        for_each_netdev(net, dev)
+#else
         for_each_netdev_rcu(net, dev)
+#endif
         {
             struct in_device *in_dev;
             struct inet6_dev *in6_dev;
@@ -2223,7 +2231,10 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
           continue_netdev:
             /* continue */;
         }
-	rcu_read_unlock();
+        rcu_read_unlock();
+#if !defined(for_each_netdev_rcu)
+        read_unlock(&dev_base_lock);
+#endif
 
         Log(("%s: pfnNotifyHostAddress is set, register notifiers\n", __FUNCTION__));
 
