@@ -69,6 +69,12 @@
 # define VBOX_FLT_XT_TO_INST(pXT)   RT_FROM_MEMBER(pXT, VBOXNETFLTINS, u.s.XmitTask)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
+# define VBOX_DEV_NET(dev)                  dev_net(dev)
+#else
+# define VBOX_DEV_NET(dev)                  ((dev)->nd_net)
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 # define VBOX_SKB_RESET_NETWORK_HDR(skb)    skb_reset_network_header(skb)
 # define VBOX_SKB_RESET_MAC_HDR(skb)        skb_reset_mac_header(skb)
@@ -2159,7 +2165,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 #if 0 /* XXX: temporarily disable */
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
     {
-        struct net *net = dev_net(pThis->u.s.pDev);
+        struct net *net = VBOX_DEV_NET(pThis->u.s.pDev);
         struct net_device *dev;
 
         rcu_read_lock();
