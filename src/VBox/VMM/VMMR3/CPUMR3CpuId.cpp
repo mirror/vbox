@@ -5176,6 +5176,8 @@ static DBGFREGSUBFIELD const g_aLeaf7Sub0EbxSubFields[] =
 static DBGFREGSUBFIELD const g_aLeaf7Sub0EcxSubFields[] =
 {
     DBGFREGSUBFIELD_RO("PREFETCHWT1\0" "PREFETCHWT1 instruction",                        0, 1, 0),
+    DBGFREGSUBFIELD_RO("PKU\0"          "Protection Key for Usermode pages",             3, 1, 0),
+    DBGFREGSUBFIELD_RO("OSPKU\0"        "CR4.PKU mirror",                                4, 1, 0),
     DBGFREGSUBFIELD_TERMINATOR()
 };
 
