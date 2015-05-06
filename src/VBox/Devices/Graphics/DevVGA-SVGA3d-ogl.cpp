@@ -3094,50 +3094,39 @@ static int vmsvga3dCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContex
     VMSVGAPACKPARAMS SavedParams;
     vmsvga3dSetUnpackParams(pState, pContext, pSurface, &SavedParams);
 
+    /* Set the mipmap base and max level paramters. */
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, pSurface->faces[0].numMipLevels);
+    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
     if (pSurface->fDirty)
-    {
         Log(("vmsvga3dCreateTexture: sync dirty texture\n"));
-        for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
-        {
-            /* Paranoia: Always do level 0 here to mirror the non-dirty case. */
-            if (pSurface->pMipmapLevels[i].fDirty || i == 0)
-            {
-                if (pSurface->pMipmapLevels[i].fDirty)
-                    Log(("vmsvga3dCreateTexture: sync dirty texture mipmap level %d (pitch %x)\n", i, pSurface->pMipmapLevels[i].cbSurfacePitch));
 
-                glTexImage2D(GL_TEXTURE_2D,
-                             i,
-                             pSurface->internalFormatGL,
-                             pSurface->pMipmapLevels[i].size.width,
-                             pSurface->pMipmapLevels[i].size.height,
-                             0,
-                             pSurface->formatGL,
-                             pSurface->typeGL,
-                             pSurface->pMipmapLevels[i].pSurfaceData);
-
-                VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-
-                pSurface->pMipmapLevels[i].fDirty = false;
-            }
-        }
-        pSurface->fDirty = false;
-    }
-    else
+    /* Always allocate and initialize all mipmap levels; non-initialized mipmap levels used as render targets cause failures. */
+    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; i++)
     {
         /* Allocate and initialize texture memory.  Passing the zero filled pSurfaceData avoids
-           exposing random host memory to the guest and helps a with the fedora 21 surface
-           corruption issues (launchpad, background, search field, login). */
+            exposing random host memory to the guest and helps a with the fedora 21 surface
+            corruption issues (launchpad, background, search field, login). */
+        if (pSurface->pMipmapLevels[i].fDirty)
+            Log(("vmsvga3dCreateTexture: sync dirty texture mipmap level %d (pitch %x)\n", i, pSurface->pMipmapLevels[i].cbSurfacePitch));
+
         glTexImage2D(GL_TEXTURE_2D,
-                     0,
-                     pSurface->internalFormatGL,
-                     pSurface->pMipmapLevels[0].size.width,
-                     pSurface->pMipmapLevels[0].size.height,
-                     0,
-                     pSurface->formatGL,
-                     pSurface->typeGL,
-                     pSurface->pMipmapLevels[0].pSurfaceData);
-        VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+                        i,
+                        pSurface->internalFormatGL,
+                        pSurface->pMipmapLevels[i].size.width,
+                        pSurface->pMipmapLevels[i].size.height,
+                        0,
+                        pSurface->formatGL,
+                        pSurface->typeGL,
+                        pSurface->pMipmapLevels[i].pSurfaceData);
+
+        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+
+        pSurface->pMipmapLevels[i].fDirty = false;
     }
+    pSurface->fDirty = false;
 
     /* Restore unpacking parameters. */
     vmsvga3dRestoreUnpackParams(pState, pContext, pSurface, &SavedParams);
@@ -5772,7 +5761,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(type < SVGA3D_RT_MAX, VERR_INVALID_PARAMETER);
     AssertReturn(target.face == 0, VERR_INVALID_PARAMETER);
-    AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
 
     Log(("vmsvga3dSetRenderTarget cid=%x type=%x surface id=%x\n", cid, type, target.sid));
 
@@ -5826,6 +5814,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     {
     case SVGA3D_RT_DEPTH:
     case SVGA3D_RT_STENCIL:
+        AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
         if (pRenderTarget->oglId.texture == OPENGL_INVALID_ID)
         {
             Log(("vmsvga3dSetRenderTarget: create renderbuffer to be used as render target; surface id=%x type=%d format=%d\n", target.sid, pRenderTarget->flags, pRenderTarget->internalFormatGL));

@@ -4270,7 +4270,6 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(type < SVGA3D_RT_MAX, VERR_INVALID_PARAMETER);
     AssertReturn(target.face == 0, VERR_INVALID_PARAMETER);
-    AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
 
     Log(("vmsvga3dSetRenderTarget cid=%x type=%x surface id=%x\n", cid, type, target.sid));
 
@@ -4349,6 +4348,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     {
     case SVGA3D_RT_DEPTH:
     case SVGA3D_RT_STENCIL:
+        AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
         if (!pRenderTarget->u.pSurface)
         {
             DWORD cQualityLevels = 0;
@@ -4494,20 +4494,21 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
                 PVMSVGA3DSHAREDSURFACE pSharedSurface = vmsvga3dSurfaceGetSharedCopy(pThis, pContext, pRenderTarget);
                 AssertReturn(pSharedSurface, VERR_INTERNAL_ERROR);
 
-                hr = pSharedSurface->u.pTexture->GetSurfaceLevel(0 /* Texture level 0 */,
+                hr = pSharedSurface->u.pTexture->GetSurfaceLevel(target.mipmap,
                                                                  &pSurface);
 
                 fShared = true;
             }
             else
 #endif
-                hr = pRenderTarget->u.pTexture->GetSurfaceLevel(0 /* Texture level 0 */,
+                hr = pRenderTarget->u.pTexture->GetSurfaceLevel(target.mipmap,
                                                                 &pSurface);
 
             AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSetRenderTarget: GetSurfaceLevel failed with %x\n", hr), VERR_INTERNAL_ERROR);
         }
         else
         {
+            AssertReturn(target.mipmap == 0, VERR_INVALID_PARAMETER);
             if (!pRenderTarget->u.pSurface)
             {
                 DWORD cQualityLevels = 0;
