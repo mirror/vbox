@@ -188,6 +188,7 @@ RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUs
             rc = VERR_BUFFER_OVERFLOW;
         else
         {
+/** @todo this needs to be UTF-8 checked or converted...   */
             memcpy(pszUser, pPwd->pw_name, cbPwdUser);
             rc = VINF_SUCCESS;
         }
