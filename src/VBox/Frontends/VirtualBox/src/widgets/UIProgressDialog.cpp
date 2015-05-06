@@ -132,6 +132,14 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     QTimer::singleShot(cMinDuration, this, SLOT(show()));
 }
 
+UIProgressDialog::~UIProgressDialog()
+{
+    /* Wait for CProgress to complete: */
+    m_progress.WaitForCompletion(-1);
+    /* Call the timer event handling delegate: */
+    handleTimerEvent();
+}
+
 void UIProgressDialog::retranslateUi()
 {
     m_strCancel = tr("Canceling...");
@@ -201,7 +209,27 @@ void UIProgressDialog::reject()
         sltCancelOperation();
 }
 
-void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
+void UIProgressDialog::timerEvent(QTimerEvent*)
+{
+    /* Call the timer event handling delegate: */
+    handleTimerEvent();
+}
+
+void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
+{
+    if (m_fCancelEnabled)
+        sltCancelOperation();
+    else
+        pEvent->ignore();
+}
+
+void UIProgressDialog::sltCancelOperation()
+{
+    m_pCancelBtn->setEnabled(false);
+    m_progress.Cancel();
+}
+
+void UIProgressDialog::handleTimerEvent()
 {
     /* We should hide progress-dialog
      * if it was already finalized but not yet closed.
@@ -312,20 +340,6 @@ void UIProgressDialog::timerEvent(QTimerEvent* /* pEvent */)
     }
     else
         m_pEtaLbl->setText(m_strCancel);
-}
-
-void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
-{
-    if (m_fCancelEnabled)
-        sltCancelOperation();
-    else
-        pEvent->ignore();
-}
-
-void UIProgressDialog::sltCancelOperation()
-{
-    m_pCancelBtn->setEnabled(false);
-    m_progress.Cancel();
 }
 
 
