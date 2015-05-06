@@ -833,7 +833,8 @@ HRESULT VBoxD3DIfDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
 #else
     Params.pHgsmi = NULL;
 #endif
-    DWORD fFlags = D3DCREATE_HARDWARE_VERTEXPROCESSING;
+    DWORD fFlags =   D3DCREATE_HARDWARE_VERTEXPROCESSING
+                   | D3DCREATE_FPU_PRESERVE; /* Do not allow Wine to mess with FPU control word. */
     PVBOXWDDMDISP_ADAPTER pAdapter = pDevice->pAdapter;
     IDirect3DDevice9 * pDevice9If = NULL;
 
