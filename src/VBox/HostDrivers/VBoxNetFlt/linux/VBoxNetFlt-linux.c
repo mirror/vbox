@@ -2216,7 +2216,11 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
                 struct inet6_ifaddr *ifa;
 
                 read_lock_bh(&in6_dev->lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
                 list_for_each_entry(ifa, &in6_dev->addr_list, if_list)
+#else
+                for (ifa = in6_dev->addr_list; ifa != NULL; ifa = ifa->if_next)
+#endif
                 {
                     Log(("%s: %s: IPv6: addr %RTnaipv6/%u\n",
                          __FUNCTION__, VBOX_NETDEV_NAME(dev),
