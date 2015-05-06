@@ -6081,7 +6081,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /*
      * We use our own critical section to avoid unncessary pointer indirections
-     * in interface methods (as we all as for historical reasons).
+     * in interface methods (as well as for historical reasons).
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSect, RT_SRC_POS, "VGA#%u", iInstance);
     AssertRCReturn(rc, rc);
