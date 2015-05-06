@@ -197,7 +197,7 @@ bool UISession::initialize()
             debugger().SetVirtualTimeRate(vboxGlobal().getWarpPct());
     }
 
-    /* Apply ad-hoc reconfigurations from the command line. */
+    /* Apply ad-hoc reconfigurations from the command line: */
     if (vboxGlobal().hasFloppyImageToMount())
         mountAdHocImage(KDeviceType_Floppy, UIMediumType_Floppy, vboxGlobal().getFloppyImage());
     if (vboxGlobal().hasDvdImageToMount())
@@ -1847,31 +1847,24 @@ bool UISession::preprocessInitialization()
     return true;
 }
 
-bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, QString const &strImage)
+bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediumType, const QString &strImage)
 {
-    /*
-     * The 'none' image name means ejecting what ever is in the drive, so leave
-     * the image variables null.
-     */
+    /* The 'none' image name means ejecting what ever is in the drive,
+     * so leave the image variables null. */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     UIMedium uiImage;
     if (strImage != "none")
     {
-        /*
-         * Open the image.
-         */
-        QString strMediumID;
+        /* Open the image: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
         CMedium vboxImage = vbox.OpenMedium(strImage, enmDeviceType, KAccessMode_ReadWrite, false /* fForceNewUuid */);
         if (!vbox.isOk() || vboxImage.isNull())
         {
-            msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage, mainMachineWindow());
+            msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage);
             return false;
         }
 
-        /*
-         * Work the cache and use the cached image if possible.
-         */
+        /* Work the cache and use the cached image if possible: */
         uiImage = vboxGlobal().medium(vboxImage.GetId());
         if (uiImage.isNull())
         {
@@ -1881,30 +1874,26 @@ bool UISession::mountAdHocImage(KDeviceType enmDeviceType, UIMediumType enmMediu
     }
     if (vbox.isOk())
     {
-        /*
-         * Find suitable storage controller.
-         */
+        /* Find suitable storage controller: */
         foreach (const CStorageController &controller, machine().GetStorageControllers())
         {
             foreach (const CMediumAttachment &attachment, machine().GetMediumAttachmentsOfController(controller.GetName()))
             {
                 if (attachment.GetType() == enmDeviceType)
                 {
-                    /*
-                     * Mount the image.
-                     */
+                    /* Mount the image: */
                     machine().MountMedium(controller.GetName(), attachment.GetPort(), attachment.GetDevice(), uiImage.medium(), true /* force */);
                     if (machine().isOk())
                         return true;
-                    msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /*mount*/, false /* retry? */, mainMachineWindow());
+                    msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /* mount */, false /* retry */);
                     return false;
                 }
             }
         }
-        msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /*mount*/, false /* retry? */, mainMachineWindow());
+        msgCenter().cannotRemountMedium(machine(), uiImage, !uiImage.isNull() /* mount */, false /* retry */);
     }
     else
-        msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage, mainMachineWindow());
+        msgCenter().cannotOpenMedium(vbox, enmMediumType, strImage);
     return false;
 }
 
