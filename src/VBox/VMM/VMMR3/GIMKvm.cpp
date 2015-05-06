@@ -190,6 +190,10 @@ VMMR3_INT_DECL(int) gimR3KvmInitCompleted(PVM pVM)
 {
     if (TMR3CpuTickIsFixedRateMonotonic(pVM, true /* fWithParavirtEnabled */))
     {
+        /** @todo We might want to consider just enabling this bit *always*. As far
+         *        as I can see in the Linux guest, the "TSC_STABLE" bit is only
+         *        translated as a "monotonic" bit which even in Async systems we
+         *        -should- be reporting a strictly monotonic TSC to the guest.  */
         PGIMKVM pKvm = &pVM->gim.s.u.Kvm;
         pKvm->uBaseFeat |= GIM_KVM_BASE_FEAT_TSC_STABLE;
 
