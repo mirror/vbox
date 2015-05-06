@@ -272,9 +272,11 @@ bool UISession::powerUp()
         return false;
     }
 
-    /* Guard progressbar warnings from auto-closing: */
-    if (uimachine()->machineLogic())
-        uimachine()->machineLogic()->setPreventAutoClose(true);
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing
+     * and visual representation mode changes: */
+    if (machineLogic())
+        machineLogic()->setManualOverrideMode(true);
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
@@ -294,9 +296,9 @@ bool UISession::powerUp()
         return false;
     }
 
-    /* Allow further auto-closing: */
-    if (uimachine()->machineLogic())
-        uimachine()->machineLogic()->setPreventAutoClose(false);
+    /* Disable 'manual-override' finally: */
+    if (machineLogic())
+        machineLogic()->setManualOverrideMode(false);
 
     /* True by default: */
     return true;
@@ -1922,8 +1924,10 @@ bool UISession::postprocessInitialization()
         /* If user asked to close VM: */
         if (fShouldWeClose)
         {
-            /* Prevent auto-closure during power off sequence: */
-            machineLogic()->setPreventAutoClose(true);
+            /* Enable 'manual-override',
+             * preventing automatic Runtime UI closing: */
+            if (machineLogic())
+                machineLogic()->setManualOverrideMode(true);
             /* Power off VM: */
             bool fServerCrashed = false;
             powerOff(false, fServerCrashed);

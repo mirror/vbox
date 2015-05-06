@@ -341,6 +341,10 @@ void UIMachineLogicFullscreen::sltCheckForRequestedVisualStateType()
     if (!uisession()->isRunning() && !uisession()->isPaused())
         return;
 
+    /* Do not try to change visual-state type in 'manual override' mode: */
+    if (isManualOverrideMode())
+        return;
+
     /* Check requested visual-state types: */
     switch (uisession()->requestedVisualState())
     {

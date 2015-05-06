@@ -377,8 +377,9 @@ UIMachineView* UIMachineLogic::dockPreviewView() const
 
 void UIMachineLogic::saveState()
 {
-    /* Prevent auto-closure: */
-    setPreventAutoClose(true);
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
 
     /* Was the step successful? */
     bool fSuccess = true;
@@ -390,8 +391,8 @@ void UIMachineLogic::saveState()
     if (fSuccess)
         fSuccess = uisession()->saveState();
 
-    /* Allow auto-closure: */
-    setPreventAutoClose(false);
+    /* Disable 'manual-override' finally: */
+    setManualOverrideMode(false);
 
     /* Manually close Runtime UI: */
     if (fSuccess)
@@ -410,8 +411,9 @@ void UIMachineLogic::shutdown()
 
 void UIMachineLogic::powerOff(bool fDiscardingState)
 {
-    /* Prevent auto-closure: */
-    setPreventAutoClose(true);
+    /* Enable 'manual-override',
+     * preventing automatic Runtime UI closing: */
+    setManualOverrideMode(true);
 
     /* Was the step successful? */
     bool fSuccess = true;
@@ -419,8 +421,8 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
     bool fServerCrashed = false;
     fSuccess = uisession()->powerOff(fDiscardingState, fServerCrashed) || fServerCrashed;
 
-    /* Allow auto-closure: */
-    setPreventAutoClose(false);
+    /* Disable 'manual-override' finally: */
+    setManualOverrideMode(false);
 
     /* Manually close Runtime UI: */
     if (fSuccess)
@@ -554,8 +556,8 @@ void UIMachineLogic::sltMachineStateChanged()
         case KMachineState_Teleported:
         case KMachineState_Aborted:
         {
-            /* Is it allowed to close Runtime UI? */
-            if (!isPreventAutoClose())
+            /* If not in 'manual-override' mode: */
+            if (!isManualOverrideMode())
             {
                 /* VM has been powered off, saved, teleported or aborted.
                  * We must close Runtime UI: */
@@ -752,7 +754,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pSharedClipboardActions(0)
     , m_pDragAndDropActions(0)
     , m_fIsWindowsCreated(false)
-    , m_fIsPreventAutoClose(false)
+    , m_fIsManualOverride(false)
 #ifdef VBOX_WITH_DEBUGGER_GUI
     , m_pDbgGui(0)
     , m_pDbgGuiVT(0)
@@ -1505,8 +1507,8 @@ void UIMachineLogic::sltClose()
     if (!isMachineWindowsCreated())
         return;
 
-    /* Do not try to close machine-window if restricted: */
-    if (isPreventAutoClose())
+    /* Do not close machine-window in 'manual-override' mode: */
+    if (isManualOverrideMode())
         return;
 
     /* First, we have to close/hide any opened modal & popup application widgets.
