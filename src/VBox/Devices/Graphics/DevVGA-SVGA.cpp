@@ -1239,7 +1239,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
         pThis->svga.u32IrqMask = u32;
 
         /* Irq pending after the above change? */
-        if (pThis->svga.u32IrqMask & pThis->svga.u32IrqStatus)
+        if (pThis->svga.u32IrqStatus & u32)
         {
             Log(("SVGA_REG_IRQMASK: Trigger interrupt with status %x\n", pThis->svga.u32IrqStatus));
             PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 1);
@@ -1497,7 +1497,10 @@ PDMBOTHCBDECL(int) vmsvgaIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         ASMAtomicAndU32(&pThis->svga.u32IrqStatus, ~u32);
         /* Clear the irq in case all events have been cleared. */
         if (!(pThis->svga.u32IrqStatus & pThis->svga.u32IrqMask))
+        {
+            Log(("vmsvgaIOWrite SVGA_IRQSTATUS_PORT: clearing IRQ\n"));
             PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
+        }
         break;
     }
     return rc;
@@ -3193,19 +3196,32 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             ASMAtomicWriteU32(&pFIFO[SVGA_FIFO_STOP], offCurrentCmd);
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCommands);
 
-            /* FIFO progress might trigger an interrupt. */
-            if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)
+            /*
+             * Raise IRQ if required.  Must enter the critical section here
+             * before making final decisions here, otherwise cubebench and
+             * others may end up waiting forever.
+             */
+            if (   u32IrqStatus
+                || (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS))
             {
-                Log(("vmsvgaFIFOLoop: fifo progress irq\n"));
-                u32IrqStatus |= SVGA_IRQFLAG_FIFO_PROGRESS;
-            }
+                PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
-            /* Irq pending? */
-            if (pThis->svga.u32IrqMask & u32IrqStatus)
-            {
-                Log(("vmsvgaFIFOLoop: Trigger interrupt with status %x\n", u32IrqStatus));
-                ASMAtomicOrU32(&pThis->svga.u32IrqStatus, u32IrqStatus);
-                PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 1);
+                /* FIFO progress might trigger an interrupt. */
+                if (pThis->svga.u32IrqMask & SVGA_IRQFLAG_FIFO_PROGRESS)
+                {
+                    Log(("vmsvgaFIFOLoop: fifo progress irq\n"));
+                    u32IrqStatus |= SVGA_IRQFLAG_FIFO_PROGRESS;
+                }
+
+                /* Unmasked IRQ pending? */
+                if (pThis->svga.u32IrqMask & u32IrqStatus)
+                {
+                    Log(("vmsvgaFIFOLoop: Trigger interrupt with status %x\n", u32IrqStatus));
+                    ASMAtomicOrU32(&pThis->svga.u32IrqStatus, u32IrqStatus);
+                    PDMDevHlpPCISetIrq(pDevIns, 0, 1);
+                }
+
+                PDMCritSectLeave(&pThis->CritSect);
             }
         }
 
