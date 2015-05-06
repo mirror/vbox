@@ -69,6 +69,12 @@
 # define VBOX_FLT_XT_TO_INST(pXT)   RT_FROM_MEMBER(pXT, VBOXNETFLTINS, u.s.XmitTask)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+# define VBOX_NETDEV_NAME(dev)              netdev_name(dev)
+#else
+# define VBOX_NETDEV_NAME(dev)              ((dev)->reg_state != NETREG_REGISTERED ? "(unregistered net_device)" : (dev)->name)
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
 # define VBOX_DEV_NET(dev)                  dev_net(dev)
 #else
@@ -1875,7 +1881,7 @@ static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsi
 
     pDev = vboxNetFltLinuxRetainNetDev(pThis);
     Log(("VBoxNetFlt: %s: IPv4 event %s(0x%lx): addr %RTnaipv4 mask %RTnaipv4\n",
-         pDev ? netdev_name(pDev) : "<???>",
+         pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
          ifa->ifa_address, ifa->ifa_mask));
 
@@ -1909,7 +1915,7 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
 
     pDev = vboxNetFltLinuxRetainNetDev(pThis);
     Log(("VBoxNetFlt: %s: IPv6 event %s(0x%lx): %RTnaipv6\n",
-         pDev ? netdev_name(pDev) : "<???>",
+         pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
          &ifa->addr));
 
@@ -2185,7 +2191,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
                         goto continue_netdev;
 
                     Log(("%s: %s: IPv4: addr %RTnaipv4 mask %RTnaipv4\n",
-                         __FUNCTION__, netdev_name(dev),
+                         __FUNCTION__, VBOX_NETDEV_NAME(dev),
                          ifa->ifa_address, ifa->ifa_mask));
 
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
@@ -2205,7 +2211,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
                 list_for_each_entry(ifa, &in6_dev->addr_list, if_list)
                 {
                     Log(("%s: %s: IPv6: addr %RTnaipv6/%u\n",
-                         __FUNCTION__, netdev_name(dev),
+                         __FUNCTION__, VBOX_NETDEV_NAME(dev),
                          &ifa->addr, (unsigned)ifa->prefix_len));
 
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
