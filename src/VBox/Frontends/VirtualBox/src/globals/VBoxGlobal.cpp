@@ -4000,26 +4000,16 @@ void VBoxGlobal::prepare()
                 m_strPidfile = QString(qApp->argv()[i]);
         }
 #endif /* VBOX_GUI_WITH_PIDFILE */
+        /* Visual state type options: */
         else if (!::strcmp(arg, "-normal") || !::strcmp(arg, "--normal"))
-        {
             visualStateType = UIVisualStateType_Normal;
-        }
         else if (!::strcmp(arg, "-fullscreen") || !::strcmp(arg, "--fullscreen"))
-        {
             visualStateType = UIVisualStateType_Fullscreen;
-        }
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
-        {
             visualStateType = UIVisualStateType_Seamless;
-        }
         else if (!::strcmp(arg, "-scale") || !::strcmp(arg, "--scale"))
-        {
             visualStateType = UIVisualStateType_Scale;
-        }
-        else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
-        {
-            ++i;
-        }
+        /* Passwords: */
         else if (!::strcmp (arg, "--settingspw"))
         {
             if (++i < argc)
@@ -4062,6 +4052,9 @@ void VBoxGlobal::prepare()
                 }
             }
         }
+        /* Misc options: */
+        else if (!::strcmp (arg, "-comment") || !::strcmp (arg, "--comment"))
+            ++i;
         else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
             mShowStartVMErrors = false;
         else if (!::strcmp(arg, "--aggressive-caching"))
@@ -4070,6 +4063,18 @@ void VBoxGlobal::prepare()
             mAgressiveCaching = false;
         else if (!::strcmp(arg, "--restore-current"))
             mRestoreCurrentSnapshot = true;
+        /* Ad hoc VM reconfig options: */
+        else if (!::strcmp(arg, "--fdc"))
+        {
+            if (++i < argc)
+                m_strFloppyImage = qApp->argv()[i];
+        }
+        else if (!::strcmp(arg, "--dvd") || !::strcmp(arg, "--cdrom"))
+        {
+            if (++i < argc)
+                m_strDvdImage = qApp->argv()[i];
+        }
+        /* VMM Options: */
         else if (!::strcmp(arg, "--disable-patm"))
             mDisablePatm = true;
         else if (!::strcmp(arg, "--disable-csam"))
@@ -4088,6 +4093,7 @@ void VBoxGlobal::prepare()
                 mWarpPct = RTStrToUInt32(qApp->argv() [i]);
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
+        /* Debugger/Debugging options: */
         else if (!::strcmp(arg, "-dbg") || !::strcmp (arg, "--dbg"))
             setDebuggerVar(&m_fDbgEnabled, true);
         else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))

@@ -26,6 +26,7 @@
 
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
+#include "UIMediumDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -378,6 +379,7 @@ private:
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
     bool preprocessInitialization();
+    bool mountAdHocImage(KDeviceType enmDeviceType, enum UIMediumDefs::UIMediumType enmMediumType, QString const &strImage);
     bool postprocessInitialization();
     int countOfVisibleWindows();
 
