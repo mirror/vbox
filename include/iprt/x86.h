@@ -822,6 +822,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CR4_SMEP                        RT_BIT(20)
 /** Bit 21 - SMAP - Supervisor-mode Access Prevention enabled. */
 #define X86_CR4_SMAP                        RT_BIT(21)
+/** Bit 22 - PKE - Protection Key Enable. */
+#define X86_CR4_PKE                         RT_BIT(22)
 /** @} */
 
 
@@ -2831,6 +2833,10 @@ typedef X86XSAVEAREA const *PCX86XSAVEAREA;
 #define XSAVE_C_ZMM_16HI_BIT    7
 /** Bit 7 - Hi16_ZMM - 512-bits ZMM16-31 state (AVX-512). */
 #define XSAVE_C_ZMM_16HI        RT_BIT_64(XSAVE_C_ZMM_16HI_BIT)
+/** Bit 9 - PKRU - Protection-key state (bit number). */
+#define XSAVE_C_PKRU_BIT        9
+/** Bit 9 - PKRU - Protection-key state. */
+#define XSAVE_C_PKRU            RT_BIT_64(XSAVE_C_PKRU_BIT)
 /** Bit 62 - LWP - Lightweight Profiling (AMD) (bit number). */
 #define XSAVE_C_LWP_BIT         62
 /** Bit 62 - LWP - Lightweight Profiling (AMD). */
@@ -3737,6 +3743,8 @@ typedef const X86XCPT *PCX86XCPT;
 #define X86_TRAP_PF_RSVD            RT_BIT(3)
 /** Bit 4 - I/D - Instruction fetch (set) / Data access (clear) - PAE + NXE. */
 #define X86_TRAP_PF_ID              RT_BIT(4)
+/** Bit 5 - PK - Protection-key violation (AMD64 mode only). */
+#define X86_TRAP_PF_PK              RT_BIT(5)
 /** @} */
 
 #pragma pack(1)
