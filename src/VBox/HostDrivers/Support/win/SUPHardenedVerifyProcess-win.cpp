@@ -408,6 +408,7 @@ static int supHardNtVpFileMemCompareSection(PSUPHNTVPSTATE pThis, PSUPHNTVPIMAGE
                     else if (uRvaEnd >= uSkipEnd)
                     {
                         cbThis  -= uSkipEnd - uRva;
+                        pbFile  += uSkipEnd - uRva;
                         uRva     = uSkipEnd;
                     }
                     else
