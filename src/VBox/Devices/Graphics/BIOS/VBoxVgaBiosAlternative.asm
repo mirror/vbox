@@ -164,7 +164,7 @@
 
 
 
-section VGAROM progbits vstart=0x0 align=1 ; size=0x994 class=CODE group=AUTO
+section VGAROM progbits vstart=0x0 align=1 ; size=0x992 class=CODE group=AUTO
     db  055h, 0aah, 040h, 0e9h, 062h, 00ah, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 049h, 042h
     db  04dh, 000h
@@ -1500,22 +1500,20 @@ vbe_biosfn_set_get_palette_data:             ; 0xc0917 LB 0x64
     retn                                      ; c3
     mov ax, 0024fh                            ; b8 4f 02
     retn                                      ; c3
-vbe_biosfn_return_protected_mode_interface: ; 0xc097b LB 0x19
+vbe_biosfn_return_protected_mode_interface: ; 0xc097b LB 0x17
     test bl, bl                               ; 84 db
-    jne short 00990h                          ; 75 11
+    jne short 0098eh                          ; 75 0f
     mov di, 0c000h                            ; bf 00 c0
     mov es, di                                ; 8e c7
     mov di, 04400h                            ; bf 00 44
     mov cx, 00115h                            ; b9 15 01
-    db  02bh, 0cfh
-    ; sub cx, di                                ; 2b cf
     mov ax, strict word 0004fh                ; b8 4f 00
     retn                                      ; c3
     mov ax, 0014fh                            ; b8 4f 01
     retn                                      ; c3
 
-  ; Padding 0x6c bytes at 0xc0994
-  times 108 db 0
+  ; Padding 0x6e bytes at 0xc0992
+  times 110 db 0
 
 section _TEXT progbits vstart=0xa00 align=1 ; size=0x2f57 class=CODE group=AUTO
 set_int_vector_:                             ; 0xc0a00 LB 0x1a
@@ -6771,7 +6769,7 @@ vesa_pm_end:                                 ; 0xc4514 LB 0x1
 
 section _DATA progbits vstart=0x4600 align=1 ; size=0x372a class=DATA group=DGROUP
 _msg_vga_init:                               ; 0xc4600 LB 0x34
-    db  'Oracle VM VirtualBox Version 5.0.0_BETA2 VGA BIOS', 00dh, 00ah, 000h
+    db  'Oracle VM VirtualBox Version 5.0.0_BETA3 VGA BIOS', 00dh, 00ah, 000h
 _vga_modes:                                  ; 0xc4634 LB 0x80
     db  000h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 001h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
     db  002h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h, 003h, 000h, 000h, 004h, 000h, 0b8h, 0ffh, 002h
@@ -7666,7 +7664,7 @@ _vbebios_vendor_name:                        ; 0xc7c79 LB 0x13
 _vbebios_product_name:                       ; 0xc7c8c LB 0x21
     db  'Oracle VM VirtualBox VBE Adapter', 000h
 _vbebios_product_revision:                   ; 0xc7cad LB 0x29
-    db  'Oracle VM VirtualBox Version 5.0.0_BETA2', 000h
+    db  'Oracle VM VirtualBox Version 5.0.0_BETA3', 000h
 _vbebios_info_string:                        ; 0xc7cd6 LB 0x2b
     db  'VirtualBox VBE Display Adapter enabled', 00dh, 00ah, 00dh, 00ah, 000h
 _no_vbebios_info_string:                     ; 0xc7d01 LB 0x29
@@ -7722,4 +7720,4 @@ section CONST2 progbits vstart=0x7d2a align=1 ; size=0x0 class=DATA group=DGROUP
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
     db  000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h, 000h
-    db  000h, 000h, 000h, 000h, 000h, 0e0h
+    db  000h, 000h, 000h, 000h, 000h, 0dah
