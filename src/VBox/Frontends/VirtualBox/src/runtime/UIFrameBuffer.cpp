@@ -1531,7 +1531,7 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
         {
             /* Fast scale sub-pixmap (2nd copy involved): */
             subPixmap = subPixmap.scaled(subPixmap.size() * dBackingScaleFactor,
-                                         Qt::IgnoreAspectRatio, transformationMode(enmScalingOptimizationType));
+                                         Qt::IgnoreAspectRatio, Qt::FastTransformation);
         }
 
 #ifdef Q_WS_MAC
