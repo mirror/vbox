@@ -934,6 +934,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
     }
 
     /* Count sub-leaves. */
+    uint32_t cMinLeaves = uLeaf == 0xd ? 64 : 0;
     uint32_t cRepeats = 0;
     uSubLeaf = 0;
     for (;;)
@@ -943,17 +944,7 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
         /* Figuring out when to stop isn't entirely straight forward as we need
            to cover undocumented behavior up to a point and implementation shortcuts. */
 
-        /* 1. Look for zero values. */
-        if (   auCur[0] == 0
-            && auCur[1] == 0
-            && (auCur[2] == 0 || auCur[2] == uSubLeaf)
-            && (auCur[3] == 0 || uLeaf == 0xb /* edx is fixed */) )
-        {
-            cRepeats = 0;
-            break;
-        }
-
-        /* 2. Look for more than 4 repeating value sets. */
+        /* 1. Look for more than 4 repeating value sets. */
         if (   auCur[0] == auPrev[0]
             && auCur[1] == auPrev[1]
             && (    auCur[2] == auPrev[2]
@@ -961,12 +952,30 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
                     && auPrev[2] == uSubLeaf - 1) )
             && auCur[3] == auPrev[3])
         {
-            cRepeats++;
-            if (cRepeats > 4)
+            if (   uLeaf != 0xd
+                || uSubLeaf >= 64
+                || (   auCur[0] == 0
+                    && auCur[1] == 0
+                    && auCur[2] == 0
+                    && auCur[3] == 0
+                    && auPrev[2] == 0) )
+                cRepeats++;
+            if (cRepeats > 4 && uSubLeaf >= cMinLeaves)
                 break;
         }
         else
             cRepeats = 0;
+
+        /* 2. Look for zero values. */
+        if (   auCur[0] == 0
+            && auCur[1] == 0
+            && (auCur[2] == 0 || auCur[2] == uSubLeaf)
+            && (auCur[3] == 0 || uLeaf == 0xb /* edx is fixed */)
+            && uSubLeaf >= cMinLeaves)
+        {
+            cRepeats = 0;
+            break;
+        }
 
         /* 3. Leaf 0xb level type 0 check. */
         if (   uLeaf == 0xb
@@ -988,6 +997,8 @@ static bool cpumR3IsEcxRelevantForCpuIdLeaf(uint32_t uLeaf, uint32_t *pcSubLeave
                 cDocLimit = 4;
             else if (uLeaf == 0x7)
                 cDocLimit = 1;
+            else if (uLeaf == 0xd)
+                cDocLimit = 63;
             else if (uLeaf == 0xf)
                 cDocLimit = 2;
             if (cDocLimit != UINT32_MAX)
@@ -1153,7 +1164,7 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                     && cpumR3IsEcxRelevantForCpuIdLeaf(uLeaf, &cSubLeaves, &fFinalEcxUnchanged)
                     && cpumR3IsEcxRelevantForCpuIdLeaf(uLeaf, &cSubLeaves, &fFinalEcxUnchanged))
                 {
-                    if (cSubLeaves > 16)
+                    if (cSubLeaves > (uLeaf == 0xd ? 68U : 16U))
                     {
                         /* This shouldn't happen.  But in case it does, file all
                            relevant details in the release log. */
@@ -1982,6 +1993,16 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
 }
 
 
+/**
+ * Installs the CPUID leaves and explods the data into structures like
+ * GuestFeatures and CPUMCTX::aoffXState.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM handle.
+ * @param   pCpum       The CPUM part of @a VM.
+ * @param   paLeaves    The leaves.  These will be copied (but not freed).
+ * @param   cLeaves     The number of leaves.
+ */
 static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLEAF paLeaves, uint32_t cLeaves)
 {
     cpumR3CpuIdAssertOrder(paLeaves, cLeaves);
@@ -2073,6 +2094,39 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
             else
                 *pLegacyLeaf = pCpum->GuestInfo.DefCpuId;
         }
+    }
+
+    /*
+     * Configure XSAVE offsets according to the CPUID info.
+     */
+    memset(&pVM->aCpus[0].cpum.s.Guest.aoffXState[0], 0xff, sizeof(pVM->aCpus[0].cpum.s.Guest.aoffXState));
+    pVM->aCpus[0].cpum.s.Guest.aoffXState[XSAVE_C_X87_BIT] = 0;
+    pVM->aCpus[0].cpum.s.Guest.aoffXState[XSAVE_C_SSE_BIT] = 0;
+    for (uint32_t iComponent = XSAVE_C_SSE_BIT + 1; iComponent < 63; iComponent++)
+        if (pCpum->fXStateGuestMask & RT_BIT_64(iComponent))
+        {
+            PCPUMCPUIDLEAF pSubLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 0xd, iComponent);
+            AssertLogRelMsgReturn(pSubLeaf, ("iComponent=%#x\n"), VERR_CPUM_IPE_1);
+            AssertLogRelMsgReturn(pSubLeaf->fSubLeafMask >= iComponent, ("iComponent=%#x\n"), VERR_CPUM_IPE_1);
+            AssertLogRelMsgReturn(   pSubLeaf->uEax > 0
+                                  && pSubLeaf->uEax <= pCpum->GuestFeatures.cbMaxExtendedState
+                                  && pSubLeaf->uEbx >= 0x240
+                                  && pSubLeaf->uEbx <  pCpum->GuestFeatures.cbMaxExtendedState
+                                  && pSubLeaf->uEbx + pSubLeaf->uEax < pCpum->GuestFeatures.cbMaxExtendedState,
+                                  ("iComponent=%#x eax=%#x ebx=%#x cbMax=%#x\n", iComponent, pSubLeaf->uEax, pSubLeaf->uEbx,
+                                   pCpum->GuestFeatures.cbMaxExtendedState),
+                                  VERR_CPUM_IPE_1);
+            pVM->aCpus[0].cpum.s.Guest.aoffXState[iComponent] = pSubLeaf->uEbx;
+        }
+    memset(&pVM->aCpus[0].cpum.s.Hyper.aoffXState[0], 0xff, sizeof(pVM->aCpus[0].cpum.s.Hyper.aoffXState));
+
+    /* Copy the CPU #0  data to the other CPUs. */
+    for (VMCPUID iCpu = 1; iCpu < pVM->cCpus; iCpu++)
+    {
+        memcpy(&pVM->aCpus[iCpu].cpum.s.Guest.aoffXState[0], &pVM->aCpus[0].cpum.s.Guest.aoffXState[0],
+               sizeof(pVM->aCpus[iCpu].cpum.s.Guest.aoffXState));
+        memcpy(&pVM->aCpus[iCpu].cpum.s.Hyper.aoffXState[0], &pVM->aCpus[0].cpum.s.Hyper.aoffXState[0],
+               sizeof(pVM->aCpus[iCpu].cpum.s.Hyper.aoffXState));
     }
 
     return VINF_SUCCESS;
@@ -3015,6 +3069,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     pCpum->fXStateGuestMask = fGuestXcr0Mask;
 
     /* Work the sub-leaves. */
+    uint32_t cbXSaveMax = sizeof(X86FXSTATE);
     for (uSubLeaf = 0; uSubLeaf < 63; uSubLeaf++)
     {
         pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, 13, uSubLeaf);
@@ -3027,15 +3082,28 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                     case 0:
                         pCurLeaf->uEax &= RT_LO_U32(fGuestXcr0Mask);
                         pCurLeaf->uEdx &= RT_HI_U32(fGuestXcr0Mask);
+                        cbXSaveMax = pCurLeaf->uEcx;
+                        AssertLogRelMsgReturn(cbXSaveMax <= 8192 && cbXSaveMax >= 0x240, ("%#x\n", cbXSaveMax), VERR_CPUM_IPE_2);
+                        AssertLogRelMsgReturn(pCurLeaf->uEbx >= 0x240 && pCurLeaf->uEbx <= cbXSaveMax,
+                                              ("ebx=%#x cbXSaveMax=%#x\n", pCurLeaf->uEbx, cbXSaveMax),
+                                              VERR_CPUM_IPE_2);
                         continue;
                     case 1:
                         pCurLeaf->uEax &= 0;
                         pCurLeaf->uEcx &= 0;
                         pCurLeaf->uEdx &= 0;
+                        /** @todo what about checking ebx? */
                         continue;
                     default:
                         if (fGuestXcr0Mask & RT_BIT_64(uSubLeaf))
                         {
+                            AssertLogRelMsgReturn(   pCurLeaf->uEax <= cbXSaveMax
+                                                  && pCurLeaf->uEax >  0
+                                                  && pCurLeaf->uEbx < cbXSaveMax
+                                                  && pCurLeaf->uEbx >= 0x240
+                                                  && pCurLeaf->uEbx + pCurLeaf->uEax <= cbXSaveMax,
+                                                  ("%#x: eax=%#x ebx=%#x cbMax=%#x\n", pCurLeaf->uEax, pCurLeaf->uEbx, cbXSaveMax),
+                                                  VERR_CPUM_IPE_2);
                             AssertLogRel(!(pCurLeaf->uEcx & 1));
                             pCurLeaf->uEcx = 0; /* Bit 0 should be zero (XCR0), the reset are reserved... */
                             pCurLeaf->uEdx = 0; /* it's reserved... */
@@ -3632,13 +3700,10 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "SSE4.2", &pConfig->enmSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
-    /* Currently excluding older AMDs as we're seeing trouble booting 32-bit windows 7, due to
-       KiTrap07++ assuming the high 128-bit YMM component is in init state. Leading to a page fault. */
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
-                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
-                            //&& !CPUMMICROARCH_IS_AMD_FAM_15H(pVM->cpum.s.HostFeatures.enmMicroarch);
-                            && pVM->cpum.s.HostFeatures.enmCpuVendor != CPUMCPUVENDOR_AMD;
+                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor;
+
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
      * Expose XSAVE/XRSTOR to the guest if available.  For the time being the
      * default is to only expose this to VMs with nested paging and AMD-V or
