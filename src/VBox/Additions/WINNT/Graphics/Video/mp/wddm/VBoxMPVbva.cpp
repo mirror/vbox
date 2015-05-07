@@ -550,7 +550,7 @@ RTDECL(void*) VBoxVBVAExAllocContiguous(PVBVAEXBUFFERCONTEXT pCtx, PHGSMIGUESTCO
 
     if (cbHwBufferContiguousAvail < cb)
     {
-        if (cb < pVBVA->cbData - pVBVA->off32Free)
+        if (cb > pVBVA->cbData - pVBVA->off32Free)
         {
             /* the entire contiguous part is smaller than the requested buffer */
             return NULL;
