@@ -1074,6 +1074,36 @@ void UIGDetailsUpdateThreadUI::run()
             /* Damn GetExtraData should be const already :( */
             CMachine localMachine = machine();
 
+#ifndef Q_WS_MAC
+            /* Get menu-bar availability status: */
+            const QString strMenubarEnabled = localMachine.GetExtraData(UIExtraDataDefs::GUI_MenuBar_Enabled);
+            {
+                /* Try to convert loaded data to bool: */
+                const bool fEnabled = !(strMenubarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
+                                        strMenubarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
+                                        strMenubarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
+                                        strMenubarEnabled == "0");
+                /* Append information: */
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Menu-bar", "details (user interface)"),
+                                          fEnabled ? QApplication::translate("UIGDetails", "Enabled", "details (user interface/menu-bar)") :
+                                                     QApplication::translate("UIGDetails", "Disabled", "details (user interface/menu-bar)"));
+            }
+#endif /* !Q_WS_MAC */
+
+            /* Get status-bar availability status: */
+            const QString strStatusbarEnabled = localMachine.GetExtraData(UIExtraDataDefs::GUI_StatusBar_Enabled);
+            {
+                /* Try to convert loaded data to bool: */
+                const bool fEnabled = !(strStatusbarEnabled.compare("false", Qt::CaseInsensitive) == 0 ||
+                                        strStatusbarEnabled.compare("no", Qt::CaseInsensitive) == 0 ||
+                                        strStatusbarEnabled.compare("off", Qt::CaseInsensitive) == 0 ||
+                                        strStatusbarEnabled == "0");
+                /* Append information: */
+                m_text << UITextTableLine(QApplication::translate("UIGDetails", "Status-bar", "details (user interface)"),
+                                          fEnabled ? QApplication::translate("UIGDetails", "Enabled", "details (user interface/status-bar)") :
+                                                     QApplication::translate("UIGDetails", "Disabled", "details (user interface/status-bar)"));
+            }
+
             /* Get scale-factor value: */
             const QString strScaleFactor = localMachine.GetExtraData(UIExtraDataDefs::GUI_ScaleFactor);
             {
