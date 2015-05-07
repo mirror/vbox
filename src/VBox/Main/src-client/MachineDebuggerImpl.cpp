@@ -1194,15 +1194,17 @@ HRESULT MachineDebugger::getRegisters(ULONG aCpuId, std::vector<com::Utf8Str> &a
                 {
                     try
                     {
-
+                        aValues.resize(cRegs);
+                        aNames.resize(cRegs);
                         for (uint32_t iReg = 0; iReg < cRegs; iReg++)
                         {
-                            Bstr bstrValue;
-
-                            hrc = formatRegisterValue(&bstrValue, &paRegs[iReg].Val, paRegs[iReg].enmType);
-                            AssertComRC(hrc);
+                            char szHex[160];
+                            szHex[159] = szHex[0] = '\0';
+                            ssize_t cch = DBGFR3RegFormatValue(szHex, sizeof(szHex), &paRegs[iReg].Val,
+                                                               paRegs[iReg].enmType, true /*fSpecial*/);
+                            Assert(cch > 0);
                             aNames[iReg] = Utf8Str(paRegs[iReg].pszName);
-                            aValues[iReg] = Utf8Str(bstrValue);
+                            aValues[iReg] = Utf8Str(szHex);
                         }
                     }
                     catch (std::bad_alloc)
