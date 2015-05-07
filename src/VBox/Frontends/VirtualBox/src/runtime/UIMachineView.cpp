@@ -576,6 +576,9 @@ void UIMachineView::prepareFrameBuffer()
         /* Take HiDPI optimization type into account: */
         m_pFrameBuffer->setHiDPIOptimizationType(uisession()->hiDPIOptimizationType());
 
+        /* Take scaling optimization type into account: */
+        m_pFrameBuffer->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
+
 #ifdef Q_WS_MAC
         /* Take backing scale-factor into account: */
         m_pFrameBuffer->setBackingScaleFactor(darwinBackingScaleFactor(machineWindow()));
