@@ -376,10 +376,10 @@ VMM_INT_DECL(int) gimKvmXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PDISCPUSTATE pDis)
         if (   pDis->pCurInstr->uOpcode == OP_VMCALL
             || pDis->pCurInstr->uOpcode == OP_VMMCALL)
         {
-            uint8_t abHypercall[3];
             if (   pDis->pCurInstr->uOpcode != pKvm->uOpCodeNative
                 && HMIsEnabled(pVM))
             {
+                uint8_t abHypercall[3];
                 size_t  cbWritten = 0;
                 rc = VMMPatchHypercall(pVM, &abHypercall, sizeof(abHypercall), &cbWritten);
                 AssertRC(rc);
