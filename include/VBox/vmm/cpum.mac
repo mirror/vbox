@@ -28,6 +28,14 @@
 
 %include "iprt/asmdefs.mac"
 
+
+;;
+; The volatile XSAVE components when VBOX_WITH_KERNEL_USING_XMM is active.
+; @note ASSUMED to be at the most 32-bit in width at the moment.
+%ifdef VBOX_WITH_KERNEL_USING_XMM
+ %define CPUM_VOLATILE_XSAVE_GUEST_COMPONENTS (XSAVE_C_SSE | XSAVE_C_YMM | XSAVE_C_ZMM_HI256 | XSAVE_C_ZMM_16HI)
+%endif
+
 ;;
 ; CPUID leaf.
 ; @remarks This structure is used by the patch manager and can only be extended
