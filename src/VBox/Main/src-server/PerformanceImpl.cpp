@@ -669,7 +669,9 @@ void PerformanceCollector::suspendSampling()
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     int rc = RTTimerLRStop(m.sampler);
-    AssertRC(rc);
+    if (   RT_FAILURE(rc)
+        && rc != VERR_TIMER_SUSPENDED)     /* calling suspendSampling() successively shouldn't assert. See @bugref{3495}. */
+        AssertMsgFailed(("PerformanceCollector::suspendSampling(): RTTimerLRStop returned %Rrc\n", rc));
 }
 
 void PerformanceCollector::resumeSampling()
@@ -678,7 +680,9 @@ void PerformanceCollector::resumeSampling()
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     int rc = RTTimerLRStart(m.sampler, 0);
-    AssertRC(rc);
+    if (   RT_FAILURE(rc)
+        && rc != VERR_TIMER_ACTIVE)     /* calling resumeSampling() successively shouldn't assert. See @bugref{3495}. */
+        AssertMsgFailed(("PerformanceCollector::resumeSampling(): RTTimerLRStart returned %Rrc\n", rc));
 }
 
 

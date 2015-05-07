@@ -6200,12 +6200,13 @@ HRESULT Console::i_pause(Reason_T aReason)
         case MachineState_Paused:
         case MachineState_TeleportingPausedVM:
         case MachineState_OnlineSnapshotting:
-
-        /* Remove any keys which are supposed to be removed on a suspend. */
-        if (   aReason == Reason_HostSuspend
-            || aReason == Reason_HostBatteryLow)
-            i_removeSecretKeysOnSuspend();
-
+            /* Remove any keys which are supposed to be removed on a suspend. */
+            if (   aReason == Reason_HostSuspend
+                || aReason == Reason_HostBatteryLow)
+            {
+                i_removeSecretKeysOnSuspend();
+                return S_OK;
+            }
             return setError(VBOX_E_INVALID_VM_STATE, tr("Already paused"));
 
         default:
@@ -6285,7 +6286,16 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
     {
         VMRESUMEREASON enmReason = VMRESUMEREASON_USER;
         if (aReason == Reason_HostResume)
+        {
+            /*
+             * Host resume may be called multiple times successively. We don't want to VMR3Resume->vmR3Resume->vmR3TrySetState()
+             * to assert on us, hence check for the VM state here and bail if it's already in the 'running' state.
+             * See @bugref{3495}.
+             */
             enmReason = VMRESUMEREASON_HOST_RESUME;
+            if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_RUNNING)
+                return S_OK;
+        }
         else if (aReason == Reason_Snapshot)
             enmReason = VMRESUMEREASON_STATE_SAVED;
 
