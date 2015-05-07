@@ -3600,10 +3600,9 @@ static int rtldrPEValidateDirectoriesAndRememberStuff(PRTLDRMODPE pModPe, const 
             } while (off < Dir.Size);
         }
         RTMemTmpFree(pFirst);
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc) && !(fFlags & RTLDR_O_FOR_DEBUG))
             return rc;
     }
-
 
     return VINF_SUCCESS;
 }
