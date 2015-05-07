@@ -1009,7 +1009,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
                 /*
-                 * Update the periodict preemption timer if it's active.
+                 * Update the periodic preemption timer if it's active.
                  */
                 if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
                     GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
