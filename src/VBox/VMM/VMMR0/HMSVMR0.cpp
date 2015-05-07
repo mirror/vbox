@@ -4491,11 +4491,11 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     /** @todo Decode Assist. */
-    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
-    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
-        rc = VERR_EM_INTERPRETER;
-    if (rc == VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
+    if (RT_UNLIKELY(   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rcStrict = VERR_EM_INTERPRETER;
+    if (rcStrict == VINF_SUCCESS)
     {
         /* RIP has been updated by EMInterpretInstruction(). */
         Assert((pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0) <= 15);
@@ -4523,11 +4523,11 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
                                 pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
                 break;
         }
-        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
     else
-        Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
-    return rc;
+        Assert(rcStrict == VERR_EM_INTERPRETER || rcStrict == VINF_PGM_CHANGE_MODE || rcStrict == VINF_PGM_SYNC_CR3);
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
