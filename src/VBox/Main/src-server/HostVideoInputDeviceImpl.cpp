@@ -74,14 +74,14 @@ void HostVideoInputDevice::uninit()
 {
     LogFlowThisFunc(("\n"));
 
-    m.name.setNull();
-    m.path.setNull();
-    m.alias.setNull();
-
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    m.name.setNull();
+    m.path.setNull();
+    m.alias.setNull();
 }
 
 static HRESULT hostVideoInputDeviceAdd(HostVideoInputDeviceList *pList,
