@@ -74,6 +74,9 @@
 ;;
 ; Make the mask for the given bit.
 %define RT_BIT_32(bit)     (1 << bit)
+;;
+; Make the mask for the given bit.
+%define RT_BIT_64(bit)     (1 << bit)
 
 ;;
 ; Makes a 32-bit unsigned (not type safe, but whatever) out of four byte values.
