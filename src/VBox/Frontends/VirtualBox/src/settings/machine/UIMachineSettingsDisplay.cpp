@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2014 Oracle Corporation
+ * Copyright (C) 2008-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,7 @@
 /* GUI includes: */
 # include "QIWidgetValidator.h"
 # include "UIMachineSettingsDisplay.h"
-# include "UIMessageCenter.h"
+# include "UIExtraDataManager.h"
 # include "UIConverter.h"
 # include "VBoxGlobal.h"
 
@@ -35,7 +35,6 @@
 # include "CExtPack.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
-
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
     : m_iMinVRAM(0)
@@ -100,9 +99,13 @@ void UIMachineSettingsDisplay::loadToCacheFrom(QVariant &data)
     /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData;
 
-    /* Cache Video data: */
+    /* Cache Screen data: */
     displayData.m_iCurrentVRAM = m_machine.GetVRAMSize();
     displayData.m_cGuestScreenCount = m_machine.GetMonitorCount();
+    displayData.m_dScaleFactor = gEDataManager->scaleFactor(m_machine.GetId());
+#ifdef Q_WS_MAC
+    displayData.m_fUseUnscaledHiDPIOutput = gEDataManager->useUnscaledHiDPIOutput(m_machine.GetId());
+#endif /* Q_WS_MAC */
     displayData.m_f3dAccelerationEnabled = m_machine.GetAccelerate3DEnabled();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     displayData.m_f2dAccelerationEnabled = m_machine.GetAccelerate2DVideoEnabled();
@@ -148,8 +151,12 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Get display data from cache: */
     const UIDataSettingsMachineDisplay &displayData = m_cache.base();
 
-    /* Load Video data to page: */
+    /* Load Screen data to page: */
     m_pEditorVideoScreenCount->setValue(displayData.m_cGuestScreenCount);
+    m_pEditorGuestScreenScale->setValue(displayData.m_dScaleFactor * 100);
+#ifdef Q_WS_MAC
+    m_pCheckBoxUnscaledHiDPIOutput->setChecked(displayData.m_fUseUnscaledHiDPIOutput);
+#endif /* Q_WS_MAC */
     m_pCheckbox3D->setChecked(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     m_pCheckbox2DVideo->setChecked(displayData.m_f2dAccelerationEnabled);
@@ -192,9 +199,13 @@ void UIMachineSettingsDisplay::putToCache()
     /* Prepare display data: */
     UIDataSettingsMachineDisplay displayData = m_cache.base();
 
-    /* Gather Video data from page: */
+    /* Gather Screen data from page: */
     displayData.m_iCurrentVRAM = m_pEditorVideoMemorySize->value();
     displayData.m_cGuestScreenCount = m_pEditorVideoScreenCount->value();
+    displayData.m_dScaleFactor = (double)m_pEditorGuestScreenScale->value() / 100;
+#ifdef Q_WS_MAC
+    displayData.m_fUseUnscaledHiDPIOutput = m_pCheckBoxUnscaledHiDPIOutput->isChecked();
+#endif /* Q_WS_MAC */
     displayData.m_f3dAccelerationEnabled = m_pCheckbox3D->isChecked();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     displayData.m_f2dAccelerationEnabled = m_pCheckbox2DVideo->isChecked();
@@ -237,16 +248,22 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
         /* Get display data from cache: */
         const UIDataSettingsMachineDisplay &displayData = m_cache.data();
 
-        /* Make sure machine is 'offline': */
+        /* Store Screen data: */
         if (isMachineOffline())
         {
-            /* Store Video data: */
             m_machine.SetVRAMSize(displayData.m_iCurrentVRAM);
             m_machine.SetMonitorCount(displayData.m_cGuestScreenCount);
             m_machine.SetAccelerate3DEnabled(displayData.m_f3dAccelerationEnabled);
 #ifdef VBOX_WITH_VIDEOHWACCEL
             m_machine.SetAccelerate2DVideoEnabled(displayData.m_f2dAccelerationEnabled);
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+        }
+        if (isMachineInValidMode())
+        {
+            gEDataManager->setScaleFactor(displayData.m_dScaleFactor, m_machine.GetId());
+#ifdef Q_WS_MAC
+            gEDataManager->setUseUnscaledHiDPIOutput(displayData.m_fUseUnscaledHiDPIOutput, m_machine.GetId());
+#endif /* Q_WS_MAC */
         }
 
         /* Check if Remote Display server still valid: */
@@ -315,7 +332,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
     /* Pass by default: */
     bool fPass = true;
 
-    /* Video tab: */
+    /* Screen tab: */
     {
         /* Prepare message: */
         UIValidationMessage message;
@@ -433,13 +450,16 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
 
 void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
 {
-    /* Video tab-order: */
+    /* Screen tab-order: */
     setTabOrder(pWidget, m_pTabWidget->focusProxy());
     setTabOrder(m_pTabWidget->focusProxy(), m_pSliderVideoMemorySize);
     setTabOrder(m_pSliderVideoMemorySize, m_pEditorVideoMemorySize);
     setTabOrder(m_pEditorVideoMemorySize, m_pSliderVideoScreenCount);
     setTabOrder(m_pSliderVideoScreenCount, m_pEditorVideoScreenCount);
-    setTabOrder(m_pEditorVideoScreenCount, m_pCheckbox3D);
+    setTabOrder(m_pEditorVideoScreenCount, m_pSliderGuestScreenScale);
+    setTabOrder(m_pSliderGuestScreenScale, m_pEditorGuestScreenScale);
+    setTabOrder(m_pEditorGuestScreenScale, m_pCheckBoxUnscaledHiDPIOutput);
+    setTabOrder(m_pCheckBoxUnscaledHiDPIOutput, m_pCheckbox3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder(m_pCheckbox3D, m_pCheckbox2DVideo);
     setTabOrder(m_pCheckbox2DVideo, m_pCheckboxRemoteDisplay);
@@ -470,7 +490,7 @@ void UIMachineSettingsDisplay::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsDisplay::retranslateUi(this);
 
-    /* Video stuff: */
+    /* Screen stuff: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     m_pLabelVideoMemorySizeMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMinVRAM));
     m_pLabelVideoMemorySizeMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
@@ -500,11 +520,37 @@ void UIMachineSettingsDisplay::polishPage()
     /* Get system data from cache: */
     const UIDataSettingsMachineDisplay &displayData = m_cache.base();
 
-    /* Video tab: */
-    m_pContainerVideo->setEnabled(isMachineOffline());
+    /* Screen tab: */
+    m_pLabelVideoMemorySize->setEnabled(isMachineOffline());
+    m_pSliderVideoMemorySize->setEnabled(isMachineOffline());
+    m_pLabelVideoMemorySizeMin->setEnabled(isMachineOffline());
+    m_pLabelVideoMemorySizeMax->setEnabled(isMachineOffline());
+    m_pEditorVideoMemorySize->setEnabled(isMachineOffline());
+    m_pLabelVideoMemoryUnit->setEnabled(isMachineOffline());
+    m_pLabelVideoScreenCount->setEnabled(isMachineOffline());
+    m_pSliderVideoScreenCount->setEnabled(isMachineOffline());
+    m_pLabelVideoScreenCountMin->setEnabled(isMachineOffline());
+    m_pLabelVideoScreenCountMax->setEnabled(isMachineOffline());
+    m_pEditorVideoScreenCount->setEnabled(isMachineOffline());
+    m_pLabelGuestScreenScale->setEnabled(isMachineInValidMode());
+    m_pSliderGuestScreenScale->setEnabled(isMachineInValidMode());
+    m_pLabelGuestScreenScaleMin->setEnabled(isMachineInValidMode());
+    m_pLabelGuestScreenScaleMax->setEnabled(isMachineInValidMode());
+    m_pEditorGuestScreenScale->setEnabled(isMachineInValidMode());
+#ifdef Q_WS_MAC
+    m_pLabelHiDPI->setEnabled(isMachineInValidMode());
+    m_pCheckBoxUnscaledHiDPIOutput->setEnabled(isMachineInValidMode());
+#else /* !Q_WS_MAC */
+    m_pLabelHiDPI->hide();
+    m_pCheckBoxUnscaledHiDPIOutput->hide();
+#endif /* !Q_WS_MAC */
+    m_pLabelVideoOptions->setEnabled(isMachineOffline());
+    m_pCheckbox3D->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    m_pCheckbox2DVideo->setEnabled(VBoxGlobal::isAcceleration2DVideoAvailable());
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+    m_pCheckbox2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
+#else /* !VBOX_WITH_VIDEOHWACCEL */
+    m_pCheckbox2DVideo->hide();
+#endif /* !VBOX_WITH_VIDEOHWACCEL */
 
     /* Remote Display tab: */
     m_pTabWidget->setTabEnabled(1, displayData.m_fRemoteDisplayServerSupported);
@@ -572,6 +618,22 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
 
     /* Revalidate: */
     revalidate();
+}
+
+void UIMachineSettingsDisplay::sltHandleGuestScreenScaleSliderChange()
+{
+    /* Apply proposed scale-factor: */
+    m_pEditorGuestScreenScale->blockSignals(true);
+    m_pEditorGuestScreenScale->setValue(m_pSliderGuestScreenScale->value());
+    m_pEditorGuestScreenScale->blockSignals(false);
+}
+
+void UIMachineSettingsDisplay::sltHandleGuestScreenScaleEditorChange()
+{
+    /* Apply proposed scale-factor: */
+    m_pSliderGuestScreenScale->blockSignals(true);
+    m_pSliderGuestScreenScale->setValue(m_pEditorGuestScreenScale->value());
+    m_pSliderGuestScreenScale->blockSignals(false);
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
@@ -690,7 +752,7 @@ void UIMachineSettingsDisplay::prepare()
     Ui::UIMachineSettingsDisplay::setupUi(this);
 
     /* Prepare tabs: */
-    prepareVideoTab();
+    prepareScreenTab();
     prepareRemoteDisplayTab();
     prepareVideoCaptureTab();
 
@@ -701,7 +763,7 @@ void UIMachineSettingsDisplay::prepare()
     retranslateUi();
 }
 
-void UIMachineSettingsDisplay::prepareVideoTab()
+void UIMachineSettingsDisplay::prepareScreenTab()
 {
     /* Prepare memory-size slider: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
@@ -743,10 +805,20 @@ void UIMachineSettingsDisplay::prepareVideoTab()
     m_pEditorVideoScreenCount->setMaximum(cMaxGuestScreens);
     connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoScreenCountEditorChange()));
 
-#ifndef VBOX_WITH_VIDEOHWACCEL
-    /* Hide check-box if not supported: */
-    m_pCheckbox2DVideo->setVisible(false);
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+    /* Prepare scale-factor slider: */
+    m_pSliderGuestScreenScale->setMinimum(100);
+    m_pSliderGuestScreenScale->setMaximum(200);
+    m_pSliderGuestScreenScale->setPageStep(10);
+    m_pSliderGuestScreenScale->setSingleStep(1);
+    m_pSliderGuestScreenScale->setTickInterval(10);
+    m_pSliderGuestScreenScale->setSnappingEnabled(true);
+    connect(m_pSliderGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleSliderChange()));
+
+    /* Prepare scale-factor editor: */
+    m_pEditorGuestScreenScale->setMinimum(100);
+    m_pEditorGuestScreenScale->setMaximum(200);
+    vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pEditorGuestScreenScale, 5);
+    connect(m_pEditorGuestScreenScale, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenScaleEditorChange()));
 }
 
 void UIMachineSettingsDisplay::prepareRemoteDisplayTab()

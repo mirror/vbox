@@ -30,11 +30,8 @@ struct UIDataSettingsMachineInterface
 {
     /* Constructor: */
     UIDataSettingsMachineInterface()
-        : m_dScaleFactor(1.0)
-#ifdef Q_WS_MAC
-        , m_fUseUnscaledHiDPIOutput(false)
-#else /* !Q_WS_MAC */
-        , m_fShowMiniToolBar(false)
+#ifndef Q_WS_MAC
+        : m_fShowMiniToolBar(false)
         , m_fMiniToolBarAtTop(false)
 #endif /* !Q_WS_MAC */
     {}
@@ -42,14 +39,13 @@ struct UIDataSettingsMachineInterface
     /* Functions: */
     bool equal(const UIDataSettingsMachineInterface &other) const
     {
-        return    (m_dScaleFactor == other.m_dScaleFactor)
-#ifdef Q_WS_MAC
-               && (m_fUseUnscaledHiDPIOutput == other.m_fUseUnscaledHiDPIOutput)
-#else /* !Q_WS_MAC */
-               && (m_fShowMiniToolBar == other.m_fShowMiniToolBar)
-               && (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop)
-#endif /* !Q_WS_MAC */
-        ;
+#ifndef Q_WS_MAC
+        return (m_fShowMiniToolBar == other.m_fShowMiniToolBar) &&
+               (m_fMiniToolBarAtTop == other.m_fMiniToolBarAtTop);
+#else /* Q_WS_MAC */
+        Q_UNUSED(other);
+        return true;
+#endif /* Q_WS_MAC */
     }
 
     /* Operators: */
@@ -57,10 +53,7 @@ struct UIDataSettingsMachineInterface
     bool operator!=(const UIDataSettingsMachineInterface &other) const { return !equal(other); }
 
     /* Variables: */
-    double m_dScaleFactor;
-#ifdef Q_WS_MAC
-    bool m_fUseUnscaledHiDPIOutput;
-#else /* !Q_WS_MAC */
+#ifndef Q_WS_MAC
     bool m_fShowMiniToolBar;
     bool m_fMiniToolBarAtTop;
 #endif /* !Q_WS_MAC */
@@ -107,12 +100,6 @@ protected:
 
     /* Helper: Polishing stuff: */
     void polishPage();
-
-private slots:
-
-    /* Handlers: Guest-screen scale-factor stuff: */
-    void sltHandleGuestScreenScaleSliderChange();
-    void sltHandleGuestScreenScaleEditorChange();
 
 private:
 

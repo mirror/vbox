@@ -27,7 +27,7 @@
     <widget class="QITabWidget" name="m_pTabWidget">
      <widget class="QWidget" name="m_pTabVideo">
       <attribute name="title">
-       <string>&amp;Video</string>
+       <string>&amp;Screen</string>
       </attribute>
       <layout class="QVBoxLayout" name="m_pLayoutTabVideo">
        <item>
@@ -153,16 +153,106 @@
            </widget>
           </item>
           <item row="4" column="0">
-           <widget class="QLabel" name="m_pLabelVideoOptions">
+           <widget class="QLabel" name="m_pLabelGuestScreenScale">
             <property name="text">
-             <string>Extended Features:</string>
+             <string>Scale Factor:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
-          <item row="4" column="1" colspan="2">
+          <item row="4" column="1" rowspan="2">
+           <layout class="QGridLayout" name="m_pLayoutGuestScreenScaleSlider">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item row="0" column="0" colspan="3">
+             <widget class="QIAdvancedSlider" name="m_pSliderGuestScreenScale">
+              <property name="whatsThis">
+               <string>Controls the guest screen scale factor.</string>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="m_pLabelGuestScreenScaleMin">
+              <property name="text">
+               <string>100%</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <spacer name="m_pSpacerGuestScreenScale">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="2">
+             <widget class="QLabel" name="m_pLabelGuestScreenScaleMax">
+              <property name="text">
+               <string>200%</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="4" column="2">
+           <widget class="QSpinBox" name="m_pEditorGuestScreenScale">
+            <property name="whatsThis">
+             <string>Controls the guest screen scale factor.</string>
+            </property>
+            <property name="suffix">
+             <string>%</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QLabel" name="m_pLabelHiDPI">
+            <property name="text">
+             <string>HiDPI:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1" colspan="2">
+           <widget class="QCheckBox" name="m_pCheckBoxUnscaledHiDPIOutput">
+            <property name="sizePolicy">
+             <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="whatsThis">
+             <string>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</string>
+            </property>
+            <property name="text">
+             <string>Use &amp;Unscaled HiDPI Output</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="m_pLabelVideoOptions">
+            <property name="text">
+             <string>Acceleration:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1" colspan="2">
            <widget class="QCheckBox" name="m_pCheckbox3D">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -178,7 +268,7 @@
             </property>
            </widget>
           </item>
-          <item row="5" column="1" colspan="2">
+          <item row="8" column="1" colspan="2">
            <widget class="QCheckBox" name="m_pCheckbox2DVideo">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
