@@ -326,7 +326,7 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>&amp;Einstellungen...</translation>
+        <translation>&amp;Ändern...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
@@ -4288,7 +4288,7 @@
     </message>
     <message>
         <source>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviert den virtuellen xHCI-USB-Controller. Dieser implementiert Unterstützung für USB-3.0-Geräte.</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
@@ -4449,11 +4449,11 @@
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Größe virtueller Bildschirme</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Zuordnungen virtueller Bildschirme</translation>
     </message>
     <message>
         <source>Close</source>
@@ -5505,7 +5505,7 @@
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Extradata-Schlüssel &lt;i&gt;%1&lt;/i&gt; der Maschine &lt;i&gt;%2&lt;/i&gt; konnte nicht auf den Wert &lt;i&gt;{%3}&lt;/i&gt; gesetzt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, optical or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
@@ -5541,11 +5541,11 @@
     </message>
     <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht an das virtuelle Netzwerkkabel angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to disconnect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht vom virtuellen Netzwerkkabel getrennt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -6328,15 +6328,15 @@
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schaltet in den &lt;nobr&gt;&lt;b&gt;Experten-Modus&lt;/b&gt;&lt;/nobr&gt;, ein übersichtlicher Dialog für erfahrene Benutzer.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Geführter Modus</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Schaltet in den &lt;nobr&gt;&lt;b&gt;geführten Modus&lt;/b&gt;&lt;/nobr&gt; mit Schritt-für-Schritt-Dialogen mit ausführlichen Erklärungen.</translation>
     </message>
 </context>
 <context>
@@ -7001,7 +7001,7 @@
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Standardpfad wird nach Bestätigen der Änderungen und erneutes Öffnen dieses Dialogs angezeigt.</translation>
     </message>
 </context>
 <context>
@@ -8465,7 +8465,7 @@
     <message>
         <source>Attaching this hard drive will be performed indirectly using a newly created differencing hard drive.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Diese Festplatte wird indirekt mittels einer neu erzeugten Differenzdatei angeschlossen.</translation>
     </message>
     <message>
         <source>Some of the files in this hard drive chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
@@ -8475,7 +8475,7 @@
     <message>
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Diese Basisfestplatte ist indirekt über die folgenden Differenzfestplatten eingebunden:</translation>
     </message>
     <message>
         <source>Encrypted</source>
