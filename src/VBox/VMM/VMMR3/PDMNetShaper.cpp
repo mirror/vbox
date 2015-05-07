@@ -159,7 +159,7 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pszBwGroup, uin
                           MM_TAG_PDM_NET_SHAPER, (void **)&pBwGroup);
         if (RT_SUCCESS(rc))
         {
-            rc = PDMR3CritSectInit(pShaper->pVM, &pBwGroup->Lock, RT_SRC_POS, "BWGRP");
+            rc = PDMR3CritSectInit(pShaper->pVM, &pBwGroup->Lock, RT_SRC_POS, "BWGRP-%s", pszBwGroup);
             if (RT_SUCCESS(rc))
             {
                 pBwGroup->pszNameR3 = MMR3HeapStrDup(pShaper->pVM, MM_TAG_PDM_NET_SHAPER, pszBwGroup);
