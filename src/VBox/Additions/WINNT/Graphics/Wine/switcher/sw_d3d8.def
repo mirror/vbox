@@ -1,6 +1,0 @@
-EXPORTS
-  D3D8GetSWInfo
-  DebugSetMute
-  Direct3DCreate8
-  ValidatePixelShader
-  ValidateVertexShader

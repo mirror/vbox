@@ -1,6 +1,0 @@
-
-EXPORTS
-  WineDirect3DCreate
-  WineDirect3DCreateClipper
-  wined3d_mutex_lock
-  wined3d_mutex_unlock

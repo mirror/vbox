@@ -711,9 +711,7 @@ HRESULT VBoxD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
             IDirect3DVertexBuffer9  *pD3D9VBuf;
             hr = pDevice9If->CreateVertexBuffer(pAllocation->SurfDesc.width,
                     vboxDDI2D3DUsage(pRc->RcDesc.fFlags)
-#ifdef VBOX_WITH_NEW_WINE
                     & (~D3DUSAGE_DYNAMIC) /* <- avoid using dynamic to ensure wine does not switch do user buffer */
-#endif
                     ,
                     pRc->RcDesc.Fvf,
                     vboxDDI2D3DPool(pRc->RcDesc.enmPool),

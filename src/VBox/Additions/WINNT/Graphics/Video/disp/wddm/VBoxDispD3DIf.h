@@ -43,11 +43,7 @@
 #       undef  _interlockedbittestandset64
 #       undef  _interlockedbittestandreset64
 
-#ifdef VBOX_WITH_NEW_WINE
 #include "../../../Wine_new/vbox/VBoxWineEx.h"
-#else
-#include "../../../Wine/vbox/VBoxWineEx.h"
-#endif
 
 /* D3D functionality the VBOXDISPD3D provides */
 typedef HRESULT WINAPI FNVBOXDISPD3DCREATE9EX(UINT SDKVersion, IDirect3D9Ex **ppD3D);

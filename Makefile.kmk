@@ -570,17 +570,17 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Additions/WINNT/Graphics/Video/mp/common \
 	src/VBox/Additions/WINNT/Graphics/Video/mp/wddm \
 	src/VBox/Additions/WINNT/Graphics/Video/mp/xpdm \
-	src/VBox/Additions/WINNT/Graphics/Wine \
-	src/VBox/Additions/WINNT/Graphics/Wine/d3d8 \
-	src/VBox/Additions/WINNT/Graphics/Wine/d3d9 \
-	src/VBox/Additions/WINNT/Graphics/Wine/libWine \
-	src/VBox/Additions/WINNT/Graphics/Wine/switcher \
-	src/VBox/Additions/WINNT/Graphics/Wine/vbox \
-	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub \
-	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include \
-	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include/backup \
-	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include/wine \
-	src/VBox/Additions/WINNT/Graphics/Wine/wined3d \
+	src/VBox/Additions/WINNT/Graphics/Wine_new \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/d3d8 \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/d3d9 \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/libWine \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/switcher \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include/backup \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/vbox/libWineStub/include/wine \
+	src/VBox/Additions/WINNT/Graphics/Wine_new/wined3d \
 	src/VBox/Additions/WINNT/Installer \
 	src/VBox/Additions/WINNT/Installer/ISO \
 	src/VBox/Additions/WINNT/Installer/InstallHelper \
