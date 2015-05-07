@@ -1527,7 +1527,7 @@
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation>[Optisches Laufwerk]</translation>
+        <translation>[DVD]</translation>
     </message>
     <message>
         <source>USB Controller</source>
@@ -8431,7 +8431,7 @@
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation>optisch</translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>TCP</source>
