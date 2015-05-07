@@ -787,13 +787,14 @@ Statistics update:  disabled</screen></para>
       should be changed.<itemizedlist>
           <listitem>
             <para><computeroutput>--nic&lt;1-N&gt;
-            none|null|nat|bridged|intnet|hostonly|generic
-            </computeroutput>: With
-            this, you can set, for each of the VM's virtual network cards,
+            none|null|nat|natnetwork|bridged|intnet|hostonly|generic</computeroutput>:
+            With this, you can set, for each of the VM's virtual network cards,
             what type of networking should be available. They can be not
             present (<computeroutput>none</computeroutput>), not connected to
             the host (<computeroutput>null</computeroutput>), use network
             address translation (<computeroutput>nat</computeroutput>),
+            use the new network address translation engine
+            (<computeroutput>natnetwork</computeroutput>),
             bridged networking (<computeroutput>bridged</computeroutput>) or
             communicate with other virtual machines using internal networking
             (<computeroutput>intnet</computeroutput>), host-only networking
@@ -802,6 +803,21 @@ Statistics update:  disabled</screen></para>
             These options correspond
             to the modes which are described in detail in <xref
             linkend="networkingmodes" />.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--nicpromisc&lt;1-N&gt;
+            deny|allow-vms|allow-all</computeroutput>:
+            This allows you, for each of the VM's virtual network cards, to
+            specify how the promiscious mode is handled. This setting is only
+            relevant for bridged networking.
+            <computeroutput>deny</computeroutput> (default setting) hides
+            any traffic not intended for this VM.
+            <computeroutput>allow-vms</computeroutput> hides all host
+            traffic from this VM but allows the VM to see traffic from/to other
+            VMs.
+            <computeroutput>allow-all</computeroutput> removes this
+            restriction completely.</para>
           </listitem>
 
           <listitem>
@@ -835,6 +851,25 @@ Statistics update:  disabled</screen></para>
             logged to.</para>
           </listitem>
 
+          <listitem>
+            <para><computeroutput>--natnet&lt;1-N&gt;
+            &lt;network&gt;|default</computeroutput>:
+            If the networking type is set to <computeroutput>nat</computeroutput>
+            (not <computeroutput>natnetwork</computeroutput>) then this
+            setting specifies the IP address range to be used for
+            this network. See <xref linkend="changenat" /> for an
+            example.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--nat-network&lt;1-N&gt; &lt;network
+            name&gt;</computeroutput>: If the networking type is set to
+            <computeroutput>natnetwork</computeroutput> (not
+            <computeroutput>nat</computeroutput>) then this setting specifies
+            the name of the NAT network this adapter is connected to.</para>
+          </listitem>
+          
+          This allows you to change the address range occupied by
           <listitem>
             <para><computeroutput>--bridgeadapter&lt;1-N&gt;
             none|&lt;devicename&gt;</computeroutput>: If bridged networking
@@ -1123,6 +1158,12 @@ Statistics update:  disabled</screen></para>
             option enables or disables the VM's virtual USB 2.0 controller;
             see <xref linkend="settings-usb" /> for details.</para>
           </listitem>
+
+          <listitem>
+            <para><computeroutput>--usbxhci on|off</computeroutput>: This
+            option enables or disables the VM's virtual USB 3.0 controller;
+            see <xref linkend="settings-usb" /> for details.</para>
+          </listitem>
         </itemizedlist></para>
 
         <!-- @todo r=andy Document tracing-* commands -->
@@ -1144,6 +1185,13 @@ Statistics update:  disabled</screen></para>
           </listitem>
 
           <!-- @todo r=andy Document vrdeproperty -->
+
+          <listitem>
+            <para><computeroutput>--vrdeextpack default|&lt;name&gt;</computeroutput>:
+            Allows to specify the library to use for to access the VM
+            remotely. The default is to use the RDP code which is part of the
+            Oracle VM VirtualBox Extension Pack.</para>
+          </listitem>
 
           <listitem>
             <para><computeroutput>--vrdeport
@@ -1187,6 +1235,13 @@ Statistics update:  disabled</screen></para>
             <para><computeroutput>--vrdeauthtype
             null|external|guest</computeroutput>: This allows you to choose
             whether and how authorization will be performed; see <xref
+            linkend="vbox-auth" /> for details.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--vrdeauthlibrary
+            default|&lt;name&gt;</computeroutput>: This allos to set the
+            library used for RDP authentication, see <xref lang=""
             linkend="vbox-auth" /> for details.</para>
           </listitem>
 
@@ -1285,6 +1340,26 @@ Statistics update:  disabled</screen></para>
           </listitem>
         </itemizedlist></para>
     </sect2>
+    
+    <sect2 id="vboxmanage-modifyvm-debugging">
+      <title>Debugging settings</title>
+
+      <para>The following settings are only relevant for low-level VM
+      debugging. Regular users will never need these settings.<itemizedlist>
+          <listitem>
+            <para><computeroutput>--tracing-enabled on|off</computeroutput>:
+            Enable the tracebuffer. This consumes some memory for the tracebuffer
+            and adds extra overhead.</para>
+          </listitem>
+          <listitem>
+            <para><computeroutput>--tracing-config &lt;config-string&gt;</computeroutput>:
+            Allows to configure tracing. In particular this defines which group of
+            tracepoints are enabled.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+
   </sect1>
 
   <sect1 id="vboxmanage-clonevm">
@@ -1647,7 +1722,7 @@ Virtual system 0:
         network traffic by dumping it to a file, for debugging
         purposes.</para>
 
-        <para>With <computeroutput>--nictrace&lt;1-N&gt;
+        <para>With <computeroutput>nictrace&lt;1-N&gt;
         on|off</computeroutput>, you can enable network tracing for a
         particular virtual network card.</para>
 
@@ -1657,7 +1732,20 @@ Virtual system 0:
         logged to.</para>
       </listitem>
 
-      <!-- @todo r=andy Document nicpromisc -->
+      <listitem>
+        <para><computeroutput>nicpromisc&lt;1-N&gt;
+        deny|allow-vms|allow-all</computeroutput>:
+        This allows you, for each of the VM's virtual network cards, to
+        specify how the promiscious mode is handled. This setting is only
+        relevant for bridged networking.
+        <computeroutput>deny</computeroutput> (default setting) hides
+        any traffic not intended for this VM.
+        <computeroutput>allow-vms</computeroutput> hides all host
+        traffic from this VM but allows the VM to see traffic from/to other
+        VMs.
+        <computeroutput>allow-all</computeroutput> removes this
+        restriction completely.</para>
+      </listitem>
 
       <listitem>
         <para><computeroutput>nicproperty&lt;1-N&gt;
@@ -1743,7 +1831,8 @@ Virtual system 0:
       <listitem>
         <para><computeroutput>videocapscreens all|&lt;screen ID&gt; [&lt;screen ID&gt; ...]]</computeroutput>
         allows to specify which screens of the VM are being recorded. This setting
-        cannot be changed while video capturing is enabled.</para>
+        cannot be changed while video capturing is enabled. Each screen is recorded
+        into a separate file.</para>
       </listitem>
 
       <listitem>
