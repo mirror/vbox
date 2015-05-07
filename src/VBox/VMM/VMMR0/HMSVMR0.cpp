@@ -1876,7 +1876,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
               ||  HMCPU_CF_IS_PENDING_ONLY(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE),
                ("fContextUseFlags=%#RX32\n", HMCPU_CF_VALUE(pVCpu)));
 
-    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss, pCtx->rsp));
+    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss.Sel, pCtx->rsp));
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
 }
@@ -4489,9 +4489,12 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
+
     /** @todo Decode Assist. */
-    VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
-    int rc = VBOXSTRICTRC_VAL(rc2);
+    VBOXSTRICTRC rc = IEMExecOneBypassEx(pVCpu, CPUMCTX2CORE(pCtx), NULL);
+    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        rc = VERR_EM_INTERPRETER;
     if (rc == VINF_SUCCESS)
     {
         /* RIP has been updated by EMInterpretInstruction(). */
@@ -4733,6 +4736,8 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
     pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
+    Log4(("hmR0SvmExitXsetbv: New XCR0=%#RX64 fLoadSaveGuestXcr0=%d (cr4=%RX64) rcStrict=%Rrc\n", 
+          pCtx->aXcr[0], pVCpu->hm.s.fLoadSaveGuestXcr0, pCtx->cr4, VBOXSTRICTRC_VAL(rcStrict)));
 
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     return VBOXSTRICTRC_TODO(rcStrict);
