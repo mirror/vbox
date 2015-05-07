@@ -39,6 +39,10 @@
 *******************************************************************************/
 /** For sanity and avoid wasting hyper heap on buggy config / saved state. */
 #define CPUM_CPUID_MAX_LEAVES       2048
+/* Max size we accept for the XSAVE area. */
+#define CPUM_MAX_XSAVE_AREA_SIZE    10240
+/* Min size we accept for the XSAVE area. */
+#define CPUM_MIN_XSAVE_AREA_SIZE    0x240
 
 
 /*******************************************************************************
@@ -1654,13 +1658,20 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCPUM
             if (pXStateLeaf0)
             {
                 if (   pXStateLeaf0->uEcx >= sizeof(X86FXSTATE)
-                    && pXStateLeaf0->uEcx <= _8K
+                    && pXStateLeaf0->uEcx <= CPUM_MAX_XSAVE_AREA_SIZE
                     && RT_ALIGN_32(pXStateLeaf0->uEcx, 8) == pXStateLeaf0->uEcx
                     && pXStateLeaf0->uEbx >= sizeof(X86FXSTATE)
                     && pXStateLeaf0->uEbx <= pXStateLeaf0->uEcx
                     && RT_ALIGN_32(pXStateLeaf0->uEbx, 8) == pXStateLeaf0->uEbx)
                 {
                     pFeatures->cbMaxExtendedState = pXStateLeaf0->uEcx;
+
+                    PCCPUMCPUIDLEAF const pXStateLeaf1 = cpumR3CpuIdFindLeafEx(paLeaves, cLeaves, 13, 1);
+                    if (   pXStateLeaf1
+                        && pXStateLeaf1->uEbx > pFeatures->cbMaxExtendedState
+                        && pXStateLeaf1->uEbx <= CPUM_MAX_XSAVE_AREA_SIZE
+                        && (pXStateLeaf1->uEcx || pXStateLeaf1->uEdx) )
+                        pFeatures->cbMaxExtendedState = pXStateLeaf0->uEbx;
                 }
                 else
                     AssertLogRelMsgFailedStmt(("Unexpected max/cur XSAVE area sizes: %#x/%#x\n", pXStateLeaf0->uEcx, pXStateLeaf0->uEbx),
@@ -2109,10 +2120,10 @@ static int cpumR3CpuIdInstallAndExplodeLeaves(PVM pVM, PCPUM pCpum, PCPUMCPUIDLE
             AssertLogRelMsgReturn(pSubLeaf, ("iComponent=%#x\n"), VERR_CPUM_IPE_1);
             AssertLogRelMsgReturn(pSubLeaf->fSubLeafMask >= iComponent, ("iComponent=%#x\n"), VERR_CPUM_IPE_1);
             AssertLogRelMsgReturn(   pSubLeaf->uEax > 0
+                                  && pSubLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE
                                   && pSubLeaf->uEax <= pCpum->GuestFeatures.cbMaxExtendedState
-                                  && pSubLeaf->uEbx >= 0x240
-                                  && pSubLeaf->uEbx <  pCpum->GuestFeatures.cbMaxExtendedState
-                                  && pSubLeaf->uEbx + pSubLeaf->uEax < pCpum->GuestFeatures.cbMaxExtendedState,
+                                  && pSubLeaf->uEbx <= pCpum->GuestFeatures.cbMaxExtendedState
+                                  && pSubLeaf->uEbx + pSubLeaf->uEax <= pCpum->GuestFeatures.cbMaxExtendedState,
                                   ("iComponent=%#x eax=%#x ebx=%#x cbMax=%#x\n", iComponent, pSubLeaf->uEax, pSubLeaf->uEbx,
                                    pCpum->GuestFeatures.cbMaxExtendedState),
                                   VERR_CPUM_IPE_1);
@@ -3083,8 +3094,9 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                         pCurLeaf->uEax &= RT_LO_U32(fGuestXcr0Mask);
                         pCurLeaf->uEdx &= RT_HI_U32(fGuestXcr0Mask);
                         cbXSaveMax = pCurLeaf->uEcx;
-                        AssertLogRelMsgReturn(cbXSaveMax <= 8192 && cbXSaveMax >= 0x240, ("%#x\n", cbXSaveMax), VERR_CPUM_IPE_2);
-                        AssertLogRelMsgReturn(pCurLeaf->uEbx >= 0x240 && pCurLeaf->uEbx <= cbXSaveMax,
+                        AssertLogRelMsgReturn(cbXSaveMax <= CPUM_MAX_XSAVE_AREA_SIZE && cbXSaveMax >= CPUM_MIN_XSAVE_AREA_SIZE,
+                                              ("%#x max=%#x\n", cbXSaveMax, CPUM_MAX_XSAVE_AREA_SIZE), VERR_CPUM_IPE_2);
+                        AssertLogRelMsgReturn(pCurLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE && pCurLeaf->uEbx <= cbXSaveMax,
                                               ("ebx=%#x cbXSaveMax=%#x\n", pCurLeaf->uEbx, cbXSaveMax),
                                               VERR_CPUM_IPE_2);
                         continue;
@@ -3100,7 +3112,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                             AssertLogRelMsgReturn(   pCurLeaf->uEax <= cbXSaveMax
                                                   && pCurLeaf->uEax >  0
                                                   && pCurLeaf->uEbx < cbXSaveMax
-                                                  && pCurLeaf->uEbx >= 0x240
+                                                  && pCurLeaf->uEbx >= CPUM_MIN_XSAVE_AREA_SIZE
                                                   && pCurLeaf->uEbx + pCurLeaf->uEax <= cbXSaveMax,
                                                   ("%#x: eax=%#x ebx=%#x cbMax=%#x\n", pCurLeaf->uEax, pCurLeaf->uEbx, cbXSaveMax),
                                                   VERR_CPUM_IPE_2);
