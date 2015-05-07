@@ -3637,7 +3637,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
                             && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
-                            && !CPUMMICROARCH_IS_AMD_FAM_15H(pVM->cpum.s.HostFeatures.enmMicroarch);
+                            //&& !CPUMMICROARCH_IS_AMD_FAM_15H(pVM->cpum.s.HostFeatures.enmMicroarch);
+                            && pVM->cpum.s.HostFeatures.enmCpuVendor != CPUMCPUVENDOR_AMD;
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
      * Expose XSAVE/XRSTOR to the guest if available.  For the time being the
      * default is to only expose this to VMs with nested paging and AMD-V or
