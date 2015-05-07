@@ -1070,12 +1070,6 @@ static void setVirtualSizeRandR12(ScrnInfoPtr pScrn, bool fLimitedContext)
             TRACE_LOG("cx=%u, cy=%u\n", cx, cy);
             xf86ScrnToScreen(pScrn)->width = cx;
             xf86ScrnToScreen(pScrn)->height = cy;
-#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 14
-            xf86UpdateDesktopDimensions();
-#elif GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 12
-            screenInfo.width = cx;
-            screenInfo.height = cy;
-#endif
             adjustScreenPixmap(pScrn, cx, cy);
             vbvxSetSolarisMouseRange(cx, cy);
         }
@@ -1123,7 +1117,13 @@ static void setSizesRandR12(ScrnInfoPtr pScrn, bool fLimitedContext)
     setScreenSizesRandR12(pScrn, fLimitedContext);
     if (!fLimitedContext)
     {
-        RRScreenSizeNotify(xf86ScrnToScreen(pScrn));
+        /* We use RRScreenSizeSet() here and not RRScreenSizeNotify() because
+         * the first also pushes the virtual screen size to the input driver.
+         * We were doing this manually by setting screenInfo.width and height
+         * and calling xf86UpdateDesktopDimensions() where appropriate, but this
+         * failed on Ubuntu 12.04.0 due to a problematic X server back-port. */
+        RRScreenSizeSet(xf86ScrnToScreen(pScrn), xf86ScrnToScreen(pScrn)->width, xf86ScrnToScreen(pScrn)->height,
+                        xf86ScrnToScreen(pScrn)->mmWidth, xf86ScrnToScreen(pScrn)->mmHeight);
         RRTellChanged(xf86ScrnToScreen(pScrn));
     }
 }

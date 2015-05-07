@@ -107,7 +107,7 @@ __register_frame_info_bases
 rename
 RRCrtcNotify
 RRGetInfo
-RRScreenSizeNotify
+RRScreenSizeSet
 RRTellChanged
 setenv
 ShadowFBInit2
