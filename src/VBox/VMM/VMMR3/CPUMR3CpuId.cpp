@@ -3632,9 +3632,12 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = cpumR3CpuIdReadIsaExtCfgLegacy(pVM, pIsaExts, pCpumCfg, "SSE4.2", &pConfig->enmSse42, true);
     AssertLogRelRCReturn(rc, rc);
 
+    /* Currently excluding older AMDs as we're seeing trouble booting 32-bit windows 7, due to
+       KiTrap07++ assuming the high 128-bit YMM component is in init state. Leading to a page fault. */
     bool const fMayHaveXSave = fNestedPagingAndFullGuestExec
                             && pVM->cpum.s.HostFeatures.fXSaveRstor
-                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor;
+                            && pVM->cpum.s.HostFeatures.fOpSysXSaveRstor
+                            && !CPUMMICROARCH_IS_AMD_FAM_15H(pVM->cpum.s.HostFeatures.enmMicroarch);
     /** @cfgm{/CPUM/IsaExts/XSAVE, boolean, depends}
      * Expose XSAVE/XRSTOR to the guest if available.  For the time being the
      * default is to only expose this to VMs with nested paging and AMD-V or
