@@ -1007,23 +1007,23 @@
     </message>
     <message>
         <source>&amp;Normal Start</source>
-        <translation type="unfinished"></translation>
+        <translation>正常启动(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation type="unfinished"></translation>
+        <translation>无界面启动(&amp;H)</translation>
     </message>
     <message>
         <source>Start the selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>在后台运行选中的虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
-        <translation type="unfinished"></translation>
+        <translation>分离式启动(&amp;D)</translation>
     </message>
     <message>
         <source>Start the selected virtual machines with the option of continuing them in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>启动所选虚拟电脑，并允许其可在后台继续运行</translation>
     </message>
 </context>
 <context>
@@ -4408,7 +4408,7 @@
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>虚拟电脑设置为启用显卡硬件加速，并且操作系统设置为Windows Vista及更新版。为获得最佳性能，应将虚拟电脑的显存至少设置为 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -7575,32 +7575,33 @@
         <translation>&lt;p&gt;增强功能包虚拟光盘已从 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;成功下载并保存在 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;您是否要注册该虚拟光盘并把它立即挂载到该虚拟电脑上?&lt;/p&gt;</translation>
     </message>
     <message>
+        <source>Drag and drop operation failed.</source>
+        <translation>拖放操作失败。</translation>
+    </message>
+    <message>
+        <source>Failed while dropping data.</source>
+        <translation>拖放数据失败。</translation>
+    </message>
+    <message>
+        <source>Unable to cancel drag and drop operation.</source>
+        <translation>未能取消拖放操作。</translation>
+    </message>
+    <message>
         <source>Bad password or authentication failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>密码错误或验证失败。</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translatorcomment>todo</translatorcomment>
+        <translation>&lt;p&gt;运行虚拟电脑时发生严重错误, 应将其关闭.&lt;/p&gt;&lt;p&gt;要获取帮助, 请查看社区内容 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或咨询你的支持部门. 请提供日志文件 &lt;tt&gt;VBox.log&lt;/tt&gt;和图像文件 &lt;tt&gt;VBox.png&lt;/tt&gt;, 位于 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 文件夹中, 并描述出错时的操作. 注意: 也可从管理器的主菜单 &lt;b&gt;控制&lt;/b&gt; 中选择 &lt;b&gt;日志&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;确定&lt;/b&gt; 关闭虚拟电脑.如果你想调试它. 请注意调试需要专业的知识和工具, 因此建议你按 &lt;b&gt;确定&lt;/b&gt; .&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;运行虚拟电脑时发生严重错误, 应将其关闭.&lt;/p&gt;&lt;p&gt;要获取帮助, 请查看社区内容 &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; 或咨询你的支持部门. 请提供日志文件 &lt;tt&gt;VBox.log&lt;/tt&gt;, 位于虚拟电脑的log文件夹中, 并描述出错时的操作. 注意: 也可从管理器的主菜单 &lt;b&gt;控制&lt;/b&gt; 中选择 &lt;b&gt;日志&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;确定&lt;/b&gt; 关闭虚拟电脑.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 新版本已发布！版本 &lt;b&gt;%1&lt;/b&gt; 可在此了解 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;。&lt;/p&gt;&lt;p&gt;您可以使用此链接下载该版本:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -8222,7 +8223,7 @@
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑. 现在是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -8311,7 +8312,7 @@
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>全局设定</translation>
     </message>
 </context>
 <context>
@@ -8370,7 +8371,7 @@
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">设置</translation>
+        <translation>设置</translation>
     </message>
 </context>
 <context>
@@ -11194,11 +11195,6 @@
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
         <comment>medium</comment>
         <translation>该基本硬盘是使用以下备份硬盘间接分配的:</translation>
-    </message>
-    <message>
-        <source>Encrypted</source>
-        <comment>medium</comment>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
