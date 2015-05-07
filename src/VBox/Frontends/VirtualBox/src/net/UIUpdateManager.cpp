@@ -209,7 +209,7 @@ private:
         QString strResponseData(pReply->readAll());
 
         /* Newer version of necessary package found: */
-        if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
+        if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+(_[0-9A-Z]+)? \\S+$")) == 0)
         {
             QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
             msgCenter().showUpdateSuccess(response[0], response[1]);
