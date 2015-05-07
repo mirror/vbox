@@ -82,6 +82,9 @@ signals:
     /** Notifies about the scaling optimization type change. */
     void sigScalingOptimizationTypeChange(const QString &strMachineID);
 
+    /** Notifies about the HiDPI optimization type change. */
+    void sigHiDPIOptimizationTypeChange(const QString &strMachineID);
+
     /** Notifies about unscaled HiDPI output mode change. */
     void sigUnscaledHiDPIOutputModeChange(const QString &strMachineID);
 

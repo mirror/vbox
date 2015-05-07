@@ -3689,6 +3689,9 @@ void UIExtraDataManager::sltExtraDataChange(QString strMachineID, QString strKey
         /* Scaling optimization type change: */
         else if (strKey == GUI_Scaling_Optimization)
             emit sigScalingOptimizationTypeChange(strMachineID);
+        /* HiDPI optimization type change: */
+        else if (strKey == GUI_HiDPI_Optimization)
+            emit sigHiDPIOptimizationTypeChange(strMachineID);
         /* Unscaled HiDPI Output mode change: */
         else if (strKey == GUI_HiDPI_UnscaledOutput)
             emit sigUnscaledHiDPIOutputModeChange(strMachineID);

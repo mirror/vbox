@@ -407,8 +407,21 @@ void UIMachineView::sltHandleScalingOptimizationChange(const QString &strMachine
     if (strMachineID != vboxGlobal().managedVMUuid())
         return;
 
-    /* Take the scale-factor into account: */
+    /* Take the scaling-optimization type into account: */
     frameBuffer()->setScalingOptimizationType(gEDataManager->scalingOptimizationType(vboxGlobal().managedVMUuid()));
+
+    /* Update viewport: */
+    viewport()->update();
+}
+
+void UIMachineView::sltHandleHiDPIOptimizationChange(const QString &strMachineID)
+{
+    /* Skip unrelated machine IDs: */
+    if (strMachineID != vboxGlobal().managedVMUuid())
+        return;
+
+    /* Take the HiDPI-optimization type into account: */
+    frameBuffer()->setHiDPIOptimizationType(gEDataManager->hiDPIOptimizationType(vboxGlobal().managedVMUuid()));
 
     /* Update viewport: */
     viewport()->update();
@@ -693,6 +706,9 @@ void UIMachineView::prepareConnections()
     /* Scaling-optimization change: */
     connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QString&)),
             this, SLOT(sltHandleScalingOptimizationChange(const QString&)));
+    /* HiDPI-optimization change: */
+    connect(gEDataManager, SIGNAL(sigHiDPIOptimizationTypeChange(const QString&)),
+            this, SLOT(sltHandleHiDPIOptimizationChange(const QString&)));
     /* Unscaled HiDPI output mode change: */
     connect(gEDataManager, SIGNAL(sigUnscaledHiDPIOutputModeChange(const QString&)),
             this, SLOT(sltHandleUnscaledHiDPIOutputModeChange(const QString&)));
