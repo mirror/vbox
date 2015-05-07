@@ -898,7 +898,7 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         rc = DnDDirDroppedFilesCreateAndOpenTemp(&pCtx->mURI.mDropDir);
         if (RT_FAILURE(rc))
             break;
-        LogFlowFunc(("strDropDir=%s\n", rc, DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
+        LogFlowFunc(("rc=%Rrc, strDropDir=%s\n", rc, DnDDirDroppedFilesGetDirAbs(&pCtx->mURI.mDropDir)));
         if (RT_FAILURE(rc))
             break;
 
