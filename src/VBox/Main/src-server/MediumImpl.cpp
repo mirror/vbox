@@ -4647,6 +4647,26 @@ HRESULT Medium::i_deleteStorage(ComObjPtr<Progress> *aProgress,
                            tr("Medium format '%s' does not support storage deletion"),
                            m->strFormat.c_str());
 
+        /* Wait for a concurrently running Medium::i_queryInfo to complete. */
+        /** @todo r=klaus would be great if this could be moved to the async
+         * part of the operation as it can take quite a while */
+        if (m->queryInfoRunning)
+        {
+            while (m->queryInfoRunning)
+            {
+                multilock.release();
+                /* Must not hold the media tree lock or the object lock, as
+                 * Medium::i_queryInfo needs this lock and thus we would run
+                 * into a deadlock here. */
+                Assert(!m->pVirtualBox->i_getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+                Assert(!isWriteLockOnCurrentThread());
+                {
+                    AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+                }
+                multilock.acquire();
+            }
+        }
+
         /* Note that we are fine with Inaccessible state too: a) for symmetry
          * with create calls and b) because it doesn't really harm to try, if
          * it is really inaccessible, the delete operation will fail anyway.

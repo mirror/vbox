@@ -1795,6 +1795,9 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
     task.m_pProgress->i_notifyComplete(rc);
 
+    if (SUCCEEDED(rc))
+        mParent->i_onSnapshotTaken(mData->mUuid,
+                                   task.m_pSnapshot->i_getId());
     LogFlowThisFuncLeave();
 }
 
@@ -1863,10 +1866,6 @@ HRESULT SessionMachine::i_finishTakingSnapshot(TakeSnapshotTask &task, AutoWrite
     {
         /* associate old hard disks with the snapshot and do locking/unlocking*/
         i_commitMedia(task.m_fTakingSnapshotOnline);
-
-        /* inform callbacks */
-        mParent->i_onSnapshotTaken(mData->mUuid,
-                                   task.m_pSnapshot->i_getId());
         alock.release();
     }
     else
@@ -2039,8 +2038,6 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
 
     HRESULT rc = S_OK;
 
-    bool stateRestored = false;
-
     try
     {
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -2160,11 +2157,9 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
         /* we have already deleted the current state, so set the execution
          * state accordingly no matter of the delete snapshot result */
         if (mSSData->strStateFilePath.isNotEmpty())
-            i_setMachineState(MachineState_Saved);
+            task.modifyBackedUpState(MachineState_Saved);
         else
-            i_setMachineState(MachineState_PoweredOff);
-
-        stateRestored = true;
+            task.modifyBackedUpState(MachineState_PoweredOff);
 
         /* Paranoia: no one must have saved the settings in the mean time. If
          * it happens nevertheless we'll close our eyes and continue below. */
@@ -2251,14 +2246,12 @@ void SessionMachine::i_restoreSnapshotHandler(RestoreSnapshotTask &task)
         /* undo all changes on failure */
         i_rollback(false /* aNotify */);
 
-        if (!stateRestored)
-        {
-            /* restore the machine state */
-            i_setMachineState(task.m_machineStateBackup);
-        }
     }
 
     mParent->i_saveModifiedRegistries();
+
+    /* restore the machine state */
+    i_setMachineState(task.m_machineStateBackup);
 
     /* set the result (this will try to fetch current error info on failure) */
     task.m_pProgress->i_notifyComplete(rc);
