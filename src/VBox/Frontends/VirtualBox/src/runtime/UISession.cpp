@@ -938,9 +938,6 @@ UISession::UISession(UIMachine *pMachine)
 #ifndef Q_WS_MAC
     , m_pMachineWindowIcon(0)
 #endif /* !Q_WS_MAC */
-    , m_mouseCapturePolicy(MouseCapturePolicy_Default)
-    , m_guruMeditationHandlerType(GuruMeditationHandlerType_Default)
-    , m_hiDPIOptimizationType(HiDPIOptimizationType_None)
     , m_requestedVisualStateType(UIVisualStateType_Invalid)
 #ifdef Q_WS_WIN
     , m_alphaCursor(0)
@@ -1332,15 +1329,6 @@ void UISession::loadSessionSettings()
         /* Load user's machine-window name postfix: */
         m_strMachineWindowNamePostfix = gEDataManager->machineWindowNamePostfix(strMachineID);
 #endif /* !Q_WS_MAC */
-
-        /* Determine mouse-capture policy: */
-        m_mouseCapturePolicy = gEDataManager->mouseCapturePolicy(strMachineID);
-
-        /* Determine Guru Meditation handler type: */
-        m_guruMeditationHandlerType = gEDataManager->guruMeditationHandlerType(strMachineID);
-
-        /* Determine HiDPI optimization type: */
-        m_hiDPIOptimizationType = gEDataManager->hiDPIOptimizationType(strMachineID);
 
         /* Is there should be First RUN Wizard? */
         m_fIsFirstTimeStarted = gEDataManager->machineFirstTimeStarted(strMachineID);

@@ -1402,8 +1402,8 @@ void UIKeyboardHandler::keyEventHandleHostComboRelease(ulong uScreenId)
 #endif /* Q_WS_X11 */
                         if (m_fIsKeyboardCaptured)
                         {
-                            if (uisession()->mouseCapturePolicy() == MouseCapturePolicy_Default ||
-                                uisession()->mouseCapturePolicy() == MouseCapturePolicy_HostComboOnly)
+                            const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
+                            if (mcp == MouseCapturePolicy_Default || mcp == MouseCapturePolicy_HostComboOnly)
                                 machineLogic()->mouseHandler()->captureMouse(uScreenId);
                         }
                         else

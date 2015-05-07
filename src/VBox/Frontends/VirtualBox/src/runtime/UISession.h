@@ -136,16 +136,6 @@ public:
     /** @} */
 #endif /* !Q_WS_MAC */
 
-    /** @name Runtime workflow stuff.
-     ** @{ */
-    /** Returns the mouse-capture policy. */
-    MouseCapturePolicy mouseCapturePolicy() const { return m_mouseCapturePolicy; }
-    /** Returns Guru Meditation handler type. */
-    GuruMeditationHandlerType guruMeditationHandlerType() const { return m_guruMeditationHandlerType; }
-    /** Returns HiDPI optimization type. */
-    HiDPIOptimizationType hiDPIOptimizationType() const { return m_hiDPIOptimizationType; }
-    /** @} */
-
     /** @name Host-screen configuration variables.
      ** @{ */
     /** Returns the list of host-screen geometries we currently have. */
@@ -437,16 +427,6 @@ private:
     QString m_strMachineWindowNamePostfix;
     /** @} */
 #endif /* !Q_WS_MAC */
-
-    /** @name Runtime workflow variables.
-     ** @{ */
-    /** Holds the mouse-capture policy. */
-    MouseCapturePolicy m_mouseCapturePolicy;
-    /** Holds Guru Meditation handler type. */
-    GuruMeditationHandlerType m_guruMeditationHandlerType;
-    /** Holds HiDPI optimization type. */
-    HiDPIOptimizationType m_hiDPIOptimizationType;
-    /** @} */
 
     /** @name Visual-state configuration variables.
      ** @{ */

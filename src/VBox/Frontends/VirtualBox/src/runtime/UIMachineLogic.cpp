@@ -502,7 +502,7 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Take the screenshot for debugging purposes: */
             takeScreenshot(strLogFolder + "/VBox.png", "png");
             /* How should we handle Guru Meditation? */
-            switch (uisession()->guruMeditationHandlerType())
+            switch (gEDataManager->guruMeditationHandlerType(vboxGlobal().managedVMUuid()))
             {
                 /* Ask how to proceed; Power off VM if proposal accepted: */
                 case GuruMeditationHandlerType_Default:

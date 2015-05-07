@@ -1018,7 +1018,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
                         qApp->processEvents();
 #endif /* Q_WS_X11 */
                         machineLogic()->keyboardHandler()->captureKeyboard(uScreenId);
-                        if (uisession()->mouseCapturePolicy() == MouseCapturePolicy_Default)
+                        const MouseCapturePolicy mcp = gEDataManager->mouseCapturePolicy(vboxGlobal().managedVMUuid());
+                        if (mcp == MouseCapturePolicy_Default)
                             captureMouse(uScreenId);
                     }
                 }
