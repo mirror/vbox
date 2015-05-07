@@ -6474,7 +6474,7 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             break;
         default: /* For debugging purposes. */
-            AssertMsgFailed(("Unknown command issued\n"));
+            AssertMsgFailed(("Unknown command issued (%#x)\n", pCmdFis[AHCI_CMDFIS_CMD]));
             pAhciReq->uATARegError = ABRT_ERR;
             pAhciReq->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
     }
