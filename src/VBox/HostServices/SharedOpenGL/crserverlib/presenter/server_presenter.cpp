@@ -194,9 +194,6 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
     uint32_t c2DRects = 0;
     CR_TEXDATA *pEnteredTex = NULL;
     PCR_BLITTER pEnteredBlitter = NULL;
-    uint32_t width = 0, height = 0;
-    RTPOINT ScaledEntryPoint = {0};
-    RTRECT ScaledSrcRect = {0};
 
     VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
     int32_t srcWidth = pSrcRectSize->cx;
@@ -210,8 +207,9 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
     bool fScale = (dstWidth != srcWidth || dstHeight != srcHeight);
     Assert(fScale);
 
+    /* 'List' contains the destination rectangles to be updated (in pDst coords). */
     VBoxVrListInit(&List);
-    int rc = VBoxVrListRectsAdd(&List, 1, CrVrScrCompositorRectGet(&hFb->Compositor), NULL);
+    int rc = VBoxVrListRectsAdd(&List, cRects, pRects, NULL);
     if (!RT_SUCCESS(rc))
     {
         WARN(("VBoxVrListRectsAdd failed rc %d", rc));
@@ -224,6 +222,76 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
             pEntry;
             pEntry = CrVrScrCompositorConstIterNext(&Iter))
     {
+        /* Where the entry would be located in pDst coords, i.e. convert pEntry hFb coord to pDst coord. */
+        RTPOINT ScaledEntryPoint;
+        ScaledEntryPoint.x = CR_FLOAT_RCAST(int32_t, strX * CrVrScrCompositorEntryRectGet(pEntry)->xLeft) + pDstRect->xLeft;
+        ScaledEntryPoint.y = CR_FLOAT_RCAST(int32_t, strY * CrVrScrCompositorEntryRectGet(pEntry)->yTop) + pDstRect->yTop;
+
+        /* Scaled texture size and rect. */
+        uint32_t width = 0, height = 0;
+        RTRECT ScaledSrcRect = {0};
+
+        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
+
+        /* Optimization to avoid entering/leaving the same texture and its blitter. */
+        if (pEnteredTex != pTex)
+        {
+            if (!pEnteredBlitter)
+            {
+                pEnteredBlitter = CrTdBlitterGet(pTex);
+                rc = CrBltEnter(pEnteredBlitter);
+                if (!RT_SUCCESS(rc))
+                {
+                    WARN(("CrBltEnter failed %d", rc));
+                    pEnteredBlitter = NULL;
+                    goto end;
+                }
+            }
+
+            if (pEnteredTex)
+            {
+                CrTdBltLeave(pEnteredTex);
+
+                pEnteredTex = NULL;
+
+                if (pEnteredBlitter != CrTdBlitterGet(pTex))
+                {
+                    WARN(("blitters not equal!"));
+                    CrBltLeave(pEnteredBlitter);
+
+                    pEnteredBlitter = CrTdBlitterGet(pTex);
+                    rc = CrBltEnter(pEnteredBlitter);
+                     if (!RT_SUCCESS(rc))
+                     {
+                         WARN(("CrBltEnter failed %d", rc));
+                         pEnteredBlitter = NULL;
+                         goto end;
+                     }
+                }
+            }
+
+            rc = CrTdBltEnter(pTex);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("CrTdBltEnter failed %d", rc));
+                goto end;
+            }
+
+            pEnteredTex = pTex;
+
+            const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
+
+            width = CR_FLOAT_RCAST(uint32_t, strX * pVrTex->width);
+            height = CR_FLOAT_RCAST(uint32_t, strY * pVrTex->height);
+            ScaledSrcRect.xLeft = ScaledEntryPoint.x;
+            ScaledSrcRect.yTop = ScaledEntryPoint.y;
+            ScaledSrcRect.xRight = width + ScaledEntryPoint.x;
+            ScaledSrcRect.yBottom = height + ScaledEntryPoint.y;
+        }
+
+        bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
+
+        /* pRegions is where the pEntry was drawn in hFb coords. */
         uint32_t cRegions;
         const RTRECT *pRegions;
         rc = CrVrScrCompositorEntryRegionsGet(&hFb->Compositor, pEntry, &cRegions, NULL, NULL, &pRegions);
@@ -233,10 +301,14 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
             goto end;
         }
 
-        rc = VBoxVrListRectsSubst(&List, cRegions, pRegions, NULL);
+        /* CrTdBltDataAcquireScaled/CrTdBltDataReleaseScaled can use cached data,
+         * so it is not necessary to optimize and Aquire only when Tex changes.
+         */
+        const CR_BLITTER_IMG *pSrcImg;
+        rc = CrTdBltDataAcquireScaled(pTex, GL_BGRA, false, width, height, &pSrcImg);
         if (!RT_SUCCESS(rc))
         {
-            WARN(("VBoxVrListRectsSubst failed rc %d", rc));
+            WARN(("CrTdBltDataAcquire failed rc %d", rc));
             goto end;
         }
 
@@ -252,6 +324,17 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
             /* translate */
             VBoxRectTranslate(&ScaledReg, pDstRect->xLeft, pDstRect->yTop);
 
+            /* Exclude the pEntry rectangle, because it will be updated now in pDst.
+             * List uses dst coords and pRegions use hFb coords, therefore use
+             * ScaledReg which is already translated to dst.
+             */
+            rc = VBoxVrListRectsSubst(&List, 1, &ScaledReg, NULL);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("VBoxVrListRectsSubst failed rc %d", rc));
+                goto end;
+            }
+
             for (uint32_t i = 0; i < cRects; ++i)
             {
                 const RTRECT * pRect = &pRects[i];
@@ -261,86 +344,18 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
                 if (VBoxRectIsZero(&Intersection))
                     continue;
 
-                CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
-                const CR_BLITTER_IMG *pSrcImg;
-
-                if (pEnteredTex != pTex)
-                {
-                    if (!pEnteredBlitter)
-                    {
-                        pEnteredBlitter = CrTdBlitterGet(pTex);
-                        rc = CrBltEnter(pEnteredBlitter);
-                        if (!RT_SUCCESS(rc))
-                        {
-                            WARN(("CrBltEnter failed %d", rc));
-                            pEnteredBlitter = NULL;
-                            goto end;
-                        }
-                    }
-
-                    if (pEnteredTex)
-                    {
-                        CrTdBltLeave(pEnteredTex);
-
-                        pEnteredTex = NULL;
-
-                        if (pEnteredBlitter != CrTdBlitterGet(pTex))
-                        {
-                            WARN(("blitters not equal!"));
-                            CrBltLeave(pEnteredBlitter);
-
-                            pEnteredBlitter = CrTdBlitterGet(pTex);
-                            rc = CrBltEnter(pEnteredBlitter);
-                             if (!RT_SUCCESS(rc))
-                             {
-                                 WARN(("CrBltEnter failed %d", rc));
-                                 pEnteredBlitter = NULL;
-                                 goto end;
-                             }
-                        }
-                    }
-
-                    rc = CrTdBltEnter(pTex);
-                    if (!RT_SUCCESS(rc))
-                    {
-                        WARN(("CrTdBltEnter failed %d", rc));
-                        goto end;
-                    }
-
-                    pEnteredTex = pTex;
-
-                    const VBOXVR_TEXTURE *pVrTex = CrTdTexGet(pTex);
-
-                    width = CR_FLOAT_RCAST(uint32_t, strX * pVrTex->width);
-                    height = CR_FLOAT_RCAST(uint32_t, strY * pVrTex->height);
-                    ScaledEntryPoint.x = CR_FLOAT_RCAST(int32_t, strX * CrVrScrCompositorEntryRectGet(pEntry)->xLeft) + pDstRect->xLeft;
-                    ScaledEntryPoint.y = CR_FLOAT_RCAST(int32_t, strY * CrVrScrCompositorEntryRectGet(pEntry)->yTop) + pDstRect->yTop;
-                    ScaledSrcRect.xLeft = ScaledEntryPoint.x;
-                    ScaledSrcRect.yTop = ScaledEntryPoint.y;
-                    ScaledSrcRect.xRight = width + ScaledEntryPoint.x;
-                    ScaledSrcRect.yBottom = height + ScaledEntryPoint.y;
-                }
-
                 VBoxRectIntersect(&Intersection, &ScaledSrcRect);
                 if (VBoxRectIsZero(&Intersection))
                     continue;
 
-                rc = CrTdBltDataAcquireScaled(pTex, GL_BGRA, false, width, height, &pSrcImg);
-                if (!RT_SUCCESS(rc))
-                {
-                    WARN(("CrTdBltDataAcquire failed rc %d", rc));
-                    goto end;
-                }
-
-                bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
-
                 CrMBltImgRect(pSrcImg, &ScaledEntryPoint, fInvert, &Intersection, pDst);
-
-                CrTdBltDataReleaseScaled(pTex, pSrcImg);
             }
         }
+
+        CrTdBltDataReleaseScaled(pTex, pSrcImg);
     }
 
+    /* Blit still not updated dst rects, i.e. not covered by 3D entries. */
     c2DRects = VBoxVrListRectsCount(&List);
     if (c2DRects)
     {
@@ -369,16 +384,11 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
             goto end;
         }
 
-        const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
+        /* p2DRects are in pDst coords and already scaled. */
 
         CR_BLITTER_IMG FbImg;
 
         crFbImgFromFb(hFb, &FbImg);
-
-        for (uint32_t i = 0; i < c2DRects; ++i)
-        {
-            VBoxRectScale(&p2DRects[i], strX, strY);
-        }
 
         CrMBltImgScaled(&FbImg, pSrcRectSize, pDstRect, c2DRects, p2DRects, pDst);
     }
@@ -448,16 +458,16 @@ static int crFbBltGetContentsScaledCPU(HCR_FRAMEBUFFER hFb, const RTRECTSIZE *pS
 #endif
 }
 
-int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst)
+static int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects, const RTRECT *pRects, CR_BLITTER_IMG *pDst)
 {
     VBOXVR_LIST List;
     uint32_t c2DRects = 0;
     CR_TEXDATA *pEnteredTex = NULL;
     PCR_BLITTER pEnteredBlitter = NULL;
-    RTPOINT EntryPoint = {0};
 
+    /* 'List' contains the destination rectangles to be updated (in pDst coords). */
     VBoxVrListInit(&List);
-    int rc = VBoxVrListRectsAdd(&List, 1, CrVrScrCompositorRectGet(&hFb->Compositor), NULL);
+    int rc = VBoxVrListRectsAdd(&List, cRects, pRects, NULL);
     if (!RT_SUCCESS(rc))
     {
         WARN(("VBoxVrListRectsAdd failed rc %d", rc));
@@ -471,6 +481,63 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
             pEntry;
             pEntry = CrVrScrCompositorConstIterNext(&Iter))
     {
+        /* Where the entry would be located in pDst coords (pPos = pDst_coord - hFb_coord). */
+        RTPOINT EntryPoint;
+        EntryPoint.x = CrVrScrCompositorEntryRectGet(pEntry)->xLeft + pPos->x;
+        EntryPoint.y = CrVrScrCompositorEntryRectGet(pEntry)->yTop + pPos->y;
+
+        CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
+
+        /* Optimization to avoid entering/leaving the same texture and its blitter. */
+        if (pEnteredTex != pTex)
+        {
+            if (!pEnteredBlitter)
+            {
+                pEnteredBlitter = CrTdBlitterGet(pTex);
+                rc = CrBltEnter(pEnteredBlitter);
+                if (!RT_SUCCESS(rc))
+                {
+                    WARN(("CrBltEnter failed %d", rc));
+                    pEnteredBlitter = NULL;
+                    goto end;
+                }
+            }
+
+            if (pEnteredTex)
+            {
+                CrTdBltLeave(pEnteredTex);
+
+                pEnteredTex = NULL;
+
+                if (pEnteredBlitter != CrTdBlitterGet(pTex))
+                {
+                    WARN(("blitters not equal!"));
+                    CrBltLeave(pEnteredBlitter);
+
+                    pEnteredBlitter = CrTdBlitterGet(pTex);
+                    rc = CrBltEnter(pEnteredBlitter);
+                     if (!RT_SUCCESS(rc))
+                     {
+                         WARN(("CrBltEnter failed %d", rc));
+                         pEnteredBlitter = NULL;
+                         goto end;
+                     }
+                }
+            }
+
+            rc = CrTdBltEnter(pTex);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("CrTdBltEnter failed %d", rc));
+                goto end;
+            }
+
+            pEnteredTex = pTex;
+        }
+
+        bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
+
+        /* pRegions is where the pEntry was drawn in hFb coords. */
         uint32_t cRegions;
         const RTRECT *pRegions;
         rc = CrVrScrCompositorEntryRegionsGet(&hFb->Compositor, pEntry, &cRegions, NULL, NULL, &pRegions);
@@ -480,10 +547,14 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
             goto end;
         }
 
-        rc = VBoxVrListRectsSubst(&List, cRegions, pRegions, NULL);
+        /* CrTdBltDataAcquire/CrTdBltDataRelease can use cached data,
+         * so it is not necessary to optimize and Aquire only when Tex changes.
+         */
+        const CR_BLITTER_IMG *pSrcImg;
+        rc = CrTdBltDataAcquire(pTex, GL_BGRA, false, &pSrcImg);
         if (!RT_SUCCESS(rc))
         {
-            WARN(("VBoxVrListRectsSubst failed rc %d", rc));
+            WARN(("CrTdBltDataAcquire failed rc %d", rc));
             goto end;
         }
 
@@ -497,6 +568,17 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
             /* translate */
             VBoxRectTranslated(pReg, pPos->x, pPos->y, &SrcReg);
 
+            /* Exclude the pEntry rectangle, because it will be updated now in pDst.
+             * List uses dst coords and pRegions use hFb coords, therefore use
+             * SrcReg which is already translated to dst.
+             */
+            rc = VBoxVrListRectsSubst(&List, 1, &SrcReg, NULL);
+            if (!RT_SUCCESS(rc))
+            {
+                WARN(("VBoxVrListRectsSubst failed rc %d", rc));
+                goto end;
+            }
+
             for (uint32_t i = 0; i < cRects; ++i)
             {
                 const RTRECT * pRect = &pRects[i];
@@ -506,73 +588,14 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
                 if (VBoxRectIsZero(&Intersection))
                     continue;
 
-                CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
-                const CR_BLITTER_IMG *pSrcImg;
-
-                if (pEnteredTex != pTex)
-                {
-                    if (!pEnteredBlitter)
-                    {
-                        pEnteredBlitter = CrTdBlitterGet(pTex);
-                        rc = CrBltEnter(pEnteredBlitter);
-                        if (!RT_SUCCESS(rc))
-                        {
-                            WARN(("CrBltEnter failed %d", rc));
-                            pEnteredBlitter = NULL;
-                            goto end;
-                        }
-                    }
-
-                    if (pEnteredTex)
-                    {
-                        CrTdBltLeave(pEnteredTex);
-
-                        pEnteredTex = NULL;
-
-                        if (pEnteredBlitter != CrTdBlitterGet(pTex))
-                        {
-                            WARN(("blitters not equal!"));
-                            CrBltLeave(pEnteredBlitter);
-
-                            pEnteredBlitter = CrTdBlitterGet(pTex);
-                            rc = CrBltEnter(pEnteredBlitter);
-                             if (!RT_SUCCESS(rc))
-                             {
-                                 WARN(("CrBltEnter failed %d", rc));
-                                 pEnteredBlitter = NULL;
-                                 goto end;
-                             }
-                        }
-                    }
-
-                    rc = CrTdBltEnter(pTex);
-                    if (!RT_SUCCESS(rc))
-                    {
-                        WARN(("CrTdBltEnter failed %d", rc));
-                        goto end;
-                    }
-
-                    pEnteredTex = pTex;
-                    EntryPoint.x = CrVrScrCompositorEntryRectGet(pEntry)->xLeft + pPos->x;
-                    EntryPoint.y = CrVrScrCompositorEntryRectGet(pEntry)->yTop + pPos->y;
-                }
-
-                rc = CrTdBltDataAcquire(pTex, GL_BGRA, false, &pSrcImg);
-                if (!RT_SUCCESS(rc))
-                {
-                    WARN(("CrTdBltDataAcquire failed rc %d", rc));
-                    goto end;
-                }
-
-                bool fInvert = !(CrVrScrCompositorEntryFlagsGet(pEntry) & CRBLT_F_INVERT_SRC_YCOORDS);
-
                 CrMBltImgRect(pSrcImg, &EntryPoint, fInvert, &Intersection, pDst);
-
-                CrTdBltDataRelease(pTex);
             }
         }
+
+        CrTdBltDataRelease(pTex);
     }
 
+    /* Blit still not updated dst rects, i.e. not covered by 3D entries. */
     c2DRects = VBoxVrListRectsCount(&List);
     if (c2DRects)
     {
@@ -600,8 +623,6 @@ int CrFbBltGetContents(HCR_FRAMEBUFFER hFb, const RTPOINT *pPos, uint32_t cRects
             WARN(("VBoxVrListRectsGet failed, rc %d", rc));
             goto end;
         }
-
-        const RTRECT *pCompRect = CrVrScrCompositorRectGet(&hFb->Compositor);
 
         CR_BLITTER_IMG FbImg;
 
