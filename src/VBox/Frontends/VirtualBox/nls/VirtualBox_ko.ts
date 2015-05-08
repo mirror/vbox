@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ko">
+<TS version="2.1" language="ko">
 <context>
     <name>@@@</name>
     <message>
@@ -26,7 +26,7 @@
     <message>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Park Shinjo</translation>
+        <translation>Shinjo Park</translation>
     </message>
 </context>
 <context>
@@ -252,7 +252,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished">심리스 모드(&amp;L)</translation>
+        <translation>심리스 모드(&amp;L)</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -931,213 +931,213 @@
     </message>
     <message>
         <source>Show Session Information Window</source>
-        <translation type="unfinished"></translation>
+        <translation>세션 정보 대화 상자 보이기</translation>
     </message>
     <message>
         <source>&amp;Webcams</source>
-        <translation type="unfinished"></translation>
+        <translation>웹캠(&amp;W)</translation>
     </message>
     <message>
         <source>&amp;Insert Guest Additions CD image...</source>
-        <translation type="unfinished"></translation>
+        <translation>게스트 확장 CD 이미지 삽입(&amp;I)...</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual drive</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox 게스트 확장 디스크 파일을 가상 드라이브에 삽입</translation>
     </message>
     <message>
         <source>&amp;VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox(&amp;V)</translation>
     </message>
     <message>
         <source>&amp;Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴 표시줄(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴 표시줄 설정(&amp;M)...</translation>
     </message>
     <message>
         <source>Opens window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴 표시줄을 설정하는 창을 엽니다</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴 표시줄 보이기(&amp;B)</translation>
     </message>
     <message>
         <source>Toggle menu-bar visibility for this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신의 메뉴 표시줄 보이기/숨기기</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄 설정(&amp;S)...</translation>
     </message>
     <message>
         <source>Opens window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄을 설정하는 창을 엽니다</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄 보이기(&amp;B)</translation>
     </message>
     <message>
         <source>Toggle status-bar visibility for this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신의 상태 표시줄 보이기/숨기기</translation>
     </message>
     <message>
         <source>&amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>입력(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>키보드(&amp;K)</translation>
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>키보드 설정(&amp;K)...</translation>
     </message>
     <message>
         <source>Display the global settings window to configure shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>전역 단축키 설정 대화 상자를 표시합니다</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>마우스(&amp;M)</translation>
     </message>
     <message>
         <source>&amp;Hard Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 드라이브(&amp;H)</translation>
     </message>
     <message>
         <source>&amp;Hard Drive Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 드라이브 설정(&amp;H)...</translation>
     </message>
     <message>
         <source>Change the settings of hard drives</source>
-        <translation type="unfinished"></translation>
+        <translation>하드 드라이브 설정 바꾸기</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished">네트워크</translation>
+        <translation>네트워크</translation>
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 설정(&amp;U)...</translation>
     </message>
     <message>
         <source>Change the settings of USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 장치 설정 바꾸기</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>공유 폴더(&amp;S)</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">로그 보기(&amp;L)...</translation>
+        <translation>로그 보기(&amp;L)...</translation>
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 데이터 관리자(&amp;X)...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 데이터 관리자 대화상자를 표시합니다</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">파일(&amp;F)</translation>
+        <translation>파일(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation type="unfinished"></translation>
+        <translation>창(&amp;W)</translation>
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation type="unfinished"></translation>
+        <translation>최소화(&amp;M)</translation>
     </message>
     <message>
         <source>Minimize active machine-window</source>
-        <translation type="unfinished"></translation>
+        <translation>활성 가상 머신 창 최소화</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>전체 화면 모드(&amp;F)</translation>
     </message>
     <message>
         <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>창 모드와 전체 화면 모드를 전환합니다</translation>
     </message>
     <message>
         <source>S&amp;caled Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 모드(&amp;C)</translation>
     </message>
     <message>
         <source>S&amp;cale Factor</source>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 비율(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 삽입(&amp;I)</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 %1 키를 입력합니다</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
+        <translation>마우스 통합(&amp;M)</translation>
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 마우스 통합 활성화</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>광학 드라이브(&amp;O)</translation>
     </message>
     <message>
         <source>&amp;Floppy Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 드라이브(&amp;F)</translation>
     </message>
     <message>
         <source>&amp;USB</source>
-        <translation type="unfinished"></translation>
+        <translation>USB(&amp;U)</translation>
     </message>
     <message>
         <source>Drag and Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>드래그 앤 드롭</translation>
     </message>
     <message>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>로그(&amp;L)</translation>
     </message>
     <message>
         <source>&amp;Normal Start</source>
-        <translation type="unfinished"></translation>
+        <translation>일반 시작(&amp;N)</translation>
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation type="unfinished"></translation>
+        <translation>헤드리스 시작(&amp;H)</translation>
     </message>
     <message>
         <source>Start the selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신을 백그라운드에서 시작합니다</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
-        <translation type="unfinished"></translation>
+        <translation>떼낼 수 있도록 시작(&amp;D)</translation>
     </message>
     <message>
         <source>Start the selected virtual machines with the option of continuing them in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>선택한 가상 머신을 시작한 후 백그라운드에서 계속 실행할 수 있도록 합니다</translation>
     </message>
 </context>
 <context>
@@ -1145,17 +1145,17 @@
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1x%2(으)로 크기 조정</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -1169,13 +1169,13 @@
     <name>UIAddDiskEncryptionPasswordDialog</name>
     <message>
         <source>%1 - Disk Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - 디스크 암호화</translation>
     </message>
     <message numerus="yes">
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>이 가상 머신은 암호로 보호되어 있습니다.암호 %n개를 입력하십시오.</numerusform>
         </translation>
     </message>
 </context>
@@ -1969,7 +1969,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>데이터 가져오는 중...</translation>
     </message>
 </context>
 <context>
@@ -2059,23 +2059,23 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>상태</translation>
     </message>
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>ID</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>암호</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard drive(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;다음 하드 드라이브 %n개에 사용됨:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
 </context>
@@ -2984,67 +2984,67 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>최소 반가상화</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hyper-V 반가상화</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>KVM 반가상화</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>[광학 드라이브]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">USB 컨트롤러</translation>
+        <translation>USB 컨트롤러</translation>
     </message>
     <message>
         <source>Scale-factor</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 비율</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>조정되지 않은 HiDPI 비디오 출력</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">사용함</translation>
+        <translation>사용함</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>작은 도구 모음 위치</translation>
     </message>
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>위</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>아래</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>작은 도구 모음</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
-        <translation type="unfinished">사용 안함</translation>
+        <translation>사용 안함</translation>
     </message>
 </context>
 <context>
@@ -3345,15 +3345,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Machine Windows:</source>
-        <translation type="unfinished"></translation>
+        <translation>머신 창:</translation>
     </message>
     <message>
         <source>If checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 마우스 커서가 머신 창 위로 지나갈 때 머신 창이 위로 올라옵니다.</translation>
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>마우스 아래 창 올리기(&amp;R)</translation>
     </message>
 </context>
 <context>
@@ -4797,17 +4797,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;디스플레이의 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;광학 드라이브의 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;플로피 드라이브 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -4881,19 +4881,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>웹캠이 연결되지 않았음</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 PC에 지원하는 웹캠이 연결되지 않았음</translation>
     </message>
     <message>
         <source>Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 어댑터 연결</translation>
     </message>
     <message>
         <source>Connect Network Adapter %1</source>
-        <translation type="unfinished"></translation>
+        <translation>네트워크 어댑터 %1 연결</translation>
     </message>
 </context>
 <context>
@@ -5198,15 +5198,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;동영상 5분 당 약 %1MB&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 가상 머신에서 원격 디스플레이가 활성화되어 있으나, &lt;b&gt;%1&lt;/b&gt;을(를) 설치해야 합니다. 원격 디스플레이를 사용하려면 VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하거나, 설치하지 않고 계속 진행하면 원격 디스플레이를 사용하지 않습니다.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 하드웨어 그래픽 가속이 켜져 있으며 운영 체제 종류를 Windows Vista 이후로 선택하였습니다. 최적의 성능을 위해서 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.</translation>
     </message>
 </context>
 <context>
@@ -5457,123 +5457,123 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation type="unfinished"></translation>
+        <translation>암호화(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 가상 머신을 암호화합니다.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>암호화 사용(&amp;A)</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation type="unfinished"></translation>
+        <translation>암호화 방식(&amp;I):</translation>
     </message>
     <message>
         <source>Holds the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 디스크를 암호화할 방식을 지정합니다.</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>새 암호 입력(&amp;N):</translation>
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 사용할 암호를 지정합니다.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>새 암호 확인(&amp;O):</translation>
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 사용할 암호를 확인합니다.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신을 암호화하려면 &lt;i&gt;%1&lt;/i&gt;을(를) 설치해야 합니다. VirtualBox 다운로드 사이트에서 게스트 확장을 설치하십시오.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호화 방식을 지정하지 않았습니다.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호가 비어 있습니다.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호가 일치하지 않습니다.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished"></translation>
+        <translation>변경하지 않음</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsInterface</name>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>VM 메뉴 표시줄을 수정할 수 있도록 합니다.</translation>
     </message>
     <message>
         <source>Screen Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>크기 조정 비율:</translation>
     </message>
     <message>
         <source>This setting determines the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 설정은 게스트 크기 조정 비율을 결정합니다.</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation type="unfinished">3D {100%?}</translation>
+        <translation>100%</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation type="unfinished">3D {200%?}</translation>
+        <translation>200%</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation type="unfinished"></translation>
+        <translation>HiDPI:</translation>
     </message>
     <message>
         <source>If checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 게스트 화면 내용이 호스트의 높은 해상도에 맞도록 조정되지 않습니다.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished"></translation>
+        <translation>조정되지 않은 HiDPI 출력 사용(&amp;U)</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">작은 도구 모음:</translation>
+        <translation>작은 도구 모음:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished">선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
+        <translation>선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
     </message>
     <message>
         <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished">전체 화면/심리스 모드에서 보이기(&amp;F)</translation>
+        <translation>전체 화면/심리스 모드에서 보이기(&amp;F)</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished">선택하면 작은 도구 모음을 화면 아래 대신 위에 표시합니다.</translation>
+        <translation>선택하면 작은 도구 모음을 화면 아래 대신 위에 표시합니다.</translation>
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">화면 위에 보이기(&amp;T)</translation>
+        <translation>화면 위에 보이기(&amp;T)</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>VM 상태 표시줄을 수정할 수 있도록 합니다.</translation>
     </message>
 </context>
 <context>
@@ -6223,19 +6223,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 가상 머신에 지정한 &lt;b&gt;경로/주소&lt;/b&gt;에 있는 파이프나 소켓을 존재하는 것으로 간주하고 사용합니다. 선택하지 않으면 가상 머신을 시작할 때 파이프나 소켓을 만듭니다.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation type="unfinished"></translation>
+        <translation>존재하는 파이프/소켓에 연결(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>경로/주소(&amp;P):</translation>
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;호스트 파이프&lt;/b&gt; 모드: 호스트의 시리얼 포트 파이프 이름을 지정합니다. 예: Windows의 경우 &quot;\\.\pipe\myvbox&quot;, 유닉스 계열 시스템의 경우 &quot;/tmp/myvbox&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;호스트 장치&lt;/b&gt; 모드: 호스트의 시리얼 포트 장치 이름을 지정합니다. 예: &quot;COM1&quot;, &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;원본 파일&lt;/b&gt; 모드: 시리얼 출력을 저장할 호스트의 파일 경로를 지정합니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;TCP&lt;/b&gt; 모드: 서버 모드의 경우 TCP &quot;포트&quot;, 클라이언트 모드의 경우 &quot;호스트이름:포트&quot;를 지정합니다.</translation>
     </message>
 </context>
 <context>
@@ -6711,47 +6711,47 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 컨트롤러 추가</translation>
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 디스크를 핫플러그 가능한 장치로 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished"></translation>
+        <translation>핫플러그 가능(&amp;H)</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk file...</source>
-        <translation type="unfinished">가상 광학 디스크 파일 선택...</translation>
+        <translation>가상 광학 디스크 파일 선택...</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Optical&amp;nbsp;Drive&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;광학&amp;nbsp;드라이브&amp;nbsp;추가&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Add&amp;nbsp;Floppy&amp;nbsp;Drive&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;플로피&amp;nbsp;드라이브&amp;nbsp;추가&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>광학 드라이브 추가</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 드라이브 추가</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>광학 드라이브(&amp;D):</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 광학 디스크나 가상 드라이브처럼 사용할 실제 드라이브를 선택하십시오. 가상 머신은 드라이브 안에 있는 디스크나 파일에 있는 데이터를 가상 디스크에 있는 데이터처럼 처리합니다.</translation>
     </message>
     <message>
         <source>Set up the virtual optical drive</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 광학 드라이브 설정</translation>
     </message>
 </context>
 <context>
@@ -7023,27 +7023,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>반가상화 인터페이스(&amp;P):</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 가상 머신에서 사용할 반가상화 게스트 인터페이스 공급자를 선택합니다.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템 페이지의 메인보드 영역에서 I/O APIC를 활성화하지 않았습니다. 이 가상 머신에 지정한 ICH9 칩셋을 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 페이지에서 USB 컨트롤러 에뮬레이션을 활성화하지 않았습니다. 이 가상 머신에서 USB 입력 장치 에뮬레이션을 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템 페이지의 메인보드 영역에서 I/O APIC를 활성화하지 않았습니다. 이 가상 머신에 지정한 두 개 이상의 가상 프로세서를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템 페이지의 가속 영역에서 하드웨어 가상화를 활성화하지 않았습니다. 이 가상 머신에 지정한 두 개 이상의 가상 프로세서를 사용하려면 이 기능을 활성화해야 합니다. 변경 사항을 저장하면 자동으로 켜질 것입니다.</translation>
     </message>
 </context>
 <context>
@@ -7183,27 +7183,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 가상 머신의 USB OHCI 컨트롤러를 사용합니다. USB OHCI 컨트롤러는 USB 1.0을 지원합니다.</translation>
     </message>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 1.1(OHCI) 컨트롤러(&amp;1)</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 2.0(EHCI) 컨트롤러(&amp;2)</translation>
     </message>
     <message>
         <source>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 이 가상 머신의 USB xHCI 컨트롤러를 사용합니다. USB xHCI 컨트롤러는 USB 3.0을 지원합니다.</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>USB 3.0(xHCI) 컨트롤러(&amp;3)</translation>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 가상 머신에서 USB 2.0/3.0을 사용할 수 있으나, &lt;b&gt;%1&lt;/b&gt;을(를) 설치해야 합니다. 가상 머신을 시작하려면 VirtualBox 다운로드 사이트에서 확장 기능 패키지를 설치하거나 USB 2.0/3.0을 비활성화시키십시오.</translation>
     </message>
 </context>
 <context>
@@ -7346,7 +7346,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished"></translation>
+        <translation>미디어 제거 중...</translation>
     </message>
 </context>
 <context>
@@ -7368,23 +7368,23 @@ p, li { white-space: pre-wrap; }
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 화면 크기 조정</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 화면 매핑</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished">전환</translation>
+        <translation>전환</translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>메뉴 표시줄 활성화</translation>
     </message>
 </context>
 <context>
@@ -9001,120 +9001,120 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에 웹캠 &lt;b&gt;%1&lt;/b&gt;을(를) 추가할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;b&gt;%2&lt;/b&gt;에서 웹캠 &lt;b&gt;%1&lt;/b&gt;을(를) 제거할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;현재 가상 머신에서 VirtualBox 게스트 확장을 사용할 수 없는 것 같으며, 공유 폴더를 사용하려면 이 기능이 필요합니다. 가상 머신에서 공유 폴더를 사용하려면, 게스트 확장이 설치되어 있지 않으면 우선 설치하시고, 작동하지 않으면 &lt;b&gt;장치&lt;/b&gt; 메뉴의 &lt;b&gt;게스트 확장 CD 이미지 삽입&lt;/b&gt; 항목을 선택하셔서 다시 설치하십시오. 게스트 확장이 설치되어 있으나 가상 머신이 시작하는 중일 때에는 공유 폴더 기능이 작동하지 않습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Insert</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>삽입</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 화면의 색 농도가 &lt;b&gt;%1비트&lt;/b&gt;로 설정되어 있습니다. 최적화된 성능을 위하여 &lt;b&gt;%2비트&lt;/b&gt;로 전환하는 것을 추천합니다. 게스트 운영 체제의 시스템 설정의 &lt;b&gt;디스플레이&lt;/b&gt; 부분을 참고하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 포트 포워딩 규칙이 올바르지 않습니다. 규칙 이름은 유일해야 합니다.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 포트 포워딩 규칙이 올바르지 않습니다. 일부 규칙에서 동일한 호스트 포트를 사용하나 IP 주소가 충돌합니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBoxClient COM 개체를 만들 수 없습니다.&lt;/p&gt;&lt;p&gt;프로그램을 종료합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>전역 VirtualBox 추가 데이터의 키 &lt;i&gt;%1&lt;/i&gt;의 값 &lt;i&gt;{%2}&lt;/i&gt;을(를) 설정할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;i&gt;%2&lt;/i&gt;의 추가 데이터의 키 &lt;i&gt;%1&lt;/i&gt;의 값 &lt;i&gt;{%3}&lt;/i&gt;을(를) 설정할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, optical or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;하나 이상의 등록된 가상 하드 디스크나, 광학 디스크 및 플로피 디스크 이미지 파일에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>설정을 저장할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new optical drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual optical disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;새 광학 드라이브를 컨트롤러 &lt;b&gt;%1&lt;/b&gt;에 추가하려고 하고 있습니다.&lt;/p&gt;&lt;p&gt;드라이브에 삽입할 가상 광학 디스크를 선택하거나, 나중에 추가하기 위해서 비워 두시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 광학 드라이브를 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;광학 디스크나 ISO 이미지를 마운트할 수도, 게스트 확장을 설치할 수도 없습니다!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>광학 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>플로피 드라이브(&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;)를 가상 머신 &lt;b&gt;%3&lt;/b&gt;의 슬롯 &lt;i&gt;%2&lt;/i&gt;에서 연결 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블을 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disconnect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블의 연결을 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;에는 광학 드라이브가 없기 때문에 &lt;b&gt;VirtualBox 게스트 확장&lt;/b&gt; 디스크 이미지를 마운트할 수 없습니다. 가상 머신 설정 대화상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;VirtualBox 게스트 확장&lt;/b&gt; 디스크 이미지 파일을 &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;에서 다운로드했으며 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;에 저장했습니다.&lt;/p&gt;&lt;p&gt;이 디스크 이미지를 등록하고 가상 광학 드라이브에 마운트하시겠습니까?&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Drag and drop operation failed.</source>
+        <translation>드래그 앤 드롭 작업이 실패했습니다.</translation>
+    </message>
+    <message>
+        <source>Failed while dropping data.</source>
+        <translation>데이터를 드롭할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to cancel drag and drop operation.</source>
+        <translation>드래그 앤 드롭 작업을 취소할 수 없습니다.</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>암호가 잘못되었거나 인증이 실패하였습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;와 이미지 파일 &lt;tt&gt;VBox.png&lt;/tt&gt; 및 오류가 발생했을 때 무엇을 하고 있었는지 알려 주십시오. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르거나, 디버깅 목적으로 계속 실행되게 하려면 &lt;b&gt;무시&lt;/b&gt; 단추를 누르십시오. 디버깅을 하려면 사전 지식과 도구가 필요하기 때문에 &lt;b&gt;확인&lt;/b&gt; 단추를 누르시기를 권장합니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신을 실행하는 중 치명적 오류가 발생하였고 가상 머신의 실행이 중단되었습니다.&lt;/p&gt;&lt;p&gt;도움말을 보시려면 &lt;a href=&quot;http://www.virtualbox.org&quot;&gt;http://www.virtualbox.org&lt;/a&gt; 사이트의 커뮤니티 섹션을 참조하거나 지원 업체에 연락하십시오. &lt;nobr&gt;가상 머신 로그 디렉터리에 있는 로그 파일 &lt;tt&gt;VBox.log&lt;/tt&gt;의 내용 및 오류가 발생했을 때 무엇을 하고 있었는지 알려 주십시오. 위 파일들은 주 VirtualBox 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;로그 보기&lt;/b&gt; 항목에서도 볼 수 있습니다.&lt;/p&gt;&lt;p&gt;가상 머신의 전원을 끄려면 &lt;b&gt;확인&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10064,7 +10064,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;VirtualBox에 오신 것을 환영합니다!&lt;/h3&gt;&lt;p&gt;이 창의 왼쪽 부분은 컴퓨터에 있는 모든 가상 머신 목록을 표시합니다. 아직 가상 머신을 만들지 않았기 때문에 이 목록은 현재 비어 있습니다.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;새 가상 머신을 만드시려면, 창 위쪽 주 도구 모음의 &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; 키를 누르면 상황에 맞는 도움말을 볼 수 있으며, 최근 정보와 뉴스를 보려면 &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;를 방문하십시오.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10153,7 +10153,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>환경 설정</translation>
     </message>
 </context>
 <context>
@@ -10232,40 +10232,40 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 인터페이스</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished">설정</translation>
+        <translation>설정</translation>
     </message>
 </context>
 <context>
     <name>UISettingsSerializerProgress</name>
     <message>
         <source>Loading Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>설정 불러오는 중...</translation>
     </message>
     <message>
         <source>Saving Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>설정 저장하는 중...</translation>
     </message>
 </context>
 <context>
     <name>UIStatusBarEditorButton</name>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;표시기를 켜거나 끄려면 &lt;b&gt;누르십시오&lt;/b&gt;.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;표시기 위치를 변경하려면 &lt;b&gt;드래그 앤 드롭&lt;/b&gt;을 사용하십시오.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIStatusBarEditorWidget</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished">닫기</translation>
+        <translation>닫기</translation>
     </message>
     <message>
         <source>Enable Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>상태 표시줄 활성화</translation>
     </message>
 </context>
 <context>
@@ -10433,11 +10433,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Continue running in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>계속 배경에서 실행(&amp;C)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;가상 머신 창을 닫지만 계속 실행되도록 합니다.&lt;/p&gt;&lt;p&gt;VirtualBox 관리자를 사용하여 가상 머신 창을 다시 볼 수 있습니다.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10603,11 +10603,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="unfinished"></translation>
+        <translation>VM 실행 시간</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>드래그 앤 드롭 모드</translation>
     </message>
 </context>
 <context>
@@ -10769,19 +10769,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>전문가 모드(&amp;E)</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="unfinished"></translation>
+        <translation>고급 사용자를 위한 하나의 대화상자인 &lt;nobr&gt;&lt;b&gt;전문가 모드&lt;/b&gt;&lt;/nobr&gt;로 전환합니다.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>가이드 모드(&amp;G)</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
-        <translation type="unfinished"></translation>
+        <translation>단계별 설명을 포함한 마법사인 &lt;nobr&gt;&lt;b&gt;가이드 모드&lt;/b&gt;&lt;/nobr&gt;로 전환합니다.</translation>
     </message>
 </context>
 <context>
@@ -12127,7 +12127,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished"></translation>
+        <translation>실제 기본 경로는 이 대화 상자의 변경 사항을 저장하고 다시 시작했을 때 표시됩니다.</translation>
     </message>
 </context>
 <context>
@@ -13942,151 +13942,146 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB 포트 %1</translation>
     </message>
     <message>
         <source>off</source>
         <comment>guest monitor status</comment>
-        <translation type="unfinished"></translation>
+        <translation>끔</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>반가상화 인터페이스</translation>
     </message>
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished">없음</translation>
+        <translation>없음</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished">기본값</translation>
+        <translation>기본값</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>레거시</translation>
     </message>
     <message>
         <source>Minimal</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>최소</translation>
     </message>
     <message>
         <source>Hyper-V</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Hyper-V</translation>
     </message>
     <message>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>새 동적 확장 저장소</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished">활성화됨</translation>
+        <translation>활성화됨</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>비활성화됨</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished">활성화됨</translation>
+        <translation>활성화됨</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>비활성화됨</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished">활성화됨</translation>
+        <translation>활성화됨</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
+        <translation>비활성화됨</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>스냅샷 찍는 중</translation>
     </message>
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>온라인 스냅샷 찍는 중</translation>
     </message>
     <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>KVM</translation>
     </message>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>광학</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>PortMode</comment>
-        <translation type="unfinished">TCP</translation>
+        <translation>TCP</translation>
     </message>
     <message>
         <source>OHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>OHCI</translation>
     </message>
     <message>
         <source>EHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>EHCI</translation>
     </message>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>xHCI</translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>사용자 인터페이스</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished"></translation>
+        <translation>(광학 드라이브)</translation>
     </message>
     <message>
         <source>Attaching this hard drive will be performed indirectly using a newly created differencing hard drive.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>이 하드 디스크를 추가하면 차이만 기록하는 새 하드 디스크를 추가할 것입니다.</translation>
     </message>
     <message>
         <source>Some of the files in this hard drive chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>이 하드 드라이브 체인 중 일부 파일에 접근할 수 없습니다. 가상 미디어 관리자에서 파일을 확인하십시오.</translation>
     </message>
     <message>
         <source>This base hard drive is indirectly attached using the following differencing hard drive:</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted</source>
-        <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>이 기본 하드 디스크는 다음 변경 사항만 기록하는 하드 디스크를 통해서 간접적으로 추가되어 있습니다:</translation>
     </message>
 </context>
 <context>
@@ -14396,7 +14391,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished"></translation>
+        <translation>UUID:</translation>
     </message>
 </context>
 <context>
