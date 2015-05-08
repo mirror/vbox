@@ -1554,6 +1554,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
     bool fBeganTakingSnapshot = false;
     BOOL fSuspendedBySave     = FALSE;
+    Guid snapshotId;
 
     try
     {
@@ -1605,7 +1606,6 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         /* STEP 1: create the snapshot object */
 
         /* create an ID for the snapshot */
-        Guid snapshotId;
         snapshotId.create();
 
         /* create a snapshot machine object */
@@ -1796,8 +1796,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
     task.m_pProgress->i_notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->i_onSnapshotTaken(mData->mUuid,
-                                   task.m_pSnapshot->i_getId());
+        mParent->i_onSnapshotTaken(mData->mUuid, snapshotId);
     LogFlowThisFuncLeave();
 }
 
