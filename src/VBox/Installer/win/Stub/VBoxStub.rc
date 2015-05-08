@@ -24,22 +24,22 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 VS_VERSION_INFO VERSIONINFO
    FILEVERSION      VBOX_RC_FILE_VERSION
    PRODUCTVERSION   VBOX_RC_FILE_VERSION
-   FILEFLAGSMASK        0x3fL
-   FILEFLAGS            0x0L
-   FILEOS               0x40004L
-   FILETYPE             0x2L
-   FILESUBTYPE          0x0L
+   FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+   FILEFLAGS        VBOX_RC_FILE_FLAGS
+   FILEOS           VBOX_RC_FILE_OS
+   FILETYPE         VBOX_RC_TYPE_DLL
+   FILESUBTYPE      VFT2_UNKNOWN
 BEGIN
    BLOCK "StringFileInfo"
    BEGIN
       BLOCK "040904b0"
       BEGIN
-         VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
          VALUE "FileDescription",  "VirtualBox\0"
-         VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
          VALUE "InternalName",     "VirtualBox\0"
-         VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VirtualBox.exe\0"
+         VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+         VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
+         VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
          VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       END

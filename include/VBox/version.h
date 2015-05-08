@@ -111,6 +111,10 @@
 # define VBOX_RC_FILE_FLAGS             0
 #endif
 #define VBOX_RC_FILE_OS                 VOS_NT_WINDOWS32
+#define VBOX_RC_TYPE_DLL                VFT_DLL
+#define VBOX_RC_TYPE_APP                VFT_APP
+#define VBOX_RC_TYPE_DRV                VFT_DRV
+
 /** @} */
 
 #endif

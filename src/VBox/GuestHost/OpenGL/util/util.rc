@@ -23,26 +23,26 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 VS_VERSION_INFO VERSIONINFO
   FILEVERSION      VBOX_RC_FILE_VERSION
   PRODUCTVERSION   VBOX_RC_FILE_VERSION
-  FILEFLAGSMASK    0x3fL
-  FILEFLAGS        0x0L
-  FILEOS           VOS_NT_WINDOWS32
-  FILETYPE         VFT_DRV
+  FILEFLAGSMASK    VS_FFI_FILEFLAGSMASK
+  FILEFLAGS        VBOX_RC_FILE_FLAGS
+  FILEOS           VBOX_RC_FILE_OS
+  FILETYPE         VBOX_RC_TYPE_DRV
   FILESUBTYPE      VFT2_DRV_DISPLAY
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
     BLOCK "040904b0"
     BEGIN
-      VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileDescription",  "VirtualBox crOpenGL crutil ICD\0"
-      VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
       VALUE "InternalName",     "VBoxOGLcrutil\0"
-      VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
 #ifdef VBOX_WDDM_WOW64
       VALUE "OriginalFilename", "VBoxOGLcrutil-x86.dll\0"
 #else
       VALUE "OriginalFilename", "VBoxOGLcrutil.dll\0"
 #endif
+      VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+      VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
+      VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_GA_STR
       VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
     END
