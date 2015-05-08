@@ -1302,70 +1302,9 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     if (version < SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER)
     	return VINF_SUCCESS;
 
-
-    if (version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL)
+    if (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT)
     {
-/*        if (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT) */ /* <- older version had a typo which lead to back always being used,
-																  * no matter what the visual bits are */
-        {
-            AssertCompile(sizeof (GLfloat) == 4);
-            pEl = &pData->aElements[pData->cElements];
-            pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
-            pEl->enmBuffer = 0; /* we do not care */
-            pEl->posX = 0;
-            pEl->posY = 0;
-            pEl->width = width;
-            pEl->height = height;
-            pEl->enmFormat = GL_DEPTH_COMPONENT;
-            pEl->enmType = GL_FLOAT;
-            pEl->cbData = width * height * 4;
-            pEl->pvData = crCalloc(pEl->cbData);
-            if (!pEl->pvData)
-            {
-                crVBoxServerFBImageDataTerm(pData);
-                crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
-                return VERR_NO_MEMORY;
-            }
-
-            /* init to default depth value, just in case */
-            pF = (GLfloat*)pEl->pvData;
-            for (i = 0; i < width * height; ++i)
-            {
-                pF[i] = 1.;
-            }
-            ++pData->cElements;
-        }
-
- /*       if (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT) */ /* <- older version had a typo which lead to back always being used,
-																	* no matter what the visual bits are */
-        {
-            AssertCompile(sizeof (GLuint) == 4);
-            pEl = &pData->aElements[pData->cElements];
-            pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
-            pEl->enmBuffer = 0; /* we do not care */
-            pEl->posX = 0;
-            pEl->posY = 0;
-            pEl->width = width;
-            pEl->height = height;
-            pEl->enmFormat = GL_STENCIL_INDEX;
-            pEl->enmType = GL_UNSIGNED_INT;
-            pEl->cbData = width * height * 4;
-            pEl->pvData = crCalloc(pEl->cbData);
-            if (!pEl->pvData)
-            {
-                crVBoxServerFBImageDataTerm(pData);
-                crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
-                return VERR_NO_MEMORY;
-            }
-            ++pData->cElements;
-        }
-        return VINF_SUCCESS;
-    }
-
-    /* Use GL_DEPTH_STENCIL only in case if both CR_STENCIL_BIT and CR_DEPTH_BIT specified. */
-    if (   (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
-        && (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
-    {
+        AssertCompile(sizeof (GLfloat) == 4);
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
         pEl->enmBuffer = 0; /* we do not care */
@@ -1373,8 +1312,38 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         pEl->posY = 0;
         pEl->width = width;
         pEl->height = height;
-        pEl->enmFormat = GL_DEPTH_STENCIL;
-        pEl->enmType = GL_UNSIGNED_INT_24_8;
+        pEl->enmFormat = GL_DEPTH_COMPONENT;
+        pEl->enmType = GL_FLOAT;
+        pEl->cbData = width * height * 4;
+        pEl->pvData = crCalloc(pEl->cbData);
+        if (!pEl->pvData)
+        {
+            crVBoxServerFBImageDataTerm(pData);
+            crWarning("crVBoxServerFBImageDataInit: crCalloc failed");
+            return VERR_NO_MEMORY;
+        }
+
+        /* init to default depth value, just in case */
+        pF = (GLfloat*)pEl->pvData;
+        for (i = 0; i < width * height; ++i)
+        {
+            pF[i] = 1.;
+        }
+        ++pData->cElements;
+    }
+
+    if (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
+    {
+        AssertCompile(sizeof (GLuint) == 4);
+        pEl = &pData->aElements[pData->cElements];
+        pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
+        pEl->enmBuffer = 0; /* we do not care */
+        pEl->posX = 0;
+        pEl->posY = 0;
+        pEl->width = width;
+        pEl->height = height;
+        pEl->enmFormat = GL_STENCIL_INDEX;
+        pEl->enmType = GL_UNSIGNED_INT;
         pEl->cbData = width * height * 4;
         pEl->pvData = crCalloc(pEl->cbData);
         if (!pEl->pvData)
@@ -1385,6 +1354,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         }
         ++pData->cElements;
     }
+
     return VINF_SUCCESS;
 }
 
