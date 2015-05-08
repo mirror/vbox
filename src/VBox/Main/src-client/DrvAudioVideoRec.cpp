@@ -722,7 +722,7 @@ int AudioVideoRec::handleVideoRecSvrCmdAudioInputEventData(void *pvContext, cons
     uint32_t cSamples = cbData / pVRDEVoice->cBytesPerFrame; /* Count of samples */
     void * pTmpSampleBuf = NULL;
     uint32_t cConvertedSamples; /* samples adjusted for rate */
-    uint32_t cbSamples; /* count of bytes occupied by samples */
+    uint32_t cbSamples = 0; /* count of bytes occupied by samples */
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("handleVRDPCmdInputEventData cbData = %d, bytesperfram=%d\n",
@@ -738,7 +738,6 @@ int AudioVideoRec::handleVideoRecSvrCmdAudioInputEventData(void *pvContext, cons
     vrdeReallocRateAdjSampleBuf(pVRDEVoice, cConvertedSamples);
 
     pConvertedSampleBuf = (PPDMAUDIOSAMPLE)pVRDEVoice->pvRateBuffer;
-
     if (pConvertedSampleBuf)
     {
         uint32_t cSampleSrc = cSamples;
@@ -748,7 +747,6 @@ int AudioVideoRec::handleVideoRecSvrCmdAudioInputEventData(void *pvContext, cons
         pTmpSampleBuf = pConvertedSampleBuf;
         cbSamples =  cConvertedSamples * sizeof(PDMAUDIOSAMPLE);
     }
-
 
     if (cbSamples)
         rc = vrdeRecordingCallback(pVRDEVoice, cbSamples, pTmpSampleBuf);
