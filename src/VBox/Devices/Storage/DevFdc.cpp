@@ -2174,22 +2174,25 @@ static void fdctrl_handle_drive_specification_command(fdctrl_t *fdctrl, int dire
 {
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
 
-    if (fdctrl->fifo[fdctrl->data_pos - 1] & 0x80) {
+    /* This command takes a variable number of parameters. It can be terminated
+     * at any time if the high bit of a parameter is set. Once there are 6 bytes
+     * in the FIFO (command + 5 parameter bytes), data_len/data_pos will be 7.
+     */
+    if (fdctrl->data_len == 7 || (fdctrl->fifo[fdctrl->data_pos - 1] & 0x80)) {
+
         /* Command parameters done */
         if (fdctrl->fifo[fdctrl->data_pos - 1] & 0x40) {
-            fdctrl->fifo[0] = fdctrl->fifo[1];
+            /* Data is echoed, but not stored! */
+            fdctrl->fifo[0] = fdctrl->data_len > 2 ? fdctrl->fifo[1] : 0;
+            fdctrl->fifo[1] = fdctrl->data_len > 3 ? fdctrl->fifo[2] : 0;
             fdctrl->fifo[2] = 0;
             fdctrl->fifo[3] = 0;
             fdctrl_set_fifo(fdctrl, 4, 0);
         } else {
             fdctrl_reset_fifo(fdctrl);
         }
-    } else if (fdctrl->data_len > 7) {
-        /* ERROR */
-        fdctrl->fifo[0] = 0x80 |
-            (cur_drv->head << 2) | GET_CUR_DRV(fdctrl);
-        fdctrl_set_fifo(fdctrl, 1, 0);
-    }
+    } else
+        fdctrl->data_len++; /* Wait for another byte. */
 }
 
 static void fdctrl_handle_relative_seek_out(fdctrl_t *fdctrl, int direction)
@@ -2254,7 +2257,7 @@ static const struct {
     { FD_CMD_CONFIGURE, 0xff, "CONFIGURE", 3, fdctrl_handle_configure },
     { FD_CMD_POWERDOWN_MODE, 0xff, "POWERDOWN MODE", 2, fdctrl_handle_powerdown_mode },
     { FD_CMD_OPTION, 0xff, "OPTION", 1, fdctrl_handle_option },
-    { FD_CMD_DRIVE_SPECIFICATION_COMMAND, 0xff, "DRIVE SPECIFICATION COMMAND", 5, fdctrl_handle_drive_specification_command },
+    { FD_CMD_DRIVE_SPECIFICATION_COMMAND, 0xff, "DRIVE SPECIFICATION COMMAND", 1, fdctrl_handle_drive_specification_command },
     { FD_CMD_RELATIVE_SEEK_OUT, 0xff, "RELATIVE SEEK OUT", 2, fdctrl_handle_relative_seek_out },
     { FD_CMD_FORMAT_AND_WRITE, 0xff, "FORMAT AND WRITE", 10, fdctrl_unimplemented },
     { FD_CMD_RELATIVE_SEEK_IN, 0xff, "RELATIVE SEEK IN", 2, fdctrl_handle_relative_seek_in },
