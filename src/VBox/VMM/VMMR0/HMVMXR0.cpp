@@ -780,14 +780,14 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
 
     /* Enter VMX root mode. */
-    int rc = VMXEnable(HCPhysCpuPage+5);
+    int rc = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc))
     {
         if (!(uOldCr4 & X86_CR4_VMXE))
             SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
 
         if (pVM)
-            pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage+5;
+            pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
     }
 
     /* Restore interrupts. */
