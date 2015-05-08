@@ -1294,7 +1294,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
         rc = hmR0EnableCpu(pVM, idCpu);
         if (RT_FAILURE(rc))
         {
-            RTThreadPreemptRestore(&PreemptState)
+            RTThreadPreemptRestore(&PreemptState);
             return rc;
         }
     }
