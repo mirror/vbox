@@ -262,7 +262,6 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
                               : pszFileName - pszFilePath;
                 char *pszRoot = &pszFilePath[cbBase];
                 m_lstRoot.append(pszRoot);
-                m_cTotal++;
 #ifdef DEBUG_andy
                 LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
                              pszFilePath, pszFileName, pszRoot));
