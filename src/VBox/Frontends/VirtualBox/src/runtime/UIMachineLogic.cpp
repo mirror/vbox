@@ -1428,7 +1428,9 @@ void UIMachineLogic::sltTakeSnapshot()
         if (machine().isOk())
         {
             /* Show the take-snapshot progress: */
-            msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_create_90px.png");
+            const bool fStillValid = msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_snapshot_create_90px.png");
+            if (!fStillValid)
+                return;
             if (!progress.isOk() || progress.GetResultCode() != 0)
                 msgCenter().cannotTakeSnapshot(progress, machineName());
         }
