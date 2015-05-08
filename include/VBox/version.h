@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,13 +26,15 @@
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
 
-#include <iprt/cdefs.h> /* For RT_XSTR. */
-
 /* Product info. */
 #include <product-generated.h>
 #include <version-generated.h>
 
 #ifndef RC_INVOKED
+/* Some versions of RC has trouble with cdefs.h, so we duplicate these two here. */
+# define RT_STR(str)             #str
+# define RT_XSTR(str)            RT_STR(str)
+#else  /* !RC_INVOKED */
 
 /** Combined version number. */
 # define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
@@ -97,12 +99,18 @@
  * @{ */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
 #define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2009-" VBOX_C_YEAR " Oracle Corporation\0"
+#define VBOX_RC_PRODUCT_NAME_STR        VBOX_PRODUCT_NAME "\0"
+#define VBOX_RC_PRODUCT_NAME_GA_STR     VBOX_PRODUCT_NAME " Guest Additions\0"
 #define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
 #define VBOX_RC_PRODUCT_VERSION_STR     RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) ".r" RT_XSTR(VBOX_SVN_REV) "\0"
 #define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
 #define VBOX_RC_FILE_VERSION_STR        RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) "." RT_XSTR(VBOX_SVN_REV) "\0"
-#define VBOX_RC_PRODUCT_NAME_STR        VBOX_PRODUCT_NAME "\0"
-#define VBOX_RC_PRODUCT_NAME_GA_STR     VBOX_PRODUCT_NAME " Guest Additions\0"
+#ifdef DEBUG
+# define VBOX_RC_FILE_FLAGS             (VS_FF_DEBUG | VS_FF_PRIVATEBUILD | VS_FF_PRERELEASE)
+#else
+# define VBOX_RC_FILE_FLAGS             0
+#endif
+#define VBOX_RC_FILE_OS                 VOS_NT_WINDOWS32
 /** @} */
 
 #endif
