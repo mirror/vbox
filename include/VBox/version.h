@@ -30,7 +30,7 @@
 #include <product-generated.h>
 #include <version-generated.h>
 
-#ifndef RC_INVOKED
+#ifdef RC_INVOKED
 /* Some versions of RC has trouble with cdefs.h, so we duplicate these two here. */
 # define RT_STR(str)             #str
 # define RT_XSTR(str)            RT_STR(str)
