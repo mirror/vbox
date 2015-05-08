@@ -1250,6 +1250,8 @@ static int crVBoxAddFBDataElement(CRFBData *pData, GLint idFBO, GLenum enmBuffer
     return VINF_SUCCESS;
 }
 
+/* Add framebuffer image elements arrording to SSM version. Please refer to cr_version.h
+ * in order to distinguish between versions. */
 static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInfo, CRMuralInfo *pMural, GLboolean fWrite, uint32_t version, GLuint overrideWidth, GLuint overrideHeight)
 {
     CRContext *pContext;
@@ -1287,13 +1289,11 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
                 pData->idOverrrideFBO = CR_SERVER_FBO_FOR_IDX(pMural, pMural->iCurReadBuffer);
         }
     }
+
     pData->cElements = 0;
 
-    rc = crVBoxAddFBDataElement(
-            pData,
-            pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-            pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_FRONT,
-            width, height, GL_RGBA, GL_UNSIGNED_BYTE);
+    rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
+        pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_FRONT, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
     AssertReturn(rc == VINF_SUCCESS, rc);
 
     /* There is a lot of code that assumes we have double buffering, just assert here to print a warning in the log
@@ -1304,24 +1304,52 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
          || version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL) /* <- Older version had a typo which lead to back always being used,
                                                                       *    no matter what the visual bits are. */
     {
-        rc = crVBoxAddFBDataElement(
-                pData,
-                pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0,
-                pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_BACK,
-                width, height, GL_RGBA, GL_UNSIGNED_BYTE);
+        rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_BB_IDX(pMural)] : 0,
+            pData->aElements[1].idFBO ? GL_COLOR_ATTACHMENT0 : GL_BACK, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
         AssertReturn(rc == VINF_SUCCESS, rc);
     }
 
     if (version < SHCROGL_SSM_VERSION_WITH_SAVED_DEPTH_STENCIL_BUFFER)
         return VINF_SUCCESS;
 
+    if (version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL)
+    {
+        rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
+            pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
+        AssertReturn(rc == VINF_SUCCESS, rc);
+
+        /* Init to default depth value, just in case. */
+        pF = (GLfloat*)pEl->pvData;
+        for (i = 0; i < width * height; ++i)
+            pF[i] = 1.;
+
+        rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
+            pMural ? pMural->idDepthRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
+        AssertReturn(rc == VINF_SUCCESS, rc);
+
+        return VINF_SUCCESS;
+    }
+
+    if (version < SHCROGL_SSM_VERSION_WITH_SEPARATE_DEPTH_STENCIL_BUFFERS)
+    {
+        /* Use GL_DEPTH_STENCIL only in case if both CR_STENCIL_BIT and CR_DEPTH_BIT specified. */
+        if (   (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
+            && (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT))
+        {
+            rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0, 0,
+                width, height, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8);
+            AssertReturn(rc == VINF_SUCCESS, rc);
+        }
+
+        return VINF_SUCCESS;
+    }
+
+    /* Current SSM verion (SHCROGL_SSM_VERSION_WITH_SEPARATE_DEPTH_STENCIL_BUFFERS). */
+
     if (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT)
     {
-        rc = crVBoxAddFBDataElement(
-                pData,
-                pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-                pMural ? pMural->idDepthRB : 0,
-                width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
+        rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
+            pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
         /* Init to default depth value, just in case. */
@@ -1332,11 +1360,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
 
     if (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
     {
-        rc = crVBoxAddFBDataElement(
-                pData,
-                pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-                pMural ? pMural->idDepthRB : 0,
-                width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
+        rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
+            pMural ? pMural->idDepthRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
         AssertReturn(rc == VINF_SUCCESS, rc);
     }
 
