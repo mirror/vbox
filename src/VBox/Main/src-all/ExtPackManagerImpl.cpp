@@ -2353,7 +2353,7 @@ ExtPack *ExtPackManager::i_findExtPack(const char *a_pszName)
 
     for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
          it != m->llInstalledExtPacks.end();
-         it++)
+         ++it)
     {
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
@@ -2377,7 +2377,7 @@ void ExtPackManager::i_removeExtPack(const char *a_pszName)
 
     for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
          it != m->llInstalledExtPacks.end();
-         it++)
+         ++it)
     {
         ExtPack::Data *pExtPackData = (*it)->m;
         if (   pExtPackData
@@ -2789,7 +2789,7 @@ void ExtPackManager::i_callAllVirtualBoxReadyHooks(void)
         if ((*it)->i_callVirtualBoxReadyHook(m->pVirtualBox, &autoLock))
             it = m->llInstalledExtPacks.begin();
         else
-            it++;
+            ++it;
     }
 }
 #endif
@@ -2816,7 +2816,7 @@ void ExtPackManager::i_callAllConsoleReadyHooks(IConsole *a_pConsole)
         if ((*it)->i_callConsoleReadyHook(a_pConsole, &autoLock))
             it = m->llInstalledExtPacks.begin();
         else
-            it++;
+            ++it;
     }
 }
 
@@ -2836,7 +2836,7 @@ void ExtPackManager::i_callAllVmCreatedHooks(IMachine *a_pMachine)
     ComPtr<ExtPackManager>  ptrSelfRef = this; /* paranoia */
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
-    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
+    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
         (*it)->i_callVmCreatedHook(m->pVirtualBox, a_pMachine, &autoLock);
 }
 #endif
@@ -2859,7 +2859,7 @@ int ExtPackManager::i_callAllVmConfigureVmmHooks(IConsole *a_pConsole, PVM a_pVM
     ComPtr<ExtPackManager>  ptrSelfRef = this; /* paranoia */
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
-    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
+    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
     {
         int vrc;
         (*it)->i_callVmConfigureVmmHook(a_pConsole, a_pVM, &autoLock, &vrc);
@@ -2888,7 +2888,7 @@ int ExtPackManager::i_callAllVmPowerOnHooks(IConsole *a_pConsole, PVM a_pVM)
     ComPtr<ExtPackManager>  ptrSelfRef = this; /* paranoia */
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
-    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
+    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
     {
         int vrc;
         (*it)->i_callVmPowerOnHook(a_pConsole, a_pVM, &autoLock, &vrc);
@@ -2915,7 +2915,7 @@ void ExtPackManager::i_callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM)
     ComPtr<ExtPackManager>  ptrSelfRef = this; /* paranoia */
     ExtPackList             llExtPacks = m->llInstalledExtPacks;
 
-    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); it++)
+    for (ExtPackList::iterator it = llExtPacks.begin(); it != llExtPacks.end(); ++it)
         (*it)->i_callVmPowerOffHook(a_pConsole, a_pVM, &autoLock);
 }
 
@@ -3023,7 +3023,7 @@ HRESULT ExtPackManager::i_getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack)
 
         for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
              it != m->llInstalledExtPacks.end();
-             it++)
+             ++it)
         {
             if ((*it)->i_wantsToBeDefaultVrde())
             {
@@ -3068,7 +3068,7 @@ void ExtPackManager::i_dumpAllToReleaseLog(void)
     LogRel(("Installed Extension Packs:\n"));
     for (ExtPackList::iterator it = m->llInstalledExtPacks.begin();
          it != m->llInstalledExtPacks.end();
-         it++)
+         ++it)
     {
         ExtPack::Data *pExtPackData = (*it)->m;
         if (pExtPackData)

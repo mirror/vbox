@@ -184,7 +184,7 @@ HRESULT MediumLockList::Update(const ComObjPtr<Medium> &aMedium, bool aLockWrite
 {
     for (MediumLockList::Base::iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         it++)
+         ++it)
     {
         if (it->GetMedium() == aMedium)
             return it->UpdateLock(aLockWrite);
@@ -223,7 +223,7 @@ HRESULT MediumLockList::Lock(bool fSkipOverLockedMedia /* = false */)
     HRESULT rc = S_OK;
     for (MediumLockList::Base::iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         it++)
+         ++it)
     {
         rc = it->Lock(fSkipOverLockedMedia);
         if (FAILED(rc))
@@ -250,7 +250,7 @@ HRESULT MediumLockList::Unlock()
     HRESULT rc = S_OK;
     for (MediumLockList::Base::iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         it++)
+         ++it)
     {
         HRESULT rc2 = it->Unlock();
         if (SUCCEEDED(rc) && FAILED(rc2))
@@ -344,7 +344,7 @@ HRESULT MediumLockListMap::Lock()
     HRESULT rc = S_OK;
     for (MediumLockListMap::Base::const_iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         it++)
+         ++it)
     {
         rc = it->second->Lock();
         if (FAILED(rc))
@@ -371,7 +371,7 @@ HRESULT MediumLockListMap::Unlock()
     HRESULT rc = S_OK;
     for (MediumLockListMap::Base::const_iterator it = mMediumLocks.begin();
          it != mMediumLocks.end();
-         it++)
+         ++it)
     {
         MediumLockList *pMediumLockList = it->second;
         HRESULT rc2 = pMediumLockList->Unlock();

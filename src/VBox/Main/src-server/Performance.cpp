@@ -458,7 +458,7 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
         /* Assume that nobody can provide VMM stats */
         mVMMStatsProvider = NULL;
 
-        for (it = mGuests.begin(); it != mGuests.end(); it++)
+        for (it = mGuests.begin(); it != mGuests.end(); ++it)
         {
             /* Skip unregistered as they are about to be destroyed */
             if ((*it)->isUnregistered())
@@ -481,7 +481,7 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
         if (!mVMMStatsProvider)
         {
             /* If nobody collects stats, take the first registered */
-            for (it = mGuests.begin(); it != mGuests.end(); it++)
+            for (it = mGuests.begin(); it != mGuests.end(); ++it)
             {
                 /* Skip unregistered as they are about to be destroyed */
                 if ((*it)->isUnregistered())
@@ -1532,7 +1532,7 @@ bool Filter::match(const ComPtr<IUnknown> object, const RTCString &name) const
     ElementList::const_iterator it;
 
     //LogAleksey(("Filter::match(%p, %s)\n", static_cast<const IUnknown*> (object), name.c_str()));
-    for (it = mElements.begin(); it != mElements.end(); it++)
+    for (it = mElements.begin(); it != mElements.end(); ++it)
     {
         //LogAleksey(("...matching against(%p, %s)\n", static_cast<const IUnknown*> ((*it).first), (*it).second.c_str()));
         if ((*it).first.isNull() || (*it).first == object)

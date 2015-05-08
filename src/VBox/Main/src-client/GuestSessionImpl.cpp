@@ -1876,7 +1876,7 @@ int GuestSession::i_processCreateExInternal(GuestProcessStartupInfo &procInfo, C
         while (it != procInfo.mArguments.end())
         {
             LogFlow((" %s", (*it).c_str()));
-            it++;
+            ++it;
         }
         LogFlow(("\n"));
     }

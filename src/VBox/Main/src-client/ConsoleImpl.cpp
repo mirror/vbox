@@ -3944,7 +3944,7 @@ DECLCALLBACK(int) Console::i_detachStorageDevice(Console *pThis,
     {
         /* Find the correct USB device in the list. */
         USBStorageDeviceList::iterator it;
-        for (it = pThis->mUSBStorageDevices.begin(); it != pThis->mUSBStorageDevices.end(); it++)
+        for (it = pThis->mUSBStorageDevices.begin(); it != pThis->mUSBStorageDevices.end(); ++it)
         {
             if (it->iPort == lPort)
                 break;

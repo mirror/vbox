@@ -5871,7 +5871,7 @@ HRESULT Machine::i_enumerateGuestPropertiesInService(const com::Utf8Str &aPatter
                                             NULL)
            )
             propMap.insert(*it);
-        it++;
+        ++it;
     }
 
     alock.release();

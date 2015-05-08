@@ -139,7 +139,7 @@ int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 
     mProcessStats.clear();
 
-    for (it = processes.begin(); it != processes.end() && RT_SUCCESS(rc); it++)
+    for (it = processes.begin(); it != processes.end() && RT_SUCCESS(rc); ++it)
     {
         RTPROCESS process = it->first;
         HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,

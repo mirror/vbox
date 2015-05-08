@@ -197,7 +197,7 @@ int SecretKeyStore::deleteAllSecretKeys(bool fSuspend, bool fForce)
     {
         for (SecretKeyMap::iterator it = m_mapSecretKeys.begin();
              it != m_mapSecretKeys.end();
-             it++)
+             ++it)
         {
             SecretKey *pKey = it->second;
             if (   pKey->refCount()
@@ -220,7 +220,7 @@ int SecretKeyStore::deleteAllSecretKeys(bool fSuspend, bool fForce)
             m_mapSecretKeys.erase(it++);
         }
         else
-            it++;
+            ++it;
     }
 
     return VINF_SUCCESS;

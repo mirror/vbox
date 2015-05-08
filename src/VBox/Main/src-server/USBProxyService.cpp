@@ -928,7 +928,7 @@ void USBProxyService::processChanges(void)
                               (fRunFilters ? &llOpenedMachines : NULL),
                               pIgnoreMachine);
             alock.acquire();
-            it++;
+            ++it;
         }
         else
         {
@@ -968,7 +968,7 @@ void USBProxyService::processChanges(void)
                  * as the result of a re-enumeration.
                  */
                 if (!pHostDevice->i_wasActuallyDetached())
-                    it++;
+                    ++it;
                 else
                 {
                     it = mDevices.erase(it);
