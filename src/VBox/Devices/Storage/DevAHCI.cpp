@@ -4248,6 +4248,7 @@ static int atapiReadDVDStructureSS(PAHCIREQ pAhciReq, PAHCIPort pAhciPort, size_
 
                         /* 4 byte header + 4 byte data */
                         uASC = (4 + 4);
+                        break;
 
                     case 0x03: /* BCA information - invalid field for no BCA info */
                         uASC = -SCSI_ASC_INV_FIELD_IN_CMD_PACKET;
