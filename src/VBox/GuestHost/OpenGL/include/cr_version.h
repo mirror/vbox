@@ -44,7 +44,8 @@
 #define SHCROGL_SSM_VERSION_WITH_SCREEN_MAP                         45
 #define SHCROGL_SSM_VERSION_WITH_SCREEN_MAP_REORDERED               46
 #define SHCROGL_SSM_VERSION_WITH_PEND_CMD_INFO                      47
-#define SHCROGL_SSM_VERSION                                         47
+#define SHCROGL_SSM_VERSION_WITH_SEPARATE_DEPTH_STENCIL_BUFFERS     48
+#define SHCROGL_SSM_VERSION                                         48
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0
