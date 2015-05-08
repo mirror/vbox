@@ -209,6 +209,27 @@ VBoxSafeArrayDestroy(SAFEARRAY *psa)
     }
     return S_OK;
 #else /* !VBOX_WITH_XPCOM */
+    VARTYPE vt = VT_UNKNOWN;
+    HRESULT rc = SafeArrayGetVartype(psa, &vt);
+    if (FAILED(rc))
+        return rc;
+    if (vt == VT_BSTR)
+    {
+        /* Special treatment: strings are to be freed explicitly, see sample
+         * C binding code, so zap it here. No way to reach compatible code
+         * behavior between COM and XPCOM without this kind of trickery. */
+        void *pData;
+        rc = SafeArrayAccessData(psa, &pData);
+        if (FAILED(rc))
+            return rc;
+        ULONG cbElement = VBoxVTElemSize(vt);
+        if (!cbElement)
+            return E_INVALIDARG;
+        Assert(cbElement = psa->cbElements);
+        ULONG cElements = psa->rgsabound[0].cElements;
+        memset(pData, '\0', cbElement * cElements);
+        SafeArrayUnaccessData(psa);
+    }
     return SafeArrayDestroy(psa);
 #endif /* !VBOX_WITH_XPCOM */
 }

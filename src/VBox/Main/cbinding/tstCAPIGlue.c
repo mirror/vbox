@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2009-2014 Oracle Corporation
+ * Copyright (C) 2009-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -755,6 +755,7 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
         ULONG cbGroups = 0;
         ULONG i, cGroups;
         g_pVBoxFuncs->pfnSafeArrayCopyOutParamHelper((void **)&groups, &cbGroups, VT_BSTR, groupsSA);
+        g_pVBoxFuncs->pfnSafeArrayDestroy(groupsSA);
         cGroups = cbGroups / sizeof(groups[0]);
         for (i = 0; i < cGroups; ++i)
         {
