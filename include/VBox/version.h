@@ -114,7 +114,7 @@
 #define VBOX_RC_TYPE_DLL                VFT_DLL
 #define VBOX_RC_TYPE_APP                VFT_APP
 #define VBOX_RC_TYPE_DRV                VFT_DRV
-
+#define VBOX_RC_MORE_STRINGS
 /** @} */
 
 #endif
