@@ -62,10 +62,9 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Common variables: */
     , m_configurationAccessLevel(ConfigurationAccessLevel_Null)
     , m_fPolished(false)
-    /* Loading/saving stuff: */
+    /* Serialization stuff: */
     , m_pSerializeProcess(0)
-    , m_fLoaded(false)
-    , m_fSaved(false)
+    , m_fSerializationIsInProgress(false)
     /* Status-bar stuff: */
     , m_pStatusBar(0)
     /* Process-bar stuff: */
@@ -219,8 +218,8 @@ void UISettingsDialog::sltMarkLoaded()
         m_pSerializeProcess = 0;
     }
 
-    /* Mark as loaded: */
-    m_fLoaded = true;
+    /* Mark serialization finished: */
+    m_fSerializationIsInProgress = false;
 }
 
 void UISettingsDialog::sltMarkSaved()
@@ -232,8 +231,8 @@ void UISettingsDialog::sltMarkSaved()
         m_pSerializeProcess = 0;
     }
 
-    /* Mark as saved: */
-    m_fSaved = true;
+    /* Mark serialization finished: */
+    m_fSerializationIsInProgress = false;
 }
 
 void UISettingsDialog::sltHandleProcessStarted()
@@ -256,8 +255,8 @@ void UISettingsDialog::sltHandleProcessProgressChange(int iValue)
 
 void UISettingsDialog::loadData(QVariant &data)
 {
-    /* Mark as not loaded: */
-    m_fLoaded = false;
+    /* Mark serialization started: */
+    m_fSerializationIsInProgress = true;
 
     /* Create settings loader: */
     m_pSerializeProcess = new UISettingsSerializer(this, UISettingsSerializer::Load,
@@ -282,8 +281,8 @@ void UISettingsDialog::loadData(QVariant &data)
 
 void UISettingsDialog::saveData(QVariant &data)
 {
-    /* Mark as not saved: */
-    m_fSaved = false;
+    /* Mark serialization started: */
+    m_fSerializationIsInProgress = true;
 
     /* Create the 'settings saver': */
     QPointer<UISettingsSerializerProgress> pDlgSerializeProgress =
@@ -530,7 +529,7 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
 
 void UISettingsDialog::reject()
 {
-    if (m_fLoaded)
+    if (!isSerializationInProgress())
         QIMainDialog::reject();
 }
 

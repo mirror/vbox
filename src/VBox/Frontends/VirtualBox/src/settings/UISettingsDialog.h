@@ -72,6 +72,8 @@ protected:
 
     /** Returns the serialize process instance. */
     UISettingsSerializer* serializeProcess() const { return m_pSerializeProcess; }
+    /** Returns whether the serialization is in progress. */
+    bool isSerializationInProgress() const { return m_fSerializationIsInProgress; }
 
     /** Loads the @a data. */
     void loadData(QVariant &data);
@@ -142,10 +144,8 @@ private:
 
     /** Holds the serialize process instance. */
     UISettingsSerializer *m_pSerializeProcess;
-
-    /* Loading/saving stuff: */
-    bool m_fLoaded;
-    bool m_fSaved;
+    /** Holds whether the serialization is in progress. */
+    bool m_fSerializationIsInProgress;
 
     /* Status bar widget: */
     QStackedWidget *m_pStatusBar;

@@ -331,6 +331,14 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
     /* Allow to reset first-run flag just when medium enumeration was finished: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltAllowResetFirstRunFlag()));
 
+    /* Make sure settings window will be updated on session/machine state/data changes: */
+    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
+            this, SLOT(sltSessionStateChanged(QString, KSessionState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
+    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
+            this, SLOT(sltMachineDataChanged(QString)));
+
     /* Get corresponding machine (required to determine dialog type and page availability): */
     m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);
     AssertMsg(!m_machine.isNull(), ("Can't find corresponding machine!\n"));
@@ -499,9 +507,6 @@ void UISettingsDialogMachine::loadOwnData()
     if (!m_session.isNull())
         return;
 
-    /* Disconnect global VBox events from this dialog: */
-    gVBoxEvents->disconnect(this);
-
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
                 configurationAccessLevel() == ConfigurationAccessLevel_Full ? vboxGlobal().openSession(m_strMachineId) :
@@ -527,9 +532,6 @@ void UISettingsDialogMachine::saveOwnData()
     /* Check that session is NOT created: */
     if (!m_session.isNull())
         return;
-
-    /* Disconnect global VBox events from this dialog: */
-    gVBoxEvents->disconnect(this);
 
     /* Prepare session: */
     m_session = configurationAccessLevel() == ConfigurationAccessLevel_Null ? CSession() :
@@ -734,14 +736,6 @@ void UISettingsDialogMachine::sltMarkLoaded()
         m_machine = CMachine();
         m_console = CConsole();
     }
-
-    /* Make sure settings window will be updated on machine state/data changes: */
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QString, KSessionState)),
-            this, SLOT(sltSessionStateChanged(QString, KSessionState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChanged(QString, KMachineState)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)),
-            this, SLOT(sltMachineDataChanged(QString)));
 }
 
 void UISettingsDialogMachine::sltMarkSaved()
@@ -761,6 +755,10 @@ void UISettingsDialogMachine::sltMarkSaved()
 
 void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSessionState sessionState)
 {
+    /* Ignore if serialization is in progress: */
+    if (isSerializationInProgress())
+        return;
+
     /* Ignore if thats NOT our VM: */
     if (strMachineId != m_strMachineId)
         return;
@@ -778,6 +776,10 @@ void UISettingsDialogMachine::sltSessionStateChanged(QString strMachineId, KSess
 
 void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMachineState machineState)
 {
+    /* Ignore if serialization is in progress: */
+    if (isSerializationInProgress())
+        return;
+
     /* Ignore if thats NOT our VM: */
     if (strMachineId != m_strMachineId)
         return;
@@ -795,6 +797,10 @@ void UISettingsDialogMachine::sltMachineStateChanged(QString strMachineId, KMach
 
 void UISettingsDialogMachine::sltMachineDataChanged(QString strMachineId)
 {
+    /* Ignore if serialization is in progress: */
+    if (isSerializationInProgress())
+        return;
+
     /* Ignore if thats NOT our VM: */
     if (strMachineId != m_strMachineId)
         return;
