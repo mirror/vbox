@@ -406,8 +406,8 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
     if (cbSize < RT_OFFSETOF(VBOXDISPIFESCAPE_SWAPCHAININFO, SwapchainInfo.ahAllocs[pSwapchainInfo->SwapchainInfo.cAllocs]))
     {
-        return STATUS_INVALID_PARAMETER;
         WARN(("invalid cbSize2 %d", cbSize));
+        return STATUS_INVALID_PARAMETER;
     }
 
     if (!pSwapchainInfo->SwapchainInfo.winHostID)
