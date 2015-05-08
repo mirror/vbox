@@ -751,10 +751,7 @@ VMMR0_INT_DECL(int) HMR0Term(void)
             rc = RTMpOnAll(hmR0DisableCpuCallback, NULL /* pvUser 1 */, &FirstRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             if (RT_SUCCESS(rc))
-            {
                 rc = hmR0FirstRcGetStatus(&FirstRc);
-                AssertMsgRC(rc, ("%u: %Rrc\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
-            }
         }
 
         /*
@@ -859,7 +856,6 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
         else
             rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, pvCpuPage, HCPhysCpuPage, false, NULL /* pvArg */);
     }
-    AssertRC(rc);
     if (RT_SUCCESS(rc))
         pCpu->fConfigured = true;
 
@@ -967,7 +963,6 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
         rc = RTMpOnAll(hmR0EnableCpuCallback, (void *)pVM, &FirstRc);
         if (RT_SUCCESS(rc))
             rc = hmR0FirstRcGetStatus(&FirstRc);
-        AssertMsgRC(rc, ("hmR0EnableAllCpuOnce failed for cpu %d with rc=%d\n", hmR0FirstRcGetCpuId(&FirstRc), rc));
     }
 
     return rc;
@@ -1221,7 +1216,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     }
 
     /*
-     * Initialize some per CPU fields.
+     * Initialize some per-VCPU fields.
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
@@ -1297,7 +1292,11 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     if (!g_HvmR0.fGlobalInit)
     {
         rc = hmR0EnableCpu(pVM, idCpu);
-        AssertRCReturnStmt(rc, RTThreadPreemptRestore(&PreemptState), rc);
+        if (RT_FAILURE(rc))
+        {
+            RTThreadPreemptRestore(&PreemptState)
+            return rc;
+        }
     }
 
     /* Setup VT-x or AMD-V. */
