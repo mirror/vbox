@@ -1724,7 +1724,7 @@ static bool supHardNtVpFreeOrReplacePrivateExecMemory(PSUPHNTVPSTATE pThis, HAND
             {
                 uintptr_t cbAdj = (uintptr_t)pbDst - uCopySrc;
                 pbSrc += cbAdj;
-                cbSrc -= cbSrc;
+                cbSrc -= cbAdj;
             }
             else
             {
