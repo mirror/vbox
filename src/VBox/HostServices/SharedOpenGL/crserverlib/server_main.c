@@ -1257,7 +1257,6 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     CRContext *pContext;
     GLuint i;
     GLfloat *pF;
-    CRFBDataElement *pEl;
     GLuint width;
     GLuint height;
     int rc;
@@ -1318,8 +1317,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
-        /* Init to default depth value, just in case. */
-        pF = (GLfloat*)pEl->pvData;
+        /* Init to default depth value, just in case. "pData->cElements - 1" because we incremented counter in crVBoxAddFBDataElement(). */
+        pF = (GLfloat*)pData->aElements[pData->cElements - 1].pvData;
         for (i = 0; i < width * height; ++i)
             pF[i] = 1.;
 
@@ -1352,8 +1351,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
-        /* Init to default depth value, just in case. */
-        pF = (GLfloat*)pEl->pvData;
+        /* Init to default depth value, just in case. "pData->cElements - 1" because we incremented counter in crVBoxAddFBDataElement(). */
+        pF = (GLfloat*)pData->aElements[pData->cElements - 1].pvData;
         for (i = 0; i < width * height; ++i)
             pF[i] = 1.;
     }
