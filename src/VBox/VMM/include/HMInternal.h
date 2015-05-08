@@ -425,6 +425,9 @@ typedef struct HM
         /** Flush types for invept & invvpid; they depend on capabilities. */
         VMXFLUSHEPT                 enmFlushEpt;
         VMXFLUSHVPID                enmFlushVpid;
+
+        /** Host-physical address for a failing VMXON instruction. */
+        RTHCPHYS                    HCPhysVmxEnableError;
     } vmx;
 
     struct
