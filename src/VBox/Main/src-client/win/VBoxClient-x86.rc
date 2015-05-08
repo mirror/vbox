@@ -43,7 +43,7 @@ BEGIN
       VALUE "InternalName",     "VBoxClient-x86\0"
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "OriginalFilename", "VBoxClient-x86.dll\0"
-      VALUE "ProductName",      VBOX_PRODUCT "\0"
+      VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
       VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
 
       VALUE "OLESelfRegister",  "\0"

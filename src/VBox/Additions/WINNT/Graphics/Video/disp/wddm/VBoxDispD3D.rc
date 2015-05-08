@@ -41,7 +41,7 @@ BEGIN
          VALUE "InternalName",     "VBoxDispD3D\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxDispD3D.dll\0"
-         VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
+         VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_GA_STR
          VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
 #else
          VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
@@ -54,7 +54,7 @@ BEGIN
 #else
          VALUE "OriginalFilename", "VBoxDispD3D.dll\0"
 #endif
-         VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
+         VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_GA_STR
          VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
 #endif
       END

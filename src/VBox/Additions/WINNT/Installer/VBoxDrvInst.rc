@@ -39,7 +39,7 @@ BEGIN
          VALUE "InternalName",     "VBoxDrvInst\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxDrvInst.exe\0"
-         VALUE "ProductName",      VBOX_PRODUCT " Guest Additions\0"
+         VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_GA_STR
          VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       END
    END

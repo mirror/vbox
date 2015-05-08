@@ -40,7 +40,7 @@ BEGIN
          VALUE "InternalName",     "VBoxRes\0"
          VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
          VALUE "OriginalFilename", "VBoxRes.dll\0"
-         VALUE "ProductName",      VBOX_PRODUCT "\0"
+         VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
          VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       END
    END

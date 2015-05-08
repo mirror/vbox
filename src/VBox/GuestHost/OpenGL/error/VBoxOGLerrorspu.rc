@@ -25,11 +25,11 @@
  #else
   #define FILENAME_STR       "VBoxOGLerrorspu"
  #endif
- #define PRODUCT_STR        VBOX_PRODUCT " Guest Additions\0"
+ #define PRODUCT_STR        VBOX_RC_PRODUCT_NAME_GA_STR
 #else
  #define DESCRIPTION_STR    "VirtualBox crOpenGL ICD\0"
  #define FILENAME_STR       "VBoxOGLerrorspu"
- #define PRODUCT_STR        VBOX_PRODUCT "\0"
+ #define PRODUCT_STR        VBOX_RC_PRODUCT_NAME_STR
 #endif
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
