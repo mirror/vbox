@@ -26,11 +26,13 @@
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
 
+#include <iprt/cdefs.h> /* For RT_XSTR. */
+
 /* Product info. */
 #include <product-generated.h>
+#include <version-generated.h>
 
 #ifndef RC_INVOKED
-# include <version-generated.h>
 
 /** Combined version number. */
 # define VBOX_VERSION                    (VBOX_VERSION_MAJOR << 16 | VBOX_VERSION_MINOR)
@@ -92,20 +94,16 @@
 #endif /* !RC_INVOKED */
 
 /** @name Prefined strings for Windows resource files
- *
- * @remarks The VBOX_VERSION_*_NR define are integer numbers while
- *          VBOX_VERSION_* are strings when using the resource compile.
- *          Kind of confusing...
- *
  * @{ */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
 #define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2009-" VBOX_C_YEAR " Oracle Corporation\0"
-#define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
-#define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
+#define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
+#define VBOX_RC_PRODUCT_VERSION_STR     RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) ".r" RT_XSTR(VBOX_SVN_REV) "\0"
+#define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , 0
+#define VBOX_RC_FILE_VERSION_STR        RT_XSTR(VBOX_VERSION_MAJOR) "." RT_XSTR(VBOX_VERSION_MINOR) "." RT_XSTR(VBOX_VERSION_BUILD) "." RT_XSTR(VBOX_SVN_REV) "\0"
+#define VBOX_RC_PRODUCT_NAME_STR        VBOX_PRODUCT_NAME "\0"
+#define VBOX_RC_PRODUCT_NAME_GA_STR     VBOX_PRODUCT_NAME " Guest Additions\0"
 /** @} */
-
-/** @todo Clean up the resource compiler mess where we cannot include
- *        version-generated.h and requires two files. */
 
 #endif
 
