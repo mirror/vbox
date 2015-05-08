@@ -637,7 +637,7 @@ VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAcc
         if (SUCCEEDED(hr))
         {
             *ppwszAccoutName = pwszName;
-            *pPos++; /* Skip @, point to domain name (if any). */
+            pPos++; /* Skip @, point to domain name (if any). */
             if (    pPos != NULL
                 && *pPos != L'\0')
             {

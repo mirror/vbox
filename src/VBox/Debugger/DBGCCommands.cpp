@@ -1566,7 +1566,7 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
                                 paArgs[0].u.pszString);
 
     while (RT_C_IS_ALNUM(*pszVar) || *pszVar == '_')
-        *pszVar++;
+        pszVar++;
     if (*pszVar)
         return DBGCCmdHlpPrintf(pCmdHlp,
                                 "syntax error: Invalid variable name '%s'. Variable names must match regex '[_a-zA-Z][_a-zA-Z0-9*]'!",
