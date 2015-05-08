@@ -791,9 +791,12 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     if (iSock != -1)
     {
         struct sockaddr *pSockAddr = NULL;
+        struct sockaddr_in InAddr = {0};
+#if LWIP_IPV6
+        struct sockaddr_in6 In6Addr = {0};
+#endif
         if (iInetFamily == PF_INET)
         {
-            struct sockaddr_in InAddr = {0};
             InAddr.sin_family = AF_INET;
             InAddr.sin_port = htons(uPort);
             InAddr.sin_addr = ip;
@@ -803,7 +806,6 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
 #if LWIP_IPV6
         else
         {
-            struct sockaddr_in6 In6Addr = {0};
             In6Addr.sin6_family = AF_INET6;
             In6Addr.sin6_port = htons(uPort);
             memcpy(&In6Addr.sin6_addr, &ip6, sizeof(ip6));
