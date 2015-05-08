@@ -542,10 +542,16 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
                        0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
     }
 
-    /*Depth&Stencil*/
-    gl->GenRenderbuffersEXT(1, &mural->idDepthStencilRB);
-    gl->BindRenderbufferEXT(GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
-    gl->RenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH24_STENCIL8_EXT,
+    /* Depth. */
+    gl->GenRenderbuffersEXT(1, &mural->idDepthRB);
+    gl->BindRenderbufferEXT(GL_RENDERBUFFER_EXT, mural->idDepthRB);
+    gl->RenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT,
+                           mural->width, mural->height);
+
+    /* Stencil. */
+    gl->GenRenderbuffersEXT(1, &mural->idStencilRB);
+    gl->BindRenderbufferEXT(GL_RENDERBUFFER_EXT, mural->idStencilRB);
+    gl->RenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_STENCIL_INDEX,
                            mural->width, mural->height);
 
     /*FBO*/
@@ -557,9 +563,9 @@ static void crServerCreateMuralFBO(CRMuralInfo *mural)
         gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT,
                                     GL_TEXTURE_2D, mural->aidColorTexs[i], 0);
         gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT,
-                                       GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
+                                       GL_RENDERBUFFER_EXT, mural->idDepthRB);
         gl->FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT,
-                                       GL_RENDERBUFFER_EXT, mural->idDepthStencilRB);
+                                       GL_RENDERBUFFER_EXT, mural->idStencilRB);
 
         status = gl->CheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
         if (status!=GL_FRAMEBUFFER_COMPLETE_EXT)
@@ -618,8 +624,11 @@ void crServerDeleteMuralFBO(CRMuralInfo *mural)
             mural->aidColorTexs[i] = 0;
         }
 
-        cr_server.head_spu->dispatch_table.DeleteRenderbuffersEXT(1, &mural->idDepthStencilRB);
-        mural->idDepthStencilRB = 0;
+        cr_server.head_spu->dispatch_table.DeleteRenderbuffersEXT(1, &mural->idDepthRB);
+        mural->idDepthRB = 0;
+
+        cr_server.head_spu->dispatch_table.DeleteRenderbuffersEXT(1, &mural->idStencilRB);
+        mural->idStencilRB = 0;
 
         for (i = 0; i < mural->cBuffers; ++i)
         {

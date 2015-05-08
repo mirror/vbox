@@ -1307,7 +1307,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         AssertCompile(sizeof (GLfloat) == 4);
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
-        pEl->enmBuffer = 0; /* we do not care */
+        pEl->enmBuffer = pMural ? pMural->idDepthRB : 0;
         pEl->posX = 0;
         pEl->posY = 0;
         pEl->width = width;
@@ -1337,7 +1337,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         AssertCompile(sizeof (GLuint) == 4);
         pEl = &pData->aElements[pData->cElements];
         pEl->idFBO = pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0;
-        pEl->enmBuffer = 0; /* we do not care */
+        pEl->enmBuffer = pMural ? pMural->idDepthRB : 0;
         pEl->posX = 0;
         pEl->posY = 0;
         pEl->width = width;
