@@ -51,6 +51,7 @@ additionalFunctions = [
 	('GLboolean DLM_APIENTRY', 'crDLMIsList', 'GLuint list'),
 	('GLuint DLM_APIENTRY', 'crDLMGenLists', 'GLsizei range'),
 	('void DLM_APIENTRY', 'crDLMListBase', 'GLuint base'),
+	('int32_t DLM_APIENTRY', 'crDLMSaveState', 'void'),
 	#('void DLM_APIENTRY', 'crDLMListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
 	#('GLboolean DLM_APIENTRY', 'crDLMIsListSent', 'CRDLM *dlm, unsigned long listIdentifier'),
 	#('GLint DLM_APIENTRY', 'crDLMListSize', 'CRDLM *dlm, unsigned long listIdentifier'),
@@ -94,6 +95,7 @@ typedef enum {
 typedef struct DLMInstanceList {
 	struct DLMInstanceList *next;
 	struct DLMInstanceList *stateNext;
+	int    cbInstance;
 	void (*execute)(struct DLMInstanceList *instance, SPUDispatchTable *dispatchTable);
 } DLMInstanceList;
 

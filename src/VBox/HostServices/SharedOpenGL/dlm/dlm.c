@@ -732,3 +732,8 @@ void crdlm_error(int line, const char *file, GLenum error, const char *info)
 	if (ErrorCallback)
 		(*ErrorCallback)(line, file, error, info);
 }
+
+int32_t DLM_APIENTRY crDLMSaveState(void)
+{
+    return 0;
+}

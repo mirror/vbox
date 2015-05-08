@@ -84,6 +84,7 @@ def wrap_struct(functionName):
 	print 'struct instance%s {' % (functionName)
 	print '	DLMInstanceList *next;'
 	print '	DLMInstanceList *stateNext;'
+	print '	int cbInstance;'
 	print '	void (DLM_APIENTRY *execute)(DLMInstanceList *instance, SPUDispatchTable *dispatchTable);'
 	for (name, type, vecSize) in params:
 		# Watch out for the word "const" (which should be ignored)
@@ -285,7 +286,7 @@ def wrap_compile(functionName):
 	print '{'
 	print '	CRDLMContextState *state = CURRENT_STATE();'
 	print '	struct instance%s *instance;' % (functionName)
-
+	
 	# The calling SPU is supposed to verify that the element is supposed to be
 	# compiled before it is actually compiled; typically, this is done based
 	# on whether a glNewList has been executed more recently than a glEndList.
@@ -317,7 +318,10 @@ def wrap_compile(functionName):
 		if index not in pointers:
 			name = params[index][0]
 			print '\tinstance->%s = %s;' % (name, name)
-
+	
+	# We need to know instance size in bytes in order to save its state later.
+	print '\tinstance->cbInstance = sizeof(struct instance%s);' % functionName
+	
 	# If there's a pointer parameter, apply it.
 	if len(pointers) == 1:
 		print '\tif (%s == NULL) {' % (params[pointers[0]][0])
@@ -327,15 +331,15 @@ def wrap_compile(functionName):
 		print '\t\tinstance->%s = instance->%s;' % (params[pointers[0]][0], pointerarg)
 		print '\t}'
 		if pointersize == 'special':
-			print '\t(void) crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
+			print '\tinstance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
 		else:
 			print '\tcrMemcpy((void *)instance->%s, (void *) %s, %s*sizeof(%s));' % (params[pointers[0]][0], params[pointers[0]][0], pointersize, pointertype)
 	elif len(pointers) == 2:
 		# this seems to work
-		print '\t(void) crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
+		print '\tinstance->cbInstance += crdlm_pointers_%s(instance, %s);' % (functionName, callstring)
 	elif len(pointers) > 2:
 		print "#error don't know how to handle pointer parameters for %s" % (functionName)
-
+	
 	# Add the element to the current display list
 	AddInstanceToList('\t')
 	# If the element is a state-changing element, add it to the current state list

@@ -15,6 +15,11 @@
 #include "cr_vreg.h"
 #include "cr_environment.h"
 #include "cr_pixeldata.h"
+
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+# include "cr_dlm.h"
+#endif
+
 #include "server_dispatch.h"
 #include "state/cr_texture.h"
 #include "render/renderspu.h"
@@ -1670,6 +1675,11 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
             }
         }
     }
+
+#ifdef VBOX_WITH_CR_DISPLAY_LISTS
+    rc = crDLMSaveState();
+    AssertRCReturn(rc, rc);
+#endif
 
     rc = crServerPendSaveState(pSSM);
     AssertRCReturn(rc, rc);

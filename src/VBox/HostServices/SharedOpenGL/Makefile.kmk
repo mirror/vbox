@@ -101,6 +101,9 @@ endif
 ifdef VBOX_WITH_CRHGSMI
 VBoxSharedCrOpenGL_DEFS += VBOX_WITH_CRHGSMI
 endif
+ifdef VBOX_WITH_CR_DISPLAY_LISTS
+VBoxSharedCrOpenGL_LIBS += $(PATH_STAGE_LIB)/VBoxOGLcrdlm$(VBOX_SUFF_LIB)
+endif
 
 #
 # VBoxOGLcrserverlib
