@@ -77,7 +77,7 @@ static size_t dbgcStringOutputInQuotes(PFNRTSTROUTPUT pfnOutput, void *pvArgOutp
         size_t cchSub = pchQuote - psz + 1;
         cchOutput += pfnOutput(pvArgOutput, psz, cchSub);
         cchOutput += pfnOutput(pvArgOutput, &chQuote, 1);
-        cchSub -= cchSub;
+        cch    -= cchSub;
         psz    += cchSub;
     }
 
