@@ -46,7 +46,7 @@ BEGIN
       VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
-
+      VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       VBOX_RC_MORE_STRINGS
     END
   END

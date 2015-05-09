@@ -40,7 +40,7 @@ BEGIN
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
       VALUE "OriginalFilename", "VBoxNetDHCP.dll\0"
       VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
-
+      VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       VBOX_RC_MORE_STRINGS
     END
   END

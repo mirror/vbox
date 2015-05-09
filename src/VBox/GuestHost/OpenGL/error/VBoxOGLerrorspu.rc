@@ -49,10 +49,11 @@ BEGIN
       VALUE "InternalFilename", "VBoxOGLhosterrorspu.dll\0"
       VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
 #endif
+
       VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
       VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
       VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-
+      VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
       VBOX_RC_MORE_STRINGS
     END
   END
