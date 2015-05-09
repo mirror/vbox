@@ -19,31 +19,27 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin" # No hardened VBoxSDL on darwin.
 
-#
-# Targets.
-#
+
 ifdef VBOX_WITH_HARDENING
+ #
+ # Hardened VBoxSDL
+ #
  PROGRAMS += VBoxSDLHardened
- DLLS += VBoxSDL
-else
- PROGRAMS += VBoxSDL
+ VBoxSDLHardened_TEMPLATE = VBOXR3HARDENEDEXE
+ VBoxSDLHardened_SOURCES = VBoxSDLHardened.cpp
+ VBoxSDLHardened_NAME = VBoxSDL
+ $(call VBOX_SET_VER_INFO_EXE,VBoxSDLHardened,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 endif
-PROGRAMS += tstSDL
-
-
-#
-# Hardened VBoxSDL
-#
-VBoxSDLHardened_TEMPLATE = VBOXR3HARDENEDEXE
-VBoxSDLHardened_SOURCES = VBoxSDLHardened.cpp
-VBoxSDLHardened_SOURCES.win = $(VBoxSDL_0_OUTDIR)/VBoxSDL-icon.rc
-VBoxSDLHardened_NAME = VBoxSDL
-$(evalcall2 VBOX_SET_VER_INFO_EXE,VBoxSDLHardened,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 
 
 #
 # VBoxSDL
 #
+ifdef VBOX_WITH_HARDENING
+ DLLS += VBoxSDL
+else
+ PROGRAMS += VBoxSDL
+endif
 VBoxSDL_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
 VBoxSDL_SDKS       = LIBSDL
 VBoxSDL_SOURCES    = \
@@ -106,15 +102,16 @@ $$(VBoxSDL_0_OUTDIR)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxSDL/ico64x0
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
 
 ifdef VBOX_WITH_HARDENING
-$(evalcall2 VBOX_SET_VER_INFO_DLL,VBoxSDL,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
+$(call VBOX_SET_VER_INFO_DLL,VBoxSDL,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 else
-$(evalcall2 VBOX_SET_VER_INFO_EXE,VBoxSDL,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
+$(call VBOX_SET_VER_INFO_EXE,VBoxSDL,VirtualBox Pure SDL Frontend,$(VBOX_WINDOWS_ICON_FILE)) # Version info / description.
 endif
 
 
 #
 # tstSDL
 #
+PROGRAMS += tstSDL
 tstSDL_TEMPLATE = VBOXR3NPEXE
 tstSDL_SDKS = LIBSDL
 tstSDL_INST = $(INST_TESTCASE)

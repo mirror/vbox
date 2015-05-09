@@ -99,8 +99,12 @@
  * @{ */
 #define VBOX_RC_COMPANY_NAME            VBOX_VENDOR
 #define VBOX_RC_LEGAL_COPYRIGHT         "Copyright (C) 2009-" VBOX_C_YEAR " Oracle Corporation\0"
-#define VBOX_RC_PRODUCT_NAME_STR        VBOX_PRODUCT "\0"
-#define VBOX_RC_PRODUCT_NAME_GA_STR     VBOX_PRODUCT " Guest Additions\0"
+#define VBOX_RC_PRODUCT_NAME                    VBOX_PRODUCT
+#define VBOX_RC_PRODUCT_NAME_GA                 VBOX_PRODUCT " Guest Additions"
+#define VBOX_RC_PRODUCT_NAME_PUEL_EXTPACK       VBOX_PRODUCT " Extension Pack"
+#define VBOX_RC_PRODUCT_NAME_STR                VBOX_RC_PRODUCT_NAME "\0"
+#define VBOX_RC_PRODUCT_NAME_GA_STR             VBOX_RC_PRODUCT_NAME_GA "\0"
+#define VBOX_RC_PRODUCT_NAME_PUEL_EXTPACK_STR   VBOX_RC_PRODUCT_NAME_PUEL_EXTPACK "\0"
 #define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , VBOX_SVN_REV_MOD_5K
 #define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR , VBOX_VERSION_MINOR , VBOX_VERSION_BUILD , VBOX_SVN_REV_MOD_5K
 #ifndef VBOX_VERSION_PRERELEASE
@@ -115,7 +119,7 @@
 #define VBOX_RC_TYPE_APP                VFT_APP
 #define VBOX_RC_TYPE_DRV                VFT_DRV
 /* Flags and extra strings depending on the build type and who's building. */
-#if defined(DEBUG) || defined(VBOX_WITH_STATISTICS) || defined(LOG_ENABLED)
+#if defined(DEBUG) || defined(LOG_ENABLED) || defined(RT_STRICT) || defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
 # define VBOX_RC_FILE_FLAGS_DEBUG       VS_FF_DEBUG
 #else
 # define VBOX_RC_FILE_FLAGS_DEBUG       0

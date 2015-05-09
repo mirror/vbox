@@ -309,7 +309,7 @@ VMMR3/SSM.cpp_DEFS +=	\
 # endif
 #endif
 
-$(evalcall2 VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
+$(call VBOX_SET_VER_INFO_DLL,VBoxVMM,VirtualBox VMM) # Version info / description.
 
 
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
@@ -518,7 +518,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
 
  VMMRC/VMMRCDeps.cpp_CXXFLAGS.win = -Oi- -TC ## @todo rename VMMRCDeps.cpp to .c
 
- $(evalcall2 VBOX_SET_VER_INFO_RC,VMMRC,VirtualBox VMM - raw-mode context parts) # Version info / description.
+ $(call VBOX_SET_VER_INFO_RC,VMMRC,VirtualBox VMM - raw-mode context parts) # Version info / description.
 endif # VBOX_WITH_RAW_MODE && !VBOX_ONLY_EXTPACKS
 
 
@@ -643,7 +643,7 @@ ifndef VBOX_ONLY_EXTPACKS
   	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
- $(evalcall2 VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
+ $(call VBOX_SET_VER_INFO_R0,VMMR0,VirtualBox VMM - ring-0 context parts) # Version info / description.
 endif # !VBOX_ONLY_EXTPACKS
 
 

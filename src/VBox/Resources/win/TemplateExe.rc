@@ -29,14 +29,41 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /* Validate input and deal with optional input. */
+/** @def IN_FILE_DESCRIPTION
+ * The file description string.
+ */
 #ifndef IN_FILE_DESCRIPTION
 # error "Must define the IN_FILE_DESCRIPTION string!"
 #endif
-#ifndef IN_FILE_BASENAME
-# error "Must define the IN_FILE_BASENAME string!"
+/** @def IN_INTERNAL_NAME
+ * The internal name string, optional (requires IN_FILE_BASENAME then).
+ */
+#ifndef IN_INTERNAL_NAME
+# ifndef IN_FILE_BASENAME
+#  error "Must define the IN_FILE_BASENAME or the IN_INTERNAL_NAME string!"
+# endif
+# define IN_INTERNAL_NAME IN_FILE_BASENAME
 #endif
-#ifndef IN_FILE_NAME /* optional */
-# define IN_FILE_NAME IN_FILE_BASENAME ".exe"
+/** @def IN_ORIGINAL_NAME
+ * The original name string, optional (requires IN_FILE_BASENAME then).
+ */
+#ifndef IN_ORIGINAL_NAME
+# ifndef IN_FILE_BASENAME
+#  error "Must define the IN_FILE_BASENAME or the IN_ORIGINAL_NAME string!"
+# endif
+# define IN_ORIGINAL_NAME IN_FILE_BASENAME " .dll"
+#endif
+/** @def IN_PRODUCT_NAME
+ * The product name string, optional.
+ */
+#ifndef IN_PRODUCT_NAME
+# ifdef IN_GUEST
+#  define IN_PRODUCT_NAME VBOX_RC_PRODUCT_NAME_GA
+# elif defined(VBOX_IN_PUEL_EXTPACK)
+#  define IN_PRODUCT_NAME VBOX_RC_PRODUCT_NAME_PUEL_EXTPACK
+# else
+#  define IN_PRODUCT_NAME VBOX_RC_PRODUCT_NAME
+# endif
 #endif
 
 
@@ -66,17 +93,13 @@ BEGIN
     BEGIN
         BLOCK "040904b0" /* Lang=US English, CodePage=utf-16 */
         BEGIN
-            VALUE "FileDescription",  IN_FILE_DESCRIPTION
-            VALUE "InternalName",     IN_FILE_BASENAME "\0"
-            VALUE "OriginalFilename", IN_FILE_NAME "\0"
-            VALUE "CompanyName",      VBOX_RC_COMPANY_NAME
+            VALUE "FileDescription",  IN_FILE_DESCRIPTION "\0"
+            VALUE "InternalName",     IN_INTERNAL_NAME "\0"
+            VALUE "OriginalFilename", IN_ORIGINAL_NAME "\0"
+            VALUE "CompanyName",      VBOX_RC_COMPANY_NAME "\0"
             VALUE "FileVersion",      VBOX_RC_FILE_VERSION_STR
             VALUE "LegalCopyright",   VBOX_RC_LEGAL_COPYRIGHT
-#ifndef IN_GUEST
-            VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_STR
-#else
-            VALUE "ProductName",      VBOX_RC_PRODUCT_NAME_GA_STR
-#endif
+            VALUE "ProductName",      IN_PRODUCT_NAME
             VALUE "ProductVersion",   VBOX_RC_PRODUCT_VERSION_STR
             VBOX_RC_MORE_STRINGS
         END
