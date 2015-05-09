@@ -2963,6 +2963,105 @@ endif
 # @param
 VBOX_RESIGN_DLL_FN =
 
+
+#
+# File version info and description macros (ignored on most OSes).
+#
+
+##
+# Macro for setting DLL/SO/DYLIB version information and description.
+#
+# The macro must be invoked using evalcall2 after the whole target has
+# been declared.
+#
+# @param 1     The target name.
+# @param 2     The description
+# @param 3     Optional icon file.
+# @param 4     Optional file name. Uses $1 + default suffix by default.
+define VBOX_SET_VER_INFO_DLL
+ifeq ($(KBUILD_TARGET),win)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/TemplateDll.rc
+$(1)_RCFLAGS += /nologo /dIN_FILE_BASENAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
+	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(if $(4), /dIN_FILE_NAME="\"$(4)\"")
+endif
+endef
+
+##
+# Macro for setting EXE version information and description.
+#
+# The macro must be invoked using evalcall2 after the whole target has
+# been declared.
+#
+# @param 1     The target name.
+# @param 2     The description
+# @param 3     Optional icon file.
+# @param 4     Optional file name. Uses $1 + default suffix by default.
+define VBOX_SET_VER_INFO_EXE
+ifeq ($(KBUILD_TARGET),win)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/TemplateExe.rc
+$(1)_RCFLAGS += /nologo /dIN_FILE_BASENAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
+	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(if $(4), /dIN_FILE_NAME="\"$(4)\"")
+endif
+endef
+
+##
+# Macro for setting driver version information and description.
+#
+# The macro must be invoked using evalcall2 after the whole target has
+# been declared.
+#
+# @param 1     The target name.
+# @param 2     The description
+# @param 3     Optional icon file.
+# @param 4     Optional file name. Uses $1 + default suffix by default.
+# @param 5     Optional VFT2_DRV_xxx define for windows.  Uses VFT2_UNKNOWN by default.
+define VBOX_SET_VER_INFO_DRV
+ifeq ($(KBUILD_TARGET),win)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/TemplateDrv.rc
+$(1)_RCFLAGS += /nologo /dIN_FILE_BASENAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
+	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(if $(4), /dIN_FILE_NAME="\"$(4)\"")
+	$(if $(5), /dIN_FILE_SUBTYPE=$(5))
+endif
+endef
+
+##
+# Macro for setting the version information and description for a ring-0 module.
+#
+# The macro must be invoked using evalcall2 after the whole target has
+# been declared.
+#
+# @param 1     The target name.
+# @param 2     The description
+# @param 3     Optional icon file.
+# @param 4     Optional file name. Uses $1 + default suffix by default.
+define VBOX_SET_VER_INFO_R0
+ifeq ($(KBUILD_TARGET),win)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/TemplateR0.rc
+$(1)_RCFLAGS += /nologo /dIN_FILE_BASENAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
+	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(if $(4), /dIN_FILE_NAME="\"$(4)\"")
+endif
+endef
+
+##
+# Macro for setting the version information and description for a raw-mode context module.
+#
+# The macro must be invoked using evalcall2 after the whole target has
+# been declared.
+#
+# @param 1     The target name.
+# @param 2     The description
+# @param 3     Optional icon file.
+# @param 4     Optional file name. Uses $1 + default suffix by default.
+define VBOX_SET_VER_INFO_RC
+ifeq ($(KBUILD_TARGET),win)
+$(1)_SOURCES.win += $(PATH_ROOT)/src/VBox/Resources/win/TemplateR0.rc
+$(1)_RCFLAGS += /nologo /dIN_FILE_BASENAME="\"$(1)\"" /dIN_FILE_DESCRIPTION="\"$(2)\"" \
+	$(if $(3), /dIN_ICON_FILE="\"$(subst \\,/,$(strip $(3)))\"") $(if $(4), /dIN_FILE_NAME="\"$(4)\"")
+endif
+endef
+
+
+
 #
 # Adjust kBuild defaults.
 #
@@ -3290,6 +3389,7 @@ ifdef VBOX_WITH_RAW_MODE
 
  ifeq ($(VBOX_LDR_FMT32),pe)
   TEMPLATE_VBoxRc_TOOL               = $(VBOX_VCC_TOOL_STEM)X86
+  TEMPLATE_VBoxRc_RCDEFS             = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
   ifdef TODO_MORE_WARNINGS
    TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) -W4 -wd4244 -wd4996 -wd4127 -wd4100 -wd4214 -wd4706 $(VBOX_VCC_WERR)
   else
@@ -3425,6 +3525,7 @@ endif
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
+TEMPLATE_VBoxR0_RCDEFS              = VBOX_SVN_REV=$(VBOX_SVN_REV) VBOX_SVN_REV_MOD_5K=$(expr $(VBOX_SVN_REV) % 50000)
  ifdef TODO_MORE_WARNINGS
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -GS- -Zc:wchar_t- $(VBOX_VCC_OPT) $(VBOX_VCC_FP) -W4 -wd4244 -wd4127 -wd4100 -wd4214 -wd4706 -wd4996 $(VBOX_VCC_WERR)
  else
