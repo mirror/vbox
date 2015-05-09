@@ -221,6 +221,8 @@ VBOX_BUILD_PUBLISHER =
 #       publisher so that RTStrVersionCompare have a chance of comparing
 #       prerelease from different publishers correctly.
 VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)_BETA3$(VBOX_BUILD_PUBLISHER)
+# Just the BETA[n],ALPHA[n],RC[n] indicators. Set to empty string for release.
+VBOX_VERSION_PRERELEASE = BETA3
 
 # Force the additions.sh script to get an exact additions build when we're doing the release.
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
@@ -5812,7 +5814,7 @@ VBOX_VER_TMP2 :=
 # directory. If you don't run it there, you get a consistent sub-tree only.
 #
 VBOX_BAD_CHAR_SET   = ,;:/\$(SP)$(TAB)$(HASH)=![]@%&''()*""<>?^{}|~
-VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION)-$(VBOX_BUILD_PUBLISHER),$(VBOX_BAD_CHAR_SET),,_)
+VBOX_VERSION_STAMP  = $(PATH_OUT)/version-stamp-raw-api-$(translate $(VBOX_VERSION_STRING)-$(VBOX_C_YEAR)-$(VBOX_VENDOR)-$(VBOX_PRODUCT)-$(VBOX_API_VERSION)-$(VBOX_BUILD_PUBLISHER)-$(USERNAME),$(VBOX_BAD_CHAR_SET),,_)
 VBOX_VERSION_HEADER = $(PATH_OUT)/version-generated.h
 VBOX_VERSION_MK     = $(PATH_OUT)/version-generated.mk
 
@@ -5832,9 +5834,18 @@ $(VBOX_VERSION_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_MAJOR $(VBOX_VERSION_MAJOR)'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_MINOR $(VBOX_VERSION_MINOR)'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_BUILD $(VBOX_VERSION_BUILD)'
+ifneq ($(VBOX_VERSION_PRERELEASE),)
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_PRERELEASE "$(strip $(VBOX_VERSION_PRERELEASE))"'
+endif
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_STRING_RAW "$(VBOX_VERSION_STRING_RAW)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VERSION_STRING "$(VBOX_VERSION_STRING)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_API_VERSION_STRING "$(VBOX_API_VERSION)"'
+	$(QUIET)$(APPEND) $@.tmp ''
+ifdef VBOX_BUILD_SERVER_BUILD
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_BUILD_SERVER_BUILD 1'
+else
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PRIVATE_BUILD_DESC "Private build by $(USERNAME)"'
+endif
 	$(QUIET)$(APPEND) $@.tmp ''
 	$(QUIET)$(APPEND) $@.tmp '#endif'
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -5883,10 +5894,18 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_MINOR = $(VBOX_VERSION_MINOR)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_BUILD = $(VBOX_VERSION_BUILD)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_STRING = $(VBOX_VERSION_STRING)'
+ifneq ($(VBOX_VERSION_PRERELEASE),)
+	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_PRERELEASE = $(strip $(VBOX_VERSION_PRERELEASE))'
+endif
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VENDOR = $(VBOX_VENDOR)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VENDOR_SHORT = $(VBOX_VENDOR_SHORT)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_PRODUCT = $(VBOX_PRODUCT)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_C_YEAR = $(VBOX_C_YEAR)'
+ifdef VBOX_BUILD_SERVER_BUILD
+	$(QUIET)$(APPEND) $@.tmp 'VBOX_BUILD_SERVER_BUILD = 1'
+else
+	$(QUIET)$(APPEND) $@.tmp 'VBOX_PRIVATE_BUILD_DESC = Private build by $(USERNAME)'
+endif
 	$(QUIET)$(MV) -f $@.tmp $@
 
 if !defined(VBOX_OSE) && !defined(VBOX_NOINC_LICENSE_VER_KMK)
