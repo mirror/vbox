@@ -86,8 +86,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	Storage/VSCSI/VSCSIVpdPagePool.cpp \
  	build/VBoxDDUDeps.cpp
- VBoxDDU_SOURCES.win      = \
-	build/VBoxDDU.rc
  ifdef VBOX_WITH_USB
   VBoxDDU_INCS.os2       += \
  	$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
@@ -110,6 +108,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  VBoxDDU_LDFLAGS.linux    = -Wl,--no-undefined
+ $(call VBOX_SET_VER_INFO_DLL,VBoxDDU,VirtualBox VMM Devices and Drivers Utilities)
 
  #
  # VBoxDD (shared object)
@@ -187,8 +186,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/ATAPIPassthrough.cpp \
  	Network/DrvNetSniffer.cpp \
  	Network/Pcap.cpp
- VBoxDD_SOURCES.win       = \
- 	build/VBoxDD.rc
  ifn1of ($(KBUILD_TARGET), os2)
   VBoxDD_SOURCES += Storage/DrvHostBase.cpp
  endif
@@ -1028,6 +1025,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif # VBOX_WITH_RAW_MODE
 
 
+ $(call VBOX_SET_VER_INFO_DLL,VBoxDD,VirtualBox VMM Devices and Drivers) # (last!)
+
+
  #
  # VBoxDD2 (shared object)
  #
@@ -1041,8 +1041,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevAPIC.cpp \
  	PC/DevIoApic.cpp \
  	PC/DevLPC.cpp
- VBoxDD2_SOURCES.win     = \
-	build/VBoxDD2.rc
  VBoxDD2_LIBS            = \
  	$(PATH_STAGE_LIB)/PcBiosBin$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaBiosBin$(VBOX_SUFF_LIB) \
@@ -1060,6 +1058,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD2_DEFS          += VBOX_WITH_PXE_ROM
  endif
 
+ $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 
  #
  # VBoxDDR0 (sysmod)
@@ -1335,14 +1334,14 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   VBoxEhciR3_SOURCES  = \
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
-  VBoxEhciR3_SOURCES.win = \
- 	build/VBoxEhciR3.rc
+  $(call VBOX_SET_VER_INFO_DLL,VBoxEhciR3,PUEL Extension Pack - EHCI Device)
 
   SYSMODS += VBoxEhciR0
   VBoxEhciR0_TEMPLATE = VBoxR0ExtPackPuel
   VBoxEhciR0_SOURCES  = \
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
+  $(call VBOX_SET_VER_INFO_R0,VBoxEhciR0,PUEL Extension Pack - EHCI Device$(COMMA) ring-0)
 
   ifdef VBOX_WITH_RAW_MODE
    SYSMODS += VBoxEhciRC
@@ -1350,6 +1349,7 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
    VBoxEhciRC_SOURCES  = \
 	USB/DevEHCI.cpp \
 	USB/DevXHCI.cpp
+   $(call VBOX_SET_VER_INFO_RC,VBoxEhciRC,PUEL Extension Pack - EHCI Device$(COMMA) raw-mode)
   endif
 
   # Hacky but MSI support *must* be enabled
@@ -1365,16 +1365,17 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
   DLLS += VBoxPciRawR3
   VBoxPciRawR3_TEMPLATE     = VBoxR3ExtPackPuel
   VBoxPciRawR3_SOURCES      = Bus/DevPciRaw.cpp
-  VBoxPciRawR3_SOURCES.win  = build/VBoxPciRawR3.rc
+  $(call VBOX_SET_VER_INFO_DLL,VBoxPciRawR3,PUEL Extension Pack - PCI Passthrough Device)
 
   DLLS += VBoxPciRawDrv
   VBoxPciRawDrv_TEMPLATE    = VBoxR3ExtPackPuel
   VBoxPciRawDrv_SOURCES     = Bus/DrvPciRaw.cpp
-  VBoxPciRawDrv_SOURCES.win = build/VBoxPciRawDrv.rc
+  $(call VBOX_SET_VER_INFO_DLL,VBoxPciRawDrv,PUEL Extension Pack - PCI Passthrough Driver)
 
   SYSMODS += VBoxPciRawR0
   VBoxPciRawR0_TEMPLATE     = VBoxR0ExtPackPuel
   VBoxPciRawR0_SOURCES      = Bus/DevPciRaw.cpp
+  $(call VBOX_SET_VER_INFO_R0,VBoxPciRawR0,PUEL Extension Pack - PCI Passthrough Driver$(COMMA) ring-0)
 
   Bus/DevPciRaw.cpp_INCS    = Bus
  endif
@@ -1465,8 +1466,6 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  	Graphics/shaderlib/stateblock.c \
  	Graphics/shaderlib/directx.c \
  	Graphics/shaderlib/libWineStub/debug.c
- VBoxSVGA3D_SOURCES.win := \
-	Graphics/VBoxSVGA3D.rc
  VBoxSVGA3D_LIBS        = $(LIB_RUNTIME)
  VBoxSVGA3D_LIBS.win   += $(PATH_SDK_$(VBOX_WINPSDK)_LIB)/Opengl32.lib
  if1of ($(KBUILD_TARGET), solaris linux freebsd)
@@ -1474,6 +1473,7 @@ if defined(VBOX_WITH_VMSVGA3D) && !defined(VBOX_ONLY_EXTPACKS)
  endif
  VBoxSVGA3D_LDFLAGS.darwin += \
  	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxSVGA3D.dylib
+ $(call VBOX_SET_VER_INFO_DLL,VBoxSVGA3D,VirtualBox VMSVGA 3D)
 
  #
  # The Objective C code needs to be separate since the shaderlib redefines most

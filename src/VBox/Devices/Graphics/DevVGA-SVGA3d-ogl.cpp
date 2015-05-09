@@ -2331,7 +2331,7 @@ static void vmsvga3dSurfaceFormat2OGL(PVMSVGA3DSURFACE pSurface, SVGA3dSurfaceFo
         pSurface->internalFormatGL = GL_DEPTH_COMPONENT16; /** @todo Wine suggests GL_DEPTH_COMPONENT24. */
         pSurface->formatGL = GL_DEPTH_COMPONENT;
         pSurface->typeGL = GL_UNSIGNED_SHORT;
-        AssertMsgFailed(("Test me - SVGA3D_Z_D16\n"));
+        //AssertMsgFailed(("Test me - SVGA3D_Z_D16\n"));
         break;
     case SVGA3D_Z_D24S8:                /* D3DFMT_D24S8 - WINED3DFMT_D24_UNORM_S8_UINT */
         pSurface->internalFormatGL = GL_DEPTH24_STENCIL8;
