@@ -897,6 +897,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  Graphics/DevVGA.cpp_INCS = $(VgaBiosBin_0_OUTDIR)
  Graphics/DevVGA.cpp_DEPS = $(VgaBiosBin_0_OUTDIR)/vbetables.h
 
+ $(call VBOX_SET_VER_INFO_DLL,VBoxDD,VirtualBox VMM Devices and Drivers) # (last!)
+
 
  ifdef VBOX_WITH_RAW_MODE
   #
@@ -1024,8 +1026,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
  endif # VBOX_WITH_RAW_MODE
 
-
- $(call VBOX_SET_VER_INFO_DLL,VBoxDD,VirtualBox VMM Devices and Drivers) # (last!)
+ $(call VBOX_SET_VER_INFO_RC,VBoxDDGC,VirtualBox VMM Devices and Drivers$(COMMA) raw-mode) # last!
 
 
  #
@@ -1066,9 +1067,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_TEMPLATE       = VBoxR0
  VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
  VBoxDDR0_DEFS           = IN_RT_R0 $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) # - WTF is IN_RT_R0 doing here?
- VBoxDDR0_DEFS.win    += VBOX_WITH_WIN_PARPORT_SUP
+ VBoxDDR0_DEFS.win      += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDDR0_INCS           = build
- VBoxDDR0_SDKS.win 	 = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
+ VBoxDDR0_SDKS.win 	  = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
  VBoxDDR0_SOURCES        = \
  	build/VBoxDDR0.cpp \
  	Audio/DevIchHda.cpp \
@@ -1204,6 +1205,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
 
+ $(call VBOX_SET_VER_INFO_R0,VBoxDDR0,VirtualBox VMM Devices and Drivers$(COMMA) ring-0) # (last!)
+
 
  ifdef VBOX_WITH_RAW_MODE
   #
@@ -1219,6 +1222,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
    	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
+  $(call VBOX_SET_VER_INFO_RC,VBoxDD2GC,VirtualBox VMM Devices and Drivers 2$(COMMA) raw-mode)
  endif
 
 
@@ -1238,6 +1242,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	$(PATH_STAGE_LIB)/VMMR0Imp$(VBOX_SUFF_LIB) \
   	$(PATH_STAGE_LIB)/SUPR0$(VBOX_SUFF_LIB)
  endif
+ $(call VBOX_SET_VER_INFO_R0,VBoxDD2R0,VirtualBox VMM Devices and Drivers 2$(COMMA) ring-0) # (last!)
 
 
  #
