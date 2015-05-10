@@ -1263,7 +1263,7 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
             ret = pThis->CTX_SUFF(vram_ptr)[off];
     } else {
         /* standard VGA latched access */
-        VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc); /** @todo wrong check! Missing addr*4.  */
+        VERIFY_VRAM_READ_OFF_RETURN(pThis, addr * 4 + 3, *prc);
 #if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
         if (pThis->svga.fEnabled && addr * 4 + 3 < _32K)
             pThis->latch = ((uint32_t *)pThis->svga.pFrameBufferBackup)[addr];
