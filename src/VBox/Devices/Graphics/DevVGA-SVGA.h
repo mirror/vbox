@@ -26,8 +26,6 @@
 #define VMSVGA_MAX_GMR_PAGES            0x100000
 /** Maximum nr of GMR ids. */
 #define VMSVGA_MAX_GMR_IDS              0x100
-/** Size of the region to backup when switching into svga mode. */
-#define VMSVGA_FRAMEBUFFER_BACKUP_SIZE  (32*1024)
 
 #define VMSVGA_VAL_UNINITIALIZED        (unsigned)-1
 

@@ -103,6 +103,12 @@
     } while (0)
 #endif
 
+/** @def VBOX_WITH_VMSVGA_BACKUP_VGA_FB
+ * Enables correct VGA MMIO read/write handling when VMSVGA is enabled.  It
+ * is SLOW and probably not entirely right, but it helps with getting 3dmark
+ * output and other stuff. */
+#define VBOX_WITH_VMSVGA_BACKUP_VGA_FB 1
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -1192,6 +1198,12 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
     RTGCPHYS GCPhys = addr; /* save original address */
 #endif
 
+#if !defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+    /* Ugly hack to get result from 2dmark and other vmsvga examples. */
+    if (pThis->svga.fEnabled)
+        return VINF_IOM_R3_MMIO_READ;
+#endif
+
     addr &= 0x1ffff;
     switch(memory_map_mode) {
     case 0:
@@ -1231,18 +1243,33 @@ static uint32_t vga_mem_readb(PVGASTATE pThis, RTGCPHYS addr, int *prc)
         }
 # endif /* IN_RC */
         VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc);
-        ret = pThis->CTX_SUFF(vram_ptr)[addr];
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+        if (pThis->svga.fEnabled && addr < _32K)
+            ret = ((uint8_t *)pThis->svga.pFrameBufferBackup)[addr];
+        else
+#endif
+            ret = pThis->CTX_SUFF(vram_ptr)[addr];
     } else if (!(pThis->sr[4] & 0x04)) {    /* Host access is controlled by SR4, not GR5! */
         /* odd/even mode (aka text mode mapping) */
         plane = (pThis->gr[4] & 2) | (addr & 1);
         /* See the comment for a similar line in vga_mem_writeb. */
         RTGCPHYS off = ((addr & ~1) << 2) | plane;
         VERIFY_VRAM_READ_OFF_RETURN(pThis, off, *prc);
-        ret = pThis->CTX_SUFF(vram_ptr)[off];
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+        if (pThis->svga.fEnabled && off < _32K)
+            ret = ((uint8_t *)pThis->svga.pFrameBufferBackup)[off];
+        else
+#endif
+            ret = pThis->CTX_SUFF(vram_ptr)[off];
     } else {
         /* standard VGA latched access */
-        VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc);
-        pThis->latch = ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr];
+        VERIFY_VRAM_READ_OFF_RETURN(pThis, addr, *prc); /** @todo wrong check! Missing addr*4.  */
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+        if (pThis->svga.fEnabled && addr * 4 + 3 < _32K)
+            pThis->latch = ((uint32_t *)pThis->svga.pFrameBufferBackup)[addr];
+        else
+#endif
+            pThis->latch = ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr];
 
         if (!(pThis->gr[5] & 0x08)) {
             /* read mode 0 */
@@ -1271,6 +1298,12 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
     memory_map_mode = (pThis->gr[6] >> 2) & 3;
 #ifndef IN_RC
     RTGCPHYS GCPhys = addr; /* save original address */
+#endif
+
+#if !defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+    /* Ugly hack to get result from 2dmark and other vmsvga examples. */
+    if (pThis->svga.fEnabled)
+        return VINF_IOM_R3_MMIO_WRITE;
 #endif
 
     addr &= 0x1ffff;
@@ -1313,7 +1346,12 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
 # endif /* IN_RC */
 
             VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr);
-            pThis->CTX_SUFF(vram_ptr)[addr] = val;
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+            if (pThis->svga.fEnabled && addr < _32K)
+                ((uint8_t *)pThis->svga.pFrameBufferBackup)[addr] = val;
+            else
+#endif
+                pThis->CTX_SUFF(vram_ptr)[addr] = val;
             Log3(("vga: chain4: [0x%x]\n", addr));
             pThis->plane_updated |= mask; /* only used to detect font change */
             vga_set_dirty(pThis, addr);
@@ -1330,7 +1368,12 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
              */
             addr = ((addr & ~1) << 2) | plane;
             VERIFY_VRAM_WRITE_OFF_RETURN(pThis, addr);
-            pThis->CTX_SUFF(vram_ptr)[addr] = val;
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+            if (pThis->svga.fEnabled && addr < _32K)
+                ((uint8_t *)pThis->svga.pFrameBufferBackup)[addr] = val;
+            else
+#endif
+                pThis->CTX_SUFF(vram_ptr)[addr] = val;
             Log3(("vga: odd/even: [0x%x]\n", addr));
             pThis->plane_updated |= mask; /* only used to detect font change */
             vga_set_dirty(pThis, addr);
@@ -1441,8 +1484,14 @@ static int vga_mem_writeb(PVGASTATE pThis, RTGCPHYS addr, uint32_t val)
         mask = pThis->sr[2];
         pThis->plane_updated |= mask; /* only used to detect font change */
         write_mask = mask16[mask];
-        ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr] =
-            (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr] & ~write_mask) |
+#if defined(IN_RING3) && defined(VBOX_WITH_VMSVGA) && defined(VBOX_WITH_VMSVGA_BACKUP_VGA_FB) /** @todo figure out the right way */
+        if (pThis->svga.fEnabled && addr * 4 + 3U < _32K)
+            ((uint32_t *)pThis->svga.pFrameBufferBackup)[addr] =
+                (((uint32_t *)pThis->svga.pFrameBufferBackup)[addr] & ~write_mask) | (val & write_mask);
+        else
+#endif
+            ((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr] =
+                (((uint32_t *)pThis->CTX_SUFF(vram_ptr))[addr] & ~write_mask) |
             (val & write_mask);
             Log3(("vga: latch: [0x%x] mask=0x%08x val=0x%08x\n",
                    addr * 4, write_mask, val));
@@ -4105,6 +4154,16 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         char_height = val;
         pHlp->pfnPrintf(pHlp, "char height %d\n", val);
         pHlp->pfnPrintf(pHlp, "text mode %dx%d\n", w / char_dots, h / (char_height << double_scan));
+
+        uint32_t cbLine;
+        uint32_t offStart;
+        uint32_t uLineCompareIgn;
+        vga_get_offsets(pThis, &cbLine, &offStart, &uLineCompareIgn);
+        if (!cbLine)
+            cbLine = 80 * 8;
+        offStart *= 8;
+        pHlp->pfnPrintf(pHlp, "cbLine:   %#x\n", cbLine);
+        pHlp->pfnPrintf(pHlp, "offStart: %#x (line %#x)\n", offStart, offStart / cbLine);
     }
     if (pThis->fRealRetrace)
     {
@@ -4125,6 +4184,13 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         }
     }
     pHlp->pfnPrintf(pHlp, "display refresh interval: %u ms\n", pThis->cMilliesRefreshInterval);
+
+#ifdef VBOX_WITH_VMSVGA
+    if (pThis->svga.fEnabled) {
+        pHlp->pfnPrintf(pHlp, pThis->svga.f3DEnabled ? "VMSVGA 3D enabled: %ux%ux%u\n" : "VMSVGA enabled: %ux%ux%u",
+                        pThis->svga.uWidth, pThis->svga.uHeight, pThis->svga.uBpp);
+    }
+#endif
 }
 
 
@@ -4262,6 +4328,7 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
              *       do with some brushing up.  Dumping from the start of the
              *       frame buffer is done intentionally so that we're more
              *       likely to obtain the full scrollback of a linux panic.
+             * windbg> .printf "------ start -----\n"; .for (r $t0 = 0; @$t0 < 25; r $t0 = @$t0 + 1) { .for (r $t1 = 0; @$t1 < 80; r $t1 = @$t1 + 1) { .printf "%c", by( (@$t0 * 80 + @$t1) * 8 + 100f0000) }; .printf "\n" }; .printf "------ end -----\n";
              */
             uint32_t cbLine;
             uint32_t offStart;

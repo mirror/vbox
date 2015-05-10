@@ -219,6 +219,9 @@ typedef struct _VBOX_VHWA_PENDINGCMD
 #define VMSVGA_FIFO_EXTCMD_LOADSTATE            3
 #define VMSVGA_FIFO_EXTCMD_RESET                4
 
+/** Size of the region to backup when switching into svga mode. */
+#define VMSVGA_FRAMEBUFFER_BACKUP_SIZE  (32*1024)
+
 typedef struct
 {
     PSSMHANDLE      pSSM;
