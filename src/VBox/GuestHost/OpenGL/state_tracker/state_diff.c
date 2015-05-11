@@ -313,6 +313,15 @@ void crStateApplyFBImage(CRContext *to, CRFBData *data)
             crDumpNamedTGA(fname, el->width, el->height, el->pvData);
 #endif
 
+            /* Before SSM version SHCROGL_SSM_VERSION_WITH_SEPARATE_DEPTH_STENCIL_BUFFERS
+             * saved state file contined invalid DEPTH/STENCIL data. In order to prevent
+             * crashes and improper guest App behavior, this data should be ignored. */
+            if (   data->u32Version < SHCROGL_SSM_VERSION_WITH_SEPARATE_DEPTH_STENCIL_BUFFERS
+                && (   el->enmFormat == GL_DEPTH_COMPONENT
+                    || el->enmFormat == GL_STENCIL_INDEX
+                    || el->enmFormat == GL_DEPTH_STENCIL))
+                continue;
+
             if (el->enmFormat == GL_DEPTH_COMPONENT || el->enmFormat == GL_DEPTH_STENCIL)
             {
                 diff_api.Enable(GL_DEPTH_TEST);

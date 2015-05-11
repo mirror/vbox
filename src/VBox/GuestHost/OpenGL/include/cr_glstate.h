@@ -270,6 +270,7 @@ typedef struct CRFBData
 {
     /* override default draw and read buffers to be used for offscreen rendering */
     GLint idOverrrideFBO;
+    uint32_t u32Version;
     uint32_t cElements;
     CRFBDataElement aElements[1];
 } CRFBData;

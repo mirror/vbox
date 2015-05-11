@@ -1289,6 +1289,8 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
         }
     }
 
+    pData->u32Version = version;
+
     pData->cElements = 0;
 
     rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
