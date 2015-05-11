@@ -14,7 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-import org.virtualbox_4_4.*;
+import org.virtualbox_5_0.*;
 import java.util.List;
 import java.util.Arrays;
 import java.math.BigInteger;
