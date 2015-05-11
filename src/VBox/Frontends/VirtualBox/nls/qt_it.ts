@@ -2442,19 +2442,19 @@ Vuoi eliminarlo comunque?</translation>
     <name>QOCIResult</name>
     <message>
         <source>Unable to bind column for batch execute</source>
-        <translation type="unfinished">Impossibile associare la colonna per l&apos;esecuzione sequenziale</translation>
+        <translation>Impossibile associare la colonna per l&apos;esecuzione sequenziale</translation>
     </message>
     <message>
         <source>Unable to execute batch statement</source>
-        <translation type="unfinished">Impossibile eseguire l&apos;istruzione sequenziale</translation>
+        <translation>Impossibile eseguire l&apos;istruzione sequenziale</translation>
     </message>
     <message>
         <source>Unable to goto next</source>
-        <translation type="unfinished">Impossibile spostarsi al successivo</translation>
+        <translation>Impossibile spostarsi al successivo</translation>
     </message>
     <message>
         <source>Unable to alloc statement</source>
-        <translation type="unfinished">Impossibile allocare l&apos;istruzione</translation>
+        <translation>Impossibile allocare l&apos;istruzione</translation>
     </message>
     <message>
         <source>Unable to prepare statement</source>
@@ -3321,7 +3321,7 @@ Scegli un nome diverso.</translation>
     <name>QSharedMemory</name>
     <message>
         <source>%1: unable to set key on lock</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: impossibile impostare la chiave sul blocco</translation>
     </message>
     <message>
         <source>%1: create size is less then 0</source>
@@ -3361,7 +3361,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1: unix key file doesn&apos;t exists</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: il file della chiave UNIX non esiste</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
@@ -3369,7 +3369,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: impossibile creare la chiave</translation>
     </message>
     <message>
         <source>%1: system-imposed size restrictions</source>
@@ -3392,15 +3392,15 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation></translation>
+        <translation>Tab</translation>
     </message>
     <message>
         <source>Backtab</source>
-        <translation type="unfinished"></translation>
+        <translation>Tab inverso</translation>
     </message>
     <message>
         <source>Backspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Backspace</translation>
     </message>
     <message>
         <source>Return</source>
@@ -3512,7 +3512,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Bass Boost</source>
-        <translation type="unfinished"></translation>
+        <translation>Esalta bassi</translation>
     </message>
     <message>
         <source>Bass Up</source>
@@ -3568,11 +3568,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Launch Mail</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia Posta</translation>
     </message>
     <message>
         <source>Launch Media</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia Media</translation>
     </message>
     <message>
         <source>Launch (0)</source>
@@ -3656,7 +3656,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation>Bllocc Num</translation>
+        <translation>Blocc Num</translation>
     </message>
     <message>
         <source>Number Lock</source>
@@ -3736,7 +3736,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Meta</source>
-        <translation></translation>
+        <translation>Meta</translation>
     </message>
     <message>
         <source>+</source>
@@ -3859,7 +3859,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Invalid or empty cipher list (%1)</source>
-        <translation>Lista di cifratura non valida o vuota (%1)</translation>
+        <translation>Elenco dei cifrari non valido o vuoto (%1)</translation>
     </message>
     <message>
         <source>Error creating SSL session, %1</source>
@@ -3994,47 +3994,47 @@ Scegli un nome diverso.</translation>
     <name>QUnicodeControlCharacterMenu</name>
     <message>
         <source>LRM Left-to-right mark</source>
-        <translation type="unfinished"></translation>
+        <translation>LRM Contrassegno sinistra-destra</translation>
     </message>
     <message>
         <source>RLM Right-to-left mark</source>
-        <translation type="unfinished"></translation>
+        <translation>RLM Contrassegno destra-sinistra</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWJ Spazio di unione a larghezza nulla</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWNJ Spazio non di unione a larghezza nulla</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWSP Spazio a larghezza nulla</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>LRE Inserimento sinistra-destra</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>RLE Inserimento destra-sinistra</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation type="unfinished"></translation>
+        <translation>LRO Forza sinistra-destra</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation type="unfinished"></translation>
+        <translation>RLO Forza destra-sinistra</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF Cattura formattazione direzionale</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
-        <translation>Inserisci carattere di controllo unicode</translation>
+        <translation>Inserisci carattere di controllo Unicode</translation>
     </message>
 </context>
 <context>
@@ -4443,7 +4443,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation type="unfinished"></translation>
+        <translation>errore innescato da utente</translation>
     </message>
     <message>
         <source>unexpected end of file</source>
@@ -4495,7 +4495,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>letter is expected</source>
-        <translation type="unfinished"></translation>
+        <translation>lettera attesa</translation>
     </message>
     <message>
         <source>error occurred while parsing comment</source>
@@ -4507,19 +4507,19 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>internal general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>riferimento interno a entità generica non consentito in DTD</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation type="unfinished"></translation>
+        <translation>riferimento esterno a entità generale analizzata non consentito nel valore dell&apos;attributo</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>riferimento esterno a entità generale analizzata non consentito in DTD</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
-        <translation type="unfinished"></translation>
+        <translation>riferimento entità non analizzata nel contesto errato</translation>
     </message>
     <message>
         <source>recursive entities</source>
@@ -4558,7 +4558,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Unexpected character &apos;%1&apos; in public id literal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Carattere inatteso &apos;%1&apos; in letterale identificativo pubblico.</translation>
     </message>
     <message>
         <source>Invalid XML version string.</source>
@@ -4606,7 +4606,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Expected character data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dati di carattere inattesi.</translation>
     </message>
     <message>
         <source>Recursive entity detected.</source>
@@ -4622,7 +4622,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>NDATA in parameter entity declaration.</source>
-        <translation type="unfinished"></translation>
+        <translation>NDATA nella dichiarazione dell&apos;entità del parametro.</translation>
     </message>
     <message>
         <source>%1 is an invalid processing instruction name.</source>
@@ -4646,7 +4646,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Reference to unparsed entity &apos;%1&apos;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Riferimento all&apos;identità non analizzata &apos;%1&apos;.</translation>
     </message>
     <message>
         <source>Entity &apos;%1&apos; not declared.</source>
@@ -4658,7 +4658,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Invalid character reference.</source>
-        <translation type="unfinished"></translation>
+        <translation>Riferimento di carattere non valido.</translation>
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
@@ -4666,7 +4666,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lo pseudo-attributo standalone deve comparire dopo la codifica.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
@@ -4709,7 +4709,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Overflow: impossibile rappresentare la data %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
@@ -4725,7 +4725,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Overflow: la data non può essere rappresentata.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
@@ -4733,7 +4733,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Almeno un componente deve apparire dopo il delimitatore %1.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
@@ -4765,19 +4765,19 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>La divisione del modulo (%1) per zero (%2) non è definita.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La divisione di un valore di tipo %1 per %2 (non un numero) non è consentita.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La divisione di un valore di tipo %1 per %2 o%3 (più o meno zero) non è consentita.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>La moltiplicazione di un valore di tipo %1 per %2 o%3 (più o meno infinito) non è consentita.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
@@ -4797,7 +4797,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valore di tipo %1 deve contenere un numero di cifre pari. Il valore %2 non è corretto.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
@@ -4809,7 +4809,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;operatore %1 non può essere utilizzato su valori atomici di tipo %2 e %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
@@ -4869,7 +4869,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un modulo di libreria non può essere valutato direttamente. Deve essere importato da un modulo principale.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
@@ -4885,15 +4885,15 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 non è un valore di destinazione valido in un&apos;istruzione di elaborazione. Deve essere un valore %2, ad es. %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;ultimo passo in un percorso deve contenere nodi o valori atomici. Non può essere un misto dei due.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="unfinished"></translation>
+        <translation>I dati dell&apos;istruzione di elaborazione non possono contenere la stringa %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
@@ -4911,25 +4911,27 @@ Scegli un nome diverso.</translation>
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
         <translation type="unfinished">
             <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 richiede almeno un argomento. %2 non è perciò valido.</numerusform>
+            <numerusform>%1 richiede almeno %n argomenti. %2 non è perciò valido.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il primo argomento di %1 non può essere di tipo %2. Deve essere un tipo numerico, xs:yearMonthDuration o xs:dayTimeDuration.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il primo argomento di %1 non può essere di tipo %2. Deve essere di tipo%3, %4, o %5.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il secondo argomento di %1 non può essere di tipo %2. Deve essere di tipo%3, %4, o %5.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
@@ -4949,15 +4951,15 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 deve essere seguito da %2 o %3, non alla fine della stringa di sostituzione.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nella stringa di sostituzione, %1 deve essere seguito da almeno una cifra se non è presente un carattere di escape.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Nella stringa di sostituzione, %1 può essere utilizzato come sequenza di escape di se stesso o %2, non %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
@@ -4973,11 +4975,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>I caratteri di spaziatura sono rimossi, eccetto quando compaiono in classi di caratteri</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un modello di espressione regolare non valido: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
@@ -5017,7 +5019,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>La cardinalità richiesta è %1, la cardinalità ottenuta è %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
@@ -5069,7 +5071,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Non è possibile dichiarare nuovamente il prefisso %1.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
@@ -5237,11 +5239,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="unfinished"></translation>
+        <translation>La promozione di %1 a %2 potrebbe causare una perdita di precisione.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il fuoco non è definito.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>

@@ -2514,18 +2514,18 @@
         <source>Scale-factor</source>
         <comment>details (user interface)</comment>
         <translatorcomment>todo</translatorcomment>
-        <translation>缩放率</translation>
+        <translation type="obsolete">缩放率</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (user interface)</comment>
         <translatorcomment>todo</translatorcomment>
-        <translation>原始 HiDPI 视频输出</translation>
+        <translation type="obsolete">原始 HiDPI 视频输出</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/Unscaled HiDPI Video Output)</comment>
-        <translation>已启用</translation>
+        <translation type="obsolete">已启用</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -2551,6 +2551,51 @@
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
         <translation>已禁用</translation>
+    </message>
+    <message>
+        <source>Scale-factor</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">缩放率</translation>
+    </message>
+    <message>
+        <source>Unscaled HiDPI Video Output</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">原始 HiDPI 视频输出</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (display/Unscaled HiDPI Video Output)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Menu-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Status-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4143,7 +4188,7 @@
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation>显卡(&amp;V)</translation>
+        <translation type="obsolete">显卡(&amp;V)</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
@@ -4410,6 +4455,46 @@
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>虚拟电脑设置为启用显卡硬件加速，并且操作系统设置为Windows Vista及更新版。为获得最佳性能，应将虚拟电脑的显存至少设置为 &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
+    <message>
+        <source>&amp;Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale Factor:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the guest screen scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>100%</source>
+        <translation type="unfinished">100%</translation>
+    </message>
+    <message>
+        <source>200%</source>
+        <translation type="unfinished">200%</translation>
+    </message>
+    <message>
+        <source>%</source>
+        <translation type="unfinished">%</translation>
+    </message>
+    <message>
+        <source>HiDPI:</source>
+        <translation type="unfinished">HiDPI:</translation>
+    </message>
+    <message>
+        <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use &amp;Unscaled HiDPI Output</source>
+        <translation type="unfinished">用原始 HiDPI 输出(&amp;U)</translation>
+    </message>
+    <message>
+        <source>Acceleration:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -4571,36 +4656,36 @@
     </message>
     <message>
         <source>Screen Scale Factor:</source>
-        <translation>屏幕缩放率:</translation>
+        <translation type="obsolete">屏幕缩放率:</translation>
     </message>
     <message>
         <source>This setting determines the guest screen scale factor.</source>
-        <translation>设置虚拟电脑屏幕缩放率。</translation>
+        <translation type="obsolete">设置虚拟电脑屏幕缩放率。</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation>100%</translation>
+        <translation type="obsolete">100%</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation>200%</translation>
+        <translation type="obsolete">200%</translation>
     </message>
     <message>
         <source>%</source>
-        <translation>%</translation>
+        <translation type="obsolete">%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
         <translatorcomment>todo</translatorcomment>
-        <translation>HiDPI:</translation>
+        <translation type="obsolete">HiDPI:</translation>
     </message>
     <message>
         <source>If checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>选中时，虚拟电脑显示内容将不缩放匹配主机高分辨率屏幕。</translation>
+        <translation type="obsolete">选中时，虚拟电脑显示内容将不缩放匹配主机高分辨率屏幕。</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>用原始 HiDPI 输出(&amp;U)</translation>
+        <translation type="obsolete">用原始 HiDPI 输出(&amp;U)</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
@@ -5527,6 +5612,10 @@
     <message>
         <source>Set up the virtual optical drive</source>
         <translation>设置虚拟光盘</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7556,11 +7645,11 @@
     </message>
     <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 连接网线失败.</translation>
+        <translation type="obsolete">为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 连接网线失败.</translation>
     </message>
     <message>
         <source>Failed to disconnect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 断开网线失败.</translation>
+        <translation type="obsolete">为虚拟电脑 &lt;b&gt;%1&lt;/b&gt; 断开网线失败.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -7576,15 +7665,15 @@
     </message>
     <message>
         <source>Drag and drop operation failed.</source>
-        <translation>拖放操作失败。</translation>
+        <translation type="obsolete">拖放操作失败。</translation>
     </message>
     <message>
         <source>Failed while dropping data.</source>
-        <translation>拖放数据失败。</translation>
+        <translation type="obsolete">拖放数据失败。</translation>
     </message>
     <message>
         <source>Unable to cancel drag and drop operation.</source>
-        <translation>未能取消拖放操作。</translation>
+        <translation type="obsolete">未能取消拖放操作。</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
@@ -7602,6 +7691,26 @@
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox 新版本已发布！版本 &lt;b&gt;%1&lt;/b&gt; 可在此了解 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;。&lt;/p&gt;&lt;p&gt;您可以使用此链接下载该版本:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11196,6 +11305,11 @@
         <comment>medium</comment>
         <translation>该基本硬盘是使用以下备份硬盘间接分配的:</translation>
     </message>
+    <message>
+        <source>Encrypted</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -11444,6 +11558,14 @@
     <message>
         <source>UUID:</source>
         <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

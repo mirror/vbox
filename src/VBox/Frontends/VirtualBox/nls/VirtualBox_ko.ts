@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.1" language="ko">
+<TS version="2.0" language="ko">
 <context>
     <name>@@@</name>
     <message>
@@ -3009,17 +3009,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Scale-factor</source>
         <comment>details (user interface)</comment>
-        <translation>크기 조정 비율</translation>
+        <translation type="obsolete">크기 조정 비율</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (user interface)</comment>
-        <translation>조정되지 않은 HiDPI 비디오 출력</translation>
+        <translation type="obsolete">조정되지 않은 HiDPI 비디오 출력</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/Unscaled HiDPI Video Output)</comment>
-        <translation>사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -3045,6 +3045,51 @@ p, li { white-space: pre-wrap; }
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
         <translation>사용 안함</translation>
+    </message>
+    <message>
+        <source>Scale-factor</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">크기 조정 비율</translation>
+    </message>
+    <message>
+        <source>Unscaled HiDPI Video Output</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">조정되지 않은 HiDPI 비디오 출력</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (display/Unscaled HiDPI Video Output)</comment>
+        <translation type="unfinished">사용함</translation>
+    </message>
+    <message>
+        <source>Menu-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished">사용함</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished">사용 안함</translation>
+    </message>
+    <message>
+        <source>Status-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished">사용함</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished">사용 안함</translation>
     </message>
 </context>
 <context>
@@ -4935,7 +4980,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation>비디오(&amp;V)</translation>
+        <translation type="obsolete">비디오(&amp;V)</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
@@ -5207,6 +5252,46 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>가상 머신에 하드웨어 그래픽 가속이 켜져 있으며 운영 체제 종류를 Windows Vista 이후로 선택하였습니다. 최적의 성능을 위해서 비디오 메모리를 &lt;b&gt;%1&lt;/b&gt; 이상으로 설정하십시오.</translation>
+    </message>
+    <message>
+        <source>&amp;Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale Factor:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the guest screen scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>100%</source>
+        <translation type="unfinished">100%</translation>
+    </message>
+    <message>
+        <source>200%</source>
+        <translation type="unfinished">200%</translation>
+    </message>
+    <message>
+        <source>%</source>
+        <translation type="unfinished">%</translation>
+    </message>
+    <message>
+        <source>HiDPI:</source>
+        <translation type="unfinished">HiDPI:</translation>
+    </message>
+    <message>
+        <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use &amp;Unscaled HiDPI Output</source>
+        <translation type="unfinished">조정되지 않은 HiDPI 출력 사용(&amp;U)</translation>
+    </message>
+    <message>
+        <source>Acceleration:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5521,35 +5606,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Screen Scale Factor:</source>
-        <translation>크기 조정 비율:</translation>
+        <translation type="obsolete">크기 조정 비율:</translation>
     </message>
     <message>
         <source>This setting determines the guest screen scale factor.</source>
-        <translation>이 설정은 게스트 크기 조정 비율을 결정합니다.</translation>
+        <translation type="obsolete">이 설정은 게스트 크기 조정 비율을 결정합니다.</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation>100%</translation>
+        <translation type="obsolete">100%</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation>200%</translation>
+        <translation type="obsolete">200%</translation>
     </message>
     <message>
         <source>%</source>
-        <translation>%</translation>
+        <translation type="obsolete">%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation>HiDPI:</translation>
+        <translation type="obsolete">HiDPI:</translation>
     </message>
     <message>
         <source>If checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>선택하면 게스트 화면 내용이 호스트의 높은 해상도에 맞도록 조정되지 않습니다.</translation>
+        <translation type="obsolete">선택하면 게스트 화면 내용이 호스트의 높은 해상도에 맞도록 조정되지 않습니다.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>조정되지 않은 HiDPI 출력 사용(&amp;U)</translation>
+        <translation type="obsolete">조정되지 않은 HiDPI 출력 사용(&amp;U)</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
@@ -6752,6 +6837,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Set up the virtual optical drive</source>
         <translation>가상 광학 드라이브 설정</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9074,11 +9163,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블을 연결할 수 없습니다.</translation>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블을 연결할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to disconnect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블의 연결을 해제할 수 없습니다.</translation>
+        <translation type="obsolete">가상 머신 &lt;b&gt;%1&lt;/b&gt;의 네트워크 어댑터 케이블의 연결을 해제할 수 없습니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -9090,15 +9179,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Drag and drop operation failed.</source>
-        <translation>드래그 앤 드롭 작업이 실패했습니다.</translation>
+        <translation type="obsolete">드래그 앤 드롭 작업이 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed while dropping data.</source>
-        <translation>데이터를 드롭할 수 없습니다.</translation>
+        <translation type="obsolete">데이터를 드롭할 수 없습니다.</translation>
     </message>
     <message>
         <source>Unable to cancel drag and drop operation.</source>
-        <translation>드래그 앤 드롭 작업을 취소할 수 없습니다.</translation>
+        <translation type="obsolete">드래그 앤 드롭 작업을 취소할 수 없습니다.</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
@@ -9115,6 +9204,26 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;VirtualBox 새 버전이 출시되었습니다! &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; 웹 사이트에 새 버전 &lt;b&gt;%1&lt;/b&gt;이(가) 올라와 있습니다.&lt;/p&gt;&lt;p&gt;이 링크를 사용해서 새 버전을 다운로드하십시오:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -14083,6 +14192,11 @@ p, li { white-space: pre-wrap; }
         <comment>medium</comment>
         <translation>이 기본 하드 디스크는 다음 변경 사항만 기록하는 하드 디스크를 통해서 간접적으로 추가되어 있습니다:</translation>
     </message>
+    <message>
+        <source>Encrypted</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -14392,6 +14506,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>UUID:</source>
         <translation>UUID:</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1537,17 +1537,17 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (user interface)</comment>
-        <translation>Skalierungsfaktor</translation>
+        <translation type="obsolete">Skalierungsfaktor</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (user interface)</comment>
-        <translation>Nicht skalierte HiDPI-Auflösung</translation>
+        <translation type="obsolete">Nicht skalierte HiDPI-Auflösung</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/Unscaled HiDPI Video Output)</comment>
-        <translation>aktiviert</translation>
+        <translation type="obsolete">aktiviert</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
@@ -1573,6 +1573,51 @@
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
         <translation>deaktiviert</translation>
+    </message>
+    <message>
+        <source>Scale-factor</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Skalierungsfaktor</translation>
+    </message>
+    <message>
+        <source>Unscaled HiDPI Video Output</source>
+        <comment>details (display)</comment>
+        <translation type="unfinished">Nicht skalierte HiDPI-Auflösung</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (display/Unscaled HiDPI Video Output)</comment>
+        <translation type="unfinished">aktiviert</translation>
+    </message>
+    <message>
+        <source>Menu-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished">aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/menu-bar)</comment>
+        <translation type="unfinished">deaktiviert</translation>
+    </message>
+    <message>
+        <source>Status-bar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished">aktiviert</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/status-bar)</comment>
+        <translation type="unfinished">deaktiviert</translation>
     </message>
 </context>
 <context>
@@ -2667,7 +2712,7 @@
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation>&amp;Anzeige</translation>
+        <translation type="obsolete">&amp;Anzeige</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
@@ -2916,6 +2961,46 @@
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>In den Video-Einstellungen wurde hardwarebeschleunigtes 3D aktiviert, und der Typ des Gastes wurde als Windows Vista oder später eingestellt. Für beste Performance sollte der Grafikspeicher auf mindestens &lt;b&gt;%1&lt;/b&gt; eingestellt werden.</translation>
     </message>
+    <message>
+        <source>&amp;Screen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Scale Factor:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls the guest screen scale factor.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>100%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>200%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HiDPI:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use &amp;Unscaled HiDPI Output</source>
+        <translation type="unfinished">&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
+    </message>
+    <message>
+        <source>Acceleration:</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsGeneral</name>
@@ -3065,35 +3150,15 @@
     </message>
     <message>
         <source>Screen Scale Factor:</source>
-        <translation>Skalierungsfaktor:</translation>
-    </message>
-    <message>
-        <source>This setting determines the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>100%</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>200%</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>%</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>HiDPI:</source>
-        <translation></translation>
+        <translation type="obsolete">Skalierungsfaktor:</translation>
     </message>
     <message>
         <source>If checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation>Verhindert die Skalierung des Gast-Bildschirminhaltes, die normalerweise für die Anpassung an hohe Auflösung des Host-Bildschirmes vorgenommen wird.</translation>
+        <translation type="obsolete">Verhindert die Skalierung des Gast-Bildschirminhaltes, die normalerweise für die Anpassung an hohe Auflösung des Host-Bildschirmes vorgenommen wird.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation>&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
+        <translation type="obsolete">&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
@@ -3922,6 +3987,10 @@
     <message>
         <source>Set up the virtual optical drive</source>
         <translation>Virtuelles optisches Laufwerk aufsetzen</translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5541,11 +5610,11 @@
     </message>
     <message>
         <source>Failed to connect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht an das virtuelle Netzwerkkabel angeschlossen werden.</translation>
+        <translation type="obsolete">Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht an das virtuelle Netzwerkkabel angeschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to disconnect network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht vom virtuellen Netzwerkkabel getrennt werden.</translation>
+        <translation type="obsolete">Die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; konnte nicht vom virtuellen Netzwerkkabel getrennt werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -5586,6 +5655,14 @@
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
         <translation>Die Drag-und-Drop-Operation vom Gast zum Host ist fehlgeschlagen.</translation>
+    </message>
+    <message>
+        <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8615,6 +8692,14 @@
     <message>
         <source>UUID:</source>
         <translation></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
