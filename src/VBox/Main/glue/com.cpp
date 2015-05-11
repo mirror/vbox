@@ -82,10 +82,7 @@ namespace com
 
 void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName)
 {
-    Assert(aName);
-    if (!aName)
-        return;
-
+    AssertPtrReturnVoid(aName);
     *aName = NULL;
 
 #if !defined(VBOX_WITH_XPCOM)
@@ -114,7 +111,7 @@ void GetInterfaceNameByIID(const GUID &aIID, BSTR *aName)
                     if (rc != ERROR_SUCCESS)
                     {
                         SysFreeString(*aName);
-                        aName = NULL;
+                        *aName = NULL;
                     }
                 }
                 RegCloseKey(iidKey);
