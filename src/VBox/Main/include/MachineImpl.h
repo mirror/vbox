@@ -1114,7 +1114,8 @@ private:
                                 ComPtr<IProgress> &aProgress);
     HRESULT saveSettings();
     HRESULT discardSettings();
-    HRESULT unregister(CleanupMode_T aCleanupMode,
+    HRESULT unregister(AutoCaller &aAutoCaller,
+                       CleanupMode_T aCleanupMode,
                        std::vector<ComPtr<IMedium> > &aMedia);
     HRESULT deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia,
                          ComPtr<IProgress> &aProgress);

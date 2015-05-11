@@ -6522,7 +6522,7 @@ and "VAR" for unsetting. -->
       </desc>
     </method>
 
-    <method name="unregister" wrap-hint-server="limitedcaller">
+    <method name="unregister" wrap-hint-server="limitedcaller,passcaller">
       <desc>
         Unregisters a machine previously registered with
         <link to="IVirtualBox::registerMachine"/> and optionally do additional

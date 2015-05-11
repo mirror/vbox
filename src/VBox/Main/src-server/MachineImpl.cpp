@@ -5064,13 +5064,10 @@ HRESULT Machine::discardSettings()
 }
 
 /** @note Locks objects! */
-HRESULT Machine::unregister(CleanupMode_T aCleanupMode,
+HRESULT Machine::unregister(AutoCaller &autoCaller,
+                            CleanupMode_T aCleanupMode,
                             std::vector<ComPtr<IMedium> > &aMedia)
 {
-    // use AutoLimitedCaller because this call is valid on inaccessible machines as well
-    AutoLimitedCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Guid id(i_getId());
