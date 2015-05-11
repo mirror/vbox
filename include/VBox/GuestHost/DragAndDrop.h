@@ -71,6 +71,8 @@ int DnDPathSanitize(char *pszPath, size_t cbPath);
 
 /** Keep the original paths, don't convert paths to relative ones. */
 #define DNDURILIST_FLAGS_ABSOLUTE_PATHS         RT_BIT(0)
+/** Resolve all symlinks. */
+#define DNDURILIST_FLAGS_RESOLVE_SYMLINKS       RT_BIT(1)
 
 class DnDURIObject
 {
@@ -80,13 +82,15 @@ public:
     {
         Unknown = 0,
         File,
-        Directory
+        Directory,
+        Type_32Bit_Hack = 0x7fffffff
     };
 
     enum Dest
     {
         Source = 0,
-        Target
+        Target,
+        Dest_32Bit_Hack = 0x7fffffff
     };
 
     DnDURIObject(void);
@@ -174,7 +178,8 @@ public:
 
 protected:
 
-    int appendPathRecursive(const char *pcszPath, size_t cbBaseLen, uint32_t fFlags);
+    int addEntry(const char *pcszSource, const char *pcszTarget, uint32_t fFlags);
+    int appendPathRecursive(const char *pcszSrcPath, const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, uint32_t fFlags);
 
 protected:
 

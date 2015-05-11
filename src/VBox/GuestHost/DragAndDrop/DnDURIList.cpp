@@ -23,6 +23,7 @@
 #include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/path.h>
+#include <iprt/symlink.h>
 #include <iprt/uri.h>
 
 #ifdef LOG_GROUP
@@ -43,137 +44,204 @@ DnDURIList::~DnDURIList(void)
 {
 }
 
-int DnDURIList::appendPathRecursive(const char *pcszPath, size_t cbBaseLen,
-                                    uint32_t fFlags)
+int DnDURIList::addEntry(const char *pcszSource, const char *pcszTarget, uint32_t fFlags)
 {
-    AssertPtrReturn(pcszPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszSource, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszTarget, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pcszSource=%s, pcszTarget=%s\n", pcszSource, pcszTarget));
 
     RTFSOBJINFO objInfo;
-    int rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * These are the types we currently support. Symlinks are not directly
-     * supported. First the guest could be an OS which doesn't support it and
-     * second the symlink could point to a file which is out of the base tree.
-     * Both things are hard to support. For now we just copy the target file in
-     * this case.
-     */
-    if (!(   RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
-          || RTFS_IS_FILE(objInfo.Attr.fMode)
-          || RTFS_IS_SYMLINK(objInfo.Attr.fMode)))
-        return VINF_SUCCESS;
-
-    uint64_t cbSize = 0;
-    rc = RTFileQuerySize(pcszPath, &cbSize);
-    if (rc == VERR_IS_A_DIRECTORY)
-        rc = VINF_SUCCESS;
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    m_lstTree.append(DnDURIObject(  RTFS_IS_DIRECTORY(objInfo.Attr.fMode)
-                                  ? DnDURIObject::Directory
-                                  : DnDURIObject::File,
-                                  pcszPath, &pcszPath[cbBaseLen],
-                                  objInfo.Attr.fMode, cbSize));
-    m_cTotal++;
-    m_cbTotal += cbSize;
-#ifdef DEBUG_andy
-    LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cTotal=%RU32, cbTotal=%zu\n",
-                 pcszPath, &pcszPath[cbBaseLen], objInfo.Attr.fMode, cbSize, m_cTotal, m_cbTotal));
-#endif
-
-    /* We have to try to open even symlinks, cause they could
-     * be symlinks to directories. */
-    PRTDIR hDir;
-    rc = RTDirOpen(&hDir, pcszPath);
-
-    /* The following error happens when this was a symlink
-     * to a file or a regular file. */
-    if (   rc == VERR_PATH_NOT_FOUND
-        || rc == VERR_NOT_A_DIRECTORY)
-        return VINF_SUCCESS;
-    if (RT_FAILURE(rc))
-        return rc;
-
-    while (RT_SUCCESS(rc))
-    {
-        RTDIRENTRY DirEntry;
-        rc = RTDirRead(hDir, &DirEntry, NULL);
-        if (RT_FAILURE(rc))
+    int rc = RTPathQueryInfo(pcszSource, &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
+    {   
+        if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            if (rc == VERR_NO_MORE_FILES)
-                rc = VINF_SUCCESS;
-            break;
+            LogFlowFunc(("File '%s' -> '%s'\n", pcszSource, pcszTarget));
+
+            m_lstTree.append(DnDURIObject(DnDURIObject::File, pcszSource, pcszTarget, 
+                             objInfo.Attr.fMode, (uint64_t)objInfo.cbObject));
+            m_cTotal++;
+            m_cbTotal += (uint64_t)objInfo.cbObject;
         }
-        switch (DirEntry.enmType)
+        else if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            case RTDIRENTRYTYPE_DIRECTORY:
-            {
-                /* Skip "." and ".." entries. */
-                if (   RTStrCmp(DirEntry.szName, ".")  == 0
-                    || RTStrCmp(DirEntry.szName, "..") == 0)
-                    break;
+            LogFlowFunc(("Directory '%s' -> '%s' \n", pcszSource, pcszTarget));
 
-                char *pszRecDir = RTPathJoinA(pcszPath, DirEntry.szName);
-                if (pszRecDir)
-                {
-                    rc = appendPathRecursive(pszRecDir, cbBaseLen, fFlags);
-                    RTStrFree(pszRecDir);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-                break;
-            }
-            case RTDIRENTRYTYPE_SYMLINK:
-            case RTDIRENTRYTYPE_FILE:
-            {
-                char *pszNewFile = RTPathJoinA(pcszPath, DirEntry.szName);
-                if (pszNewFile)
-                {
-                    /* We need the size and the mode of the file. */
-                    RTFSOBJINFO objInfo1;
-                    rc = RTPathQueryInfo(pszNewFile, &objInfo1, RTFSOBJATTRADD_NOTHING);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = RTFileQuerySize(pszNewFile, &cbSize);
-                    if (rc == VERR_IS_A_DIRECTORY) /* Happens for symlinks. */
-                        rc = VINF_SUCCESS;
-
-                    if (RT_FAILURE(rc))
-                        break;
-
-                    if (RTFS_IS_FILE(objInfo.Attr.fMode))
-                    {
-                        m_lstTree.append(DnDURIObject(DnDURIObject::File,
-                                                      pszNewFile, &pszNewFile[cbBaseLen],
-                                                      objInfo1.Attr.fMode, cbSize));
-                        m_cTotal++;
-                        m_cbTotal += cbSize;
-#ifdef DEBUG_andy
-                        LogFlowFunc(("strSrcPath=%s, strDstPath=%s, fMode=0x%x, cbSize=%RU64, cTotal=%RU32, cbTotal=%zu\n",
-                                     pszNewFile, &pszNewFile[cbBaseLen], objInfo1.Attr.fMode, cbSize, m_cTotal, m_cbTotal));
-#endif
-                    }
-                    else /* Handle symlink directories. */
-                        rc = appendPathRecursive(pszNewFile, cbBaseLen, fFlags);
-
-                    RTStrFree(pszNewFile);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-                break;
-            }
-
-            default:
-                /* Just ignore the rest. */
-                break;
+            m_lstTree.append(DnDURIObject(DnDURIObject::Directory, pcszSource, pcszTarget,
+                             objInfo.Attr.fMode, 0 /* Size */));
+            m_cTotal++;
         }
+        /* Note: Symlinks already should have been resolved at this point. */
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
 
-    RTDirClose(hDir);
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int DnDURIList::appendPathRecursive(const char *pcszSrcPath, 
+                                    const char *pcszDstPath, const char *pcszDstBase, size_t cchDstBase, uint32_t fFlags)
+{
+    AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszDstPath, VERR_INVALID_POINTER);
+   
+    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s, cchDstBase=%zu\n", 
+                 pcszSrcPath, pcszDstPath, pcszDstBase, cchDstBase));
+
+    RTFSOBJINFO objInfo;
+    int rc = RTPathQueryInfo(pcszSrcPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+    if (RT_SUCCESS(rc))
+    {   
+        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+        {
+            rc = addEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
+
+            PRTDIR hDir;
+            if (RT_SUCCESS(rc))
+                rc = RTDirOpen(&hDir, pcszSrcPath);
+            if (RT_SUCCESS(rc))
+            {   
+                do
+                {
+                    RTDIRENTRY DirEntry;
+                    rc = RTDirRead(hDir, &DirEntry, NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        if (rc == VERR_NO_MORE_FILES)
+                            rc = VINF_SUCCESS;
+                        break;
+                    }
+
+                    switch (DirEntry.enmType)
+                    {
+                        case RTDIRENTRYTYPE_DIRECTORY:
+                        {
+                            /* Skip "." and ".." entries. */
+                            if (   RTStrCmp(DirEntry.szName, ".")  == 0
+                                || RTStrCmp(DirEntry.szName, "..") == 0)
+                                break;                           
+
+                            char *pszSrc = RTPathJoinA(pcszSrcPath, DirEntry.szName);
+                            if (pszSrc)
+                            {
+                                char *pszDst = RTPathJoinA(pcszDstPath, DirEntry.szName);
+                                if (pszDst)
+                                {
+                                    rc = appendPathRecursive(pszSrc, pszDst, pcszDstBase, cchDstBase, fFlags);
+                                    RTStrFree(pszDst);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+
+                                RTStrFree(pszSrc);
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                            break;
+                        }
+
+                        case RTDIRENTRYTYPE_FILE:
+                        {
+                            char *pszSrc = RTPathJoinA(pcszSrcPath, DirEntry.szName);
+                            if (pszSrc)
+                            {
+                                char *pszDst = RTPathJoinA(pcszDstPath, DirEntry.szName);
+                                if (pszDst)
+                                {
+                                    rc = addEntry(pszSrc, &pszDst[cchDstBase], fFlags);
+                                    RTStrFree(pszDst);
+                                }
+                                else
+                                    rc = VERR_NO_MEMORY;
+                                RTStrFree(pszSrc);
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                            break;
+                        }
+                        case RTDIRENTRYTYPE_SYMLINK:
+                        {
+                            if (fFlags & DNDURILIST_FLAGS_RESOLVE_SYMLINKS)
+                            {
+                                char *pszSrc = RTPathRealDup(pcszDstBase);
+                                if (pszSrc)
+                                {
+                                    rc = RTPathQueryInfo(pszSrc, &objInfo, RTFSOBJATTRADD_NOTHING);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                                        {
+                                            LogFlowFunc(("Directory entry is symlink to directory\n"));
+                                            rc = appendPathRecursive(pszSrc, pcszDstPath, pcszDstBase, cchDstBase, fFlags); 
+                                        }
+                                        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                                        {
+                                            LogFlowFunc(("Directory entry is symlink to file\n"));
+                                            rc = addEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
+                                        }
+                                        else
+                                            rc = VERR_NOT_SUPPORTED;
+                                    }
+
+                                    RTStrFree(pszSrc);
+                                }        
+                                else
+                                    rc = VERR_NO_MEMORY;
+                            }
+                            break;
+                        }
+
+                        default:
+                            break;
+                    }
+
+                } while (RT_SUCCESS(rc));
+
+                RTDirClose(hDir);
+            }
+        }
+        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+        {
+            rc = addEntry(pcszSrcPath, &pcszDstPath[cchDstBase], fFlags);
+        }
+        else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
+        {
+            if (fFlags & DNDURILIST_FLAGS_RESOLVE_SYMLINKS)
+            {
+                char *pszSrc = RTPathRealDup(pcszSrcPath);
+                if (pszSrc)
+                {
+                    rc = RTPathQueryInfo(pszSrc, &objInfo, RTFSOBJATTRADD_NOTHING);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                        {
+                            LogFlowFunc(("Symlink to directory\n"));
+                            rc = appendPathRecursive(pszSrc, pcszDstPath, pcszDstBase, cchDstBase, fFlags); 
+                        }
+                        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                        {
+                            LogFlowFunc(("Symlink to file\n"));
+                            rc = addEntry(pszSrc, &pcszDstPath[cchDstBase], fFlags);
+                        }
+                        else
+                            rc = VERR_NOT_SUPPORTED;
+                    }
+
+                    RTStrFree(pszSrc);
+                }        
+                else
+                    rc = VERR_NO_MEMORY;          
+            }
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -245,36 +313,36 @@ int DnDURIList::AppendURIPath(const char *pszURI, uint32_t fFlags)
 
     /* Query the path component of a file URI. If this hasn't a
      * file scheme NULL is returned. */
-    char *pszFilePath = RTUriFilePath(pszURI, URI_FILE_FORMAT_AUTO);
-    if (pszFilePath)
+    char *pszSrcPath = RTUriFilePath(pszURI, URI_FILE_FORMAT_AUTO);
+    if (pszSrcPath)
     {
         /* Add the path to our internal file list (recursive in
          * the case of a directory). */
-        size_t cbPathLen = RTPathStripTrailingSlash(pszFilePath);
+        size_t cbPathLen = RTPathStripTrailingSlash(pszSrcPath);
         if (cbPathLen)
         {
-            char *pszFileName = RTPathFilename(pszFilePath);
+            char *pszFileName = RTPathFilename(pszSrcPath);
             if (pszFileName)
             {
-                Assert(pszFileName >= pszFilePath);
-                size_t cbBase = (fFlags & DNDURILIST_FLAGS_ABSOLUTE_PATHS)
-                              ? 0 /* Use start of path as root. */
-                              : pszFileName - pszFilePath;
-                char *pszRoot = &pszFilePath[cbBase];
-                m_lstRoot.append(pszRoot);
-#ifdef DEBUG_andy
+                Assert(pszFileName >= pszSrcPath);
+                size_t cchDstBase = (fFlags & DNDURILIST_FLAGS_ABSOLUTE_PATHS)
+                                  ? 0 /* Use start of path as root. */
+                                  : pszFileName - pszSrcPath;
+                char *pszDstPath = &pszSrcPath[cchDstBase];
+                m_lstRoot.append(pszDstPath);
+
                 LogFlowFunc(("pszFilePath=%s, pszFileName=%s, pszRoot=%s\n",
-                             pszFilePath, pszFileName, pszRoot));
-#endif
-                rc = appendPathRecursive(pszFilePath, cbBase, fFlags);
+                             pszSrcPath, pszFileName, pszDstPath));
+
+                rc = appendPathRecursive(pszSrcPath, pszSrcPath, pszSrcPath, cchDstBase, fFlags);
             }
             else
-                rc = VERR_NOT_FOUND;
+                rc = VERR_PATH_NOT_FOUND;
         }
         else
             rc = VERR_INVALID_PARAMETER;
 
-        RTStrFree(pszFilePath);
+        RTStrFree(pszSrcPath);
     }
     else
         rc = VERR_INVALID_PARAMETER;
