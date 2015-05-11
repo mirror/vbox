@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2007-2013 Oracle Corporation
+# Copyright (C) 2007-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -527,7 +527,7 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
  # Globals relevant to the SDK.
  #
  VBOXWEB_GLUE_PYTHON           = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_wrappers.py
- VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_services.py
+ VBOXWEB_WS_PYTHON             = $(VBOX_PATH_SDK)/bindings/webservice/python/lib/VirtualBox_server.py
  VBOXWEB_WS_PERL               = $(VBOX_PATH_SDK)/bindings/webservice/perl/lib/vboxService.pm
  VBOXWEB_WS_PHP                = $(VBOX_PATH_SDK)/bindings/webservice/php/lib/vboxServiceWrappers.php
  VBOXWEB_SAMPLES_JAXWS_DIR     = $(VBOX_PATH_SDK)/bindings/webservice/java/jax-ws/samples
@@ -539,11 +539,10 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
  endef
 
  VBOXWEB_OTHERS               +=  \
-	$(VBOXWEB_GLUE_PYTHON) 	  \
-	$(VBOXWEB_WS_PYTHON)      \
-	$(VBOXWEB_WS_PERL)        \
-	$(VBOXWEB_WS_PHP)         \
-	$(VBOXWEB_PYTHONWSSAMPLE) \
+	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_GLUE_PYTHON),)       \
+	$(if $(VBOX_WITH_PYTHON),$(VBOXWEB_WS_PYTHON),)         \
+	$(if $(VBOX_WITH_PERL),$(VBOXWEB_WS_PERL),)             \
+	$(if $(VBOX_WITH_PHP),$(VBOXWEB_WS_PHP),)               \
 	$(PATH_ROOT)
 
 
@@ -554,17 +553,17 @@ if defined(VBOX_ONLY_SDK) && "$(KBUILD_TARGET)" != "win"
  vboxwebinst_INST = $(INST_SDK)bindings/webservice/
  vboxwebinst_MODE = a+rx,u+w
  vboxwebinst_SOURCES = \
-	samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
-	samples/php/clienttest.php=>php/samples/clienttest.php \
-	samples/python/clienttest.py=>python/samples/clienttest.py
+	$(if $(VBOX_WITH_PERL),samples/perl/clienttest.pl=>perl/samples/clienttest.pl,) \
+	$(if $(VBOX_WITH_PHP),samples/php/clienttest.php=>php/samples/clienttest.php,) \
+	$(if $(VBOX_WITH_PYTHON),samples/python/clienttest.py=>python/samples/clienttest.py,)
 
  INSTALLS += vboxwebinst_nox
  vboxwebinst_nox_INST = $(INST_SDK)bindings/webservice/
  vboxwebinst_nox_MODE = a+r,u+w
  vboxwebinst_nox_SOURCES = \
-	samples/python/Makefile=>python/samples/Makefile \
-	samples/python/Makefile.glue=>python/lib/Makefile \
-	$(PATH_ROOT)/COPYING.LIB=>java/jax-ws/COPYING.LIB
+	$(if $(VBOX_WITH_PYTHON),samples/python/Makefile=>python/samples/Makefile,) \
+	$(if $(VBOX_WITH_PYTHON),samples/python/Makefile.glue=>python/lib/Makefile,) \
+	$(if ($VBOX_WITH_JWS),$(PATH_ROOT)/COPYING.LIB=>java/jax-ws/COPYING.LIB,)
 
  INSTALLS += vboxwebinst_wsdl
  vboxwebinst_wsdl_INST = $(INST_SDK)bindings/webservice/

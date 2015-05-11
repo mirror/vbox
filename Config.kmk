@@ -584,8 +584,12 @@ VBOX_WITH_VRDP_AUTHMOD = 1
 VBOX_WITH_VRDP_RDESKTOP = 1
 ## The Direct Framebuffer GUI.
 #VBOX_WITH_VBOXFB = 1
-# Enables the Python<->XPCOM and Python<->COM bindings.
+# Enables the Python<->XPCOM, Python<->COM and (WS enabled) Python<->WS bindings.
 VBOX_WITH_PYTHON ?= 1
+# Enables the PERL<->WS binding (if WS enabled).
+#VBOX_WITH_PERL ?= 1
+# Enables the PHP<->WS binding (if WS enabled).
+VBOX_WITH_PHP ?= 1
 if1of ($(KBUILD_TARGET), darwin linux solaris)
  # Enable Java<->XPCOM bridge + glue code
  VBOX_WITH_JXPCOM ?= 1
