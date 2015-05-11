@@ -47,7 +47,8 @@ VBoxSDL_SOURCES    = \
 	Framebuffer.cpp \
 	Helper.cpp
 VBoxSDL_SOURCES.darwin = \
-	VBoxSDLMain-darwin.m
+	VBoxSDLMain-darwin.m \
+       Framebuffer-darwin.m
 
 VBoxSDL_DEFS       =
 ifdef VBOX_WITH_SDL13

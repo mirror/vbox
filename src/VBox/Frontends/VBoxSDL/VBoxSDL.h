@@ -20,6 +20,7 @@
 #ifndef __H_VBOXSDL
 #define __H_VBOXSDL
 
+#include <iprt/cdefs.h>
 #ifdef RT_OS_WINDOWS /** @todo check why we need to do this on windows. */
 /* convince SDL to not overload main() */
 #define _SDL_main_h
@@ -73,4 +74,10 @@ void PushNotifyUpdateEvent(SDL_Event *event);
 #endif
 int  PushSDLEventForSure(SDL_Event *event);
 
-#endif // __H_VBOXSDL
+#ifdef RT_OS_DARWIN
+RT_C_DECLS_BEGIN
+void *VBoxSDLGetDarwinWindowId(void);
+RT_C_DECLS_END
+#endif
+
+#endif
