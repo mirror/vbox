@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -482,13 +482,12 @@ bool UIVMItem::isItemRunningHeadless(UIVMItem *pItem)
         CSession session = vboxGlobal().openExistingSession(pItem->id());
         if (!session.isNull())
         {
-            /* Acquire the session type: */
-            const QString strSessionType = session.GetMachine().GetSessionType();
+            /* Acquire the session name: */
+            const QString strSessionName = session.GetMachine().GetSessionName();
             /* Close the session early: */
             session.UnlockMachine();
-            /* Check whether we are in 'headless' session type: */
-            if (strSessionType.compare("headless", Qt::CaseInsensitive) == 0)
-                return true;
+            /* Check whether we are in 'headless' session: */
+            return strSessionName == "headless";
         }
     }
     return false;

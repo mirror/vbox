@@ -4169,7 +4169,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="701464d0-7284-42e9-b7b3-894cf31536b7"
+    uuid="77a44043-a68a-4ef9-ac26-e9567b1e6bbc"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -4669,14 +4669,15 @@
       <desc>Current session state for this machine.</desc>
     </attribute>
 
-    <attribute name="sessionType" type="wstring" readonly="yes">
+    <attribute name="sessionName" type="wstring" readonly="yes">
       <desc>
-        Type of the session. If <link to="#sessionState"/> is
+        Name of the session. If <link to="#sessionState"/> is
         Spawning or Locked, this attribute contains the
         same value as passed to the
         <link to="IMachine::launchVMProcess"/> method in the
-        @a type parameter. If the session was used with
-        <link to="IMachine::lockMachine" />, or if
+        @a name parameter. If the session was established with
+        <link to="IMachine::lockMachine" />, it is the name of the session
+        (if set, otherwise empty string). If
         <link to="#sessionState"/> is SessionClosed, the value of this
         attribute is an empty string.
       </desc>
@@ -5190,7 +5191,7 @@ and "VAR" for unsetting. -->
           must be in "Unlocked" state).
         </desc>
       </param>
-      <param name="type" type="wstring" dir="in">
+      <param name="name" type="wstring" dir="in">
         <desc>
           Front-end to use for the new VM process. The following are currently supported:
           <ul>
@@ -19265,7 +19266,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISession" extends="$unknown"
-    uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
+    uuid="3d4f472c-aac8-4387-94be-54042bcd8901"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalSessionControl"
     >
@@ -19338,12 +19339,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="name" type="wstring">
+      <desc>
+        Name of this session. Important only for VM sessions, otherwise it
+        it will be remembered, but not used for anything significant (and can
+        be left at the empty string which is the default). The value can only
+        be changed when the session state is SessionState_Unlocked. Make sure
+        that you use a descriptive name which does not conflict with the VM
+        process session names: "GUI/Qt", "GUI/SDL" and "headless".
+      </desc>
+    </attribute>
+
     <attribute name="machine" type="IMachine" readonly="yes">
       <desc>Machine object associated with this session.</desc>
     </attribute>
 
     <attribute name="console" type="IConsole" readonly="yes">
-      <desc>Console object associated with this session.</desc>
+      <desc>Console object associated with this session. Only sessions
+      which locked the machine for a VM process have a non-null console.</desc>
     </attribute>
 
     <method name="unlockMachine">

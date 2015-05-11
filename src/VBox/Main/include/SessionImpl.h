@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,6 +56,8 @@ private:
     // Wrapped ISession properties
     HRESULT getState(SessionState_T *aState);
     HRESULT getType(SessionType_T *aType);
+    HRESULT getName(com::Utf8Str &aName);
+    HRESULT setName(const com::Utf8Str &aName);
     HRESULT getMachine(ComPtr<IMachine> &aMachine);
     HRESULT getConsole(ComPtr<IConsole> &aConsole);
 
@@ -142,6 +144,7 @@ private:
 
     SessionState_T mState;
     SessionType_T mType;
+    Utf8Str mName;
 
     ComPtr<IInternalMachineControl> mControl;
 

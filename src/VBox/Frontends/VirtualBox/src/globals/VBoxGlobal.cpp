@@ -1476,6 +1476,9 @@ CSession VBoxGlobal::openSession(const QString &strId, KLockType lockType /* = K
             break;
         }
 
+        if (lockType == KLockType_VM)
+            session.SetName("GUI/Qt");
+
         /* Lock found machine to session: */
         machine.LockMachine(session, lockType);
         if (!machine.isOk())

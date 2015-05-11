@@ -148,8 +148,8 @@ public:
             /** Current session state */
             SessionState_T mState;
 
-            /** Session type string (for indirect sessions) */
-            Utf8Str mType;
+            /** Session name string (of the primary session) */
+            Utf8Str mName;
 
             /** Session machine object */
             ComObjPtr<SessionMachine> mMachine;
@@ -927,7 +927,8 @@ private:
     HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
     HRESULT getSettingsModified(BOOL *aSettingsModified);
     HRESULT getSessionState(SessionState_T *aSessionState);
-    HRESULT getSessionType(com::Utf8Str &aSessionType);
+    HRESULT getSessionType(SessionType_T *aSessionType);
+    HRESULT getSessionName(com::Utf8Str &aSessionType);
     HRESULT getSessionPID(ULONG *aSessionPID);
     HRESULT getState(MachineState_T *aState);
     HRESULT getLastStateChange(LONG64 *aLastStateChange);

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -148,6 +148,25 @@ HRESULT Session::getType(SessionType_T *aType)
     CHECK_OPEN();
 
     *aType = mType;
+    return S_OK;
+}
+
+HRESULT Session::getName(com::Utf8Str &aName)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aName = mName;
+    return S_OK;
+}
+
+HRESULT Session::setName(const com::Utf8Str &aName)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mState != SessionState_Unlocked)
+        return setError(VBOX_E_INVALID_OBJECT_STATE, tr("Trying to set name for a session which is not in state \"unlocked\""));
+
+    mName = aName;
     return S_OK;
 }
 

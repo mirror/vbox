@@ -910,6 +910,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).c_str()));
 
+        // set session name
+        CHECK_ERROR_BREAK(session, COMSETTER(Name)(Bstr("headless").raw()));
         // open a session
         CHECK_ERROR_BREAK(m, LockMachine(session, LockType_VM));
         fSessionOpened = true;

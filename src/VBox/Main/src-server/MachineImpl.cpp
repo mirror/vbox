@@ -2673,7 +2673,6 @@ HRESULT Machine::getSettingsModified(BOOL *aSettingsModified)
 
 HRESULT Machine::getSessionState(SessionState_T *aSessionState)
 {
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aSessionState = mData->mSession.mState;
@@ -2681,11 +2680,11 @@ HRESULT Machine::getSessionState(SessionState_T *aSessionState)
     return S_OK;
 }
 
-HRESULT Machine::getSessionType(com::Utf8Str &aSessionType)
+HRESULT Machine::getSessionName(com::Utf8Str &aSessionName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aSessionType = mData->mSession.mType;
+    aSessionName = mData->mSession.mName;
 
     return S_OK;
 }
@@ -3222,6 +3221,9 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
     ComAssertMsgRet(!!pSessionControl, ("No IInternalSessionControl interface"),
                     E_INVALIDARG);
 
+    // session name (only used in some code paths)
+    Utf8Str strSessionName;
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mRegistered)
@@ -3436,6 +3438,15 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
                 setError(VBOX_E_VM_ERROR,
                          tr("Failed to assign the machine to the session (%Rhrc)"), rc);
 
+            // get session name, either to remember or to compare against
+            // the already known session name.
+            {
+                Bstr bstrSessionName;
+                HRESULT rc2 = aSession->COMGETTER(Name)(bstrSessionName.asOutParam());
+                if (SUCCEEDED(rc2))
+                    strSessionName = bstrSessionName;
+            }
+
             if (    SUCCEEDED(rc)
                  && fLaunchingVMProcess
                )
@@ -3484,6 +3495,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         // finalize spawning anyway (this is why we don't return on errors above)
         if (fLaunchingVMProcess)
         {
+            Assert(mData->mSession.mName == strSessionName);
             /* Note that the progress object is finalized later */
             /** @todo Consider checking mData->mSession.mProgress for cancellation
              *        around here.  */
@@ -3521,6 +3533,8 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
             /* memorize the direct session control and cache IUnknown for it */
             mData->mSession.mDirectControl = pSessionControl;
             mData->mSession.mState = SessionState_Locked;
+            if (!fLaunchingVMProcess)
+                mData->mSession.mName = strSessionName;
             /* associate the SessionMachine with this Machine */
             mData->mSession.mMachine = sessionMachine;
 
@@ -3560,11 +3574,11 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
  *  @note Locks objects!
  */
 HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
-                                 const com::Utf8Str &aType,
+                                 const com::Utf8Str &aName,
                                  const com::Utf8Str &aEnvironment,
                                  ComPtr<IProgress> &aProgress)
 {
-    Utf8Str strFrontend(aType);
+    Utf8Str strFrontend(aName);
     /* "emergencystop" doesn't need the session, so skip the checks/interface
      * retrieval. This code doesn't quite fit in here, but introducing a
      * special API method would be even more effort, and would require explicit
@@ -7429,7 +7443,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
 
     if (fSeparate)
     {
-        if (mData->mSession.mState != SessionState_Unlocked && mData->mSession.mType.compare("headless", Utf8Str::CaseInsensitive))
+        if (mData->mSession.mState != SessionState_Unlocked && mData->mSession.mName == "headless")
             return setError(VBOX_E_INVALID_OBJECT_STATE,
                             tr("The machine '%s' is in a state which is incompatible with launching a separate UI process"),
                             mUserData->s.strName.c_str());
@@ -7530,6 +7544,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     const char *pszSupStartupLogArg = NULL;
 #endif
 
+    Utf8Str strCanonicalName;
 
 #ifdef VBOX_WITH_QTGUI
     if (   !strFrontend.compare("gui", Utf8Str::CaseInsensitive)
@@ -7538,6 +7553,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         || !strFrontend.compare("gui/separate", Utf8Str::CaseInsensitive)
         || !strFrontend.compare("GUI/Qt/separate", Utf8Str::CaseInsensitive))
     {
+        strCanonicalName = "GUI/Qt";
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
         /* Modify the base path so that we don't need to use ".." below. */
         RTPathStripTrailingSlash(szPath);
@@ -7606,6 +7622,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         || !strFrontend.compare("sdl/separate", Utf8Str::CaseInsensitive)
         || !strFrontend.compare("GUI/SDL/separate", Utf8Str::CaseInsensitive))
     {
+        strCanonicalName = "GUI/SDL";
         static const char s_szVBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
         Assert(cchBufLeft >= sizeof(s_szVBoxSDL_exe));
         strcpy(pszNamePart, s_szVBoxSDL_exe);
@@ -7640,6 +7657,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         || !strFrontend.compare("vrdp", Utf8Str::CaseInsensitive) /* Deprecated. Same as headless. */
        )
     {
+        strCanonicalName = "headless";
         /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
          * which did not contain VRDP server. In VBox 4.0 the remote desktop server (VRDE) is optional,
          * and a VM works even if the server has not been installed.
@@ -7731,7 +7749,8 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         mData->mSession.mProgress = aProgress;
         mData->mSession.mPID = pid;
         mData->mSession.mState = SessionState_Spawning;
-        mData->mSession.mType = strFrontend;
+        Assert(strCanonicalName.isNotEmpty());
+        mData->mSession.mName = strCanonicalName;
     }
     else
     {
@@ -12653,7 +12672,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     mData->mSession.mLockType = LockType_Null;
     mData->mSession.mMachine.setNull();
     mData->mSession.mState = SessionState_Unlocked;
-    mData->mSession.mType.setNull();
+    mData->mSession.mName.setNull();
 
     /* destroy the machine client token before leaving the exclusive lock */
     if (mClientToken)
