@@ -35,10 +35,14 @@ typedef const HostDnsMonitorProxy *PCHostDnsMonitorProxy;
 class HostDnsInformation
 {
   public:
+    static const uint32_t IGNORE_SERVER_ORDER = RT_BIT_32(0);
+    static const uint32_t IGNORE_SUFFIXES     = RT_BIT_32(1);
+
+  public:
     std::vector<std::string> servers;
     std::string domain;
     std::vector<std::string> searchList;
-    bool equals(const HostDnsInformation &, bool fDNSOrderIgnore = false) const;
+    bool equals(const HostDnsInformation &, uint32_t fLaxComparison = 0) const;
 };
 
 /**
