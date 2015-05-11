@@ -338,7 +338,6 @@ static void *MyNSGLGetProcAddress(const char *pszSymbol)
     if (VMSVGA3D_GL_IS_SUCCESS(a_pContext)) \
     { /* likely */ } \
     else do { \
-        VMSVGA3D_GET_GL_ERROR(a_pContext); \
         VMSVGA3D_GL_COMPLAIN(a_pState, a_pContext, a_LogRelDetails); \
     } while (0)
 
@@ -503,7 +502,7 @@ typedef struct
 {
     uint32_t                id;
 #ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
-    uint32_t                idAssociatedContextUnused;
+    uint32_t                idWeakContextAssociation;
 #else
     uint32_t                idAssociatedContext;
 #endif
@@ -535,7 +534,7 @@ static SSMFIELD const g_aVMSVGA3DSURFACEFields[] =
 {
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, id),
 #ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
-    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContextUnused),
+    SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idWeakContextAssociation),
 #else
     SSMFIELD_ENTRY(                 VMSVGA3DSURFACE, idAssociatedContext),
 #endif
@@ -634,7 +633,7 @@ static SSMFIELD const g_aVMSVGASHADERCONSTFields[] =
 #define VMSVGA3D_UPDATE_TRANSFORM       RT_BIT(5)
 #define VMSVGA3D_UPDATE_MATERIAL        RT_BIT(6)
 
-typedef struct
+typedef struct VMSVGA3DCONTEXT
 {
     uint32_t                id;
 #ifdef RT_OS_WINDOWS
@@ -2648,7 +2647,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     memset(pSurface, 0, sizeof(*pSurface));
     pSurface->id                    = sid;
 #ifdef VMSVGA3D_OGL_WITH_SHARED_CTX
-    pSurface->idAssociatedContextUnused = SVGA3D_INVALID_ID;
+    pSurface->idWeakContextAssociation = SVGA3D_INVALID_ID;
 #else
     pSurface->idAssociatedContext   = SVGA3D_INVALID_ID;
 #endif
@@ -3895,9 +3894,14 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     for (uint32_t i=0; i < cRects; i++)
         Log(("vmsvga3dCommandPresent: rectangle %d src=(%d,%d) (%d,%d)(%d,%d)\n", i, pRect[i].srcx, pRect[i].srcy, pRect[i].x, pRect[i].y, pRect[i].x + pRect[i].w, pRect[i].y + pRect[i].h));
 
-    cid = SVGA3D_INVALID_ID;
     pContext = &pState->SharedCtx;
+# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1
+    if (   pSurface->idWeakContextAssociation < pState->cContexts
+        && pState->papContexts[pSurface->idWeakContextAssociation]->id == pSurface->idWeakContextAssociation)
+        pContext = pState->papContexts[pSurface->idWeakContextAssociation];
+# endif
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+    cid = pContext->id;
 #else
     /* @todo stricter checks for associated context */
     cid = pSurface->idAssociatedContext;
@@ -3916,6 +3920,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     pContext = pState->papContexts[cid];
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 #endif
+    VMSVGA3D_CLEAR_GL_ERRORS();
 
     /* Source surface different size? */
     if (pSurface->pMipmapLevels[0].size.width  != pThis->svga.uWidth ||
@@ -3969,43 +3974,42 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     glViewport(0, 0, pSurface->pMipmapLevels[0].size.width, pSurface->pMipmapLevels[0].size.height);
 #endif
 
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &oldTextureId);
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_TEXTURE_BINDING_2D, &oldTextureId), pState, pContext);
 
     oldVShader = pContext->state.shidVertex;
     oldPShader = pContext->state.shidPixel;
-    vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_VS, SVGA_ID_INVALID);
-    vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_PS, SVGA_ID_INVALID);
+    vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, SVGA_ID_INVALID);
+    vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, SVGA_ID_INVALID);
 
     /* Flush shader changes. */
     if (pContext->pShaderContext)
         ShaderUpdateState(pContext->pShaderContext, 0);
 
     /* Activate the read and draw framebuffer objects. */
-    pState->ext.glBindFramebuffer(GL_READ_FRAMEBUFFER, pContext->idReadFramebuffer);
-    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
-    pState->ext.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0 /* back buffer */);
-    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_READ_FRAMEBUFFER, pContext->idReadFramebuffer), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0 /* back buffer */), pState, pContext);
 
-    pState->ext.glActiveTexture(GL_TEXTURE0);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture);
-    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glActiveTexture(GL_TEXTURE0), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glEnable(GL_TEXTURE_2D), pState, pContext);;
+    VMSVGA3D_ASSERT_GL_CALL(glBindTexture(GL_TEXTURE_2D, pSurface->oglId.texture), pState, pContext);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    VMSVGA3D_ASSERT_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR), pState, pContext);;
 
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+#if 0
+    VMSVGA3D_ASSERT_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP), pState, pContext);;
+    VMSVGA3D_ASSERT_GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP), pState, pContext);;
+#endif
 
     /* Reset the transformation matrices. */
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glScalef(1.0f, -1.0f, 1.0f);
-    glOrtho(0, pThis->svga.uWidth, pThis->svga.uHeight, 0, 0.0, -1.0);
+    VMSVGA3D_ASSERT_GL_CALL(glMatrixMode(GL_MODELVIEW), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glPushMatrix(), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glLoadIdentity(), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glMatrixMode(GL_PROJECTION), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glPushMatrix(), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glLoadIdentity(), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glScalef(1.0f, -1.0f, 1.0f), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glOrtho(0, pThis->svga.uWidth, pThis->svga.uHeight, 0, 0.0, -1.0), pState, pContext);
 
     for (uint32_t i = 0; i < cRects; i++)
     {
@@ -4048,6 +4052,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         Log(("texture (%d,%d) (%d,%d) (%d,%d) (%d,%d)\n", pRect[i].srcx, pSurface->pMipmapLevels[0].size.height - (pRect[i].srcy + pRect[i].h), pRect[i].srcx, pSurface->pMipmapLevels[0].size.height - pRect[i].srcy, pRect[i].srcx + pRect[i].w, pSurface->pMipmapLevels[0].size.height - pRect[i].srcy, pRect[i].srcx + pRect[i].w, pSurface->pMipmapLevels[0].size.height - (pRect[i].srcy + pRect[i].h)));
 
         glBegin(GL_QUADS);
+
         /* bottom left */
         glTexCoord2f(left, bottom);
         glVertex2i(vertexLeft, vertexBottom);
@@ -4064,25 +4069,23 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         glTexCoord2f(right, bottom);
         glVertex2i(vertexRight, vertexBottom);
 
-        glEnd();
-        VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+        VMSVGA3D_ASSERT_GL_CALL(glEnd(), pState, pContext);
     }
 
     /* Restore old settings. */
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
+    VMSVGA3D_ASSERT_GL_CALL(glMatrixMode(GL_PROJECTION), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glPopMatrix(), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glMatrixMode(GL_MODELVIEW), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glPopMatrix(), pState, pContext);
 
-    //glPopAttrib();
+    //VMSVGA3D_ASSERT_GL_CALL(glPopAttrib(), pState, pContext);
 
-    glBindTexture(GL_TEXTURE_2D, oldTextureId);
-    vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_VS, oldVShader);
-    vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_PS, oldPShader);
+    VMSVGA3D_ASSERT_GL_CALL(glBindTexture(GL_TEXTURE_2D, oldTextureId), pState, pContext);
+    vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, oldVShader);
+    vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, oldPShader);
 
     /* Reset the frame buffer association */
-    pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer);
-    VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
 
 #else
     /* Activate the read and draw framebuffer objects. */
@@ -5840,6 +5843,9 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
 
             pContext = pState->papContexts[cid];
             VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
+# ifdef VMSVGA3D_OGL_WITH_SHARED_CTX_EXPERIMENT_1
+            pRenderTarget->idWeakContextAssociation = cid;
+# endif
 #else
             LogFlow(("vmsvga3dSetRenderTarget: sid=%x idAssociatedContext %#x -> %#x\n", pRenderTarget->id, pRenderTarget->idAssociatedContext, cid));
             pRenderTarget->idAssociatedContext = cid;
@@ -7569,22 +7575,23 @@ int vmsvga3dShaderDestroy(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSh
     return VINF_SUCCESS;
 }
 
-int vmsvga3dShaderSet(PVGASTATE pThis, uint32_t cid, SVGA3dShaderType type, uint32_t shid)
+int vmsvga3dShaderSet(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t cid, SVGA3dShaderType type, uint32_t shid)
 {
-    PVMSVGA3DCONTEXT    pContext;
     PVMSVGA3DSTATE      pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     int                 rc;
 
     Log(("vmsvga3dShaderSet cid=%x type=%s shid=%d\n", cid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", shid));
 
-    if (    cid >= pState->cContexts
-        ||  pState->papContexts[cid]->id != cid)
+    if (  !pContext
+        && cid < pState->cContexts
+        && pState->papContexts[cid]->id == cid)
+        pContext = pState->papContexts[cid];
+    else
     {
         Log(("vmsvga3dShaderSet invalid context id!\n"));
         return VERR_INVALID_PARAMETER;
     }
-    pContext = pState->papContexts[cid];
     VMSVGA3D_SET_CURRENT_CONTEXT(pState, pContext);
 
     if (type == SVGA3D_SHADERTYPE_VS)

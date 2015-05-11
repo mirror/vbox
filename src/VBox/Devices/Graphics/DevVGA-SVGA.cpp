@@ -3085,7 +3085,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         SVGA3dCmdSetShader *pCmd = (SVGA3dCmdSetShader *)(pHdr + 1);
                         VMSVGAFIFO_CHECK_3D_CMD_MIN_SIZE_BREAK(sizeof(*pCmd));
 
-                        rc = vmsvga3dShaderSet(pThis, pCmd->cid, pCmd->type, pCmd->shid);
+                        rc = vmsvga3dShaderSet(pThis, NULL, pCmd->cid, pCmd->type, pCmd->shid);
                         break;
                     }
 

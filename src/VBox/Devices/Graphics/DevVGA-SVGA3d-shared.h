@@ -336,9 +336,9 @@ int vmsvga3dLoadExec(PVGASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
                 vmsvga3dSetViewPort(pThis, cid, &pContext->state.RectViewPort);
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VERTEXSHADER)
-                vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
+                vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_PIXELSHADER)
-                vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
+                vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
         }
     }
     return VINF_SUCCESS;

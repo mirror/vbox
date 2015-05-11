@@ -248,7 +248,7 @@ static SSMFIELD const g_aVMSVGASHADERCONSTFields[] =
 #define VMSVGA3D_UPDATE_TRANSFORM       RT_BIT(5)
 #define VMSVGA3D_UPDATE_MATERIAL        RT_BIT(6)
 
-typedef struct
+typedef struct VMSVGA3DCONTEXT
 {
     uint32_t                id;
 #ifdef VBOX_VMSVGA3D_WITH_OPENGL
@@ -3419,9 +3419,9 @@ int vmsvga3dChangeMode(PVGASTATE pThis)
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VIEWPORT)
                 vmsvga3dSetViewPort(pThis, cid, &pContext->state.RectViewPort);
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_VERTEXSHADER)
-                vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
+                vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, pContext->state.shidVertex);
             if (pContext->state.u32UpdateFlags & VMSVGA3D_UPDATE_PIXELSHADER)
-                vmsvga3dShaderSet(pThis, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
+                vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, pContext->state.shidPixel);
             /** @todo restore more state data */
 #endif /* #ifdef VMSVGA3D_DIRECT3D9_RESET */
         }
@@ -5873,15 +5873,15 @@ int vmsvga3dShaderDestroy(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSh
     return VINF_SUCCESS;
 }
 
-int vmsvga3dShaderSet(PVGASTATE pThis, uint32_t cid, SVGA3dShaderType type, uint32_t shid)
+int vmsvga3dShaderSet(PVGASTATE pThis, PVMSVGA3DCONTEXT pContext, uint32_t cid, SVGA3dShaderType type, uint32_t shid)
 {
-    PVMSVGA3DCONTEXT    pContext;
     PVMSVGA3DSTATE      pState = (PVMSVGA3DSTATE)pThis->svga.p3dState;
     AssertReturn(pState, VERR_NO_MEMORY);
     HRESULT             hr;
 
     Log(("vmsvga3dShaderSet %x type=%s shid=%d\n", cid, (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL", shid));
 
+    NOREF(pContext);
     if (    cid >= pState->cContexts
         ||  pState->papContexts[cid]->id != cid)
     {
