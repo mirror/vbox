@@ -362,7 +362,6 @@ out_free:
 int vbox_driver_unload(struct drm_device *dev)
 {
     struct vbox_private *vbox = dev->dev_private;
-    int i;
 
     LogFunc(("vboxvideo: %d\n", __LINE__));
     vbox_mode_fini(dev);

@@ -484,7 +484,7 @@ ssize_t vbox_connector_write_sysfs(struct device *pDev,
                                   deviceAttribute);
     pDrmDev = pVBoxConnector->base.dev;
     pVBox = pDrmDev->dev_private;
-    if (sscanf(psz, "%dx%d\n%c", &cX, &cY, &ch) != 2)
+    if (sscanf(psz, "%5dx%5d\n%c", &cX, &cY, &ch) != 2)
         return -EINVAL;
     if (   cX < 64 || cX > VBE_DISPI_MAX_XRES
         || cY < 64 || cY > VBE_DISPI_MAX_YRES)
