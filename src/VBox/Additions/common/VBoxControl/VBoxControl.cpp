@@ -987,10 +987,10 @@ void getCustomModes(HKEY hkeyVideo)
 
         /* check if the mode is OK */
         if (   (xres > (1 << 16))
-            && (yres > (1 << 16))
-            && (   (bpp != 16)
-                || (bpp != 24)
-                || (bpp != 32)))
+            || (yres > (1 << 16))
+            || (   (bpp != 16)
+                && (bpp != 24)
+                && (bpp != 32)))
             break;
 
         /* add mode to table */
@@ -1098,10 +1098,10 @@ static RTEXITCODE handleAddCustomMode(int argc, char *argv[])
 
     /** @todo better check including xres mod 8 = 0! */
     if (   (xres > (1 << 16))
-        && (yres > (1 << 16))
-        && (   (bpp != 16)
-            || (bpp != 24)
-            || (bpp != 32)))
+        || (yres > (1 << 16))
+        || (   (bpp != 16)
+            && (bpp != 24)
+            && (bpp != 32)))
     {
         VBoxControlError("invalid mode specified!\n");
         return RTEXITCODE_FAILURE;
