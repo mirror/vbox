@@ -4067,7 +4067,7 @@ void VBoxGlobal::prepare()
         else if (!::strcmp(arg, "--restore-current"))
             mRestoreCurrentSnapshot = true;
         /* Ad hoc VM reconfig options: */
-        else if (!::strcmp(arg, "--fdc"))
+        else if (!::strcmp(arg, "--fda"))
         {
             if (++i < argc)
                 m_strFloppyImage = qApp->argv()[i];
