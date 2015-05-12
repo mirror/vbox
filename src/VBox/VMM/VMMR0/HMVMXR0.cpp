@@ -842,7 +842,7 @@ static int hmR0VmxLeaveRootMode(void)
 DECLINLINE(int) hmR0VmxPageAllocZ(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCPhys)
 {
     AssertPtrReturn(pMemObj, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppVirt, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppVirt,  VERR_INVALID_PARAMETER);
     AssertPtrReturn(pHCPhys, VERR_INVALID_PARAMETER);
 
     int rc = RTR0MemObjAllocCont(pMemObj, PAGE_SIZE, false /* fExecutable */);
@@ -1261,15 +1261,17 @@ DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
  * pair to be swapped during the world-switch as part of the
  * auto-load/store MSR area in the VMCS.
  *
- * @returns true if the MSR was added -and- its value was updated, false
- *          otherwise.
- * @param   pVCpu           Pointer to the VMCPU.
- * @param   uMsr            The MSR.
- * @param   uGuestMsr       Value of the guest MSR.
- * @param   fUpdateHostMsr  Whether to update the value of the host MSR if
- *                          necessary.
+ * @returns VBox status code.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   uMsr                The MSR.
+ * @param   uGuestMsr           Value of the guest MSR.
+ * @param   fUpdateHostMsr      Whether to update the value of the host MSR if
+ *                              necessary.
+ * @param   pfAddedAndUpdated   Where to store whether the MSR was added -and-
+ *                              its value was updated. Optional, can be NULL.
  */
-static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, bool fUpdateHostMsr)
+static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, bool fUpdateHostMsr,
+                                       bool *pfAddedAndUpdated)
 {
     PVMXAUTOMSR pGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
     uint32_t    cMsrs     = pVCpu->hm.s.vmx.cMsrs;
@@ -1286,7 +1288,7 @@ static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGu
     {
         ++cMsrs;
         int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cMsrs);
-        AssertRC(rc);
+        AssertMsgRCReturn(rc, ("hmR0VmxAddAutoLoadStoreMsr: Insufficient space to add MSR %u\n", uMsr), rc);
 
         /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
         if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS)
@@ -1319,7 +1321,9 @@ static bool hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGu
         fUpdatedMsrValue = true;
     }
 
-    return fUpdatedMsrValue;
+    if (pfAddedAndUpdated)
+        *pfAddedAndUpdated = fUpdatedMsrValue;
+    return VINF_SUCCESS;
 }
 
 
@@ -4775,11 +4779,13 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #if HC_ARCH_BITS == 32 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (pVM->hm.s.fAllow64BitGuests)
         {
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false /* fUpdateHostMsr */);
-            hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false /* fUpdateHostMsr */);
-# ifdef DEBUG
+            int rc = VINF_SUCCESS;
+            rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_LSTAR,          pMixedCtx->msrLSTAR,        false, NULL);
+            rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_STAR,           pMixedCtx->msrSTAR,         false, NULL);
+            rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_SF_MASK,        pMixedCtx->msrSFMASK,       false, NULL);
+            rc |= hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_KERNEL_GS_BASE, pMixedCtx->msrKERNELGSBASE, false, NULL);
+            AssertRCReturn(rc, rc);
+#ifdef DEBUG
             PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
             for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cMsrs; i++, pMsr++)
             {
@@ -4831,7 +4837,10 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
             else
             {
-                hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_EFER, pMixedCtx->msrEFER, false /* fUpdateHostMsr */);
+                int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K6_EFER, pMixedCtx->msrEFER, false /* fUpdateHostMsr */,
+                                                    NULL /* pfAddedAndUpdated */);
+                AssertRCReturn(rc, rc);
+
                 /* We need to intercept reads too, see @bugref{7386} comment #16. */
                 hmR0VmxSetMsrPermission(pVCpu, MSR_K6_EFER, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
                 Log4(("Load[%RU32]: MSR[--]: u32Msr=%#RX32 u64Value=%#RX64 cMsrs=%u\n", pVCpu->idCpu, MSR_K6_EFER,
@@ -6790,11 +6799,11 @@ static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool
     /*
      * We assume all general purpose registers other than RSP are available.
      *
-     * RIP is a must as it will be incremented or otherwise changed.
+     * RIP is a must, as it will be incremented or otherwise changed.
      *
      * RFLAGS are always required to figure the CPL.
      *
-     * RSP isn't always required, however it's a GPR so frequently required.
+     * RSP isn't always required, however it's a GPR, so frequently required.
      *
      * SS and CS are the only segment register needed if IEM doesn't do memory
      * access (CPL + 16/32/64-bit mode), but we can only get all segment registers.
@@ -6818,7 +6827,7 @@ static int hmR0VmxSaveGuestRegsForIemExec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool
 
 
 /**
- * Ensures that we've got a complete basic context.
+ * Ensures that we've got a complete basic guest-context.
  *
  * This excludes the FPU, SSE, AVX, and similar extended state.  The interface
  * is for the interpreter.
@@ -7098,7 +7107,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGue
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0VmxCallRing3Callback() needs to be updated too.
+     * If you modify code here, check whether hmR0VmxCallRing3Callback() needs to be updated too.
      */
 
     /* Save the guest state if necessary. */
@@ -7363,8 +7372,8 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
     {
         /*
          * !!! IMPORTANT !!!
-         * If you modify code here, make sure to check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs
-         * to be updated too. This is a stripped down version which gets out ASAP trying to not trigger any assertion.
+         * If you modify code here, check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs to be updated too.
+         * This is a stripped down version which gets out ASAP, trying to not trigger any further assertions.
          */
         RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER; \
         VMMRZCallRing3RemoveNotification(pVCpu);
@@ -8786,12 +8795,16 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     {
         if (!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
         {
+            bool fMsrUpdated;
             int rc2 = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
             AssertRC(rc2);
             Assert(HMVMXCPU_GST_IS_UPDATED(pVCpu, HMVMX_UPDATED_GUEST_AUTO_LOAD_STORE_MSRS));
-            bool fMsrUpdated = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu),
-                                                          true /* fUpdateHostMsr */);
+
+            rc2 = hmR0VmxAddAutoLoadStoreMsr(pVCpu, MSR_K8_TSC_AUX, CPUMR0GetGuestTscAux(pVCpu), true /* fUpdateHostMsr */,
+                                             &fMsrUpdated);
+            AssertRC(rc2);
             Assert(fMsrUpdated || pVCpu->hm.s.vmx.fUpdatedHostMsrs);
+
             /* Finally, mark that all host MSR values are updated so we don't redo it without leaving VT-x. See @bugref{6956}. */
             pVCpu->hm.s.vmx.fUpdatedHostMsrs = true;
         }
