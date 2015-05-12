@@ -304,6 +304,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
     if (ASMAtomicReadBool(&mDataBase.mfTransferIsPending))
         return setError(E_INVALIDARG, tr("Another drop operation already is in progress"));
 
+    /* Gets reset when the thread is finished. */
     ASMAtomicWriteBool(&mDataBase.mfTransferIsPending, true);
 
     /* Dito. */
@@ -323,6 +324,8 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
         RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
+        
+        LogFlowFunc(("Starting thread ...\n"));
 
         int rc = RTThreadCreate(NULL, GuestDnDSource::i_receiveDataThread,
                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndSrcRcvData");
@@ -785,10 +788,10 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveDataThread(RTTHREAD Thread, void *pvU
 
     ASMAtomicWriteBool(&pSource->mDataBase.mfTransferIsPending, false);
 
-    LogFlowFunc(("pSource=%p returning rc=%Rrc\n", (GuestDnDSource *)pSource, rc));
-
     if (pTask)
         delete pTask;
+
+    LogFlowFunc(("pSource=%p returning rc=%Rrc\n", (GuestDnDSource *)pSource, rc));
     return rc;
 }
 
@@ -1021,6 +1024,8 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
     int rc = VINF_SUCCESS;
+
+    int rcCallback = VINF_SUCCESS; /* rc for the callback. */
     bool fNotify = false;
 
     switch (uMsg)
@@ -1091,9 +1096,11 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
+            if (RT_SUCCESS(pCBData->rc))
+                pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
             rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
             if (RT_SUCCESS(rc))
-                rc = pCBData->rc;
+                rcCallback = pCBData->rc;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
@@ -1102,8 +1109,13 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             break;
     }
 
-    if (RT_FAILURE(rc))
+    if (   RT_FAILURE(rc)
+        || RT_FAILURE(rcCallback))
+    {
         fNotify = true;
+        if (RT_SUCCESS(rcCallback))
+            rcCallback = rc;
+    }
 
     /* All URI data processed? */
     if (pCtx->mData.cbProcessed >= pCtx->mData.cbToProcess)
@@ -1112,12 +1124,12 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
         fNotify = true;
     }
 
-    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool, rc=%Rrc\n",
-                 pCtx->mData.cbProcessed, pCtx->mData.cbToProcess, fNotify, rc));
+    LogFlowFunc(("cbProcessed=%RU64, cbToProcess=%RU64, fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n",
+                 pCtx->mData.cbProcessed, pCtx->mData.cbToProcess, fNotify, rcCallback, rc));
 
     if (fNotify)
     {
-        int rc2 = pCtx->mCallback.Notify(rc);
+        int rc2 = pCtx->mCallback.Notify(rcCallback);
         AssertRC(rc2);
     }
 
