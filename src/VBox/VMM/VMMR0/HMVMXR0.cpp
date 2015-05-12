@@ -213,7 +213,7 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 typedef struct VMXTRANSIENT
 {
     /** The host's rflags/eflags. */
-    RTCCUINTREG     uEflags;
+    RTCCUINTREG     fEFlags;
 #if HC_ARCH_BITS == 32
     uint32_t        u32Alignment0;
 #endif
@@ -774,7 +774,7 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     }
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with CR4. */
-    RTCCUINTREG uEflags = ASMIntDisableFlags();
+    RTCCUINTREG fEFlags = ASMIntDisableFlags();
 
     /* Enable the VMX bit in CR4 if necessary. */
     RTCCUINTREG uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, ~0);
@@ -791,7 +791,7 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     }
 
     /* Restore interrupts. */
-    ASMSetFlags(uEflags);
+    ASMSetFlags(fEFlags);
     return rc;
 }
 
@@ -806,7 +806,7 @@ static int hmR0VmxLeaveRootMode(void)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Paranoid: Disable interrupts as, in theory, interrupts handlers might mess with CR4. */
-    RTCCUINTREG uEflags = ASMIntDisableFlags();
+    RTCCUINTREG fEFlags = ASMIntDisableFlags();
 
     /* If we're for some reason not in VMX root mode, then don't leave it. */
     RTCCUINTREG uHostCR4 = ASMGetCR4();
@@ -823,7 +823,7 @@ static int hmR0VmxLeaveRootMode(void)
         rc = VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 
     /* Restore interrupts. */
-    ASMSetFlags(uEflags);
+    ASMSetFlags(fEFlags);
     return rc;
 }
 
@@ -5243,7 +5243,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     int             rc, rc2;
     PHMGLOBALCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
-    RTCCUINTREG     uOldEflags;
+    RTCCUINTREG     fOldEFlags;
 
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
@@ -5259,7 +5259,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 #endif
 
     /* Disable interrupts. */
-    uOldEflags = ASMIntDisableFlags();
+    fOldEFlags = ASMIntDisableFlags();
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     RTCPUID idHostCpu = RTMpCpuId();
@@ -5297,7 +5297,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     if (RT_FAILURE(rc2))
     {
         SUPR0ChangeCR4(0, ~X86_CR4_VMXE);
-        ASMSetFlags(uOldEflags);
+        ASMSetFlags(fOldEFlags);
         pVM->hm.s.vmx.HCPhysVmxEnableError = HCPhysCpuPage;
         return rc2;
     }
@@ -5305,7 +5305,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     rc2 = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc2);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-    ASMSetFlags(uOldEflags);
+    ASMSetFlags(fOldEFlags);
     return rc;
 }
 
@@ -8650,14 +8650,14 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      * We also check a couple of other force-flags as a last opportunity to get the EMT back to ring-3 before
      * executing guest code.
      */
-    pVmxTransient->uEflags = ASMIntDisableFlags();
+    pVmxTransient->fEFlags = ASMIntDisableFlags();
     if (  (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
         && (   !fStepping /* Optimized for the non-stepping case, of course. */
             || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK & ~(VMCPU_FF_TIMER | VMCPU_FF_PDM_CRITSECT))) )
     {
         hmR0VmxClearEventVmcs(pVCpu);
-        ASMSetFlags(pVmxTransient->uEflags);
+        ASMSetFlags(pVmxTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
@@ -8666,7 +8666,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         hmR0VmxClearEventVmcs(pVCpu);
-        ASMSetFlags(pVmxTransient->uEflags);
+        ASMSetFlags(pVmxTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
@@ -8882,7 +8882,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 #ifdef VBOX_STRICT
     hmR0VmxCheckHostEferMsr(pVCpu);                                   /* Verify that VMRUN/VMLAUNCH didn't modify host EFER. */
 #endif
-    ASMSetFlags(pVmxTransient->uEflags);                              /* Enable interrupts. */
+    ASMSetFlags(pVmxTransient->fEFlags);                              /* Enable interrupts. */
     VMMRZCallRing3Enable(pVCpu);                                      /* It is now safe to do longjmps to ring-3!!! */
 
     /* Save the basic VM-exit reason. Refer Intel spec. 24.9.1 "Basic VM-exit Information". */

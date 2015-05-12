@@ -195,7 +195,7 @@ PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
 typedef struct SVMTRANSIENT
 {
     /** The host's rflags/eflags. */
-    RTCCUINTREG     uEflags;
+    RTCCUINTREG     fEFlags;
 #if HC_ARCH_BITS == 32
     uint32_t        u32Alignment0;
 #endif
@@ -339,7 +339,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     NOREF(fEnabledByHost);
 
     /* Paranoid: Disable interrupt as, in theory, interrupt handlers might mess with EFER. */
-    RTCCUINTREG uEflags = ASMIntDisableFlags();
+    RTCCUINTREG fEFlags = ASMIntDisableFlags();
 
     /*
      * We must turn on AMD-V and setup the host state physical address, as those MSRs are per CPU.
@@ -356,7 +356,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
 
         if (!pCpu->fIgnoreAMDVInUseError)
         {
-            ASMSetFlags(uEflags);
+            ASMSetFlags(fEFlags);
             return VERR_SVM_IN_USE;
         }
     }
@@ -368,7 +368,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, HCPhysCpuPage);
 
     /* Restore interrupts. */
-    ASMSetFlags(uEflags);
+    ASMSetFlags(fEFlags);
 
     /*
      * Theoretically, other hypervisors may have used ASIDs, ideally we should flush all non-zero ASIDs
@@ -404,7 +404,7 @@ VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS 
     NOREF(pCpu);
 
     /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with EFER. */
-    RTCCUINTREG uEflags = ASMIntDisableFlags();
+    RTCCUINTREG fEFlags = ASMIntDisableFlags();
 
     /* Turn off AMD-V in the EFER MSR. */
     uint64_t u64HostEfer = ASMRdMsr(MSR_K6_EFER);
@@ -414,7 +414,7 @@ VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS 
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
 
     /* Restore interrupts. */
-    ASMSetFlags(uEflags);
+    ASMSetFlags(fEFlags);
 
     return VINF_SUCCESS;
 }
@@ -3024,18 +3024,18 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
      * We also check a couple of other force-flags as a last opportunity to get the EMT back to ring-3 before
      * executing guest code.
      */
-    pSvmTransient->uEflags = ASMIntDisableFlags();
+    pSvmTransient->fEFlags = ASMIntDisableFlags();
     if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
         || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
-        ASMSetFlags(pSvmTransient->uEflags);
+        ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        ASMSetFlags(pSvmTransient->uEflags);
+        ASMSetFlags(pSvmTransient->fEFlags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
@@ -3238,7 +3238,7 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-    ASMSetFlags(pSvmTransient->uEflags);                        /* Enable interrupts. */
+    ASMSetFlags(pSvmTransient->fEFlags);                        /* Enable interrupts. */
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
     /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
@@ -4736,7 +4736,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXsetbv(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         HMCPU_CF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 
     pVCpu->hm.s.fLoadSaveGuestXcr0 = (pCtx->cr4 & X86_CR4_OSXSAVE) && pCtx->aXcr[0] != ASMGetXcr0();
-    Log4(("hmR0SvmExitXsetbv: New XCR0=%#RX64 fLoadSaveGuestXcr0=%d (cr4=%RX64) rcStrict=%Rrc\n", 
+    Log4(("hmR0SvmExitXsetbv: New XCR0=%#RX64 fLoadSaveGuestXcr0=%d (cr4=%RX64) rcStrict=%Rrc\n",
           pCtx->aXcr[0], pVCpu->hm.s.fLoadSaveGuestXcr0, pCtx->cr4, VBOXSTRICTRC_VAL(rcStrict)));
 
     HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
