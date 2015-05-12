@@ -206,6 +206,11 @@ VBoxOGL_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_OGL_CRUTIL) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
+
+VBoxOGL_LIBS.win += \
+	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi$(VBOX_SUFF_LIB)
+
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGL_LIBS += \
  	$(PATH_STAGE_LIB)/libXcomposite.so \
@@ -241,6 +246,12 @@ VBoxOGL-x86_LIBS = $(VBOX_LIB_IPRT_GUEST_R3_SHARED_X86) \
 	$(VBOX_LIB_VBGL_R3_SHARED_X86) \
 	$(VBOX_LIB_OGL_CRUTIL_X86) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB)
+
+VBoxOGL-x86_LIBS.win += \
+	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
+
+
 VBoxOGL-x86_SOURCES.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_SOURCES.win))
 VBoxOGL-x86_CLEAN.win = $(subst cropengl.def,cropengl-x86.def,$(VBoxOGL_CLEAN.win))
 VBoxOGL-x86_DEFS = $(VBoxOGL_DEFS) VBOX_WDDM_WOW64

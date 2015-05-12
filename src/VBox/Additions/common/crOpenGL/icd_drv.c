@@ -22,6 +22,11 @@
 #include "stub.h"
 #include "cr_mem.h"
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+# include <VBox/VBoxCrHgsmi.h>
+# include <VBox/VBoxUhgsmi.h>
+#endif
+
 #include <windows.h>
 
 //TODO: consider
@@ -154,6 +159,9 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
 {
     char dpyName[MAX_DPY_NAME];
     ContextInfo *context;
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    PVBOXUHGSMI pHgsmi = NULL;
+#endif
 
     CR_DDI_PROLOGUE();
 
@@ -169,9 +177,13 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
         desiredVisual |= ComputeVisBits( hdc );
 #endif
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    pHgsmi = VBoxCrHgsmiCreate();
+#endif
+
     context = stubNewContext(dpyName, desiredVisual, UNDECIDED, 0
 #if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
-        , NULL
+        , pHgsmi
 #endif
             );
     if (!context)
@@ -300,10 +312,32 @@ int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPI
 
 BOOL APIENTRY DrvDeleteContext(HGLRC hglrc)
 {
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    ContextInfo *pContext;
+    PVBOXUHGSMI pHgsmi = NULL;
+#endif
+
     CR_DDI_PROLOGUE();
-    /*crDebug( "DrvDeleteContext(0x%x) called", hglrc );*/
+    crDebug( "DrvDeleteContext(0x%x) called", hglrc );
+
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    crHashtableLock(stub.contextTable);
+
+    pContext = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
+    if (pContext)
+        pHgsmi = pContext->pHgsmi;
+
+    crHashtableUnlock(stub.contextTable);
+#endif
+
     stubDestroyContext( (unsigned long) hglrc );
-    return 1;
+
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+    if (pHgsmi)
+        VBoxCrHgsmiDestroy(pHgsmi);
+#endif
+
+    return true;
 }
 
 BOOL APIENTRY DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)

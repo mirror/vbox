@@ -1459,6 +1459,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
             crNetFreeConnection(ns.conn);
         }
 
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        VBoxCrHgsmiInit();
+#endif
         break;
     }
 
@@ -1472,6 +1475,11 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
             CRASSERT(stub.spu);
             stub.spu->dispatch_table.VBoxDetachThread();
         }
+
+        
+#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+        VBoxCrHgsmiTerm();
+#endif
 
         stubSPUSafeTearDown();
 
