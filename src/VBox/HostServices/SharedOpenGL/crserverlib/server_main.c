@@ -1316,7 +1316,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     if (version < SHCROGL_SSM_VERSION_WITH_SINGLE_DEPTH_STENCIL)
     {
         rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-            pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
+            pMural ? pMural->idDepthStencilRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
         /* Init to default depth value, just in case. "pData->cElements - 1" because we incremented counter in crVBoxAddFBDataElement(). */
@@ -1325,7 +1325,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
             pF[i] = 1.;
 
         rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-            pMural ? pMural->idDepthRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
+            pMural ? pMural->idDepthStencilRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
         return VINF_SUCCESS;
@@ -1350,7 +1350,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     if (pCtxInfo->CreateInfo.requestedVisualBits & CR_DEPTH_BIT)
     {
         rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-            pMural ? pMural->idDepthRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
+            pMural ? pMural->idDepthStencilRB : 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
         AssertReturn(rc == VINF_SUCCESS, rc);
 
         /* Init to default depth value, just in case. "pData->cElements - 1" because we incremented counter in crVBoxAddFBDataElement(). */
@@ -1362,7 +1362,7 @@ static int crVBoxServerFBImageDataInitEx(CRFBData *pData, CRContextInfo *pCtxInf
     if (pCtxInfo->CreateInfo.requestedVisualBits & CR_STENCIL_BIT)
     {
         rc = crVBoxAddFBDataElement(pData, pMural && pMural->fRedirected ? pMural->aidFBOs[CR_SERVER_FBO_FB_IDX(pMural)] : 0,
-            pMural ? pMural->idDepthRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
+            pMural ? pMural->idDepthStencilRB : 0, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_INT);
         AssertReturn(rc == VINF_SUCCESS, rc);
     }
 

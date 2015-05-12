@@ -255,8 +255,7 @@ typedef struct {
     GLint iCurDrawBuffer;
     GLint iCurReadBuffer;
 
-    GLuint idDepthRB;
-    GLuint idStencilRB;
+    GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
 
     GLboolean fHasParentWindow;
