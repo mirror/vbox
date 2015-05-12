@@ -500,10 +500,10 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendDataThread(RTTHREAD Thread, void *pvUser
 
     ASMAtomicWriteBool(&pTarget->mDataBase.mfTransferIsPending, false);
 
-    LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pTarget, rc));
-
     if (pTask)
         delete pTask;
+
+    LogFlowFunc(("pTarget=%p returning rc=%Rrc\n", (GuestDnDTarget *)pTarget, rc));
     return rc;
 }
 
@@ -560,6 +560,8 @@ HRESULT GuestDnDTarget::sendData(ULONG aScreenId, const com::Utf8Str &aFormat, c
 
         SendDataTask *pTask = new SendDataTask(this, pSendCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
+
+        LogFlowFunc(("Starting thread ...\n"));
 
         int rc = RTThreadCreate(NULL, GuestDnDTarget::i_sendDataThread,
                                 (void *)pTask, 0, RTTHREADTYPE_MAIN_WORKER, 0, "dndTgtSndData");
