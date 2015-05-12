@@ -1796,7 +1796,8 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  Long-mode:          %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_LongMode)));
         if self.fpApiVer >= 3.2:
             reporter.log("  PAE:                %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_PAE)));
-            reporter.log("  Synthetic CPU:      %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_Synthetic)));
+            if self.fpApiVer < 5.0:
+                reporter.log("  Synthetic CPU:      %s" % (oVM.getCPUProperty(vboxcon.CPUPropertyType_Synthetic)));
         else:
             reporter.log("  PAE:                %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_PAE)));
             reporter.log("  Synthetic CPU:      %s" % (oVM.getCpuProperty(vboxcon.CpuPropertyType_Synthetic)));
