@@ -1303,7 +1303,7 @@ static int handleCompact(HandlerArg *a)
                             /* Release the file handle and continue.*/
                             RTVfsFileRelease(hVfsFile);
                         }
-                        else if RT_FAILURE(rc)
+                        else if (RT_FAILURE(rc))
                             break;
                         else
                         {

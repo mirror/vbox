@@ -1163,9 +1163,9 @@ static int hdaCmdSync(PHDASTATE pThis, bool fLocal)
             do
             {
                 const char *prefix;
-                if ((i + j) == HDA_REG(pThis, CORBRP);
+                if ((i + j) == HDA_REG(pThis, CORBRP));
                     prefix = "[R]";
-                else if ((i + j) == HDA_REG(pThis, CORBWP);
+                else if ((i + j) == HDA_REG(pThis, CORBWP));
                     prefix = "[W]";
                 else
                     prefix = "   "; /* three spaces */
