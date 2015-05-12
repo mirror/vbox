@@ -88,7 +88,7 @@ Qt::DropAction UIDnDHandler::dragEnter(ulong screenID, int x, int y,
                                        Qt::DropAction proposedAction, Qt::DropActions possibleActions,
                                        const QMimeData *pMimeData)
 {
-    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n", 
+    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n",
                  m_enmMode, screenID, x, y, toVBoxDnDAction(proposedAction)));
 
     if (m_enmMode != DNDMODE_UNKNOWN)
@@ -112,7 +112,7 @@ Qt::DropAction UIDnDHandler::dragMove(ulong screenID, int x, int y,
                                       Qt::DropAction proposedAction, Qt::DropActions possibleActions,
                                       const QMimeData *pMimeData)
 {
-    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n", 
+    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n",
                  m_enmMode, screenID, x, y, toVBoxDnDAction(proposedAction)));
 
     if (m_enmMode != DNDMODE_HOSTTOGUEST)
@@ -134,7 +134,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
                                       Qt::DropAction proposedAction, Qt::DropActions possibleActions,
                                       const QMimeData *pMimeData)
 {
-    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n", 
+    LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n",
                  m_enmMode, screenID, x, y, toVBoxDnDAction(proposedAction)));
 
     if (m_enmMode != DNDMODE_HOSTTOGUEST)
@@ -211,20 +211,22 @@ void UIDnDHandler::dragLeave(ulong screenID)
 int UIDnDHandler::dragStart(const QStringList &lstFormats,
                             Qt::DropAction defAction, Qt::DropActions actions)
 {
+    int rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
     m_lstFormats = lstFormats;
     m_defAction  = defAction;
     m_actions    = actions;
 
     LogFlowFunc(("m_defAction=0x%x\n", m_defAction));
     LogFlowFunc(("Number of formats: %d\n", m_lstFormats.size()));
-#ifdef DEBUG
+# ifdef DEBUG
     for (int i = 0; i < m_lstFormats.size(); i++)
         LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toAscii().constData()));
-#endif
+# endif
 
-    int rc = VINF_SUCCESS;
-
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
 
     UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent);
     if (!pDropSource)
@@ -254,7 +256,7 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
     if (pDataObject)
         pDataObject->Release();
 
-#else /* !RT_OS_WINDOWS */
+# else /* !RT_OS_WINDOWS */
 
     QDrag *pDrag = new QDrag(m_pParent);
     if (!pDrag)
@@ -286,7 +288,13 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
 
     /* pDrag will be cleaned up by Qt automatically. */
 
-#endif /* !RT_OS_WINDOWS */
+# endif /* !RT_OS_WINDOWS */
+
+#else /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+    rc = VERR_NOT_SUPPORTED;
+
+#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -296,7 +304,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
 {
     int rc;
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
-  
+
     LogFlowFunc(("enmMode=%RU32, m_fIsPending=%RTbool, screenID=%RU32\n", m_enmMode, m_fIsPending, screenID));
 
     {
@@ -378,7 +386,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
     if (!lstFmtNative.isEmpty())
     {
         rc = dragStart(lstFmtNative,
-                       toQtDnDAction(defaultAction), toQtDnDActions(vecActions));          
+                       toQtDnDAction(defaultAction), toQtDnDActions(vecActions));
     }
     else /* No format data from the guest arrived yet. */
         rc = VERR_NO_DATA;
@@ -432,7 +440,7 @@ int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
                                             tr("Retrieving data ..."), ":/progress_dnd_gh_90px.png",
                                             m_pParent);
 
-        LogFlowFunc(("fCanceled=%RTbool, fCompleted=%RTbool, isOk=%RTbool, hrc=%Rhrc\n", 
+        LogFlowFunc(("fCanceled=%RTbool, fCompleted=%RTbool, isOk=%RTbool, hrc=%Rhrc\n",
                      progress.GetCanceled(), progress.GetCompleted(), progress.isOk(), progress.GetResultCode()));
 
         if (!progress.GetCanceled())
