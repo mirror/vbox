@@ -9067,16 +9067,23 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
          */
 
 #ifdef VBOX_WITH_GUEST_PROPS
+        /* Guest properties (optional) */
+
         /* Only load transient guest properties for configs which have saved
          * state, because there shouldn't be any for powered off VMs. The same
          * logic applies for snapshots, as offline snapshots shouldn't have
          * any such properties. They confuse the code in various places.
          * Note: can't rely on the machine state, as it isn't set yet. */
         bool fSkipTransientGuestProperties = mSSData->strStateFilePath.isEmpty();
-        /* Guest properties (optional) */
-        for (settings::GuestPropertiesList::const_iterator it = data.llGuestProperties.begin();
-            it != data.llGuestProperties.end();
-            ++it)
+        /* apologies for the hacky unconst() usage, but this needs hacking
+         * actually inconsistent settings into consistency, otherwise there
+         * will be some corner cases where the inconsistency survives
+         * surprisingly long without getting fixed, especially for snapshots
+         * as there are no config changes. */
+        settings::GuestPropertiesList &llGuestProperties = unconst(data.llGuestProperties);
+        for (settings::GuestPropertiesList::iterator it = llGuestProperties.begin();
+            it != llGuestProperties.end();
+            /*nothing*/)
         {
             const settings::GuestProperty &prop = *it;
             uint32_t fFlags = guestProp::NILFLAG;
@@ -9084,9 +9091,13 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
             if (   fSkipTransientGuestProperties
                 && (   fFlags & guestProp::TRANSIENT
                     || fFlags & guestProp::TRANSRESET))
+            {
+                it = llGuestProperties.erase(it);
                 continue;
+            }
             HWData::GuestProperty property = { prop.strValue, (LONG64) prop.timestamp, fFlags };
             mHWData->mGuestProperties[prop.strName] = property;
+            ++it;
         }
 
         mHWData->mGuestPropertyNotificationPatterns = data.strNotificationPatterns;
