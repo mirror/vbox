@@ -300,7 +300,6 @@ protected:
     /** Draws corresponding @a rect of passed @a image with @a painter. */
     static void drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                               int iContentsShiftX, int iContentsShiftY,
-                              ScalingOptimizationType enmScalingOptimizationType,
                               bool fUseUnscaledHiDPIOutput,
                               HiDPIOptimizationType hiDPIOptimizationType,
                               double dBackingScaleFactor);
@@ -1369,8 +1368,7 @@ void UIFrameBufferPrivate::paintDefault(QPaintEvent *pEvent)
     /* Draw image rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  scalingOptimizationType(), useUnscaledHiDPIOutput(),
-                  hiDPIOptimizationType(), backingScaleFactor());
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 }
 
 void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
@@ -1437,8 +1435,7 @@ void UIFrameBufferPrivate::paintSeamless(QPaintEvent *pEvent)
     /* Paint rectangle: */
     drawImageRect(painter, sourceImage, paintRect,
                   m_pMachineView->contentsX(), m_pMachineView->contentsY(),
-                  scalingOptimizationType(), useUnscaledHiDPIOutput(),
-                  hiDPIOptimizationType(), backingScaleFactor());
+                  useUnscaledHiDPIOutput(), hiDPIOptimizationType(), backingScaleFactor());
 }
 
 /* static */
@@ -1501,13 +1498,10 @@ void UIFrameBufferPrivate::eraseImageRect(QPainter &painter, const QRect &rect,
 /* static */
 void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image, const QRect &rect,
                                          int iContentsShiftX, int iContentsShiftY,
-                                         ScalingOptimizationType enmScalingOptimizationType,
                                          bool fUseUnscaledHiDPIOutput,
                                          HiDPIOptimizationType hiDPIOptimizationType,
                                          double dBackingScaleFactor)
 {
-    NOREF(enmScalingOptimizationType);
-
     /* Calculate offset: */
     size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
                     (rect.y() + iContentsShiftY) * image.bytesPerLine();
