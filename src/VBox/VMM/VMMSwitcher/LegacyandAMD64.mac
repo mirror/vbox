@@ -646,8 +646,6 @@ GLOBALNAME ICEnterTarget
     lidt    [rdx + CPUMCPU.Hyper.idtr]
 %endif
 
-    ; load the hypervisor function address
-    mov     r9, [rdx + CPUMCPU.Hyper.eip]
     DEBUG64_S_CHAR('8')
 
     ; Check if we need to restore the guest FPU state
@@ -739,6 +737,8 @@ htg_debug_done:
     lea     rax, [htg_return wrt rip]
     push    rax                         ; return address
 
+    ; load the hypervisor function address
+    mov     r9, [rdx + CPUMCPU.Hyper.eip]
     cmp     r9d, HM64ON32OP_VMXRCStartVM64
     jz      NAME(VMXRCStartVM64)
     cmp     r9d, HM64ON32OP_SVMRCVMRun64
