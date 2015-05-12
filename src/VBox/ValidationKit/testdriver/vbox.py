@@ -8,7 +8,7 @@ VirtualBox Specific base testdriver.
 
 __copyright__ = \
 """
-Copyright (C) 2010-2014 Oracle Corporation
+Copyright (C) 2010-2015 Oracle Corporation
 
 This file is part of VirtualBox Open Source Edition (OSE), as
 available from http://www.virtualbox.org. This file is free software;
@@ -1780,7 +1780,10 @@ class TestDriver(base.TestDriver):                                              
             reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPID, oVM.sessionPID));
         else:
             reporter.log("  Session PID:        %u (%#x)" % (oVM.sessionPid, oVM.sessionPid));
-        reporter.log("  Session Type:       %s" % (oVM.sessionType));
+        if self.fpApiVer >= 5.0:
+            reporter.log("  Session Name:       %s" % (oVM.sessionName));
+        else:
+            reporter.log("  Session Name:       %s" % (oVM.sessionType));
         reporter.log("  CPUs:               %s" % (oVM.CPUCount));
         reporter.log("  RAM:                %sMB" % (oVM.memorySize));
         reporter.log("  VRAM:               %sMB" % (oVM.VRAMSize));
@@ -2219,7 +2222,10 @@ class TestDriver(base.TestDriver):                                              
         # Get the original values so we're not subject to
         try:
             eCurState =             oVM.sessionState;
-            sCurType  = sOrgType  = oVM.sessionType;
+            if self.fpApiVer >= 5.0:
+                sCurName  = sOrgName  = oVM.sessionName;
+            else:
+                sCurName  = sOrgName  = oVM.sessionType;
             if self.fpApiVer >= 4.2:
                 iCurPid   = iOrgPid   = oVM.sessionPID;
             else:
@@ -2233,8 +2239,8 @@ class TestDriver(base.TestDriver):                                              
 
         msStart = base.timestampMilli();
         while iCurPid  == iOrgPid \
-          and sCurType == sOrgType \
-          and sCurType != '' \
+          and sCurName == sOrgName \
+          and sCurName != '' \
           and base.timestampMilli() - msStart < cMsTimeout \
           and (   eCurState == vboxcon.SessionState_Unlocking \
                or eCurState == vboxcon.SessionState_Spawning \
@@ -2242,7 +2248,7 @@ class TestDriver(base.TestDriver):                                              
             self.processEvents(1000);
             try:
                 eCurState = oVM.sessionState;
-                sCurType  = oVM.sessionType;
+                sCurName  = oVM.sessionName if self.fpApiVer >= 5.0 else oVM.sessionType;
                 iCurPid   = oVM.sessionPID if self.fpApiVer >= 4.2 else oVM.sessionPid;
             except Exception, oXcpt:
                 if ComError.notEqual(oXcpt, ComError.E_ACCESSDENIED):
