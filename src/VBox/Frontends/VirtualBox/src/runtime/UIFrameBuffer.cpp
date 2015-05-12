@@ -1506,6 +1506,8 @@ void UIFrameBufferPrivate::drawImageRect(QPainter &painter, const QImage &image,
                                          HiDPIOptimizationType hiDPIOptimizationType,
                                          double dBackingScaleFactor)
 {
+    NOREF(enmScalingOptimizationType);
+
     /* Calculate offset: */
     size_t offset = (rect.x() + iContentsShiftX) * image.depth() / 8 +
                     (rect.y() + iContentsShiftY) * image.bytesPerLine();
