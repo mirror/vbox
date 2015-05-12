@@ -30,7 +30,7 @@
 #include "CSession.h"
 
 /* Forward declarations: */
-class UIDnDDrag;
+class UIDnDHandler;
 
 class UIDnDDataObject : public IDataObject
 {
@@ -47,7 +47,7 @@ public:
 
 public:
 
-    UIDnDDataObject(CSession &session, CDnDSource &dndSource, const QStringList &lstFormats, QWidget *pParent);
+    UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &lstFormats);
     virtual ~UIDnDDataObject(void);
 
 public: /* IUnknown methods. */
@@ -83,28 +83,24 @@ protected:
     void RegisterFormat(FORMATETC *pFormatEtc, CLIPFORMAT clipFormat, TYMED tyMed = TYMED_HGLOBAL,
                         LONG lindex = -1, DWORD dwAspect = DVASPECT_CONTENT, DVTARGETDEVICE *pTargetDevice = NULL);
 
-    QWidget    *mpParent;
-    CSession    mSession;
-    CDnDSource  mDnDSource;
-    Status      mStatus;
-    LONG        mRefCount;
-    /** Number of native formats registered. This
-     *  can be a different number than supplied with
-     *  mlstFormats. */
-    ULONG       mcFormats;
-    FORMATETC  *mpFormatEtc;
-    STGMEDIUM  *mpStgMedium;
-    RTSEMEVENT  mSemEvent;
-    QStringList mlstFormats;
-    QString     mstrFormat;
-    /** The retrieved data as a QVariant. Needed
-     *  for buffering in case a second format needs
-     *  the same data, e.g. CF_TEXT and CF_UNICODETEXT. */
-    QVariant    mVaData;
+    UIDnDHandler   *m_pDnDHandler;
+
+    Status          mStatus;
+    LONG            mRefCount;
+    /** Number of native formats registered. This can be a different number than supplied with mlstFormats. */
+    ULONG           mcFormats;
+    FORMATETC      *mpFormatEtc;
+    STGMEDIUM      *mpStgMedium;
+    RTSEMEVENT      mSemEvent;
+    QStringList     mlstFormats;
+    QString         mstrFormat;
+    /** The retrieved data as a QVariant. Needed for buffering in case a second format needs the same data,
+     *  e.g. CF_TEXT and CF_UNICODETEXT. */
+    QVariant        mVaData;
     /** The retrieved data as a raw buffer. */
-    void       *mpvData;
+    void           *mpvData;
     /** Raw buffer size (in bytes). */
-    uint32_t    mcbData;
+    uint32_t        mcbData;
 };
 
 #endif /* ___UIDnDDataObject_win_h___ */

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,6 @@
 
 /* GUI includes: */
 # include "UIDnDMIMEData.h"
-# include "UIDnDDrag.h"
 # include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
@@ -40,23 +39,24 @@
 #include <VBox/log.h>
 
 
-UIDnDMimeData::UIDnDMimeData(CSession &session,
-                             CDnDSource &dndSource,
-                             QStringList formats,
-                             Qt::DropAction defAction, Qt::DropActions actions,
-                             QWidget *pParent)
-    : m_Session(session)
-    , m_DnDSource(dndSource)
-    , m_lstFormats(formats)
+UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
+                             QStringList lstFormats, Qt::DropAction defAction, Qt::DropActions actions)
+    : m_pDnDHandler(pDnDHandler)
+    , m_lstFormats(lstFormats)
     , m_defAction(defAction)
     , m_actions(actions)
-    , m_pParent(pParent)
     , m_enmState(Dragging)
     , m_vaData(QVariant::Invalid)
 {
     LogFlowThisFuncEnter();
 
-    /*
+#ifdef DEBUG
+    LogFlowFunc(("Number of formats: %d\n", lstFormats.size()));
+    for (int i = 0; i < lstFormats.size(); i++)
+        LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toAscii().constData()));
+#endif
+
+     /**
      * This is unbelievable hacky, but I didn't find another way. Stupid
      * Qt QDrag interface is so less verbose, that we in principle know
      * nothing about what happens when the user drag something around. It
@@ -82,41 +82,36 @@ UIDnDMimeData::UIDnDMimeData(CSession &session,
      *       events will come through anymore. At this point DoDragDrop is modal
      *       and will take care of all the input handling. */
 #ifndef RT_OS_WINDOWS
+    /* Install the event filter in a deferred way. */
     QTimer::singleShot(0, this, SLOT(sltInstallEventFilter()));
 #endif
-
-#ifdef DEBUG
-    LogFlowFunc(("Number of formats: %d\n", formats.size()));
-    for (int i = 0; i < formats.size(); i++)
-        LogFlowFunc(("\tFormat %d: %s\n", i, formats.at(i).toAscii().constData()));
-#endif
 }
 
-void UIDnDMimeData::sltDropActionChanged(Qt::DropAction dropAction)
-{
-    LogFlowFunc(("dropAction=0x%x\n", dropAction));
-    m_defAction = dropAction;
-}
-
-QStringList UIDnDMimeData::formats(void) const
+QStringList UIDnDMIMEData::formats(void) const
 {
     return m_lstFormats;
 }
 
-bool UIDnDMimeData::hasFormat(const QString &strMIMEType) const
+bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
 {
     bool fRc = m_lstFormats.contains(strMIMEType);
     LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool)\n",
-                 strMIMEType.toStdString().c_str(),
-                 fRc, QMimeData::hasFormat(strMIMEType)));
+                 strMIMEType.toStdString().c_str(), fRc, QMimeData::hasFormat(strMIMEType)));
     return fRc;
 }
 
-QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
-                                     QVariant::Type vaType)
+/**
+ * Called by Qt's drag'n drop operation (QDrag) for retrieving the actual drag'n drop
+ * data in case of a successful drag'n drop operation.
+ *
+ * @param strMIMEType           MIME type string.
+ * @param vaType                Variant containing the actual data based on the the MIME type.
+ *
+ * @return QVariant
+ */
+QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type vaType) const
 {
-    LogFlowFunc(("m_enmState=%d, mimeType=%s, type=%d (%s)\n",
-                 m_enmState, strMIMEType.toStdString().c_str(),
+    LogFlowFunc(("state=%RU32, mimeType=%s, type=%d (%s)\n", m_enmState, strMIMEType.toStdString().c_str(),
                  vaType, QVariant::typeToName(vaType)));
 
     bool fCanDrop = true;
@@ -138,8 +133,7 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
     if (   fCanDrop
         && !m_lstFormats.contains(strMIMEType))
     {
-        LogFlowFunc(("Unsupported MIME type=%s\n",
-                     strMIMEType.toStdString().c_str()));
+        LogRel3(("DnD: Unsupported MIME type=%s\n", strMIMEType.toStdString().c_str()));
         fCanDrop = false;
     }
 
@@ -153,68 +147,51 @@ QVariant UIDnDMimeData::retrieveData(const QString &strMIMEType,
              /* URI list. */
              || vaType == QVariant::List))
     {
-        LogFlowFunc(("Unsupported data type=%d (%s)\n",
-                     vaType, QVariant::typeToName(vaType)));
+        LogRel3(("DnD: Unsupported data type=%d (%s)\n", vaType, QVariant::typeToName(vaType)));
         fCanDrop = false;
     }
 
+    LogRel3(("DnD: State=%ld, fCanDrop=%RTbool\n", m_enmState, fCanDrop));
+
     if (!fCanDrop)
     {
-        LogFlowFunc(("Skipping request, m_enmState=%d ...\n",
-                     m_enmState));
+        LogFlowFunc(("Skipping request, state=%RU32 ...\n", m_enmState));
         return QMimeData::retrieveData(strMIMEType, vaType);
     }
 
-    int rc = VINF_SUCCESS;
-    if (m_enmState == Dropped)
-    {
-        rc = UIDnDDrag::RetrieveData(m_Session,
-                                     m_DnDSource,
-                                     m_defAction,
-                                     strMIMEType, vaType, m_vaData,
-                                     m_pParent);
-        if (RT_SUCCESS(rc))
-        {
-            /* Tell ourselves that data became available. */
-            emit sigDataAvailable(strMIMEType);
-        }
-        else
-        {
-            m_enmState = Canceled;
-        }
-    }
+    /* Note: The const_cast is used because this function needs to be const (otherwise
+     *       Qt won't call it), but we need the stuff in an unconst'ed way. */
+    int rc = const_cast<UIDnDMIMEData *>(this)->retrieveDataInternal(strMIMEType, vaType);
 
-    LogFlowFunc(("Returning rc=%Rrc, m_enmState=%ld\n",
-                 rc, m_enmState));
+    LogFlowFunc(("Returning rc=%Rrc, state=%RU32\n", rc, m_enmState));
     return m_vaData;
 }
 
 #ifndef RT_OS_WINDOWS
-bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
+bool UIDnDMIMEData::eventFilter(QObject *pObject, QEvent *pEvent)
 {
+    bool fRemoveFilter = false;
+
     if (pEvent)
     {
         switch (pEvent->type())
         {
-#ifdef DEBUG_andy
             case QEvent::MouseMove:
             {
                 QMouseEvent *pMouseEvent = (QMouseEvent*)(pEvent);
                 AssertPtr(pMouseEvent);
-                LogFlowFunc(("MouseMove: x=%d, y=%d\n",
-                             pMouseEvent->globalX(), pMouseEvent->globalY()));
+                LogFlowFunc(("MouseMove: x=%d, y=%d\n", pMouseEvent->globalX(), pMouseEvent->globalY()));
 
-                return true;
-                /* Never reached. */
+                break;
             }
-#endif
+
             case QEvent::MouseButtonRelease:
             {
                 LogFlowFunc(("MouseButtonRelease\n"));
                 m_enmState = Dropped;
 
-                return true;
-                /* Never reached. */
+                fRemoveFilter = true;
+                break;
             }
 
             case QEvent::KeyPress:
@@ -222,12 +199,12 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
                 /* ESC pressed? */
                 if (static_cast<QKeyEvent*>(pEvent)->key() == Qt::Key_Escape)
                 {
-                    LogFlowFunc(("ESC pressed, cancelling drag and drop operation\n"));
+                    LogRel2(("DnD: ESC pressed, cancelling drag and drop operation\n"));
                     m_enmState = Canceled;
-                }
 
-                return true;
-                /* Never reached. */
+                    fRemoveFilter = true;
+                }
+                break;
             }
 
             default:
@@ -235,18 +212,19 @@ bool UIDnDMimeData::eventFilter(QObject *pObject, QEvent *pEvent)
         }
     }
 
+    if (fRemoveFilter)
+    {
+        LogFlowFunc(("Removing event filter ...\n"));
+        AssertPtr(qApp);
+        qApp->removeEventFilter(this);
+    }
+
+    /* Do normal processing by Qt. */
     return QObject::eventFilter(pObject, pEvent);
 }
+#endif /* !RT_OS_WINDOWS */
 
-void UIDnDMimeData::sltInstallEventFilter(void)
-{
-    LogFlowFunc(("Installing event filter ...\n"));
-    AssertPtr(qApp);
-    qApp->installEventFilter(this);
-}
-#endif /* RT_OS_WINDOWS */
-
-int UIDnDMimeData::setData(const QString &mimeType)
+int UIDnDMIMEData::setData(const QString &mimeType)
 {
     LogFlowFunc(("mimeType=%s, dataType=%s\n",
                  mimeType.toAscii().constData(), m_vaData.typeName()));
@@ -274,11 +252,11 @@ int UIDnDMimeData::setData(const QString &mimeType)
             for (int i = 0; i < lstData.size(); i++)
             {
                 QFileInfo fileInfo(lstData.at(i).toString());
-#ifdef DEBUG
+
                 LogFlowFunc(("\tURL: %s (fExists=%RTbool, fIsDir=%RTbool, cb=%RU64)\n",
                              fileInfo.absoluteFilePath().constData(), fileInfo.exists(),
                              fileInfo.isDir(), fileInfo.size()));
-#endif
+
                 lstURL << QUrl::fromLocalFile(fileInfo.absoluteFilePath());
             }
             LogFlowFunc(("Number of URLs: %d\n",  lstURL.size()));
@@ -296,4 +274,47 @@ int UIDnDMimeData::setData(const QString &mimeType)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
+int UIDnDMIMEData::retrieveDataInternal(const QString &strMIMEType, QVariant::Type vaType)
+{
+    LogFlowFunc(("state=%RU32, mimeType=%s, type=%d (%s)\n", m_enmState,
+                  strMIMEType.toStdString().c_str(), vaType, QVariant::typeToName(vaType)));
+
+    AssertPtr(m_pDnDHandler);
+    int rc = m_pDnDHandler->retrieveData(m_defAction, strMIMEType, vaType, m_vaData);
+    if (RT_SUCCESS(rc))
+    {
+        /* Nothing to do here yet. */
+    }
+    else if (rc == VERR_CANCELLED)
+        m_enmState = Canceled;
+    else
+        m_enmState = Error;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Issued by the QDrag object as soon as the current drop action has changed.
+ *
+ * @param dropAction            New drop action to use.
+ */
+void UIDnDMIMEData::sltDropActionChanged(Qt::DropAction dropAction)
+{
+    LogFlowFunc(("dropAction=0x%x\n", dropAction));
+    m_defAction = dropAction;
+}
+
+#ifndef RT_OS_WINDOWS
+/**
+ * Issued by ourselves to install the event filter.
+ */
+void UIDnDMIMEData::sltInstallEventFilter(void)
+{
+    LogFlowFunc(("Installing event filter ...\n"));
+    AssertPtr(qApp);
+    qApp->installEventFilter(this);
+}
+#endif
 

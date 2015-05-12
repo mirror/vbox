@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,9 +30,6 @@
 
 #include "UIDnDHandler.h"
 
-/* Forward declarations: */
-class UIDnDDrag;
-
 /** @todo Subclass QWindowsMime / QMacPasteboardMime
  *  to register own/more MIME types. */
 
@@ -40,7 +37,7 @@ class UIDnDDrag;
  * Own implementation of QMimeData for starting and
  * handling all guest-to-host transfers.
  */
-class UIDnDMimeData: public QMimeData
+class UIDnDMIMEData: public QMimeData
 {
     Q_OBJECT;
 
@@ -54,12 +51,16 @@ class UIDnDMimeData: public QMimeData
          *  over to the host, based on the (MIME) metadata. */
         Dropped,
         /** The operation has been canceled. */
-        Canceled
+        Canceled,
+        /** An error occurred. */
+        Error,
+        /** The usual 32-bit type blow up. */
+        State_32BIT_Hack = 0x7fffffff
     };
 
 public:
 
-    UIDnDMimeData(CSession &session, CDnDSource &dndSource, QStringList formats, Qt::DropAction defAction, Qt::DropActions actions, QWidget *pParent);
+    UIDnDMIMEData(UIDnDHandler *pDnDHandler, QStringList formats, Qt::DropAction defAction, Qt::DropActions actions);
 
 public:
 
@@ -76,31 +77,29 @@ protected:
 
     virtual bool hasFormat(const QString &mimeType) const;
 
-    virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type);
+    virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type) const;
 
 #ifndef RT_OS_WINDOWS
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif
     /** @}  */
 
-signals:
+    int retrieveDataInternal(const QString &strMIMEType, QVariant::Type vaType);
 
-    void sigDataAvailable(const QString &mimeType) const;
-
-private slots:
+protected slots:
 
 #ifndef RT_OS_WINDOWS
     void sltInstallEventFilter(void);
 #endif
 
-private:
+protected:
 
-    CSession          m_Session;
-    CDnDSource        m_DnDSource;
+    UIDnDHandler     *m_pDnDHandler;
+
     QStringList       m_lstFormats;
     Qt::DropAction    m_defAction;
     Qt::DropActions   m_actions;
-    QWidget          *m_pParent;
+
     mutable State     m_enmState;
     mutable QVariant  m_vaData;
 };

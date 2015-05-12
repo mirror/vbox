@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -100,6 +100,7 @@ const int XKeyRelease = KeyRelease;
 #include <math.h>
 
 
+/* static */
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , ulong uScreenId
                                      , UIVisualStateType visualStateType
@@ -162,9 +163,9 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     /* Initialization: */
     pMachineView->sltMachineStateChanged();
     /** @todo Can we move the call to sltAdditionsStateChanged() from the
-     * subclass constructors here too?  It is called for Normal and Seamless,
-     * but not for Fullscreen and Scale.  However for Scale it is a no op.,
-     * so it would not hurt.  Would it hurt for Fullscreen? */
+     *        subclass constructors here too?  It is called for Normal and Seamless,
+     *        but not for Fullscreen and Scale.  However for Scale it is a no op.,
+     *        so it would not hurt.  Would it hurt for fullscreen? */
 
     /* Set a preliminary maximum size: */
     pMachineView->setMaxGuestSize();
@@ -172,8 +173,16 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     return pMachineView;
 }
 
+/* static */
 void UIMachineView::destroy(UIMachineView *pMachineView)
 {
+    if (!pMachineView)
+        return;
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    if (pMachineView->m_pDnDHandler)
+        delete pMachineView->m_pDnDHandler;
+#endif
     delete pMachineView;
 }
 
@@ -674,8 +683,12 @@ void UIMachineView::prepareCommon()
     setFocusPolicy(Qt::WheelFocus);
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-    /* Enable Drag & Drop. */
+    /* Enable drag & drop. */
     setAcceptDrops(true);
+
+    /* Create the drag and drop handler instance.
+     * At the moment we only support one instance per machine window. */
+    m_pDnDHandler = new UIDnDHandler(uisession(), this /* pParent */);
 #endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
@@ -1401,6 +1414,13 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+/**
+ * Host -> Guest: Issued when the host cursor enters the guest (VM) window.
+ *                The guest will receive the relative cursor coordinates of the
+ *                appropriate screen ID.
+ *
+ * @param pEvent                Related enter event.
+ */
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1408,22 +1428,26 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
-
     /* Ask the target for starting a DnD event. */
-    Qt::DropAction result = DnDHandler()->dragEnter(dndTarget,
-                                                    screenId(),
-                                                    frameBuffer()->convertHostXTo(cpnt.x()),
-                                                    frameBuffer()->convertHostYTo(cpnt.y()),
-                                                    pEvent->proposedAction(),
-                                                    pEvent->possibleActions(),
-                                                    pEvent->mimeData(), this /* pParent */);
+    Qt::DropAction result = m_pDnDHandler->dragEnter(screenId(),
+                                                     frameBuffer()->convertHostXTo(cpnt.x()),
+                                                     frameBuffer()->convertHostYTo(cpnt.y()),
+                                                     pEvent->proposedAction(),
+                                                     pEvent->possibleActions(),
+                                                     pEvent->mimeData());
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);
     pEvent->accept();
 }
 
+/**
+ * Host -> Guest: Issued when the host cursor moves inside (over) the guest (VM) window.
+ *                The guest will receive the relative cursor coordinates of the
+ *                appropriate screen ID.
+ *
+ * @param pEvent                Related move event.
+ */
 void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1431,45 +1455,50 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
-
     /* Ask the guest for moving the drop cursor. */
-    Qt::DropAction result = DnDHandler()->dragMove(dndTarget,
-                                                   screenId(),
-                                                   frameBuffer()->convertHostXTo(cpnt.x()),
-                                                   frameBuffer()->convertHostYTo(cpnt.y()),
-                                                   pEvent->proposedAction(),
-                                                   pEvent->possibleActions(),
-                                                   pEvent->mimeData(), this /* pParent */);
+    Qt::DropAction result = m_pDnDHandler->dragMove(screenId(),
+                                                    frameBuffer()->convertHostXTo(cpnt.x()),
+                                                    frameBuffer()->convertHostYTo(cpnt.y()),
+                                                    pEvent->proposedAction(),
+                                                    pEvent->possibleActions(),
+                                                    pEvent->mimeData());
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);
     pEvent->accept();
 }
 
+/**
+ * Host -> Guest: Issued when the host cursor leaves the guest (VM) window again.
+ *                This will ask the guest to stop any further drag'n drop operation.
+ *
+ * @param pEvent                Related leave event.
+ */
 void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
+    m_pDnDHandler->dragLeave(screenId());
 
-    /* Ask the guest for stopping this DnD event. */
-    DnDHandler()->dragLeave(dndTarget,
-                            screenId(), this /* pParent */);
     pEvent->accept();
 }
 
+/**
+ * Guest -> Host: Checks for a pending drag and drop event within the guest
+ *                and (optionally) starts a drag and drop operation on the host.
+ */
 void UIMachineView::dragIsPending(void)
 {
     /** @todo Add guest->guest DnD functionality here by getting
      *        the source of guest B (when copying from B to A). */
-    CDnDSource dndSource = static_cast<CDnDSource>(guest().GetDnDSource());
-
-    /* Check for a pending DnD event within the guest and if so, handle all the
-     * magic. */
-    DnDHandler()->dragIsPending(session(), dndSource, screenId(), this /* pParent */);
+    m_pDnDHandler->dragIsPending(screenId());
 }
 
+/**
+ * Host -> Guest: Issued when the host drops data into the guest (VM) window.
+ *
+ * @param pEvent                Related drop event.
+ */
 void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1477,17 +1506,13 @@ void UIMachineView::dropEvent(QDropEvent *pEvent)
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
-    CDnDTarget dndTarget = static_cast<CDnDTarget>(guest().GetDnDTarget());
-
     /* Ask the guest for dropping data. */
-    Qt::DropAction result = DnDHandler()->dragDrop(session(),
-                                                   dndTarget,
-                                                   screenId(),
-                                                   frameBuffer()->convertHostXTo(cpnt.x()),
-                                                   frameBuffer()->convertHostYTo(cpnt.y()),
-                                                   pEvent->proposedAction(),
-                                                   pEvent->possibleActions(),
-                                                   pEvent->mimeData(), this /* pParent */);
+    Qt::DropAction result = m_pDnDHandler->dragDrop(screenId(),
+                                                    frameBuffer()->convertHostXTo(cpnt.x()),
+                                                    frameBuffer()->convertHostYTo(cpnt.y()),
+                                                    pEvent->proposedAction(),
+                                                    pEvent->possibleActions(),
+                                                    pEvent->mimeData());
 
     /* Set the DnD action returned by the guest. */
     pEvent->setDropAction(result);

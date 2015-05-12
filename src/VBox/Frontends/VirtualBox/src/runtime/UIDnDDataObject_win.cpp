@@ -34,24 +34,20 @@
 
 #include <QStringList>
 
+#include "UIDnDHandler.h"
 #include "UIDnDDataObject_win.h"
 #include "UIDnDEnumFormat_win.h"
 
 
-UIDnDDataObject::UIDnDDataObject(CSession &session,
-                                 CDnDSource &dndSource,
-                                 const QStringList &lstFormats,
-                                 QWidget *pParent)
-    : mSession(session),
-      mDnDSource(dndSource),
-      mpParent(pParent),
-      mStatus(Uninitialized),
-      mRefCount(1),
-      mcFormats(0),
-      mpFormatEtc(NULL),
-      mpStgMedium(NULL),
-      mpvData(NULL),
-      mcbData(0)
+UIDnDDataObject::UIDnDDataObject(UIDnDHandler *pDnDHandler, const QStringList &lstFormats)
+    : m_pDnDHandler(pDnDHandler)
+    , mStatus(Uninitialized)
+    , mRefCount(1)
+    , mcFormats(0)
+    , mpFormatEtc(NULL)
+    , mpStgMedium(NULL)
+    , mpvData(NULL)
+    , mcbData(0)
 {
     HRESULT hr;
 
@@ -97,8 +93,8 @@ UIDnDDataObject::UIDnDDataObject(CSession &session,
             }
         }
 
-        LogFlowFunc(("Total registered native formats: %RU32 (for %d formats from guest)\n",
-                     cRegisteredFormats, lstFormats.size()));
+        LogRel3(("DnD: Total registered native formats: %RU32 (for %d formats from guest)\n",
+                 cRegisteredFormats, lstFormats.size()));
         hr = S_OK;
     }
     catch (std::bad_alloc &)
@@ -207,9 +203,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
     AssertPtrReturn(pFormatEtc, DV_E_FORMATETC);
     AssertPtrReturn(pMedium, DV_E_FORMATETC);
 
-#ifdef VBOX_DND_DEBUG_FORMATS
     LogFlowFunc(("pFormatEtc=%p, pMedium=%p\n", pFormatEtc, pMedium));
-#endif
 
     ULONG lIndex;
     if (!LookupFormatEtc(pFormatEtc, &lIndex)) /* Format supported? */
@@ -228,6 +222,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
     LogFlowFunc(("mStatus=%ld\n", mStatus));
     if (mStatus == Dropping)
     {
+        LogRel3(("DnD: Dropping\n"));
         LogFlowFunc(("Waiting for event ...\n"));
         int rc2 = RTSemEventWait(mSemEvent, RT_INDEFINITE_WAIT);
         LogFlowFunc(("rc=%Rrc, mStatus=%ld\n", rc2, mStatus));
@@ -235,11 +230,12 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
 
     if (mStatus == Dropped)
     {
-        LogFlowFunc(("cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
-                     pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-                     pThisFormat->tymed, pThisFormat->dwAspect));
-        LogFlowFunc(("Got strFormat=%s, pvData=%p, cbData=%RU32\n",
-                     mstrFormat.toAscii().constData(), mpvData, mcbData));
+        LogRel3(("DnD: Dropped\n"));
+        LogRel3(("DnD: cfFormat=%RI16, sFormat=%s, tyMed=%RU32, dwAspect=%RU32\n",
+                 pThisFormat->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+                 pThisFormat->tymed, pThisFormat->dwAspect));
+        LogRel3(("DnD: Got strFormat=%s, pvData=%p, cbData=%RU32\n",
+                 mstrFormat.toAscii().constData(), mpvData, mcbData));
 
         QVariant::Type vaType;
         QString strMIMEType;
@@ -285,18 +281,20 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
             pMedium->tymed = TYMED_HGLOBAL;
         }
 #endif
-        LogFlowFunc(("strMIMEType=%s, vaType=%ld\n",
-                     strMIMEType.toAscii().constData(), vaType));
+        LogRel3(("DnD: strMIMEType=%s, vaType=%ld\n", strMIMEType.toAscii().constData(), vaType));
 
         int rc;
         if (!mVaData.isValid())
         {
-            rc = UIDnDDrag::RetrieveData(mSession,
-                                         mDnDSource,
-                                         /** @todo Support other actions. */
-                                         Qt::CopyAction,
-                                         strMIMEType, vaType, mVaData,
-                                         mpParent);
+            /* Note:  We're usig Qt::MoveAction because this speed up the whole operation
+             *        significantly: Instead of copying the data from the temporary location to
+             *        the final destination we just move it.
+             *
+             * Note2: The Qt::MoveAction *only* affects the behavior on the host! The desired
+             *        action for the guest (e.g. moving a file from guest to host) is not affected
+             *        by this setting. */
+            rc = m_pDnDHandler->retrieveData(Qt::MoveAction,
+                                             strMIMEType, vaType, mVaData);
         }
         else
             rc = VINF_SUCCESS; /* Data already retrieved. */
@@ -651,22 +649,20 @@ bool UIDnDDataObject::LookupFormatEtc(FORMATETC *pFormatEtc, ULONG *puIndex)
             && pFormatEtc->cfFormat == mpFormatEtc[i].cfFormat
             && pFormatEtc->dwAspect == mpFormatEtc[i].dwAspect)
         {
-#ifdef VBOX_DND_DEBUG_FORMATS
-            LogFlowFunc(("Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                         pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
-                         pFormatEtc->dwAspect, i));
-#endif
+            LogRel3(("DnD: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
+                     pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(mpFormatEtc[i].cfFormat),
+                     pFormatEtc->dwAspect, i));
+
             if (puIndex)
                 *puIndex = i;
             return true;
         }
     }
 
-#ifdef VBOX_DND_DEBUG_FORMATS
-    LogFlowFunc(("Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
-                 pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-                 pFormatEtc->dwAspect));
-#endif
+    LogRel3(("DnD: Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
+             pFormatEtc->tymed, pFormatEtc->cfFormat, UIDnDDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
+             pFormatEtc->dwAspect));
+
     return false;
 }
 

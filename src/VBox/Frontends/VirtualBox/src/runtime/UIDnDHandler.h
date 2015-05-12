@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,16 +18,21 @@
 #ifndef ___UIDnDHandler_h___
 #define ___UIDnDHandler_h___
 
+/* Qt includes: */
+#include <QMimeData>
+#include <QMutex>
+#include <QStringList>
+
 /* COM includes: */
 #include "COMEnums.h"
+#include "CDnDTarget.h"
+#include "CDnDSource.h"
 
 /* Forward declarations: */
 class QMimeData;
-class CDnDSource;
-class CDnDTarget;
-class CGuest;
-class CSession;
-class UIDnDMimeData;
+
+class UIDnDMIMEData;
+class UISession;
 
 class UIDnDHandler: public QObject
 {
@@ -35,45 +40,35 @@ class UIDnDHandler: public QObject
 
 public:
 
-    /* Singleton factory. */
-    static UIDnDHandler *instance(void)
-    {
-        if (!m_pInstance)
-            m_pInstance = new UIDnDHandler();
-        return m_pInstance;
-    }
-
-    static void destroy(void)
-    {
-        if (m_pInstance)
-        {
-            delete m_pInstance;
-            m_pInstance = NULL;
-        }
-    }
+    UIDnDHandler(UISession *pSession, QWidget *pParent);
+    virtual ~UIDnDHandler(void);
 
     /**
      * Current operation mode.
      */
-    enum Direction
+    typedef enum DNDMODE
     {
         /** Unknown mode. */
-        Unknown = 0,
+        DNDMODE_UNKNOWN     = 0,
         /** Host to guest. */
-        HostToGuest,
+        DNDMODE_HOSTTOGUEST = 1,
         /** Guest to host. */
-        GuestToHost
+        DNDMODE_GUESTTOHOST = 2,
         /** @todo Implement guest to guest. */
-    };
+        /** The usual 32-bit type blow up. */
+        DNDMODE_32BIT_HACK = 0x7fffffff
+    } DNDMODE;
 
     /* Frontend -> Target. */
-    Qt::DropAction             dragEnter(CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    Qt::DropAction             dragMove (CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    Qt::DropAction             dragDrop (CSession &session, CDnDTarget &dndTarget, ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData, QWidget *pParent = NULL);
-    void                       dragLeave(CDnDTarget &dndTarget, ulong screenId, QWidget *pParent = NULL);
+    Qt::DropAction             dragEnter(ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
+    Qt::DropAction             dragMove (ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
+    Qt::DropAction             dragDrop (ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
+    void                       dragLeave(ulong screenId);
 
     /* Source -> Frontend. */
-    int                        dragIsPending(CSession &session, CDnDSource &dndSource, ulong screenId, QWidget *pParent = NULL);
+    int                        dragIsPending(ulong screenId);
+    int                        dragStart(const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions);
+    int                        retrieveData(Qt::DropAction  dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
 
 public:
 
@@ -82,19 +77,37 @@ public:
     static Qt::DropAction      toQtDnDAction(KDnDAction action);
     static Qt::DropActions     toQtDnDActions(const QVector<KDnDAction> &vecActions);
 
-private:
+protected:
 
-    UIDnDHandler(void);
-    virtual ~UIDnDHandler(void) {}
+    /** Pointer to UI session. */
+    UISession        *m_pSession;
+    /** Pointer to parent widget. */
+    QWidget          *m_pParent;
 
-private:
+    /** Drag and drop source instance. */
+    CDnDSource        m_dndSource;
+    /** Drag and drop target instance. */
+    CDnDTarget        m_dndTarget;
+    /** Current transfer direction. */
+    DNDMODE           m_enmMode;
+    /** Flag indicating if a drag operation is pending currently. */
+    bool              m_fIsPending;
+    QMutex            m_ReadLock;
+    QMutex            m_WriteLock;
 
-    /** Static pointer to singleton instance. */
-    static UIDnDHandler *m_pInstance;
+    /** List of formats supported by the source. */
+    QStringList       m_lstFormats;
+    /** Default drop action from the source. */
+    Qt::DropAction    m_defAction;
+    /** List of allowed drop actions from the source. */
+    Qt::DropActions   m_actions;
+
+#ifndef RT_OS_WINDOWS
+    /** Pointer to MIMEData instance used for handling
+     *  own MIME times on non-Windows host OSes. */
+    UIDnDMIMEData    *m_pMIMEData;
+    friend class UIDnDMIMEData;
+#endif
 };
-
-/** Gets the singleton instance of the drag'n drop UI helper class. */
-#define DnDHandler() UIDnDHandler::instance()
-
 #endif /* ___UIDnDHandler_h___ */
 
