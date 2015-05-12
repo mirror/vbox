@@ -1202,15 +1202,31 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                 {
                     ControllerItem *ctr = static_cast <ControllerItem*> (item);
                     CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
-                    switch (m_configurationAccessLevel)
+                    const bool fIsMoreAttachmentsPossible = (ULONG)rowCount(aIndex) <
+                                                            (sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
+                                                             sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
+                    if (fIsMoreAttachmentsPossible)
                     {
-                        case ConfigurationAccessLevel_Full: return ((uint)rowCount(aIndex) < sp.GetMaxPortCountForStorageBus(ctr->ctrBusType()) *
-                                                                                             sp.GetMaxDevicesPerPortForStorageBus(ctr->ctrBusType()));
-                        case ConfigurationAccessLevel_Runtime: return (ctr->ctrBusType() == KStorageBus_SATA) &&
-                                                                      ((uint)rowCount(aIndex) < ctr->portCount());
-                        default: break;
+                        switch (m_configurationAccessLevel)
+                        {
+                            case ConfigurationAccessLevel_Full:
+                                return true;
+                            case ConfigurationAccessLevel_Runtime:
+                            {
+                                switch (ctr->ctrBusType())
+                                {
+                                    case KStorageBus_USB:
+                                        return true;
+                                    case KStorageBus_SATA:
+                                        return (uint)rowCount(aIndex) < ctr->portCount();
+                                    default:
+                                        break;
+                                }
+                            }
+                            default:
+                                break;
+                        }
                     }
-                    return false;
                 }
             }
             return false;
@@ -2782,7 +2798,7 @@ void UIMachineSettingsStorage::getInformation()
                 mCbNonRotational->setChecked (mStorageModel->data (index, StorageModel::R_AttIsNonRotational).toBool());
 
                 /* Fetch hot-pluggable state: */
-                m_pCheckBoxHotPluggable->setVisible(slt.bus == KStorageBus_SATA);
+                m_pCheckBoxHotPluggable->setVisible((slt.bus == KStorageBus_SATA) || (slt.bus == KStorageBus_USB));
                 m_pCheckBoxHotPluggable->setChecked(fIsHotPluggable);
 
                 /* Update optional widgets visibility */
@@ -3786,7 +3802,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
                         fSuccess = m_machine.isOk();
                     }
                 }
-                if (controllerBus == KStorageBus_SATA)
+                if ((controllerBus == KStorageBus_SATA) || (controllerBus == KStorageBus_USB))
                 {
                     if (fSuccess && isMachineOffline())
                     {
@@ -3875,7 +3891,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
                         fSuccess = m_machine.isOk();
                     }
                 }
-                if (controllerBus == KStorageBus_SATA)
+                if ((controllerBus == KStorageBus_SATA) || (controllerBus == KStorageBus_USB))
                 {
                     if (fSuccess && isMachineOffline())
                     {
@@ -3889,8 +3905,8 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
             {
                 /* Show error message: */
                 msgCenter().cannotAttachDevice(m_machine, mediumTypeToLocal(attachmentDeviceType),
-                                                 vboxMedium.location(),
-                                                 StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
+                                               vboxMedium.location(),
+                                               StorageSlot(controllerBus, iAttachmentPort, iAttachmentDevice), this);
             }
         }
     }
