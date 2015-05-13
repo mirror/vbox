@@ -383,6 +383,8 @@ HRESULT VirtualBox::init()
         unconst(m->strHomeDir) = szHomeDir;
     }
 
+    LogRel(("Home directory: '%s'\n", m->strHomeDir.c_str()));
+
     /* compose the VirtualBox.xml file name */
     unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
                                                  m->strHomeDir.c_str(),
