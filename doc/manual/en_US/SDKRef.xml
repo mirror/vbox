@@ -5242,7 +5242,7 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>When creating a VM configuration with <xref
           linkend="IVirtualBox__createMachine"
-          xreflabel="IVirtualBox::createMachine" />) it is now possible to
+          xreflabel="IVirtualBox::createMachine()" /> it is now possible to
           ignore existing configuration files which would previously have
           caused a failure. For this the
           <computeroutput>override</computeroutput> parameter was
