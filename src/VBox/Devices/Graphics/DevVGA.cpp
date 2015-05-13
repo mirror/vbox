@@ -4770,14 +4770,18 @@ static DECLCALLBACK(int) vgaPortSetRefreshRate(PPDMIDISPLAYPORT pInterface, uint
 }
 
 
-/** @copydoc PDMIDISPLAYPORT::pfnQueryColorDepth */
-static DECLCALLBACK(int) vgaPortQueryColorDepth(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits)
+/** @copydoc PDMIDISPLAYPORT::pfnQueryVideoMode */
+static DECLCALLBACK(int) vgaPortQueryVideoMode(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits, uint32_t *pcx, uint32_t *pcy)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
 
     if (!pcBits)
         return VERR_INVALID_PARAMETER;
     *pcBits = vga_get_bpp(pThis);
+    if (pcx)
+        *pcx = pThis->last_scr_width;
+    if (pcy)
+        *pcy = pThis->last_scr_height;
     return VINF_SUCCESS;
 }
 
@@ -6111,7 +6115,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     pThis->IPort.pfnUpdateDisplay       = vgaPortUpdateDisplay;
     pThis->IPort.pfnUpdateDisplayAll    = vgaPortUpdateDisplayAll;
-    pThis->IPort.pfnQueryColorDepth     = vgaPortQueryColorDepth;
+    pThis->IPort.pfnQueryVideoMode      = vgaPortQueryVideoMode;
     pThis->IPort.pfnSetRefreshRate      = vgaPortSetRefreshRate;
     pThis->IPort.pfnTakeScreenshot      = vgaPortTakeScreenshot;
     pThis->IPort.pfnFreeScreenshot      = vgaPortFreeScreenshot;

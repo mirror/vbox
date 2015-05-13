@@ -523,7 +523,7 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(int, pfnUpdateDisplayAll,(PPDMIDISPLAYPORT pInterface, bool fFailOnResize));
 
     /**
-     * Return the current guest color depth in bits per pixel (bpp).
+     * Return the current guest resolution and color depth in bits per pixel (bpp).
      *
      * As the graphics card is able to provide display updates with the bpp
      * requested by the host, this method can be used to query the actual
@@ -532,9 +532,11 @@ typedef struct PDMIDISPLAYPORT
      * @returns VBox status code.
      * @param   pInterface         Pointer to this interface.
      * @param   pcBits             Where to store the current guest color depth.
+     * @param   pcx                Where to store the horizontal resolution.
+     * @param   pcy                Where to store the vertical resolution.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueryColorDepth,(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits));
+    DECLR3CALLBACKMEMBER(int, pfnQueryVideoMode,(PPDMIDISPLAYPORT pInterface, uint32_t *pcBits, uint32_t *pcx, uint32_t *pcy));
 
     /**
      * Sets the refresh rate and restart the timer.
@@ -703,9 +705,9 @@ typedef struct PDMIDISPLAYPORT
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
 #ifdef VBOX_WITH_VMSVGA
-#define PDMIDISPLAYPORT_IID                     "e8da6d7e-8490-11e4-91d8-ab609a010f13"
+#define PDMIDISPLAYPORT_IID                     "9672e2b0-1aef-4c4d-9108-864cdb28333f"
 #else
-#define PDMIDISPLAYPORT_IID                     "db067c60-8490-11e4-8424-032afeb83818"
+#define PDMIDISPLAYPORT_IID                     "323f3412-8903-4564-b04c-cbfe0d2d1596"
 #endif
 
 
