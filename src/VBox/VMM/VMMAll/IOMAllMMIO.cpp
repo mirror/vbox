@@ -108,6 +108,8 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
     if (pRange->fFlags & IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE)
     {
 # ifdef IN_RING3
+        LogRel(("IOM: Complicated write %#x byte at %RGp to %s, initiating debugger intervention\n", cbValue, GCPhys,
+                R3STRING(pRange->pszDesc)));
         rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, RT_SRC_POS,
                             "Complicated write %#x byte at %RGp to %s\n", cbValue, GCPhys, R3STRING(pRange->pszDesc));
         if (rc == VERR_DBGF_NOT_ATTACHED)
