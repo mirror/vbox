@@ -5269,8 +5269,7 @@ AuthResult AUTHCALL AuthEntry(
           extended to require an additional
           <computeroutput>screenId</computeroutput> parameter: <itemizedlist>
               <listitem>
-                <para><xref linkend="IMachine__querySavedThumbnailSize"
-                xreflabel="IMachine::querySavedThumbnailSize()" /></para>
+                <para>IMachine::querySavedThumbnailSize()</para>
               </listitem>
 
               <listitem>
@@ -5279,12 +5278,12 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__querySavedScreenshotPNGSize"
+                <para><xref linkend="IMachine__querySavedScreenshotInfo"
                 xreflabel="IMachine::querySavedScreenshotPNGSize()" /></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__readSavedScreenshotPNGToArray"
+                <para><xref linkend="IMachine__readSavedScreenshotToArray"
                 xreflabel="IMachine::readSavedScreenshotPNGToArray()" /></para>
               </listitem>
             </itemizedlist></para>
