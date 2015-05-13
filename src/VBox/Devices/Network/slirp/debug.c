@@ -301,17 +301,17 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                 "socket(%d)", so->s);
 
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-            "socket %d:(proto:%u) exp. in %d "
+            "socket %d:(proto:%u) exp. in %d"
             " state=%R[natsockstate]"
-            " fUnderPolling:%RTbool"
-            " fShouldBeRemoved:%RTbool"
+            "%s" /* fUnderPolling */
+            "%s" /* fShouldBeRemoved */
             " f_(addr:port)=%RTnaipv4:%d"
             " l_(addr:port)=%RTnaipv4:%d",
             so->s, so->so_type,
             so->so_expire ? so->so_expire - curtime : 0,
             so->so_state,
-            so->fUnderPolling,
-            so->fShouldBeRemoved,
+            so->fUnderPolling ? " fUnderPolling" : "",
+            so->fShouldBeRemoved ? " fShouldBeRemoved" : "",
             so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
             so->so_laddr.s_addr,
