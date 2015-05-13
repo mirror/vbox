@@ -394,8 +394,9 @@ static int audioMixBufAllocBuf(PPDMAUDIOMIXBUF pMixBuf, uint32_t cSamples)
         for (uint32_t i = 0; i < cSamples; i++) \
         { \
             AUDMIXBUF_MACRO_LOG(("%p: s=%RI16\n", paDst, *pSrc)); \
-            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc++), pOpts->Volume.uLeft) >> VOL_SHIFT; \
-            paDst->i64RSample = paDst->i64LSample; \
+            paDst->i64LSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->Volume.uLeft) >> VOL_SHIFT; \
+            paDst->i64RSample = ASMMult2xS32RetS64((int32_t)audioMixBufClipFrom##_aName(*pSrc), pOpts->Volume.uRight) >> VOL_SHIFT; \
+            ++pSrc; \
             AUDMIXBUF_MACRO_LOG(("\t-> l=%RI64, r=%RI64\n", paDst->i64LSample, paDst->i64RSample)); \
             paDst++; \
         } \
