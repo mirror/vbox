@@ -5857,9 +5857,6 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
      */
     RTSpinlockAcquire(pNetwork->hAddrSpinlock);
 
-    for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
-        intnetR0IfAddrCacheDestroy(&pNetwork->aAddrBlacklist[i]);
-
     uint32_t iIf = pNetwork->MacTab.cEntries;
     while (iIf-- > 0)
     {
@@ -5939,6 +5936,8 @@ static DECLCALLBACK(void) intnetR0NetworkDestruct(void *pvObj, void *pvUser1, vo
     pNetwork->hAddrSpinlock = NIL_RTSPINLOCK;
     RTMemFree(pNetwork->MacTab.paEntries);
     pNetwork->MacTab.paEntries = NULL;
+    for (int i = kIntNetAddrType_Invalid + 1; i < kIntNetAddrType_End; i++)
+        intnetR0IfAddrCacheDestroy(&pNetwork->aAddrBlacklist[i]);
     RTMemFree(pNetwork);
 
     /* Release the create/destroy sem. */
