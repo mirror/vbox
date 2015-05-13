@@ -1414,13 +1414,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
-/**
- * Host -> Guest: Issued when the host cursor enters the guest (VM) window.
- *                The guest will receive the relative cursor coordinates of the
- *                appropriate screen ID.
- *
- * @param pEvent                Related enter event.
- */
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1441,13 +1434,6 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
     pEvent->accept();
 }
 
-/**
- * Host -> Guest: Issued when the host cursor moves inside (over) the guest (VM) window.
- *                The guest will receive the relative cursor coordinates of the
- *                appropriate screen ID.
- *
- * @param pEvent                Related move event.
- */
 void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1468,12 +1454,6 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
     pEvent->accept();
 }
 
-/**
- * Host -> Guest: Issued when the host cursor leaves the guest (VM) window again.
- *                This will ask the guest to stop any further drag'n drop operation.
- *
- * @param pEvent                Related leave event.
- */
 void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
@@ -1483,10 +1463,6 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
     pEvent->accept();
 }
 
-/**
- * Guest -> Host: Checks for a pending drag and drop event within the guest
- *                and (optionally) starts a drag and drop operation on the host.
- */
 void UIMachineView::dragIsPending(void)
 {
     /** @todo Add guest->guest DnD functionality here by getting
@@ -1494,11 +1470,6 @@ void UIMachineView::dragIsPending(void)
     m_pDnDHandler->dragIsPending(screenId());
 }
 
-/**
- * Host -> Guest: Issued when the host drops data into the guest (VM) window.
- *
- * @param pEvent                Related drop event.
- */
 void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
