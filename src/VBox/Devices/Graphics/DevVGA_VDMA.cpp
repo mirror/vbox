@@ -1436,47 +1436,63 @@ static int vboxVDMACrHostCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *p
     }
 }
 
+static int vboxVDMASetupScreenInfo(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen)
+{
+    const uint32_t u32ViewIndex = pScreen->u32ViewIndex;
+    const bool fDisabled = RT_BOOL(pScreen->u16Flags & VBVA_SCREEN_F_DISABLED);
+
+    if (fDisabled)
+    {
+        if (   u32ViewIndex < pVGAState->cMonitors
+            || u32ViewIndex == UINT32_C(0xFFFFFFFF))
+        {
+            RT_ZERO(*pScreen);
+            pScreen->u32ViewIndex = u32ViewIndex;
+            pScreen->u16Flags = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED;
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        if (   u32ViewIndex < pVGAState->cMonitors
+            && pScreen->u16BitsPerPixel <= 32
+            && pScreen->u32Width <= UINT16_MAX
+            && pScreen->u32Height <= UINT16_MAX
+            && pScreen->u32LineSize <= UINT16_MAX * 4)
+        {
+            const uint32_t u32BytesPerPixel = (pScreen->u16BitsPerPixel + 7) / 8;
+            if (pScreen->u32Width <= pScreen->u32LineSize / (u32BytesPerPixel? u32BytesPerPixel: 1))
+            {
+                const uint64_t u64ScreenSize = (uint64_t)pScreen->u32LineSize * pScreen->u32Height;
+                if (   pScreen->u32StartOffset <= pVGAState->vram_size
+                    && u64ScreenSize <= pVGAState->vram_size
+                    && pScreen->u32StartOffset <= pVGAState->vram_size - (uint32_t)u64ScreenSize)
+                {
+                    return VINF_SUCCESS;
+                }
+            }
+        }
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
 static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOXCMDVBVA_RESIZE_ENTRY *pEntry)
 {
     PVGASTATE pVGAState = pVdma->pVGAState;
     VBVAINFOSCREEN Screen = pEntry->Screen;
-    VBVAINFOVIEW View;
+
+    /* Verify and cleanup local copy of the input data. */
+    int rc = vboxVDMASetupScreenInfo(pVGAState, &Screen);
+    if (RT_FAILURE(rc))
+    {
+        WARN(("invalid screen data\n"));
+        return rc;
+    }
+
     VBOXCMDVBVA_SCREENMAP_DECL(uint32_t, aTargetMap);
-    uint32_t u32ViewIndex = Screen.u32ViewIndex;
-    uint16_t u16Flags = Screen.u16Flags;
-    bool fDisable = false;
-
-    memcpy(aTargetMap, pEntry->aTargetMap, sizeof (aTargetMap));
-
+    memcpy(aTargetMap, pEntry->aTargetMap, sizeof(aTargetMap));
     ASMBitClearRange(aTargetMap, pVGAState->cMonitors, VBOX_VIDEO_MAX_SCREENS);
-
-    if (u16Flags & VBVA_SCREEN_F_DISABLED)
-    {
-        fDisable = true;
-        memset(&Screen, 0, sizeof (Screen));
-        Screen.u32ViewIndex = u32ViewIndex;
-        Screen.u16Flags = VBVA_SCREEN_F_ACTIVE | VBVA_SCREEN_F_DISABLED;
-    }
-
-    if (u32ViewIndex > pVGAState->cMonitors)
-    {
-        if (u32ViewIndex != 0xffffffff)
-        {
-            WARN(("invalid view index\n"));
-            return VERR_INVALID_PARAMETER;
-        }
-        else if (!fDisable)
-        {
-            WARN(("0xffffffff view index only valid for disable requests\n"));
-            return VERR_INVALID_PARAMETER;
-        }
-    }
-
-    View.u32ViewOffset = 0;
-    View.u32ViewSize = Screen.u32LineSize * Screen.u32Height + Screen.u32StartOffset;
-    View.u32MaxScreenSize = View.u32ViewSize + Screen.u32Width + 1; /* <- make VBVAInfoScreen logic (offEnd < pView->u32MaxScreenSize) happy */
-
-    int rc = VINF_SUCCESS;
 
     rc = pVdma->CrSrvInfo.pfnResize(pVdma->CrSrvInfo.hSvr, &Screen, aTargetMap);
     if (RT_FAILURE(rc))
@@ -1484,6 +1500,14 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
         WARN(("pfnResize failed %d\n", rc));
         return rc;
     }
+
+    /* A fake view which contains the current screen for the 2D VBVAInfoView. */
+    VBVAINFOVIEW View;
+    View.u32ViewOffset = 0;
+    View.u32ViewSize = Screen.u32LineSize * Screen.u32Height + Screen.u32StartOffset;
+    View.u32MaxScreenSize = Screen.u32LineSize * Screen.u32Height;
+
+    const bool fDisable = RT_BOOL(Screen.u16Flags & VBVA_SCREEN_F_DISABLED);
 
     for (int i = ASMBitFirstSet(aTargetMap, pVGAState->cMonitors);
             i >= 0;
@@ -1519,11 +1543,6 @@ static int vboxVDMACrGuestCtlResizeEntryProcess(struct VBOXVDMAHOST *pVdma, VBOX
             break;
         }
     }
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    Screen.u32ViewIndex = u32ViewIndex;
 
     return rc;
 }

@@ -660,8 +660,8 @@ bool VBVAIsEnabled(PVGASTATE pVGAState);
 void VBVARaiseIrq (PVGASTATE pVGAState, uint32_t fFlags);
 void VBVARaiseIrqNoWait(PVGASTATE pVGAState, uint32_t fFlags);
 
-int VBVAInfoView(PVGASTATE pVGAState, VBVAINFOVIEW *pView);
-int VBVAInfoScreen(PVGASTATE pVGAState, VBVAINFOSCREEN *pScreen);
+int VBVAInfoView(PVGASTATE pVGAState, const VBVAINFOVIEW *pView);
+int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen);
 int VBVAGetInfoViewAndScreen(PVGASTATE pVGAState, uint32_t u32ViewIndex, VBVAINFOVIEW *pView, VBVAINFOSCREEN *pScreen);
 
 /* @return host-guest flags that were set on reset
