@@ -89,7 +89,6 @@ static const int icmp_flush[19] =
 /* ADDR MASK REPLY (18) */   0
 };
 
-static void icmp_cache_clean(PNATState pData, int iEntries);
 
 int
 icmp_init(PNATState pData, int iIcmpCacheLimit)
@@ -98,6 +97,8 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
     pData->icmp_socket.so_state = SS_ISFCONNECTED;
 
 #ifndef RT_OS_WINDOWS
+    TAILQ_INIT(&pData->icmp_msg_head);
+
     if (iIcmpCacheLimit < 0)
     {
         LogRel(("NAT: iIcmpCacheLimit is invalid %d, will be alter to default value 100\n", iIcmpCacheLimit));
@@ -128,9 +129,6 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
     }
     fd_nonblock(pData->icmp_socket.s);
     NSOCK_INC();
-
-    LIST_INIT(&pData->icmp_msg_head);
-
 #else /* RT_OS_WINDOWS */
     if (icmpwin_init(pData) != 0)
         return 1;
@@ -148,12 +146,111 @@ icmp_finit(PNATState pData)
 #ifdef RT_OS_WINDOWS
     icmpwin_finit(pData);
 #else
-    icmp_cache_clean(pData, -1);
+    while (!TAILQ_EMPTY(&pData->icmp_msg_head))
+    {
+        struct icmp_msg *icm = TAILQ_FIRST(&pData->icmp_msg_head);
+        icmp_msg_delete(pData, icm);
+    }
     closesocket(pData->icmp_socket.s);
 #endif
 }
 
+
 #if !defined(RT_OS_WINDOWS)
+static struct icmp_msg *
+icmp_msg_alloc(PNATState pData)
+{
+    struct icmp_msg *icm;
+
+#ifdef DEBUG
+    {
+        int iTally = 0;
+        TAILQ_FOREACH(icm, &pData->icmp_msg_head, im_queue)
+            ++iTally;
+        Assert(pData->cIcmpCacheSize == iTally);
+    }
+#endif
+
+    if (pData->cIcmpCacheSize >= pData->iIcmpCacheLimit)
+    {
+        int cTargetCacheSize = pData->iIcmpCacheLimit/2;
+
+        while (pData->cIcmpCacheSize > cTargetCacheSize)
+        {
+            icm = TAILQ_FIRST(&pData->icmp_msg_head);
+            icmp_msg_delete(pData, icm);
+        }
+    }
+
+    icm = RTMemAlloc(sizeof(struct icmp_msg));
+    if (RT_UNLIKELY(icm == NULL))
+        return NULL;
+
+    TAILQ_INSERT_TAIL(&pData->icmp_msg_head, icm, im_queue);
+    pData->cIcmpCacheSize++;
+
+    return icm;
+}
+
+
+static void
+icmp_attach(PNATState pData, struct mbuf *m)
+{
+    struct icmp_msg *icm;
+
+#ifdef DEBUG
+    {
+        /* only used for ping */
+        struct ip *ip = mtod(m, struct ip *);
+        Assert(ip->ip_p == IPPROTO_ICMP);
+    }
+#endif
+
+    icm = icmp_msg_alloc(pData);
+    if (RT_UNLIKELY(icm == NULL))
+        return;
+
+    icm->im_so = &pData->icmp_socket;
+    icm->im_m = m;
+}
+
+
+void
+icmp_msg_delete(PNATState pData, struct icmp_msg *icm)
+{
+    if (RT_UNLIKELY(icm == NULL))
+        return;
+
+#ifdef DEBUG
+    {
+        struct icmp_msg *existing;
+        int iTally = 0;
+
+        TAILQ_FOREACH(existing, &pData->icmp_msg_head, im_queue)
+            ++iTally;
+        Assert(pData->cIcmpCacheSize == iTally);
+
+        Assert(pData->cIcmpCacheSize > 0);
+        TAILQ_FOREACH(existing, &pData->icmp_msg_head, im_queue)
+        {
+            if (existing == icm)
+                break;
+        }
+        Assert(existing != NULL);
+    }
+#endif
+
+    TAILQ_REMOVE(&pData->icmp_msg_head, icm, im_queue);
+    pData->cIcmpCacheSize--;
+
+    icm->im_so->so_m = NULL;
+    if (icm->im_m != NULL)
+        m_freem(pData, icm->im_m);
+
+    RTMemFree(icm);
+}
+
+
 /*
  * ip here is ip header + 64bytes readed from ICMP packet
  */
@@ -184,7 +281,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     {
         case IPPROTO_ICMP:
             icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));
-            LIST_FOREACH(icm, &pData->icmp_msg_head, im_list)
+            TAILQ_FOREACH(icm, &pData->icmp_msg_head, im_queue)
             {
                 m0 = icm->im_m;
                 ip0 = mtod(m0, struct ip *);
@@ -249,7 +346,7 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             {
                 found = 1;
                 so = last_socket;
-                goto sofound;
+                break;
             }
             for (so = head_socket->so_prev; so != head_socket; so = so->so_prev)
             {
@@ -268,91 +365,57 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
         default:
             Log(("NAT:ICMP: unsupported protocol(%d)\n", ip->ip_p));
     }
-    sofound:
-    if (found == 1 && icm == NULL)
+
+#ifdef DEBUG
+    if (found)
+        Assert((icm != NULL) ^ (so != NULL));
+#endif
+
+    if (found && icm == NULL)
     {
+        /*
+         * XXX: Implies this is not a pong, found socket.  This is, of
+         * course, wasteful since the caller will delete icmp_msg
+         * immediately after processing, so there's not much reason to
+         * clutter up the queue with it.
+         */
+        AssertReturn(so != NULL, NULL);
+
+        /*
+         * XXX: FIXME: If the very first send(2) fails, the socket is
+         * still in SS_NOFDREF and so we will not report this too.
+         */
         if (so->so_state == SS_NOFDREF)
         {
-            /* socket is shutdowning we've already sent ICMP on it.*/
-            Log(("NAT: Received icmp on shutdowning socket (probably corresponding ICMP socket has been already sent)\n"));
+            /* socket is shutting down we've already sent ICMP on it. */
+            Log(("NAT:ICMP: disconnected %R[natsock]\n", so));
+            LogFlowFunc(("LEAVE: icm:NULL\n"));
             return NULL;
         }
-        icm = RTMemAlloc(sizeof(struct icmp_msg));
-        icm->im_m = so->so_m;
+
+        if (so->so_m == NULL)
+        {
+            Log(("NAT:ICMP: no saved mbuf for %R[natsock]\n", so));
+            LogFlowFunc(("LEAVE: icm:NULL\n"));
+            return NULL;
+        }
+
+        icm = icmp_msg_alloc(pData);
+        if (RT_UNLIKELY(icm == NULL))
+        {
+            LogFlowFunc(("LEAVE: icm:NULL\n"));
+            return NULL;
+        }
+
+        Log(("NAT:ICMP: for %R[natsock]\n", so));
         icm->im_so = so;
-        found = 1;
-        Log(("hit:%R[natsock]\n", so));
-        /*XXX: this storage not very long,
-         * better add flag if it should removed from lis
-         */
-        LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
-        pData->cIcmpCacheSize++;
-        if (pData->cIcmpCacheSize > pData->iIcmpCacheLimit)
-            icmp_cache_clean(pData, pData->iIcmpCacheLimit/2);
-        LogFlowFunc(("LEAVE: icm:%p\n", icm));
-        return (icm);
+        icm->im_m = so->so_m;
     }
-    if (found == 1)
-    {
-        LogFlowFunc(("LEAVE: icm:%p\n", icm));
-        return icm;
-    }
-
-    LogFlowFunc(("LEAVE: NULL\n"));
-    return NULL;
-}
-
-/**
- * iEntries how many entries to leave, if iEntries < 0, clean all
- */
-static void icmp_cache_clean(PNATState pData, int iEntries)
-{
-    int iIcmpCount = 0;
-    struct icmp_msg *icm = NULL;
-    LogFlowFunc(("iEntries:%d\n", iEntries));
-    if (iEntries > pData->cIcmpCacheSize)
-    {
-        LogFlowFuncLeave();
-        return;
-    }
-    while(!LIST_EMPTY(&pData->icmp_msg_head))
-    {
-        icm = LIST_FIRST(&pData->icmp_msg_head);
-        if (    iEntries > 0
-            &&  iIcmpCount < iEntries)
-        {
-            iIcmpCount++;
-            continue;
-        }
-
-        LIST_REMOVE(icm, im_list);
-        if (icm->im_m)
-        {
-            pData->cIcmpCacheSize--;
-            m_freem(pData, icm->im_m);
-        }
-        RTMemFree(icm);
-    }
-    LogFlowFuncLeave();
-}
-
-static int
-icmp_attach(PNATState pData, struct mbuf *m)
-{
-    struct icmp_msg *icm;
-    struct ip *ip;
-    ip = mtod(m, struct ip *);
-    Assert(ip->ip_p == IPPROTO_ICMP);
-    icm = RTMemAlloc(sizeof(struct icmp_msg));
-    icm->im_m = m;
-    icm->im_so = m->m_so;
-    LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
-    pData->cIcmpCacheSize++;
-    if (pData->cIcmpCacheSize > pData->iIcmpCacheLimit)
-        icmp_cache_clean(pData, pData->iIcmpCacheLimit/2);
-    return 0;
+    LogFlowFunc(("LEAVE: icm:%p\n", icm));
+    return icm;
 }
 #endif /* !RT_OS_WINDOWS */
+
 
 /*
  * Process a received ICMP message.
@@ -479,7 +542,6 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
                               (struct sockaddr *)&addr, sizeof(addr));
                     if (rc >= 0)
                     {
-                        m->m_so = &pData->icmp_socket;
                         icmp_attach(pData, m);
                         /* don't let m_freem at the end free atached buffer */
                         goto done;

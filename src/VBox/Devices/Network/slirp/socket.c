@@ -1227,9 +1227,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
     if (!m)
     {
         LogFunc(("%R[natsock] hasn't stored it's mbuf on sent\n", icm->im_so));
-        LIST_REMOVE(icm, im_list);
-        RTMemFree(icm);
-        return;
+        goto done;
     }
 
     src = addr->sin_addr.s_addr;
@@ -1240,7 +1238,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
         if (icp0->icmp_type != ICMP_ECHO)
         {
             Log(("NAT: we haven't found echo for this reply\n"));
-            return;
+            goto done;
         }
         /*
          * while combining buffer to send (see ip_icmp.c) we control ICMP header only,
@@ -1253,7 +1251,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
         {
             Log(("NAT: ECHO(%d) lenght doesn't match ECHOREPLY(%d)\n",
                 (ip->ip_len - hlen), (ip0->ip_len - (ip0->ip_hl << 2))));
-            return;
+            goto done;
         }
     }
 
@@ -1296,10 +1294,9 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockadd
     icmp_reflect(pData, m);
     /* m was freed */
     icm->im_m = NULL;
-    icm->im_so->so_m = NULL;
-    LIST_REMOVE(icm, im_list);
-    pData->cIcmpCacheSize--;
-    RTMemFree(icm);
+
+  done:
+    icmp_msg_delete(pData, icm);
 }
 
 static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
