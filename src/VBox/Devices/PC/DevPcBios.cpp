@@ -267,7 +267,7 @@ static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pThis->iShutdown == 8)
             {
                 pThis->iShutdown = 0;
-                LogRel(("DevPcBios: 8900h shutdown request\n"));
+                LogRel(("PcBios: 8900h shutdown request\n"));
                 return PDMDevHlpVMPowerOff(pDevIns);
             }
         }
@@ -457,12 +457,12 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
         rc = pHardDisk->pfnSetLCHSGeometry(pHardDisk, &LCHSGeometry);
         if (rc == VERR_VD_IMAGE_READ_ONLY)
         {
-            LogRel(("DevPcBios: ATA failed to update LCHS geometry, read only\n"));
+            LogRel(("PcBios: ATA failed to update LCHS geometry, read only\n"));
             rc = VINF_SUCCESS;
         }
         else if (rc == VERR_PDM_GEOMETRY_NOT_SET)
         {
-            LogRel(("DevPcBios: ATA failed to update LCHS geometry, backend refused\n"));
+            LogRel(("PcBios: ATA failed to update LCHS geometry, backend refused\n"));
             rc = VINF_SUCCESS;
         }
     }
@@ -720,7 +720,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                 pcbiosCmosInitHardDisk(pDevIns, offType, offInfo,
                                        &LCHSGeometry);
             }
-            LogRel(("DevPcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+            LogRel(("PcBios: ATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
         }
     }
 
@@ -777,7 +777,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                     pcbiosCmosInitHardDisk(pDevIns, 0x00, offInfo,
                                            &LCHSGeometry);
                 }
-                LogRel(("DevPcBios: SATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+                LogRel(("PcBios: SATA LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
             }
         }
     }
@@ -830,10 +830,10 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
                             break;
                     }
                     pcbiosCmosInitHardDisk(pDevIns, 0x00, offInfo, &LCHSGeometry);
-                    LogRel(("DevPcBios: SCSI LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
+                    LogRel(("PcBios: SCSI LUN#%d LCHS=%u/%u/%u\n", i, LCHSGeometry.cCylinders, LCHSGeometry.cHeads, LCHSGeometry.cSectors));
                 }
                 else
-                    LogRel(("DevPcBios: SCSI LUN#%d LCHS not provided\n", i));
+                    LogRel(("PcBios: SCSI LUN#%d LCHS not provided\n", i));
             }
         }
     }
@@ -1106,7 +1106,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                 N_("Configuration error: Querying \"McfgLength\" as integer failed"));
 
 
-    LogRel(("DevPcBios: [SMP] BIOS with %u CPUs\n", pThis->cCpus));
+    LogRel(("PcBios: [SMP] BIOS with %u CPUs\n", pThis->cCpus));
 
     rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
@@ -1333,7 +1333,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_FAILURE(rc))
             return rc;
 
-        LogRel(("DevPcBios: Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
+        LogRel(("PcBios: Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
     }
     else
     {
@@ -1399,7 +1399,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
                               _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
-        LogRel(("DevPcBios: MPS table at %08x\n", VBOX_DMI_TABLE_BASE + VBOX_DMI_TABLE_SIZE));
+        LogRel(("PcBios: MPS table at %08x\n", VBOX_DMI_TABLE_BASE + VBOX_DMI_TABLE_SIZE));
     }
 
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
@@ -1471,7 +1471,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             /*
              * Ignore failure and fall back to the built-in LAN boot ROM.
              */
-            LogRel(("DevPcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
+            LogRel(("PcBios: Failed to open LAN boot ROM file '%s', rc=%Rrc!\n", pThis->pszLanBootFile, rc));
             RTFileClose(FileLanBoot);
             FileLanBoot = NIL_RTFILE;
             MMR3HeapFree(pThis->pszLanBootFile);
@@ -1484,7 +1484,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     if (pThis->pszLanBootFile)
     {
-        LogRel(("DevPcBios: Using LAN ROM '%s' with a size of %#x bytes\n", pThis->pszLanBootFile, cbFileLanBoot));
+        LogRel(("PcBios: Using LAN ROM '%s' with a size of %#x bytes\n", pThis->pszLanBootFile, cbFileLanBoot));
         /*
          * Allocate buffer for the LAN boot ROM data.
          */
