@@ -238,6 +238,93 @@ typedef struct WindowInfo WindowInfo;
 #endif /* IN_VMSVGA3D */
 
 
+/**
+ * Works functions that creates a NSOpenGLPixelFormat instance. 
+ *  
+ * @returns Instance.
+ * @param   fVisParams          Context flags.
+ */
+static NSOpenGLPixelFormat *vboxCreatePixelFormat(GLbitfield fVisParams)
+{
+    NSOpenGLPixelFormatAttribute attribs[24] =
+    {
+#ifdef IN_VMSVGA3D
+        NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)0,
+#endif
+        NSOpenGLPFAAccelerated,
+        NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24
+    };
+#ifndef IN_VMSVGA3D
+    int i = 3;
+#else
+    int i = 3+2;
+    if (fVisParams & VMSVGA3D_NON_DEFAULT_PROFILE_BIT)
+        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersionLegacy :  NSOpenGLProfileVersion3_2Core;
+    else
+        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
+#endif
+
+    if (fVisParams & CR_ALPHA_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_ALPHA_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFAAlphaSize;
+        attribs[i++] = 8;
+    }
+    if (fVisParams & CR_DEPTH_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_DEPTH_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFADepthSize;
+        attribs[i++] = 24;
+    }
+    if (fVisParams & CR_STENCIL_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_STENCIL_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFAStencilSize;
+        attribs[i++] = 8;
+    }
+    if (fVisParams & CR_ACCUM_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_ACCUM_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFAAccumSize;
+        if (fVisParams & CR_ALPHA_BIT)
+            attribs[i++] = 32;
+        else
+            attribs[i++] = 24;
+    }
+    if (fVisParams & CR_MULTISAMPLE_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_MULTISAMPLE_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFASampleBuffers;
+        attribs[i++] = 1;
+        attribs[i++] = NSOpenGLPFASamples;
+        attribs[i++] = 4;
+    }
+    if (fVisParams & CR_DOUBLE_BIT)
+    {
+        COCOA_LOG_FLOW(("  CR_DOUBLE_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFADoubleBuffer;
+    }
+    if (fVisParams & CR_STEREO_BIT)
+    {
+        /* We don't support that.
+        COCOA_LOG_FLOW(("  CR_STEREO_BIT requested\n"));
+        attribs[i++] = NSOpenGLPFAStereo;
+        */
+    }
+
+    if (VBoxOglIsOfflineRenderingAppropriate())
+    {
+        COCOA_LOG_FLOW(("  Offline rendering is enabled\n"));
+        attribs[i++] = NSOpenGLPFAAllowOfflineRenderers;
+    }
+
+    /* Mark the end */
+    attribs[i++] = 0;
+
+    /* Instantiate the pixel format object. */
+    return [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
+}
+
 
 static NSOpenGLContext *vboxCtxGetCurrent(void)
 {
@@ -806,7 +893,8 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
     bool                m_fCleanupNeeded;
     bool                m_fEverSized;
 }
-- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView *)pParentView winInfo:(WindowInfo *)pWinInfo;
+- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView *)pParentView winInfo:(WindowInfo *)pWinInfo 
+         fVisParams:(GLbitfield) fVisParams;
 - (void)setGLCtx:(NSOpenGLContext*)pCtx;
 - (NSOpenGLContext *)glCtx;
 
@@ -886,7 +974,7 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 @private
     OverlayWindow *m_pOverlayWindow;
 }
--(id)initWithOverlayWindow:(OverlayWindow *)pOverlayWindow;
+-(id)initWithOverlayWindow:(NSRect)frame overlayWindow:(OverlayWindow *)pOverlayWindow;
 @end
 
 /** 
@@ -1171,11 +1259,14 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 ********************************************************************************/
 @implementation OverlayHelperView
 
--(id)initWithOverlayWindow:(OverlayWindow *)pOverlayWindow
+-(id)initWithOverlayWindow:(NSRect)frame overlayWindow:(OverlayWindow *)pOverlayWindow
 {
     DEBUG_FUNC_ENTER();
 
-    self = [super initWithFrame:NSZeroRect];
+    self = [super initWithFrame:frame];
+#ifdef IN_VMSVGA3D
+    self.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+#endif
 
     m_pOverlayWindow = pOverlayWindow;
 
@@ -1218,7 +1309,15 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 
         [m_pOverlayView setOverlayWin: self];
 
-        m_pOverlayHelperView = [[OverlayHelperView alloc] initWithOverlayWindow:self];
+#ifdef IN_VMSVGA3D                                                                           
+        NSRect frame = [pParentView frame];
+        frame.origin.x = frame.origin.x = 0;
+        m_pOverlayHelperView = [[OverlayHelperView alloc] initWithOverlayWindow:frame
+                                                                  overlayWindow:self];
+#else
+        m_pOverlayHelperView = [[OverlayHelperView alloc] initWithOverlayWindow:NSZeroRect
+                                                                  overlayWindow:self];
+#endif
 
         /* Add the helper view as a child of the parent view to get notifications */
         [pParentView addSubview:m_pOverlayHelperView];
@@ -1347,10 +1446,11 @@ static DECLCALLBACK(void) VBoxMainThreadTaskRunner_RcdRunCallback(void *pvUser)
 ********************************************************************************/
 @implementation OverlayView
 
-- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView *)pParentView winInfo:(WindowInfo *)pWinInfo
+- (id)initWithFrame:(NSRect)frame thread:(RTTHREAD)aThread parentView:(NSView *)pParentView winInfo:(WindowInfo *)pWinInfo 
+         fVisParams:(GLbitfield) fVisParams
 {
-    COCOA_LOG_FLOW(("%s: self=%p aThread=%p pParentView=%p pWinInfo=%p\n", __PRETTY_FUNCTION__, (void *)self, 
-                    (void *)aThread, (void *)pParentView, (void *)pWinInfo));
+    COCOA_LOG_FLOW(("%s: self=%p aThread=%p pParentView=%p pWinInfo=%p fVisParams=%#x\n", __PRETTY_FUNCTION__, (void *)self, 
+                    (void *)aThread, (void *)pParentView, (void *)pWinInfo, fVisParams));
 
     m_pParentView             = pParentView;
     /* Make some reasonable defaults */
@@ -2754,86 +2854,8 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
 {
     COCOA_LOG_FLOW(("cocoaGLCtxCreate: ppCtx=%p fVisParams=%#x pSharedCtx=%p\n", (void *)ppCtx, fVisParams, (void *)pSharedCtx));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
-    NSOpenGLPixelFormat *pFmt = nil;
 
-    NSOpenGLPixelFormatAttribute attribs[24] =
-    {
-#ifdef IN_VMSVGA3D
-        NSOpenGLPFAOpenGLProfile, (NSOpenGLPixelFormatAttribute)0,
-#endif
-        NSOpenGLPFAAccelerated,
-        NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24
-    };
-
-    int i = 3;
-
-#ifdef IN_VMSVGA3D
-    if (fVisParams & VMSVGA3D_NON_DEFAULT_PROFILE_BIT)
-        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersionLegacy :  NSOpenGLProfileVersion3_2Core;
-    else
-        attribs[1] = VBOX_VMSVGA3D_DEFAULT_OGL_PROFILE >= 3.2 ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
-#endif
-
-    if (fVisParams & CR_ALPHA_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_ALPHA_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFAAlphaSize;
-        attribs[i++] = 8;
-    }
-    if (fVisParams & CR_DEPTH_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_DEPTH_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFADepthSize;
-        attribs[i++] = 24;
-    }
-    if (fVisParams & CR_STENCIL_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_STENCIL_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFAStencilSize;
-        attribs[i++] = 8;
-    }
-    if (fVisParams & CR_ACCUM_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_ACCUM_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFAAccumSize;
-        if (fVisParams & CR_ALPHA_BIT)
-            attribs[i++] = 32;
-        else
-            attribs[i++] = 24;
-    }
-    if (fVisParams & CR_MULTISAMPLE_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_MULTISAMPLE_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFASampleBuffers;
-        attribs[i++] = 1;
-        attribs[i++] = NSOpenGLPFASamples;
-        attribs[i++] = 4;
-    }
-    if (fVisParams & CR_DOUBLE_BIT)
-    {
-        COCOA_LOG_FLOW(("  CR_DOUBLE_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFADoubleBuffer;
-    }
-    if (fVisParams & CR_STEREO_BIT)
-    {
-        /* We don't support that.
-        COCOA_LOG_FLOW(("  CR_STEREO_BIT requested\n"));
-        attribs[i++] = NSOpenGLPFAStereo;
-        */
-    }
-
-    if (VBoxOglIsOfflineRenderingAppropriate())
-    {
-        COCOA_LOG_FLOW(("  Offline rendering is enabled\n"));
-        attribs[i++] = NSOpenGLPFAAllowOfflineRenderers;
-    }
-
-    /* Mark the end */
-    attribs[i++] = 0;
-
-    /* Choose a pixel format */
-    pFmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
-
+    NSOpenGLPixelFormat *pFmt = vboxCreatePixelFormat(fVisParams);
     if (pFmt)
     {
         *ppCtx = [[OverlayOpenGLContext alloc] initWithFormat:pFmt shareContext:pSharedCtx];
@@ -2874,15 +2896,16 @@ void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx)
 * View management
 *
 ********************************************************************************/
-static OverlayView *vboxViewCreate(WindowInfo *pWinInfo, NativeNSViewRef pParentView)
+static OverlayView *vboxViewCreate(WindowInfo *pWinInfo, NativeNSViewRef pParentView, GLbitfield fVisParams)
 {
-    COCOA_LOG_FLOW(("vboxViewCreate: pWinInfo=%p pParentView=%p\n", pWinInfo, (void *)pParentView));
+    COCOA_LOG_FLOW(("vboxViewCreate: pWinInfo=%p pParentView=%p fVisParams=%#x\n", pWinInfo, (void *)pParentView, fVisParams));
 
     /* Create our worker view. */
     OverlayView *pView = [[OverlayView alloc] initWithFrame:NSZeroRect 
                                                      thread:RTThreadSelf() 
                                                  parentView:pParentView 
-                                                    winInfo:pWinInfo];
+                                                    winInfo:pWinInfo
+                                                 fVisParams:fVisParams];
 
     if (pView)
     {
@@ -2911,7 +2934,7 @@ typedef struct CR_RCD_CREATEVIEW
 static DECLCALLBACK(void) vboxRcdCreateView(void *pvCb)
 {
     CR_RCD_CREATEVIEW *pCreateView = (CR_RCD_CREATEVIEW *)pvCb;
-    pCreateView->pView = vboxViewCreate(pCreateView->pWinInfo, pCreateView->pParentView);
+    pCreateView->pView = vboxViewCreate(pCreateView->pWinInfo, pCreateView->pParentView, pCreateView->fVisParams);
     COCOA_LOG_FLOW(("vboxRcdCreateView: returns pView=%p\n", (void *)pCreateView->pView));
 }
 
@@ -2947,7 +2970,7 @@ void cocoaViewCreate(NativeNSViewRef *ppView, WindowInfo *pWinInfo, NativeNSView
 #if 0
         dispatch_sync(dispatch_get_main_queue(), ^{
 #endif
-            *ppView = vboxViewCreate(pWinInfo, pParentView);
+            *ppView = vboxViewCreate(pWinInfo, pParentView, fVisParams);
 #if 0
         });
 #endif
@@ -3032,8 +3055,9 @@ void cocoaViewSetSize(NativeNSViewRef pView, int cx, int cy)
 {
     COCOA_LOG_FLOW(("cocoaViewSetSize: pView=%p cx=%d cy=%d\n", (void *)pView, cx, cy));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    OverlayView *pOverlayView = (OverlayView *)pView;
 
-    [(OverlayView *)pView vboxSetSize:NSMakeSize(cx, cy)];
+    [pOverlayView vboxSetSize:NSMakeSize(cx, cy)];
 
     [pPool release];
     COCOA_LOG_FLOW(("cocoaViewSetSize: returns\n"));
@@ -3190,52 +3214,66 @@ void cocoaViewSetVisibleRegion(NativeNSViewRef pView, GLint cRects, const GLint 
  * VMSVGA3D interface.
  */
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx, 
-                                               bool fOtherProfile)
+VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
+                                                           NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
+                                                           NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile)
 {
-    cocoaGLCtxCreate(ppCtx, CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT | (fOtherProfile ? VMSVGA3D_NON_DEFAULT_PROFILE_BIT : 0), 
-                     pSharedCtx);
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    GLbitfield fVisParams = CR_ALPHA_BIT | CR_DEPTH_BIT | CR_DOUBLE_BIT | (fOtherProfile ? VMSVGA3D_NON_DEFAULT_PROFILE_BIT : 0);
+    bool fRc = false;
+
+    cocoaGLCtxCreate(ppCtx, fVisParams, pSharedCtx);
+    if (*ppCtx)
+    {
+        cocoaViewCreate(ppView, NULL, pParentView, fVisParams);
+        if (*ppView)
+        {
+            cocoaViewSetSize(*ppView, cx, cy);
+            [(OverlayView *)*ppView setGLCtx: *ppCtx];
+            fRc = true;
+        }
+        else
+            [*ppCtx release];
+    }
+
+    [pPool release];
+    return fRc;
 }
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx)
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
     cocoaGLCtxDestroy(pCtx);
-}
-
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView)
-{
-    cocoaViewCreate(ppView, NULL, pParentView, 0 /* fVisParams - ignored */);
-}
-
-VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyView(NativeNSViewRef pView)
-{
     cocoaViewDestroy(pView);
 }
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
 {
     cocoaViewSetPosition(pView, pParentView, x, y);
 }
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h)
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h)
 {
     cocoaViewSetSize(pView, w, h);
 }
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
     Assert(!pView || [(OverlayView *)pView glCtx] == pCtx || [(OverlayView *)pView glCtx] == nil);
     cocoaViewMakeCurrentContext(pView, pCtx);
 }
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
 # if 1
     Assert([(OverlayView *)pView glCtx] == pCtx);
+    Assert([pCtx view] == pView);
     cocoaViewDisplay(pView);
 # else
     DEBUG_FUNC_ENTER();
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    
+    Assert([(OverlayView *)pView glCtx] == pCtx);
+    Assert([pCtx view] == pView);
 
     [pCtx flushBuffer];
 

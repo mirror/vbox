@@ -3871,13 +3871,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     int                 rc = VINF_SUCCESS;
     PVMSVGA3DCONTEXT    pContext;
     uint32_t            cid;
-    struct
-    {
-        uint32_t        x;
-        uint32_t        y;
-        uint32_t        cx;
-        uint32_t        cy;
-    } srcViewPort;
 
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn(sid < SVGA3D_MAX_SURFACE_IDS, VERR_INVALID_PARAMETER);
@@ -3922,14 +3915,18 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 #endif
     VMSVGA3D_CLEAR_GL_ERRORS();
 
-    /* Source surface different size? */
-    if (pSurface->pMipmapLevels[0].size.width  != pThis->svga.uWidth ||
-        pSurface->pMipmapLevels[0].size.height != pThis->svga.uHeight)
+    /*
+     * Source surface different size?
+     */
+    RTRECT2 srcViewPort;
+    if (   pSurface->pMipmapLevels[0].size.width  != pThis->svga.uWidth
+        || pSurface->pMipmapLevels[0].size.height != pThis->svga.uHeight)
     {
         float xMultiplier = (float)pSurface->pMipmapLevels[0].size.width / (float)pThis->svga.uWidth;
         float yMultiplier = (float)pSurface->pMipmapLevels[0].size.height / (float)pThis->svga.uHeight;
 
-        LogFlow(("size (%d vs %d) (%d vs %d) multiplier %d\n", pSurface->pMipmapLevels[0].size.width, pThis->svga.uWidth, pSurface->pMipmapLevels[0].size.height, pThis->svga.uHeight, (int)(xMultiplier * 100.0), (int)(yMultiplier * 100.0)));
+        LogFlow(("size (%d vs %d) (%d vs %d) multiplier (%d,%d)/100\n", pSurface->pMipmapLevels[0].size.width, pThis->svga.uWidth,
+                 pSurface->pMipmapLevels[0].size.height, pThis->svga.uHeight, (int)(xMultiplier * 100.0), (int)(yMultiplier * 100.0)));
 
         srcViewPort.x  = (uint32_t)((float)pThis->svga.viewport.x  * xMultiplier);
         srcViewPort.y  = (uint32_t)((float)pThis->svga.viewport.y  * yMultiplier);
@@ -3943,9 +3940,17 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
         srcViewPort.cx = pThis->svga.viewport.cx;
         srcViewPort.cy = pThis->svga.viewport.cy;
     }
+    RTRECT SrcViewPortRect;
+    SrcViewPortRect.xLeft   = srcViewPort.x;
+    SrcViewPortRect.xRight  = srcViewPort.x + srcViewPort.cx;
+    SrcViewPortRect.yBottom = srcViewPort.y;
+    SrcViewPortRect.yTop    = srcViewPort.y + srcViewPort.cy;
 
-#if 1
-    /* @note this path is slightly faster than the glBlitFrameBuffer path below. */
+
+#ifndef RT_OS_DARWIN /* blit-cube fails in this path... */
+    /*
+     * Note! this path is slightly faster than the glBlitFrameBuffer path below.
+     */
     SVGA3dCopyRect rect;
     uint32_t oldVShader, oldPShader;
     GLint oldTextureId;
@@ -4084,10 +4089,10 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_VS, oldVShader);
     vmsvga3dShaderSet(pThis, pContext, cid, SVGA3D_SHADERTYPE_PS, oldPShader);
 
-    /* Reset the frame buffer association */
-    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
-
 #else
+    /*
+     * glBlitFramebuffer variant.
+     */
     /* Activate the read and draw framebuffer objects. */
     pState->ext.glBindFramebuffer(GL_READ_FRAMEBUFFER, pContext->idReadFramebuffer);
     VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
@@ -4100,6 +4105,7 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
 
     /* Blit the surface rectangle(s) to the back buffer. */
     if (cRects == 0)
+
     {
         Log(("view port (%d,%d)(%d,%d)\n", srcViewPort.x, srcViewPort.y, srcViewPort.cx, srcViewPort.cy));
         pState->ext.glBlitFramebuffer(srcViewPort.x,
@@ -4118,6 +4124,65 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     {
         for (uint32_t i = 0; i < cRects; i++)
         {
+# ifdef RT_OS_DARWIN
+            /* This works better... */
+            RTRECT SrcRect;
+            SrcRect.xLeft   = pRect[i].srcx;
+            SrcRect.xRight  = pRect[i].srcx + pRect[i].w;
+            SrcRect.yBottom = pRect[i].srcy;
+            SrcRect.yTop    = pRect[i].srcy + pRect[i].h;
+            RTRECT DstRect; /* y flipped wrt source */
+            DstRect.xLeft   = pRect[i].x;
+            DstRect.xRight  = pRect[i].x + pRect[i].w;
+            DstRect.yBottom = pRect[i].y + pRect[i].h;
+            DstRect.yTop    = pRect[i].y;
+
+            if (SrcRect.xLeft < SrcViewPortRect.xLeft)
+            {
+                DstRect.xLeft += SrcViewPortRect.xLeft - SrcRect.xLeft;
+                SrcRect.xLeft  = SrcViewPortRect.xLeft;
+            }
+            else if (SrcRect.xLeft >= SrcViewPortRect.xRight)
+                continue;
+
+            if (SrcRect.xRight > SrcViewPortRect.xRight)
+            {
+                DstRect.xRight -= SrcViewPortRect.xRight - SrcRect.xRight;
+                SrcRect.xRight  = SrcViewPortRect.xRight;
+            }
+            else if (SrcRect.xRight <= SrcViewPortRect.xLeft)
+                continue;
+
+            if (SrcRect.xRight <= SrcRect.xLeft)
+                continue;
+
+            if (SrcRect.yBottom < SrcViewPortRect.yBottom)
+            {
+                DstRect.yTop    += SrcViewPortRect.yBottom - SrcRect.yBottom;
+                SrcRect.yBottom  = SrcViewPortRect.yBottom;
+            }
+            else if (SrcRect.yBottom >= SrcViewPortRect.yTop)
+                continue;
+
+            if (SrcRect.yTop > SrcViewPortRect.yTop)
+            {
+                DstRect.yBottom -= SrcViewPortRect.yTop - SrcRect.yTop;
+                SrcRect.yTop     = SrcViewPortRect.yTop;
+            }
+            else if (SrcRect.yTop <= SrcViewPortRect.yBottom)
+                continue;
+
+            if (SrcRect.yTop <= SrcRect.yBottom)
+                continue;
+
+            Log(("SrcRect: (%d,%d)(%d,%d) DstRect: (%d,%d)(%d,%d)\n",
+                 SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
+                 DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop));
+            pState->ext.glBlitFramebuffer(SrcRect.xLeft, SrcRect.yBottom, SrcRect.xRight, SrcRect.yTop,
+                                          DstRect.xLeft, DstRect.yBottom, DstRect.xRight, DstRect.yTop,
+                                          GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+# else
             if (    pRect[i].x + pRect[i].w <= pThis->svga.viewport.x
                 ||  pThis->svga.viewport.x + pThis->svga.viewport.cx <= pRect[i].x
                 ||  pRect[i].y + pRect[i].h <= pThis->svga.viewport.y
@@ -4126,7 +4191,6 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
                 /* Intersection is empty; skip */
                 continue;
             }
-
             pState->ext.glBlitFramebuffer(RT_MAX(pRect[i].srcx, srcViewPort.x),
                                           pSurface->pMipmapLevels[0].size.width - RT_MAX(pRect[i].srcy, srcViewPort.y),   /* exclusive. (reverse to flip the image) */
                                           RT_MIN(pRect[i].srcx + pRect[i].w, srcViewPort.x + srcViewPort.cx),  /* exclusive. */
@@ -4137,14 +4201,19 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
                                           pThis->svga.uHeight - (RT_MAX(pRect[i].y, pThis->svga.viewport.y) - pThis->svga.viewport.y),
                                           GL_COLOR_BUFFER_BIT,
                                           GL_LINEAR);
+# endif
         }
     }
-    /* Reset the frame buffer association */
-    pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer);
-    VMSVGA3D_CHECK_LAST_ERROR_WARN(pState, pContext);
+
+#endif
+#ifndef RT_OS_DARWIN /* darwin: later */
+    /* Reset the frame buffer association - see below.  */
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
 #endif
 
-    /* Flip the front and back buffers. */
+    /*
+     * Flip the front and back buffers.
+     */
 #ifdef RT_OS_WINDOWS
     BOOL ret = SwapBuffers(pContext->hdc);
     AssertMsg(ret, ("SwapBuffers failed with %d\n", GetLastError()));
@@ -4159,6 +4228,14 @@ int vmsvga3dCommandPresent(PVGASTATE pThis, uint32_t sid, uint32_t cRects, SVGA3
     }
     /* now swap the buffers, i.e. display the rendering result */
     glXSwapBuffers(pState->display, pContext->window);
+#endif
+
+#if defined(RT_OS_DARWIN)
+    /*
+     * Now we can reset the frame buffer association.  Doing it earlier means no
+     * output on darwin.
+     */
+    VMSVGA3D_ASSERT_GL_CALL(pState->ext.glBindFramebuffer(GL_FRAMEBUFFER, pContext->idFramebuffer), pState, pContext);
 #endif
     return VINF_SUCCESS;
 }
@@ -4386,10 +4463,11 @@ static int vmsvga3dContextDefineOgl(PVGASTATE pThis, uint32_t cid, uint32_t fFla
 #elif defined(RT_OS_DARWIN)
     pContext->fOtherProfile = RT_BOOL(fFlags & VMSVGA3D_DEF_CTX_F_OTHER_PROFILE);
 
-    NativeNSOpenGLContextRef shareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
-    vmsvga3dCocoaCreateContext(&pContext->cocoaContext, shareContext, pContext->fOtherProfile);
-    NativeNSViewRef pHostView = (NativeNSViewRef)pThis->svga.u64HostWindowId;
-    vmsvga3dCocoaCreateView(&pContext->cocoaView, pHostView);
+    NativeNSOpenGLContextRef pShareContext = pSharedCtx ? pSharedCtx->cocoaContext : NULL;
+    NativeNSViewRef          pHostView    = (NativeNSViewRef)pThis->svga.u64HostWindowId;
+    vmsvga3dCocoaCreateViewAndContext(&pContext->cocoaView, &pContext->cocoaContext,
+                                      pHostView, pThis->svga.uWidth, pThis->svga.uHeight,
+                                      pShareContext, pContext->fOtherProfile);
 
 #else
     Window hostWindow = (Window)pThis->svga.u64HostWindowId;
@@ -4618,8 +4696,7 @@ int vmsvga3dContextDestroy(PVGASTATE pThis, uint32_t cid)
         int rc = vmsvga3dSendThreadMessage(pState->pWindowThread, pState->WndRequestSem, WM_VMSVGA3D_DESTROYWINDOW, (WPARAM)pContext->hwnd, 0);
         AssertRC(rc);
 #elif defined(RT_OS_DARWIN)
-        vmsvga3dCocoaDestroyView(pContext->cocoaView);
-        vmsvga3dCocoaDestroyContext(pContext->cocoaContext);
+        vmsvga3dCocoaDestroyViewAndContext(pContext->cocoaView, pContext->cocoaContext);
 #elif defined(RT_OS_LINUX)
         glXMakeCurrent(pState->display, None, NULL);
         glXDestroyContext(pState->display, pContext->glxContext);

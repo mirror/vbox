@@ -68,7 +68,11 @@
 #include "vmsvga/svga3d_caps.h"
 #ifdef VBOX_WITH_VMSVGA3D
 # include "DevVGA-SVGA3d.h"
+# ifdef RT_OS_DARWIN
+#  include "DevVGA-SVGA3d-cocoa.h"
+# endif
 #endif
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -2202,6 +2206,13 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     uint32_t volatile * const pFIFO = pThis->svga.pFIFOR3;
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
+# if defined(RT_OS_DARWIN) && defined(VBOX_WITH_VMSVGA3D)
+        /*
+         * Should service the run loop every so often.
+         */
+        if (pThis->svga.f3DEnabled)
+            vmsvga3dCocoaServiceRunLoop();
+# endif
 
         /*
          * Wait for at most 250 ms to start polling.

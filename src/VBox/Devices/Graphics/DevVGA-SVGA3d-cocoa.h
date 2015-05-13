@@ -19,7 +19,6 @@
 
 #include <iprt/types.h>
 #include <VBox/VBoxCocoa.h>
-#include <OpenGL/OpenGL.h>
 
 RT_C_DECLS_BEGIN
 
@@ -28,21 +27,21 @@ ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSOpenGLContext);
 #endif
 
-#ifdef IN_VMSVGA3D
-# define VMSVGA3D_DECL(type)  DECLEXPORT(type)
+#ifdef IN_VMSVGA3DCOCOA
+# define VMSVGA3DCOCOA_DECL(type)  DECLEXPORT(type)
 #else
-# define VMSVGA3D_DECL(type)  DECLIMPORT(type)
+# define VMSVGA3DCOCOA_DECL(type)  DECLIMPORT(type)
 #endif
 
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pSharedCtx,
-                                               bool fOtherProfile);
-VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx);
-VMSVGA3D_DECL(void) vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView);
-VMSVGA3D_DECL(void) vmsvga3dCocoaDestroyView(NativeNSViewRef pView);
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h);
-VMSVGA3D_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
-VMSVGA3D_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaServiceRunLoop(void);
+VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
+                                                           NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
+                                                           NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx);
 
 RT_C_DECLS_END
 

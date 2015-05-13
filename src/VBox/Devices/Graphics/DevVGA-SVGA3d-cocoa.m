@@ -17,370 +17,106 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#define LOG_GROUP LOG_GROUP_DEV_VMSVGA
 #include "DevVGA-SVGA3d-cocoa.h"
 #import <Cocoa/Cocoa.h>
 #import <OpenGL/gl.h>
 
 #include <iprt/thread.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
+#include <VBox/log.h>
 
-/* Debug macros */
-#if 0 /*def DEBUG_VERBOSE*/
-/*# error "should be disabled!"*/
-# define DEBUG_INFO(text) do { \
-        crWarning text ; \
-        Assert(0); \
-    } while (0)
 
-# define DEBUG_MSG(text) \
-    printf text
-
-# define DEBUG_WARN(text) do { \
-        crWarning text ; \
-        Assert(0); \
-    } while (0)
-
-# define DEBUG_MSG_1(text) \
-    DEBUG_MSG(text)
-
-# define DEBUG_FUNC_ENTER() \
-    int cchDebugFuncEnter = printf("==>%s\n", __PRETTY_FUNCTION__)
-
-#define DEBUG_FUNC_LEAVE() do { \
-        DEBUG_MSG(("<==%s\n", __PRETTY_FUNCTION__)); \
-    } while (0)
-
-#define DEBUG_FUNC_RET(valuefmtnl) do { \
-        DEBUG_MSG(("<==%s returns", __PRETTY_FUNCTION__)); \
-        DEBUG_MSG(valuefmtnl); \
-    } while (0)
-
-#else
-
-# define DEBUG_INFO(text) do { \
-        crInfo text ; \
-    } while (0)
-
-# define DEBUG_MSG(text) \
-    do {} while (0)
-
-# define DEBUG_WARN(text) do { \
-        crWarning text ; \
-    } while (0)
-
-# define DEBUG_MSG_1(text) \
-    do {} while (0)
-
-# define DEBUG_FUNC_ENTER() int cchDebugFuncEnter = 0
-# define DEBUG_FUNC_LEAVE() NOREF(cchDebugFuncEnter)
-# define DEBUG_FUNC_RET(valuefmtnl) DEBUG_FUNC_LEAVE()
-
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @def USE_NSOPENGLVIEW
+ * Define this to experiment with using NSOpenGLView instead 
+ * of NSView.  There are transparency issues with the former, 
+ * so for the time being we're using the latter.  */
+#if 0
+#define USE_NSOPENGLVIEW
 #endif
 
-# define CHECK_GL_ERROR()\
-    do {} while (0)
 
-
-/** Custom OpenGL context class.
- *
- * This implementation doesn't allow to set a view to the
- * context, but save the view for later use. Also it saves a copy of the
- * pixel format used to create that context for later use. */
-@interface VMSVGA3DOpenGLContext: NSOpenGLContext
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Argument package for doing this on the main thread.
+ */
+@interface VMSVGA3DCreateViewAndContext : NSObject
 {
-@private
-    NSOpenGLPixelFormat *m_pPixelFormat;
-    NSView              *m_pView;
+@public
+    /* in */
+    NativeNSViewRef             pParentView; 
+    uint32_t                    cx;
+    uint32_t                    cy;
+    NativeNSOpenGLContextRef    pSharedCtx;
+    bool                        fOtherProfile;
+
+    /* out */
+    NativeNSViewRef             pView;
+    NativeNSOpenGLContextRef    pCtx;
 }
-- (NSOpenGLPixelFormat*)openGLPixelFormat;
 @end
 
-@interface VMSVGA3DOverlayView: NSView
+
+/**
+ * The overlay view.
+ */
+@interface VMSVGA3DOverlayView 
+#ifdef USE_NSOPENGLVIEW
+    : NSOpenGLView
+#else
+    : NSView
+#endif
 {
 @private
     NSView          *m_pParentView;
-    NSWindow        *m_pOverlayWin;
-    
-    NSOpenGLContext *m_pGLCtx;
-    
+    /** Set if the buffers needs clearing. */
+    bool            m_fClear;
+
+#ifndef USE_NSOPENGLVIEW
+    /** The OpenGL context associated with this view. */
+    NSOpenGLContext *m_pCtx;
+#endif
+
     /* Position/Size tracking */
     NSPoint          m_Pos;
     NSSize           m_Size;
     
     /** This is necessary for clipping on the root window */
     NSRect           m_RootRect;
-    float            m_yInvRootOffset;
 }
-- (id)initWithFrame:(NSRect)frame parentView:(NSView*)pparentView;
-- (void)setGLCtx:(NSOpenGLContext*)pCtx;
-- (NSOpenGLContext*)glCtx;
-- (void)setOverlayWin: (NSWindow*)win;
-- (NSWindow*)overlayWin;
++ (void)createViewAndContext:(VMSVGA3DCreateViewAndContext *)pParams;
+- (id)initWithFrameAndFormat:(NSRect)frame parentView:(NSView*)pparentView pixelFormat:(NSOpenGLPixelFormat *)pFmt;
 - (void)setPos:(NSPoint)pos;
-- (NSPoint)pos;
 - (void)setSize:(NSSize)size;
-- (NSSize) size;
-- (void)updateViewportCS;
-- (void)reshape;
-@end
+- (void)vboxReshape;
+- (void)vboxClearBuffers;
+- (NSOpenGLContext *)makeCurrentGLContext;
+- (void)restoreSavedGLContext:(NSOpenGLContext *)pSavedCtx;
 
-/** Helper view.
- *
- * This view is added as a sub view of the parent view to track
- * main window changes. Whenever the main window is changed
- * (which happens on fullscreen/seamless entry/exit) the overlay
- * window is informed & can add them self as a child window
- * again. */
-@class VMSVGA3DOverlayWindow;
-@interface VMSVGA3DOverlayHelperView: NSView
-{
-@private
-    VMSVGA3DOverlayWindow *m_pOverlayWindow;
-}
--(id)initWithOverlayWindow:(VMSVGA3DOverlayWindow*)pOverlayWindow;
-@end
+#ifndef USE_NSOPENGLVIEW
+/* NSOpenGLView fakes: */
+- (void)setOpenGLContext:(NSOpenGLContext *)pCtx;
+- (NSOpenGLContext *)openGLContext;
+- (void)prepareOpenGL;
 
-/** Custom window class.
- *
- * This is the overlay window which contains our custom NSView.
- * Its a direct child of the Qt Main window. It marks its background
- * transparent & non opaque to make clipping possible. It also disable mouse
- * events and handle frame change events of the parent view. */
-@interface VMSVGA3DOverlayWindow: NSWindow
-{
-@private
-    NSView                    *m_pParentView;
-    VMSVGA3DOverlayView       *m_pOverlayView;
-    VMSVGA3DOverlayHelperView *m_pOverlayHelperView;
-    NSThread                  *m_Thread;
-}
-- (id)initWithParentView:(NSView*)pParentView overlayView:(VMSVGA3DOverlayView*)pOverlayView;
-- (void)parentWindowFrameChanged:(NSNotification *)note;
-- (void)parentWindowChanged:(NSWindow*)pWindow;
-@end
-
-
-/********************************************************************************
-*
-* VMSVGA3DOpenGLContext class implementation
-*
-********************************************************************************/
-@implementation VMSVGA3DOpenGLContext
-
--(id)initWithFormat:(NSOpenGLPixelFormat*)format shareContext:(NSOpenGLContext*)share
-{
-    DEBUG_FUNC_ENTER();
-
-    m_pPixelFormat = NULL;
-    m_pView = NULL;
-
-    self = [super initWithFormat:format shareContext:share];
-    if (self)
-        m_pPixelFormat = format;
-
-    DEBUG_MSG(("OCTX(%p): init VMSVGA3DOpenGLContext\n", (void*)self));
-    DEBUG_FUNC_RET(("%p\n", (void *)self));
-    return self;
-}
-
-- (void)dealloc
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OCTX(%p): dealloc VMSVGA3DOpenGLContext\n", (void*)self));
-
-    [m_pPixelFormat release];
-
-m_pPixelFormat = NULL;
-m_pView = NULL;
-
-    [super dealloc];
-    DEBUG_FUNC_LEAVE();
-}
-
--(bool)isDoubleBuffer
-{
-    DEBUG_FUNC_ENTER();
-    GLint val;
-    [m_pPixelFormat getValues:&val forAttribute:NSOpenGLPFADoubleBuffer forVirtualScreen:0];
-    DEBUG_FUNC_RET(("%d\n", val == 1 ? YES : NO));
-    return val == 1 ? YES : NO;
-}
-
--(void)setView:(NSView*)view
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OCTX(%p): setView: new view: %p\n", (void*)self, (void*)view));
-
-    m_pView = view;
-
-    DEBUG_FUNC_LEAVE();
-}
-
--(NSView*)view
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%p\n", (void *)m_pView));
-    return m_pView;
-}
-
--(void)clearDrawable
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OCTX(%p): clearDrawable\n", (void*)self));
-
-    m_pView = NULL;
-    [super clearDrawable];
-
-    DEBUG_FUNC_LEAVE();
-}
-
--(NSOpenGLPixelFormat*)openGLPixelFormat
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%p\n", (void *)m_pPixelFormat));
-    return m_pPixelFormat;
-}
-
-@end
-
-
-
-/********************************************************************************
-*
-* VMSVGA3DOverlayHelperView class implementation
-*
-********************************************************************************/
-@implementation VMSVGA3DOverlayHelperView
-
--(id)initWithOverlayWindow:(VMSVGA3DOverlayWindow*)pOverlayWindow
-{
-    DEBUG_FUNC_ENTER();
-
-    self = [super initWithFrame:NSZeroRect];
-
-    m_pOverlayWindow = pOverlayWindow;
-
-    DEBUG_MSG(("OHVW(%p): init OverlayHelperView\n", (void*)self));
-    DEBUG_FUNC_RET(("%p\n", (void *)self));
-    return self;
-}
-
--(void)viewDidMoveToWindow
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OHVW(%p): viewDidMoveToWindow: new win: %p\n", (void*)self, (void*)[self window]));
-
-    [m_pOverlayWindow parentWindowChanged:[self window]];
-
-    DEBUG_FUNC_LEAVE();
-}
-
-@end
-
-/********************************************************************************
-*
-* VMSVGA3DOverlayWindow class implementation
-*
-********************************************************************************/
-@implementation VMSVGA3DOverlayWindow
-
-- (id)initWithParentView:(NSView*)pParentView overlayView:(VMSVGA3DOverlayView*)pOverlayView
-{
-    DEBUG_FUNC_ENTER();
-    NSWindow *pParentWin = nil;
-
-    if((self = [super initWithContentRect:NSZeroRect styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:NO]))
-    {
-        m_pParentView = pParentView;
-        m_pOverlayView = pOverlayView;
-        m_Thread = [NSThread currentThread];
-
-        [m_pOverlayView setOverlayWin: self];
-
-        m_pOverlayHelperView = [[VMSVGA3DOverlayHelperView alloc] initWithOverlayWindow:self];
-        /* Add the helper view as a child of the parent view to get notifications */
-        [pParentView addSubview:m_pOverlayHelperView];
-
-        /* Make sure this window is transparent */
-#ifdef SHOW_WINDOW_BACKGROUND
-        /* For debugging */
-        [self setBackgroundColor:[NSColor colorWithCalibratedRed:1.0 green:0.0 blue:0.0 alpha:0.7]];
-#else
-        [self setBackgroundColor:[NSColor clearColor]];
 #endif
-        [self setOpaque:NO];
-        [self setAlphaValue:.999];
-        /* Disable mouse events for this window */
-        [self setIgnoresMouseEvents:YES];
-
-        pParentWin = [m_pParentView window];
-
-        /* Initial set the position to the parents view top/left (Compiz fix). */
-        [self setFrameOrigin:
-            [pParentWin convertBaseToScreen:
-                [m_pParentView convertPoint:NSZeroPoint toView:nil]]];
-
-        /* Set the overlay view as our content view */
-        [self setContentView:m_pOverlayView];
-
-        /* Add ourself as a child to the parent views window. Note: this has to
-         * be done last so that everything else is setup in
-         * parentWindowChanged. */
-        [pParentWin addChildWindow:self ordered:NSWindowAbove];
-    }
-    DEBUG_MSG(("OWIN(%p): init OverlayWindow\n", (void*)self));
-    DEBUG_FUNC_RET(("%p\n", (void *)self));
-    return self;
-}
-
-- (void)dealloc
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OWIN(%p): dealloc OverlayWindow\n", (void*)self));
-
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    [m_pOverlayHelperView removeFromSuperview];
-    [m_pOverlayHelperView release];
-
-    [super dealloc];
-    DEBUG_FUNC_LEAVE();
-}
-
-- (void)parentWindowFrameChanged:(NSNotification*)pNote
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OWIN(%p): parentWindowFrameChanged\n", (void*)self));
-
-    [m_pOverlayView reshape];
-
-    DEBUG_FUNC_LEAVE();
-}
-
-- (void)parentWindowChanged:(NSWindow*)pWindow
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OWIN(%p): parentWindowChanged\n", (void*)self));
-
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    if(pWindow != nil)
-    {
-        /* Ask to get notifications when our parent window frame changes. */
-        [[NSNotificationCenter defaultCenter]
-            addObserver:self
-            selector:@selector(parentWindowFrameChanged:)
-            name:NSWindowDidResizeNotification
-            object:pWindow];
-        /* Add us self as child window */
-        [pWindow addChildWindow:self ordered:NSWindowAbove];
-        [m_pOverlayView reshape];
-    }
-
-    DEBUG_FUNC_LEAVE();
-}
+/* Overridden: */    
+- (void)viewDidMoveToWindow;
+- (void)viewDidMoveToSuperview;
+- (void)resizeWithOldSuperviewSize:(NSSize)oldBoundsSize;
+- (void)drawRect:(NSRect)rect;
 
 @end
+
 
 /********************************************************************************
 *
@@ -389,246 +125,15 @@ m_pView = NULL;
 ********************************************************************************/
 @implementation VMSVGA3DOverlayView
 
-- (id)initWithFrame:(NSRect) frame parentView:(NSView*)pParentView
+
++ (void)createViewAndContext:(VMSVGA3DCreateViewAndContext *)pParams
 {
-    DEBUG_FUNC_ENTER();
+    LogFlow(("OvlWin createViewAndContext:\n"));
 
-    m_pParentView    = pParentView;
-    /* Make some reasonable defaults */
-    m_pGLCtx         = nil;
-    m_Pos            = NSZeroPoint;
-    m_Size           = NSMakeSize(1, 1);
-    m_RootRect       = NSMakeRect(0, 0, m_Size.width, m_Size.height);
-    m_yInvRootOffset = 0;
-    
-    self = [super initWithFrame: frame];
-    
-    DEBUG_MSG(("OVIW(%p): init VMSVGA3DOverlayView\n", (void*)self));
-    DEBUG_FUNC_RET(("%p\n", (void *)self));
-    return self;
-}
-
-- (void)cleanupData
-{
-    DEBUG_FUNC_ENTER();
-
-    /*[self deleteDockTile];*/
-    
-    [self setGLCtx:nil];
-    
-#if 0
-    if (m_pSharedGLCtx)
-    {
-        if ([m_pSharedGLCtx view] == self)
-            [m_pSharedGLCtx clearDrawable];
-
-        [m_pSharedGLCtx release];
-
-        m_pSharedGLCtx = nil;
-        
-        CrBltTerm(m_pBlitter);
-        
-        RTMemFree(m_pBlitter);
-        
-        m_pBlitter = nil;
-    }
-#endif
-
-    /*[self clearVisibleRegions];*/
-    
-    DEBUG_FUNC_LEAVE();
-}
-
-- (void)dealloc
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OVIW(%p): dealloc OverlayView\n", (void*)self));
-
-    [self cleanupData];
-
-    [super dealloc];
-
-    DEBUG_FUNC_LEAVE();
-}
-
-
-- (void)setGLCtx:(NSOpenGLContext*)pCtx
-{
-    DEBUG_FUNC_ENTER();
-
-    DEBUG_MSG(("OVIW(%p): setGLCtx: new ctx: %p (old: %p)\n", (void*)self, (void*)pCtx, (void *)m_pGLCtx));
-    if (m_pGLCtx == pCtx)
-    {
-        DEBUG_FUNC_LEAVE();
-        return;
-    }
-
-    /* ensure the context drawable is cleared to avoid holding a reference to inexistent view */
-    if (m_pGLCtx)
-    {
-        [m_pGLCtx clearDrawable];
-        [m_pGLCtx release];
-        /*[m_pGLCtx performSelectorOnMainThread:@selector(release) withObject:nil waitUntilDone:NO];*/
-    }
-    m_pGLCtx = pCtx;
-    if (pCtx)
-        [pCtx retain];
-
-    DEBUG_FUNC_LEAVE();
-}
-
-- (NSOpenGLContext*)glCtx
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%p\n", (void *)m_pGLCtx));
-    return m_pGLCtx;
-}
-
-- (void)setOverlayWin:(NSWindow*)pWin
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OVIW(%p): setOverlayWin: new win: %p\n", (void*)self, (void*)pWin));
-    m_pOverlayWin = pWin;
-    DEBUG_FUNC_LEAVE();
-}
-
-- (NSWindow*)overlayWin
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%p\n", (void *)m_pOverlayWin));
-    return m_pOverlayWin;
-}
-
-- (void)setPos:(NSPoint)pos
-{
-    DEBUG_FUNC_ENTER();
-
-    m_Pos = pos;
-    [self reshape];
-    DEBUG_FUNC_LEAVE();
-}
-
-- (NSPoint)pos
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%f,%f\n", m_Pos.x, m_Pos.y));
-    return m_Pos;
-}
-
-- (void)setSize:(NSSize)size
-{
-    DEBUG_FUNC_ENTER();
-    m_Size = size;
-    [self reshape];
-    DEBUG_FUNC_LEAVE();
-}
-
-- (NSSize)size
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_FUNC_RET(("%f,%f\n", m_Size.width, m_Size.height));
-    return m_Size;
-}
-
-- (void)updateViewportCS
-{
-    DEBUG_FUNC_ENTER();
-    DEBUG_MSG(("OVIW(%p): updateViewport\n", (void*)self));
-
-    /* Update the viewport for our OpenGL view */
-/*    [m_pSharedGLCtx update]; */
-        
-    /* Clear background to transparent */
-/*    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);*/
-    DEBUG_FUNC_LEAVE();
-}
-
-- (void)reshape
-{
-    DEBUG_FUNC_ENTER();
-    NSRect parentFrame = NSZeroRect;
-    NSPoint parentPos  = NSZeroPoint;
-    NSPoint childPos   = NSZeroPoint;
-    NSRect childFrame  = NSZeroRect;
-    NSRect newFrame    = NSZeroRect;
-
-    DEBUG_MSG(("OVIW(%p): reshape\n", (void*)self));
-
-    /* Getting the right screen coordinates of the parents frame is a little bit
-     * complicated. */
-    parentFrame = [m_pParentView frame];
-    DEBUG_MSG(("FIXED parentFrame [%f:%f], [%f:%f]\n", parentFrame.origin.x, parentFrame.origin.y, parentFrame.size.width, parentFrame.size.height));    
-    parentPos = [[m_pParentView window] convertBaseToScreen:[[m_pParentView superview] convertPointToBase:NSMakePoint(parentFrame.origin.x, parentFrame.origin.y + parentFrame.size.height)]];
-    parentFrame.origin.x = parentPos.x;
-    parentFrame.origin.y = parentPos.y;
-
-    /* Calculate the new screen coordinates of the overlay window. */
-    childPos = NSMakePoint(m_Pos.x, m_Pos.y + m_Size.height);
-    childPos = [[m_pParentView window] convertBaseToScreen:[[m_pParentView superview] convertPointToBase:childPos]];
-    DEBUG_MSG(("FIXED childPos(screen) [%f:%f]\n", childPos.x, childPos.y));
-
-    /* Make a frame out of it. */
-    childFrame = NSMakeRect(childPos.x, childPos.y, m_Size.width, m_Size.height);
-    DEBUG_MSG(("FIXED childFrame [%f:%f], [%f:%f]\n", childFrame.origin.x, childFrame.origin.y, childFrame.size.width, childFrame.size.height));
-
-    /* We have to make sure that the overlay window will not be displayed out
-     * of the parent window. So intersect both frames & use the result as the new
-     * frame for the window. */
-    newFrame = NSIntersectionRect(parentFrame, childFrame);
-
-    DEBUG_MSG(("[%p]: parentFrame pos[%f : %f] size[%f : %f]\n",
-          (void*)self, 
-         parentFrame.origin.x, parentFrame.origin.y,
-         parentFrame.size.width, parentFrame.size.height));
-    DEBUG_MSG(("[%p]: childFrame pos[%f : %f] size[%f : %f]\n",
-          (void*)self, 
-         childFrame.origin.x, childFrame.origin.y,
-         childFrame.size.width, childFrame.size.height));
-         
-    DEBUG_MSG(("[%p]: newFrame pos[%f : %f] size[%f : %f]\n",
-          (void*)self, 
-         newFrame.origin.x, newFrame.origin.y,
-         newFrame.size.width, newFrame.size.height));
-    
-    /* Later we have to correct the texture position in the case the window is
-     * out of the parents window frame. So save the shift values for later use. */ 
-    m_RootRect.origin.x = newFrame.origin.x - childFrame.origin.x;
-    m_RootRect.origin.y =  childFrame.size.height + childFrame.origin.y - (newFrame.size.height + newFrame.origin.y);
-    m_RootRect.size = newFrame.size;
-    m_yInvRootOffset = newFrame.origin.y - childFrame.origin.y;
-    
-    DEBUG_MSG(("[%p]: m_RootRect pos[%f : %f] size[%f : %f]\n",
-         (void*)self, 
-         m_RootRect.origin.x, m_RootRect.origin.y,
-         m_RootRect.size.width, m_RootRect.size.height));
-
-    /* Set the new frame. */
-    [[self window] setFrame:newFrame display:YES];
-
-#if 0
-    /* Make sure the context is updated according */
-    /* [self updateViewport]; */
-    if (m_pSharedGLCtx)
-    {
-        VBOX_CR_RENDER_CTX_INFO CtxInfo; 
-        vboxCtxEnter(m_pSharedGLCtx, &CtxInfo);
-    
-        [self updateViewportCS];
-    
-        vboxCtxLeave(&CtxInfo);
-    }
-#endif
-    DEBUG_FUNC_LEAVE();
-}
-
-@end
-
-
-void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLContextRef pShareCtx, bool fOtherProfile)
-{
-    DEBUG_FUNC_ENTER();
+    /*
+     * Create a pixel format.
+     */
     NSOpenGLPixelFormat *pFmt = nil;
-    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
     // Consider to remove it and check if it's harmless.
     NSOpenGLPixelFormatAttribute attribs[] =
@@ -637,131 +142,464 @@ void vmsvga3dCocoaCreateContext(NativeNSOpenGLContextRef *ppCtx, NativeNSOpenGLC
         //NSOpenGLPFAWindow, - obsolete/deprecated, try work without it...
         NSOpenGLPFAAccelerated,
         NSOpenGLPFADoubleBuffer,
+        NSOpenGLPFABackingStore,
         NSOpenGLPFAColorSize, (NSOpenGLPixelFormatAttribute)24,
         NSOpenGLPFAAlphaSize, (NSOpenGLPixelFormatAttribute)8,
         NSOpenGLPFADepthSize, (NSOpenGLPixelFormatAttribute)24,
         0
     };
-    attribs[1] = fOtherProfile ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
-
-    /* Choose a pixel format */
+    attribs[1] = pParams->fOtherProfile ? NSOpenGLProfileVersion3_2Core : NSOpenGLProfileVersionLegacy;
     pFmt = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
     if (pFmt)
     {
-        *ppCtx = [[VMSVGA3DOpenGLContext alloc] initWithFormat:pFmt shareContext:pShareCtx];
-        DEBUG_MSG(("New context %p\n", (void *)*ppCtx));
+        /*
+         * Create a new view.
+         */
+        NSRect Frame;
+        Frame.origin.x    = 0;
+        Frame.origin.y    = 0;
+        Frame.size.width  = pParams->cx < _1M ? pParams->cx : 0;
+        Frame.size.height = pParams->cy < _1M ? pParams->cy : 0;
+        VMSVGA3DOverlayView *pView = [[VMSVGA3DOverlayView alloc] initWithFrameAndFormat:Frame
+                                                                              parentView:pParams->pParentView
+                                                                             pixelFormat:pFmt];
+        if (pView)
+        {
+            /*
+             * If we have no shared GL context, we use the one that NSOpenGLView create. Otherwise, 
+             * we replace it.  (If we don't call openGLContext, it won't yet have been instantiated, 
+             * so there is no unecessary contexts created here when pSharedCtx != NULL.)
+             */
+            NSOpenGLContext *pCtx;
+#ifdef USE_NSOPENGLVIEW
+            if (!pParams->pSharedCtx)
+                pCtx = [pView openGLContext];
+            else
+#endif
+            {
+                pCtx = [[NSOpenGLContext alloc] initWithFormat:pFmt shareContext: pParams->pSharedCtx];
+                if (pCtx)
+                {
+                    [pView setOpenGLContext:pCtx];
+                    [pCtx setView:pView];
+#ifdef USE_NSOPENGLVIEW
+                    Assert([pCtx view] == pView);
+#endif
+                }
+            }
+            if (pCtx)
+            {
+                /* 
+                 * Attach the view to the parent.
+                 */
+                [pParams->pParentView addSubview:pView];
+
+                /*
+                 * Resize and return.
+                 */
+                //[pView setSize:Frame.size];
+
+                NSOpenGLContext *pSavedCtx = [pView makeCurrentGLContext];
+
+                [pView prepareOpenGL];
+                GLint x;
+                //x = 0; [pCtx setValues:&x forParameter:NSOpenGLCPSwapInterval];
+                //x = 1; [pCtx setValues:&x forParameter:NSOpenGLCPSurfaceOrder];
+                x = 0; [pCtx setValues:&x forParameter:NSOpenGLCPSurfaceOpacity];
+
+                [pView setHidden:NO];
+
+                [pView restoreSavedGLContext:pSavedCtx];
+
+                pParams->pView = pView;
+                pParams->pCtx  = pCtx;
+                [pCtx retain]; //??
+
+                [pFmt release];
+                LogFlow(("OvlWin createViewAndContext: returns successfully\n"));
+                return;
+            }
+            [pView release];
+        }
+        [pFmt release];
     }
     else
-    {
         AssertFailed();
-        *ppCtx = NULL;
-    }
 
-    [pPool release];
-
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("OvlWin createViewAndContext: returns failure\n"));
+    return;
 }
 
-void vmsvga3dCocoaDestroyContext(NativeNSOpenGLContextRef pCtx)
+- (id)initWithFrameAndFormat:(NSRect) frame parentView:(NSView*)pParentView pixelFormat:(NSOpenGLPixelFormat *)pFmt
 {
-    DEBUG_FUNC_ENTER();
-    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
-    [pCtx release];
-    [pPool release];
-    DEBUG_FUNC_LEAVE();
-}
+    LogFlow(("OvlWin(%p) initWithFrameAndFormat:\n", (void *)self));
 
-void vmsvga3dCocoaCreateView(NativeNSViewRef *ppView, NativeNSViewRef pParentView)
-{
-    DEBUG_FUNC_ENTER();
-    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    m_pParentView    = pParentView;
+    /* Make some reasonable defaults */
+    m_Pos            = NSZeroPoint;
+    m_Size           = frame.size;
+    m_RootRect       = NSMakeRect(0, 0, m_Size.width, m_Size.height);
     
-    /* Create our worker view */
-    VMSVGA3DOverlayView* pView = [[VMSVGA3DOverlayView alloc] initWithFrame:NSZeroRect parentView:pParentView];
-
-    if (pView)
+#ifdef USE_NSOPENGLVIEW
+    self = [super initWithFrame:frame pixelFormat:pFmt];
+#else
+    self = [super initWithFrame:frame];
+#endif
+    if (self)
     {
-        /* We need a real window as container for the view */
-        [[VMSVGA3DOverlayWindow alloc] initWithParentView:pParentView overlayView:pView];
-        /* Return the freshly created overlay view */
-        *ppView = pView;
+        self.autoresizingMask = NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin | NSViewMaxYMargin;
     }
-    
-    [pPool release];
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("OvlWin(%p) initWithFrameAndFormat: returns %p\n", (void *)self, (void *)self));
+    return self;
 }
 
-void vmsvga3dCocoaDestroyView(NativeNSViewRef pView)
+- (void)dealloc
 {
-    DEBUG_FUNC_ENTER();
-    NSWindow *pWin = nil;
-    
+    LogFlow(("OvlWin(%p) dealloc:\n", (void *)self));
+
+#ifdef USE_NSOPENGLVIEW
+    [[self openGLContext] clearDrawable];
+#else
+    if (m_pCtx)
+    {
+        [m_pCtx clearDrawable];
+        [m_pCtx release];
+        m_pCtx = nil;
+    }
+#endif
+
+    [super dealloc];
+
+    LogFlow(("OvlWin(%p) dealloc: returns\n", (void *)self));
+}
+
+
+- (void)setPos:(NSPoint)pos
+{
+    Log(("OvlWin(%p) setPos: (%d,%d)\n", (void *)self, (int)pos.x, (int)pos.y));
+
+    m_Pos = pos;
+    [self vboxReshape];
+
+    LogFlow(("OvlWin(%p) setPos: returns\n", (void *)self));
+}
+
+
+- (void)setSize:(NSSize)size
+{
+    Log(("OvlWin(%p) setSize: (%d,%d):\n", (void *)self, (int)size.width, (int)size.height));
+    m_Size = size;
+    [self vboxReshape];
+    LogFlow(("OvlWin(%p) setSize: returns\n", (void *)self));
+}
+
+
+- (void)vboxClearBuffers
+{
+#if 1 /* experiment */
+    if ([NSThread isMainThread])
+        Log(("OvlWin(%p) vboxClearBuffers: skip, main thread\n", (void *)self));
+    else
+    {
+        Log(("OvlWin(%p) vboxClearBuffers: clears\n", (void *)self));
+        NSOpenGLContext *pSavedCtx = [self makeCurrentGLContext];
+
+        GLint iOldDrawBuf = GL_BACK;
+        glGetIntegerv(GL_DRAW_BUFFER, &iOldDrawBuf);
+        glDrawBuffer(GL_FRONT_AND_BACK);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT /*|GL_DEPTH_BUFFER_BIT*/ );
+        [[self openGLContext] flushBuffer];
+        glDrawBuffer(iOldDrawBuf);
+
+        [self restoreSavedGLContext:pSavedCtx];
+    }
+#endif
+}
+
+
+- (void)vboxReshape
+{
+    LogFlow(("OvlWin(%p) vboxReshape:\n", (void *)self));
+
+    /*
+     * Not doing any complicate stuff here yet, hoping that we'll get correctly 
+     * resized when the parent view changes...
+     */
+
+    /*
+     * Tell the GL context.
+     */
+    //[[self openGLContext] setView:self];
+    [[self openGLContext] update];
+
+    [self vboxClearBuffers];
+
+    LogFlow(("OvlWin(%p) vboxReshape: returns\n", (void *)self));
+}
+
+
+/** 
+ * Changes to the OpenGL context associated with the view. 
+ * @returns Previous OpenGL context. 
+ */ 
+- (NSOpenGLContext *)makeCurrentGLContext
+{
+    NSOpenGLContext *pSavedCtx = [NSOpenGLContext currentContext];
+
+    /* Always flush before changing. glXMakeCurrent and wglMakeCurrent does this
+       implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
+    if (pSavedCtx != nil)
+        glFlush();
+
+    [[self openGLContext] makeCurrentContext];
+    return pSavedCtx;
+}
+
+
+/**
+ * Restores the previous OpenGL context after 
+ * makeCurrentGLContext. 
+ *  
+ * @param pSavedCtx     The makeCurrentGLContext return value.
+ */
+- (void)restoreSavedGLContext:(NSOpenGLContext *)pSavedCtx
+{
+    /* Always flush before changing. glXMakeCurrent and wglMakeCurrent does this
+       implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
+    glFlush();
+
+    if (pSavedCtx)
+        [pSavedCtx makeCurrentContext];
+    else
+        [NSOpenGLContext clearCurrentContext];
+}
+
+#ifndef USE_NSOPENGLVIEW
+/*
+ * Faking NSOpenGLView interface.
+ */
+- (void)setOpenGLContext:(NSOpenGLContext *)pCtx
+{
+    if (pCtx != m_pCtx)
+    {
+        if (pCtx)
+        {
+            [pCtx retain];
+            [pCtx setView:self];
+            /*Assert([pCtx view] == self); - setView fails early on, works later... */
+        }
+
+        if (m_pCtx)
+            [m_pCtx release];
+
+        m_pCtx = pCtx;
+
+        if (pCtx)
+            [pCtx update];
+    }
+}
+
+- (NSOpenGLContext *)openGLContext
+{
+    /* Stupid hack to work around setView failing early. */
+    if (m_pCtx && [m_pCtx view] != self)
+        [m_pCtx setView:self];
+    return m_pCtx;
+}
+
+- (void)prepareOpenGL
+{
+    //[m_pCtx prepareOpenGL];
+}
+#endif /* USE_NSOPENGLVIEW */
+
+/* 
+ * Overridden NSOpenGLView / NSView methods:
+ */
+
+-(void)viewDidMoveToWindow
+{
+    LogFlow(("OvlView(%p) viewDidMoveToWindow: new win: %p\n", (void *)self, (void *)[self window]));
+    [super viewDidMoveToWindow];
+    [self vboxReshape];
+}
+
+-(void)viewDidMoveToSuperview
+{
+    LogFlow(("OvlView(%p) viewDidMoveToSuperview: new view: %p\n", (void *)self, (void *)[self superview]));
+    [super viewDidMoveToSuperview];
+    [self vboxReshape];
+}
+
+-(void)resizeWithOldSuperviewSize:(NSSize)oldBoundsSize
+{
+    LogFlow(("OvlView(%p) resizeWithOldSuperviewSize: %d,%d -> %d,%d\n", (void *)self, 
+             (int)oldBoundsSize.width, (int)oldBoundsSize.height, (int)[self bounds].size.width, (int)[self bounds].size.height));
+    [super resizeWithOldSuperviewSize:oldBoundsSize];
+    [self vboxReshape];
+}
+
+- (void)drawRect:(NSRect)rect
+{
+    if (m_fClear)
+    {
+        m_fClear = false;
+        [self vboxClearBuffers];
+    }
+}
+
+@end /* VMSVGA3DOverlayView */
+
+@implementation VMSVGA3DCreateViewAndContext
+@end
+
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaServiceRunLoop(void)
+{
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    NSRunLoop *pRunLoop = [NSRunLoop currentRunLoop];
+
+    if ([NSRunLoop mainRunLoop] != pRunLoop)
+    {
+        [pRunLoop runUntilDate:[NSDate distantPast]];
+    }
+
+    [pPool release];
+}
+
+
+VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppView, NativeNSOpenGLContextRef *ppCtx,
+                                                           NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
+                                                           NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile)
+{
+    LogFlow(("vmsvga3dCocoaCreateViewAndContext: pParentView=%d size=%d,%d pSharedCtx=%p fOtherProfile=%RTbool\n", 
+             (void *)pParentView, cx, cy, (void *)pSharedCtx, fOtherProfile));
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    vmsvga3dCocoaServiceRunLoop();
+
+
+    VMSVGA3DCreateViewAndContext *pParams = [VMSVGA3DCreateViewAndContext alloc];
+    pParams->pParentView = pParentView;
+    pParams->cx = cx;
+    pParams->cy = cy;
+    pParams->pSharedCtx = pSharedCtx;
+    pParams->fOtherProfile = fOtherProfile;
+    pParams->pView = NULL;
+    pParams->pCtx = NULL;
+
+    [VMSVGA3DOverlayView performSelectorOnMainThread:@selector(createViewAndContext:)
+                                          withObject:pParams
+                                       waitUntilDone:YES];
+
+    vmsvga3dCocoaServiceRunLoop();
+
+    *ppCtx  = pParams->pCtx;
+    *ppView = pParams->pView;
+    bool fRet = *ppCtx != NULL && *ppView != NULL;
+
+    [pParams release];
+
+    [pPool release];
+    LogFlow(("vmsvga3dCocoaDestroyContext: returns %RTbool\n", fRet));
+    return fRet;
+}
+
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaDestroyViewAndContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
+{
+    LogFlow(("vmsvga3dCocoaDestroyViewAndContext: pView=%p pCtx=%p\n", (void *)pView, (void *)pCtx));
+    NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+
+    /* The view */
+    [pView removeFromSuperview];
     [pView setHidden: YES];
-    
-    [pWin release];
+    Log(("vmsvga3dCocoaDestroyViewAndContext: view %p ref count=%d\n", (void *)pView, [pView retainCount]));
     [pView release];
 
+    /* The OpenGL context. */
+    Log(("vmsvga3dCocoaDestroyViewAndContext: ctx  %p ref count=%d\n", (void *)pCtx, [pView retainCount]));
+    [pCtx release];
+
     [pPool release];
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("vmsvga3dCocoaDestroyViewAndContext: returns\n"));
 }
 
-void vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetPosition(NativeNSViewRef pView, NativeNSViewRef pParentView, int x, int y)
 {
-    DEBUG_FUNC_ENTER();
+    LogFlow(("vmsvga3dCocoaViewSetPosition: pView=%p pParentView=%p (%d,%d)\n", (void *)pView, (void *)pParentView, x, y));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
 
-    [(VMSVGA3DOverlayView*)pView setPos:NSMakePoint(x, y)];
+    [(VMSVGA3DOverlayView *)pView setPos:NSMakePoint(x, y)];
 
     [pPool release];
+    LogFlow(("vmsvga3dCocoaViewSetPosition: returns\n"));
 }
 
-void vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int w, int h)
+
+VMSVGA3DCOCOA_DECL(void) vmsvga3dCocoaViewSetSize(NativeNSViewRef pView, int cx, int cy)
 {
-    DEBUG_FUNC_ENTER();
+    LogFlow(("vmsvga3dCocoaViewSetSize: pView=%p (%d,%d)\n", (void *)pView, cx, cy));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    VMSVGA3DOverlayView *pOverlayView = (VMSVGA3DOverlayView *)pView;
 
-    [(VMSVGA3DOverlayView*)pView setSize:NSMakeSize(w, h)];
+    [pOverlayView setSize:NSMakeSize(cx, cy)];
 
     [pPool release];
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("vmsvga3dCocoaViewSetSize: returns\n"));
 }
+
 
 void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
-    DEBUG_FUNC_ENTER();
+    LogFlow(("vmsvga3dCocoaViewSetSize: pView=%p, pCtx=%p\n", (void*)pView, (void*)pCtx));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
-
-    DEBUG_MSG(("cocoaViewMakeCurrentContext(%p, %p)\n", (void*)pView, (void*)pCtx));
+    VMSVGA3DOverlayView *pOverlayView = (VMSVGA3DOverlayView *)pView;
 
     /* Always flush before flush. glXMakeCurrent and wglMakeCurrent does this
        implicitly, seemingly NSOpenGLContext::makeCurrentContext doesn't. */
     if ([NSOpenGLContext currentContext] != 0)
         glFlush();
 
-    if (pView)
+    if (pOverlayView)
     {
-        [(VMSVGA3DOverlayView*)pView setGLCtx:pCtx];
-/*        [(VMSVGA3DOverlayView*)pView makeCurrentFBO];*/
+        /* This must be a release assertion as we depend on the setView
+           sideeffect of the openGLContext method call. (hack alert!) */
+        AssertRelease([pOverlayView openGLContext] == pCtx);
         [pCtx makeCurrentContext];
     }
     else
-    {
     	[NSOpenGLContext clearCurrentContext];
-    }
 
     [pPool release];
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
 }
+
 
 void vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pCtx)
 {
-    DEBUG_FUNC_ENTER();
+    LogFlow(("vmsvga3dCocoaSwapBuffers: pView=%p, pCtx=%p\n", (void*)pView, (void*)pCtx));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
-    
+
+#ifndef USE_NSOPENGLVIEW
+    /* Hack alert! setView fails early on so call openGLContext to try again. */
+    VMSVGA3DOverlayView *pMyView = (VMSVGA3DOverlayView *)pView;
+    if ([pCtx view] == NULL)
+        [pMyView openGLContext];
+#elif defined(RT_STRICT)
+    NSOpenGLView *pMyView = (NSOpenGLView *)pView;
+#endif
+
+    Assert(pCtx == [NSOpenGLContext currentContext]);
+    Assert(pCtx == [pMyView openGLContext]);
+    AssertMsg([pCtx view] == pMyView, ("%p != %p\n", (void *)[pCtx view], (void *)pMyView));
+
     [pCtx flushBuffer];
+    //[pView setNeedsDisplay:YES];
+    vmsvga3dCocoaServiceRunLoop();
     
     [pPool release];
-    DEBUG_FUNC_LEAVE();
+    LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
 }
 

@@ -17,10 +17,9 @@
 
 LIBRARY VBoxSVGA3DObjC
 EXPORTS 
-    vmsvga3dCocoaCreateContext              
-    vmsvga3dCocoaDestroyContext             
-    vmsvga3dCocoaCreateView                 
-    vmsvga3dCocoaDestroyView                
+    vmsvga3dCocoaServiceRunLoop
+    vmsvga3dCocoaCreateViewAndContext
+    vmsvga3dCocoaDestroyViewAndContext             
     vmsvga3dCocoaViewSetPosition            
     vmsvga3dCocoaViewSetSize                
     vmsvga3dCocoaViewMakeCurrentContext     
