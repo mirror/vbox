@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -678,6 +678,8 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
     RTPrintf("Autostart database path:         %ls\n", str.raw());
     systemProperties->COMGETTER(DefaultAdditionsISO)(str.asOutParam());
     RTPrintf("Default Guest Additions ISO:     %ls\n", str.raw());
+    systemProperties->COMGETTER(LoggingLevel)(str.asOutParam());
+    RTPrintf("Logging Level:                   %ls\n", str.raw());
     return S_OK;
 }
 

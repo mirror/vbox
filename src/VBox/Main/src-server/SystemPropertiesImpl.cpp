@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1180,6 +1180,8 @@ HRESULT SystemProperties::i_setDefaultMachineFolder(const Utf8Str &strPath)
 HRESULT SystemProperties::i_setLoggingLevel(const com::Utf8Str &aLoggingLevel)
 {
     Utf8Str useLoggingLevel(aLoggingLevel);
+    if (useLoggingLevel.isEmpty())
+        useLoggingLevel = VBOXSVC_LOG_DEFAULT;
     int rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
     //  If failed and not the default logging level - try to use the default logging level.
     if (RT_FAILURE(rc))

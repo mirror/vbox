@@ -905,6 +905,13 @@ int handleSetProperty(HandlerArg *a)
             bstrDefaultFrontend.setNull();
         CHECK_ERROR(systemProperties, COMSETTER(DefaultFrontend)(bstrDefaultFrontend.raw()));
     }
+    else if (!strcmp(a->argv[0], "logginglevel"))
+    {
+        Bstr bstrLoggingLevel(a->argv[1]);
+        if (!strcmp(a->argv[1], "default"))
+            bstrLoggingLevel.setNull();
+        CHECK_ERROR(systemProperties, COMSETTER(LoggingLevel)(bstrLoggingLevel.raw()));
+    }
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 

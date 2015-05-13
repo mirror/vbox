@@ -2881,6 +2881,17 @@ Value: 2006.01.01</screen>
             <xref linkend="vboxmanage-startvm" />.</para>
           </glossdef>
         </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>logginglevel</computeroutput></glossterm>
+
+          <glossdef>
+            <para>This configures the VBoxSVC release logging details.<footnote>
+              <para><ulink url="http://www.virtualbox.org/wiki/VBoxLogging">http://www.virtualbox.org/wiki/VBoxLogging</ulink>.</para>
+              </footnote>
+            </para>
+          </glossdef>
+        </glossentry>
       </glosslist></para>
   </sect1>
 
