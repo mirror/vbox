@@ -2175,7 +2175,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         apicCpuClearInterrupt(pDev, pApic);
     }
 
-    LogRel(("DevAPIC: Re-activating Local APIC\n"));
+    LogRel(("APIC: Re-activating Local APIC\n"));
     pDev->pApicHlpR3->pfnChangeFeature(pDev->pDevInsR3, pDev->enmVersion);
 
     APIC_UNLOCK(pDev);
@@ -2369,7 +2369,7 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * The CPUID feature bit.
      */
-    LogRel(("DevAPIC: Activating Local APIC\n"));
+    LogRel(("APIC: Activating Local APIC\n"));
     pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmVersion);
 
     /*

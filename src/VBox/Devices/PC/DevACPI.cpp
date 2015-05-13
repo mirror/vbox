@@ -1511,25 +1511,25 @@ PDMBOTHCBDECL(int) acpiR3PM1aCtlWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             case 0x01:                  /* S1 */
                 if (pThis->fS1Enabled)
                 {
-                    LogRel(("Entering S1 power state (powered-on suspend)\n"));
+                    LogRel(("ACPI: Entering S1 power state (powered-on suspend)\n"));
                     rc = acpiR3DoSleep(pThis);
                     break;
                 }
-                LogRel(("Ignoring guest attempt to enter S1 power state (powered-on suspend)!\n"));
+                LogRel(("ACPI: Ignoring guest attempt to enter S1 power state (powered-on suspend)!\n"));
                 /* fall thru */
 
             case 0x04:                  /* S4 */
                 if (pThis->fS4Enabled)
                 {
-                    LogRel(("Entering S4 power state (suspend to disk)\n"));
+                    LogRel(("ACPI: Entering S4 power state (suspend to disk)\n"));
                     rc = acpiR3DoPowerOff(pThis);/* Same behavior as S5 */
                     break;
                 }
-                LogRel(("Ignoring guest attempt to enter S4 power state (suspend to disk)!\n"));
+                LogRel(("ACPI: Ignoring guest attempt to enter S4 power state (suspend to disk)!\n"));
                 /* fall thru */
 
             case 0x05:                  /* S5 */
-                LogRel(("Entering S5 power state (power down)\n"));
+                LogRel(("ACPI: Entering S5 power state (power down)\n"));
                 rc = acpiR3DoPowerOff(pThis);
                 break;
 
@@ -1707,7 +1707,7 @@ PDMBOTHCBDECL(int) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
     int rc = VINF_SUCCESS;
     if (u32 == ACPI_RESET_REG_VAL)
     {
-        LogRel(("Reset initiated by ACPI\n"));
+        LogRel(("ACPI: Reset initiated by ACPI\n"));
         rc = PDMDevHlpVMReset(pDevIns);
     }
     else
@@ -2641,7 +2641,7 @@ static int acpiR3PlantTables(ACPIState *pThis)
     if (cbRamLow > UINT32_C(0xffe00000)) /* See MEM3. */
     {
         /* Note: This is also enforced by DevPcBios.cpp. */
-        LogRel(("DevACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbRamLow));
+        LogRel(("ACPI: Clipping cbRamLow=%#RX64 down to 0xffe00000.\n", cbRamLow));
         cbRamLow = UINT32_C(0xffe00000);
     }
     pThis->cbRamLow = (uint32_t)cbRamLow;
@@ -3310,7 +3310,8 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                         memcpy(&pThis->u32OemRevision, &pThis->pu8CustBin[24], 4);
                         memcpy(&pThis->au8CreatorId[0], &pThis->pu8CustBin[28], 4);
                         memcpy(&pThis->u32CreatorRev, &pThis->pu8CustBin[32], 4);
-                        LogRel(("Reading custom ACPI table from file '%s' (%d bytes)\n", pszCustBinFile, pThis->cbCustBin));
+                        LogRel(("ACPI: Reading custom ACPI table from file '%s' (%d bytes)\n", pszCustBinFile,
+                                pThis->cbCustBin));
                     }
                 }
                 else
