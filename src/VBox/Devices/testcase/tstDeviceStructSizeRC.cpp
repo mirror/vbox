@@ -1077,6 +1077,9 @@ int main()
     GEN_CHECK_SIZE(EHCI);
     GEN_CHECK_OFF(EHCI, PciDev);
     GEN_CHECK_OFF(EHCI, MMIOBase);
+    GEN_CHECK_OFF(EHCI, pEndOfFrameTimerR3);
+    GEN_CHECK_OFF(EHCI, pEndOfFrameTimerR0);
+    GEN_CHECK_OFF(EHCI, pEndOfFrameTimerRC);
     GEN_CHECK_OFF(EHCI, pDevInsR3);
     GEN_CHECK_OFF(EHCI, pDevInsR0);
     GEN_CHECK_OFF(EHCI, pDevInsRC);
@@ -1118,6 +1121,12 @@ int main()
     GEN_CHECK_OFF(EHCI, cIdleCycles);
     GEN_CHECK_OFF(EHCI, uFrameRate);
     GEN_CHECK_OFF(EHCI, fIdle);
+    GEN_CHECK_OFF(EHCI, pEOFTimerSyncR3);
+    GEN_CHECK_OFF(EHCI, pEOFTimerSyncR0);
+    GEN_CHECK_OFF(EHCI, pEOFTimerSyncRC);
+    GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncR3);
+    GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncR0);
+    GEN_CHECK_OFF(EHCI, pEOFTimerNoSyncRC);
     GEN_CHECK_OFF(EHCI, hThreadFrame);
     GEN_CHECK_OFF(EHCI, hSemEventFrame);
     GEN_CHECK_OFF(EHCI, fBusStarted);
