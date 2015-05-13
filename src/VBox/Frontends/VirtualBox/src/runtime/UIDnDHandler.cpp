@@ -91,7 +91,8 @@ Qt::DropAction UIDnDHandler::dragEnter(ulong screenID, int x, int y,
     LogFlowFunc(("enmMode=%RU32, screenID=%RU32, x=%d, y=%d, action=%ld\n",
                  m_enmMode, screenID, x, y, toVBoxDnDAction(proposedAction)));
 
-    if (m_enmMode != DNDMODE_UNKNOWN)
+    if (   m_enmMode != DNDMODE_UNKNOWN
+        && m_enmMode != DNDMODE_HOSTTOGUEST)
         return Qt::IgnoreAction;
 
     /* Ask the guest for starting a DnD event. */
@@ -101,7 +102,7 @@ Qt::DropAction UIDnDHandler::dragEnter(ulong screenID, int x, int y,
                                           toVBoxDnDAction(proposedAction),
                                           toVBoxDnDActions(possibleActions),
                                           pMimeData->formats().toVector());
-    if (result != KDnDAction_Ignore)
+    if (m_dndTarget.isOk())
         m_enmMode = DNDMODE_HOSTTOGUEST;
 
     /* Set the DnD action returned by the guest. */
@@ -149,8 +150,10 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
                                          toVBoxDnDAction(proposedAction),
                                          toVBoxDnDActions(possibleActions),
                                          pMimeData->formats().toVector(), format);
+
     /* Has the guest accepted the drop event? */
-    if (result != KDnDAction_Ignore)
+    if (   m_dndTarget.isOk()
+        && result != KDnDAction_Ignore)
     {
         /* Get the actual MIME data in the requested format. */
         AssertPtr(pMimeData);
@@ -192,16 +195,25 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
         }
     }
 
+    /*
+     * Since the mouse button has been release this in any case marks 
+     * the end of the current transfer direction. So reset the current 
+     * mode as well here. 
+     */ 
+    m_enmMode = DNDMODE_UNKNOWN;
+
     return toQtDnDAction(result);
 }
 
 void UIDnDHandler::dragLeave(ulong screenID)
 {
     LogFlowFunc(("enmMode=%RU32, screenID=%RU32\n", m_enmMode, screenID));
-    m_dndTarget.Leave(screenID);
 
     if (m_enmMode == DNDMODE_HOSTTOGUEST)
+    {
+        m_dndTarget.Leave(screenID);
         m_enmMode = DNDMODE_UNKNOWN;
+    }
 }
 
 /*
@@ -310,7 +322,8 @@ int UIDnDHandler::dragIsPending(ulong screenID)
     {
         QMutexLocker AutoReadLock(&m_ReadLock);
 
-        if (m_enmMode != DNDMODE_UNKNOWN) /* Wrong mode set? */
+        if (   m_enmMode != DNDMODE_UNKNOWN
+            && m_enmMode != DNDMODE_GUESTTOHOST) /* Wrong mode set? */
             return VINF_SUCCESS;
 
         if (m_fIsPending) /* Pendig operation is in progress. */
