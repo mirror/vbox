@@ -6915,7 +6915,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 } /* Command */
                 else
                 {
-                    ASMAtomicWritePtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], NULL);
+                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag]);
                     ahciR3ReqFree(pAhciPort, pAhciReq);
                 }
             }
@@ -6930,7 +6930,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     fReqCanceled = ahciTransferComplete(pAhciPort, &Req, VERR_NO_MEMORY);
                 else
                 {
-                    ASMAtomicWritePtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], NULL);
+                    ASMAtomicWriteNullPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag]);
                     ahciR3ReqFree(pAhciPort, pAhciReq);
                 }
             }
