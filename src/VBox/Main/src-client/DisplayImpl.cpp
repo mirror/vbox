@@ -999,8 +999,8 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
      */
 
 #ifdef DEBUG_sunlover
-    LogFlowFunc(("[%d] %d,%d %dx%d (%d,%d)\n",
-                 uScreenId, x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
+    LogFlowFunc(("[%d] %d,%d %dx%d\n",
+                 uScreenId, x, y, w, h));
 #endif /* DEBUG_sunlover */
 
     /* No updates for a disabled guest screen. */
@@ -1013,11 +1013,8 @@ void Display::i_handleDisplayUpdate(unsigned uScreenId, int x, int y, int w, int
     /* if (maFramebuffers[uScreenId].flags & VBVA_SCREEN_F_BLANK)
         return; */
 
-    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-        i_checkCoordBounds (&x, &y, &w, &h, mpDrv->IConnector.cx, mpDrv->IConnector.cy);
-    else
-        i_checkCoordBounds (&x, &y, &w, &h, maFramebuffers[uScreenId].w,
-                                          maFramebuffers[uScreenId].h);
+    i_checkCoordBounds (&x, &y, &w, &h, maFramebuffers[uScreenId].w,
+                                        maFramebuffers[uScreenId].h);
 
     IFramebuffer *pFramebuffer = maFramebuffers[uScreenId].pFramebuffer;
     if (pFramebuffer != NULL)
@@ -1154,8 +1151,8 @@ void Display::i_getFramebufferDimensions(int32_t *px1, int32_t *py1,
     {
         x1 = (int32_t)maFramebuffers[0].xOrigin;
         y1 = (int32_t)maFramebuffers[0].yOrigin;
-        x2 = mpDrv->IConnector.cx + (int32_t)maFramebuffers[0].xOrigin;
-        y2 = mpDrv->IConnector.cy + (int32_t)maFramebuffers[0].yOrigin;
+        x2 = (int32_t)maFramebuffers[0].w + (int32_t)maFramebuffers[0].xOrigin;
+        y2 = (int32_t)maFramebuffers[0].h + (int32_t)maFramebuffers[0].yOrigin;
     }
     if (cxInputMapping && cyInputMapping)
     {
@@ -1271,28 +1268,10 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
             /* Prepare a new array of rectangles which intersect with the framebuffer.
              */
             RTRECT rectFramebuffer;
-            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-            {
-                rectFramebuffer.xLeft   = 0;
-                rectFramebuffer.yTop    = 0;
-                if (mpDrv)
-                {
-                    rectFramebuffer.xRight  = mpDrv->IConnector.cx;
-                    rectFramebuffer.yBottom = mpDrv->IConnector.cy;
-                }
-                else
-                {
-                    rectFramebuffer.xRight  = 0;
-                    rectFramebuffer.yBottom = 0;
-                }
-            }
-            else
-            {
-                rectFramebuffer.xLeft   = pFBInfo->xOrigin;
-                rectFramebuffer.yTop    = pFBInfo->yOrigin;
-                rectFramebuffer.xRight  = pFBInfo->xOrigin + pFBInfo->w;
-                rectFramebuffer.yBottom = pFBInfo->yOrigin + pFBInfo->h;
-            }
+            rectFramebuffer.xLeft   = pFBInfo->xOrigin;
+            rectFramebuffer.yTop    = pFBInfo->yOrigin;
+            rectFramebuffer.xRight  = pFBInfo->xOrigin + pFBInfo->w;
+            rectFramebuffer.yBottom = pFBInfo->yOrigin + pFBInfo->h;
 
             uint32_t cRectVisibleRegion = 0;
 
@@ -1546,54 +1525,25 @@ HRESULT Display::getScreenResolution(ULONG aScreenId, ULONG *aWidth, ULONG *aHei
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-    uint32_t u32BitsPerPixel = 0;
-    int32_t xOrigin = 0;
-    int32_t yOrigin = 0;
-    GuestMonitorStatus_T guestMonitorStatus = GuestMonitorStatus_Enabled;
-
-    if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-    {
-        if (mpDrv)
-        {
-            u32Width = mpDrv->IConnector.cx;
-            u32Height = mpDrv->IConnector.cy;
-
-            alock.release();
-
-            int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &u32BitsPerPixel);
-            AssertRC(rc);
-
-            alock.acquire();
-        }
-    }
-    else if (aScreenId < mcMonitors)
-    {
-        DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
-        u32Width = pFBInfo->w;
-        u32Height = pFBInfo->h;
-        u32BitsPerPixel = pFBInfo->u16BitsPerPixel;
-        xOrigin = pFBInfo->xOrigin;
-        yOrigin = pFBInfo->yOrigin;
-        if (pFBInfo->flags & VBVA_SCREEN_F_DISABLED)
-            guestMonitorStatus = GuestMonitorStatus_Disabled;
-    }
-    else
-    {
+    if (aScreenId >= mcMonitors)
         return E_INVALIDARG;
-    }
+
+    DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
+
+    GuestMonitorStatus_T guestMonitorStatus = GuestMonitorStatus_Enabled;
+    if (pFBInfo->flags & VBVA_SCREEN_F_DISABLED)
+        guestMonitorStatus = GuestMonitorStatus_Disabled;
 
     if (aWidth)
-        *aWidth = u32Width;
+        *aWidth = pFBInfo->w;
     if (aHeight)
-        *aHeight = u32Height;
+        *aHeight = pFBInfo->h;
     if (aBitsPerPixel)
-        *aBitsPerPixel = u32BitsPerPixel;
+        *aBitsPerPixel = pFBInfo->u16BitsPerPixel;
     if (aXOrigin)
-        *aXOrigin = xOrigin;
+        *aXOrigin = pFBInfo->xOrigin;
     if (aYOrigin)
-        *aYOrigin = yOrigin;
+        *aYOrigin = pFBInfo->yOrigin;
     if (aGuestMonitorStatus)
         *aGuestMonitorStatus = guestMonitorStatus;
 
@@ -1735,42 +1685,36 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
                                   BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY,
                                   ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    if (aWidth == 0 || aHeight == 0 || aBitsPerPixel == 0)
+    {
+        /* Some of parameters must not change. Query current mode. */
+        ULONG ulWidth        = 0;
+        ULONG ulHeight       = 0;
+        ULONG ulBitsPerPixel = 0;
+        HRESULT hr = getScreenResolution(aDisplay, &ulWidth, &ulHeight, &ulBitsPerPixel, NULL, NULL, NULL);
+        if (FAILED(hr))
+            return hr;
+
+        /* Assign current values to not changing parameters. */
+        if (aWidth == 0)
+            aWidth = ulWidth;
+        if (aHeight == 0)
+            aHeight = ulHeight;
+        if (aBitsPerPixel == 0)
+             aBitsPerPixel = ulBitsPerPixel;
+    }
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (aDisplay >= mcMonitors)
+        return E_INVALIDARG;
 
     CHECK_CONSOLE_DRV(mpDrv);
 
     /*
-     * Do some rough checks for valid input.
+     * It is up to the guest to decide whether the hint is
+     * valid. Therefore don't do any VRAM sanity checks here.
      */
-    ULONG width  = aWidth;
-    if (!width)
-        width    = mpDrv->IConnector.cx;
-    ULONG height = aHeight;
-    if (!height)
-        height   = mpDrv->IConnector.cy;
-    ULONG bpp    = aBitsPerPixel;
-    if (!bpp)
-    {
-        alock.release();
-
-        uint32_t cBits = 0;
-        int rc = mpDrv->pUpPort->pfnQueryColorDepth(mpDrv->pUpPort, &cBits);
-        AssertRC(rc);
-        bpp = cBits;
-
-        alock.acquire();
-    }
-    ULONG cMonitors;
-    mParent->i_machine()->COMGETTER(MonitorCount)(&cMonitors);
-    if (cMonitors == 0 && aDisplay > 0)
-        return E_INVALIDARG;
-    if (aDisplay >= cMonitors)
-        return E_INVALIDARG;
-
-   /*
-    * sunlover 20070614: It is up to the guest to decide whether the hint is
-    * valid. Therefore don't do any VRAM sanity checks here!
-    */
 
     /* Have to release the lock because the pfnRequestDisplayChange
      * will call EMT.  */
@@ -1788,9 +1732,7 @@ HRESULT Display::setVideoModeHint(ULONG aDisplay, BOOL aEnabled,
     if (   mfGuestVBVACapabilities & VBVACAPS_VIDEO_MODE_HINTS
         && !(mfGuestVBVACapabilities & VBVACAPS_IRQ))
     {
-        HRESULT hrc = mParent->i_sendACPIMonitorHotPlugEvent();
-        if (FAILED(hrc))
-            return hrc;
+        mParent->i_sendACPIMonitorHotPlugEvent();
     }
 
     /* We currently never suppress the VMMDev hint if the guest has requested
@@ -3606,7 +3548,7 @@ HRESULT Display::notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI)
                     CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *pData = (CRVBOXHGCMSETUNSCALEDHIDPIOUTPUT *)(pCtl + 1);
                     int rc;
 
-                    pData->fUnscaledHiDPI          = fUnscaledHiDPI;
+                    pData->fUnscaledHiDPI          = RT_BOOL(fUnscaledHiDPI);
 
                     pCtl->Hdr.enmType              = VBOXCRCMDCTL_TYPE_HGCM;
                     pCtl->Hdr.u32Function          = SHCRGL_HOST_FN_SET_UNSCALED_HIDPI;
