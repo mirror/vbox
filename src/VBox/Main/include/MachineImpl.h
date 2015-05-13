@@ -1156,23 +1156,21 @@ private:
                                       ULONG *aWidth,
                                       ULONG *aHeight,
                                       BOOL *aEnabled);
-    HRESULT querySavedThumbnailSize(ULONG aScreenId,
-                                    ULONG *aSize,
-                                    ULONG *aWidth,
-                                    ULONG *aHeight);
     HRESULT readSavedThumbnailToArray(ULONG aScreenId,
                                       BitmapFormat_T aBitmapFormat,
                                       ULONG *aWidth,
                                       ULONG *aHeight,
                                       std::vector<BYTE> &aData);
-    HRESULT querySavedScreenshotPNGSize(ULONG aScreenId,
-                                        ULONG *aSize,
-                                        ULONG *aWidth,
-                                        ULONG *aHeight);
-    HRESULT readSavedScreenshotPNGToArray(ULONG aScreenId,
-                                          ULONG *aWidth,
-                                          ULONG *aHeight,
-                                          std::vector<BYTE> &aData);
+    HRESULT querySavedScreenshotInfo(ULONG aScreenId,
+                                     ULONG *aWidth,
+                                     ULONG *aHeight,
+                                     std::vector<BitmapFormat_T> &aBitmapFormats);
+    HRESULT readSavedScreenshotToArray(ULONG aScreenId,
+                                       BitmapFormat_T aBitmapFormat,
+                                       ULONG *aWidth,
+                                       ULONG *aHeight,
+                                       std::vector<BYTE> &aData);
+
     HRESULT hotPlugCPU(ULONG aCpu);
     HRESULT hotUnplugCPU(ULONG aCpu);
     HRESULT getCPUStatus(ULONG aCpu,

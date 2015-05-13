@@ -6369,34 +6369,6 @@ HRESULT Machine::querySavedGuestScreenInfo(ULONG aScreenId,
     return S_OK;
 }
 
-HRESULT Machine::querySavedThumbnailSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
-{
-    if (aScreenId != 0)
-        return E_NOTIMPL;
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    uint8_t *pu8Data = NULL;
-    uint32_t cbData = 0;
-    uint32_t u32Width = 0;
-    uint32_t u32Height = 0;
-
-    int vrc = readSavedDisplayScreenshot(mSSData->strStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
-
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Saved screenshot data is not available (%Rrc)"),
-                        vrc);
-
-    *aSize = cbData;
-    *aWidth = u32Width;
-    *aHeight = u32Height;
-
-    freeSavedDisplayScreenshot(pu8Data);
-
-    return S_OK;
-}
-
 HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitmapFormat,
                                            ULONG *aWidth, ULONG *aHeight, std::vector<BYTE> &aData)
 {
@@ -6491,7 +6463,10 @@ HRESULT Machine::readSavedThumbnailToArray(ULONG aScreenId, BitmapFormat_T aBitm
     return hr;
 }
 
-HRESULT Machine::querySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight)
+HRESULT Machine::querySavedScreenshotInfo(ULONG aScreenId,
+                                          ULONG *aWidth,
+                                          ULONG *aHeight,
+                                          std::vector<BitmapFormat_T> &aBitmapFormats)
 {
     if (aScreenId != 0)
         return E_NOTIMPL;
@@ -6510,18 +6485,26 @@ HRESULT Machine::querySavedScreenshotPNGSize(ULONG aScreenId, ULONG *aSize, ULON
                         tr("Saved screenshot data is not available (%Rrc)"),
                         vrc);
 
-    *aSize = cbData;
     *aWidth = u32Width;
     *aHeight = u32Height;
+    aBitmapFormats.resize(1);
+    aBitmapFormats[0] = BitmapFormat_PNG;
 
     freeSavedDisplayScreenshot(pu8Data);
 
     return S_OK;
 }
 
-HRESULT Machine::readSavedScreenshotPNGToArray(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, std::vector<BYTE> &aData)
+HRESULT Machine::readSavedScreenshotToArray(ULONG aScreenId,
+                                            BitmapFormat_T aBitmapFormat,
+                                            ULONG *aWidth,
+                                            ULONG *aHeight,
+                                            std::vector<BYTE> &aData)
 {
     if (aScreenId != 0)
+        return E_NOTIMPL;
+
+    if (aBitmapFormat != BitmapFormat_PNG)
         return E_NOTIMPL;
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

@@ -206,7 +206,7 @@ void UIGMachinePreview::sltRecreatePreview()
                 {
                     /* Use the screenshot from saved-state if possible: */
                     ULONG uGuestWidth = 0, uGuestHeight = 0;
-                    QVector<BYTE> screenData = m_machine.ReadSavedScreenshotPNGToArray(0, uGuestWidth, uGuestHeight);
+                    QVector<BYTE> screenData = m_machine.ReadSavedScreenshotToArray(0, KBitmapFormat_PNG, uGuestWidth, uGuestHeight);
 
                     /* Make sure screen-data is OK: */
                     if (!m_machine.isOk() || screenData.isEmpty())

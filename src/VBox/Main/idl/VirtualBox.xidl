@@ -4169,7 +4169,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="77a44043-a68a-4ef9-ac26-e9567b1e6bbc"
+    uuid="feb138aa-dbce-4a89-8ec0-380fc7ec4913"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7036,32 +7036,6 @@ and "VAR" for unsetting. -->
       </param>
     </method>
 
-    <method name="querySavedThumbnailSize">
-      <desc>
-        Returns size in bytes and dimensions in pixels of a saved thumbnail bitmap from saved state.
-      </desc>
-      <param name="screenId" type="unsigned long" dir="in">
-        <desc>
-          Saved guest screen to query info from.
-        </desc>
-      </param>
-      <param name="size" type="unsigned long" dir="out">
-        <desc>
-          Size of buffer required to store the bitmap.
-        </desc>
-      </param>
-      <param name="width" type="unsigned long" dir="out">
-        <desc>
-          Bitmap width.
-        </desc>
-      </param>
-      <param name="height" type="unsigned long" dir="out">
-        <desc>
-          Bitmap height.
-        </desc>
-      </param>
-    </method>
-
     <method name="readSavedThumbnailToArray">
       <desc>
         Thumbnail is retrieved to an array of bytes in the requested format.
@@ -7093,18 +7067,13 @@ and "VAR" for unsetting. -->
       </param>
     </method>
 
-    <method name="querySavedScreenshotPNGSize">
+    <method name="querySavedScreenshotInfo">
       <desc>
-        Returns size in bytes and dimensions of a saved PNG image of screenshot from saved state.
+        Returns available formats and size of the screenshot from saved state.
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
           Saved guest screen to query info from.
-        </desc>
-      </param>
-      <param name="size" type="unsigned long" dir="out">
-        <desc>
-          Size of buffer required to store the PNG binary data.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="out">
@@ -7117,15 +7086,25 @@ and "VAR" for unsetting. -->
           Image height.
         </desc>
       </param>
+      <param name="bitmapFormats" type="BitmapFormat" safearray="yes" dir="return">
+        <desc>
+          Formats supported by readSavedScreenshotToArray.
+        </desc>
+      </param>
     </method>
 
-    <method name="readSavedScreenshotPNGToArray">
+    <method name="readSavedScreenshotToArray">
       <desc>
-        Screenshot in PNG format is retrieved to an array of bytes.
+        Screenshot in requested format is retrieved to an array of bytes.
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
         <desc>
           Saved guest screen to read from.
+        </desc>
+      </param>
+      <param name="bitmapFormat" type="BitmapFormat" dir="in">
+        <desc>
+          The requested format.
         </desc>
       </param>
       <param name="width" type="unsigned long" dir="out">
@@ -7140,7 +7119,7 @@ and "VAR" for unsetting. -->
       </param>
       <param name="data" type="octet" dir="return" safearray="yes">
         <desc>
-          Array with resulting PNG data.
+          Array with resulting image data.
         </desc>
       </param>
     </method>

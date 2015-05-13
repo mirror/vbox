@@ -4195,6 +4195,22 @@ AuthResult AUTHCALL AuthEntry(
           IMachine::ReadSavedThumbnailPNGToArray() has been removed.
         </para></listitem>
 
+        <listitem><para>
+          IMachine::QuerySavedScreenshotPNGSize() has been renamed to
+          IMachine::QuerySavedScreenshotInfo() which also returns
+          an array of available screenshot formats.
+        </para></listitem>
+
+        <listitem><para>
+          IMachine::ReadSavedScreenshotPNGToArray() has been renamed to
+          IMachine::ReadSavedScreenshotToArray() which  has a new parameter
+          <computeroutput>bitmapFormat</computeroutput>.
+        </para></listitem>
+
+        <listitem><para>
+          IMachine::QuerySavedThumbnailSize() has been removed.
+        </para></listitem>
+
         <listitem>
           <para>The method <xref linkend="IWebsessionManager__getSessionObject"
           xreflabel="IWebsessionManager::getSessionObject()" /> now returns
