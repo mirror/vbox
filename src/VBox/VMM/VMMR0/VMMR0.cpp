@@ -1045,13 +1045,12 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 if (!HMR0SuspendPending())
                 {
                     /*
-                     * Register thread-context hooks if required.
+                     * Enable the context switching hook.
                      */
-                    if (    pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK
-                        && !RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook))
+                    if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
                     {
-                        rc = RTThreadCtxHookEnable(pVCpu->vmm.s.hCtxHook);
-                        AssertRC(rc);
+                        Assert(!RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook));
+                        int rc2 = RTThreadCtxHookEnable(pVCpu->vmm.s.hCtxHook); AssertRC(rc2);
                     }
 
                     /*
@@ -1089,11 +1088,12 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                                         "Got VMCPU state %d expected %d.\n", VMCPU_GET_STATE(pVCpu), VMCPUSTATE_STARTED_HM);
                             rc = VERR_VMM_WRONG_HM_VMCPU_STATE;
                         }
+                        /** @todo Get rid of this. HM shouldn't disable the context hook. */
                         else if (RT_UNLIKELY(vmmR0ThreadCtxHookIsEnabled(pVCpu)))
                         {
                             pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
                             RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
-                                        "Thread-context hooks still registered! VCPU=%p Id=%u rc=%d.\n", pVCpu, pVCpu->idCpu, rc);
+                                        "Thread-context hooks still enabled! VCPU=%p Id=%u rc=%d.\n", pVCpu, pVCpu->idCpu, rc);
                             rc = VERR_INVALID_STATE;
                         }
 
@@ -1101,20 +1101,38 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                     }
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
 
-                    /** @todo shouldn't we disable the ctx hook here??? */
+                    /*
+                     * Invalidate the host CPU identifiers before we disable the context
+                     * hook / restore preemption.
+                     */
+                    pVCpu->iHostCpuSet = UINT32_MAX;
+                    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+
+                    /*
+                     * Disable context hooks.  Due to unresolved cleanup issues, we
+                     * cannot leave the hooks enabled when we return to ring-3.
+                     *
+                     * Note! At the moment HM may also have disabled the hook
+                     *       when we get here, but the IPRT API handles that.
+                     */
+                    if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+                    {
+                        ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+                        RTThreadCtxHookDisable(pVCpu->vmm.s.hCtxHook);
+                    }
                 }
                 /*
                  * The system is about to go into suspend mode; go back to ring 3.
                  */
                 else
+                {
                     rc = VINF_EM_RAW_INTERRUPT;
+                    pVCpu->iHostCpuSet = UINT32_MAX;
+                    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+                }
 
-                /*
-                 * Invalidate the host CPU identifiers as we restore preemption.
-                 */
-                pVCpu->iHostCpuSet = UINT32_MAX;
-                ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-
+                /** @todo When HM stops messing with the context hook state, we'll disable
+                 *        preemption again before the RTThreadCtxHookDisable call. */
                 if (!fPreemptRestored)
                     RTThreadPreemptRestore(&PreemptState);
 
