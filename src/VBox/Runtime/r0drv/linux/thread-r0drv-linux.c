@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 5, 28) || defined(CONFIG_X86_SMAP)
 # include <iprt/asm-amd64-x86.h>
 #endif
 #include <iprt/assert.h>
