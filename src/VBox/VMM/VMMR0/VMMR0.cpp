@@ -446,106 +446,6 @@ VMMR0_INT_DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 
 
 /**
- * Creates R0 thread-context hooks for the current EMT thread.
- *
- * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
- *
- * @thread  EMT(pVCpu)
- */
-VMMR0_INT_DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
-{
-    VMCPU_ASSERT_EMT(pVCpu);
-    Assert(pVCpu->vmm.s.hR0ThreadCtx == NIL_RTTHREADCTX);
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
-    int rc = RTThreadCtxHooksCreate(&pVCpu->vmm.s.hR0ThreadCtx);
-    if (   RT_FAILURE(rc)
-        && rc != VERR_NOT_SUPPORTED)
-    {
-        Log(("RTThreadCtxHooksCreate failed! rc=%Rrc pVCpu=%p idCpu=%RU32\n", rc, pVCpu, pVCpu->idCpu));
-        return rc;
-    }
-#endif
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Releases the object reference for the thread-context hook.
- *
- * @param   pVCpu       Pointer to the VMCPU.
- * @remarks Can be called from any thread.
- */
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
-{
-    RTThreadCtxHooksRelease(pVCpu->vmm.s.hR0ThreadCtx);
-}
-
-
-/**
- * Registers the thread-context hook for this VCPU.
- *
- * @returns VBox status code.
- * @param   pVCpu           Pointer to the VMCPU.
- * @param   pfnThreadHook   Pointer to the thread-context callback.
- *
- * @thread  EMT(pVCpu)
- */
-VMMR0_INT_DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnThreadHook)
-{
-    VMCPU_ASSERT_EMT(pVCpu);
-    return RTThreadCtxHooksRegister(pVCpu->vmm.s.hR0ThreadCtx, pfnThreadHook, pVCpu);
-}
-
-
-/**
- * Deregisters the thread-context hook for this VCPU.
- *
- * @param   pVCpu       Pointer to the VMCPU.
- *
- * @thread  EMT(pVCpu)
- */
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
-{
-    /* Clear the VCPU <-> host CPU mapping as we've left HM context. See @bugref{7726} comment #19. */
-    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-
-    if (pVCpu->vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX)
-    {
-        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-        int rc = RTThreadCtxHooksDeregister(pVCpu->vmm.s.hR0ThreadCtx);
-        AssertRC(rc);
-    }
-}
-
-
-/**
- * Whether thread-context hooks are created (implying they're supported) on this
- * platform.
- *
- * @returns true if the hooks are created, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
-{
-    return pVCpu->vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX;
-}
-
-
-/**
- * Whether thread-context hooks are registered for this VCPU.
- *
- * @returns true if registered, false otherwise.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
-{
-    return RTThreadCtxHooksAreRegistered(pVCpu->vmm.s.hR0ThreadCtx);
-}
-
-
-/**
  * VMM ring-0 thread-context callback.
  *
  * This does common HM state updating and calls the HM-specific thread-context
@@ -562,7 +462,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
 
     switch (enmEvent)
     {
-        case RTTHREADCTXEVENT_RESUMED:
+        case RTTHREADCTXEVENT_IN:
         {
             /*
              * Linux may call us with preemption enabled (really!) but technically we
@@ -570,7 +470,11 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
              * scenario (i.e. preempted in resume hook -> preempt hook -> resume hook...
              * ad infinitum). Let's just disable preemption for now...
              */
-            HM_DISABLE_PREEMPT();
+            /** @todo r=bird: I don't believe the above. The linux code is clearly enabling
+             *        preemption after doing the callout (one or two functions up the
+             *        call chain). */
+            RTTHREADPREEMPTSTATE ParanoidPreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&ParanoidPreemptState);
 
             /* We need to update the VCPU <-> host CPU mapping. */
             RTCPUID idHostCpu;
@@ -588,11 +492,11 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HMR0ThreadCtxCallback(enmEvent, pvUser);
 
             /* Restore preemption. */
-            HM_RESTORE_PREEMPT();
+            RTThreadPreemptRestore(&ParanoidPreemptState);
             break;
         }
 
-        case RTTHREADCTXEVENT_PREEMPTING:
+        case RTTHREADCTXEVENT_OUT:
         {
             /* Invoke the HM-specific thread-context callback. */
             HMR0ThreadCtxCallback(enmEvent, pvUser);
@@ -611,6 +515,112 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HMR0ThreadCtxCallback(enmEvent, pvUser);
             break;
     }
+}
+
+
+/**
+ * Creates thread switching hook for the current EMT thread.
+ *
+ * This is called by GVMMR0CreateVM and GVMMR0RegisterVCpu.  If the host
+ * platform does not implement switcher hooks, no hooks will be create and the
+ * member set to NIL_RTTHREADCTXHOOK.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(int) VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    Assert(pVCpu->vmm.s.hCtxHook == NIL_RTTHREADCTXHOOK);
+
+    int rc = RTThreadCtxHookCreate(&pVCpu->vmm.s.hCtxHook, 0, vmmR0ThreadCtxCallback, pVCpu);
+    if (RT_SUCCESS(rc))
+        return rc;
+
+    pVCpu->vmm.s.hCtxHook = NIL_RTTHREADCTXHOOK;
+    if (rc == VERR_NOT_SUPPORTED)
+        return VINF_SUCCESS;
+
+    LogRelMax(32, ("RTThreadCtxHookCreate failed! rc=%Rrc pVCpu=%p idCpu=%RU32\n", rc, pVCpu, pVCpu->idCpu));
+    return VINF_SUCCESS; /* Just ignore it, we can live without context hooks. */
+}
+
+
+/**
+ * Destroys the thread switching hook for the specified VCPU.
+ *
+ * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @remarks Can be called from any thread.
+ */
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu)
+{
+    int rc = RTThreadCtxHookDestroy(pVCpu->vmm.s.hCtxHook);
+    AssertRC(rc);
+}
+
+
+/**
+ * Disables the thread switching hook for this VCPU (if we got one).
+ *
+ * @param   pVCpu       Pointer to the cross context CPU structure.
+ * @thread  EMT(pVCpu)
+ *
+ * @remarks This also clears VMCPU::idHostCpu, so the mapping is invalid after
+ *          this call.  This means you have to be careful with what you do!
+ */
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu)
+{
+    /*
+     * Clear the VCPU <-> host CPU mapping as we've left HM context.
+     * @bugref{7726} comment #19 explains the need for this trick:
+     *
+     *      hmR0VmxCallRing3Callback/hmR0SvmCallRing3Callback &
+     *      hmR0VmxLeaveSession/hmR0SvmLeaveSession disables context hooks during
+     *      longjmp & normal return to ring-3, which opens a window where we may be
+     *      rescheduled without changing VMCPUID::idHostCpu and cause confusion if
+     *      the CPU starts executing a different EMT.  Both functions first disables
+     *      preemption and then calls HMR0LeaveCpu which invalids idHostCpu, leaving
+     *      an opening for getting preempted.
+     */
+    /** @todo Make HM not need this API!  Then we could leave the hooks enabled
+     *        all the time. */
+    /** @todo move this into the context hook disabling if(). */
+    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+
+    /*
+     * Disable the context hook, if we got one.
+     */
+    if (pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK)
+    {
+        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+        int rc = RTThreadCtxHookDisable(pVCpu->vmm.s.hCtxHook);
+        AssertRC(rc);
+    }
+}
+
+
+/**
+ * Internal version of VMMR0ThreadCtxHooksAreRegistered.
+ *
+ * @returns true if registered, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+DECLINLINE(bool) vmmR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
+{
+    return RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook);
+}
+
+
+/**
+ * Whether thread-context hooks are registered for this VCPU.
+ *
+ * @returns true if registered, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu)
+{
+    return vmmR0ThreadCtxHookIsEnabled(pVCpu);
 }
 
 
@@ -992,7 +1002,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             /*
              * Disable preemption.
              */
-            Assert(!VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            Assert(!vmmR0ThreadCtxHookIsEnabled(pVCpu));
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);
 
@@ -1037,10 +1047,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                     /*
                      * Register thread-context hooks if required.
                      */
-                    if (    VMMR0ThreadCtxHooksAreCreated(pVCpu)
-                        && !VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+                    if (    pVCpu->vmm.s.hCtxHook != NIL_RTTHREADCTXHOOK
+                        && !RTThreadCtxHookIsEnabled(pVCpu->vmm.s.hCtxHook))
                     {
-                        rc = VMMR0ThreadCtxHooksRegister(pVCpu, vmmR0ThreadCtxCallback);
+                        rc = RTThreadCtxHookEnable(pVCpu->vmm.s.hCtxHook);
                         AssertRC(rc);
                     }
 
@@ -1056,7 +1066,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                          * When preemption hooks are in place, enable preemption now that
                          * we're in HM context.
                          */
-                        if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+                        if (vmmR0ThreadCtxHookIsEnabled(pVCpu))
                         {
                             fPreemptRestored = true;
                             RTThreadPreemptRestore(&PreemptState);
@@ -1079,7 +1089,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                                         "Got VMCPU state %d expected %d.\n", VMCPU_GET_STATE(pVCpu), VMCPUSTATE_STARTED_HM);
                             rc = VERR_VMM_WRONG_HM_VMCPU_STATE;
                         }
-                        else if (RT_UNLIKELY(VMMR0ThreadCtxHooksAreRegistered(pVCpu)))
+                        else if (RT_UNLIKELY(vmmR0ThreadCtxHookIsEnabled(pVCpu)))
                         {
                             pVM->vmm.s.szRing0AssertMsg1[0] = '\0';
                             RTStrPrintf(pVM->vmm.s.szRing0AssertMsg2, sizeof(pVM->vmm.s.szRing0AssertMsg2),
@@ -1090,6 +1100,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                         VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
                     }
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
+
+                    /** @todo shouldn't we disable the ctx hook here??? */
                 }
                 /*
                  * The system is about to go into suspend mode; go back to ring 3.

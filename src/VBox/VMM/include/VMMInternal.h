@@ -419,25 +419,18 @@ typedef struct VMMCPU
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
 
-    /** @name Thread-context hooks.
-     *  @{*/
-    R0PTRTYPE(RTTHREADCTX)      hR0ThreadCtx;
-#if HC_ARCH_BITS == 32
-    uint32_t                    u32Padding;
-#else
-    uint64_t                    u64Padding;
-#endif
-    /** @} */
+    /** Thread context switching hook (ring-0). */
+    RTTHREADCTXHOOK             hCtxHook;
 
     /** @name Rendezvous
      * @{ */
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding[HC_ARCH_BITS == 32 ? 3 : 7];
+    bool                        afPadding[HC_ARCH_BITS == 32 ? 3+4 : 7+8];
     /** @} */
 
-    /** @name Raw-mode context tracting data.
+    /** @name Raw-mode context tracing data.
      * @{ */
     SUPDRVTRACERUSRCTX          TracerCtx;
     /** @} */

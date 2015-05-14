@@ -120,12 +120,12 @@
     } while (0)
 
 /** Assert that preemption is disabled or covered by thread-context hooks. */
-#define HMSVM_ASSERT_PREEMPT_SAFE()           Assert(   VMMR0ThreadCtxHooksAreRegistered(pVCpu) \
+#define HMSVM_ASSERT_PREEMPT_SAFE()           Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
                                                      || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
-#define HMSVM_ASSERT_CPU_SAFE()               AssertMsg(   VMMR0ThreadCtxHooksAreRegistered(pVCpu) \
+#define HMSVM_ASSERT_CPU_SAFE()               AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
                                                         || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
                                                         ("Illegal migration! Entered on CPU %u Current %u\n", \
                                                         pVCpu->hm.s.idEnteredCpu, RTMpCpuId()));
@@ -1740,10 +1740,10 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
     switch (enmEvent)
     {
-        case RTTHREADCTXEVENT_PREEMPTING:
+        case RTTHREADCTXEVENT_OUT:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             PVM         pVM  = pVCpu->CTX_SUFF(pVM);
@@ -1768,10 +1768,10 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             break;
         }
 
-        case RTTHREADCTXEVENT_RESUMED:
+        case RTTHREADCTXEVENT_IN:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             /* No longjmps (log-flush, locks) in this fragile context. */
@@ -2139,8 +2139,9 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
      */
 
+    /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
-    VMMR0ThreadCtxHooksDeregister(pVCpu);
+    VMMR0ThreadCtxHookDisable(pVCpu);
 
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
@@ -2197,7 +2198,8 @@ DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
 
         /* Deregister the hook now that we've left HM context before re-enabling preemption. */
-        VMMR0ThreadCtxHooksDeregister(pVCpu);
+        /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+        VMMR0ThreadCtxHookDisable(pVCpu);
 
         /* Leave HM context. This takes care of local init (term). */
         HMR0LeaveCpu(pVCpu);

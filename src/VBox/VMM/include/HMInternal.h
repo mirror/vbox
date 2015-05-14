@@ -220,10 +220,30 @@ RT_C_DECLS_BEGIN
 /** Total guest mapped memory needed. */
 #define HM_VTX_TOTAL_DEVHEAP_MEM        (HM_EPT_IDENTITY_PG_TABLE_SIZE + HM_VTX_TSS_SIZE)
 
+
+/** @name Macros for enabling and disabling preemption.
+ * These are really just for hiding the RTTHREADPREEMPTSTATE and asserting that
+ * preemption has already been disabled when there is no context hook.
+ * @{ */
+#ifdef VBOX_STRICT
+# define HM_DISABLE_PREEMPT() \
+    RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD) || VMMR0ThreadCtxHookIsEnabled(pVCpu)); \
+    RTThreadPreemptDisable(&PreemptStateInternal)
+#else
+# define HM_DISABLE_PREEMPT() \
+    RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+    RTThreadPreemptDisable(&PreemptStateInternal)
+#endif /* VBOX_STRICT */
+#define HM_RESTORE_PREEMPT()    do { RTThreadPreemptRestore(&PreemptStateInternal); } while(0)
+/** @} */
+
+
 /** Enable for TPR guest patching. */
 #define VBOX_HM_WITH_GUEST_PATCHING
 
-/** HM SSM version
+/** @name HM saved state versions
+ * @{
  */
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
 # define HM_SAVED_STATE_VERSION                 5
@@ -233,6 +253,7 @@ RT_C_DECLS_BEGIN
 # define HM_SAVED_STATE_VERSION_NO_PATCHING     4
 #endif
 #define HM_SAVED_STATE_VERSION_2_0_X            3
+/** @} */
 
 /**
  * Global per-cpu information. (host)

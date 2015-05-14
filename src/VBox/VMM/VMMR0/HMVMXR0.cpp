@@ -183,12 +183,12 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #endif
 
 /** Assert that preemption is disabled or covered by thread-context hooks. */
-#define HMVMX_ASSERT_PREEMPT_SAFE()       Assert(   VMMR0ThreadCtxHooksAreRegistered(pVCpu)   \
+#define HMVMX_ASSERT_PREEMPT_SAFE()       Assert(   VMMR0ThreadCtxHookIsEnabled(pVCpu)   \
                                                  || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
 /** Assert that we haven't migrated CPUs when thread-context hooks are not
  *  used. */
-#define HMVMX_ASSERT_CPU_SAFE()           AssertMsg(   VMMR0ThreadCtxHooksAreRegistered(pVCpu) \
+#define HMVMX_ASSERT_CPU_SAFE()           AssertMsg(   VMMR0ThreadCtxHookIsEnabled(pVCpu) \
                                                     || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
                                                     ("Illegal migration! Entered on CPU %u Current %u\n", \
                                                     pVCpu->hm.s.idEnteredCpu, RTMpCpuId())); \
@@ -7242,7 +7242,8 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
     /** @todo Deregistering here means we need to VMCLEAR always
      *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
-    VMMR0ThreadCtxHooksDeregister(pVCpu);
+    /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+    VMMR0ThreadCtxHookDisable(pVCpu);
 
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
@@ -7375,9 +7376,9 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
          * If you modify code here, check whether hmR0VmxLeave() and hmR0VmxLeaveSession() needs to be updated too.
          * This is a stripped down version which gets out ASAP, trying to not trigger any further assertions.
          */
-        RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER; \
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
+        RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
         RTThreadPreemptDisable(&PreemptState);
 
         PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -7407,7 +7408,8 @@ DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperati
             pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
         }
 
-        VMMR0ThreadCtxHooksDeregister(pVCpu);
+        /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
+        VMMR0ThreadCtxHookDisable(pVCpu);
         HMR0LeaveCpu(pVCpu);
         RTThreadPreemptRestore(&PreemptState);
         return VINF_SUCCESS;
@@ -8221,10 +8223,10 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
     switch (enmEvent)
     {
-        case RTTHREADCTXEVENT_PREEMPTING:
+        case RTTHREADCTXEVENT_OUT:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             PVM      pVM       = pVCpu->CTX_SUFF(pVM);
@@ -8255,10 +8257,10 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             break;
         }
 
-        case RTTHREADCTXEVENT_RESUMED:
+        case RTTHREADCTXEVENT_IN:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            Assert(VMMR0ThreadCtxHookIsEnabled(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
             /* No longjmps here, as we don't want to trigger preemption (& its hook) while resuming. */
@@ -10059,7 +10061,7 @@ HMVMX_EXIT_DECL hmR0VmxExitExtInt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
     /* Windows hosts (32-bit and 64-bit) have DPC latency issues. See @bugref{6853}. */
-    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+    if (VMMR0ThreadCtxHookIsEnabled(pVCpu))
         return VINF_SUCCESS;
     return VINF_EM_RAW_INTERRUPT;
 }

@@ -192,8 +192,8 @@
 #define RTTARFILE_MAGIC_DEAD            UINT32_C(0x19120420)
 /** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
 #define RTTESTINT_MAGIC                 UINT32_C(0x19750113)
-/** RTTHREADCTXINT::u32Magic value. (Dennis MacAlistair Ritchie) */
-#define RTTHREADCTXINT_MAGIC            UINT32_C(0x19410909)
+/** RTTHREADCTXHOOKINT::u32Magic value. (Dennis MacAlistair Ritchie) */
+#define RTTHREADCTXHOOKINT_MAGIC        UINT32_C(0x19410909)
 /** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
 #define RTTHREADINT_MAGIC               UINT32_C(0x18740529)
 /** RTTHREADINT::u32Magic value for a dead thread. */

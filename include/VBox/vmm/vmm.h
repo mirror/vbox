@@ -511,12 +511,10 @@ VMMR0DECL(int)       VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOper
 VMMR0_INT_DECL(int)  VMMR0TermVM(PVM pVM, PGVM pGVM);
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu);
 VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)  VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu);
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu);
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu);
-VMMR0_INT_DECL(int)  VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnHook);
-VMMR0_INT_DECL(void) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu);
-VMMR0_INT_DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu);
+VMMR0_INT_DECL(int)  VMMR0ThreadCtxHookCreateForEmt(PVMCPU pVCpu);
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDestroyForEmt(PVMCPU pVCpu);
+VMMR0_INT_DECL(void) VMMR0ThreadCtxHookDisable(PVMCPU pVCpu);
+VMMR0_INT_DECL(bool) VMMR0ThreadCtxHookIsEnabled(PVMCPU pVCpu);
 
 # ifdef LOG_ENABLED
 VMMR0_INT_DECL(void) VMMR0LogFlushDisable(PVMCPU pVCpu);

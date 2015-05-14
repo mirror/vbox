@@ -888,7 +888,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
 
-                                        rc = VMMR0ThreadCtxHooksCreate(&pVM->aCpus[0]);
+                                        rc = VMMR0ThreadCtxHookCreateForEmt(&pVM->aCpus[0]);
                                         if (RT_SUCCESS(rc))
                                         {
                                             VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pVM, ProcId, (void *)hEMT0, cCpus);
@@ -1122,7 +1122,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
              *        deregistered before releasing (destroying) it? Only until we find a
              *        solution for not deregistering hooks everytime we're leaving HMR0
              *        context. */
-            VMMR0ThreadCtxHooksRelease(&pVM->aCpus[idCpu]);
+            VMMR0ThreadCtxHookDestroyForEmt(&pVM->aCpus[idCpu]);
         }
 
         SUPR0ObjRelease(pvObj, pHandle->pSession);
@@ -1350,8 +1350,7 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
 
     pVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
 
-    rc = VMMR0ThreadCtxHooksCreate(&pVM->aCpus[idCpu]);
-    return rc;
+    return VMMR0ThreadCtxHookCreateForEmt(&pVM->aCpus[idCpu]);
 }
 
 

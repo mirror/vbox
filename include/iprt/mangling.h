@@ -1681,12 +1681,11 @@
 # define RTThreadCreate                                 RT_MANGLER(RTThreadCreate)
 # define RTThreadCreateF                                RT_MANGLER(RTThreadCreateF)
 # define RTThreadCreateV                                RT_MANGLER(RTThreadCreateV)
-# define RTThreadCtxHooksAreRegistered                  RT_MANGLER(RTThreadCtxHooksAreRegistered)  /* r0drv */
-# define RTThreadCtxHooksCreate                         RT_MANGLER(RTThreadCtxHooksCreate)         /* r0drv */
-# define RTThreadCtxHooksDeregister                     RT_MANGLER(RTThreadCtxHooksDeregister)     /* r0drv */
-# define RTThreadCtxHooksRegister                       RT_MANGLER(RTThreadCtxHooksRegister)       /* r0drv */
-# define RTThreadCtxHooksRelease                        RT_MANGLER(RTThreadCtxHooksRelease)        /* r0drv */
-# define RTThreadCtxHooksRetain                         RT_MANGLER(RTThreadCtxHooksRetain)         /* r0drv */
+# define RTThreadCtxHookIsEnabled                       RT_MANGLER(RTThreadCtxHookIsEnabled)    /* r0drv */
+# define RTThreadCtxHookCreate                          RT_MANGLER(RTThreadCtxHookCreate)       /* r0drv */
+# define RTThreadCtxHookDestroy                         RT_MANGLER(RTThreadCtxHookDestroy)      /* r0drv */
+# define RTThreadCtxHookDisable                         RT_MANGLER(RTThreadCtxHookDisable)      /* r0drv */
+# define RTThreadCtxHookEnable                          RT_MANGLER(RTThreadCtxHookEnable)       /* r0drv */
 # define RTThreadFromNative                             RT_MANGLER(RTThreadFromNative)
 # define RTThreadGetAffinity                            RT_MANGLER(RTThreadGetAffinity)
 # define RTThreadGetExecutionTimeMilli                  RT_MANGLER(RTThreadGetExecutionTimeMilli)

@@ -48,7 +48,6 @@ typedef struct TSTRTR0THREADCTXDATA
     uint32_t volatile   u32Magic;
     RTCPUID             uSourceCpuId;
     RTNATIVETHREAD      hSourceThread;
-    RTTHREADCTX         hThreadCtx;
 
     /* For RTTHREADCTXEVENT_PREEMPTING. */
     bool                fPreemptingSuccess;
@@ -81,7 +80,7 @@ static DECLCALLBACK(void) tstRTR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *
 
     switch (enmEvent)
     {
-        case RTTHREADCTXEVENT_PREEMPTING:
+        case RTTHREADCTXEVENT_OUT:
         {
             ASMAtomicWriteBool(&pData->fPreemptingInvoked, true);
 
@@ -118,7 +117,7 @@ static DECLCALLBACK(void) tstRTR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *
             break;
         }
 
-        case RTTHREADCTXEVENT_RESUMED:
+        case RTTHREADCTXEVENT_IN:
         {
             ASMAtomicWriteBool(&pData->fResumedInvoked, true);
 
@@ -301,36 +300,16 @@ DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, ui
                 break;
             }
 
-            bool fRegistered = RTThreadCtxHooksAreRegistered(NIL_RTTHREADCTX);
+            bool fRegistered = RTThreadCtxHookIsEnabled(NIL_RTTHREADCTXHOOK);
             if (fRegistered)
             {
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksAreRegistered returns true before creating any hooks");
-                break;
-            }
-
-            RTTHREADCTX hThreadCtx;
-            int rc = RTThreadCtxHooksCreate(&hThreadCtx);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_NOT_SUPPORTED)
-                    RTStrPrintf(pszErr, cchErr, "RTThreadCtxHooksCreate returns VERR_NOT_SUPPORTED");
-                else
-                    RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksCreate returns %Rrc", rc);
-                break;
-            }
-
-            fRegistered = RTThreadCtxHooksAreRegistered(hThreadCtx);
-            if (fRegistered)
-            {
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksAreRegistered returns true before registering any hooks");
-                RTThreadCtxHooksRelease(hThreadCtx);
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled returns true before creating any hooks");
                 break;
             }
 
             PTSTRTR0THREADCTXDATA pCtxData = (PTSTRTR0THREADCTXDATA)RTMemAllocZ(sizeof(*pCtxData));
             AssertReturn(pCtxData, VERR_NO_MEMORY);
             pCtxData->u32Magic           = TSTRTR0THREADCTXDATA_MAGIC;
-            pCtxData->hThreadCtx         = hThreadCtx;
             pCtxData->fPreemptingSuccess = false;
             pCtxData->fPreemptingInvoked = false;
             pCtxData->fResumedInvoked    = false;
@@ -338,27 +317,47 @@ DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, ui
             pCtxData->hSourceThread      = RTThreadNativeSelf();
             RT_ZERO(pCtxData->achResult);
 
+            RTTHREADCTXHOOK hThreadCtx;
+            int rc = RTThreadCtxHookCreate(&hThreadCtx, 0, tstRTR0ThreadCtxHook, pCtxData);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_NOT_SUPPORTED)
+                    RTStrPrintf(pszErr, cchErr, "RTThreadCtxHooksCreate returns VERR_NOT_SUPPORTED");
+                else
+                    RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksCreate returns %Rrc", rc);
+                RTMemFree(pCtxData);
+                break;
+            }
+
+            fRegistered = RTThreadCtxHookIsEnabled(hThreadCtx);
+            if (fRegistered)
+            {
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled returns true before registering any hooks");
+                RTThreadCtxHookDestroy(hThreadCtx);
+                break;
+            }
+
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
             pCtxData->uSourceCpuId       = RTMpCpuId();
 
-            rc = RTThreadCtxHooksRegister(hThreadCtx, &tstRTR0ThreadCtxHook, pCtxData);
+            rc = RTThreadCtxHookEnable(hThreadCtx);
             if (RT_FAILURE(rc))
             {
                 RTThreadPreemptRestore(&PreemptState);
                 RTMemFree(pCtxData);
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksRegister returns %Rrc", rc);
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookEnable returns %Rrc", rc);
                 break;
             }
 
-            fRegistered = RTThreadCtxHooksAreRegistered(hThreadCtx);
+            fRegistered = RTThreadCtxHookIsEnabled(hThreadCtx);
             if (!fRegistered)
             {
                 RTThreadPreemptRestore(&PreemptState);
                 RTMemFree(pCtxData);
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksAreRegistered return false when hooks are supposedly registered");
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return false when hooks are supposedly registered");
                 break;
             }
 
@@ -427,20 +426,20 @@ DECLEXPORT(int) TSTRTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, ui
                     RTStrCopy(pszErr, cchErr, pCtxData->achResult);
             }
 
-            RTThreadCtxHooksDeregister(hThreadCtx);
+            RTThreadCtxHookDisable(hThreadCtx);
 
-            fRegistered = RTThreadCtxHooksAreRegistered(hThreadCtx);
+            fRegistered = RTThreadCtxHookIsEnabled(hThreadCtx);
             if (fRegistered)
             {
                 RTMemFree(pCtxData);
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksAreRegistered return true when hooks are deregistered");
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHookIsEnabled return true when hooks are deregistered");
                 break;
             }
 
             Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            uint32_t cRefs = RTThreadCtxHooksRelease(hThreadCtx);
-            if (cRefs == UINT32_MAX)
-                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksRelease returns invalid cRefs!");
+            rc = RTThreadCtxHookDestroy(hThreadCtx);
+            if (RT_FAILURE(rc))
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksRelease returns %Rrc!", rc);
 
             RTMemFree(pCtxData);
             break;

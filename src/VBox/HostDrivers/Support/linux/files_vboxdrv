@@ -193,6 +193,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/timer-r0drv-linux.c=>r0drv/linux/timer-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/waitqueue-r0drv-linux.h=>r0drv/linux/waitqueue-r0drv-linux.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/semspinmutex-r0drv-generic.c=>r0drv/generic/semspinmutex-r0drv-generic.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/threadctxhooks-r0drv-generic.cpp=>r0drv/generic/threadctxhooks-r0drv-generic.cpp \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \

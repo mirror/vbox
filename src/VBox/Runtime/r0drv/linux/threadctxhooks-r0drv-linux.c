@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Thread-Context Hook, Ring-0 Driver, Linux.
+ * IPRT - Thread Context Switching Hook, Ring-0 Driver, Linux.
  */
 
 /*
@@ -41,8 +41,9 @@
 #endif
 #include "internal/thread.h"
 
+
 /*
- * Linux kernel 2.6.23 introduced thread-context hooks but RedHat 2.6.18 kernels
+ * Linux kernel 2.6.23 introduced preemption notifiers but RedHat 2.6.18 kernels
  * got it backported.
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18) && defined(CONFIG_PREEMPT_NOTIFIERS)
@@ -51,58 +52,58 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * The internal thread-context object.
+ * The internal hook object for linux.
  */
-typedef struct RTTHREADCTXINT
+typedef struct RTTHREADCTXHOOKINT
 {
-    /** Magic value (RTTHREADCTXINT_MAGIC). */
+    /** Magic value (RTTHREADCTXHOOKINT_MAGIC). */
     uint32_t volatile           u32Magic;
-    /** The thread handle (owner) for which the context-hooks are registered. */
+    /** The thread handle (owner) for which the hook is registered. */
     RTNATIVETHREAD              hOwner;
     /** The preemption notifier object. */
-    struct preempt_notifier     hPreemptNotifier;
-    /** Whether this handle has any hooks registered or not. */
-    bool                        fRegistered;
-    /** Pointer to the registered thread-context hook. */
-    PFNRTTHREADCTXHOOK          pfnThreadCtxHook;
-    /** User argument passed to the thread-context hook. */
+    struct preempt_notifier     LnxPreemptNotifier;
+    /** Whether the hook is enabled or not.  If enabled, the LnxPreemptNotifier
+     * is linked into the owning thread's list of preemption callouts. */
+    bool                        fEnabled;
+    /** Pointer to the user callback. */
+    PFNRTTHREADCTXHOOK          pfnCallback;
+    /** User argument passed to the callback. */
     void                       *pvUser;
-    /** The thread-context operations. */
-    struct preempt_ops          hPreemptOps;
-    /** The reference count for this object. */
-    uint32_t volatile           cRefs;
+    /** The linux callbacks. */
+    struct preempt_ops          PreemptOps;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
     /** Starting with 3.1.19, the linux kernel doesn't restore kernel RFLAGS during
      * task switch, so we have to do that ourselves. (x86 code is not affected.) */
     RTCCUINTREG                 fSavedRFlags;
 #endif
-} RTTHREADCTXINT, *PRTTHREADCTXINT;
+} RTTHREADCTXHOOKINT;
+typedef RTTHREADCTXHOOKINT *PRTTHREADCTXHOOKINT;
 
 
 /**
- * Hook function for the thread-preempting event.
+ * Hook function for the thread schedule out event.
  *
  * @param   pPreemptNotifier    Pointer to the preempt_notifier struct.
- * @param   pNext               Pointer to the task that is preempting the
- *                              current thread.
+ * @param   pNext               Pointer to the task that is being scheduled
+ *                              instead of the current thread.
  *
  * @remarks Called with the rq (runqueue) lock held and with preemption and
  *          interrupts disabled!
  */
 static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifier, struct task_struct *pNext)
 {
-    PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
+    PRTTHREADCTXHOOKINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXHOOKINT, LnxPreemptNotifier);
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     RTCCUINTREG fSavedEFlags = ASMGetFlags();
     stac();
 #endif
 
     AssertPtr(pThis);
-    AssertPtr(pThis->pfnThreadCtxHook);
-    Assert(pThis->fRegistered);
+    AssertPtr(pThis->pfnCallback);
+    Assert(pThis->fEnabled);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_PREEMPTING, pThis->pvUser);
+    pThis->pfnCallback(RTTHREADCTXEVENT_OUT, pThis->pvUser);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     ASMSetFlags(fSavedEFlags);
@@ -114,27 +115,28 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
 
 
 /**
- * Hook function for the thread-resumed event.
+ * Hook function for the thread schedule in event.
  *
  * @param   pPreemptNotifier    Pointer to the preempt_notifier struct.
- * @param   iCpu                The CPU this thread is scheduled on.
+ * @param   iCpu                The CPU this thread is being scheduled on.
  *
  * @remarks Called without holding the rq (runqueue) lock and with preemption
  *          enabled!
+ * @todo    r=bird: Preemption is of course disabled when it is called.
  */
 static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier, int iCpu)
 {
-    PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
+    PRTTHREADCTXHOOKINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXHOOKINT, LnxPreemptNotifier);
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     RTCCUINTREG fSavedEFlags = ASMGetFlags();
     stac();
 #endif
 
     AssertPtr(pThis);
-    AssertPtr(pThis->pfnThreadCtxHook);
-    Assert(pThis->fRegistered);
+    AssertPtr(pThis->pfnCallback);
+    Assert(pThis->fEnabled);
 
-    pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_RESUMED, pThis->pvUser);
+    pThis->pfnCallback(RTTHREADCTXEVENT_IN, pThis->pvUser);
 
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 1, 19) && defined(RT_ARCH_AMD64)
@@ -151,213 +153,151 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
  *
  * @param   pThis   Pointer to the internal thread-context object.
  */
-DECLINLINE(void) rtThreadCtxHooksDeregister(PRTTHREADCTXINT pThis)
+DECLINLINE(void) rtThreadCtxHookDisable(PRTTHREADCTXHOOKINT pThis)
 {
-    preempt_notifier_unregister(&pThis->hPreemptNotifier);
-    pThis->hPreemptOps.sched_out = NULL;
-    pThis->hPreemptOps.sched_in  = NULL;
-    pThis->fRegistered           = false;
+    Assert(pThis->PreemptOps.sched_out == rtThreadCtxHooksLnxSchedOut);
+    Assert(pThis->PreemptOps.sched_in  == rtThreadCtxHooksLnxSchedIn);
+    preempt_disable();
+    preempt_notifier_unregister(&pThis->LnxPreemptNotifier);
+    pThis->fEnabled = false;
+    preempt_enable();
 }
 
 
-RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
+RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser)
 {
-    PRTTHREADCTXINT pThis;
+    /*
+     * Validate input.
+     */
+    PRTTHREADCTXHOOKINT pThis;
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
+    AssertReturn(fFlags == 0, VERR_INVALID_FLAGS);
 
-    pThis = (PRTTHREADCTXINT)RTMemAllocZ(sizeof(*pThis));
+    /*
+     * Allocate and initialize a new hook.  We don't register it yet, just
+     * create it.
+     */
+    pThis = (PRTTHREADCTXHOOKINT)RTMemAllocZ(sizeof(*pThis));
     if (RT_UNLIKELY(!pThis))
         return VERR_NO_MEMORY;
-    pThis->u32Magic    = RTTHREADCTXINT_MAGIC;
-    pThis->hOwner      = RTThreadNativeSelf();
-    pThis->fRegistered = false;
-    preempt_notifier_init(&pThis->hPreemptNotifier, &pThis->hPreemptOps);
-    pThis->cRefs       = 1;
+    pThis->u32Magic     = RTTHREADCTXHOOKINT_MAGIC;
+    pThis->hOwner       = RTThreadNativeSelf();
+    pThis->fEnabled     = false;
+    pThis->pfnCallback  = pfnCallback;
+    pThis->pvUser       = pvUser;
+    preempt_notifier_init(&pThis->LnxPreemptNotifier, &pThis->PreemptOps);
+    pThis->PreemptOps.sched_out = rtThreadCtxHooksLnxSchedOut;
+    pThis->PreemptOps.sched_in  = rtThreadCtxHooksLnxSchedIn;
 
-    *phThreadCtx = pThis;
+    *phCtxHook = pThis;
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
+RT_EXPORT_SYMBOL(RTThreadCtxHookCreate);
 
 
-RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
+RTDECL(int ) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
 {
     /*
      * Validate input.
      */
-    uint32_t        cRefs;
-    PRTTHREADCTXINT pThis = hThreadCtx;
+    PRTTHREADCTXHOOKINT pThis = hCtxHook;
+    if (pThis == NIL_RTTHREADCTXHOOK)
+        return VINF_SUCCESS;
     AssertPtr(pThis);
-    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
-                    UINT32_MAX);
-
-    cRefs = ASMAtomicIncU32(&pThis->cRefs);
-    Assert(cRefs < UINT32_MAX / 2);
-    return cRefs;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRetain);
-
-
-
-RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
-{
-    /*
-     * Validate input.
-     */
-    uint32_t        cRefs;
-    PRTTHREADCTXINT pThis = hThreadCtx;
-    if (pThis == NIL_RTTHREADCTX)
-        return 0;
-
-    AssertPtr(pThis);
-    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
-                    UINT32_MAX);
+    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXHOOKINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+                    VERR_INVALID_HANDLE);
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(pThis->fEnabled || pThis->hOwner == RTThreadNativeSelf());
 
-    cRefs = ASMAtomicDecU32(&pThis->cRefs);
-    if (!cRefs)
+    /*
+     * If there's still a registered thread-context hook, deregister it now before destroying the object.
+     */
+    if (pThis->fEnabled)
     {
-        /*
-         * If there's still a registered thread-context hook, deregister it now before destroying the object.
-         */
-        if (pThis->fRegistered)
-            rtThreadCtxHooksDeregister(pThis);
-
-        /*
-         * Paranoia... but since these are ring-0 threads we can't be too careful.
-         */
-        Assert(!pThis->fRegistered);
-        Assert(!pThis->hPreemptOps.sched_out);
-        Assert(!pThis->hPreemptOps.sched_in);
-
-        ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
-        RTMemFree(pThis);
+        Assert(pThis->hOwner == RTThreadNativeSelf());
+        rtThreadCtxHookDisable(pThis);
+        Assert(!pThis->fEnabled); /* paranoia */
     }
-    else
-        Assert(cRefs < UINT32_MAX / 2);
 
-    return cRefs;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRelease);
-
-
-RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadCtxHook, void *pvUser)
-{
-    /*
-     * Validate input.
-     */
-    PRTTHREADCTXINT pThis = hThreadCtx;
-    if (pThis == NIL_RTTHREADCTX)
-        return VERR_INVALID_HANDLE;
-    AssertPtr(pThis);
-    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
-                    VERR_INVALID_HANDLE);
-    Assert(pThis->hOwner == RTThreadNativeSelf());
-    Assert(!pThis->hPreemptOps.sched_out);
-    Assert(!pThis->hPreemptOps.sched_in);
-
-    /*
-     * Register the callback.
-     */
-    pThis->hPreemptOps.sched_out = rtThreadCtxHooksLnxSchedOut;
-    pThis->hPreemptOps.sched_in  = rtThreadCtxHooksLnxSchedIn;
-    pThis->pvUser                = pvUser;
-    pThis->pfnThreadCtxHook      = pfnThreadCtxHook;
-    pThis->fRegistered           = true;
-    preempt_notifier_register(&pThis->hPreemptNotifier);
+    ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXHOOKINT_MAGIC);
+    RTMemFree(pThis);
 
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRegister);
+RT_EXPORT_SYMBOL(RTThreadCtxHookDestroy);
 
 
-RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
+RTDECL(int) RTThreadCtxHookEnable(RTTHREADCTXHOOK hCtxHook)
 {
     /*
      * Validate input.
      */
-    PRTTHREADCTXINT pThis = hThreadCtx;
-    if (pThis == NIL_RTTHREADCTX)
-        return VERR_INVALID_HANDLE;
+    PRTTHREADCTXHOOKINT pThis = hCtxHook;
     AssertPtr(pThis);
-    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXHOOKINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
     Assert(pThis->hOwner == RTThreadNativeSelf());
-    Assert(pThis->fRegistered);
+    Assert(!pThis->fEnabled);
+    if (!pThis->fEnabled)
+    {
+        Assert(pThis->PreemptOps.sched_out == rtThreadCtxHooksLnxSchedOut);
+        Assert(pThis->PreemptOps.sched_in == rtThreadCtxHooksLnxSchedIn);
 
-    /*
-     * Deregister the callback.
-     */
-    rtThreadCtxHooksDeregister(pThis);
+        /*
+         * Register the callback.
+         */
+        preempt_disable();
+        pThis->fEnabled = true;
+        preempt_notifier_register(&pThis->LnxPreemptNotifier);
+        preempt_enable();
+    }
+
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksDeregister);
+RT_EXPORT_SYMBOL(RTThreadCtxHookEnable);
 
 
-RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx)
+RTDECL(int) RTThreadCtxHookDisable(RTTHREADCTXHOOK hCtxHook)
 {
     /*
      * Validate input.
      */
-    PRTTHREADCTXINT pThis = hThreadCtx;
-    if (pThis == NIL_RTTHREADCTX)
+    PRTTHREADCTXHOOKINT pThis = hCtxHook;
+    if (pThis != NIL_RTTHREADCTXHOOK)
+    {
+        AssertPtr(pThis);
+        AssertMsgReturn(pThis->u32Magic == RTTHREADCTXHOOKINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+                        VERR_INVALID_HANDLE);
+        Assert(pThis->hOwner == RTThreadNativeSelf());
+
+        /*
+         * Deregister the callback.
+         */
+        if (pThis->fEnabled)
+            rtThreadCtxHookDisable(pThis);
+    }
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHookDisable);
+
+
+RTDECL(bool) RTThreadCtxHookIsEnabled(RTTHREADCTXHOOK hCtxHook)
+{
+    /*
+     * Validate input.
+     */
+    PRTTHREADCTXHOOKINT pThis = hCtxHook;
+    if (pThis == NIL_RTTHREADCTXHOOK)
         return false;
     AssertPtr(pThis);
-    AssertMsg(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
+    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXHOOKINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+                    false);
 
-    return pThis->fRegistered;
+    return pThis->fEnabled;
 }
 
 #else    /* Not supported / Not needed */
-
-RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
-{
-    NOREF(phThreadCtx);
-    return VERR_NOT_SUPPORTED;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
-
-
-RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
-{
-    NOREF(hThreadCtx);
-    return UINT32_MAX;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRetain);
-
-
-RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
-{
-    NOREF(hThreadCtx);
-    return UINT32_MAX;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRelease);
-
-
-RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadCtxHook, void *pvUser)
-{
-    NOREF(hThreadCtx);
-    NOREF(pfnThreadCtxHook);
-    NOREF(pvUser);
-    return VERR_NOT_SUPPORTED;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksRegister);
-
-
-RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
-{
-    NOREF(hThreadCtx);
-    return VERR_NOT_SUPPORTED;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksDeregister);
-
-
-RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx)
-{
-    NOREF(hThreadCtx);
-    return false;
-}
-RT_EXPORT_SYMBOL(RTThreadCtxHooksAreRegistered);
-
+# include "../generic/threadctxhooks-r0drv-generic.cpp"
 #endif   /* Not supported / Not needed */
 

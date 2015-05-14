@@ -107,18 +107,13 @@ struc VMMCPU
         .pR0LoggerR3            RTR3PTR_RES 1
         .pR0LoggerR0            RTR0PTR_RES 1
 
-        .hR0ThreadCtx           RTR0PTR_RES 1
-%if HC_ARCH_BITS == 32
-        .u32Padding             resd 1
-%else
-        .u64Padding             resq 1
-%endif
+        .hCtxHook               RTR0PTR_RES 1
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
-        .afPadding              resb 3
+        .afPadding              resb 3+4
 %else
-        .afPadding              resb 7
+        .afPadding              resb 7+8
 %endif
 
         alignb 8

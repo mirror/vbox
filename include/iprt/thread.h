@@ -587,106 +587,104 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread);
 
 
 /**
- * Thread-context events.
+ * Thread context swithcing events.
  */
 typedef enum RTTHREADCTXEVENT
 {
-    /** This thread is about to be preempted. */
-    RTTHREADCTXEVENT_PREEMPTING = 0,
-    /** This thread has just been resumed. */
-    RTTHREADCTXEVENT_RESUMED,
+    /** This thread is being scheduled out on the current CPU (includes preemption,
+     * waiting, sleep and whatever else may trigger scheduling). */
+    RTTHREADCTXEVENT_OUT = 0,
+    /** This thread is being scheduled in on the current CPU and will resume
+     * execution. */
+    RTTHREADCTXEVENT_IN,
     /** The usual 32-bit size hack. */
     RTTHREADCTXEVENT_32BIT_HACK = 0x7fffffff
 } RTTHREADCTXEVENT;
 
 /**
- * Thread-context hook.
+ * Thread context switching hook callback.
+ *
+ * This hook function is called when a thread is scheduled and preempted.  Check
+ * @a enmEvent to see which it is.  Since the function is being called from
+ * hooks inside the scheduler, it is limited what you can do from this function.
+ * Do NOT acquire locks, sleep or yield the thread for instance.  IRQ safe
+ * spinlocks are fine though.
  *
  * @returns IPRT status code.
- * @param   enmEvent    The thread-context event.
+ * @param   enmEvent    The thread-context event.  Please quitely ignore unknown
+ *                      events, we may add more (thread exit, ++) later.
  * @param   pvUser      User argument.
- *
- * @remarks This function may be called under different contexts, i.e. with
- *          different locks held, with/without preemption disabled depending on
- *          the event in @a enmEvent.
  */
 typedef DECLCALLBACK(void) FNRTTHREADCTXHOOK(RTTHREADCTXEVENT enmEvent, void *pvUser);
-/** Pointer to a thread-context hook. */
+/** Pointer to a context switching hook. */
 typedef FNRTTHREADCTXHOOK *PFNRTTHREADCTXHOOK;
 
 /**
- * Initializes a thread-context hook for the current thread.
+ * Initializes a thread context switching hook for the current thread.
  *
- * This must be called once per-thread before using RTThreadCtxHooksRegister().
- *
- * @returns IPRT status code.
- * @param   phThreadCtx         Where to store the thread-context handle.
- *
- * @remarks This must be called with preemption enabled!
- */
-RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx);
-
-/**
- * Retains a new reference to a thread-context hook.
- *
- * @returns New reference count.
- *          UINT32_MAX is returned if the handle is invalid (asserted).
- * @param   phThreadCtx         Pointer to the thread-context handle.
- *
- * @remarks This can be called from any thread. Can be called with preemption
- *          disabled.
- */
-RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx);
-
-/**
- * Releases a reference to a thread-context hook.
- *
- * @returns New reference count.
- * @retval  0 if the thread-context hook was freed or @a hThreadCtx is
- *          NIL_RTTHREADCTX.
- * @retval  UINT32_MAX is returned if the handle is invalid (asserted).
- *
- * @param   hThreadCtx          The thread-context handle.
- *
- * @remarks This can be called from any thread but must be called with
- *          preemption enabled!
- */
-RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx);
-
-/**
- * Registers a thread-context hook for the current thread to receive
- * notifications for all supported thread-context events.
+ * The hook is created as disabled, use RTThreadCtxHookEnable to enable it.
  *
  * @returns IPRT status code.
- * @param   hThreadCtx          The thread-context handle.
- * @param   pfnThreadHook       Pointer to a thread-context hook (a callback)
- *                              for all thread-context events.
- * @param   pvUser              User argument (optional, can be NULL).
- *
- * @remarks Can be called with preemption disabled.
+ * @param   phCtxHook       Where to store the hook handle.
+ * @param   fFlags          Reserved for future extensions, must be zero.
+ * @param   pfnCallback     Pointer to a the hook function (callback) that
+ *                          should be called for all context switching events
+ *                          involving the current thread.
+ * @param   pvUser          User argument that will be passed to @a pfnCallback.
+ * @remarks Preemption must be enabled.
  */
-RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadHook, void *pvUser);
+RTDECL(int) RTThreadCtxHookCreate(PRTTHREADCTXHOOK phCtxHook, uint32_t fFlags, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser);
 
 /**
- * Deregisters the thread-context hook for the current thread.
+ * Destroys a thread context switching hook.
+ *
+ * Caller must make sure the hook is disabled before the final reference is
+ * released.  Recommended to call this on the owning thread, otherwise the
+ * memory backing it may on some systems only be released when the thread
+ * terminates.
  *
  * @returns IPRT status code.
- * @param   hThreadCtx          The thread-context handle.
  *
- * @remarks Can be called with preemption disabled.
+ * @param   hCtxHook        The context hook handle.  NIL_RTTHREADCTXHOOK is
+ *                          ignored and the function will return VINF_SUCCESS.
+ * @remarks Preemption must be enabled.
+ * @remarks Do not call from FNRTTHREADCTXHOOK.
  */
-RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx);
+RTDECL(int) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook);
 
 /**
- * Are thread-context hooks registered for the thread?
+ * Enables the context switching hooks for the current thread.
+ *
+ * @returns IPRT status code.
+ * @param   hCtxHook        The context hook handle.
+ * @remarks Should be called with preemption disabled.
+ */
+RTDECL(int) RTThreadCtxHookEnable(RTTHREADCTXHOOK hCtxHook);
+
+/**
+ * Disables the thread context switching hook for the current thread.
+ *
+ * Will not assert or fail if called twice or with a NIL handle.
+ *
+ * @returns IPRT status code.
+ * @param   hCtxHook        The context hook handle. NIL_RTTHREADCTXHOOK is
+ *                          ignored and the function wil return VINF_SUCCESS.
+ * @remarks Should be called with preemption disabled.
+ * @remarks Do not call from FNRTTHREADCTXHOOK.
+ */
+RTDECL(int) RTThreadCtxHookDisable(RTTHREADCTXHOOK hCtxHook);
+
+/**
+ * Is the thread context switching hook enabled?
  *
  * @returns true if registered, false if not supported or not registered.
- * @param   hThreadCtx          The thread-context handle.
+ * @param   hCtxHook        The context hook handle.   NIL_RTTHREADCTXHOOK is
+ *                          ignored and the function will return false.
  *
- * @remarks Can be called from any thread (but possibility of races when
- *          it's not the current thread!)
+ * @remarks Can be called from any thread, though is naturally subject to races
+ *          when not called from the thread associated with the hook.
  */
-RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx);
+RTDECL(bool) RTThreadCtxHookIsEnabled(RTTHREADCTXHOOK hCtxHook);
 
 # endif /* IN_RING0 */
 
