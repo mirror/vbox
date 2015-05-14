@@ -2695,6 +2695,8 @@ ifdef VBOX_SIGNING_MODE
   endif
   VBOX_CERTIFICATE_STORE ?= my
   VBOX_CERTIFICATE_STORE_ARGS ?= /s "$(VBOX_CERTIFICATE_STORE)"
+  VBOX_CERTIFICATE_FINGERPRINT_ARGS := $(if-expr "$(VBOX_CERTIFICATE_FINGERPRINT)" != "" \
+  	,/sha1 "$(subst $(SP),,$(VBOX_CERTIFICATE_FINGERPRINT))",)
 
   ## Commands for signing a driver image after link.
   VBOX_SIGN_DRIVER_CMDS ?= $(if $(eq $(tool_do),LINK_LIBRARY),,$(call VBOX_SIGN_IMAGE_FN,$(out)))
@@ -2706,6 +2708,7 @@ ifdef VBOX_SIGNING_MODE
 	$(VBOX_CROSS_CERTIFICATE_FILE_ARGS) \
 	$(VBOX_CERTIFICATE_STORE_ARGS) \
 	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
+       $(VBOX_CERTIFICATE_FINGERPRINT_ARGS) \
 	$(VBOX_TSA_URL_ARGS) \
 	$(if $(strip $(2)),/d "$(strip $(2))",) \
 	$(3) \
@@ -2747,6 +2750,9 @@ ifdef VBOX_SIGNING_MODE
   # Currently release signing is done when packing.  This may change later.
   # (Installer package signing is done elsewhere (VBOX_MACOSX_INSTALLER_SIGN).)
   #
+  if defined(VBOX_CERTIFICATE_FINGERPRINT) && !defined(VBOX_CERTIFICATE_SUBJECT_NAME)
+    VBOX_CERTIFICATE_SUBJECT_NAME = $(subst $(SP),,$(VBOX_CERTIFICATE_FINGERPRINT))
+  endif
   ifeq ($(VBOX_SIGNING_MODE),test)
    VBOX_CERTIFICATE_SUBJECT_NAME ?= $(error You need to set VBOX_CERTIFICATE_SUBJECT_NAME in LocalConfig.kmk.)
    VBOX_CERTIFICATE_SUBJECT_NAME_ARGS ?= --sign "$(VBOX_CERTIFICATE_SUBJECT_NAME)"
