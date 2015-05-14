@@ -254,7 +254,7 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
         AssertMsg(rc, ("removectx() failed. rc=%d\n", rc));
         NOREF(rc);
 
-#ifdef VBOX_STRICT
+#if 0 /*def RT_STRICT - access after free */
         cRefs = ASMAtomicReadU32(&pThis->cRefs);
         Assert(!cRefs);
 #endif
