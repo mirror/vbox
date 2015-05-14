@@ -199,10 +199,12 @@ RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
 #ifdef CONFIG_PREEMPT
+    IPRT_LINUX_SAVE_EFL_AC(); /* paranoia */
     AssertPtr(pState);
     Assert(pState->u32Reserved == 42);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
     preempt_enable();
+    IPRT_LINUX_RESTORE_EFL_ONLY_AC();  /* paranoia */
 
 #else
     int32_t volatile *pc;
