@@ -1819,8 +1819,9 @@
         <listitem>
           <para>Finally, <computeroutput>VBoxHeadless</computeroutput> is yet
           another front-end that produces no visible output on the host at
-          all, but merely acts as a RDP server if the VirtualBox Remote
-          Desktop Extension (VRDE) is installed. As opposed to the other
+          all, but can act as a RDP server if the VirtualBox Remote
+          Desktop Extension (VRDE) is installed and enabled for the VM.
+          As opposed to the other
           graphical interfaces, the headless front-end requires no graphics
           support. This is useful, for example, if you want to host your
           virtual machines on a headless Linux server that has no X Window

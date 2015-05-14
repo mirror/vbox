@@ -444,8 +444,8 @@ static void show_usage()
 {
     RTPrintf("Usage:\n"
              "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
-             "   -v, -vrde, --vrde on|off|config       Enable (default) or disable the VRDE\n"
-             "                                           server or don't change the setting\n"
+             "   -v, -vrde, --vrde on|off|config       Enable or disable the VRDE server\n"
+             "                                           or don't change the setting (default)\n"
              "   -e, -vrdeproperty, --vrdeproperty <name=[value]> Set a VRDE property:\n"
              "                                     \"TCP/Ports\" - comma-separated list of\n"
              "                                       ports the VRDE server can bind to; dash\n"
@@ -1015,8 +1015,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             CHECK_ERROR(es, RegisterListener(consoleListener, ComSafeArrayAsInParam(eventTypes), true));
         }
 
-        /* default is to enable the remote desktop server (backward compatibility) */
-        BOOL fVRDEEnable = true;
+        /* Default is to use the VM setting for the VRDE server. */
+        enum VRDEOption
+        {
+            VRDEOption_Config,
+            VRDEOption_Off,
+            VRDEOption_On
+        };
+        VRDEOption enmVRDEOption = VRDEOption_Config;
         BOOL fVRDEEnabled;
         ComPtr <IVRDEServer> vrdeServer;
         CHECK_ERROR_BREAK(machine, COMGETTER(VRDEServer)(vrdeServer.asOutParam()));
@@ -1024,24 +1030,23 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         if (vrdeEnabled != NULL)
         {
-            /* -vrdeServer on|off|config */
+            /* -vrde on|off|config */
             if (!strcmp(vrdeEnabled, "off") || !strcmp(vrdeEnabled, "disable"))
-                fVRDEEnable = false;
-            else if (!strcmp(vrdeEnabled, "config"))
+                enmVRDEOption = VRDEOption_Off;
+            else if (!strcmp(vrdeEnabled, "on") || !strcmp(vrdeEnabled, "enable"))
+                enmVRDEOption = VRDEOption_On;
+            else if (strcmp(vrdeEnabled, "config"))
             {
-                if (!fVRDEEnabled)
-                    fVRDEEnable = false;
-            }
-            else if (strcmp(vrdeEnabled, "on") && strcmp(vrdeEnabled, "enable"))
-            {
-                RTPrintf("-vrdeServer requires an argument (on|off|config)\n");
+                RTPrintf("-vrde requires an argument (on|off|config)\n");
                 break;
             }
         }
 
-        if (fVRDEEnable)
+        Log(("VBoxHeadless: enmVRDE %d, fVRDEEnabled %d\n", enmVRDEOption, fVRDEEnabled));
+
+        if (enmVRDEOption != VRDEOption_Off)
         {
-            Log(("VBoxHeadless: Enabling VRDE server...\n"));
+            /* Set other specified options. */
 
             /* set VRDE port if requested by the user */
             if (vrdePort != NULL)
@@ -1093,13 +1098,17 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     break;
             }
 
+        }
+
+        if (enmVRDEOption == VRDEOption_On)
+        {
             /* enable VRDE server (only if currently disabled) */
             if (!fVRDEEnabled)
             {
                 CHECK_ERROR_BREAK(vrdeServer, COMSETTER(Enabled)(TRUE));
             }
         }
-        else
+        else if (enmVRDEOption == VRDEOption_Off)
         {
             /* disable VRDE server (only if currently enabled */
             if (fVRDEEnabled)

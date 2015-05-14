@@ -1176,12 +1176,9 @@ Statistics update:  disabled</screen></para>
       available through <computeroutput>VBoxManage
       modifyvm</computeroutput>:<itemizedlist>
           <listitem>
-            <para><computeroutput>--vrde on|off</computeroutput>: With the
-            VirtualBox graphical user interface, this enables or disables the
-            VirtualBox remote desktop extension (VRDE) server. Note that if
-            you are using <computeroutput>VBoxHeadless</computeroutput> (see
-            <xref linkend="vboxheadless" />), VRDE is enabled by
-            default.</para>
+            <para><computeroutput>--vrde on|off</computeroutput>:
+            This enables or disables the VirtualBox remote desktop extension
+            (VRDE) server.</para>
           </listitem>
 
           <!-- @todo r=andy Document vrdeproperty -->

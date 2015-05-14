@@ -37,10 +37,6 @@
     linkend="settings-display" />) or with
     <computeroutput>VBoxManage</computeroutput>:<screen>VBoxManage modifyvm "VM name" --vrde on</screen></para>
 
-    <para>If you use <computeroutput>VBoxHeadless</computeroutput> (described
-    further below), VRDP support will be automatically enabled since
-    VBoxHeadless has no other means of output.</para>
-
     <para>By default, the VRDP server uses TCP port
     <computeroutput>3389</computeroutput>. You will need to change the
     default port if you run more than one VRDP server, since the port can
@@ -165,7 +161,7 @@
 
       <para>VirtualBox therefore comes with yet another front-end called
       <computeroutput>VBoxHeadless</computeroutput>, which produces no visible
-      output on the host at all, but instead only delivers VRDP data. This
+      output on the host at all, but still can deliver VRDP data. This
       front-end has no dependencies on the X Window system on Linux and
       Solaris hosts.<footnote>
           <para>Before VirtualBox 1.6, the headless server was called
@@ -206,21 +202,23 @@
           <para>The other alternative is to start
           <computeroutput>VBoxHeadless</computeroutput> from the VirtualBox
           Manager GUI, by holding the Shift key when starting a virtual
-          machine.
+          machine or selecting <computeroutput>Headless Start</computeroutput>
+          from the <computeroutput>Machine</computeroutput> menu.
           </para>
         </listitem>
       </itemizedlist>
 
-      <para>Note that when you use
-      <computeroutput>VBoxHeadless</computeroutput> to start a VM, since the
-      headless server has no other means of output, the VRDP server will
-      <emphasis>always</emphasis> be enabled, regardless of whether you had
-      enabled the VRDP server in the VM's settings. If this is undesirable
-      (for example because you want to access the VM via
-      <computeroutput>ssh</computeroutput> only), start the VM like
-      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde off</screen>To
-      have the VRDP server enabled depending on the VM configuration, as the
-      other front-ends would, use this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde config</screen></para>
+      <para>Since VirtualBox version 5.0, when you use
+      <computeroutput>VBoxHeadless</computeroutput> to start a VM,
+      the VRDP server will be enabled according to the VM configuration.
+      You can override the VM's setting using <computeroutput>--vrde</computeroutput>
+      command line parameter. To enable the VRDP server start the VM like
+      this:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde on</screen>
+      and to disable it:<screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde off</screen>
+      To have the VRDP server enabled depending on the VM configuration, as the
+      other front-ends would, you can still use:
+      <screen>VBoxHeadless --startvm &lt;uuid|name&gt; --vrde config</screen>
+      but this is the same as <screen>VBoxHeadless --startvm &lt;uuid|name&gt;</screen></para>
 
       <para>If you start the VM with <computeroutput>VBoxManage startvm ...</computeroutput>
       then the configuration settings of the VM are always used.</para>
@@ -310,6 +308,11 @@
             installation that you want to install later to the virtual
             machine, so the machine can boot from it:<screen>VBoxManage storageattach "Windows XP" --storagectl "IDE Controller"
       --port 0 --device 1 --type dvddrive --medium /full/path/to/iso.iso</screen></para>
+          </listitem>
+
+          <listitem>
+            <para>Enable VirtualBox remote desktop extension (the VRDP server):
+            <screen>VBoxManage modifyvm "Windows XP" --vrde on</screen></para>
           </listitem>
 
           <listitem>
