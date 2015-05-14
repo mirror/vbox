@@ -3093,6 +3093,9 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                     case 0:
                         pCurLeaf->uEax &= RT_LO_U32(fGuestXcr0Mask);
                         pCurLeaf->uEdx &= RT_HI_U32(fGuestXcr0Mask);
+                        AssertLogRelMsgReturn((pCurLeaf->uEax & (XSAVE_C_X87 | XSAVE_C_SSE)) == (XSAVE_C_X87 | XSAVE_C_SSE),
+                                              ("CPUID(0xd/0).EAX missing mandatory X87 or SSE bits: %#RX32", pCurLeaf->uEax),
+                                              VERR_CPUM_IPE_1);
                         cbXSaveMax = pCurLeaf->uEcx;
                         AssertLogRelMsgReturn(cbXSaveMax <= CPUM_MAX_XSAVE_AREA_SIZE && cbXSaveMax >= CPUM_MIN_XSAVE_AREA_SIZE,
                                               ("%#x max=%#x\n", cbXSaveMax, CPUM_MAX_XSAVE_AREA_SIZE), VERR_CPUM_IPE_2);
@@ -4851,6 +4854,7 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
      *          ECX - Bit 0 indicates whether this sub-leaf maps to a valid IA32_XSS bit (=1) or a valid XCR0 bit (=0).
      *          EDX - Reserved, but is set to zero if invalid sub-leaf index.
      */
+    uint64_t fGuestXcr0Mask = 0;
     PCPUMCPUIDLEAF pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x0000000d), 0);
     if (   pCurLeaf
         && (aGuestCpuIdStd[1].uEcx & X86_CPUID_FEATURE_ECX_XSAVE)
@@ -4859,11 +4863,14 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
             || pCurLeaf->uEcx
             || pCurLeaf->uEdx) )
     {
-        uint64_t fGuestXcr0Mask = RT_MAKE_U64(pCurLeaf->uEax, pCurLeaf->uEdx);
+        fGuestXcr0Mask = RT_MAKE_U64(pCurLeaf->uEax, pCurLeaf->uEdx);
         if (fGuestXcr0Mask & ~pVM->cpum.s.fXStateHostMask)
             return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS,
                                      N_("CPUID(0xd/0).EDX:EAX mismatch: %#llx saved, %#llx supported by the current host (XCR0 bits)"),
                                      fGuestXcr0Mask, pVM->cpum.s.fXStateHostMask);
+        if ((fGuestXcr0Mask & (XSAVE_C_X87 | XSAVE_C_SSE)) != (XSAVE_C_X87 | XSAVE_C_SSE))
+            return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS,
+                                     N_("CPUID(0xd/0).EDX:EAX missing mandatory X87 or SSE bits: %#RX64"), fGuestXcr0Mask);
 
         /* We don't support any additional features yet. */
         pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x0000000d), 1);
@@ -4875,12 +4882,6 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
                                      N_("CPUID(0xd/1).EDX:ECX=%#llx, expected zero"),
                                      RT_MAKE_U64(pCurLeaf->uEdx, pCurLeaf->uEcx));
 
-
-        if (pVM->cpum.s.fXStateGuestMask != fGuestXcr0Mask)
-        {
-            LogRel(("CPUM: fXStateGuestMask=%#lx -> %#llx\n", pVM->cpum.s.fXStateGuestMask, fGuestXcr0Mask));
-            pVM->cpum.s.fXStateGuestMask = fGuestXcr0Mask;
-        }
 
         for (uint32_t uSubLeaf = 2; uSubLeaf < 64; uSubLeaf++)
         {
@@ -4901,6 +4902,27 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
                 }
             }
         }
+    }
+    /* Clear leaf 0xd just in case we're loading an old state... */
+    else if (pCurLeaf)
+    {
+        AssertLogRel(uVersion <= CPUM_SAVED_STATE_VERSION_PUT_STRUCT);
+        for (uint32_t uSubLeaf = 0; uSubLeaf < 64; uSubLeaf++)
+        {
+            pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x0000000d), uSubLeaf);
+            if (pCurLeaf)
+                pCurLeaf->uEax = pCurLeaf->uEbx = pCurLeaf->uEcx = pCurLeaf->uEdx = 0;
+        }
+    }
+
+    /* Update the fXStateGuestMask value for the VM. */
+    if (pVM->cpum.s.fXStateGuestMask != fGuestXcr0Mask)
+    {
+        LogRel(("CPUM: fXStateGuestMask=%#llx -> %#llx\n", pVM->cpum.s.fXStateGuestMask, fGuestXcr0Mask));
+        pVM->cpum.s.fXStateGuestMask = fGuestXcr0Mask;
+        if (!fGuestXcr0Mask && (aGuestCpuIdStd[1].uEcx & X86_CPUID_FEATURE_ECX_XSAVE))
+            return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS,
+                                     N_("Internal Processing Error: XSAVE feature bit enabled, but leaf 0xd is empty."));
     }
 
 #undef CPUID_CHECK_RET
