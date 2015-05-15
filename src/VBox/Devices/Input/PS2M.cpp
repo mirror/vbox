@@ -327,7 +327,7 @@ static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
     /* Check if queue is full. */
     if (pQ->cUsed >= pQ->cSize)
     {
-        LogFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
+        LogRelFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
         return;
     }
     /* Insert data and update circular buffer write position. */
@@ -335,7 +335,7 @@ static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
     if (++pQ->wpos == pQ->cSize)
         pQ->wpos = 0;   /* Roll over. */
     ++pQ->cUsed;
-    LogFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
+    LogRelFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
 }
 
 #ifdef IN_RING3
@@ -995,7 +995,7 @@ static DECLCALLBACK(int) ps2mPutEvent(PPDMIMOUSEPORT pInterface, int32_t dx, int
     int rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    LogFlowFunc(("dX=%d dY=%d dZ=%d dW=%d buttons=%02X\n", dx, dy, dz, dw, fButtons));
+    LogRelFlowFunc(("dX=%d dY=%d dZ=%d dW=%d buttons=%02X\n", dx, dy, dz, dw, fButtons));
     /* NB: The PS/2 Y axis direction is inverted relative to ours. */
     ps2mPutEventWorker(pThis, dx, -dy, dz, dw, fButtons);
 

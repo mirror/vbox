@@ -491,7 +491,7 @@ static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
     /* Check if queue is full. */
     if (pQ->cUsed >= pQ->cSize)
     {
-        LogFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
+        LogRelFlowFunc(("queue %p full (%d entries)\n", pQ, pQ->cUsed));
         return;
     }
     /* Insert data and update circular buffer write position. */
@@ -499,7 +499,7 @@ static void ps2kInsertQueue(GeneriQ *pQ, uint8_t val)
     if (++pQ->wpos == pQ->cSize)
         pQ->wpos = 0;   /* Roll over. */
     ++pQ->cUsed;
-    LogFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
+    LogRelFlowFunc(("inserted 0x%02X into queue %p\n", val, pQ));
 }
 
 #ifdef IN_RING3
@@ -1163,7 +1163,7 @@ static DECLCALLBACK(int) ps2kPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint3
     PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
     int         rc;
 
-    LogFlowFunc(("key code %08X\n", u32UsageCode));
+    LogRelFlowFunc(("key code %08X\n", u32UsageCode));
 
     rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
