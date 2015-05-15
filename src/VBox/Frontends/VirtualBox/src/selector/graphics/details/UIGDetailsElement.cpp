@@ -228,8 +228,21 @@ void UIGDetailsElement::updateMinimumHeaderHeight()
 void UIGDetailsElement::setIcon(const QIcon &icon)
 {
     /* Cache icon: */
-    m_pixmapSize = icon.isNull() ? QSize(0, 0) : icon.availableSizes().first();
-    m_pixmap = icon.pixmap(m_pixmapSize);
+    if (icon.isNull())
+    {
+        /* No icon provided: */
+        m_pixmapSize = QSize();
+        m_pixmap = QPixmap();
+    }
+    else
+    {
+        /* Determine default the icon size: */
+        const QStyle *pStyle = QApplication::style();
+        const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+        m_pixmapSize = QSize(iIconMetric, iIconMetric);
+        /* Acquire the icon of the corresponding size: */
+        m_pixmap = icon.pixmap(m_pixmapSize);
+    }
 
     /* Update linked values: */
     updateMinimumHeaderWidth();
