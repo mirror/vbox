@@ -808,7 +808,7 @@
     </message>
     <message>
         <source>Save State</source>
-        <translation>Kaydetme Durumu</translation>
+        <translation>Durumu Kaydet</translation>
     </message>
     <message>
         <source>Save the machine state of the selected virtual machines</source>
@@ -1057,7 +1057,7 @@
     </message>
     <message>
         <source>S&amp;cale Factor</source>
-        <translation>&amp;Küçültme Etkeni</translation>
+        <translation>Ö&amp;lçek Etkeni</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
@@ -1102,7 +1102,7 @@
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation>&amp;Başlıksız Başlat</translation>
+        <translation>&amp;Gözetimsiz Başlat</translation>
     </message>
     <message>
         <source>Start the selected virtual machines in the background</source>
@@ -1114,7 +1114,7 @@
     </message>
     <message>
         <source>Start the selected virtual machines with the option of continuing them in the background</source>
-        <translation>Seçilen sanal makineleri arka planda devam ettiren seçenek ile başlatır</translation>
+        <translation>Seçilen sanal makineleri arka planda devam ettiren seçenek ile başlat</translation>
     </message>
 </context>
 <context>
@@ -2496,47 +2496,47 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Küçültme etkeni</translation>
+        <translation>Ölçek etkeni</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Küçültülmemiş HiDPI Görüntü Çıktısı</translation>
+        <translation>Küçültülmemiş HiDPI Görüntü Çıktısı</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Menü çubuğu</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Durum çubuğu</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Etkisizleştirildi</translation>
     </message>
 </context>
 <context>
@@ -3729,7 +3729,7 @@
     </message>
     <message>
         <source>Host+</source>
-        <translation>Host+</translation>
+        <translation>Anamakine+</translation>
     </message>
     <message>
         <source>None</source>
@@ -4493,43 +4493,43 @@
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ekran</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ölçek Etkeni:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafir ekranı ölçek etkenini kontrol eder.</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation type="unfinished">% 100</translation>
+        <translation>% 100</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation type="unfinished">% 200</translation>
+        <translation>% 200</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation type="unfinished">HiDPI:</translation>
+        <translation>HiDPI:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>İşaretlendiğinde, misafir ekran içerikleri yüksek anamakine ekran çözünürlüklerini dengelemek için büyütülmeyecektir.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished">&amp;Küçültülmemiş HiDPI Çıktısı kullan</translation>
+        <translation>&amp;Küçültülmemiş HiDPI Çıktısı kullan</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hızlandırma:</translation>
     </message>
 </context>
 <context>
@@ -5900,7 +5900,7 @@
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anahtar ile şifrelenmiş:</translation>
     </message>
 </context>
 <context>
@@ -8203,23 +8203,23 @@
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anamakineden misafire sürükle ve bırak işlemi başarısız oldu.</translation>
     </message>
     <message>
         <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Anamakineden misafire sürükle ve bırak işlemi iptal edilemiyor.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Misafirden anamakineye sürükle ve bırak işlemi başarısız oldu.</translation>
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ağ bağdaştırıcısı kablosunu bağlama başarısız.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinden ağ bağdaştırıcısı kablosu bağlantısını kesme başarısız.</translation>
     </message>
 </context>
 <context>
@@ -9618,12 +9618,12 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%3 tarihinden bu yana %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Oturum %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%3 tarihinden/saatinden bu yana %2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Oturum %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
         <comment>Inaccessible VM tooltip (name, last state change)</comment>
-        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 tarihinden bu yana erişilemez&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 tarihinden/saatinden bu yana erişilemez&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>S&amp;how</source>
@@ -12680,7 +12680,7 @@ Version %1</source>
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation>Kilit Açıldı</translation>
+        <translation>Kilidi Açıldı</translation>
     </message>
     <message>
         <source>Locked</source>
@@ -12690,7 +12690,7 @@ Version %1</source>
     <message>
         <source>Unlocking</source>
         <comment>SessionState</comment>
-        <translation>Kilit açılıyor</translation>
+        <translation>Kilidi açılıyor</translation>
     </message>
     <message>
         <source>Null</source>
@@ -13253,7 +13253,7 @@ Version %1</source>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Şifrelenmiş</translation>
     </message>
 </context>
 <context>
@@ -14056,11 +14056,11 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Şifrelenmemiş&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Şu anahtar ile şifrelenmiş:</translation>
     </message>
 </context>
 <context>
