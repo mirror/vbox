@@ -313,7 +313,11 @@ static void setModeRandR11(ScrnInfoPtr pScrn, DisplayModePtr pMode, bool fLimite
         pScrn->virtualY = pMode->VDisplay;
     }
     else
+    {
+        xf86ScrnToScreen(pScrn)->width = pMode->HDisplay;
+        xf86ScrnToScreen(pScrn)->height = pMode->VDisplay;
         adjustScreenPixmap(pScrn, pMode->HDisplay, pMode->VDisplay);
+    }
     if (pMode->HDisplay != 0 && pMode->VDisplay != 0)
         vbvxSetMode(pScrn, 0, pMode->HDisplay, pMode->VDisplay, 0, 0, true, true, &frameBuffer);
     pScrn->currentMode = pMode;
