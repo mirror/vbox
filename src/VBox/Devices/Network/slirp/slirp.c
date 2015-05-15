@@ -1349,7 +1349,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 if (!fGratuitousArpReported)
                 {
                     LogRel(("NAT: Gratuitous ARP [IP:%RTnaipv4, ether:%RTmac]\n",
-                            pARPHeader->ar_sip, pARPHeader->ar_sha));
+                            *(uint32_t *)pARPHeader->ar_sip, pARPHeader->ar_sha));
                     fGratuitousArpReported = true;
                 }
                 slirp_arp_cache_update_or_add(pData, *(uint32_t *)pARPHeader->ar_sip, &pARPHeader->ar_sha[0]);
