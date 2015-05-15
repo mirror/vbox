@@ -241,19 +241,21 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
 # ifdef VBOX_GUI_WITH_HIDPI
     /* Test if HiDPI icons are enabled. Works only with a patched version of Qt 4.x
      * with the changes from https://codereview.qt-project.org/#change,54636 applied. */
-    if (qApp->testAttribute(Qt::AA_UseHighDpiPixmaps))
-    {
-        /* Parse name to prefix and suffix: */
-        QString strPrefix = strName.section('.', 0, -2);
-        QString strSuffix = strName.section('.', -1, -1);
-        /* Prepare HiDPI pixmap on the basis of values above: */
-        QPixmap pixmapHiDPI(strPrefix + "_hidpi." + strSuffix);
-        /* Add HiDPI pixmap (if any): */
-        if (!pixmapHiDPI.isNull())
-            icon.addPixmap(pixmapHiDPI, mode, state);
-    }
+    if (!qApp->testAttribute(Qt::AA_UseHighDpiPixmaps))
+        return;
 # endif /* VBOX_GUI_WITH_HIDPI */
+    /* Otherwise HiDPI icons are useless: */
+    return;
 #endif /* Q_WS_MAC */
+
+    /* Parse name to prefix and suffix: */
+    QString strPrefix = strName.section('.', 0, -2);
+    QString strSuffix = strName.section('.', -1, -1);
+    /* Prepare HiDPI pixmap on the basis of values above: */
+    QPixmap pixmapHiDPI(strPrefix + "_hidpi." + strSuffix);
+    /* Add HiDPI pixmap (if any): */
+    if (!pixmapHiDPI.isNull())
+        icon.addPixmap(pixmapHiDPI, mode, state);
 }
 
 
