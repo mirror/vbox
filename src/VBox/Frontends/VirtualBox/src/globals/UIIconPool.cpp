@@ -243,9 +243,10 @@ void UIIconPool::addName(QIcon &icon, const QString &strName,
      * with the changes from https://codereview.qt-project.org/#change,54636 applied. */
     if (!qApp->testAttribute(Qt::AA_UseHighDpiPixmaps))
         return;
-# endif /* VBOX_GUI_WITH_HIDPI */
+# else /* !VBOX_GUI_WITH_HIDPI */
     /* Otherwise HiDPI icons are useless: */
     return;
+# endif /* !VBOX_GUI_WITH_HIDPI */
 #endif /* Q_WS_MAC */
 
     /* Parse name to prefix and suffix: */
