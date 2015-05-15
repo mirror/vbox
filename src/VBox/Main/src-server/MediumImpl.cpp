@@ -5951,6 +5951,41 @@ const Utf8Str& Medium::i_getKeyId()
     return it->second;
 }
 
+/**
+ * Returns all filter related properties.
+ *
+ * @returns COM status code.
+ * @param   aReturnNames    Where to store the properties names on success.
+ * @param   aReturnValues   Where to store the properties values on success.
+ */
+HRESULT Medium::i_getFilterProperties(std::vector<com::Utf8Str> &aReturnNames,
+                                      std::vector<com::Utf8Str> &aReturnValues)
+{
+    std::vector<com::Utf8Str> aPropNames;
+    std::vector<com::Utf8Str> aPropValues;
+    HRESULT hrc = getProperties(Utf8Str(""), aPropNames, aPropValues);
+
+    if (SUCCEEDED(hrc))
+    {
+        unsigned cReturnSize = 0;
+        aReturnNames.resize(0);
+        aReturnValues.resize(0);
+        for (unsigned idx = 0; idx < aPropNames.size(); idx++)
+        {
+            if (i_isPropertyForFilter(aPropNames[idx]))
+            {
+                aReturnNames.resize(cReturnSize + 1);
+                aReturnValues.resize(cReturnSize + 1);
+                aReturnNames[cReturnSize] = aPropNames[idx];
+                aReturnValues[cReturnSize] = aPropValues[idx];
+                cReturnSize++;
+            }
+        }
+    }
+
+    return hrc;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Private methods
@@ -8319,15 +8354,35 @@ HRESULT Medium::i_taskCloneHandler(Medium::CloneTask &task)
         }
     }
 
-    // now, at the end of this task (always asynchronous), save the settings
+    /* Copy any filter related settings over to the target. */
     if (SUCCEEDED(mrc))
     {
-        // save the settings
-        i_markRegistriesModified();
-        /* collect multiple errors */
-        eik.restore();
-        m->pVirtualBox->i_saveModifiedRegistries();
-        eik.fetch();
+        /* Copy any filter related settings over. */
+        ComObjPtr<Medium> pBase = i_getBase();
+        ComObjPtr<Medium> pTargetBase = pTarget->i_getBase();
+        std::vector<com::Utf8Str> aFilterPropNames;
+        std::vector<com::Utf8Str> aFilterPropValues;
+        mrc = pBase->i_getFilterProperties(aFilterPropNames, aFilterPropValues);
+        if (SUCCEEDED(mrc))
+        {
+            /* Go through the properties and add them to the target medium. */
+            for (unsigned idx = 0; idx < aFilterPropNames.size(); idx++)
+            {
+                mrc = pTargetBase->i_setPropertyDirect(aFilterPropNames[idx], aFilterPropValues[idx]);
+                if (FAILED(mrc)) break;
+            }
+
+            // now, at the end of this task (always asynchronous), save the settings
+            if (SUCCEEDED(mrc))
+            {
+                // save the settings
+                i_markRegistriesModified();
+                /* collect multiple errors */
+                eik.restore();
+                m->pVirtualBox->i_saveModifiedRegistries();
+                eik.fetch();
+            }
+        }
     }
 
     /* Everything is explicitly unlocked when the task exits,
