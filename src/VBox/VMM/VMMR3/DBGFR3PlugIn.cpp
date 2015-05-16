@@ -29,6 +29,7 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>
