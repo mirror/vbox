@@ -1068,12 +1068,10 @@ HRESULT MachineDebugger::writeVirtualMemory(ULONG aCpuId, LONG64 aAddress, ULONG
     ReturnComNotImplemented();
 }
 
-HRESULT MachineDebugger::detectOS(com::Utf8Str &aOs)
+HRESULT MachineDebugger::loadPlugIn(const com::Utf8Str &aName, com::Utf8Str &aPlugInName)
 {
-    LogFlowThisFunc(("\n"));
-
     /*
-     * Do the autocaller and lock bits.
+     * Lock the debugger and get the VM pointer
      */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Console::SafeVMPtr ptrVM(mParent);
@@ -1083,15 +1081,99 @@ HRESULT MachineDebugger::detectOS(com::Utf8Str &aOs)
         /*
          * Do the job and try convert the name.
          */
-/** @todo automatically load the DBGC plugins or this is a waste of time. */
+        if (aName.equals("all"))
+        {
+            DBGFR3PlugInLoadAll(ptrVM.rawUVM());
+            try
+            {
+                aPlugInName = "all";
+                hrc = S_OK;
+            }
+            catch (std::bad_alloc)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
+        }
+        else
+        {
+            RTERRINFOSTATIC ErrInfo;
+            char            szName[80];
+            int vrc = DBGFR3PlugInLoad(ptrVM.rawUVM(), aName.c_str(), szName, sizeof(szName), RTErrInfoInitStatic(&ErrInfo));
+            if (RT_SUCCESS(vrc))
+            {
+                try
+                {
+                    aPlugInName = "all";
+                    hrc = S_OK;
+                }
+                catch (std::bad_alloc)
+                {
+                    hrc = E_OUTOFMEMORY;
+                }
+            }
+            else
+                hrc = setErrorVrc(vrc, "%s", ErrInfo.szMsg);
+        }
+    }
+    return hrc;
+
+}
+
+HRESULT MachineDebugger::unloadPlugIn(const com::Utf8Str &aName)
+{
+    /*
+     * Lock the debugger and get the VM pointer
+     */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Do the job and try convert the name.
+         */
+        if (aName.equals("all"))
+        {
+            DBGFR3PlugInUnloadAll(ptrVM.rawUVM());
+            hrc = S_OK;
+        }
+        else
+        {
+            int vrc = DBGFR3PlugInUnload(ptrVM.rawUVM(), aName.c_str());
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else if (vrc == VERR_NOT_FOUND)
+                hrc = setErrorBoth(E_FAIL, vrc, "Plug-in '%s' was not found", aName.c_str());
+            else
+                hrc = setErrorVrc(vrc, "Error unloading '%s': %Rrc", aName.c_str(), vrc);
+        }
+    }
+    return hrc;
+
+}
+
+HRESULT MachineDebugger::detectOS(com::Utf8Str &aOs)
+{
+    LogFlowThisFunc(("\n"));
+
+    /*
+     * Lock the debugger and get the VM pointer
+     */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+    {
+        /*
+         * Do the job.
+         */
         char szName[64];
         int vrc = DBGFR3OSDetect(ptrVM.rawUVM(), szName, sizeof(szName));
         if (RT_SUCCESS(vrc) && vrc != VINF_DBGF_OS_NOT_DETCTED)
         {
             try
             {
-                Bstr bstrName(szName);
-                aOs = Utf8Str(bstrName);
+                aOs = szName;
             }
             catch (std::bad_alloc)
             {

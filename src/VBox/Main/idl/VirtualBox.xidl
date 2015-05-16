@@ -17163,7 +17163,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="5e4534dc-21b8-4f6b-8a08-eef50e1a0aa1"
+    uuid="b08d5aa9-4e35-3a17-2e4d-61948b590989"
     wsmap="managed"
     >
     <method name="dumpGuestCore">
@@ -17344,6 +17344,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="bytes" type="octet" safearray="yes" dir="in">
         <desc>The bytes to write.</desc>
+      </param>
+    </method>
+
+    <method name="loadPlugIn">
+      <desc> Loads a DBGF plug-in. </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The plug-in name or DLL. Special name 'all' loads all installed plug-ins.</desc>
+      </param>
+      <param name="plugInName" type="wstring" dir="return">
+        <desc>The name of the loaded plug-in.</desc>
+      </param>
+    </method>
+
+    <method name="unloadPlugIn">
+      <desc>Unloads a DBGF plug-in.</desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>The plug-in name or DLL. Special name 'all' unloads all plug-ins.</desc>
       </param>
     </method>
 
