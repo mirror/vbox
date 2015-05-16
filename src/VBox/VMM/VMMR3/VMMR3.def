@@ -116,6 +116,7 @@ EXPORTS
     DBGFR3RegNmQueryAllCount
     DBGFR3OSDeregister
     DBGFR3OSRegister
+    DBGFR3OSQueryInterface
     DBGFR3MemReadString
     DBGFR3MemRead
     DBGFR3MemScan
