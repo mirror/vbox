@@ -128,6 +128,10 @@ EXPORTS
     DBGFR3AsGetConfig
     DBGFR3CpuGetMode
     DBGFR3AddrFromSelOff
+    DBGFR3PlugInLoad
+    DBGFR3PlugInUnload
+    DBGFR3PlugInLoadAll
+    DBGFR3PlugInUnloadAll
 
     EMR3QueryExecutionPolicy
     EMR3SetExecutionPolicy
