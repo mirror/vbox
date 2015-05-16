@@ -338,7 +338,7 @@ SOLARIS_STRIP_BINS = \
 	    libQtNetworkVBox.so.4 \
 	    $(if $(VBOX_GUI_USE_QGL),libQtOpenGLVBox.so.4,) \
 	    accessible/libqtaccessiblewidgets.so,)) \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so,) \
+	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,) \
 	$(if $(VBOX_WITH_CROGL),\
 	  VBoxOGLhostcrutil.so \
 	  VBoxOGLhosterrorspu.so \

@@ -2,6 +2,7 @@
 @group wheel
 @mode 755
 lib/virtualbox/VBoxDbg.so
+lib/virtualbox/DbgPlugInDiggers.so
 lib/virtualbox/VBoxDD.so
 lib/virtualbox/VBoxDD2.so
 lib/virtualbox/VBoxDDU.so

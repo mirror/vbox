@@ -371,7 +371,8 @@ ifdef VBOX_WITH_CROGL
 endif
 ifdef VBOX_WITH_DEBUGGER_GUI
  VBOX_DI_VBAPP_DYLIBS += \
- 	MacOS/VBoxDbg.dylib
+ 	MacOS/VBoxDbg.dylib \
+ 	MacOS/DbgPlugInDiggers.dylib
 endif
 ifdef VBOX_WITH_HARDENING
  VBOX_DI_VBAPP_DYLIBS += \

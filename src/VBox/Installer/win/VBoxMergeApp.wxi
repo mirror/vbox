@@ -279,6 +279,8 @@
 <?if $(env.VBOX_WITH_DEBUGGER_GUI) = "yes" ?>
         <File Id="file_VBoxDbg.dll" Name="VBoxDbg.dll"
               Source="$(env.PATH_OUT)\bin\VBoxDbg.dll" />
+        <File Id="file_DbgPlugInDiggers.dll" Name="DbgPlugInDiggers.dll"
+              Source="$(env.PATH_OUT)\bin\DbgPlugInDiggers.dll" />
 <?endif ?>
 <?if $(env.VBOX_GUI_USE_QGL) = "yes" ?>
         <File Id="file_QtOpenGLVBox4.dll" Name="QtOpenGLVBox4.dll"

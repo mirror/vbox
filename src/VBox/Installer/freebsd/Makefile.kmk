@@ -151,7 +151,7 @@ ifdef VBOX_WITH_QTGUI
  	VBoxKeyboard.so \
  	VirtualBox \
  	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
-	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so)
+	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so DbgPlugInDiggers.so,)
  VBOX_FBSD_SYMLINKS += \
  	VirtualBox
  VBOX_FBSD_NO_STRIP += \
