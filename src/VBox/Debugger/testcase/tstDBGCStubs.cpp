@@ -321,6 +321,18 @@ VMMR3DECL(int) DBGFR3CoreWrite(PUVM pUVM, const char *pszFilename, bool fReplace
     return VERR_INTERNAL_ERROR;
 }
 
+VMMR3DECL(int)  DBGFR3PlugInLoad(PUVM pUVM, const char *pszPlugIn, char *pszActual, size_t cbActual, PRTERRINFO pErrInfo)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(int)  DBGFR3PlugInUnload(PUVM pUVM, const char *pszName)
+{
+    return VERR_INTERNAL_ERROR;
+}
+VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM)
+{
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // The rest should eventually be replaced by DBGF calls and eliminated. //

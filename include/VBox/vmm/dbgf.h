@@ -1732,6 +1732,62 @@ VMMR3DECL(void *)   DBGFR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmIf);
 
 VMMR3DECL(int)      DBGFR3CoreWrite(PUVM pUVM, const char *pszFilename, bool fReplaceFile);
 
+
+#ifdef IN_RING3
+/** @defgroup grp_dbgf_plug_in      The DBGF Plug-in Interface
+ * @{
+ */
+
+/** The plug-in module name prefix. */
+#define DBGF_PLUG_IN_PREFIX         "DbgPlugIn"
+
+/** The name of the plug-in entry point (FNDBGFPLUGIN) */
+#define DBGF_PLUG_IN_ENTRYPOINT     "DbgPlugInEntry"
+
+/**
+ * DBGF plug-in operations.
+ */
+typedef enum DBGFPLUGINOP
+{
+    /** The usual invalid first value. */
+    DBGFPLUGINOP_INVALID,
+    /** Initialize the plug-in for a VM, register all the stuff.
+     * The plug-in will be unloaded on failure.
+     * uArg: The full VirtualBox version, see VBox/version.h. */
+    DBGFPLUGINOP_INIT,
+    /** Terminate the plug-ing for a VM, deregister all the stuff.
+     * The plug-in will be unloaded after this call regardless of the return
+     * code. */
+    DBGFPLUGINOP_TERM,
+    /** The usual 32-bit hack. */
+    DBGFPLUGINOP_32BIT_HACK = 0x7fffffff
+} DBGFPLUGINOP;
+
+/**
+ * DBGF plug-in main entry point.
+ *
+ * @returns VBox status code.
+ *
+ * @param   enmOperation    The operation.
+ * @param   pUVM            The user mode VM handle. This may be NULL.
+ * @param   uArg            Extra argument.
+ */
+typedef DECLCALLBACK(int) FNDBGFPLUGIN(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
+/** Pointer to a FNDBGFPLUGIN. */
+typedef FNDBGFPLUGIN *PFNDBGFPLUGIN;
+
+/** @copydoc FNDBGFPLUGIN */
+DECLEXPORT(int) DbgPlugInEntry(DBGFPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
+
+VMMR3DECL(int)  DBGFR3PlugInLoad(PUVM pUVM, const char *pszPlugIn, char *pszActual, size_t cbActual, PRTERRINFO pErrInfo);
+VMMR3DECL(int)  DBGFR3PlugInUnload(PUVM pUVM, const char *pszName);
+VMMR3DECL(void) DBGFR3PlugInLoadAll(PUVM pUVM);
+VMMR3DECL(void) DBGFR3PlugInUnloadAll(PUVM pUVM);
+
+/** @} */
+#endif /* IN_RING3 */
+
+
 /** @} */
 
 

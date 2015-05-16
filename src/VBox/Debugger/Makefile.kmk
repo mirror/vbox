@@ -53,9 +53,9 @@ Debugger_SOURCES   = \
 #
 # The diggers plug-in.
 #
-DLLS += DBGCPlugInDiggers
-DBGCPlugInDiggers_TEMPLATE = VBOXR3
-DBGCPlugInDiggers_SOURCES = \
+DLLS += DbgPlugInDiggers
+DbgPlugInDiggers_TEMPLATE = VBOXR3
+DbgPlugInDiggers_SOURCES = \
 	DBGPlugInDiggers.cpp \
 	DBGPlugInDarwin.cpp \
 	DBGPlugInLinux.cpp \
@@ -63,11 +63,11 @@ DBGCPlugInDiggers_SOURCES = \
 	DBGPlugInWinNt.cpp \
 	DBGPlugInOS2.cpp \
 	DBGPlugInCommonELF.cpp
-DBGCPlugInDiggers_LIBS = \
+DbgPlugInDiggers_LIBS = \
 	$(if-expr "$(LIB_VMM)" == "$(VBOX_LIB_VMM_LAZY)",$(LIB_REM),) \
 	$(VBOX_LIB_VMM_LAZY) \
 	$(LIB_RUNTIME)
-$(call VBOX_SET_VER_INFO_DLL,DBGCPlugInDiggers,VirtualBox Debugger Guest OS Digger Plug-in)
+$(call VBOX_SET_VER_INFO_DLL,DbgPlugInDiggers,VirtualBox Debugger Guest OS Digger Plug-in)
 
 
 #

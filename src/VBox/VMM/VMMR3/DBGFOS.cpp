@@ -37,14 +37,14 @@
 *******************************************************************************/
 
 #define DBGF_OS_READ_LOCK(pUVM) \
-    do { int rcLock = RTCritSectRwEnterShared(&pUVM->dbgf.s.OSCritSect); AssertRC(rcLock); } while (0)
+    do { int rcLock = RTCritSectRwEnterShared(&pUVM->dbgf.s.CritSect); AssertRC(rcLock); } while (0)
 #define DBGF_OS_READ_UNLOCK(pUVM) \
-    do { int rcLock = RTCritSectRwLeaveShared(&pUVM->dbgf.s.OSCritSect); AssertRC(rcLock); } while (0)
+    do { int rcLock = RTCritSectRwLeaveShared(&pUVM->dbgf.s.CritSect); AssertRC(rcLock); } while (0)
 
 #define DBGF_OS_WRITE_LOCK(pUVM) \
-    do { int rcLock = RTCritSectRwEnterExcl(&pUVM->dbgf.s.OSCritSect); AssertRC(rcLock); } while (0)
+    do { int rcLock = RTCritSectRwEnterExcl(&pUVM->dbgf.s.CritSect); AssertRC(rcLock); } while (0)
 #define DBGF_OS_WRITE_UNLOCK(pUVM) \
-    do { int rcLock = RTCritSectRwLeaveExcl(&pUVM->dbgf.s.OSCritSect); AssertRC(rcLock); } while (0)
+    do { int rcLock = RTCritSectRwLeaveExcl(&pUVM->dbgf.s.CritSect); AssertRC(rcLock); } while (0)
 
 
 /*******************************************************************************
@@ -92,7 +92,7 @@ typedef DBGFOSEMTWRAPPER *PDBGFOSEMTWRAPPER;
  */
 int dbgfR3OSInit(PUVM pUVM)
 {
-    return RTCritSectRwInit(&pUVM->dbgf.s.OSCritSect);
+    return VINF_SUCCESS;
 }
 
 
@@ -103,7 +103,7 @@ int dbgfR3OSInit(PUVM pUVM)
  */
 void dbgfR3OSTerm(PUVM pUVM)
 {
-    RTCritSectRwDelete(&pUVM->dbgf.s.OSCritSect);
+    DBGF_OS_WRITE_LOCK(pUVM);
 
     /*
      * Terminate the current one.
@@ -134,6 +134,8 @@ void dbgfR3OSTerm(PUVM pUVM)
 
         MMR3HeapFree(pOS);
     }
+
+    DBGF_OS_WRITE_UNLOCK(pUVM);
 }
 
 

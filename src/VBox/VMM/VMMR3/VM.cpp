@@ -2489,13 +2489,13 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
 #if defined(VBOX_WITH_STATISTICS) || defined(LOG_ENABLED)
         RTLogFlags(NULL, "nodisabled nobuffered");
 #endif
-#ifdef VBOX_WITH_STATISTICS
-        STAMR3Dump(pUVM, "*");
-#else
+//#ifdef VBOX_WITH_STATISTICS
+//        STAMR3Dump(pUVM, "*");
+//#else
         LogRel(("************************* Statistics *************************\n"));
         STAMR3DumpToReleaseLog(pUVM, "*");
         LogRel(("********************* End of statistics **********************\n"));
-#endif
+//#endif
 
         /*
          * Destroy the VM components.

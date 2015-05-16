@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -63,27 +63,6 @@ typedef struct DBGCNAMEDVAR
 } DBGCNAMEDVAR;
 /** Pointer to named variable. */
 typedef DBGCNAMEDVAR *PDBGCNAMEDVAR;
-
-
-/** The max length of a plug-in name, zero terminator included. */
-#define DBGCPLUGIN_MAX_NAME     32
-
-/**
- * Plug-in tracking record.
- */
-typedef struct DBGCPLUGIN
-{
-    /** Pointer to the next plug-in. */
-    struct DBGCPLUGIN  *pNext;
-    /** The loader handle.  */
-    RTLDRMOD            hLdrMod;
-    /** The plug-in entry point. */
-    PFNDBGCPLUGIN       pfnEntry;
-    /** The plug-in name (variable length).  */
-    char                szName[DBGCPLUGIN_MAX_NAME];
-} DBGCPLUGIN;
-/** Pointer to plug-in tracking record. */
-typedef DBGCPLUGIN *PDBGCPLUGIN;
 
 
 /**
@@ -157,9 +136,6 @@ typedef struct DBGC
      * Global variables can be referenced using the $ operator and set
      * and unset using command with those names. */
     PDBGCNAMEDVAR      *papVars;
-
-    /** The list of plug-in. (singly linked) */
-    PDBGCPLUGIN         pPlugInHead;
 
     /** The list of breakpoints. (singly linked) */
     PDBGCBP             pFirstBp;
@@ -396,9 +372,6 @@ DECLCALLBACK(int) dbgcOpAddrPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat,
 DECLCALLBACK(int) dbgcOpAddrHostPhys(PDBGC pDbgc, PCDBGCVAR pArg, DBGCVARCAT enmCat, PDBGCVAR pResult);
 
 void    dbgcInitCmdHlp(PDBGC pDbgc);
-
-void    dbgcPlugInAutoLoad(PDBGC pDbgc);
-void    dbgcPlugInUnloadAll(PDBGC pDbgc);
 
 /* For tstDBGCParser: */
 int     dbgcCreate(PDBGC *ppDbgc, PDBGCBACK pBack, unsigned fFlags);

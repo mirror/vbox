@@ -184,6 +184,7 @@ typedef DBGFOS *PDBGFOS;
 typedef DBGFOS const *PCDBGFOS;
 
 
+
 /**
  * Converts a DBGF pointer into a VM pointer.
  * @returns Pointer to the VM structure the CPUM is part of.
@@ -316,19 +317,22 @@ typedef struct DBGFUSERPERVM
     /** Alignment padding. */
     bool                        afAlignment2[3];
 
+    /** Critical section protecting the Guest OS Digger data, the info handlers
+     * and the plugins.  These share to give the best possible plugin unload
+     * race protection. */
+    RTCRITSECTRW                CritSect;
+    /** Head of the LIFO of loaded DBGF plugins. */
+    R3PTRTYPE(struct DBGFPLUGIN *) pPlugInHead;
     /** The current Guest OS digger. */
     R3PTRTYPE(PDBGFOS)          pCurOS;
     /** The head of the Guest OS digger instances. */
     R3PTRTYPE(PDBGFOS)          pOSHead;
-    /** Critical section protecting the Guest OS Digger data. */
-    RTCRITSECTRW                OSCritSect;
-
     /** List of registered info handlers. */
     R3PTRTYPE(PDBGFINFO)        pInfoFirst;
-    /** Critical section protecting the above list. */
-    RTCRITSECT                  InfoCritSect;
 
 } DBGFUSERPERVM;
+typedef DBGFUSERPERVM *PDBGFUSERPERVM;
+typedef DBGFUSERPERVM const *PCDBGFUSERPERVM;
 
 /**
  * The per-CPU DBGF data kept in the UVM.
@@ -355,6 +359,8 @@ void dbgfR3RegTerm(PUVM pUVM);
 int  dbgfR3TraceInit(PVM pVM);
 void dbgfR3TraceRelocate(PVM pVM);
 void dbgfR3TraceTerm(PVM pVM);
+int  dbgfR3PlugInInit(PUVM pUVM);
+void dbgfR3PlugInTerm(PUVM pUVM);
 
 
 

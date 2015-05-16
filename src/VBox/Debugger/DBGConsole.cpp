@@ -967,9 +967,6 @@ void dbgcDestroy(PDBGC pDbgc)
 
     }
 
-    /* Unload all plug-ins. */
-    dbgcPlugInUnloadAll(pDbgc);
-
     /* Detach from the VM. */
     if (pDbgc->pUVM)
         DBGFR3Detach(pDbgc->pUVM);
@@ -1049,7 +1046,7 @@ DBGDECL(int) DBGCCreate(PUVM pUVM, PDBGCBACK pBack, unsigned fFlags)
     if (RT_SUCCESS(rc))
     {
         if (pVM)
-            dbgcPlugInAutoLoad(pDbgc);
+            DBGFR3PlugInLoadAll(pDbgc->pUVM);
         rc = pDbgc->CmdHlp.pfnPrintf(&pDbgc->CmdHlp, NULL, "VBoxDbg> ");
         if (RT_SUCCESS(rc))
         {

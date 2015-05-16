@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,7 +41,12 @@
 
 RT_C_DECLS_BEGIN
 
+
 #ifdef IN_RING3 /* The debugger stuff is ring-3 only. */
+
+/** @defgroup grp_dbgc     The Debugger Console API
+ * @{
+ */
 
 /** @def VBOX_WITH_DEBUGGER
  * The build is with debugger module. Test if this is defined before registering
@@ -1095,56 +1100,9 @@ DBGDECL(int)    DBGCDeregisterCommands(PCDBGCCMD paCommands, unsigned cCommands)
 DBGDECL(int)    DBGCTcpCreate(PUVM pUVM, void **ppvUser);
 DBGDECL(int)    DBGCTcpTerminate(PUVM pUVM, void *pvData);
 
-
-/** @defgroup grp_dbgc_plug_in      The DBGC Plug-in Interface
- * @{
- */
-
-/** The plug-in module name prefix. */
-#define DBGC_PLUG_IN_PREFIX         "DBGCPlugIn"
-
-/** The name of the plug-in entry point (FNDBGCPLUGIN) */
-#define DBGC_PLUG_IN_ENTRYPOINT     "DBGCPlugInEntry"
-
-/**
- * DBGC plug-in operations.
- */
-typedef enum DBGCPLUGINOP
-{
-    /** The usual invalid first value. */
-    DBGCPLUGINOP_INVALID,
-    /** Initialize the plug-in, register all the stuff.
-     * The plug-in will be unloaded on failure.
-     * uArg: The VirtualBox version (major+minor). */
-    DBGCPLUGINOP_INIT,
-    /** Terminate the plug-ing, deregister all the stuff.
-     * The plug-in will be unloaded after this call regardless of the return
-     * code. */
-    DBGCPLUGINOP_TERM,
-    /** The usual 32-bit hack. */
-    DBGCPLUGINOP_32BIT_HACK = 0x7fffffff
-} DBGCPLUGINOP;
-
-/**
- * DBGC plug-in main entry point.
- *
- * @returns VBox status code.
- *
- * @param   enmOperation    The operation.
- * @param   pUVM            The user mode VM handle. This may be NULL.
- * @param   uArg            Extra argument.
- */
-typedef DECLCALLBACK(int) FNDBGCPLUGIN(DBGCPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
-/** Pointer to a FNDBGCPLUGIN. */
-typedef FNDBGCPLUGIN *PFNDBGCPLUGIN;
-
-/** @copydoc FNDBGCPLUGIN */
-DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PUVM pUVM, uintptr_t uArg);
-
-#endif /* IN_RING3 */
-
 /** @} */
 
+#endif /* IN_RING3 */
 
 RT_C_DECLS_END
 

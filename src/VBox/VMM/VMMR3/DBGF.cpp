@@ -140,17 +140,43 @@ VMMR3_INT_DECL(int) DBGFR3Init(PVM pVM)
     AssertCompile(sizeof(pUVM->dbgf.s)          <= sizeof(pUVM->dbgf.padding));
     AssertCompile(sizeof(pUVM->aCpus[0].dbgf.s) <= sizeof(pUVM->aCpus[0].dbgf.padding));
 
-    int rc = dbgfR3InfoInit(pUVM);
+    /*
+     * The usual sideways mountain climbing style of init:
+     */
+    int rc = dbgfR3InfoInit(pUVM); /* (First, initalizes the shared critical section.) */
     if (RT_SUCCESS(rc))
+    {
         rc = dbgfR3TraceInit(pVM);
-    if (RT_SUCCESS(rc))
-        rc = dbgfR3RegInit(pUVM);
-    if (RT_SUCCESS(rc))
-        rc = dbgfR3AsInit(pUVM);
-    if (RT_SUCCESS(rc))
-        rc = dbgfR3BpInit(pVM);
-    if (RT_SUCCESS(rc))
-        rc = dbgfR3OSInit(pUVM);
+        if (RT_SUCCESS(rc))
+        {
+            rc = dbgfR3RegInit(pUVM);
+            if (RT_SUCCESS(rc))
+            {
+                rc = dbgfR3AsInit(pUVM);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = dbgfR3BpInit(pVM);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = dbgfR3OSInit(pUVM);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = dbgfR3PlugInInit(pUVM);
+                            if (RT_SUCCESS(rc))
+                            {
+                                return VINF_SUCCESS;
+                            }
+                            dbgfR3OSTerm(pUVM);
+                        }
+                    }
+                    dbgfR3AsTerm(pUVM);
+                }
+                dbgfR3RegTerm(pUVM);
+            }
+            dbgfR3TraceTerm(pVM);
+        }
+        dbgfR3InfoTerm(pUVM);
+    }
     return rc;
 }
 
@@ -165,6 +191,7 @@ VMMR3_INT_DECL(int) DBGFR3Term(PVM pVM)
 {
     PUVM pUVM = pVM->pUVM;
 
+    dbgfR3PlugInTerm(pUVM);
     dbgfR3OSTerm(pUVM);
     dbgfR3AsTerm(pUVM);
     dbgfR3RegTerm(pUVM);
