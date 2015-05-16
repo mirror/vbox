@@ -1186,6 +1186,53 @@ HRESULT MachineDebugger::detectOS(com::Utf8Str &aOs)
     return hrc;
 }
 
+HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDmesg)
+{
+    /*
+     * Lock the debugger and get the VM pointer
+     */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (SUCCEEDED(hrc))
+    {
+        PDBGFOSIDMESG pDmesg = (PDBGFOSIDMESG)DBGFR3OSQueryInterface(ptrVM.rawUVM(), DBGFOSINTERFACE_DMESG);
+        if (pDmesg)
+        {
+            size_t   cbActual;
+            size_t   cbBuf  = _512K;
+            int vrc = aDmesg.reserveNoThrow(cbBuf);
+            if (RT_SUCCESS(vrc))
+            {
+                uint32_t cMessages = aMaxMessages == 0 ? UINT32_MAX : aMaxMessages;
+                vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), 0 /*fFlags*/, cMessages,
+                                                aDmesg.mutableRaw(), cbBuf, &cbActual);
+
+                uint32_t cTries = 10;
+                while (vrc == VERR_BUFFER_OVERFLOW && cbBuf < 16*_1M && cTries-- > 0)
+                {
+                    cbBuf = RT_ALIGN_Z(cbActual + _4K, _4K);
+                    int vrc = aDmesg.reserveNoThrow(cbBuf);
+                    if (RT_SUCCESS(vrc))
+                        vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), 0 /*fFlags*/, cMessages,
+                                                        aDmesg.mutableRaw(), cbBuf, &cbActual);
+                }
+                if (RT_SUCCESS(vrc))
+                    aDmesg.jolt();
+                else if (vrc == VERR_BUFFER_OVERFLOW)
+                    hrc = setError(E_FAIL, "Too much log available, must use the maxMessages parameter to restrict.");
+                else
+                    hrc = setErrorVrc(vrc);
+            }
+            else
+                hrc = setErrorBoth(E_OUTOFMEMORY, vrc);
+        }
+        else
+            hrc = setError(E_FAIL, "The dmesg interface isn't implemented by guest OS digger, or detectOS() has not been called.");
+    }
+    return hrc;
+}
+
 /**
  * Formats a register value.
  *

@@ -247,14 +247,35 @@ public:
              && cb > m_cch + 1
            )
         {
-            int vrc = RTStrRealloc(&m_psz, cb);
-            if (RT_SUCCESS(vrc))
+            int rc = RTStrRealloc(&m_psz, cb);
+            if (RT_SUCCESS(rc))
                 m_cbAllocated = cb;
 #ifdef RT_EXCEPTIONS_ENABLED
             else
                 throw std::bad_alloc();
 #endif
         }
+    }
+
+    /**
+     * A C like version of the reserve method, i.e. return code instead of throw.
+     *
+     * @returns VINF_SUCCESS or VERR_NO_STRING_MEMORY.
+     * @param   cb              New minimum size (in bytes) of member memory buffer.
+     */
+    int reserveNoThrow(size_t cb)
+    {
+        if (    cb != m_cbAllocated
+             && cb > m_cch + 1
+           )
+        {
+            int rc = RTStrRealloc(&m_psz, cb);
+            if (RT_SUCCESS(rc))
+                m_cbAllocated = cb;
+            else
+                return rc;
+        }
+        return VINF_SUCCESS;
     }
 
     /**

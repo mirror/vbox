@@ -17163,7 +17163,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="b08d5aa9-4e35-3a17-2e4d-61948b590989"
+    uuid="ae7afb78-4265-8c03-ccb9-33a7970057e3"
     wsmap="managed"
     >
     <method name="dumpGuestCore">
@@ -17378,12 +17378,25 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="queryOSKernelLog">
+      <desc>
+        Tries to get the kernel log (dmesg) of the guest OS.
+
+      </desc>
+      <param name="maxMessages" type="unsigned long" dir="in">
+        <desc>Max number of messages to return, counting from the end of the
+          log.  If 0, there is no limit.</desc>
+      </param>
+      <param name="dmesg" type="wstring" dir="return">
+        <desc>
+          The kernel log.
+        </desc>
+      </param>
+    </method>
+
     <method name="getRegister">
       <desc>
         Gets one register.
-
-        This feature is not implemented in the 4.0.0 release but may show up
-        in a dot release.
       </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>The identifier of the Virtual CPU.</desc>
@@ -17402,9 +17415,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="getRegisters">
       <desc>
         Gets all the registers for the given CPU.
-
-        This feature is not implemented in the 4.0.0 release but may show up
-        in a dot release.
       </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>The identifier of the Virtual CPU.</desc>

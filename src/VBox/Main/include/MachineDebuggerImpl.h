@@ -106,6 +106,8 @@ private:
                        com::Utf8Str &aPlugInName);
     HRESULT unloadPlugIn(const com::Utf8Str &aName);
     HRESULT detectOS(com::Utf8Str &aOs);
+    HRESULT queryOSKernelLog(ULONG aMaxMessages,
+                             com::Utf8Str &aDmesg);
     HRESULT getRegister(ULONG aCpuId,
                         const com::Utf8Str &aName,
                         com::Utf8Str &aValue);
