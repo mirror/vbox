@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -163,7 +163,7 @@
  * @subsection      sec_pgm_handlers_virt   Virtual Access Handlers
  *
  * We currently implement three types of virtual access handlers:  ALL, WRITE
- * and HYPERVISOR (WRITE). See PGMVIRTHANDLERTYPE for some more details.
+ * and HYPERVISOR (WRITE). See PGMVIRTHANDLERKIND for some more details.
  *
  * The HYPERVISOR access handlers is kept in a separate tree since it doesn't apply
  * to physical pages (PGMTREES::HyperVirtHandlers) and only needs to be consulted in
@@ -645,6 +645,22 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Argument package for pgmR3RElocatePhysHnadler, pgmR3RelocateVirtHandler and
+ * pgmR3RelocateHyperVirtHandler.
+ */
+typedef struct PGMRELOCHANDLERARGS
+{
+    RTGCINTPTR  offDelta;
+    PVM         pVM;
+} PGMRELOCHANDLERARGS;
+/** Pointer to a page access handlere relocation argument package. */
+typedef PGMRELOCHANDLERARGS const *PCPGMRELOCHANDLERARGS;
 
 
 /*******************************************************************************
@@ -2406,18 +2422,26 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Physical and virtual handlers.
      */
-    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &offDelta);
+    PGMRELOCHANDLERARGS Args = { offDelta, pVM };
+    RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,     true, pgmR3RelocatePhysHandler,      &Args);
     pVM->pgm.s.pLastPhysHandlerRC = NIL_RTRCPTR;
 
     PPGMPHYSHANDLERTYPEINT pCurPhysType;
     RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadPhysHandlerTypes, pCurPhysType, PGMPHYSHANDLERTYPEINT, ListNode)
     {
-        if (pCurPhysType->pfnHandlerRC)
+        if (pCurPhysType->pfnHandlerRC != NIL_RTRCPTR)
             pCurPhysType->pfnHandlerRC += offDelta;
     }
 
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &offDelta);
-    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &offDelta);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &Args);
+    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &Args);
+
+    PPGMVIRTHANDLERTYPEINT pCurVirtType;
+    RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadVirtHandlerTypes, pCurVirtType, PGMVIRTHANDLERTYPEINT, ListNode)
+    {
+        if (pCurVirtType->pfnHandlerRC != NIL_RTRCPTR)
+            pCurVirtType->pfnHandlerRC += offDelta;
+    }
 
     /*
      * The page pool.
@@ -2440,15 +2464,14 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  *
  * @returns 0 (continue enum)
  * @param   pNode       Pointer to a PGMPHYSHANDLER node.
- * @param   pvUser      Pointer to the offDelta. This is a pointer to the delta since we're
- *                      not certain the delta will fit in a void pointer for all possible configs.
+ * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
  */
 static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser)
 {
-    PPGMPHYSHANDLER pHandler = (PPGMPHYSHANDLER)pNode;
-    RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
+    PPGMPHYSHANDLER         pHandler = (PPGMPHYSHANDLER)pNode;
+    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
     if (pHandler->pvUserRC >= 0x10000)
-        pHandler->pvUserRC += offDelta;
+        pHandler->pvUserRC += pArgs->offDelta;
     return 0;
 }
 
@@ -2458,17 +2481,17 @@ static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, vo
  *
  * @returns 0 (continue enum)
  * @param   pNode       Pointer to a PGMVIRTHANDLER node.
- * @param   pvUser      Pointer to the offDelta. This is a pointer to the delta since we're
- *                      not certain the delta will fit in a void pointer for all possible configs.
+ * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
  */
 static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
-    PPGMVIRTHANDLER pHandler = (PPGMVIRTHANDLER)pNode;
-    RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
-    Assert(     pHandler->enmType == PGMVIRTHANDLERTYPE_ALL
-           ||   pHandler->enmType == PGMVIRTHANDLERTYPE_WRITE);
-    Assert(pHandler->pfnHandlerRC);
-    pHandler->pfnHandlerRC += offDelta;
+    PPGMVIRTHANDLER         pHandler = (PPGMVIRTHANDLER)pNode;
+    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
+    Assert(PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR);
+
+    if (   pHandler->pvUserRC != NIL_RTRCPTR
+        && PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->fRelocUserRC)
+        pHandler->pvUserRC += pArgs->offDelta;
     return 0;
 }
 
@@ -2478,16 +2501,17 @@ static DECLCALLBACK(int) pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, voi
  *
  * @returns 0 (continue enum)
  * @param   pNode       Pointer to a PGMVIRTHANDLER node.
- * @param   pvUser      Pointer to the offDelta. This is a pointer to the delta since we're
- *                      not certain the delta will fit in a void pointer for all possible configs.
+ * @param   pvUser      Pointer to a PGMRELOCHANDLERARGS.
  */
 static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
-    PPGMVIRTHANDLER pHandler = (PPGMVIRTHANDLER)pNode;
-    RTGCINTPTR      offDelta = *(PRTGCINTPTR)pvUser;
-    Assert(pHandler->enmType == PGMVIRTHANDLERTYPE_HYPERVISOR);
-    Assert(pHandler->pfnHandlerRC);
-    pHandler->pfnHandlerRC  += offDelta;
+    PPGMVIRTHANDLER         pHandler = (PPGMVIRTHANDLER)pNode;
+    PCPGMRELOCHANDLERARGS   pArgs    = (PCPGMRELOCHANDLERARGS)pvUser;
+    Assert(PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->enmKind == PGMVIRTHANDLERKIND_HYPERVISOR);
+
+    if (   pHandler->pvUserRC != NIL_RTRCPTR
+        && PGMVIRTANDLER_GET_TYPE(pArgs->pVM, pHandler)->fRelocUserRC)
+        pHandler->pvUserRC += pArgs->offDelta;
     return 0;
 }
 

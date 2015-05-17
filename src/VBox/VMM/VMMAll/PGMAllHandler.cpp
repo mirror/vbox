@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1366,6 +1366,73 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
 
 
 /**
+ * Internal worker for releasing a virtual handler type registration reference.
+ *
+ * @returns New reference count. UINT32_MAX if invalid input (asserted).
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pType       Pointer to the type registration.
+ */
+DECLINLINE(uint32_t) pgmHandlerVirtualTypeRelease(PVM pVM, PPGMVIRTHANDLERTYPEINT pType)
+{
+    AssertMsgReturn(pType->u32Magic == PGMVIRTHANDLERTYPEINT_MAGIC, ("%#x\n", pType->u32Magic), UINT32_MAX);
+    uint32_t cRefs = ASMAtomicDecU32(&pType->cRefs);
+    if (cRefs == 0)
+    {
+        pgmLock(pVM);
+        pType->u32Magic = PGMVIRTHANDLERTYPEINT_MAGIC_DEAD;
+        RTListOff32NodeRemove(&pType->ListNode);
+        pgmUnlock(pVM);
+        MMHyperFree(pVM, pType);
+    }
+    return cRefs;
+}
+
+
+/**
+ * Internal worker for retaining a virtual handler type registration reference.
+ *
+ * @returns New reference count. UINT32_MAX if invalid input (asserted).
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pType       Pointer to the type registration.
+ */
+DECLINLINE(uint32_t) pgmHandlerVirtualTypeRetain(PVM pVM, PPGMVIRTHANDLERTYPEINT pType)
+{
+    AssertMsgReturn(pType->u32Magic == PGMVIRTHANDLERTYPEINT_MAGIC, ("%#x\n", pType->u32Magic), UINT32_MAX);
+    uint32_t cRefs = ASMAtomicIncU32(&pType->cRefs);
+    Assert(cRefs < _1M && cRefs > 0);
+    return cRefs;
+}
+
+
+/**
+ * Releases a reference to a virtual handler type registration.
+ *
+ * @returns New reference count. UINT32_MAX if invalid input (asserted).
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   hType       The type regiration handle.
+ */
+VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRelease(PVM pVM, PGMVIRTHANDLERTYPE hType)
+{
+    if (hType != NIL_PGMVIRTHANDLERTYPE)
+        return pgmHandlerVirtualTypeRelease(pVM, PGMVIRTHANDLERTYPEINT_FROM_HANDLE(pVM, hType));
+    return 0;
+}
+
+
+/**
+ * Retains a reference to a virtual handler type registration.
+ *
+ * @returns New reference count. UINT32_MAX if invalid input (asserted).
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   hType       The type regiration handle.
+ */
+VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRetain(PVM pVM, PGMVIRTHANDLERTYPE hType)
+{
+    return pgmHandlerVirtualTypeRetain(pVM, PGMVIRTHANDLERTYPEINT_FROM_HANDLE(pVM, hType));
+}
+
+
+/**
  * Check if particular guest's VA is being monitored.
  *
  * @returns true or false
@@ -1374,7 +1441,7 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
  * @remarks Will acquire the PGM lock.
  * @thread  Any.
  */
-VMMDECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
+VMM_INT_DECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
 {
     pgmLock(pVM);
     PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrGet(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, GCPtr);
@@ -1492,7 +1559,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     /*
      * Iterate the pages and apply the new state.
      */
-    unsigned        uState   = pgmHandlerVirtualCalcState(pCur);
+    uint32_t        uState   = PGMVIRTANDLER_GET_TYPE(pVM, pCur)->uState;
     PPGMRAMRANGE    pRamHint = NULL;
     RTGCUINTPTR     offPage  = ((RTGCUINTPTR)pCur->Core.Key & PAGE_OFFSET_MASK);
     RTGCUINTPTR     cbLeft   = pCur->cb;
@@ -1644,24 +1711,25 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOneByPhysAddr(PAVLROGCPTRNODECOR
  */
 static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
-    PPGMVIRTHANDLER pVirt   = (PPGMVIRTHANDLER)pNode;
-    PPGMAHAFIS      pState  = (PPGMAHAFIS)pvUser;
-    PVM             pVM     = pState->pVM;
+    PPGMAHAFIS              pState  = (PPGMAHAFIS)pvUser;
+    PVM                     pVM     = pState->pVM;
+    PPGMVIRTHANDLER         pVirt   = (PPGMVIRTHANDLER)pNode;
+    PPGMVIRTHANDLERTYPEINT  pType   = PGMVIRTANDLER_GET_TYPE(pVM, pVirt);
 
     /*
      * Validate the type and calc state.
      */
-    switch (pVirt->enmType)
+    switch (pType->enmKind)
     {
-        case PGMVIRTHANDLERTYPE_WRITE:
-        case PGMVIRTHANDLERTYPE_ALL:
+        case PGMVIRTHANDLERKIND_WRITE:
+        case PGMVIRTHANDLERKIND_ALL:
             break;
         default:
-            AssertMsgFailed(("unknown/wrong enmType=%d\n", pVirt->enmType));
+            AssertMsgFailed(("unknown/wrong enmKind=%d\n", pType->enmKind));
             pState->cErrors++;
             return 0;
     }
-    const unsigned uState = pgmHandlerVirtualCalcState(pVirt);
+    const uint32_t uState = pType->uState;
 
     /*
      * Check key alignment.
@@ -1856,7 +1924,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         /* the head */
                         GCPhysKey = pPhys2Virt->Core.KeyLast;
                         PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)((uintptr_t)pPhys2Virt + pPhys2Virt->offVirtHandler);
-                        unsigned uState = pgmHandlerVirtualCalcState(pCur);
+                        unsigned uState = PGMVIRTANDLER_GET_TYPE(pVM, pCur)->uState;
                         State.uVirtStateFound = RT_MAX(State.uVirtStateFound, uState);
 
                         /* any aliases */
@@ -1864,7 +1932,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         {
                             pPhys2Virt = (PPGMPHYS2VIRTHANDLER)((uintptr_t)pPhys2Virt + (pPhys2Virt->offNextAlias & PGMPHYS2VIRTHANDLER_OFF_MASK));
                             pCur = (PPGMVIRTHANDLER)((uintptr_t)pPhys2Virt + pPhys2Virt->offVirtHandler);
-                            uState = pgmHandlerVirtualCalcState(pCur);
+                            uState = PGMVIRTANDLER_GET_TYPE(pVM, pCur)->uState;
                             State.uVirtStateFound = RT_MAX(State.uVirtStateFound, uState);
                         }
 

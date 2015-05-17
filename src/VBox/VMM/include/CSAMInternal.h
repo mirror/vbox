@@ -155,8 +155,8 @@ typedef struct CSAM
     uint32_t            iDangerousInstr;
 
     RCPTRTYPE(RTRCPTR *)  pPDBitmapGC;
-    RCPTRTYPE(RTHCPTR *)    pPDHCBitmapGC;
-    R3PTRTYPE(uint8_t **)   pPDBitmapHC;
+    RCPTRTYPE(RTHCPTR *)  pPDHCBitmapGC;
+    R3PTRTYPE(uint8_t **) pPDBitmapHC;
     R3PTRTYPE(RTRCPTR  *) pPDGCBitmapHC;
 
     /* Temporary storage during load/save state */
@@ -174,11 +174,16 @@ typedef struct CSAM
 
     /* To keep track of possible code pages */
     uint32_t            cPossibleCodePages;
-    RTRCPTR           pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
+    RTRCPTR             pvPossibleCodePage[CSAM_MAX_CODE_PAGES_FLUSH];
 
     /* call addresses reported by the recompiler */
-    RTRCPTR           pvCallInstruction[16];
-    RTUINT              iCallInstruction;
+    RTRCPTR             pvCallInstruction[16];
+    uint32_t            iCallInstruction;
+
+    /** Code page write access handler type. */
+    PGMVIRTHANDLERTYPE  hCodePageWriteType;
+    /** Code page write & invalidation access handler type. */
+    PGMVIRTHANDLERTYPE  hCodePageWriteAndInvPgType;
 
     /* Set when scanning has started. */
     bool                fScanningStarted;

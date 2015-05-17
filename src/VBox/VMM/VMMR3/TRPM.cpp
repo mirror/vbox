@@ -454,6 +454,7 @@ static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
 VMMR3DECL(int) TRPMR3Init(PVM pVM)
 {
     LogFlow(("TRPMR3Init\n"));
+    int rc;
 
     /*
      * Assert sizes and alignments.
@@ -489,7 +490,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     if (pTRPMNode)
     {
         bool f;
-        int rc = CFGMR3QueryBool(pTRPMNode, "SafeToDropGuestIDTMonitoring", &f);
+        rc = CFGMR3QueryBool(pTRPMNode, "SafeToDropGuestIDTMonitoring", &f);
         if (RT_SUCCESS(rc))
             pVM->trpm.s.fSafeToDropGuestIDTMonitoring = f;
     }
@@ -506,12 +507,35 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     memcpy(&pVM->trpm.s.aIdt[0], &g_aIdt[0], sizeof(pVM->trpm.s.aIdt));
 
     /*
+     * Register virtual access handlers.
+     */
+    pVM->trpm.s.hShadowIdtWriteHandlerType = NIL_PGMVIRTHANDLERTYPE;
+    pVM->trpm.s.hGuestIdtWriteHandlerType  = NIL_PGMVIRTHANDLERTYPE;
+#ifdef VBOX_WITH_RAW_MODE
+    if (!HMIsEnabled(pVM))
+    {
+# ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
+        rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_HYPERVISOR, false /*fRelocUserRC*/,
+                                             NULL /*pfnInvalidateR3*/, NULL /*pfnHandlerR3*/,
+                                             "trpmRCShadowIDTWriteHandler", NULL /*pszModRC*/,
+                                             "Shadow IDT write access handler", &pVM->trpm.s.hShadowIdtWriteHandlerType);
+        AssertRCReturn(rc, rc);
+# endif
+        rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
+                                             NULL /*pfnInvalidateR3*/, trpmR3GuestIDTWriteHandler,
+                                             "trpmRCGuestIDTWriteHandler", NULL /*pszModRC*/,
+                                             "Guest IDT write access handler", &pVM->trpm.s.hGuestIdtWriteHandlerType);
+        AssertRCReturn(rc, rc);
+    }
+#endif /* VBOX_WITH_RAW_MODE */
+
+    /*
      * Register the saved state data unit.
      */
-    int rc = SSMR3RegisterInternal(pVM, "trpm", 1, TRPM_SAVED_STATE_VERSION, sizeof(TRPM),
-                                   NULL, NULL, NULL,
-                                   NULL, trpmR3Save, NULL,
-                                   NULL, trpmR3Load, NULL);
+    rc = SSMR3RegisterInternal(pVM, "trpm", 1, TRPM_SAVED_STATE_VERSION, sizeof(TRPM),
+                               NULL, NULL, NULL,
+                               NULL, trpmR3Save, NULL,
+                               NULL, trpmR3Load, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -691,12 +715,13 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 # ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
     if (pVM->trpm.s.pvMonShwIdtRC != RTRCPTR_MAX)
     {
-        rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.pvMonShwIdtRC);
+        rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->trpm.s.pvMonShwIdtRC, true /*fHypervisor*/);
         AssertRC(rc);
     }
     pVM->trpm.s.pvMonShwIdtRC = VM_RC_ADDR(pVM, &pVM->trpm.s.aIdt[0]);
-    rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_HYPERVISOR, pVM->trpm.s.pvMonShwIdtRC, pVM->trpm.s.pvMonShwIdtRC + sizeof(pVM->trpm.s.aIdt) - 1,
-                                     0, 0, "trpmRCShadowIDTWriteHandler", 0, "Shadow IDT write access handler");
+    rc = PGMR3HandlerVirtualRegister(pVM, pVCpu, pVM->trpm.s.hShadowIdtWriteHandlerType,
+                                     pVM->trpm.s.pvMonShwIdtRC, pVM->trpm.s.pvMonShwIdtRC + sizeof(pVM->trpm.s.aIdt) - 1,
+                                     NULL /*pvUserR3*/, NIL_RTR0PTR /*pvUserRC*/, NULL /*pszDesc*/);
     AssertRC(rc);
 # endif
 
@@ -774,7 +799,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     {
         if (!pVM->trpm.s.fSafeToDropGuestIDTMonitoring)
         {
-            int rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
+            int rc = PGMHandlerVirtualDeregister(pVM, VMMGetCpu(pVM), pVM->trpm.s.GuestIdtr.pIdt, false /*fHypervisor*/);
             AssertRC(rc);
         }
         pVM->trpm.s.GuestIdtr.pIdt = RTRCPTR_MAX;
@@ -1089,14 +1114,16 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
             /*
              * [Re]Register write virtual handler for guest's IDT.
              */
+            PVMCPU pVCpu = VMMGetCpu(pVM);
             if (pVM->trpm.s.GuestIdtr.pIdt != RTRCPTR_MAX)
             {
-                rc = PGMHandlerVirtualDeregister(pVM, pVM->trpm.s.GuestIdtr.pIdt);
+                rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->trpm.s.GuestIdtr.pIdt, false /*fHypervisor*/);
                 AssertRCReturn(rc, rc);
             }
             /* limit is including */
-            rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
-                                             0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
+            rc = PGMR3HandlerVirtualRegister(pVM, pVCpu, pVM->trpm.s.hGuestIdtWriteHandlerType,
+                                             IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
+                                             NULL /*pvUserR3*/, NIL_RTR0PTR /*pvUserRC*/, NULL /*pszDesc*/);
 
             if (rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT)
             {
@@ -1105,8 +1132,9 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
                 if (PAGE_ADDRESS(IDTR.pIdt) != PAGE_ADDRESS(IDTR.pIdt + IDTR.cbIdt))
                     CSAMR3RemovePage(pVM, IDTR.pIdt + IDTR.cbIdt);
 
-                rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
-                                                 0, trpmR3GuestIDTWriteHandler, "trpmRCGuestIDTWriteHandler", 0, "Guest IDT write access handler");
+                rc = PGMR3HandlerVirtualRegister(pVM, pVCpu, pVM->trpm.s.hGuestIdtWriteHandlerType,
+                                                 IDTR.pIdt, IDTR.pIdt + IDTR.cbIdt /* already inclusive */,
+                                                 NULL /*pvUserR3*/, NIL_RTR0PTR /*pvUserRC*/, NULL /*pszDesc*/);
             }
 
             AssertRCReturn(rc, rc);

@@ -250,6 +250,24 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
     AssertRCReturn(rc, rc);
 
     /*
+     * Register virtual handler types.
+     */
+    rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
+                                         NULL /*pfnInvalidateR3 */,
+                                         CSAMCodePageWriteHandler,
+                                         "CSAMGCCodePageWriteHandler", NULL /*pszModRC*/,
+                                         "CSAM code page write handler",
+                                         &pVM->csam.s.hCodePageWriteType);
+    AssertLogRelRCReturn(rc, rc);
+    rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
+                                         CSAMCodePageInvalidate,
+                                         CSAMCodePageWriteHandler,
+                                         "CSAMGCCodePageWriteHandler", NULL /*pszModRC*/,
+                                         "CSAM code page write and invlpg handler",
+                                         &pVM->csam.s.hCodePageWriteAndInvPgType);
+    AssertLogRelRCReturn(rc, rc);
+
+    /*
      * Register save and load state notifiers.
      */
     rc = SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SAVED_STATE_VERSION, sizeof(pVM->csam.s) + PAGE_SIZE*16,
@@ -1854,16 +1872,18 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     {
     case CSAM_TAG_PATM:
     case CSAM_TAG_REM:
-#ifdef CSAM_MONITOR_CSAM_CODE_PAGES
+# ifdef CSAM_MONITOR_CSAM_CODE_PAGES
     case CSAM_TAG_CSAM:
-#endif
+# endif
     {
-        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, GCPtr, GCPtr + (PAGE_SIZE - 1) /* inclusive! */,
-                                         (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
-                                         csamGetMonitorDescription(enmTag));
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %RRv failed with %Rrc\n", GCPtr, rc));
+        rc = PGMR3HandlerVirtualRegister(pVM, pVCpu, fMonitorInvalidation
+                                         ? pVM->csam.s.hCodePageWriteAndInvPgType : pVM->csam.s.hCodePageWriteType,
+                                         GCPtr, GCPtr + (PAGE_SIZE - 1) /* inclusive! */,
+                                         pPage, NIL_RTRCPTR, csamGetMonitorDescription(enmTag));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT,
+                  ("PGMR3HandlerVirtualRegister %RRv failed with %Rrc\n", GCPtr, rc));
         if (RT_FAILURE(rc))
-            Log(("PGMR3HandlerVirtualRegisterEx for %RRv failed with %Rrc\n", GCPtr, rc));
+            Log(("PGMR3HandlerVirtualRegister for %RRv failed with %Rrc\n", GCPtr, rc));
 
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
 
@@ -1884,7 +1904,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
 
     Log(("csamCreatePageRecord %RRv GCPhys=%RGp\n", GCPtr, pPage->page.GCPhys));
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     switch (enmTag)
     {
     case CSAM_TAG_CSAM:
@@ -1899,7 +1919,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     default:
         break; /* to shut up GCC */
     }
-#endif
+# endif
 
 #endif
 
@@ -1920,7 +1940,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
  */
 VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 {
-    PCSAMPAGEREC pPageRec = NULL;
+    ;
     int          rc;
     bool         fMonitorInvalidation;
     Assert(pVM->cCpus == 1);
@@ -1940,7 +1960,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     /** @todo implicit assumption */
     fMonitorInvalidation = (enmTag == CSAM_TAG_PATM);
 
-    pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
+    PCSAMPAGEREC pPageRec = (PCSAMPAGEREC)RTAvlPVGet(&pVM->csam.s.pPageTree, (AVLPVKEY)(uintptr_t)pPageAddrGC);
     if (pPageRec == NULL)
     {
         uint64_t fFlags;
@@ -1971,12 +1991,14 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     {
         Log(("CSAMR3MonitorPage: activate monitoring for %RRv\n", pPageAddrGC));
 
-        rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_WRITE, pPageAddrGC, pPageAddrGC + (PAGE_SIZE - 1) /* inclusive! */,
-                                         (fMonitorInvalidation) ? CSAMCodePageInvalidate : 0, CSAMCodePageWriteHandler, "CSAMGCCodePageWriteHandler", 0,
-                                         csamGetMonitorDescription(enmTag));
-        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT, ("PGMR3HandlerVirtualRegisterEx %RRv failed with %Rrc\n", pPageAddrGC, rc));
+        rc = PGMR3HandlerVirtualRegister(pVM, pVCpu, fMonitorInvalidation
+                                         ? pVM->csam.s.hCodePageWriteAndInvPgType : pVM->csam.s.hCodePageWriteType,
+                                         pPageAddrGC, pPageAddrGC + (PAGE_SIZE - 1) /* inclusive! */,
+                                         pPageRec, NIL_RTRCPTR /*pvUserRC*/, csamGetMonitorDescription(enmTag));
+        AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT,
+                  ("PGMR3HandlerVirtualRegister %RRv failed with %Rrc\n", pPageAddrGC, rc));
         if (RT_FAILURE(rc))
-            Log(("PGMR3HandlerVirtualRegisterEx for %RRv failed with %Rrc\n", pPageAddrGC, rc));
+            Log(("PGMR3HandlerVirtualRegister for %RRv failed with %Rrc\n", pPageAddrGC, rc));
 
         /* Could fail, because it's already monitored. Don't treat that condition as fatal. */
 
@@ -1997,7 +2019,8 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
         &&  fMonitorInvalidation)
     {
         Assert(pPageRec->page.fMonitorActive);
-        PGMHandlerVirtualChangeInvalidateCallback(pVM, pPageRec->page.pPageGC, CSAMCodePageInvalidate);
+        rc = PGMHandlerVirtualChangeType(pVM, pPageRec->page.pPageGC, pVM->csam.s.hCodePageWriteAndInvPgType);
+        AssertRC(rc);
         pPageRec->page.fMonitorInvalidation = true;
         STAM_COUNTER_INC(&pVM->csam.s.StatNrPagesInv);
 
@@ -2090,7 +2113,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
              */
             Assert(!fInCSAMCodePageInvalidate);
             STAM_COUNTER_DEC(&pVM->csam.s.StatPageMonitor);
-            PGMHandlerVirtualDeregister(pVM, GCPtr);
+            PGMHandlerVirtualDeregister(pVM, pVCpu, GCPtr, false /*fHypervisor*/);
         }
         if (pPageRec->page.enmTag == CSAM_TAG_PATM)
         {

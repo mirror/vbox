@@ -22,6 +22,7 @@
 #include <VBox/types.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/pgm.h>
 
 
 
@@ -125,9 +126,12 @@ typedef struct TRPM
     RCPTRTYPE(void *)       pvMonShwIdtRC;
     /** Current (last) Guest's IDTR. */
     VBOXIDTR                GuestIdtr;
-
     /** padding. */
     uint8_t                 au8Padding[2];
+    /** Shadow IDT virtual write access handler type. */
+    PGMVIRTHANDLERTYPE      hShadowIdtWriteHandlerType;
+    /** Guest IDT virtual write access handler type. */
+    PGMVIRTHANDLERTYPE      hGuestIdtWriteHandlerType;
 
     /** Checked trap & interrupt handler array */
     RCPTRTYPE(void *)       aGuestTrapHandler[256];

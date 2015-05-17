@@ -1478,8 +1478,10 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
             if (rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT)
             {
                 RTRCPTR pPage = pPatch->pPrivInstrGC & PAGE_BASE_GC_MASK;
-
-                rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
+                rc = PGMR3HandlerVirtualRegister(pVM, VMMGetCpu(pVM), pVM->patm.s.hMonitorPageType,
+                                                 pPage,
+                                                 pPage + (PAGE_SIZE - 1) /* inclusive! */,
+                                                 (void *)(uintptr_t)pPage, pPage, NULL /*pszDesc*/);
                 Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
             }
             else
@@ -1520,7 +1522,7 @@ static int patmCorrectFixup(PVM pVM, unsigned uVersion, PATM &patmInfo, PPATCHIN
         break;
 
     }
-}
+    }
     return VINF_SUCCESS;
 }
 

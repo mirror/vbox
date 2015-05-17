@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1195,27 +1195,6 @@ DECLINLINE(PPGMPHYSHANDLER) pgmHandlerPhysicalLookup(PVM pVM, RTGCPHYS GCPhys)
     if (pHandler)
         pVM->pgm.s.CTX_SUFF(pLastPhysHandler) = pHandler;
     return pHandler;
-}
-
-
-/**
- * Gets the page state for a virtual handler.
- *
- * @returns The virtual handler page state.
- * @param   pCur    The virtual handler in question.
- * @remarks This should never be used on a hypervisor access handler.
- */
-DECLINLINE(unsigned) pgmHandlerVirtualCalcState(PPGMVIRTHANDLER pCur)
-{
-    switch (pCur->enmType)
-    {
-        case PGMVIRTHANDLERTYPE_WRITE:
-            return PGM_PAGE_HNDL_VIRT_STATE_WRITE;
-        case PGMVIRTHANDLERTYPE_ALL:
-            return PGM_PAGE_HNDL_VIRT_STATE_ALL;
-        default:
-            AssertFatalMsgFailed(("Invalid type %d\n", pCur->enmType));
-    }
 }
 
 

@@ -366,7 +366,19 @@ VMMR3_INT_DECL(int) PATMR3InitFinalize(PVM pVM)
     AssertLogRelMsgReturn(pVM->patm.s.cbPatchHelpers < _128K,
                           ("%RRv-%RRv => %#x\n", pVM->patm.s.pbPatchHelpersRC, RCPtrEnd, pVM->patm.s.cbPatchHelpers),
                           VERR_INTERNAL_ERROR_4);
-    return rc;
+
+
+    /*
+     * Register the virtual page access handler type.
+     */
+    rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_ALL, false /*fRelocUserRC*/,
+                                         NULL /*pfnInvalidateR3*/,
+                                         patmVirtPageHandler,
+                                         "PATMGCMonitorPage", NULL /*pszModRC*/,
+                                         "PATMMonitorPatchJump", &pVM->patm.s.hMonitorPageType);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -817,7 +829,10 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
                     RTRCPTR pPage = pPatch->patch.pPrivInstrGC & PAGE_BASE_GC_MASK;
 
                     Log(("PATM: Patch page not present -> check later!\n"));
-                    rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
+                    rc = PGMR3HandlerVirtualRegister(pVM, VMMGetCpu(pVM), pVM->patm.s.hMonitorPageType,
+                                                     pPage,
+                                                     pPage + (PAGE_SIZE - 1) /* inclusive! */,
+                                                     (void *)(uintptr_t)pPage, pPage, NULL /*pszDesc*/);
                     Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
                 }
                 else
@@ -895,8 +910,11 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
                     ||  rc == VERR_PAGE_TABLE_NOT_PRESENT)
                 {
                     RTRCPTR pPage = pPatch->patch.pPrivInstrGC & PAGE_BASE_GC_MASK;
-
-                    rc = PGMR3HandlerVirtualRegister(pVM, PGMVIRTHANDLERTYPE_ALL, pPage, pPage + (PAGE_SIZE - 1) /* inclusive! */, 0, patmVirtPageHandler, "PATMGCMonitorPage", 0, "PATMMonitorPatchJump");
+                    Log(("PATM: Patch page not present -> check later!\n"));
+                    rc = PGMR3HandlerVirtualRegister(pVM, VMMGetCpu(pVM), pVM->patm.s.hMonitorPageType,
+                                                     pPage,
+                                                     pPage + (PAGE_SIZE - 1) /* inclusive! */,
+                                                     (void *)(uintptr_t)pPage, pPage, NULL /*pszDesc*/);
                     Assert(RT_SUCCESS(rc) || rc == VERR_PGM_HANDLER_VIRTUAL_CONFLICT);
                 }
                 else
@@ -6672,11 +6690,12 @@ VMMR3_INT_DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCP
 VMMR3_INT_DECL(int) PATMR3HandleMonitoredPage(PVM pVM)
 {
     AssertReturn(!HMIsEnabled(pVM), VERR_PATM_HM_IPE);
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     RTRCPTR addr = pVM->patm.s.pvFaultMonitor;
     addr &= PAGE_BASE_GC_MASK;
 
-    int rc = PGMHandlerVirtualDeregister(pVM, addr);
+    int rc = PGMHandlerVirtualDeregister(pVM, pVCpu, addr, false /*fHypervisor*/);
     AssertRC(rc); NOREF(rc);
 
     PPATMPATCHREC pPatchRec = (PPATMPATCHREC)RTAvloU32GetBestFit(&pVM->patm.s.PatchLookupTreeHC->PatchTree, addr, false);

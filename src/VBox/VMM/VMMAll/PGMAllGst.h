@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -461,11 +461,13 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
  */
 static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE pNode, void *pvUser)
 {
-    PPGMVIRTHANDLER pCur   = (PPGMVIRTHANDLER)pNode;
-    PPGMHVUSTATE    pState = (PPGMHVUSTATE)pvUser;
-    PVM             pVM    = pState->pVM;
-    PVMCPU          pVCpu  = pState->pVCpu;
-    Assert(pCur->enmType != PGMVIRTHANDLERTYPE_HYPERVISOR);
+    PPGMHVUSTATE            pState   = (PPGMHVUSTATE)pvUser;
+    PVM                     pVM      = pState->pVM;
+    PVMCPU                  pVCpu    = pState->pVCpu;
+    PPGMVIRTHANDLER         pCur     = (PPGMVIRTHANDLER)pNode;
+    PPGMVIRTHANDLERTYPEINT  pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
+
+    Assert(pCurType->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR);
 
 # if PGM_GST_TYPE == PGM_TYPE_32BIT
     PX86PD          pPDSrc = pgmGstGet32bitPDPtr(pVCpu);
