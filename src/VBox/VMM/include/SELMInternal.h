@@ -185,7 +185,7 @@ typedef struct SELM
      * This is only used if we monitor the bitmap. */
     uint16_t                offGuestIoBitmap;
     /** @} */
-    uint16_t                padding4;
+    uint16_t                padding4[3];
 
     /** SELMR3UpdateFromCPUM() profiling. */
     STAMPROFILE             StatUpdateFromCPUM;
