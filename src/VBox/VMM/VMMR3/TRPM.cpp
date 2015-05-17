@@ -1114,7 +1114,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
             /*
              * [Re]Register write virtual handler for guest's IDT.
              */
-            PVMCPU pVCpu = VMMGetCpu(pVM);
             if (pVM->trpm.s.GuestIdtr.pIdt != RTRCPTR_MAX)
             {
                 rc = PGMHandlerVirtualDeregister(pVM, pVCpu, pVM->trpm.s.GuestIdtr.pIdt, false /*fHypervisor*/);
