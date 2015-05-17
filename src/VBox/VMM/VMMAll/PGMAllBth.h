@@ -247,15 +247,10 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                 if (uErr & X86_TRAP_PF_RSVD) STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersPhysAllOpt);
             }
 
-            if (pCurType->CTX_SUFF(pfnHandler))
+            if (pCurType->CTX_SUFF(pfnPfHandler))
             {
-                PPGMPOOL            pPool      = pVM->pgm.s.CTX_SUFF(pPool);
-                void               *pvUser     = pCur->CTX_SUFF(pvUser);
-#  ifdef IN_RING0
-                PFNPGMR0PHYSHANDLER pfnHandler = pCurType->CTX_SUFF(pfnHandler);
-#  else
-                PFNPGMRCPHYSHANDLER pfnHandler = pCurType->CTX_SUFF(pfnHandler);
-#  endif
+                PPGMPOOL    pPool  = pVM->pgm.s.CTX_SUFF(pPool);
+                void       *pvUser = pCur->CTX_SUFF(pvUser);
 
                 STAM_PROFILE_START(&pCur->Stat, h);
                 if (pCur->hType != pPool->hAccessHandlerType)
@@ -264,7 +259,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                     *pfLockTaken = false;
                 }
 
-                rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
 
 #  ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);

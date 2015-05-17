@@ -3523,30 +3523,19 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 }
 
 
-#ifdef IN_RC
+#ifndef IN_RING3
+RT_C_DECLS_BEGIN
+DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER)) vgaLbfAccessPfHandler;
+RT_C_DECLS_END
+
 /**
  * @callback_method_impl{FNPGMRCPHYSHANDLER, \#PF Handler for VBE LFB access.}
  */
-PDMBOTHCBDECL(int) vgaRCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+PDMBOTHCBDECL(int) vgaLbfAccessPfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                         RTGCPHYS GCPhysFault, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     AssertPtr(pThis);
-    Assert(GCPhysFault >= pThis->GCPhysVRAM);
-    AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
-    NOREF(pRegFrame);
-
-    return vgaLFBAccess(pVM, pThis, GCPhysFault, pvFault);
-}
-
-#elif IN_RING0
-
-/**
- * @callback_method_impl{FNPGMR0PHYSHANDLER, \#PF Handler for VBE LFB access.}
- */
-PDMBOTHCBDECL(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
-{
-    PVGASTATE   pThis = (PVGASTATE)pvUser;
-    Assert(pThis);
     Assert(GCPhysFault >= pThis->GCPhysVRAM);
     AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
     NOREF(pRegFrame);
@@ -6219,8 +6208,8 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                           vgaR3LFBAccessHandler,
-                                          g_DeviceVga.szR0Mod, "vgaR0LFBAccessHandler",
-                                          g_DeviceVga.szRCMod, "vgaRCLFBAccessHandler",
+                                          g_DeviceVga.szR0Mod, "vgaLbfAccessPfHandler",
+                                          g_DeviceVga.szRCMod, "vgaLbfAccessPfHandler",
                                           "VGA LFB", &pThis->hLfbAccessHandlerType);
     AssertRCReturn(rc, rc);
 

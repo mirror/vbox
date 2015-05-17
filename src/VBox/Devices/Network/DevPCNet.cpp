@@ -1074,12 +1074,6 @@ DECLINLINE(RTGCPHYS32) pcnetTdraAddr(PPCNETSTATE pThis, int idx)
     return pThis->GCTDRA + ((CSR_XMTRL(pThis) - idx) << pThis->iLog2DescSize);
 }
 
-RT_C_DECLS_BEGIN
-#ifndef IN_RING3
-DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                     RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
-#endif
-RT_C_DECLS_END
 
 #undef htonl
 #define htonl(x)    ASMByteSwapU32(x)
@@ -1095,6 +1089,9 @@ static int      pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t va
 
 #ifdef PCNET_NO_POLLING
 # ifndef IN_RING3
+RT_C_DECLS_BEGIN
+DECLEXPORT(CTX_SUFF(FNPGM,PHYSPFHANDLER)) pcnetHandleRingWritePf;
+RT_C_DECLS_END
 
 /**
  * #PF Virtual Handler callback for Guest write access to the ring descriptor page(pThis)
@@ -1107,12 +1104,12 @@ static int      pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t va
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
-                                     RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                       RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     PPCNETSTATE pThis   = (PPCNETSTATE)pvUser;
 
-    Log(("#%d pcnetHandleRingWriteGC: write to %#010x\n", PCNET_INST_NR, GCPhysFault));
+    Log(("#%d pcnetHandleRingWritePf: write to %#010x\n", PCNET_INST_NR, GCPhysFault));
 
     uint32_t cb;
     int rc = CTXALLSUFF(pThis->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
@@ -1167,13 +1164,13 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pcnetHandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf,
-                                              size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pcnetR3HandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf,
+                                                size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
     PPCNETSTATE pThis   = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
 
-    Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
+    Log(("#%d pcnetR3HandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatRingWrite));
     if (GCPhys >= pThis->GCRDRA && GCPhys < pcnetRdraAddr(pThis, 0))
@@ -4975,9 +4972,9 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
 
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
-                                          pcnetHandleRingWrite,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWrite",
-                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWrite",
+                                          pcnetR3HandleRingWrite,
+                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWritePf",
+                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWritePf",
                                           "PCNet ring write access handler",
                                           &pThis->hNoPollingHandlerType);
     AssertRCReturn(rc, rc);

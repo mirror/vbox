@@ -113,7 +113,7 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+static FNPGMR3PHYSHANDLER pgmR3PoolAccessHandler;
 #ifdef VBOX_WITH_DEBUGGER
 static FNDBGCCMD pgmR3PoolCmdCheck;
 #endif
@@ -283,8 +283,8 @@ int pgmR3PoolInit(PVM pVM)
     pPool->hAccessHandlerType = NIL_PGMPHYSHANDLERTYPE;
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                           pgmR3PoolAccessHandler,
-                                          NULL, "pgmPoolAccessHandler",
-                                          NULL, "pgmPoolAccessHandler",
+                                          NULL, "pgmPoolAccessPfHandler",
+                                          NULL, "pgmPoolAccessPfHandler",
                                           "Guest Paging Access Handler",
                                           &pPool->hAccessHandlerType);
     AssertLogRelRCReturn(rc, rc);

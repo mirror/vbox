@@ -579,15 +579,15 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
         }
         else
         {
-            if (pHandlerType->CTX_SUFF(pfnHandler))
+            if (pHandlerType->CTX_SUFF(pfnPfHandler))
             {
-                CTX_MID(PFNPGM,PHYSHANDLER) pfnHandler = pHandlerType->CTX_SUFF(pfnHandler);
-                void                       *pvUser     = pHandler->CTX_SUFF(pvUser);
+                void *pvUser = pHandler->CTX_SUFF(pvUser);
                 STAM_PROFILE_START(&pHandler->Stat, h);
                 pgmUnlock(pVM);
 
-                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pfnHandler, uErr, GCPhysFault, pvUser));
-                rc = pfnHandler(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame, GCPhysFault, GCPhysFault, pvUser);
+                Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->CTX_SUFF(pfnPfHandler), uErr, GCPhysFault, pvUser));
+                rc = pHandlerType->CTX_SUFF(pfnPfHandler)(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
+                                                          GCPhysFault, GCPhysFault, pvUser);
 
 #ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
