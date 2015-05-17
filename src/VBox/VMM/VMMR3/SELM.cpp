@@ -677,7 +677,6 @@ VMMR3DECL(void) SELMR3Reset(PVM pVM)
         /*
          * Default action when entering raw mode for the first time
          */
-        PVMCPU pVCpu = &pVM->aCpus[0];  /* raw mode implies on VCPU */
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
@@ -1042,7 +1041,6 @@ static int selmR3UpdateShadowGdt(PVM pVM, PVMCPU pVCpu)
         ||  GDTR.cbGdt != pVM->selm.s.GuestGdtr.cbGdt)
     {
         Log(("SELMR3UpdateFromCPUM: Guest's GDT is changed to pGdt=%016RX64 cbGdt=%08X\n", GDTR.pGdt, GDTR.cbGdt));
-        PVMCPU pVCpu = VMMGetCpu(pVM);
 
 # ifdef SELM_TRACK_GUEST_GDT_CHANGES
         /*
@@ -1752,7 +1750,6 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
     {
         Log(("SELMR3SyncTSS: Guest's TSS is changed to pTss=%RGv cbMonitoredTss=%08X cbGuestTss=%#08x\n",
              GCPtrTss, cbMonitoredTss, pVM->selm.s.cbGuestTss));
-        PVMCPU pVCpu = VMMGetCpu(pVM);
 
         /* Release the old range first. */
         if (pVM->selm.s.GCPtrGuestTss != RTRCPTR_MAX)
