@@ -598,8 +598,6 @@ typedef struct PATM
 
 
 
-DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-
 DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM);
 DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 
@@ -638,20 +636,7 @@ int             patmAddBranchToLookupCache(PVM pVM, RTRCPTR pJumpTableGC, RTRCPT
 R3PTRTYPE(uint8_t *) patmR3GCVirtToHCVirt(PVM pVM, PPATMP2GLOOKUPREC pCacheRec, RCPTRTYPE(uint8_t *) pGCPtr);
 
 RT_C_DECLS_BEGIN
-/**
- * #PF Virtual Handler callback for Guest access a page monitored by PATM
- *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         Pointer to the VM.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- */
-VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-
+DECLEXPORT(FNPGMRCVIRTPFHANDLER) patmRCVirtPagePfHandler;
 RT_C_DECLS_END
 
 /**

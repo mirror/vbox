@@ -69,10 +69,10 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
-static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
+static DECLCALLBACK(int) csamR3Save(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int) csamR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static FNPGMR3VIRTHANDLER    csamR3CodePageWriteHandler;
+static FNPGMR3VIRTINVALIDATE csamR3CodePageInvalidate;
 
 bool                csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage);
 int                 csamR3CheckPageRecord(PVM pVM, RTRCPTR pInstr);
@@ -83,8 +83,8 @@ static void         csamMarkCode(PVM pVM, PCSAMPAGE pPage, RTRCPTR pInstr, uint3
 static int          csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, bool fCode32,
                                           PFN_CSAMR3ANALYSE pfnCSAMR3Analyse, void *pUserData, PCSAMP2GLOOKUPREC pCacheRec);
 
-/** @todo Temporary for debugging. */
-static bool fInCSAMCodePageInvalidate = false;
+/** @todo "Temporary" for debugging. */
+static bool g_fInCsamR3CodePageInvalidate = false;
 
 #ifdef VBOX_WITH_DEBUGGER
 static FNDBGCCMD csamr3CmdOn;
@@ -254,15 +254,15 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
      */
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                          NULL /*pfnInvalidateR3 */,
-                                         CSAMCodePageWriteHandler,
-                                         "CSAMGCCodePageWriteHandler", NULL /*pszModRC*/,
+                                         csamR3CodePageWriteHandler,
+                                         "csamRCCodePageWritePfHandler", NULL /*pszModRC*/,
                                          "CSAM code page write handler",
                                          &pVM->csam.s.hCodePageWriteType);
     AssertLogRelRCReturn(rc, rc);
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
-                                         CSAMCodePageInvalidate,
-                                         CSAMCodePageWriteHandler,
-                                         "CSAMGCCodePageWriteHandler", NULL /*pszModRC*/,
+                                         csamR3CodePageInvalidate,
+                                         csamR3CodePageWriteHandler,
+                                         "csamRCCodePageWritePfHandler", NULL /*pszModRC*/,
                                          "CSAM code page write and invlpg handler",
                                          &pVM->csam.s.hCodePageWriteAndInvPgType);
     AssertLogRelRCReturn(rc, rc);
@@ -272,8 +272,8 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
      */
     rc = SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SAVED_STATE_VERSION, sizeof(pVM->csam.s) + PAGE_SIZE*16,
                                NULL, NULL, NULL,
-                               NULL, csamr3Save, NULL,
-                               NULL, csamr3Load, NULL);
+                               NULL, csamR3Save, NULL,
+                               NULL, csamR3Load, NULL);
     AssertRCReturn(rc, rc);
 
     STAM_REG(pVM, &pVM->csam.s.StatNrTraps,          STAMTYPE_COUNTER,   "/CSAM/PageTraps",           STAMUNIT_OCCURENCES,     "The number of CSAM page traps.");
@@ -539,7 +539,7 @@ static DECLCALLBACK(int) SavePageState(PAVLPVNODECORE pNode, void *pVM1)
  * @param   pVM             Pointer to the VM.
  * @param   pSSM            SSM operation handle.
  */
-static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) csamR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     CSAM csamInfo = pVM->csam.s;
     int  rc;
@@ -561,7 +561,7 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
     rc = SSMR3PutMem(pSSM, csamInfo.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
     AssertRCReturn(rc, rc);
 
-    for (unsigned i=0;i<CSAM_PGDIRBMP_CHUNKS;i++)
+    for (unsigned i = 0; i < CSAM_PGDIRBMP_CHUNKS; i++)
     {
         if(csamInfo.pPDBitmapHC[i])
         {
@@ -591,7 +591,7 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) csamR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     int  rc;
     CSAM csamInfo;
@@ -1866,7 +1866,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     Assert(ret);
 
 #ifdef CSAM_MONITOR_CODE_PAGES
-    AssertRelease(!fInCSAMCodePageInvalidate);
+    AssertRelease(!g_fInCsamR3CodePageInvalidate);
 
     switch (enmTag)
     {
@@ -2111,7 +2111,7 @@ static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
             /* @todo -> this is expensive (cr3 reload)!!!
              * if this happens often, then reuse it instead!!!
              */
-            Assert(!fInCSAMCodePageInvalidate);
+            Assert(!g_fInCsamR3CodePageInvalidate);
             STAM_COUNTER_DEC(&pVM->csam.s.StatPageMonitor);
             PGMHandlerVirtualDeregister(pVM, pVCpu, GCPtr, false /*fHypervisor*/);
         }
@@ -2178,18 +2178,19 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     int rc;
 
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("CSAMCodePageWriteHandler: write to %RGv size=%zu\n", GCPtr, cbBuf));
+    Log(("csamR3CodePageWriteHandler: write to %RGv size=%zu\n", GCPtr, cbBuf));
     NOREF(pvUser);
 
     if (    PAGE_ADDRESS(pvPtr) == PAGE_ADDRESS((uintptr_t)pvPtr + cbBuf - 1)
          && !memcmp(pvPtr, pvBuf, cbBuf))
     {
-        Log(("CSAMCodePageWriteHandler: dummy write -> ignore\n"));
+        Log(("csamR3CodePageWriteHandler: dummy write -> ignore\n"));
         return VINF_PGM_HANDLER_DO_DEFAULT;
     }
 
@@ -2201,7 +2202,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
         /** @note in theory not correct to let it write the data first before disabling a patch!
          *        (if it writes the same data as the patch jump and we replace it with obsolete opcodes)
          */
-        Log(("CSAMCodePageWriteHandler: delayed write!\n"));
+        Log(("csamR3CodePageWriteHandler: delayed write!\n"));
         AssertCompileSize(RTRCPTR, 4);
         rc = VMR3ReqCallVoidNoWait(pVM, VMCPUID_ANY, (PFNRT)CSAMDelayedWriteHandler, 3, pVM, (RTRCPTR)GCPtr, cbBuf);
     }
@@ -2216,13 +2217,13 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
  * @param   pVM             Pointer to the VM.
  * @param   GCPtr           The virtual address the guest has changed.
  */
-static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr)
+static DECLCALLBACK(int) csamR3CodePageInvalidate(PVM pVM, RTGCPTR GCPtr, void *pvUser)
 {
-    fInCSAMCodePageInvalidate = true;
-    LogFlow(("CSAMCodePageInvalidate %RGv\n", GCPtr));
+    g_fInCsamR3CodePageInvalidate = true;
+    LogFlow(("csamR3CodePageInvalidate %RGv\n", GCPtr));
     /** @todo We can't remove the page (which unregisters the virtual handler) as we are called from a DoWithAll on the virtual handler tree. Argh. */
     csamFlushPage(pVM, GCPtr, false /* don't remove page! */);
-    fInCSAMCodePageInvalidate = false;
+    g_fInCsamR3CodePageInvalidate = false;
     return VINF_SUCCESS;
 }
 

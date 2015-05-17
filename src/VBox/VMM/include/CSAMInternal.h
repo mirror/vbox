@@ -282,7 +282,7 @@ inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 }
 
 RT_C_DECLS_BEGIN
-VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+DECLEXPORT(FNPGMRCVIRTPFHANDLER) csamRCCodePageWritePfHandler;
 RT_C_DECLS_END
 
 #endif

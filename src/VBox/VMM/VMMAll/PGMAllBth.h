@@ -333,12 +333,12 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
             {
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
-                RTGCPTR                     GCPtrStart = pCur->Core.Key;
-                CTX_MID(PFNPGM,VIRTHANDLER) pfnHandler = pCurType->CTX_SUFF(pfnHandler);
+                RTGCPTR GCPtrStart = pCur->Core.Key;
                 pgmUnlock(pVM);
                 *pfLockTaken = false;
 
-                rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPtrStart, pvFault - GCPtrStart);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPtrStart, pvFault - GCPtrStart,
+                                                      pCur->pvUserRC);
 
 #    ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
@@ -373,8 +373,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                            == (pGstWalk->Core.GCPhys & X86_PTE_PAE_PG_MASK));
 #   ifdef IN_RC
                     STAM_PROFILE_START(&pCur->Stat, h);
-                    RTGCPTR                     GCPtrStart = pCur->Core.Key;
-                    CTX_MID(PFNPGM,VIRTHANDLER) pfnHandler = pCurType->CTX_SUFF(pfnHandler);
+                    RTGCPTR GCPtrStart = pCur->Core.Key;
                     pgmUnlock(pVM);
                     *pfLockTaken = false;
 
@@ -382,7 +381,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                                 + (pvFault    & PAGE_OFFSET_MASK)
                                 - (GCPtrStart & PAGE_OFFSET_MASK);
                     Assert(off < pCur->cb);
-                    rc = pfnHandler(pVM, uErr, pRegFrame, pvFault, GCPtrStart, off);
+                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPtrStart, off, pCur->pvUserRC);
 
 #    ifdef VBOX_WITH_STATISTICS
                     pgmLock(pVM);
@@ -717,7 +716,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 /*
                  * Check if the fault address is in a virtual page access handler range.
                  */
-                PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers, pvFault);
+                PPGMVIRTHANDLER pCur = (PPGMVIRTHANDLER)RTAvlroGCPtrRangeGet(&pVM->pgm.s.CTX_SUFF(pTrees)->HyperVirtHandlers,
+                                                                             pvFault);
                 if (    pCur
                     &&  pvFault - pCur->Core.Key < pCur->cb
                     &&  uErr & X86_TRAP_PF_RW)
@@ -726,7 +726,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     STAM_PROFILE_START(&pCur->Stat, h);
                     PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
                     pgmUnlock(pVM);
-                    rc = pCurType->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key);
+                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key,
+                                                          pCur->pvUserRC);
                     pgmLock(pVM);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else
@@ -820,7 +821,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
                 pgmUnlock(pVM);
-                rc = pCurType->CTX_SUFF(pfnHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key,
+                                                      pCur->pvUserRC);
                 pgmLock(pVM);
                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else

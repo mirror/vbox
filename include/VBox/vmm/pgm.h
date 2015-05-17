@@ -177,18 +177,20 @@ typedef enum PGMVIRTHANDLERKIND
  * for ALL and WRITE handlers these will also trigger.
  *
  * @returns VBox status code (appropriate for GC return).
- * @param   pVM         VM Handle.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pVM             VM Handle.
+ * @param   uErrorCode      CPU Error code (X86_TRAP_PF_XXX).
+ * @param   pRegFrame       Trap register frame.
+ * @param   pvFault         The fault address (cr2).
+ * @param   pvRange         The base address of the handled virtual range.
+ * @param   offRange        The offset of the access into this range.
+ *                          (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser          User argument.
  * @todo    Add pVCpu, possibly replacing pVM.
  */
-typedef DECLCALLBACK(int) FNPGMRCVIRTHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+typedef DECLCALLBACK(int) FNPGMRCVIRTPFHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser);
 /** Pointer to PGM access callback. */
-typedef FNPGMRCVIRTHANDLER *PFNPGMRCVIRTHANDLER;
+typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
 
 /**
  * \#PF Handler callback for virtual access handler ranges, R3.
@@ -207,7 +209,8 @@ typedef FNPGMRCVIRTHANDLER *PFNPGMRCVIRTHANDLER;
  * @param   pvUser          User argument.
  * @todo    Add pVCpu, possibly replacing pVM.
  */
-typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                             PGMACCESSTYPE enmAccessType, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
 
@@ -217,8 +220,9 @@ typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
  *
  * @param   pVM             VM Handle.
  * @param   GCPtr           The virtual address the guest has changed.
+ * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr);
+typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr, void *pvUser);
 /** Pointer to PGM invalidation callback. */
 typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 
@@ -545,12 +549,12 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                       PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                       PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                      RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
+                                                      RCPTRTYPE(FNPGMRCVIRTPFHANDLER) pfnPfHandlerRC,
                                                       const char *pszDesc, PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                     PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                    const char *pszHandlerRC, const char *pszModRC, const char *pszDesc,
+                                                    const char *pszPfHandlerRC, const char *pszModRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHANDLERTYPE hType, RTGCPTR GCPtr,
                                                 RTGCPTR GCPtrLast, void *pvUserR3, RTRCPTR pvUserRC, const char *pszDesc);

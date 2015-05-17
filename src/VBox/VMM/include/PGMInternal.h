@@ -710,7 +710,7 @@ typedef struct PGMVIRTANDLERTYPEINT
     bool                                fRelocUserRC;
     bool                                afPadding[3];
     /** Pointer to RC callback function. */
-    RCPTRTYPE(PFNPGMRCVIRTHANDLER)      pfnHandlerRC;
+    RCPTRTYPE(PFNPGMRCVIRTPFHANDLER)    pfnPfHandlerRC;
     /** Pointer to the R3 callback function for invalidation. */
     R3PTRTYPE(PFNPGMR3VIRTINVALIDATE)   pfnInvalidateR3;
     /** Pointer to R3 callback function. */

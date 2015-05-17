@@ -56,7 +56,8 @@
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) patmRCVirtPagePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                        RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
     pVM->patm.s.pvFaultMonitor = (RTRCPTR)(RTRCUINTPTR)pvFault;

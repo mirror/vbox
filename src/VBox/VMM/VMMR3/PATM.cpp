@@ -91,6 +91,7 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+static FNPGMR3VIRTHANDLER patmR3VirtPageHandler;
 
 static int          patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictAddr, PPATCHINFO pPatch);
 static int          patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch);
@@ -216,6 +217,16 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     AssertRC(rc);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register the virtual page access handler type.
+     */
+    rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_ALL, false /*fRelocUserRC*/,
+                                         NULL /*pfnInvalidateR3*/,
+                                         patmR3VirtPageHandler,
+                                         "patmRCVirtPagePfHandler", NULL /*pszModRC*/,
+                                         "PATMMonitorPatchJump", &pVM->patm.s.hMonitorPageType);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register save and load state notifiers.
@@ -367,16 +378,6 @@ VMMR3_INT_DECL(int) PATMR3InitFinalize(PVM pVM)
                           ("%RRv-%RRv => %#x\n", pVM->patm.s.pbPatchHelpersRC, RCPtrEnd, pVM->patm.s.cbPatchHelpers),
                           VERR_INTERNAL_ERROR_4);
 
-
-    /*
-     * Register the virtual page access handler type.
-     */
-    rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_ALL, false /*fRelocUserRC*/,
-                                         NULL /*pfnInvalidateR3*/,
-                                         patmVirtPageHandler,
-                                         "PATMGCMonitorPage", NULL /*pszModRC*/,
-                                         "PATMMonitorPatchJump", &pVM->patm.s.hMonitorPageType);
-    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
@@ -989,8 +990,8 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                      PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) patmR3VirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                               PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     NOREF(pvPtr); NOREF(pvBuf); NOREF(cbBuf); NOREF(pvUser);

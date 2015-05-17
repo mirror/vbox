@@ -248,8 +248,8 @@ typedef TRPMCPU *PTRPMCPU;
 #pragma pack()
 
 
-VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
-VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
+DECLEXPORT(FNPGMRCVIRTPFHANDLER) trpmRCGuestIDTWritePfHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER) trpmRCShadowIDTWritePfHandler;
 
 /**
  * Clear guest trap/interrupt gate handler

@@ -45,6 +45,8 @@
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/string.h>
 
+
+
 /**
  * \#PF Handler callback for virtual access handler ranges. (CSAM self-modifying
  * code monitor)
@@ -60,8 +62,10 @@
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Ignored.
  */
-VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) csamRCCodePageWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     PPATMGCSTATE pPATMGCState;
     bool         fPatchCode = PATMIsPatchGCAddr(pVM, pRegFrame->eip);
@@ -80,10 +84,10 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     Assert(pPATMGCState);
 
     Assert(pPATMGCState->fPIF || fPatchCode);
-    /** When patch code is executing instructions that must complete, then we must *never* interrupt it. */
+    /* When patch code is executing instructions that must complete, then we must *never* interrupt it. */
     if (!pPATMGCState->fPIF && fPatchCode)
     {
-        Log(("CSAMGCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %08RX32!\n", pRegFrame->eip));
+        Log(("csamRCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %08RX32!\n", pRegFrame->eip));
         /** @note there are cases when pages previously used for code are now used for stack; patch generated code will fault (pushf))
          *  Just make the page r/w and continue.
          */
@@ -103,7 +107,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     else
         cpl = (pRegFrame->ss.Sel & X86_SEL_RPL);
 
-    Log(("CSAMGCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
+    Log(("csamRCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", pvFault, (RTGCUINTPTR)pvRange + offRange, cpl));
 
     /* If user code is modifying one of our monitored pages, then we can safely make it r/w as it's no longer being used for supervisor code. */
     if (cpl != 3)
@@ -130,7 +134,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     /*
      * Make this particular page R/W. The VM_FF_CSAM_FLUSH_DIRTY_PAGE handler will reset it to readonly again.
      */
-    Log(("CSAMGCCodePageWriteHandler: enabled r/w for page %RGv\n", pvFault));
+    Log(("csamRCCodePageWriteHandler: enabled r/w for page %RGv\n", pvFault));
     rc = PGMShwMakePageWritable(pVCpu, pvFault, PGM_MK_PG_IS_WRITE_FAULT);
     AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
     ASMInvalidatePage((void *)(uintptr_t)pvFault);

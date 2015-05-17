@@ -290,13 +290,13 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                       PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                       PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                      RCPTRTYPE(PFNPGMRCVIRTHANDLER) pfnHandlerRC,
+                                                      RCPTRTYPE(FNPGMRCVIRTPFHANDLER) pfnPfHandlerRC,
                                                       const char *pszDesc, PPGMVIRTHANDLERTYPE phType)
 {
     AssertReturn(!HMIsEnabled(pVM), VERR_NOT_AVAILABLE); /* Not supported/relevant for VT-x and AMD-V. */
     AssertReturn(RT_VALID_PTR(pfnHandlerR3) || enmKind == PGMVIRTHANDLERKIND_HYPERVISOR, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnInvalidateR3, VERR_INVALID_POINTER);
-    AssertReturn(pfnHandlerRC != NIL_RTRCPTR, VERR_INVALID_POINTER);
+    AssertReturn(pfnPfHandlerRC != NIL_RTRCPTR, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(   enmKind == PGMVIRTHANDLERKIND_WRITE
                  || enmKind == PGMVIRTHANDLERKIND_ALL
@@ -315,7 +315,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
                                 ? PGM_PAGE_HNDL_VIRT_STATE_ALL : PGM_PAGE_HNDL_VIRT_STATE_WRITE;
         pType->pfnInvalidateR3  = pfnInvalidateR3;
         pType->pfnHandlerR3     = pfnHandlerR3;
-        pType->pfnHandlerRC     = pfnHandlerRC;
+        pType->pfnPfHandlerRC   = pfnPfHandlerRC;
         pType->pszDesc          = pszDesc;
 
         pgmLock(pVM);
@@ -323,8 +323,8 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
         pgmUnlock(pVM);
 
         *phType = MMHyperHeapPtrToOffset(pVM, pType);
-        LogFlow(("PGMR3HandlerVirtualTypeRegisterEx: %p/%#x: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pfnHandlerRC=%RRv pszDesc=%s\n",
-                 pType, *phType, enmKind, pfnInvalidateR3, pfnHandlerR3, pfnHandlerRC, pszDesc));
+        LogFlow(("PGMR3HandlerVirtualTypeRegisterEx: %p/%#x: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pfnPfHandlerRC=%RRv pszDesc=%s\n",
+                 pType, *phType, enmKind, pfnInvalidateR3, pfnHandlerR3, pfnPfHandlerRC, pszDesc));
         return VINF_SUCCESS;
     }
     *phType = NIL_PGMVIRTHANDLERTYPE;
@@ -345,7 +345,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pszModRC        The name of the raw-mode context module, NULL is an
  *                          alias for the main RC module.
- * @param   pszHandlerRC    The name of the raw-mode context handler, NULL if
+ * @param   pszPfHandlerRC  The name of the raw-mode context handler, NULL if
  *                          the ring-3 handler should be called.
  * @param   pszDesc         The type description.
  * @param   phType          Where to return the type handle (cross context
@@ -355,33 +355,31 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                     PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                    const char *pszHandlerRC, const char *pszModRC, const char *pszDesc,
+                                                    const char *pszPfHandlerRC, const char *pszModRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType)
 {
-    LogFlow(("PGMR3HandlerVirtualTypeRegister: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pszModRC=%s pszHandlerRC=%s pszDesc=%s\n",
-             enmKind, pfnInvalidateR3, pfnHandlerR3, pszHandlerRC, pszModRC, pszDesc));
+    LogFlow(("PGMR3HandlerVirtualTypeRegister: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pszModRC=%s pszPfHandlerRC=%s pszDesc=%s\n",
+             enmKind, pfnInvalidateR3, pfnHandlerR3, pszPfHandlerRC, pszModRC, pszDesc));
 
     /*
      * Validate input.
      */
     if (!pszModRC)
         pszModRC = VMMGC_MAIN_MODULE_NAME;
-    if (!pszHandlerRC)
-        pszHandlerRC = "pgmVirtHandlerRedirectToHC";
-    AssertPtrReturn(pszHandlerRC, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPfHandlerRC, VERR_INVALID_POINTER);
 
     /*
      * Resolve the GC handler.
      */
-    RTRCPTR pfnHandlerRC = NIL_RTRCPTR;
-    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, NULL /*pszSearchPath*/, pszHandlerRC, &pfnHandlerRC);
+    RTRCPTR pfnPfHandlerRC = NIL_RTRCPTR;
+    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, NULL /*pszSearchPath*/, pszPfHandlerRC, &pfnPfHandlerRC);
     if (RT_SUCCESS(rc))
         return PGMR3HandlerVirtualTypeRegisterEx(pVM, enmKind, fRelocUserRC,
                                                  pfnInvalidateR3, pfnHandlerR3,
-                                                 pfnHandlerRC,
+                                                 pfnPfHandlerRC,
                                                  pszDesc, phType);
 
-    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModRC, pszHandlerRC, rc));
+    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModRC, pszPfHandlerRC, rc));
     return rc;
 }
 
@@ -755,7 +753,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
         default:                            pszType = "????"; break;
     }
     pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %RHv  %RRv  %s  %s\n",
-        pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCurType->pfnHandlerRC, pszType, pCur->pszDesc);
+        pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCurType->pfnPfHandlerRC, pszType, pCur->pszDesc);
 #ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",

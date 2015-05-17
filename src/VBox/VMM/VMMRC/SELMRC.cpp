@@ -222,7 +222,6 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
 }
 
 
-
 /**
  * \#PF Virtual Handler callback for Guest write access to the Guest's own GDT.
  *
@@ -235,11 +234,12 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  */
-VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     PVMCPU pVCpu = VMMGetCpu0(pVM);
-    LogFlow(("selmRCGuestGDTWriteHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
-    NOREF(pvRange);
+    LogFlow(("selmRCGuestGDTWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
+    NOREF(pvRange); NOREF(pvUser);
 
     /*
      * Check if any selectors might be affected.
@@ -327,12 +327,14 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Unused.
  */
-VMMRCDECL(int) selmRCGuestLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     /** @todo To be implemented. */
     ////LogCom(("selmRCGuestLDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
+    NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
 
     VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_SELM_SYNC_LDT);
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
@@ -380,12 +382,14 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Unused.
  */
-VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     PVMCPU pVCpu = VMMGetCpu0(pVM);
-    LogFlow(("selmRCGuestTSSWriteHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
-    NOREF(pvRange);
+    LogFlow(("selmRCGuestTSSWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
+    NOREF(pvRange); NOREF(pvUser);
 
     /*
      * Try emulate the access.
@@ -408,7 +412,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                  ||  pGuestTss->ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
            )
         {
-            Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+            Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
                  (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)pGuestTss->ss0, (RTGCPTR)pGuestTss->esp0));
             pVM->selm.s.Tss.esp1 = pGuestTss->esp0;
             pVM->selm.s.Tss.ss1  = pGuestTss->ss0 | 1;
@@ -422,7 +426,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                       ||  pGuestTss->ss1  != ((pVM->selm.s.Tss.ss2 & ~2) | 1)) /* undo raw-r1 */
                 )
         {
-            Log(("selmRCGuestTSSWriteHandler: R1 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+            Log(("selmRCGuestTSSWritePfHandler: R1 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
                  (RTSEL)((pVM->selm.s.Tss.ss2 & ~2) | 1), (RTGCPTR)pVM->selm.s.Tss.esp2, (RTSEL)pGuestTss->ss1, (RTGCPTR)pGuestTss->esp1));
             pVM->selm.s.Tss.esp2 = pGuestTss->esp1;
             pVM->selm.s.Tss.ss2  = (pGuestTss->ss1 & ~1) | 2;
@@ -446,7 +450,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
                      ||  s.ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
                )
             {
-                Log(("selmRCGuestTSSWriteHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv [x-page]\n",
+                Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv [x-page]\n",
                      (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)s.ss0, (RTGCPTR)s.esp0));
                 pVM->selm.s.Tss.esp1 = s.esp0;
                 pVM->selm.s.Tss.ss1  = s.ss0 | 1;
@@ -533,11 +537,13 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Unused.
  */
-VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    LogRel(("FATAL ERROR: selmRCShadowGDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
+    LogRel(("FATAL ERROR: selmRCShadowGDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_GDT_WRITE;
 }
 #endif
@@ -555,12 +561,14 @@ VMMRCDECL(int) selmRCShadowGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Unused.
  */
-VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    LogRel(("FATAL ERROR: selmRCShadowLDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    LogRel(("FATAL ERROR: selmRCShadowLDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     Assert(pvFault - (uintptr_t)pVM->selm.s.pvLdtRC < (unsigned)(65536U + PAGE_SIZE));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
+    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_LDT_WRITE;
 }
 #endif
@@ -578,11 +586,13 @@ VMMRCDECL(int) selmRCShadowLDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @param   pvUser      Unused.
  */
-VMMRCDECL(int) selmRCShadowTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
+DECLEXPORT(int) selmRCShadowTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    LogRel(("FATAL ERROR: selmRCShadowTSSWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange);
+    LogRel(("FATAL ERROR: selmRCShadowTSSWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
+    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
 #endif

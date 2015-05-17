@@ -2439,8 +2439,8 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     PPGMVIRTHANDLERTYPEINT pCurVirtType;
     RTListOff32ForEach(&pVM->pgm.s.pTreesR3->HeadVirtHandlerTypes, pCurVirtType, PGMVIRTHANDLERTYPEINT, ListNode)
     {
-        if (pCurVirtType->pfnHandlerRC != NIL_RTRCPTR)
-            pCurVirtType->pfnHandlerRC += offDelta;
+        if (pCurVirtType->pfnPfHandlerRC != NIL_RTRCPTR)
+            pCurVirtType->pfnPfHandlerRC += offDelta;
     }
 
     /*
