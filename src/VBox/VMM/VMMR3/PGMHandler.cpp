@@ -494,8 +494,6 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHA
     {
         if (pType->enmKind != PGMVIRTHANDLERKIND_HYPERVISOR)
         {
-            PVMCPU pVCpu = VMMGetCpu(pVM);
-
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL | PGM_SYNC_CLEAR_PGM_POOL;
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         }
@@ -566,7 +564,7 @@ VMMR3_INT_DECL(int) PGMHandlerVirtualChangeType(PVM pVM, RTGCPTR GCPtr, PGMVIRTH
  * @param   fHypervisor Set if PGMVIRTHANDLERKIND_HYPERVISOR, false if not.
  * @thread  EMT(pVCpu)
  */
-VMM_INT_DECL(int) PGMHandlerVirtualDeregister(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, bool fHypervisor)
+VMMR3_INT_DECL(int) PGMHandlerVirtualDeregister(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, bool fHypervisor)
 {
     pgmLock(pVM);
 
