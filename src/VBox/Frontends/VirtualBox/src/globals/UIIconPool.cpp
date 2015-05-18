@@ -378,11 +378,16 @@ QPixmap UIIconPoolGeneral::guestOSTypeIcon(const QString &strOSTypeID, QSize *pL
                     ("Undefined icon for type '%s'.", strOSTypeID.toLatin1().constData()),
                     nullPixmap);
 
+    /* Determine desired icon size: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_LargeIconSize);
+    const QSize iconSize = QSize(iIconMetric, iIconMetric);
+
     /* Pass up logical size if necessary: */
     if (pLogicalSize)
-        *pLogicalSize = availableSizes.first();
+        *pLogicalSize = iconSize;
 
     /* Return pixmap of first available size: */
-    return icon.pixmap(availableSizes.first());
+    return icon.pixmap(iconSize);
 }
 

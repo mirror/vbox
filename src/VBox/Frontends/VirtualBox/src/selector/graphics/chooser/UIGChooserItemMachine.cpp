@@ -238,10 +238,13 @@ void UIGChooserItemMachine::updatePixmap()
 
 void UIGChooserItemMachine::updateStatePixmap()
 {
+    /* Determine the icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
     /* Get new state-pixmap and state-pixmap size: */
     const QIcon stateIcon = machineStateIcon();
     AssertReturnVoid(!stateIcon.isNull());
-    const QSize statePixmapSize = stateIcon.availableSizes().first();
+    const QSize statePixmapSize = QSize(iIconMetric, iIconMetric);
     const QPixmap statePixmap = stateIcon.pixmap(statePixmapSize);
     /* Update linked values: */
     if (m_statePixmapSize != statePixmapSize)
