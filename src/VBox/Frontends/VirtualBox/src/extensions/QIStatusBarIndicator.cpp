@@ -23,6 +23,8 @@
 # include <QIcon>
 # include <QPainter>
 # include <QHBoxLayout>
+# include <QApplication>
+# include <QStyle>
 # include <QLabel>
 # ifdef Q_WS_MAC
 #  include <QContextMenuEvent>
@@ -89,7 +91,9 @@ QIcon QIStateStatusBarIndicator::stateIcon(int iState) const
 void QIStateStatusBarIndicator::setStateIcon(int iState, const QIcon &icon)
 {
     /* Adjust size-hint: */
-    m_size = m_size.expandedTo(icon.availableSizes().first());
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+    m_size = QSize(iIconMetric, iIconMetric);
     /* Cache passed-icon: */
     m_icons[iState] = icon;
 }
