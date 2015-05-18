@@ -557,7 +557,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                     PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                    const char *pszPfHandlerRC, const char *pszModRC, const char *pszDesc,
+                                                    const char *pszPfHandlerRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHANDLERTYPE hType, RTGCPTR GCPtr,
                                                 RTGCPTR GCPtrLast, void *pvUserR3, RTRCPTR pvUserRC, const char *pszDesc);

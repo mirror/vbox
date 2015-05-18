@@ -255,14 +255,14 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                          NULL /*pfnInvalidateR3 */,
                                          csamR3CodePageWriteHandler,
-                                         "csamRCCodePageWritePfHandler", NULL /*pszModRC*/,
+                                         "csamRCCodePageWritePfHandler",
                                          "CSAM code page write handler",
                                          &pVM->csam.s.hCodePageWriteType);
     AssertLogRelRCReturn(rc, rc);
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                          csamR3CodePageInvalidate,
                                          csamR3CodePageWriteHandler,
-                                         "csamRCCodePageWritePfHandler", NULL /*pszModRC*/,
+                                         "csamRCCodePageWritePfHandler",
                                          "CSAM code page write and invlpg handler",
                                          &pVM->csam.s.hCodePageWriteAndInvPgType);
     AssertLogRelRCReturn(rc, rc);

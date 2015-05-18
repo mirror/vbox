@@ -345,10 +345,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
  * @param   pfnInvalidateR3 Pointer to the ring-3 invalidateion callback
  *                          (optional, can be NULL).
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
- * @param   pszModRC        The name of the raw-mode context module, NULL is an
- *                          alias for the main RC module.
- * @param   pszPfHandlerRC  The name of the raw-mode context handler, NULL if
- *                          the ring-3 handler should be called.
+ * @param   pszPfHandlerRC  The name of the raw-mode context handler.
  * @param   pszDesc         The type description.
  * @param   phType          Where to return the type handle (cross context
  *                          safe).
@@ -357,31 +354,29 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                     PFNPGMR3VIRTHANDLER pfnHandlerR3,
-                                                    const char *pszPfHandlerRC, const char *pszModRC, const char *pszDesc,
+                                                    const char *pszPfHandlerRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType)
 {
-    LogFlow(("PGMR3HandlerVirtualTypeRegister: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pszModRC=%s pszPfHandlerRC=%s pszDesc=%s\n",
-             enmKind, pfnInvalidateR3, pfnHandlerR3, pszPfHandlerRC, pszModRC, pszDesc));
+    LogFlow(("PGMR3HandlerVirtualTypeRegister: enmKind=%d pfnInvalidateR3=%RHv pfnHandlerR3=%RHv pszPfHandlerRC=%s pszDesc=%s\n",
+             enmKind, pfnInvalidateR3, pfnHandlerR3, pszPfHandlerRC, pszDesc));
 
     /*
      * Validate input.
      */
-    if (!pszModRC)
-        pszModRC = VMMGC_MAIN_MODULE_NAME;
     AssertPtrReturn(pszPfHandlerRC, VERR_INVALID_POINTER);
 
     /*
      * Resolve the GC handler.
      */
     RTRCPTR pfnPfHandlerRC = NIL_RTRCPTR;
-    int rc = PDMR3LdrGetSymbolRCLazy(pVM, pszModRC, NULL /*pszSearchPath*/, pszPfHandlerRC, &pfnPfHandlerRC);
+    int rc = PDMR3LdrGetSymbolRCLazy(pVM, VMMGC_MAIN_MODULE_NAME, NULL /*pszSearchPath*/, pszPfHandlerRC, &pfnPfHandlerRC);
     if (RT_SUCCESS(rc))
         return PGMR3HandlerVirtualTypeRegisterEx(pVM, enmKind, fRelocUserRC,
                                                  pfnInvalidateR3, pfnHandlerR3,
                                                  pfnPfHandlerRC,
                                                  pszDesc, phType);
 
-    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", pszModRC, pszPfHandlerRC, rc));
+    AssertMsgFailed(("Failed to resolve %s.%s, rc=%Rrc.\n", VMMGC_MAIN_MODULE_NAME, pszPfHandlerRC, rc));
     return rc;
 }
 

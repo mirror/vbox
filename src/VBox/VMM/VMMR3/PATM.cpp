@@ -224,7 +224,7 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_ALL, false /*fRelocUserRC*/,
                                          NULL /*pfnInvalidateR3*/,
                                          patmR3VirtPageHandler,
-                                         "patmRCVirtPagePfHandler", NULL /*pszModRC*/,
+                                         "patmRCVirtPagePfHandler",
                                          "PATMMonitorPatchJump", &pVM->patm.s.hMonitorPageType);
     AssertRCReturn(rc, rc);
 
