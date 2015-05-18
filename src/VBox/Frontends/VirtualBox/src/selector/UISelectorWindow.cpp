@@ -1409,7 +1409,9 @@ void UISelectorWindow::prepareWidgets()
     /* Prepare tool-bar: */
     mVMToolBar = new UIToolBar(this);
     mVMToolBar->setContextMenuPolicy(Qt::CustomContextMenu);
-    mVMToolBar->setIconSize(QSize(32, 32));
+    const QSize toolBarIconSize = mVMToolBar->iconSize();
+    if (toolBarIconSize.width() < 32 || toolBarIconSize.height() < 32)
+        mVMToolBar->setIconSize(QSize(32, 32));
     mVMToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     mVMToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_New));
     mVMToolBar->addAction(actionPool()->action(UIActionIndexST_M_Machine_S_Settings));
