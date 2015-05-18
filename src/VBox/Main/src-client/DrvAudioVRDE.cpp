@@ -172,7 +172,7 @@ static DECLCALLBACK(int) drvAudioVRDECaptureIn(PPDMIHOSTAUDIO pInterface, PPDMAU
     uint32_t cProcessed = 0;
     if (pVRDEStrmIn->cSamplesCaptured)
     {
-        rc = audioMixBufMixToParent(&pVRDEStrmIn->HstStrmIn.MixBuf, pVRDEStrmIn->cSamplesCaptured,
+        rc = AudioMixBufMixToParent(&pVRDEStrmIn->HstStrmIn.MixBuf, pVRDEStrmIn->cSamplesCaptured,
                                     &cProcessed);
     }
     else
@@ -249,7 +249,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
 
     PPDMAUDIOSAMPLE pSamples;
     uint32_t cRead;
-    int rc = audioMixBufAcquire(&pHstStrmOut->MixBuf, cSamplesToSend,
+    int rc = AudioMixBufAcquire(&pHstStrmOut->MixBuf, cSamplesToSend,
                                 &pSamples, &cRead);
     if (   RT_SUCCESS(rc)
         && cRead)
@@ -259,7 +259,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
 
         if (rc == VINF_TRY_AGAIN)
         {
-            rc = audioMixBufAcquire(&pHstStrmOut->MixBuf, cSamplesToSend - cRead,
+            rc = AudioMixBufAcquire(&pHstStrmOut->MixBuf, cSamplesToSend - cRead,
                                     &pSamples, &cRead);
             if (RT_SUCCESS(rc))
                 pDrv->pConsoleVRDPServer->SendAudioSamples(pSamples, cRead, format);
@@ -268,7 +268,7 @@ static DECLCALLBACK(int) drvAudioVRDEPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUDI
         }
     }
 
-    audioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesToSend);
+    AudioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesToSend);
 
     /*
      * Always report back all samples acquired, regardless of whether the
@@ -311,7 +311,7 @@ static DECLCALLBACK(int) drvAudioVRDEControlOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     LogFlowFunc(("enmStreamCmd=%ld\n", enmStreamCmd));
 
-    audioMixBufReset(&pHstStrmOut->MixBuf);
+    AudioMixBufReset(&pHstStrmOut->MixBuf);
 
     return VINF_SUCCESS;
 }
@@ -332,13 +332,13 @@ static DECLCALLBACK(int) drvAudioVRDEControlIn(PPDMIHOSTAUDIO pInterface, PPDMAU
     if (!pDrv->pConsoleVRDPServer)
         return VINF_SUCCESS;
 
-    audioMixBufReset(&pThisStrmIn->MixBuf);
+    AudioMixBufReset(&pThisStrmIn->MixBuf);
 
     /* Initialize only if not already done. */
     int rc;
     if (enmStreamCmd == PDMAUDIOSTREAMCMD_ENABLE)
     {
-        rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEStrmIn, audioMixBufSize(&pThisStrmIn->MixBuf),
+        rc = pDrv->pConsoleVRDPServer->SendAudioInputBegin(NULL, pVRDEStrmIn, AudioMixBufSize(&pThisStrmIn->MixBuf),
                                                            pThisStrmIn->Props.uHz,
                                                            pThisStrmIn->Props.cChannels, pThisStrmIn->Props.cBits);
         if (rc == VERR_NOT_SUPPORTED)
@@ -458,7 +458,7 @@ int AudioVRDE::onVRDEInputData(void *pvContext, const void *pvData, uint32_t cbD
     /** @todo Use CritSect! */
 
     uint32_t cWritten;
-    int rc = audioMixBufWriteCirc(&pHstStrmIn->MixBuf, pvData, cbData, &cWritten);
+    int rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf, pvData, cbData, &cWritten);
     if (RT_SUCCESS(rc))
         pVRDEStrmIn->cSamplesCaptured += cWritten;
 
