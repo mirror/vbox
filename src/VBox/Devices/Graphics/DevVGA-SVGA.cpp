@@ -163,10 +163,10 @@ typedef struct
 *******************************************************************************/
 #ifdef IN_RING3
 # ifdef DEBUG_FIFO_ACCESS
-static FNPGMR3PHYSHANDLER vmsvgaR3FIFOAccessHandler;
+static FNPGMPHYSHANDLER vmsvgaR3FIFOAccessHandler;
 # endif
 # ifdef DEBUG_GMR_ACCESS
-static FNPGMR3PHYSHANDLER vmsvgaR3GMRAccessHandler;
+static FNPGMPHYSHANDLER vmsvgaR3GMRAccessHandler;
 # endif
 #endif
 

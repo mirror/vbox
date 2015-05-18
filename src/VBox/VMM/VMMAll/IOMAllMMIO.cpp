@@ -1787,7 +1787,6 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
 }
 
 
-#ifdef IN_RING3
 /**
  * \#PF Handler callback for MMIO ranges.
  *
@@ -1803,8 +1802,8 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
  * @param   enmOrigin       Who is making the access.
  * @param   pvUser          Pointer to the MMIO range entry.
  */
-DECLCALLBACK(int) iomR3MmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                   PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+PGM_ALL_CB2_DECL(int) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                     PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     STAM_COUNTER_INC(&pVM->iom.s.StatR3MMIOHandler);
@@ -1846,7 +1845,6 @@ DECLCALLBACK(int) iomR3MmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, 
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     return rc;
 }
-#endif /* IN_RING3 */
 
 
 /**

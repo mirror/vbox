@@ -80,7 +80,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
  *                          safe).
  */
 VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind,
-                                                       PFNPGMR3PHYSHANDLER pfnHandlerR3,
+                                                       PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
                                                        RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType)
@@ -142,7 +142,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKI
  *                          safe).
  */
 VMMR3DECL(int) PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
-                                                R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3,
+                                                R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
                                                 const char *pszModR0, const char *pszPfHandlerR0,
                                                 const char *pszModRC, const char *pszPfHandlerRC, const char *pszDesc,
                                                 PPGMPHYSHANDLERTYPE phType)

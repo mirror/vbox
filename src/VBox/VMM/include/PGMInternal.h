@@ -594,7 +594,7 @@ typedef struct PGMPHYSHANDLERTYPEINT
     /** Explicit alignment padding. */
     RTRCPTR                             RCPtrPadding;
     /** Pointer to R3 callback function. */
-    R3PTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
+    R3PTRTYPE(PFNPGMPHYSHANDLER)        pfnHandlerR3;
     /** Pointer to R0 callback function for \#PFs. */
     R0PTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandlerR0;
     /** Description / Name. For easing debugging. */
@@ -4145,6 +4145,7 @@ int             pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHY
 int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
 void            pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
+PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER) pgmPhysRomWriteHandler;
 #ifndef IN_RING3
 DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysPfHandlerRedirectToHC;
 DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysRomWritePfHandler;
@@ -4160,7 +4161,6 @@ int             pgmPhysGetPageExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 int             pgmPhysGetPageAndRangeExSlow(PVM pVM, RTGCPHYS GCPhys, PPPGMPAGE ppPage, PPGMRAMRANGE *ppRam);
 
 #ifdef IN_RING3
-FNPGMR3PHYSHANDLER pgmR3PhysRomWriteHandler;
 void            pgmR3PhysRelinkRamRanges(PVM pVM);
 int             pgmR3PhysRamPreAllocate(PVM pVM);
 int             pgmR3PhysRamReset(PVM pVM);
@@ -4204,9 +4204,12 @@ int             pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE 
 void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint, uint16_t iPte);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, PPGMPAGE pPhysPage, uint16_t u16, uint16_t iShwPT, uint16_t iPte);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage, uint16_t iPte);
-void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, unsigned cbWrite);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER) pgmPoolAccessHandler;
+#ifndef IN_RING3
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)   pgmPoolAccessPfHandler;
+#endif
 
 void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolResetDirtyPages(PVM pVM);

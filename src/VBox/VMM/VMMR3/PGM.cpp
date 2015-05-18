@@ -1455,7 +1455,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
      */
     if (RT_SUCCESS(rc))
         rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
-                                              pgmR3PhysRomWriteHandler,
+                                              pgmPhysRomWriteHandler,
                                               NULL, "pgmPhysRomWritePfHandler",
                                               NULL, "pgmPhysRomWritePfHandler",
                                               "ROM write protection",

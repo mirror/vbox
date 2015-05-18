@@ -131,6 +131,37 @@ typedef enum PGMACCESSTYPE
 } PGMACCESSTYPE;
 
 
+/** @def PGM_ALL_CB_DECL
+ * Macro for declaring a handler callback for all contexts.  The handler
+ * callback is static in ring-3, and exported in RC and R0.
+ * @sa PGM_ALL_CB2_DECL.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+# ifdef __cplusplus
+#  define PGM_ALL_CB_DECL(type)     extern "C" DECLEXPORT(type)
+# else
+#  define PGM_ALL_CB_DECL(type)     DECLEXPORT(type)
+# endif
+#else
+# define PGM_ALL_CB_DECL(type)      static type
+#endif
+
+/** @def PGM_ALL_CB2_DECL
+ * Macro for declaring a handler callback for all contexts.  The handler
+ * callback is hidden in ring-3, and exported in RC and R0.
+ * @sa PGM_ALL_CB2_DECL.
+ */
+#if defined(IN_RC) || defined(IN_RING0)
+# ifdef __cplusplus
+#  define PGM_ALL_CB2_DECL(type)    extern "C" DECLEXPORT(type)
+# else
+#  define PGM_ALL_CB2_DECL(type)    DECLEXPORT(type)
+# endif
+#else
+# define PGM_ALL_CB2_DECL(type)     DECLHIDDEN(type)
+#endif
+
+
 /**
  * \#PF Handler callback for physical access handler ranges in RC and R0.
  *
@@ -169,13 +200,11 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       The origin of this call.
  * @param   pvUser          User argument.
- *
- * @todo    Add pVCpu, possibly replacing pVM.
  */
-typedef DECLCALLBACK(int) FNPGMR3PHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                             PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMPHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                           PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 /** Pointer to PGM access callback. */
-typedef FNPGMR3PHYSHANDLER *PFNPGMR3PHYSHANDLER;
+typedef FNPGMPHYSHANDLER *PFNPGMPHYSHANDLER;
 
 
 /**
@@ -566,12 +595,12 @@ VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhy
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 
 VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind,
-                                                       PFNPGMR3PHYSHANDLER pfnHandlerR3,
+                                                       PFNPGMPHYSHANDLER pfnHandlerR3,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
                                                        RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
 VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
-                                                     R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3,
+                                                     R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
                                                      const char *pszModR0, const char *pszPfHandlerR0,
                                                      const char *pszModRC, const char *pszPfHandlerRC, const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);

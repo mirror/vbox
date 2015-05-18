@@ -113,7 +113,6 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static FNPGMR3PHYSHANDLER pgmR3PoolAccessHandler;
 #ifdef VBOX_WITH_DEBUGGER
 static FNDBGCCMD pgmR3PoolCmdCheck;
 #endif
@@ -282,7 +281,7 @@ int pgmR3PoolInit(PVM pVM)
 
     pPool->hAccessHandlerType = NIL_PGMPHYSHANDLERTYPE;
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
-                                          pgmR3PoolAccessHandler,
+                                          pgmPoolAccessHandler,
                                           NULL, "pgmPoolAccessPfHandler",
                                           NULL, "pgmPoolAccessPfHandler",
                                           "Guest Paging Access Handler",
@@ -487,120 +486,6 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
     pgmUnlock(pVM);
     Assert(pPool->cCurPages <= pPool->cMaxPages);
     return VINF_SUCCESS;
-}
-
-
-
-/**
- * Worker used by pgmR3PoolAccessHandler when it's invoked by an async thread.
- *
- * @param   pPool   The pool.
- * @param   pPage   The page.
- */
-static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
-{
-    /* for the present this should be safe enough I think... */
-    pgmLock(pPool->pVMR3);
-    if (    pPage->fReusedFlushPending
-        &&  pPage->enmKind != PGMPOOLKIND_FREE)
-        pgmPoolFlushPage(pPool, pPage);
-    pgmUnlock(pPool->pVMR3);
-}
-
-
-/**
- * \#PF Handler callback for PT write accesses.
- *
- * The handler can not raise any faults, it's mainly for monitoring write access
- * to certain pages.
- *
- * @returns VINF_SUCCESS if the handler has carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorR3, a);
-    PPGMPOOL        pPool = pVM->pgm.s.pPoolR3;
-    PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    LogFlow(("pgmR3PoolAccessHandler: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
-             GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
-
-    NOREF(pvBuf); NOREF(enmAccessType); NOREF(enmOrigin);
-
-    /*
-     * We don't have to be very sophisticated about this since there are relativly few calls here.
-     * However, we must try our best to detect any non-cpu accesses (disk / networking).
-     *
-     * Just to make life more interesting, we'll have to deal with the async threads too.
-     * We cannot flush a page if we're in an async thread because of REM notifications.
-     */
-    pgmLock(pVM);
-    if (PHYS_PAGE_ADDRESS(GCPhys) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
-    {
-        /* Pool page changed while we were waiting for the lock; ignore. */
-        Log(("CPU%d: pgmR3PoolAccessHandler pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhys), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
-        pgmUnlock(pVM);
-        return VINF_PGM_HANDLER_DO_DEFAULT;
-    }
-
-    Assert(pPage->enmKind != PGMPOOLKIND_FREE);
-
-    /* @todo this code doesn't make any sense. remove the if (!pVCpu) block */
-    if (!pVCpu) /** @todo This shouldn't happen any longer, all access handlers will be called on an EMT. All ring-3 handlers, except MMIO, already own the PGM lock. @bugref{3170} */
-    {
-        Log(("pgmR3PoolAccessHandler: async thread, requesting EMT to flush the page: %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
-             pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
-        STAM_COUNTER_INC(&pPool->StatMonitorR3Async);
-        if (!pPage->fReusedFlushPending)
-        {
-            pgmUnlock(pVM);
-            int rc = VMR3ReqCallVoidNoWait(pPool->pVMR3, VMCPUID_ANY, (PFNRT)pgmR3PoolFlushReusedPage, 2, pPool, pPage);
-            AssertRCReturn(rc, rc);
-            pgmLock(pVM);
-            pPage->fReusedFlushPending = true;
-            pPage->cModifications += 0x1000;
-        }
-
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
-        /** @todo r=bird: making unsafe assumption about not crossing entries here! */
-        while (cbBuf > 4)
-        {
-            cbBuf -= 4;
-            pvPhys = (uint8_t *)pvPhys + 4;
-            GCPhys += 4;
-            pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
-        }
-        STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
-    }
-    else if (    (   pPage->cModifications < 96 /* it's cheaper here. */
-                  || pgmPoolIsPageLocked(pPage)
-                  )
-             &&  cbBuf <= 4)
-    {
-        /* Clear the shadow entry. */
-        if (!pPage->cModifications++)
-            pgmPoolMonitorModifiedInsert(pPool, pPage);
-        /** @todo r=bird: making unsafe assumption about not crossing entries here! */
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvPhys, 0 /* unknown write size */);
-        STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
-    }
-    else
-    {
-        pgmPoolMonitorChainFlush(pPool, pPage); /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
-        STAM_PROFILE_STOP_EX(&pPool->StatMonitorR3, &pPool->StatMonitorR3FlushPage, a);
-    }
-    pgmUnlock(pVM);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
 

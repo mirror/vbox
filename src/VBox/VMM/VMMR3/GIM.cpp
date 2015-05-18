@@ -69,7 +69,7 @@
 *******************************************************************************/
 static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass);
-static FNPGMR3PHYSHANDLER gimR3Mmio2WriteHandler;
+static FNPGMPHYSHANDLER gimR3Mmio2WriteHandler;
 
 
 /**

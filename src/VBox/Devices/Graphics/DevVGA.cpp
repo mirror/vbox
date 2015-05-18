@@ -267,12 +267,10 @@ typedef WINHDR *PWINHDR;
 *******************************************************************************/
 #ifndef IN_RING3
 RT_C_DECLS_BEGIN
-DECLEXPORT(FNPGMRZPHYSPFHANDLER) vgaLbfAccessPfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)  vgaLbfAccessPfHandler;
 RT_C_DECLS_END
 #endif
-#ifdef IN_RING3
-static FNPGMR3PHYSHANDLER vgaR3LFBAccessHandler;
-#endif
+PGM_ALL_CB_DECL(FNPGMPHYSHANDLER) vgaLFBAccessHandler;
 
 
 /*******************************************************************************
@@ -3550,14 +3548,14 @@ PDMBOTHCBDECL(int) vgaLbfAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
 
     return vgaLFBAccess(pVM, pThis, GCPhysFault, pvFault);
 }
+#endif /* !IN_RING3 */
 
-#else /* IN_RING3 */
 
 /**
- * @callback_method_impl{FNPGMR3PHYSHANDLER, HC access handler for the LFB.}
+ * @callback_method_impl{FNPGMPHYSHANDLER, HC access handler for the LFB.}
  */
-static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                               PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+PGM_ALL_CB_DECL(int) vgaLFBAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     int         rc;
@@ -3571,7 +3569,7 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS G
     AssertMsg(rc <= VINF_SUCCESS, ("rc=%Rrc\n", rc));
     return rc;
 }
-#endif /* IN_RING3 */
+
 
 /* -=-=-=-=-=- All rings: VGA BIOS I/Os -=-=-=-=-=- */
 
@@ -6216,7 +6214,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * Register access handler types.
      */
     rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
-                                          vgaR3LFBAccessHandler,
+                                          vgaLFBAccessHandler,
                                           g_DeviceVga.szR0Mod, "vgaLbfAccessPfHandler",
                                           g_DeviceVga.szRCMod, "vgaLbfAccessPfHandler",
                                           "VGA LFB", &pThis->hLfbAccessHandlerType);

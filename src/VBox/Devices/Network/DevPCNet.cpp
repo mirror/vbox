@@ -632,6 +632,14 @@ AssertCompileSize(RMD, 16);
 
 static void pcnetPollTimerStart(PPCNETSTATE pThis);
 static int  pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread);
+#ifdef PCNET_NO_POLLING
+PGM_ALL_CB_DECL(FNPGMPHYSHANDLER)           pcnetHandleRingWrite;
+# ifndef IN_RING3
+RT_C_DECLS_BEGIN
+DECLEXPORT(CTX_SUFF(FNPGM,PHYSPFHANDLER))   pcnetHandleRingWritePf;
+RT_C_DECLS_END
+# endif
+#endif
 
 
 
@@ -1088,11 +1096,8 @@ static int      pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t va
 
 
 #ifdef PCNET_NO_POLLING
-# ifndef IN_RING3
-RT_C_DECLS_BEGIN
-DECLEXPORT(CTX_SUFF(FNPGM,PHYSPFHANDLER)) pcnetHandleRingWritePf;
-RT_C_DECLS_END
 
+# ifndef IN_RING3
 /**
  * #PF Virtual Handler callback for Guest write access to the ring descriptor page(pThis)
  *
@@ -1146,13 +1151,11 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
     STAM_COUNTER_INC(&CTXALLSUFF(pThis->StatRingWriteFailed)); ;
     return VINF_IOM_R3_MMIO_WRITE; /* handle in ring3 */
 }
+#endif /* !IN_RING3 */
 
-# else /* IN_RING3 */
-
-static FNPGMR3PHYSHANDLER pcnetR3HandleRingWrite;
 
 /**
- * #PF Handler callback for physical access handler ranges (MMIO among others) in HC.
+ * #PF Handler callback for physical access handler ranges (MMIO among others).
  *
  * The handler can not raise any faults, it's mainly for monitoring write access
  * to certain pages.
@@ -1169,13 +1172,13 @@ static FNPGMR3PHYSHANDLER pcnetR3HandleRingWrite;
  * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pcnetR3HandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+PGM_ALL_CB_DECL(int) pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                          PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
     PPCNETSTATE pThis   = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
 
-    Log(("#%d pcnetR3HandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
+    Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatRingWrite));
     if (GCPhys >= pThis->GCRDRA && GCPhys < pcnetRdraAddr(pThis, 0))
@@ -1205,7 +1208,6 @@ static DECLCALLBACK(int) pcnetR3HandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS 
     }
     return VINF_SUCCESS;
 }
-# endif /* !IN_RING3 */
 #endif /* PCNET_NO_POLLING */
 
 static void pcnetSoftReset(PPCNETSTATE pThis)
@@ -4977,7 +4979,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
 
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
-                                          pcnetR3HandleRingWrite,
+                                          pcnetHandleRingWrite,
                                           g_DevicePCNet.szR0Mod, "pcnetHandleRingWritePf",
                                           g_DevicePCNet.szRCMod, "pcnetHandleRingWritePf",
                                           "PCNet ring write access handler",
