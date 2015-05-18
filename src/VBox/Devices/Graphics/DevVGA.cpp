@@ -262,6 +262,18 @@ typedef WINHDR *PWINHDR;
 #define LOGO_MAX_HEIGHT      480
 #define LOGO_MAX_SIZE        LOGO_MAX_WIDTH * LOGO_MAX_HEIGHT * 4
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifndef IN_RING3
+RT_C_DECLS_BEGIN
+DECLEXPORT(FNPGMRZPHYSPFHANDLER) vgaLbfAccessPfHandler;
+RT_C_DECLS_END
+#endif
+#ifdef IN_RING3
+static FNPGMR3PHYSHANDLER vgaR3LFBAccessHandler;
+#endif
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -3524,14 +3536,10 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 
 
 #ifndef IN_RING3
-RT_C_DECLS_BEGIN
-DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER)) vgaLbfAccessPfHandler;
-RT_C_DECLS_END
-
 /**
  * @callback_method_impl{FNPGMRCPHYSHANDLER, \#PF Handler for VBE LFB access.}
  */
-PDMBOTHCBDECL(int) vgaLbfAccessPfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+PDMBOTHCBDECL(int) vgaLbfAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                          RTGCPHYS GCPhysFault, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
@@ -3548,13 +3556,14 @@ PDMBOTHCBDECL(int) vgaLbfAccessPfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
 /**
  * @callback_method_impl{FNPGMR3PHYSHANDLER, HC access handler for the LFB.}
  */
-static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                               PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     int         rc;
     Assert(pThis);
     Assert(GCPhys >= pThis->GCPhysVRAM);
-    NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmAccessType);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmAccessType); NOREF(enmOrigin);
 
     rc = vgaLFBAccess(pVM, pThis, GCPhys, 0);
     if (RT_SUCCESS(rc))

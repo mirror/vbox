@@ -157,6 +157,23 @@ typedef struct
 
 } VMSVGASTATE, *PVMSVGASTATE;
 
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef IN_RING3
+# ifdef DEBUG_FIFO_ACCESS
+static FNPGMR3PHYSHANDLER vmsvgaR3FIFOAccessHandler;
+# endif
+# ifdef DEBUG_GMR_ACCESS
+static FNPGMR3PHYSHANDLER vmsvgaR3GMRAccessHandler;
+# endif
+#endif
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 #ifdef IN_RING3
 
 /**
@@ -1857,20 +1874,23 @@ static int vmsvgaFIFOAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, bool fWri
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             VM Handle.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) vmsvgaR3FIFOAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) vmsvgaR3FIFOAccessHandler(PVM pVM, PVMCPU pVCpu RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                   PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     int         rc;
     Assert(pThis);
     Assert(GCPhys >= pThis->GCPhysVRAM);
-    NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin);
 
     rc = vmsvgaFIFOAccess(pVM, pThis, GCPhys, enmAccessType == PGMACCESSTYPE_WRITE);
     if (RT_SUCCESS(rc))
@@ -1889,19 +1909,22 @@ static DECLCALLBACK(int) vmsvgaR3FIFOAccessHandler(PVM pVM, RTGCPHYS GCPhys, voi
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             VM Handle.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) vmsvgaR3GMRAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) vmsvgaR3GMRAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                  PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
     Assert(pThis);
     PVMSVGASTATE pSVGAState = (PVMSVGASTATE)pThis->svga.pSVGAState;
-    NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin);
 
     Log(("vmsvgaR3GMRAccessHandler: GMR access to page %RGp\n", GCPhys));
 

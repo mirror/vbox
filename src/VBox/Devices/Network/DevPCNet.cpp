@@ -1098,16 +1098,17 @@ RT_C_DECLS_END
  *
  * @return  VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         VM Handle.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                        RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    PPCNETSTATE pThis   = (PPCNETSTATE)pvUser;
+    PPCNETSTATE pThis = (PPCNETSTATE)pvUser;
 
     Log(("#%d pcnetHandleRingWritePf: write to %#010x\n", PCNET_INST_NR, GCPhysFault));
 
@@ -1148,6 +1149,8 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCOR
 
 # else /* IN_RING3 */
 
+static FNPGMR3PHYSHANDLER pcnetR3HandleRingWrite;
+
 /**
  * #PF Handler callback for physical access handler ranges (MMIO among others) in HC.
  *
@@ -1157,15 +1160,17 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCOR
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             VM Handle.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pcnetR3HandleRingWrite(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf,
-                                                size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pcnetR3HandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PPDMDEVINS  pDevIns = (PPDMDEVINS)pvUser;
     PPCNETSTATE pThis   = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
