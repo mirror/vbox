@@ -1013,23 +1013,11 @@ void vusbDevSetAddress(PVUSBDEV pDev, uint8_t u8Address)
 
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     AssertPtrReturnVoid(pRh);
-    if (pDev->u8Address == VUSB_DEFAULT_ADDRESS)
-        pRh->pDefaultAddress = NULL;
 
     vusbDevAddressUnHash(pDev);
 
     if (u8Address == VUSB_DEFAULT_ADDRESS)
-    {
-        if (pRh->pDefaultAddress != NULL)
-        {
-            vusbDevAddressUnHash(pRh->pDefaultAddress);
-            vusbDevSetState(pRh->pDefaultAddress, VUSB_DEVICE_STATE_POWERED);
-            Log(("2 DEFAULT ADDRS\n"));
-        }
-
-        pRh->pDefaultAddress = pDev;
         vusbDevSetState(pDev, VUSB_DEVICE_STATE_DEFAULT);
-    }
     else
         vusbDevSetState(pDev, VUSB_DEVICE_STATE_ADDRESS);
 
@@ -1178,7 +1166,8 @@ int vusbDevUrbIoThreadCreate(PVUSBDEV pDev)
 
     ASMAtomicXchgBool(&pDev->fTerminate, false);
     rc = RTThreadCreateF(&pDev->hUrbIoThread, vusbDevUrbIoThread, pDev, 0, RTTHREADTYPE_IO,
-                         RTTHREADFLAGS_WAITABLE, "USBDevIo-%d", pDev->i16Port);
+                         RTTHREADFLAGS_WAITABLE, "%s-%d", pDev->pUsbIns->pReg->szName,
+                         pDev->pUsbIns->iInstance);
     if (RT_SUCCESS(rc))
     {
         /* Wait for it to become active. */
@@ -1232,8 +1221,6 @@ int vusbDevDetach(PVUSBDEV pDev)
     PVUSBROOTHUB pRh = vusbDevGetRh(pDev);
     if (!pRh)
         AssertMsgFailedReturn(("Not attached!\n"), VERR_VUSB_DEVICE_NOT_ATTACHED);
-    if (pRh->pDefaultAddress == pDev)
-        pRh->pDefaultAddress = NULL;
 
     pDev->pHub->pOps->pfnDetach(pDev->pHub, pDev);
     pDev->i16Port = -1;
