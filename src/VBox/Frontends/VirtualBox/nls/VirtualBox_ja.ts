@@ -3011,47 +3011,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">表示倍率</translation>
+        <translation>表示倍率</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">スケールしない HiDPI 出力</translation>
+        <translation>スケールしない HiDPI 出力</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">有効</translation>
+        <translation>有効</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>メニューバー</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">有効</translation>
+        <translation>有効</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>ステータスバー</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">有効</translation>
+        <translation>有効</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">無効</translation>
+        <translation>無効</translation>
     </message>
 </context>
 <context>
@@ -5197,43 +5197,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>スクリーン(&amp;S)</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>表示倍率:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>この設定はゲストスクリーンの表示倍率を調整します。</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation type="unfinished">100%</translation>
+        <translation>100%</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation type="unfinished">200%</translation>
+        <translation>200%</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation type="unfinished">HiDPI:</translation>
+        <translation>HiDPI:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>ゲストスクリーンの内容をホストのスクリーン解像度に合わせてスケールする処理を行いません。</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished">スケールしない HiDPI 出力を使用(&amp;U)</translation>
+        <translation>スケールしない HiDPI 出力を使用(&amp;U)</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>アクセラレーション:</translation>
     </message>
 </context>
 <context>
@@ -6885,7 +6885,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>暗号化の鍵:</translation>
     </message>
 </context>
 <context>
@@ -9384,11 +9384,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt; のネットワークアダプターケーブルの接続に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt; のネットワークアダプターケーブルの切断に失敗しました。</translation>
     </message>
 </context>
 <context>
@@ -15736,11 +15736,11 @@ USB フィルターを追加または除去するにはコンテキストメニ�
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;暗号化なし&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>暗号化の鍵:</translation>
     </message>
 </context>
 <context>
