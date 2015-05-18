@@ -1433,6 +1433,20 @@ uint32_t lsbindex (uint32_t u)
 }
 #endif
 
+/* Convert SB16 to SB Pro mixer volume (left). */
+static inline void sb16ConvVolumeL(PSB16STATE pThis, unsigned reg, uint8_t val)
+{
+    /* High nibble in SBP mixer. */
+    pThis->mixer_regs[reg] = (pThis->mixer_regs[reg] & 0x0f) | (val & 0xf0);
+}
+
+/* Convert SB16 to SB Pro mixer volume (right). */
+static inline void sb16ConvVolumeR(PSB16STATE pThis, unsigned reg, uint8_t val)
+{
+    /* Low nibble in SBP mixer. */
+    pThis->mixer_regs[reg] = (pThis->mixer_regs[reg] & 0xf0) | (val >> 4);
+}
+
 static IO_WRITE_PROTO(mixer_write_datab)
 {
     PSB16STATE  pThis = (PSB16STATE)opaque;
@@ -1448,45 +1462,83 @@ static IO_WRITE_PROTO(mixer_write_datab)
             sb16MixerReset(pThis);
             /* And update the actual volume, too. */
             fUpdateMaster = true;
-            fUpdateStream  = true;
+            fUpdateStream = true;
             break;
 
         case 0x04:
             /* Translate from old style stream volume (L/R). */
-            pThis->mixer_regs[0x32] = val & 0xff;
-            pThis->mixer_regs[0x33] = val << 4;
+            pThis->mixer_regs[0x32] = (val & 0xf0) >> 3;
+            pThis->mixer_regs[0x33] = (val & 0x0f) << 1;
             fUpdateStream = true;
             break;
 
         case 0x22:
             /* Translate from old style master volume (L/R). */
-            pThis->mixer_regs[0x30] = val & 0xff;
-            pThis->mixer_regs[0x31] = val << 4;
+            pThis->mixer_regs[0x30] = (val & 0xf0) >> 3;
+            pThis->mixer_regs[0x31] = (val & 0x0f) << 1;
             fUpdateMaster = true;
             break;
 
-        case 0x30:
-            /* Translate to old style master volume (L). */
-            pThis->mixer_regs[0x22] = (pThis->mixer_regs[0x22] & 0x0f) | val;
+        case 0x26:
+            /* Translate from old style MIDI volume (L/R). */
+            pThis->mixer_regs[0x34] = (val & 0xf0) >> 3;
+            pThis->mixer_regs[0x35] = (val & 0x0f) << 1;
+            break;
+
+        case 0x28:
+            /* Translate from old style CD volume (L/R). */
+            pThis->mixer_regs[0x36] = (val & 0xf0) >> 3;
+            pThis->mixer_regs[0x37] = (val & 0x0f) << 1;
+            break;
+
+        case 0x2E:
+            /* Translate from old style line volume (L/R). */
+            pThis->mixer_regs[0x38] = (val & 0xf0) >> 3;
+            pThis->mixer_regs[0x39] = (val & 0x0f) << 1;
+            break;
+
+        case 0x30:  /* Translate to old style master volume (L). */
+            sb16ConvVolumeL(pThis, 0x22, val);
             fUpdateMaster = true;
             break;
 
-        case 0x31:
-            /* Translate to old style master volume (R). */
-            pThis->mixer_regs[0x22] = (pThis->mixer_regs[0x22] & 0xf0) | (val >> 4);
+        case 0x31:  /* Translate to old style master volume (R). */
+            sb16ConvVolumeR(pThis, 0x22, val);
             fUpdateMaster = true;
             break;
 
-        case 0x32:
-            /* Translate to old style stream volume (L). */
-            pThis->mixer_regs[0x04] = (pThis->mixer_regs[0x04] & 0x0f) | val;
+        case 0x32:  /* Translate to old style voice volume (L). */
+            sb16ConvVolumeL(pThis, 0x04, val);
             fUpdateStream = true;
             break;
 
-        case 0x33:
-            /* Translate to old style stream volume (R). */
-            pThis->mixer_regs[0x04] = (pThis->mixer_regs[0x04] & 0xf0) | (val >> 4);
+        case 0x33:  /* Translate to old style voice volume (R). */
+            sb16ConvVolumeR(pThis, 0x04, val);
             fUpdateStream = true;
+            break;
+
+        case 0x34:  /* Translate to old style MIDI volume (L). */
+            sb16ConvVolumeL(pThis, 0x26, val);
+            break;
+
+        case 0x35:  /* Translate to old style MIDI volume (R). */
+            sb16ConvVolumeR(pThis, 0x26, val);
+            break;
+
+        case 0x36:  /* Translate to old style CD volume (L). */
+            sb16ConvVolumeL(pThis, 0x28, val);
+            break;
+
+        case 0x37:  /* Translate to old style CD volume (R). */
+            sb16ConvVolumeR(pThis, 0x28, val);
+            break;
+
+        case 0x38:  /* Translate to old style line volume (L). */
+            sb16ConvVolumeL(pThis, 0x2E, val);
+            break;
+
+        case 0x39:  /* Translate to old style line volume (R). */
+            sb16ConvVolumeR(pThis, 0x2E, val);
             break;
 
         case 0x80:
