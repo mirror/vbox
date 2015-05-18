@@ -1970,6 +1970,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
     SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
+#if 0
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
     {
@@ -1979,6 +1980,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
             pDrv->Out.pStrmOut = NULL;
         }
     }
+#endif
 #else
     AUD_close_out (&pThis->card, pThis->voice);
     pThis->voice = NULL;
@@ -2019,6 +2021,10 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
         sb16Control(pThis, 1);
         sb16SpeakerControl(pThis, pThis->speaker);
     }
+
+    /* Update the master (mixer) and PCM out volumes. */
+    sb16SetMasterVolume(pThis);
+    sb16SetPcmOutVolume(pThis);
 
     return VINF_SUCCESS;
 }
