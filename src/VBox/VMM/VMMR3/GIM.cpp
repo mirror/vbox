@@ -69,6 +69,7 @@
 *******************************************************************************/
 static DECLCALLBACK(int) gimR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) gimR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion, uint32_t uPass);
+static FNPGMR3PHYSHANDLER gimR3Mmio2WriteHandler;
 
 
 /**
@@ -485,16 +486,18 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
  * should do (like throwing #GP faults).
  *
  * @returns VBox status code.
- * @param pVM               Pointer to the VM.
- * @param GCPhys            The guest-physical address of the region.
- * @param pvPhys            Pointer to the region in the guest address space.
- * @param pvBuf             Pointer to the data being read/written.
- * @param cbBuf             The size of the buffer in @a pvBuf.
- * @param enmAccessType     The type of access.
- * @param pvUser            User argument (NULL, not used).
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
+ * @param   GCPhys          The guest-physical address of the region.
+ * @param   pvPhys          Pointer to the region in the guest address space.
+ * @param   pvBuf           Pointer to the data being read/written.
+ * @param   cbBuf           The size of the buffer in @a pvBuf.
+ * @param   enmAccessType   The type of access.
+ * @param   enmOrigin       Who is making the access.
+ * @param   pvUser          User argument (NULL, not used).
  */
-static DECLCALLBACK(int) gimR3Mmio2WriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     /*
      * Ignore writes to the mapped MMIO2 page.

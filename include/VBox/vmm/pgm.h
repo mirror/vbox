@@ -120,40 +120,6 @@ typedef enum PGMPHYSHANDLERKIND
 } PGMPHYSHANDLERKIND;
 
 /**
- * \#PF Handler callback for physical access handler ranges in RC.
- *
- * @returns VBox status code (appropriate for RC return).
- * @param   pVM         VM Handle.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- *                      NULL on DMA and other non CPU access.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
- */
-typedef DECLCALLBACK(int) FNPGMRCPHYSPFHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                               RTGCPHYS GCPhysFault, void *pvUser);
-/** Pointer to PGM access callback. */
-typedef FNPGMRCPHYSPFHANDLER *PFNPGMRCPHYSPFHANDLER;
-
-/**
- * \#PF Handler callback for physical access handler ranges in R0.
- *
- * @returns VBox status code (appropriate for R0 return).
- * @param   pVM         VM Handle.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- *                      NULL on DMA and other non CPU access.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
- */
-typedef DECLCALLBACK(int) FNPGMR0PHYSPFHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                               RTGCPHYS GCPhysFault, void *pvUser);
-/** Pointer to PGM access callback. */
-typedef FNPGMR0PHYSPFHANDLER *PFNPGMR0PHYSPFHANDLER;
-
-/**
  * Guest Access type
  */
 typedef enum PGMACCESSTYPE
@@ -164,6 +130,27 @@ typedef enum PGMACCESSTYPE
     PGMACCESSTYPE_WRITE
 } PGMACCESSTYPE;
 
+
+/**
+ * \#PF Handler callback for physical access handler ranges in RC and R0.
+ *
+ * @returns VBox status code (appropriate for RC return).
+ * @param   pVM         VM Handle.
+ * @param   pVCpu           Pointer to the cross context CPU context for the
+ *                          calling EMT.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pRegFrame   Trap register frame.
+ *                      NULL on DMA and other non CPU access.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      User argument.
+ */
+typedef DECLCALLBACK(int) FNPGMRZPHYSPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+                                               RTGCPHYS GCPhysFault, void *pvUser);
+/** Pointer to PGM access callback. */
+typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
+
+
 /**
  * \#PF Handler callback for physical access handler ranges (MMIO among others) in HC.
  *
@@ -173,17 +160,20 @@ typedef enum PGMACCESSTYPE
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             VM Handle.
+ * @param   pVCpu           Pointer to the cross context CPU context for the
+ *                          calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       The origin of this call.
  * @param   pvUser          User argument.
  *
  * @todo    Add pVCpu, possibly replacing pVM.
  */
-typedef DECLCALLBACK(int) FNPGMR3PHYSHANDLER(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                             PGMACCESSTYPE enmAccessType, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMR3PHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                             PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMR3PHYSHANDLER *PFNPGMR3PHYSHANDLER;
 
@@ -221,7 +211,7 @@ typedef enum PGMVIRTHANDLERKIND
  *                          (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNPGMRCVIRTPFHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+typedef DECLCALLBACK(int) FNPGMRCVIRTPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                                RTGCPTR pvRange, uintptr_t offRange, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
@@ -577,8 +567,8 @@ VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t 
 
 VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind,
                                                        PFNPGMR3PHYSHANDLER pfnHandlerR3,
-                                                       R0PTRTYPE(PFNPGMR0PHYSPFHANDLER) pfnPfHandlerR0,
-                                                       RCPTRTYPE(PFNPGMRCPHYSPFHANDLER) pfnPfHandlerRC,
+                                                       R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
+                                                       RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
 VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
                                                      R3PTRTYPE(PFNPGMR3PHYSHANDLER) pfnHandlerR3,

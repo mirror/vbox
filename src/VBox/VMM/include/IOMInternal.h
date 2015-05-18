@@ -422,10 +422,10 @@ PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *p
 #endif /* IN_RING3 */
 
 #ifndef IN_RING3
-DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER))    iomMmioPfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandler;
 #endif
 #ifdef IN_RING3
-FNPGMR3PHYSHANDLER                          iomR3MmioHandler;
+FNPGMR3PHYSHANDLER                  iomR3MmioHandler;
 #endif
 
 /* IOM locking helpers. */

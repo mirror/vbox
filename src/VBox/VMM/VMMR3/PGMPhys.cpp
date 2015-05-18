@@ -3501,22 +3501,24 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                           PGMACCESSTYPE enmAccessType, void *pvUser)
+DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                           PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     PPGMROMRANGE    pRom     = (PPGMROMRANGE)pvUser;
     const uint32_t  iPage    = (GCPhys - pRom->GCPhys) >> PAGE_SHIFT;
     Assert(iPage < (pRom->cb >> PAGE_SHIFT));
     PPGMROMPAGE     pRomPage = &pRom->aPages[iPage];
     Log5(("pgmR3PhysRomWriteHandler: %d %c %#08RGp %#04zx\n", pRomPage->enmProt, enmAccessType == PGMACCESSTYPE_READ ? 'R' : 'W', GCPhys, cbBuf));
-    NOREF(pvPhys);
+    NOREF(pVCpu); NOREF(pvPhys); NOREF(enmOrigin);
 
     if (enmAccessType == PGMACCESSTYPE_READ)
     {

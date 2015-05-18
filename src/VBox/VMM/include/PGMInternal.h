@@ -590,13 +590,13 @@ typedef struct PGMPHYSHANDLERTYPEINT
     /** The PGM_PAGE_HNDL_PHYS_STATE_XXX value corresponding to enmKind. */
     uint32_t                            uState;
     /** Pointer to RC callback function for \#PFs. */
-    RCPTRTYPE(PFNPGMRCPHYSPFHANDLER)    pfnPfHandlerRC;
+    RCPTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandlerRC;
     /** Explicit alignment padding. */
     RTRCPTR                             RCPtrPadding;
     /** Pointer to R3 callback function. */
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)      pfnHandlerR3;
     /** Pointer to R0 callback function for \#PFs. */
-    R0PTRTYPE(PFNPGMR0PHYSPFHANDLER)    pfnPfHandlerR0;
+    R0PTRTYPE(PFNPGMRZPHYSPFHANDLER)    pfnPfHandlerR0;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 } PGMPHYSHANDLERTYPEINT;
@@ -4146,8 +4146,8 @@ int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GC
 int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
 void            pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 #ifndef IN_RING3
-DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER)) pgmPhysPfHandlerRedirectToHC;
-DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER)) pgmPhysRomWritePfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysPfHandlerRedirectToHC;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysRomWritePfHandler;
 #endif
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysInvalidRamRangeTlbs(PVM pVM);

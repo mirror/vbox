@@ -1734,18 +1734,20 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
  *
  * @returns VBox status code (appropriate for GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pCtxCore    Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-DECLEXPORT(int) iomMmioPfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault,
+DECLEXPORT(int) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault,
                                  RTGCPHYS GCPhysFault, void *pvUser)
 {
     LogFlow(("iomMmioPfHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
-    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, VMMGetCpu(pVM), (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
+    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
@@ -1792,23 +1794,24 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          Pointer to the MMIO range entry.
  */
-DECLCALLBACK(int) iomR3MmioHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                   PGMACCESSTYPE enmAccessType, void *pvUser)
+DECLCALLBACK(int) iomR3MmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                   PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
-    PVMCPU        pVCpu = VMMGetCpu(pVM);
     PIOMMMIORANGE pRange = (PIOMMMIORANGE)pvUser;
     STAM_COUNTER_INC(&pVM->iom.s.StatR3MMIOHandler);
 
     AssertMsg(cbBuf >= 1 && cbBuf <= 16, ("%zu\n", cbBuf));
     AssertPtr(pRange);
-    NOREF(pvPhys);
+    NOREF(pvPhys); NOREF(enmOrigin);
 
     /*
      * Validate the range.

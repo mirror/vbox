@@ -517,24 +517,25 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  * @returns VINF_SUCCESS if the handler has carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           The cross context CPU structure for the calling EMT.
  * @param   GCPhys          The physical address the guest is writing to.
  * @param   pvPhys          The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making the access.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                                PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorR3, a);
     PPGMPOOL        pPool = pVM->pgm.s.pPoolR3;
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    PVMCPU          pVCpu = VMMGetCpu(pVM);
     LogFlow(("pgmR3PoolAccessHandler: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
 
-    NOREF(pvBuf); NOREF(enmAccessType);
+    NOREF(pvBuf); NOREF(enmAccessType); NOREF(enmOrigin);
 
     /*
      * We don't have to be very sophisticated about this since there are relativly few calls here.

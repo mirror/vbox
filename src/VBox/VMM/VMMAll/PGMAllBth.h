@@ -259,7 +259,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                     *pfLockTaken = false;
                 }
 
-                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPhysFault, pvUser);
 
 #  ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
@@ -329,11 +329,12 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
                 RTGCPTR GCPtrStart = pCur->Core.Key;
+                void *pvUser = pCur->CTX_SUFF(pvUser);
                 pgmUnlock(pVM);
                 *pfLockTaken = false;
 
-                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPtrStart, pvFault - GCPtrStart,
-                                                      pCur->pvUserRC);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPtrStart,
+                                                      pvFault - GCPtrStart, pvUser);
 
 #    ifdef VBOX_WITH_STATISTICS
                 pgmLock(pVM);
@@ -369,6 +370,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
 #   ifdef IN_RC
                     STAM_PROFILE_START(&pCur->Stat, h);
                     RTGCPTR GCPtrStart = pCur->Core.Key;
+                    void *pvUser = pCur->CTX_SUFF(pvUser);
                     pgmUnlock(pVM);
                     *pfLockTaken = false;
 
@@ -376,7 +378,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
                                 + (pvFault    & PAGE_OFFSET_MASK)
                                 - (GCPtrStart & PAGE_OFFSET_MASK);
                     Assert(off < pCur->cb);
-                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, GCPtrStart, off, pCur->pvUserRC);
+                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, GCPtrStart, off, pvUser);
 
 #    ifdef VBOX_WITH_STATISTICS
                     pgmLock(pVM);
@@ -720,9 +722,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 #   ifdef IN_RC
                     STAM_PROFILE_START(&pCur->Stat, h);
                     PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
+                    void *pvUser = pCur->CTX_SUFF(pvUser);
                     pgmUnlock(pVM);
-                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key,
-                                                          pCur->pvUserRC);
+                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
+                                                          pvFault - pCur->Core.Key, pvUser);
                     pgmLock(pVM);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else
@@ -815,9 +818,10 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             {
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
+                void *pvUser = pCur->CTX_SUFF(pvUser);
                 pgmUnlock(pVM);
-                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, uErr, pRegFrame, pvFault, pCur->Core.Key, pvFault - pCur->Core.Key,
-                                                      pCur->pvUserRC);
+                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
+                                                      pvFault - pCur->Core.Key, pvUser);
                 pgmLock(pVM);
                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else

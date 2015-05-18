@@ -586,7 +586,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
                 pgmUnlock(pVM);
 
                 Log6(("PGMR0Trap0eHandlerNPMisconfig: calling %p(,%#x,,%RGp,%p)\n", pHandlerType->CTX_SUFF(pfnPfHandler), uErr, GCPhysFault, pvUser));
-                rc = pHandlerType->CTX_SUFF(pfnPfHandler)(pVM, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
+                rc = pHandlerType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr == UINT32_MAX ? RTGCPTR_MAX : uErr, pRegFrame,
                                                           GCPhysFault, GCPhysFault, pvUser);
 
 #ifdef VBOX_WITH_STATISTICS

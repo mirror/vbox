@@ -57,16 +57,18 @@
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-VMMDECL(int) pgmPhysPfHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+VMMDECL(int) pgmPhysPfHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                           RTGCPHYS GCPhysFault, void *pvUser)
 {
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(GCPhysFault); NOREF(pvUser);
+    NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(GCPhysFault); NOREF(pvUser);
     return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_R3_MMIO_WRITE : VINF_IOM_R3_MMIO_READ;
 }
 
@@ -77,19 +79,20 @@ VMMDECL(int) pgmPhysPfHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument. Pointer to the ROM range structure.
  */
-DECLEXPORT(int) pgmPhysRomWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) pgmPhysRomWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                          RTGCPHYS GCPhysFault, void *pvUser)
 {
     int             rc;
     PPGMROMRANGE    pRom = (PPGMROMRANGE)pvUser;
     uint32_t        iPage = (GCPhysFault - pRom->GCPhys) >> PAGE_SHIFT;
-    PVMCPU          pVCpu = VMMGetCpu(pVM);
     NOREF(uErrorCode); NOREF(pvFault);
 
     Assert(uErrorCode & X86_TRAP_PF_RW); /* This shall not be used for read access! */
@@ -2130,7 +2133,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
         PGM_LOCK_ASSERT_OWNER(pVM);
         /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
         pgmUnlock(pVM);
-        rc = pfnHandler(pVM, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, pvUser);
+        rc = pfnHandler(pVM, pVCpu, GCPhys, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, enmOrigin, pvUser);
         pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
         pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2390,7 +2393,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 PGM_LOCK_ASSERT_OWNER(pVM);
                 /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
                 pgmUnlock(pVM);
-                rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
+                rc = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
                 pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
                 pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2616,7 +2619,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             PGM_LOCK_ASSERT_OWNER(pVM);
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             pgmUnlock(pVM);
-            rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
+            rc = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
             pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2691,7 +2694,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             PGM_LOCK_ASSERT_OWNER(pVM);
             /* Release the PGM lock as MMIO handlers take the IOM lock. (deadlock prevention) */
             pgmUnlock(pVM);
-            rc = pfnHandler(pVM, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, pvUser);
+            rc = pfnHandler(pVM, pVCpu, GCPhys, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE, enmOrigin, pvUser);
             pgmLock(pVM);
 # ifdef VBOX_WITH_STATISTICS
             pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);

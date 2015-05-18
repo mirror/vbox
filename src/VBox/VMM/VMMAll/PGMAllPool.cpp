@@ -51,7 +51,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 #ifndef IN_RING3
-DECLEXPORT(CTX_MID(FNPGM,PHYSPFHANDLER)) pgmPoolAccessPfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPoolAccessPfHandler;
 #endif
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind);
@@ -1050,6 +1050,8 @@ DECLINLINE(int) pgmPoolAccessPfHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPo
  *
  * @returns VBox status code (appropriate for GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  *                      NULL on DMA and other non CPU access.
@@ -1057,13 +1059,12 @@ DECLINLINE(int) pgmPoolAccessPfHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPo
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-DECLEXPORT(int) pgmPoolAccessPfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) pgmPoolAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                        RTGCPHYS GCPhysFault, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), a);
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
-    PVMCPU          pVCpu = VMMGetCpu(pVM);
     unsigned        cMaxModifications;
     bool            fForcedFlush = false;
     NOREF(uErrorCode);
