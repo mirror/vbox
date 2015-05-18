@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,12 +24,13 @@
  *
  * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address start reading from.
+ * @param   enmOrigin       Who is calling.
  */
-VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
+VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys, PGMACCESSORIGIN enmOrigin)
 {
     Assert(VM_IS_EMT(pVM));
     PGMPHYS_DATATYPE val;
-    PGMPhysRead(pVM, GCPhys, &val, sizeof(val));
+    PGMPhysRead(pVM, GCPhys, &val, sizeof(val), enmOrigin);
     return val;
 }
 
@@ -43,11 +44,12 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys)
  * @param   pVM             Pointer to the VM.
  * @param   GCPhys          Physical address to write to.
  * @param   val             What to write.
+ * @param   enmOrigin       Who is calling.
  */
-VMMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val)
+VMMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val, PGMACCESSORIGIN enmOrigin)
 {
     Assert(VM_IS_EMT(pVM));
-    PGMPhysWrite(pVM, GCPhys, &val, sizeof(val));
+    PGMPhysWrite(pVM, GCPhys, &val, sizeof(val), enmOrigin);
 }
 
 #undef PGMPHYSFN_READNAME

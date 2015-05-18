@@ -310,7 +310,7 @@ static DECLCALLBACK(int) loadMem(PVM pVM, RTFILE File, uint64_t *poff)
 
             /* Write that page to the guest - skip known rom areas for now. */
             if (GCPhys < 0xa0000 || GCPhys >= 0x100000) /* ASSUME size of a8Page is a power of 2. */
-                PGMPhysWrite(pVM, GCPhys, &au8Page, cbRead);
+                PGMPhysWrite(pVM, GCPhys, &au8Page, cbRead, PGMACCESSORIGIN_DEBUGGER);
             GCPhys += cbRead;
         }
     }

@@ -924,7 +924,7 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
     if (pVM)    /* NULL when the VM is destroyed. */
     {
         /* Update the guest memory of the standby VM. */
-        int rc = PGMR3PhysWriteExternal(pVM, pNode->Core.Key, pNode->pPage, PAGE_SIZE, "FTMemSync");
+        int rc = PGMR3PhysWriteExternal(pVM, pNode->Core.Key, pNode->pPage, PAGE_SIZE, PGMACCESSORIGIN_FTM);
         AssertRC(rc);
     }
     RTMemFree(pNode);

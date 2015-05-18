@@ -1026,7 +1026,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
             cbToTryRead = sizeof(pIemCpu->abOpcode);
 
         if (!pIemCpu->fBypassHandlers)
-            rc = PGMPhysRead(pVM, GCPhys, pIemCpu->abOpcode, cbToTryRead);
+            rc = PGMPhysRead(pVM, GCPhys, pIemCpu->abOpcode, cbToTryRead, PGMACCESSORIGIN_IEM);
         else
             rc = PGMPhysSimpleReadGCPhys(pVM, pIemCpu->abOpcode, GCPhys, cbToTryRead);
         if (rc != VINF_SUCCESS)
@@ -1144,7 +1144,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
      * should be no need to check again here.
      */
     if (!pIemCpu->fBypassHandlers)
-        rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead);
+        rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead, PGMACCESSORIGIN_IEM);
     else
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
@@ -6429,12 +6429,14 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
             rc = PGMPhysWrite(IEMCPU_TO_VM(pIemCpu),
                               pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
                               pbBuf,
-                              cbFirst);
+                              cbFirst,
+                              PGMACCESSORIGIN_IEM);
             if (cbSecond && rc == VINF_SUCCESS)
                 rc = PGMPhysWrite(IEMCPU_TO_VM(pIemCpu),
                                   pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
                                   pbBuf + cbFirst,
-                                  cbSecond);
+                                  cbSecond,
+                                  PGMACCESSORIGIN_IEM);
         }
         else
         {
@@ -6574,14 +6576,14 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
         int rc;
         if (!pIemCpu->fBypassHandlers)
         {
-            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbFirstPage);
+            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbFirstPage, PGMACCESSORIGIN_IEM);
             if (rc != VINF_SUCCESS)
             {
                 /** @todo status code handling */
                 Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
                 return rc;
             }
-            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage);
+            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage, PGMACCESSORIGIN_IEM);
             if (rc != VINF_SUCCESS)
             {
                 /** @todo status code handling */
@@ -6694,7 +6696,7 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
         {
             int rc;
             if (!pIemCpu->fBypassHandlers)
-                rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbMem);
+                rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbMem, PGMACCESSORIGIN_IEM);
             else
                 rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbMem);
             if (rc != VINF_SUCCESS)

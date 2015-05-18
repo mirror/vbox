@@ -3564,7 +3564,7 @@ void remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb);
+    PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb, PGMACCESSORIGIN_REM);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("read(%d): %08x\n", cb, (uint32_t)SrcGCPhys));
 #endif
@@ -3582,7 +3582,7 @@ RTCCUINTREG remR3PhysReadU8(RTGCPHYS SrcGCPhys)
     uint8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("readu8: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3601,7 +3601,7 @@ RTCCINTREG remR3PhysReadS8(RTGCPHYS SrcGCPhys)
     int8_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU8(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("reads8: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3620,7 +3620,7 @@ RTCCUINTREG remR3PhysReadU16(RTGCPHYS SrcGCPhys)
     uint16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("readu16: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3639,7 +3639,7 @@ RTCCINTREG remR3PhysReadS16(RTGCPHYS SrcGCPhys)
     int16_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU16(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("reads16: %x <- %08x\n", (uint16_t)val, (uint32_t)SrcGCPhys));
@@ -3658,7 +3658,7 @@ RTCCUINTREG remR3PhysReadU32(RTGCPHYS SrcGCPhys)
     uint32_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("readu32: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3677,7 +3677,7 @@ RTCCINTREG remR3PhysReadS32(RTGCPHYS SrcGCPhys)
     int32_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU32(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("reads32: %x <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3696,7 +3696,7 @@ uint64_t remR3PhysReadU64(RTGCPHYS SrcGCPhys)
     uint64_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("readu64: %llx <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3715,7 +3715,7 @@ int64_t remR3PhysReadS64(RTGCPHYS SrcGCPhys)
     int64_t val;
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys);
+    val = PGMR3PhysReadU64(cpu_single_env->pVM, SrcGCPhys, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemRead, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("reads64: %llx <- %08x\n", val, (uint32_t)SrcGCPhys));
@@ -3735,7 +3735,7 @@ void remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb);
+    PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("write(%d): %08x\n", cb, (uint32_t)DstGCPhys));
@@ -3753,7 +3753,7 @@ void remR3PhysWriteU8(RTGCPHYS DstGCPhys, uint8_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteU8(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU8(cpu_single_env->pVM, DstGCPhys, val, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("writeu8: %x -> %08x\n", val, (uint32_t)DstGCPhys));
@@ -3771,7 +3771,7 @@ void remR3PhysWriteU16(RTGCPHYS DstGCPhys, uint16_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteU16(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU16(cpu_single_env->pVM, DstGCPhys, val, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("writeu16: %x -> %08x\n", val, (uint32_t)DstGCPhys));
@@ -3789,7 +3789,7 @@ void remR3PhysWriteU32(RTGCPHYS DstGCPhys, uint32_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteU32(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU32(cpu_single_env->pVM, DstGCPhys, val, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("writeu32: %x -> %08x\n", val, (uint32_t)DstGCPhys));
@@ -3807,7 +3807,7 @@ void remR3PhysWriteU64(RTGCPHYS DstGCPhys, uint64_t val)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMR3PhysWriteU64(cpu_single_env->pVM, DstGCPhys, val);
+    PGMR3PhysWriteU64(cpu_single_env->pVM, DstGCPhys, val, PGMACCESSORIGIN_REM);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("writeu64: %llx -> %08x\n", val, (uint32_t)DstGCPhys));
@@ -3890,7 +3890,7 @@ static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint8_t u8;
     Log2(("remR3HandlerReadU8: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8));
+    PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8), PGMACCESSORIGIN_REM);
     return u8;
 }
 
@@ -3898,7 +3898,7 @@ static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint16_t u16;
     Log2(("remR3HandlerReadU16: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16));
+    PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16), PGMACCESSORIGIN_REM);
     return u16;
 }
 
@@ -3906,26 +3906,26 @@ static uint32_t remR3HandlerReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32;
     Log2(("remR3HandlerReadU32: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32));
+    PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32), PGMACCESSORIGIN_REM);
     return u32;
 }
 
 static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU8: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t));
+    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t), PGMACCESSORIGIN_REM);
 }
 
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU16: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t));
+    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t), PGMACCESSORIGIN_REM);
 }
 
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t));
+    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t), PGMACCESSORIGIN_REM);
 }
 
 /* -+- disassembly -+- */
