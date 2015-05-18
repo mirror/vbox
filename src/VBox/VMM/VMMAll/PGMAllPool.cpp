@@ -1378,44 +1378,65 @@ PGM_ALL_CB2_DECL(int) pgmPoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhy
     LogFlow(("PGM_ALL_CB_DECL: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
 
-    NOREF(pvBuf); NOREF(enmAccessType); NOREF(enmOrigin);
+    NOREF(pvBuf); NOREF(enmAccessType);
 
     /*
-     * We don't have to be very sophisticated about this since there are relativly few calls here.
-     * However, we must try our best to detect any non-cpu accesses (disk / networking).
+     * Make sure the pool page wasn't modified by a different CPU.
      */
     pgmLock(pVM);
-    if (PHYS_PAGE_ADDRESS(GCPhys) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
+    if (PHYS_PAGE_ADDRESS(GCPhys) == PHYS_PAGE_ADDRESS(pPage->GCPhys))
     {
-        /* Pool page changed while we were waiting for the lock; ignore. */
-        Log(("CPU%d: PGM_ALL_CB_DECL pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhys), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
-        pgmUnlock(pVM);
-        return VINF_PGM_HANDLER_DO_DEFAULT;
-    }
+        Assert(pPage->enmKind != PGMPOOLKIND_FREE);
 
-    Assert(pPage->enmKind != PGMPOOLKIND_FREE);
-/** @todo we can do better than this now.   */
-    if (   (   pPage->cModifications < 96 /* it's cheaper here. */
-            || pgmPoolIsPageLocked(pPage) )
-        && cbBuf <= 4)
-    {
-        /* Clear the shadow entry. */
-        if (!pPage->cModifications++)
-            pgmPoolMonitorModifiedInsert(pPool, pPage);
-        /** @todo r=bird: making unsafe assumption about not crossing entries here! */
-        pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvBuf, 0 /* unknown write size */);
-        STAM_PROFILE_STOP(&pPool->StatMonitorR3, a);
-    }
-    else
-    {
-        pgmPoolMonitorChainFlush(pPool, pPage); /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
+        /* The max modification count before flushing depends on the context and page type. */
+#ifdef IN_RING3
+        uint16_t const cMaxModifications = 96; /* it's cheaper here, right? */
+#else
+        uint16_t cMaxModifications;
+        if (    pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+            ||  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_32BIT_PT)
+            cMaxModifications = 4;
+        else
+            cMaxModifications = 24;
+# ifdef IN_RC
+        cMaxModifications *= 2; /* traps are cheaper than exists. */
+# endif
+#endif
+
+        /*
+         * We don't have to be very sophisticated about this since there are relativly few calls here.
+         * However, we must try our best to detect any non-cpu accesses (disk / networking).
+         */
+        if (   (   pPage->cModifications < cMaxModifications
+                || pgmPoolIsPageLocked(pPage) )
+            && enmOrigin != PGMACCESSORIGIN_DEVICE
+            && cbBuf <= 16)
+        {
+            /* Clear the shadow entry. */
+            if (!pPage->cModifications++)
+                pgmPoolMonitorModifiedInsert(pPool, pPage);
+
+            if (cbBuf <= 8)
+                pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvBuf, (uint32_t)cbBuf);
+            else
+            {
+                pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys, pvBuf, 8);
+                pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhys + 8, (uint8_t *)pvBuf + 8, (uint32_t)cbBuf - 8);
+            }
+        }
+        else
+        {
+            /* ASSUME that VERR_PGM_POOL_CLEARED can be ignored here and that FFs will deal with it in due time. */
+            pgmPoolMonitorChainFlush(pPool, pPage);
+        }
+
         STAM_PROFILE_STOP_EX(&pPool->StatMonitorR3, &pPool->StatMonitorR3FlushPage, a);
     }
+    else
+        Log(("CPU%d: PGM_ALL_CB_DECL pgm pool page for %RGp changed (to %RGp) while waiting!\n", pVCpu->idCpu, PHYS_PAGE_ADDRESS(GCPhys), PHYS_PAGE_ADDRESS(pPage->GCPhys)));
     pgmUnlock(pVM);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
-
-
 
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
