@@ -1782,7 +1782,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
 
 
     /* Prepare open-existing-medium action: */
-    QAction *pActionOpenExistingMedium = menu.addAction(QIcon(":/select_file_16px.png"), QString(), pListener, pszSlotName);
+    QAction *pActionOpenExistingMedium = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"), QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
                                                                           mediumType)));
     switch (mediumType)
