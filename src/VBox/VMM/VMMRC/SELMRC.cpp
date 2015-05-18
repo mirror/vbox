@@ -227,6 +227,8 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -234,10 +236,9 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  */
-DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
     LogFlow(("selmRCGuestGDTWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
     NOREF(pvRange); NOREF(pvUser);
 
@@ -321,6 +322,8 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -329,14 +332,14 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     /** @todo To be implemented. */
     ////LogCom(("selmRCGuestLDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
 
-    VMCPU_FF_SET(VMMGetCpu0(pVM), VMCPU_FF_SELM_SYNC_LDT);
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
     return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
 }
@@ -376,6 +379,8 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -384,10 +389,9 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
     LogFlow(("selmRCGuestTSSWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
     NOREF(pvRange); NOREF(pvUser);
 
@@ -531,6 +535,8 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -539,11 +545,11 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowGDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
+    NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_GDT_WRITE;
 }
 #endif
@@ -555,6 +561,8 @@ DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPU
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -563,12 +571,12 @@ DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPU
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowLDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     Assert(pvFault - (uintptr_t)pVM->selm.s.pvLdtRC < (unsigned)(65536U + PAGE_SIZE));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
+    NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_LDT_WRITE;
 }
 #endif
@@ -580,6 +588,8 @@ DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPU
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -588,11 +598,11 @@ DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPU
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowTSSWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) selmRCShadowTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowTSSWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
-    NOREF(pVM); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
+    NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
     return VERR_SELM_SHADOW_TSS_WRITE;
 }
 #endif

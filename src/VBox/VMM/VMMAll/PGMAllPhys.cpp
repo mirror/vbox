@@ -2081,8 +2081,9 @@ static void pgmPhysCacheAdd(PVM pVM, PGMPHYSCACHE *pCache, RTGCPHYS GCPhys, uint
  * @param   GCPhys      The physical address to start reading at.
  * @param   pvBuf       Where to put the bits we read.
  * @param   cb          How much to read - less or equal to a page.
+ * @param   enmOrigin       The origin of this call.
  */
-static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pvBuf, size_t cb)
+static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pvBuf, size_t cb, PGMACCESSORIGIN enmOrigin)
 {
     /*
      * The most frequent access here is MMIO and shadowed ROM.
@@ -2107,6 +2108,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
     /*
      * Deal with any physical handlers.
      */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
 #ifdef IN_RING3
     PPGMPHYSHANDLER pPhys = NULL;
 #endif
@@ -2173,7 +2175,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
                               + (GCPhys & PAGE_OFFSET_MASK);
 
             STAM_PROFILE_START(&pVirt->Stat, h);
-            rc2 = pVirtType->CTX_SUFF(pfnHandler)(pVM, GCPtr, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ,
+            rc2 = pVirtType->CTX_SUFF(pfnHandler)(pVM, pVCpu, GCPtr, (void *)pvSrc, pvBuf, cb, PGMACCESSTYPE_READ, enmOrigin,
                                                   pVirt->CTX_SUFF(pvUser));
             STAM_PROFILE_STOP(&pVirt->Stat, h);
             if (rc2 == VINF_SUCCESS)
@@ -2253,7 +2255,7 @@ VMMDECL(int) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, P
                 if (RT_UNLIKELY(   PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
                                 || PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage)))
                 {
-                    int rc = pgmPhysReadHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb);
+                    int rc = pgmPhysReadHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb, enmOrigin);
                     if (RT_FAILURE(rc))
                     {
                         pgmUnlock(pVM);
@@ -2336,8 +2338,10 @@ VMMDECL(int) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, P
  * @param   GCPhys      The physical address to start writing at.
  * @param   pvBuf       What to write.
  * @param   cbWrite     How much to write - less or equal to a page.
+ * @param   enmOrigin       The origin of this call.
  */
-static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const *pvBuf, size_t cbWrite)
+static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const *pvBuf, size_t cbWrite,
+                               PGMACCESSORIGIN enmOrigin)
 {
     PGMPAGEMAPLOCK  PgMpLck;
     void           *pvDst = NULL;
@@ -2350,6 +2354,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
      * write area. This should be a pretty frequent case with MMIO and
      * the heavy usage of full page handlers in the page pool.
      */
+    PVMCPU pVCpu = VMMGetCpu(pVM);
     if (   !PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
         || PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage) /* screw virtual handlers on MMIO pages */)
     {
@@ -2460,8 +2465,8 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                                       + (GCPhys & PAGE_OFFSET_MASK);
 
                     STAM_PROFILE_START(&pCur->Stat, h);
-                    rc = pCurType->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
-                                                        pCur->CTX_SUFF(pvUser));
+                    rc = pCurType->CTX_SUFF(pfnHandler)(pVM, pVCpu, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
+                                                        enmOrigin, pCur->CTX_SUFF(pvUser));
                     STAM_PROFILE_STOP(&pCur->Stat, h);
                 }
                 if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
@@ -2648,8 +2653,8 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                                   + (iVirtPage << PAGE_SHIFT)
                                   + (GCPhys & PAGE_OFFSET_MASK);
                 STAM_PROFILE_START(&pVirt->Stat, h);
-                rc = pVirtType->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
-                                                     pVirt->CTX_SUFF(pvUser));
+                rc = pVirtType->CTX_SUFF(pfnHandler)(pVM, pVCpu, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
+                                                     enmOrigin, pVirt->CTX_SUFF(pvUser));
                 STAM_PROFILE_STOP(&pVirt->Stat, h);
                 AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, pVirt->pszDesc));
             }
@@ -2703,8 +2708,8 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                                   + (iVirtPage << PAGE_SHIFT)
                                   + (GCPhys & PAGE_OFFSET_MASK);
                 STAM_PROFILE_START(&pVirt->Stat, h2);
-                int rc2 = pVirtType->CTX_SUFF(pfnHandler)(pVM, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
-                                                          pVirt->CTX_SUFF(pvUser));
+                int rc2 = pVirtType->CTX_SUFF(pfnHandler)(pVM, pVCpu, GCPtr, pvDst, (void *)pvBuf, cbRange, PGMACCESSTYPE_WRITE,
+                                                          enmOrigin, pVirt->CTX_SUFF(pvUser));
                 STAM_PROFILE_STOP(&pVirt->Stat, h2);
                 if (rc2 == VINF_SUCCESS && rc == VINF_PGM_HANDLER_DO_DEFAULT)
                     rc = VINF_SUCCESS;
@@ -2800,7 +2805,7 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
                 if (   PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
                     || PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
                 {
-                    int rc = pgmPhysWriteHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb);
+                    int rc = pgmPhysWriteHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb, enmOrigin);
                     if (RT_FAILURE(rc))
                     {
                         pgmUnlock(pVM);

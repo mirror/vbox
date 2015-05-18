@@ -94,6 +94,8 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   uErrorCode   CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
@@ -102,10 +104,9 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    PVMCPU      pVCpu = VMMGetCpu0(pVM);
     uint16_t    cbIDT;
     RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVCpu, &cbIDT);
 #ifdef VBOX_STRICT
@@ -159,7 +160,9 @@ DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *
  * @returns VBox status code (appropriate for trap handling and GC return).
  * @param   pVM         Pointer to the VM.
- * @param   uErrorCode   CPU Error code.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
+ * @param   uErrorCode  CPU Error code.
  * @param   pRegFrame   Trap register frame.
  * @param   pvFault     The fault address (cr2).
  * @param   pvRange     The base address of the handled virtual range.
@@ -167,10 +170,9 @@ DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUM
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) trpmRCShadowIDTWritePfHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
+DECLEXPORT(int) trpmRCShadowIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
     LogRel(("FATAL ERROR: trpmRCShadowIDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%08RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(offRange); NOREF(pvUser);
 

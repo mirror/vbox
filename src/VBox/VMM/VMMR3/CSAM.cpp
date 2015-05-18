@@ -2171,15 +2171,18 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
  * @returns VINF_SUCCESS if the handler have carried out the operation.
  * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
  * @param   pVM             Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
  * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making this write.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     int rc;
 
@@ -2198,6 +2201,7 @@ static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void
         rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     else
     {
+        AssertFailed(); /* PGM should make sure this does not happen anymore! */
         /* Queue the write instead otherwise we'll get concurrency issues. */
         /** @note in theory not correct to let it write the data first before disabling a patch!
          *        (if it writes the same data as the patch jump and we replace it with obsolete opcodes)
@@ -2215,9 +2219,11 @@ static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
  * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the cross context CPU context for the
+ *                          calling EMT.
  * @param   GCPtr           The virtual address the guest has changed.
  */
-static DECLCALLBACK(int) csamR3CodePageInvalidate(PVM pVM, RTGCPTR GCPtr, void *pvUser)
+static DECLCALLBACK(int) csamR3CodePageInvalidate(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser)
 {
     g_fInCsamR3CodePageInvalidate = true;
     LogFlow(("csamR3CodePageInvalidate %RGv\n", GCPtr));

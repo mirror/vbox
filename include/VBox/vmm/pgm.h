@@ -76,6 +76,36 @@ typedef FNPGMRELOCATE *PFNPGMRELOCATE;
 
 
 /**
+ * Memory access origin.
+ */
+typedef enum PGMACCESSORIGIN
+{
+    /** Invalid zero value. */
+    PGMACCESSORIGIN_INVALID = 0,
+    /** IEM is access memory. */
+    PGMACCESSORIGIN_IEM,
+    /** HM is access memory. */
+    PGMACCESSORIGIN_HM,
+    /** Some device is access memory. */
+    PGMACCESSORIGIN_DEVICE,
+    /** Someone debugging is access memory. */
+    PGMACCESSORIGIN_DEBUGGER,
+    /** SELM is access memory. */
+    PGMACCESSORIGIN_SELM,
+    /** FTM is access memory. */
+    PGMACCESSORIGIN_FTM,
+    /** REM is access memory. */
+    PGMACCESSORIGIN_REM,
+    /** IOM is access memory. */
+    PGMACCESSORIGIN_IOM,
+    /** End of valid values. */
+    PGMACCESSORIGIN_END,
+    /** Type size hack. */
+    PGMACCESSORIGIN_32BIT_HACK = 0x7fffffff
+} PGMACCESSORIGIN;
+
+
+/**
  * Physical page access handler kind.
  */
 typedef enum PGMPHYSHANDLERKIND
@@ -181,6 +211,8 @@ typedef enum PGMVIRTHANDLERKIND
  *
  * @returns VBox status code (appropriate for GC return).
  * @param   pVM             VM Handle.
+ * @param   pVCpu           Pointer to the cross context CPU context for the
+ *                          calling EMT.
  * @param   uErrorCode      CPU Error code (X86_TRAP_PF_XXX).
  * @param   pRegFrame       Trap register frame.
  * @param   pvFault         The fault address (cr2).
@@ -188,7 +220,6 @@ typedef enum PGMVIRTHANDLERKIND
  * @param   offRange        The offset of the access into this range.
  *                          (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser          User argument.
- * @todo    Add pVCpu, possibly replacing pVM.
  */
 typedef DECLCALLBACK(int) FNPGMRCVIRTPFHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
                                                RTGCPTR pvRange, uintptr_t offRange, void *pvUser);
@@ -211,25 +242,27 @@ typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is calling.
  * @param   pvUser          User argument.
- * @todo    Add pVCpu, possibly replacing pVM.
  */
-typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                             PGMACCESSTYPE enmAccessType, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                             PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
-
 
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
  * @param   pVM             VM Handle.
+ * @param   pVCpu           Pointer to the cross context CPU context for the
+ *                          calling EMT.
  * @param   GCPtr           The virtual address the guest has changed.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, RTGCPTR GCPtr, void *pvUser);
+typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser);
 /** Pointer to PGM invalidation callback. */
 typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
+
 
 /**
  * PGMR3PhysEnumDirtyFTPages callback for syncing dirty physical pages
@@ -243,6 +276,7 @@ typedef FNPGMR3VIRTINVALIDATE *PFNPGMR3VIRTINVALIDATE;
 typedef DECLCALLBACK(int) FNPGMENUMDIRTYFTPAGES(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser);
 /** Pointer to PGMR3PhysEnumDirtyFTPages callback. */
 typedef FNPGMENUMDIRTYFTPAGES *PFNPGMENUMDIRTYFTPAGES;
+
 
 /**
  * Paging mode.
@@ -399,21 +433,6 @@ VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
 VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
-/** Memory access origin. */
-typedef enum PGMACCESSORIGIN
-{
-    PGMACCESSORIGIN_INVALID = 0,
-    PGMACCESSORIGIN_IEM,
-    PGMACCESSORIGIN_HM,
-    PGMACCESSORIGIN_DEVICE,
-    PGMACCESSORIGIN_DEBUGGER,
-    PGMACCESSORIGIN_SELM,
-    PGMACCESSORIGIN_FTM,
-    PGMACCESSORIGIN_IOM,
-    PGMACCESSORIGIN_REM,
-    PGMACCESSORIGIN_END,
-    PGMACCESSORIGIN_32BIT_HACK = 0x7fffffff
-} PGMACCESSORIGIN;
 VMMDECL(int)        PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, PGMACCESSORIGIN enmOrigin);
 VMMDECL(int)        PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, PGMACCESSORIGIN enmOrigin);
 VMMDECL(int)        PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, PGMACCESSORIGIN enmOrigin);
