@@ -760,7 +760,6 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     memset(pPart->aPartitions, '\0', sizeof(pPart->aPartitions));
 
     rc = RTFileReadAt(File, 0, &aBuffer, sizeof(aBuffer), NULL);
-
     if (RT_FAILURE(rc))
         return rc;
 
@@ -776,8 +775,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
         if (RT_SUCCESS(rc))
         {
             const char* l_ppth = (char*)partitionTableHeader;
-            rc = strncmp(l_ppth, "EFI PART", 8);
-            if (RT_FAILURE(rc))
+            if (strncmp(l_ppth, "EFI PART", 8))
                 return VERR_INVALID_PARAMETER;
 
             /** @todo check GPT Version */
@@ -812,31 +810,38 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
                                                           );
 
             uint32_t currentEntry = 0;
-            while(currentEntry<partitionsNumber)
+
+            if (partitionEntrySize * partitionsNumber > 4 * _1M)
             {
-                uint8_t partitionEntry[128];
+                RTMsgError("The GPT header seems corrupt because it contains too many entries");
+                return VERR_INVALID_PARAMETER;
+            }
 
-                /*partition entries begin from LBA2*/
-                rc = RTFileReadAt(File, 1024 + currentEntry*partitionEntrySize, &partitionEntry, partitionEntrySize, NULL);
+            uint8_t *pbPartTable = (uint8_t *)RTMemAllocZ(RT_ALIGN_Z(partitionEntrySize * partitionsNumber, 512));
+            if (!pbPartTable)
+            {
+                RTMsgError("Allocating memory for the GPT partitions entries failed");
+                return VERR_NO_MEMORY;
+            }
 
-                uint64_t start = RT_MAKE_U64_FROM_U8( partitionEntry[32],
-                                                          partitionEntry[33],
-                                                          partitionEntry[34],
-                                                          partitionEntry[35],
-                                                          partitionEntry[36],
-                                                          partitionEntry[37],
-                                                          partitionEntry[38],
-                                                          partitionEntry[39]
-                                                          );
-                uint64_t end = RT_MAKE_U64_FROM_U8( partitionEntry[40],
-                                                          partitionEntry[41],
-                                                          partitionEntry[42],
-                                                          partitionEntry[43],
-                                                          partitionEntry[44],
-                                                          partitionEntry[45],
-                                                          partitionEntry[46],
-                                                          partitionEntry[47]
-                                                          );
+            /* partition entries begin from LBA2 */
+            /** @todo r=aeichner: Reading from LBA 2 is not always correct, the header will contain the starting LBA. */
+            rc = RTFileReadAt(File, 1024, pbPartTable, RT_ALIGN_Z(partitionEntrySize * partitionsNumber, 512), NULL);
+            if (RT_FAILURE(rc))
+            {
+                RTMsgError("Reading the partition table failed");
+                RTMemFree(pbPartTable);
+                return rc;
+            }
+
+            while (currentEntry < partitionsNumber)
+            {
+                uint8_t *partitionEntry = pbPartTable + currentEntry * partitionEntrySize;
+
+                uint64_t start = RT_MAKE_U64_FROM_U8(partitionEntry[32], partitionEntry[33], partitionEntry[34], partitionEntry[35],
+                                                     partitionEntry[36], partitionEntry[37], partitionEntry[38], partitionEntry[39]);
+                uint64_t end = RT_MAKE_U64_FROM_U8(partitionEntry[40], partitionEntry[41], partitionEntry[42], partitionEntry[43],
+                                                   partitionEntry[44], partitionEntry[45], partitionEntry[46], partitionEntry[47]);
 
                 PHOSTPARTITION pCP = &pPart->aPartitions[pPart->cPartitions++];
                 pCP->uIndex = currentEntry + 1;
@@ -863,6 +868,8 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
 
                 ++currentEntry;
             }
+
+            RTMemFree(pbPartTable);
         }
     }
     else
