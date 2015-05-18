@@ -91,21 +91,21 @@ typedef enum AUDMIXOP
 } AUDMIXOP;
 
 
-int audioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
-int audioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMIN pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
-int audioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMOUT pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
-int audioMixerControlStream(AUDMIXSTREAM pHandle); /** @todo Implement me. */
-int audioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
-void audioMixerDestroy(PAUDIOMIXER pMixer);
-uint32_t audioMixerGetStreamCount(PAUDIOMIXER pMixer);
-void audioMixerInvalidate(PAUDIOMIXER pMixer);
-int audioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed);
-int audioMixerProcessSinkOut(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed);
-void audioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
-void audioMixerRemoveStream(PAUDMIXSINK pMixer, PAUDMIXSTREAM pStream);
-int audioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
-int audioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
-int audioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
+int AudioMixerAddSink(PAUDIOMIXER pMixer, const char *pszName, AUDMIXSINKDIR enmDir, PAUDMIXSINK *ppSink);
+int AudioMixerAddStreamIn(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMIN pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
+int AudioMixerAddStreamOut(PAUDMIXSINK pSink, PPDMIAUDIOCONNECTOR pConnector, PPDMAUDIOGSTSTRMOUT pStream, uint32_t uFlags, PAUDMIXSTREAM *ppStream);
+int AudioMixerControlStream(AUDMIXSTREAM pHandle); /** @todo Implement me. */
+int AudioMixerCreate(const char *pszName, uint32_t uFlags, PAUDIOMIXER *ppMixer);
+void AudioMixerDestroy(PAUDIOMIXER pMixer);
+uint32_t AudioMixerGetStreamCount(PAUDIOMIXER pMixer);
+void AudioMixerInvalidate(PAUDIOMIXER pMixer);
+int AudioMixerProcessSinkIn(PAUDMIXSINK pSink, AUDMIXOP enmOp, void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed);
+int AudioMixerProcessSinkOut(PAUDMIXSINK pSink, AUDMIXOP enmOp, const void *pvBuf, uint32_t cbBuf, uint32_t *pcbProcessed);
+void AudioMixerRemoveSink(PAUDIOMIXER pMixer, PAUDMIXSINK pSink);
+void AudioMixerRemoveStream(PAUDMIXSINK pSink, PAUDMIXSTREAM pStream);
+int AudioMixerSetDeviceFormat(PAUDIOMIXER pMixer, PPDMAUDIOSTREAMCFG pCfg);
+int AudioMixerSetMasterVolume(PAUDIOMIXER pMixer, PPDMAUDIOVOLUME pVol);
+int AudioMixerSetSinkVolume(PAUDMIXSINK pSink, PPDMAUDIOVOLUME pVol);
 
 #endif /* AUDIO_MIXER_H */
 

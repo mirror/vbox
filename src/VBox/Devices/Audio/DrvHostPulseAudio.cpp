@@ -722,7 +722,7 @@ static DECLCALLBACK(int) drvHostPulseAudioCaptureIn(PPDMIHOSTAUDIO pInterface, P
     }
 
     int rc = VINF_SUCCESS;
-    size_t cbToRead = RT_MIN(cbAvail, audioMixBufFreeBytes(&pHstStrmIn->MixBuf));
+    size_t cbToRead = RT_MIN(cbAvail, AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
 
     LogFlowFunc(("cbToRead=%zu, cbAvail=%zu, offPeekBuf=%zu, cbPeekBuf=%zu\n",
                  cbToRead, cbAvail, pThisStrmIn->offPeekBuf, pThisStrmIn->cbPeekBuf));
@@ -762,7 +762,7 @@ static DECLCALLBACK(int) drvHostPulseAudioCaptureIn(PPDMIHOSTAUDIO pInterface, P
         if (cbToWrite)
         {
             uint32_t cWritten;
-            rc = audioMixBufWriteCirc(&pHstStrmIn->MixBuf,
+            rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf,
                                       pThisStrmIn->pu8PeekBuf + pThisStrmIn->offPeekBuf,
                                       cbToWrite, &cWritten);
             if (RT_FAILURE(rc))
@@ -795,7 +795,7 @@ static DECLCALLBACK(int) drvHostPulseAudioCaptureIn(PPDMIHOSTAUDIO pInterface, P
     {
         uint32_t cProcessed = 0;
         if (cWrittenTotal)
-            rc = audioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal,
+            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal,
                                         &cProcessed);
 
         if (pcSamplesCaptured)
@@ -851,7 +851,7 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
         uint32_t cRead, cbRead;
         while (cbToRead)
         {
-            rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf, pThisStrmOut->pvPCMBuf,
+            rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pThisStrmOut->pvPCMBuf,
                                      RT_MIN(cbToRead, pThisStrmOut->cbPCMBuf), &cRead);
             if (   !cRead
                 || RT_FAILURE(rc))
@@ -883,7 +883,7 @@ static DECLCALLBACK(int) drvHostPulseAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPD
     {
         uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
         if (cReadTotal)
-            audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+            AudioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
 
         if (pcSamplesPlayed)
             *pcSamplesPlayed = cReadTotal;

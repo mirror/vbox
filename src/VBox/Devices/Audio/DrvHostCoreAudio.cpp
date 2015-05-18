@@ -1319,7 +1319,7 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
 
     do
     {
-        size_t cbBuf = audioMixBufSizeBytes(&pHstStrmIn->MixBuf);
+        size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmIn->MixBuf);
         size_t cbToWrite = RT_MIN(cbBuf, RTCircBufFree(pStreamIn->pBuf));
         LogFlowFunc(("cbToWrite=%zu\n", cbToWrite));
 
@@ -1337,7 +1337,7 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
                 break;
             }
 
-            rc = audioMixBufWriteCirc(&pHstStrmIn->MixBuf, puBuf, cbToRead, &cWritten);
+            rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf, puBuf, cbToRead, &cWritten);
             if (RT_FAILURE(rc))
                 break;
 
@@ -1357,7 +1357,7 @@ static DECLCALLBACK(int) drvHostCoreAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PP
     {
         uint32_t cWrittenTotal = AUDIOMIXBUF_B2S(&pHstStrmIn->MixBuf, cbWrittenTotal);
         if (cWrittenTotal)
-            audioMixBufFinish(&pHstStrmIn->MixBuf, cWrittenTotal);
+            AudioMixBufFinish(&pHstStrmIn->MixBuf, cWrittenTotal);
 
         LogFlowFunc(("cWrittenTotal=%RU32 (%RU32 bytes)\n", cWrittenTotal, cbWrittenTotal));
 
@@ -1476,7 +1476,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
     do
     {
-        size_t cbBuf = RT_MIN(audioMixBufSizeBytes(&pHstStrmOut->MixBuf), pStreamOut->cbPCMBuf);
+        size_t cbBuf = RT_MIN(AudioMixBufSizeBytes(&pHstStrmOut->MixBuf), pStreamOut->cbPCMBuf);
         size_t cbToRead = RT_MIN(cbBuf, RTCircBufFree(pStreamOut->pBuf));
         LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 
@@ -1486,7 +1486,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
 
         while (cbToRead)
         {
-            rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf,
+            rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf,
                                      pStreamOut->pvPCMBuf, cbToRead, &cRead);
             if (   RT_FAILURE(rc)
                 || !cRead)
@@ -1521,7 +1521,7 @@ static DECLCALLBACK(int) drvHostCoreAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     {
         uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
         if (cReadTotal)
-            audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+            AudioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
 
         LogFlowFunc(("cReadTotal=%RU32 (%RU32 bytes)\n", cReadTotal, cbReadTotal));
 

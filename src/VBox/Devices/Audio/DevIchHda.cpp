@@ -2209,7 +2209,7 @@ static int hdaReadAudio(PHDASTATE pThis, PAUDMIXSINK pSink,
     else
     {
         uint32_t cbRead = 0;
-        rc = audioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pBdle->au8HdaBuffer, cb2Copy, &cbRead);
+        rc = AudioMixerProcessSinkIn(pSink, AUDMIXOP_BLEND, pBdle->au8HdaBuffer, cb2Copy, &cbRead);
         if (RT_SUCCESS(rc))
         {
             Assert(cbRead);
@@ -2474,8 +2474,8 @@ static DECLCALLBACK(int) hdaOpenIn(PHDASTATE pThis,
         LogFlowFunc(("LUN#%RU8: Opened input \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
         if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
-            audioMixerRemoveStream(pSink, pDrv->LineIn.phStrmIn);
-            rc = audioMixerAddStreamIn(pSink,
+            AudioMixerRemoveStream(pSink, pDrv->LineIn.phStrmIn);
+            rc = AudioMixerAddStreamIn(pSink,
                                        pDrv->pConnector, pDrv->LineIn.pStrmIn,
                                        0 /* uFlags */, &pDrv->LineIn.phStrmIn);
         }
@@ -2506,8 +2506,8 @@ static DECLCALLBACK(int) hdaOpenOut(PHDASTATE pThis,
         LogFlowFunc(("LUN#%RU8: Opened output \"%s\", with rc=%Rrc\n", pDrv->uLUN, pszDesc, rc));
         if (rc == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
-            audioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
-            rc = audioMixerAddStreamOut(pThis->pSinkOutput,
+            AudioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
+            rc = AudioMixerAddStreamOut(pThis->pSinkOutput,
                                         pDrv->pConnector, pDrv->Out.pStrmOut,
                                         0 /* uFlags */, &pDrv->Out.phStrmOut);
         }
@@ -2542,7 +2542,7 @@ static DECLCALLBACK(int) hdaSetVolume(PHDASTATE pThis, ENMSOUNDSOURCE enmSource,
     }
 
     /* Set the volume. Codec already converted it to the correct range. */
-    audioMixerSetSinkVolume(pSink, &vol);
+    AudioMixerSetSinkVolume(pSink, &vol);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -3588,7 +3588,7 @@ static DECLCALLBACK(int) hdaDestruct(PPDMDEVINS pDevIns)
 
     if (pThis->pMixer)
     {
-        audioMixerDestroy(pThis->pMixer);
+        AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
@@ -3857,7 +3857,7 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     if (RT_SUCCESS(rc))
     {
-        rc = audioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
+        rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
         if (RT_SUCCESS(rc))
         {
             /* Set a default audio format for our mixer. */
@@ -3867,25 +3867,25 @@ static DECLCALLBACK(int) hdaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             streamCfg.enmFormat     = AUD_FMT_S16;
             streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-            rc = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
+            rc = AudioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
             AssertRC(rc);
 
             /* Add all required audio sinks. */
-            rc = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
+            rc = AudioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
                                    AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
             AssertRC(rc);
 
-            rc = audioMixerAddSink(pThis->pMixer, "[Recording] Line In",
+            rc = AudioMixerAddSink(pThis->pMixer, "[Recording] Line In",
                                    AUDMIXSINKDIR_INPUT, &pThis->pSinkLineIn);
             AssertRC(rc);
 
-            rc = audioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
+            rc = AudioMixerAddSink(pThis->pMixer, "[Recording] Microphone In",
                                    AUDMIXSINKDIR_INPUT, &pThis->pSinkMicIn);
             AssertRC(rc);
 
             /* There is no master volume control. Set the master to max. */
             PDMAUDIOVOLUME vol = { false, 255, 255 };
-            rc = audioMixerSetMasterVolume(pThis->pMixer, &vol);
+            rc = AudioMixerSetMasterVolume(pThis->pMixer, &vol);
             AssertRC(rc);
         }
     }

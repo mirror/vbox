@@ -1074,7 +1074,7 @@ static void sb16SetMasterVolume(PSB16STATE pThis)
     uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
     PDMAUDIOVOLUME vol = { false, lvol, rvol };
-    audioMixerSetMasterVolume(pThis->pMixer, &vol);
+    AudioMixerSetMasterVolume(pThis->pMixer, &vol);
 #else
     int     mute = 0;
     uint8_t lvol = pThis->mixer_regs[0x30];
@@ -1091,7 +1091,7 @@ static void sb16SetPcmOutVolume(PSB16STATE pThis)
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
     PDMAUDIOVOLUME vol = { false, lvol, rvol };
-    audioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
+    AudioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
 #else
     int     mute = 0;
     uint8_t lvol = pThis->mixer_regs[0x32];
@@ -1347,7 +1347,7 @@ static void sb16MixerReset(PSB16STATE pThis)
 
     if (pThis->pMixer)
     {
-        audioMixerDestroy(pThis->pMixer);
+        AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
@@ -1382,7 +1382,7 @@ static void sb16MixerReset(PSB16STATE pThis)
         pThis->mixer_regs[i] = 0x80;
 
 #ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    int rc2 = audioMixerCreate("SB16 Mixer", 0 /* uFlags */, &pThis->pMixer);
+    int rc2 = AudioMixerCreate("SB16 Mixer", 0 /* uFlags */, &pThis->pMixer);
     if (RT_SUCCESS(rc2))
     {
         /* Set a default audio format for our mixer. */
@@ -1392,11 +1392,11 @@ static void sb16MixerReset(PSB16STATE pThis)
         streamCfg.enmFormat     = AUD_FMT_S16;
         streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-        rc2 = audioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
+        rc2 = AudioMixerSetDeviceFormat(pThis->pMixer, &streamCfg);
         AssertRC(rc2);
 
         /* Add all required audio sinks. */
-        rc2 = audioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
+        rc2 = AudioMixerAddSink(pThis->pMixer, "[Playback] PCM Output",
                                 AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
         AssertRC(rc2);
     }
@@ -2118,8 +2118,8 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         LogFlowFunc(("LUN#%RU8: Opened output with rc=%Rrc\n", uLUN, rc));
         if (rc2 == VINF_SUCCESS) /* Note: Could return VWRN_ALREADY_EXISTS. */
         {
-            audioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
-            rc = audioMixerAddStreamOut(pThis->pSinkOutput,
+            AudioMixerRemoveStream(pThis->pSinkOutput, pDrv->Out.phStrmOut);
+            rc = AudioMixerAddStreamOut(pThis->pSinkOutput,
                                         pDrv->pConnector, pDrv->Out.pStrmOut,
                                         0 /* uFlags */,
                                         &pDrv->Out.phStrmOut);
@@ -2137,7 +2137,7 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
         uLUN++;
     }
     /* Ensure volume gets propagated. */
-    audioMixerInvalidate(pThis->pMixer);
+    AudioMixerInvalidate(pThis->pMixer);
 
     return rc;
 }
@@ -2205,7 +2205,7 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 
     if (pThis->pMixer)
     {
-        audioMixerDestroy(pThis->pMixer);
+        AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
 #endif /* VBOX_WITH_PDM_AUDIO_DRIVER */

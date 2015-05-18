@@ -365,7 +365,7 @@ static DECLCALLBACK(int) drvHostOSSAudioControlOut(PPDMIHOSTAUDIO pInterface, PP
         case PDMAUDIOSTREAMCMD_ENABLE:
         {
             audio_pcm_info_clear_buf(&pHstStrmOut->Props,
-                                     pThisStrmOut->pvPCMBuf, audioMixBufSize(&pHstStrmOut->MixBuf));
+                                     pThisStrmOut->pvPCMBuf, AudioMixBufSize(&pHstStrmOut->MixBuf));
 
             mask = PCM_ENABLE_OUTPUT;
             if (ioctl(pThisStrmOut->hFile, SNDCTL_DSP_SETTRIGGER, &mask) < 0)
@@ -418,7 +418,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
 
     int rc = VINF_SUCCESS;
     size_t cbToRead = RT_MIN(pThisStrmIn->cbBuf,
-                             audioMixBufFreeBytes(&pHstStrmIn->MixBuf));
+                             AudioMixBufFreeBytes(&pHstStrmIn->MixBuf));
 
     LogFlowFunc(("cbToRead=%zu\n", cbToRead));
 
@@ -465,7 +465,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
         else if (cbRead)
         {
             uint32_t cWritten;
-            rc = audioMixBufWriteCirc(&pHstStrmIn->MixBuf,
+            rc = AudioMixBufWriteCirc(&pHstStrmIn->MixBuf,
                                       pThisStrmIn->pvBuf, cbRead,
                                       &cWritten);
             if (RT_FAILURE(rc))
@@ -489,7 +489,7 @@ static DECLCALLBACK(int) drvHostOSSAudioCaptureIn(PPDMIHOSTAUDIO pInterface, PPD
     {
         uint32_t cProcessed = 0;
         if (cWrittenTotal)
-            rc = audioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal,
+            rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, cWrittenTotal,
                                         &cProcessed);
 
         if (pcSamplesCaptured)
@@ -785,7 +785,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
 
     do
     {
-        size_t cbBuf = audioMixBufSizeBytes(&pHstStrmOut->MixBuf);
+        size_t cbBuf = AudioMixBufSizeBytes(&pHstStrmOut->MixBuf);
 
         uint32_t cLive = drvAudioHstOutSamplesLive(pHstStrmOut,
                                                    NULL /* pcStreamsLive */);
@@ -860,7 +860,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
         uint32_t cRead, cbRead;
         while (cbToRead)
         {
-            rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf,
+            rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf,
                                      pThisStrmOut->pvPCMBuf, cbToRead, &cRead);
             if (RT_FAILURE(rc))
                 break;
@@ -892,7 +892,7 @@ static DECLCALLBACK(int) drvHostOSSAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDMA
     {
         uint32_t cReadTotal = AUDIOMIXBUF_B2S(&pHstStrmOut->MixBuf, cbReadTotal);
         if (cReadTotal)
-            audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+            AudioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
 
         if (pcSamplesPlayed)
             *pcSamplesPlayed = cReadTotal;

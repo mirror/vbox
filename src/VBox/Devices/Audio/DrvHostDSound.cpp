@@ -1166,7 +1166,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     if (pv1 && cb1)
     {
-        rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf, pv1, cb1, &cRead);
+        rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pv1, cb1, &cRead);
         if (RT_SUCCESS(rc))
             cReadTotal += cRead;
     }
@@ -1175,7 +1175,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
         && cReadTotal == len1
         && pv2 && cb2)
     {
-        rc = audioMixBufReadCirc(&pHstStrmOut->MixBuf, pv2, cb2, &cRead);
+        rc = AudioMixBufReadCirc(&pHstStrmOut->MixBuf, pv2, cb2, &cRead);
         if (RT_SUCCESS(rc))
             cReadTotal += cRead;
     }
@@ -1191,7 +1191,7 @@ static DECLCALLBACK(int) drvHostDSoundPlayOut(PPDMIHOSTAUDIO pInterface, PPDMAUD
 
     if (cReadTotal)
     {
-        audioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
+        AudioMixBufFinish(&pHstStrmOut->MixBuf, cReadTotal);
         rc = VINF_SUCCESS; /* Played something. */
     }
 
@@ -1351,10 +1351,10 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     }
 
     /* Using as an intermediate not circular buffer. */
-    audioMixBufReset(&pHstStrmIn->MixBuf);
+    AudioMixBufReset(&pHstStrmIn->MixBuf);
 
     /* Get number of free samples in the mix buffer and check that is has free space */
-    uint32_t csMixFree = audioMixBufFree(&pHstStrmIn->MixBuf);
+    uint32_t csMixFree = AudioMixBufFree(&pHstStrmIn->MixBuf);
     if (csMixFree == 0)
     {
         DSLOG(("DSound: capture mix buffer full\n"));
@@ -1391,7 +1391,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     uint32_t csWritten;
     if (pv1 && len1)
     {
-        rc = audioMixBufWriteAt(&pHstStrmIn->MixBuf, 0 /* offWrite */,
+        rc = AudioMixBufWriteAt(&pHstStrmIn->MixBuf, 0 /* offWrite */,
                                 pv1, cb1, &csWritten);
         if (RT_SUCCESS(rc))
             csWrittenTotal += csWritten;
@@ -1401,7 +1401,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
         && csWrittenTotal == len1
         && pv2 && len2)
     {
-        rc = audioMixBufWriteAt(&pHstStrmIn->MixBuf, csWrittenTotal,
+        rc = AudioMixBufWriteAt(&pHstStrmIn->MixBuf, csWrittenTotal,
                                 pv2, cb2, &csWritten);
         if (RT_SUCCESS(rc))
             csWrittenTotal += csWritten;
@@ -1413,7 +1413,7 @@ static DECLCALLBACK(int) drvHostDSoundCaptureIn(PPDMIHOSTAUDIO pInterface, PPDMA
     if (csWrittenTotal != 0)
     {
         /* Captured something. */
-        rc = audioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal,
+        rc = AudioMixBufMixToParent(&pHstStrmIn->MixBuf, csWrittenTotal,
                                     &csProcessed);
     }
 

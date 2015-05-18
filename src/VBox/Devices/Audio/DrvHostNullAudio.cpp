@@ -174,7 +174,7 @@ static DECLCALLBACK(int) drvHostNullAudioPlayOut(PPDMIHOSTAUDIO pInterface, PPDM
     if (cSamplesPlayed > csLive)
         cSamplesPlayed = csLive;
 
-    audioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesPlayed);
+    AudioMixBufFinish(&pHstStrmOut->MixBuf, cSamplesPlayed);
 
     if (pcSamplesPlayed)
         *pcSamplesPlayed = cSamplesPlayed;

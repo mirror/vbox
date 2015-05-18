@@ -146,13 +146,13 @@ void drvAudioGstInFreeRes(PPDMAUDIOGSTSTRMIN pGstStrmIn)
         pGstStrmIn->State.pszName = NULL;
     }
 
-    audioMixBufDestroy(&pGstStrmIn->MixBuf);
+    AudioMixBufDestroy(&pGstStrmIn->MixBuf);
 }
 
 void drvAudioHstInFreeRes(PPDMAUDIOHSTSTRMIN pHstStrmIn)
 {
     AssertPtrReturnVoid(pHstStrmIn);
-    audioMixBufDestroy(&pHstStrmIn->MixBuf);
+    AudioMixBufDestroy(&pHstStrmIn->MixBuf);
 }
 
 void drvAudioGstOutFreeRes(PPDMAUDIOGSTSTRMOUT pGstStrmOut)
@@ -166,7 +166,7 @@ void drvAudioGstOutFreeRes(PPDMAUDIOGSTSTRMOUT pGstStrmOut)
         pGstStrmOut->State.pszName = NULL;
     }
 
-    audioMixBufDestroy(&pGstStrmOut->MixBuf);
+    AudioMixBufDestroy(&pGstStrmOut->MixBuf);
 }
 
 #if 0
@@ -225,7 +225,7 @@ uint32_t drvAudioHstInGetLive(PPDMAUDIOHSTSTRMIN pHstStrmIn)
 void drvAudioHstOutFreeRes(PPDMAUDIOHSTSTRMOUT pHstStrmOut)
 {
     AssertPtrReturnVoid(pHstStrmOut);
-    audioMixBufDestroy(&pHstStrmOut->MixBuf);
+    AudioMixBufDestroy(&pHstStrmOut->MixBuf);
 }
 
 #if 0
@@ -437,7 +437,7 @@ static uint32_t drvAudioHstOutMinSamplesMixed(PPDMAUDIOHSTSTRMOUT pHstStrmOut, u
         if (    pGstStrmOut->State.fActive
             || !pGstStrmOut->State.fEmpty)
         {
-            cSamples = audioMixBufMixed(&pGstStrmOut->MixBuf);
+            cSamples = AudioMixBufMixed(&pGstStrmOut->MixBuf);
             cMinSamplesMixed = RT_MIN(cMinSamplesMixed, cSamples);
 
             cStreamsLive++;
@@ -472,7 +472,7 @@ uint32_t drvAudioHstOutSamplesLive(PPDMAUDIOHSTSTRMOUT pHstStrmOut, uint32_t *pc
     if (cStreamsLive) /* Any live streams at all? */
     {
         if (   cSamplesMin == UINT32_MAX
-            || cSamplesMin > audioMixBufSize(&pHstStrmOut->MixBuf))
+            || cSamplesMin > AudioMixBufSize(&pHstStrmOut->MixBuf))
         {
             LogFlowFunc(("Error: cSamplesMin=%RU32\n", cSamplesMin));
             return 0;

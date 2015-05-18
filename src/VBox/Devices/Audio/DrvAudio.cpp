@@ -489,9 +489,9 @@ int drvAudioGstOutInit(PPDMAUDIOGSTSTRMOUT pGstStrmOut, PPDMAUDIOHSTSTRMOUT pHos
         if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
             return VERR_NO_MEMORY;
 
-        rc = audioMixBufInit(&pGstStrmOut->MixBuf, pszTemp, &pGstStrmOut->Props, audioMixBufSize(&pHostStrmOut->MixBuf));
+        rc = AudioMixBufInit(&pGstStrmOut->MixBuf, pszTemp, &pGstStrmOut->Props, AudioMixBufSize(&pHostStrmOut->MixBuf));
         if (RT_SUCCESS(rc))
-            rc = audioMixBufLinkTo(&pGstStrmOut->MixBuf, &pHostStrmOut->MixBuf);
+            rc = AudioMixBufLinkTo(&pGstStrmOut->MixBuf, &pHostStrmOut->MixBuf);
 
         RTStrFree(pszTemp);
 
@@ -563,7 +563,7 @@ int drvAudioAllocHstOut(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTREAMCFG
             break;
         }
 
-        rc = audioMixBufInit(&pHstStrmOut->MixBuf, pszTemp, &pHstStrmOut->Props, cSamples);
+        rc = AudioMixBufInit(&pHstStrmOut->MixBuf, pszTemp, &pHstStrmOut->Props, cSamples);
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmOut, &pHstStrmOut->Node);
@@ -741,9 +741,9 @@ int drvAudioGstInInit(PPDMAUDIOGSTSTRMIN pGstStrmIn, PPDMAUDIOHSTSTRMIN pHstStrm
         if (RTStrAPrintf(&pszTemp, "%s (Guest)", pszName) <= 0)
             return VERR_NO_MEMORY;
 
-        rc = audioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pGstStrmIn->Props, audioMixBufSize(&pHstStrmIn->MixBuf));
+        rc = AudioMixBufInit(&pGstStrmIn->MixBuf, pszTemp, &pGstStrmIn->Props, AudioMixBufSize(&pHstStrmIn->MixBuf));
         if (RT_SUCCESS(rc))
-            rc = audioMixBufLinkTo(&pHstStrmIn->MixBuf, &pGstStrmIn->MixBuf);
+            rc = AudioMixBufLinkTo(&pHstStrmIn->MixBuf, &pGstStrmIn->MixBuf);
 
         RTStrFree(pszTemp);
 
@@ -815,7 +815,7 @@ static int drvAudioAllocHstIn(PDRVAUDIO pThis, const char *pszName, PPDMAUDIOSTR
             break;
         }
 
-        rc = audioMixBufInit(&pHstStrmIn->MixBuf, pszTemp, &pHstStrmIn->Props, cSamples);
+        rc = AudioMixBufInit(&pHstStrmIn->MixBuf, pszTemp, &pHstStrmIn->Props, cSamples);
         if (RT_SUCCESS(rc))
         {
             RTListPrepend(&pThis->lstHstStrmIn, &pHstStrmIn->Node);
@@ -884,7 +884,7 @@ int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOu
      * guest mixing buffer.
      */
     uint32_t cWritten;
-    int rc = audioMixBufWriteAt(&pGstStrmOut->MixBuf, 0 /* Offset in samples */, pvBuf, cbBuf, &cWritten);
+    int rc = AudioMixBufWriteAt(&pGstStrmOut->MixBuf, 0 /* Offset in samples */, pvBuf, cbBuf, &cWritten);
 
     /*
      * Second, mix the guest mixing buffer with the host mixing
@@ -894,7 +894,7 @@ int drvAudioWrite(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOGSTSTRMOUT pGstStrmOu
     if (   RT_SUCCESS(rc)
         && cWritten)
     {
-        rc = audioMixBufMixToParent(&pGstStrmOut->MixBuf, cWritten, &cMixed);
+        rc = AudioMixBufMixToParent(&pGstStrmOut->MixBuf, cWritten, &cMixed);
     }
     else
         cMixed = 0;
@@ -1077,7 +1077,7 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
                 /* Tell the sound device emulation how many samples are free
                  * so that it can start writing PCM data to us. */
                 cbFree2 = RT_MIN(cbFree2, AUDIOMIXBUF_S2B_RATIO(&pGstStrmOut->MixBuf,
-                                                                audioMixBufFree(&pGstStrmOut->MixBuf)));
+                                                                AudioMixBufFree(&pGstStrmOut->MixBuf)));
 
                 LogFlowFunc(("\t[%s] cbFree=%RU32\n", pGstStrmOut->MixBuf.pszName, cbFree2));
             }
@@ -1107,7 +1107,7 @@ static DECLCALLBACK(int) drvAudioQueryStatus(PPDMIAUDIOCONNECTOR pInterface,
         if (pGstStrmIn->State.fActive)
         {
             cbAvailIn = RT_MAX(cbAvailIn, AUDIOMIXBUF_S2B(&pHstStrmIn->MixBuf,
-                                                          audioMixBufMixed(&pHstStrmIn->MixBuf)));
+                                                          AudioMixBufMixed(&pHstStrmIn->MixBuf)));
 
             LogFlowFunc(("\t[%s] cbFree=%RU32\n", pHstStrmIn->MixBuf.pszName, cbAvailIn));
         }
@@ -1193,7 +1193,7 @@ static DECLCALLBACK(int) drvAudioPlayOut(PPDMIAUDIOCONNECTOR pInterface, uint32_
                 && pGstStrmOut->State.fEmpty)
                 continue;
 
-            if (audioMixBufIsEmpty(&pGstStrmOut->MixBuf))
+            if (AudioMixBufIsEmpty(&pGstStrmOut->MixBuf))
             {
                 pGstStrmOut->State.fEmpty = true;
                 fNeedsCleanup |= !pGstStrmOut->State.fActive;
@@ -1427,11 +1427,11 @@ static DECLCALLBACK(int) drvAudioRead(PPDMIAUDIOCONNECTOR pInterface, PPDMAUDIOG
      * should have the audio data in the format the guest needs.
      */
     uint32_t cRead;
-    int rc = audioMixBufReadCirc(&pGstStrmIn->MixBuf,
+    int rc = AudioMixBufReadCirc(&pGstStrmIn->MixBuf,
                                  pvBuf, cbBuf, &cRead);
     if (RT_SUCCESS(rc))
     {
-        audioMixBufFinish(&pGstStrmIn->MixBuf, cRead);
+        AudioMixBufFinish(&pGstStrmIn->MixBuf, cRead);
 
         if (pcbRead)
             *pcbRead = AUDIOMIXBUF_S2B(&pGstStrmIn->MixBuf, cRead);
