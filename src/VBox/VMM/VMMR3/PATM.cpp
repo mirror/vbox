@@ -91,8 +91,6 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static FNPGMR3VIRTHANDLER patmR3VirtPageHandler;
-
 static int          patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictAddr, PPATCHINFO pPatch);
 static int          patmActivateInt3Patch(PVM pVM, PPATCHINFO pPatch);
 static int          patmDeactivateInt3Patch(PVM pVM, PPATCHINFO pPatch);
@@ -223,7 +221,7 @@ VMMR3_INT_DECL(int) PATMR3Init(PVM pVM)
      */
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_ALL, false /*fRelocUserRC*/,
                                          NULL /*pfnInvalidateR3*/,
-                                         patmR3VirtPageHandler,
+                                         patmVirtPageHandler,
                                          "patmRCVirtPagePfHandler",
                                          "PATMMonitorPatchJump", &pVM->patm.s.hMonitorPageType);
     AssertRCReturn(rc, rc);
@@ -972,37 +970,6 @@ static DECLCALLBACK(int) patmR3RelocatePatches(PAVLOU32NODECORE pNode, void *pPa
     if (pPatch->patch.flags & PATMFL_PATCHED_GUEST_CODE)
         PATM_LOG_PATCH_INSTR(pVM, &pPatch->patch, PATMREAD_RAWCODE, "Rel patch jump:", "");
     return 0;
-}
-
-/**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          The address of the guest page we're monitoring.
- */
-static DECLCALLBACK(int) patmR3VirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                               PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    NOREF(pVCpu); NOREF(pvPtr); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser);
-
-    /** @todo could be the wrong virtual address (alias) */
-    pVM->patm.s.pvFaultMonitor = GCPtr;
-    PATMR3HandleMonitoredPage(pVM);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
 #ifdef VBOX_WITH_DEBUGGER

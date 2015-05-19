@@ -71,7 +71,6 @@
 *******************************************************************************/
 static DECLCALLBACK(int) csamR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) csamR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-static FNPGMR3VIRTHANDLER    csamR3CodePageWriteHandler;
 static FNPGMR3VIRTINVALIDATE csamR3CodePageInvalidate;
 
 bool                csamIsCodeScanned(PVM pVM, RTRCPTR pInstr, PCSAMPAGE *pPage);
@@ -254,14 +253,14 @@ VMMR3_INT_DECL(int) CSAMR3Init(PVM pVM)
      */
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                          NULL /*pfnInvalidateR3 */,
-                                         csamR3CodePageWriteHandler,
+                                         csamCodePageWriteHandler,
                                          "csamRCCodePageWritePfHandler",
                                          "CSAM code page write handler",
                                          &pVM->csam.s.hCodePageWriteType);
     AssertLogRelRCReturn(rc, rc);
     rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                          csamR3CodePageInvalidate,
-                                         csamR3CodePageWriteHandler,
+                                         csamCodePageWriteHandler,
                                          "csamRCCodePageWritePfHandler",
                                          "CSAM code page write and invlpg handler",
                                          &pVM->csam.s.hCodePageWriteAndInvPgType);
@@ -2163,59 +2162,6 @@ static DECLCALLBACK(void) CSAMDelayedWriteHandler(PVM pVM, RTRCPTR GCPtr, size_t
 }
 
 /**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(int) csamR3CodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    int rc;
-
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("csamR3CodePageWriteHandler: write to %RGv size=%zu\n", GCPtr, cbBuf));
-    NOREF(pvUser);
-
-    if (    PAGE_ADDRESS(pvPtr) == PAGE_ADDRESS((uintptr_t)pvPtr + cbBuf - 1)
-         && !memcmp(pvPtr, pvBuf, cbBuf))
-    {
-        Log(("csamR3CodePageWriteHandler: dummy write -> ignore\n"));
-        return VINF_PGM_HANDLER_DO_DEFAULT;
-    }
-
-    if (VM_IS_EMT(pVM))
-        rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
-    else
-    {
-        AssertFailed(); /* PGM should make sure this does not happen anymore! */
-        /* Queue the write instead otherwise we'll get concurrency issues. */
-        /** @note in theory not correct to let it write the data first before disabling a patch!
-         *        (if it writes the same data as the patch jump and we replace it with obsolete opcodes)
-         */
-        Log(("csamR3CodePageWriteHandler: delayed write!\n"));
-        AssertCompileSize(RTRCPTR, 4);
-        rc = VMR3ReqCallVoidNoWait(pVM, VMCPUID_ANY, (PFNRT)CSAMDelayedWriteHandler, 3, pVM, (RTRCPTR)GCPtr, cbBuf);
-    }
-    AssertRC(rc);
-
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-
-/**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
  *
  * @param   pVM             Pointer to the VM.
@@ -2434,17 +2380,17 @@ static int csamR3FlushDirtyPages(PVM pVM)
 
     STAM_PROFILE_START(&pVM->csam.s.StatFlushDirtyPages, a);
 
-    for (uint32_t i=0;i<pVM->csam.s.cDirtyPages;i++)
+    for (uint32_t i = 0; i < pVM->csam.s.cDirtyPages; i++)
     {
         int          rc;
         PCSAMPAGEREC pPageRec;
-        RTRCPTR      GCPtr = pVM->csam.s.pvDirtyBasePage[i];
-
-        GCPtr = GCPtr & PAGE_BASE_GC_MASK;
+        RTRCPTR      GCPtr = pVM->csam.s.pvDirtyBasePage[i] & PAGE_BASE_GC_MASK;
 
 #ifdef VBOX_WITH_REM
          /* Notify the recompiler that this page has been changed. */
         REMR3NotifyCodePageChanged(pVM, pVCpu, GCPtr);
+        if (pVM->csam.s.pvDirtyFaultPage[i] != pVM->csam.s.pvDirtyBasePage[i])
+            REMR3NotifyCodePageChanged(pVM, pVCpu, pVM->csam.s.pvDirtyFaultPage[i] & PAGE_BASE_GC_MASK);
 #endif
 
         /* Enable write protection again. (use the fault address as it might be an alias) */

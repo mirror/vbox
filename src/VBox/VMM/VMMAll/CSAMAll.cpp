@@ -28,6 +28,9 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/mm.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/param.h>
@@ -43,6 +46,127 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+
+#ifdef IN_RING0
+# error "IN_RING3 & IN_RC only!"
+#endif
+
+
+/**
+ * Access handler callback for virtual access handler ranges.
+ *
+ * Important to realize that a physical page in a range can have aliases, and
+ * for ALL and WRITE handlers these will also trigger.
+ *
+ * @returns VINF_SUCCESS if the handler have carried out the operation.
+ * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu       Pointer to the cross context CPU context for the
+ *                      calling EMT.
+ * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
+ * @param   pvPtr           The HC mapping of that address.
+ * @param   pvBuf           What the guest is reading/writing.
+ * @param   cbBuf           How much it's reading/writing.
+ * @param   enmAccessType   The access type.
+ * @param   enmOrigin       Who is making this write.
+ * @param   pvUser          User argument.
+ */
+PGM_ALL_CB2_DECL(int) csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                               PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    RTGCPTR const GCPtrMonitored = (uintptr_t)pvUser | (GCPtr & PAGE_OFFSET_MASK);
+    Log(("csamCodePageWriteHandler: write to %RGv LB %zu\n", GCPtr, cbBuf));
+
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Assert(VMCPU_IS_EMT(pVCpu));
+
+    /*
+     * Check if it's a dummy write that doesn't change anything.
+     */
+    if (   PAGE_ADDRESS(pvPtr) == PAGE_ADDRESS((uintptr_t)pvPtr + cbBuf - 1)
+        && !memcmp(pvPtr, pvBuf, cbBuf))
+    {
+        Log(("csamCodePageWriteHandler: dummy write -> ignore\n"));
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+
+#ifdef IN_RING3
+    /*
+     * Ring-3: Do proper handling.
+     */
+    int rc = PATMR3PatchWrite(pVM, GCPtrMonitored, (uint32_t)cbBuf);
+    AssertRC(rc);
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+
+#else
+    /*
+     * Raw-mode: Try avoid needing to go to ring-3 (same as csamRCCodePageWritePfHandler).
+     */
+    uint32_t     const cpl            = CPUMGetGuestCPL(pVCpu);
+    bool         const fPatchCode     = PATMIsPatchGCAddr(pVM, CPUMGetGuestRIP(pVCpu));
+    PPATMGCSTATE       pPATMGCState   = PATMGetGCState(pVM);
+
+    Assert(pVM->csam.s.cDirtyPages < CSAM_MAX_DIRTY_PAGES);
+    Assert(pPATMGCState);
+    Assert(pPATMGCState->fPIF || fPatchCode);
+
+# ifdef VBOX_WITH_REM
+    /* Flush the recompilers translation block cache as the guest seems to be modifying instructions. */
+    /** @todo a bit overkill?? */
+    REMFlushTBs(pVM);
+# endif
+
+    /*
+     * When patch code is executing instructions that must complete, then we
+     * must *never* interrupt it.
+     */
+    if (!pPATMGCState->fPIF && fPatchCode)
+    {
+        Log(("csamRCCodePageWriteHandler: fPIF=0 -> stack fault in patch generated code at %08RX32!\n", CPUMGetGuestRIP(pVCpu)));
+        return VINF_PGM_HANDLER_DO_DEFAULT;
+    }
+
+    Log(("csamRCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", GCPtr, GCPtrMonitored, cpl));
+
+    /*
+     * If user code is modifying one of our monitored pages, then we can safely
+     * write to it as it's no longer being used for supervisor code.
+     */
+    if (cpl != 3)
+    {
+        VBOXSTRICTRC rcStrict = PATMRCHandleWriteToPatchPage(pVM, NULL /* pRegFrame = no interpret */,
+                                                             (RTRCPTR)GCPtrMonitored, cbBuf);
+        if (   rcStrict == VINF_PGM_HANDLER_DO_DEFAULT
+            || rcStrict == VINF_SUCCESS)
+            return VBOXSTRICTRC_TODO(rcStrict);
+        if (rcStrict == VINF_EM_RAW_EMULATE_INSTR)
+        {
+            STAM_COUNTER_INC(&pVM->csam.s.StatDangerousWrite);
+            return VINF_EM_RAW_EMULATE_INSTR;
+        }
+        Assert(rcStrict == VERR_PATCH_NOT_FOUND);
+    }
+
+    /*
+     * Schedule ring-3 activity.
+     * Note that GCPtr might be a different address in case of aliases.  So,
+     * take down both alternatives.
+     */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
+    pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages]  = (RTRCPTR)GCPtrMonitored;
+    pVM->csam.s.pvDirtyFaultPage[pVM->csam.s.cDirtyPages] = (RTRCPTR)GCPtr;
+    if (++pVM->csam.s.cDirtyPages == CSAM_MAX_DIRTY_PAGES)
+        return VINF_CSAM_PENDING_ACTION;
+
+    /*
+     * Continue with the write. The VM_FF_CSAM_FLUSH_DIRTY_PAGE handler will reset it to readonly again.
+     */
+    Log(("csamRCCodePageWriteHandler: enabled r/w for page %RGv (%RGv)\n", GCPtr, GCPtrMonitored));
+    STAM_COUNTER_INC(&pVM->csam.s.StatCodePageModified);
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+#endif
+}
+
 
 /**
  * Check if this page needs to be analysed by CSAM

@@ -164,9 +164,9 @@ VMM_INT_DECL(int)       PATMSysCall(PVM pVM, PCPUMCTX pCtx, PDISCPUSTATE pCpu);
  * @{
  */
 
-VMMRC_INT_DECL(int)     PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
-VMMRC_INT_DECL(int)     PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite);
-VMMRC_INT_DECL(int)     PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMRC_INT_DECL(int)             PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMRC_INT_DECL(VBOXSTRICTRC)    PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTRCPTR GCPtr, uint32_t cbWrite);
+VMMRC_INT_DECL(int)             PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /** @} */
 
