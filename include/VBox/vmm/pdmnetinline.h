@@ -67,38 +67,38 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
 {
     PDMNETWORKGSOTYPE enmType;
 
-    if (RT_UNLIKELY(cbGsoMax < sizeof(*pGso)))
-        return false;
+    if (RT_LIKELY(cbGsoMax >= sizeof(*pGso)))
+    { /* likely */ } else return false;
 
     enmType = (PDMNETWORKGSOTYPE)pGso->u8Type;
-    if (RT_UNLIKELY( enmType <= PDMNETWORKGSOTYPE_INVALID || enmType >= PDMNETWORKGSOTYPE_END ))
-        return false;
+    if (RT_LIKELY( enmType > PDMNETWORKGSOTYPE_INVALID && enmType < PDMNETWORKGSOTYPE_END ))
+    { /* likely */ } else return false;
 
     /* all types requires both headers. */
-    if (RT_UNLIKELY( pGso->offHdr1 < sizeof(RTNETETHERHDR) ))
-        return false;
-    if (RT_UNLIKELY( pGso->offHdr2 <= pGso->offHdr1 ))
-        return false;
-    if (RT_UNLIKELY( pGso->cbHdrsTotal  <= pGso->offHdr2 ))
-        return false;
+    if (RT_LIKELY( pGso->offHdr1 >= sizeof(RTNETETHERHDR) ))
+    { /* likely */ } else return false;
+    if (RT_LIKELY( pGso->offHdr2 < pGso->offHdr1 ))
+    { /* likely */ } else return false;
+    if (RT_LIKELY( pGso->cbHdrsTotal > pGso->offHdr2 ))
+    { /* likely */ } else return false;
 
     /* min size of the 1st header(s). */
     switch (enmType)
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV4_MIN_LEN ))
-                return false;
+            if (RT_LIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 >= RTNETIPV4_MIN_LEN ))
+            { /* likely */ } else return false;
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV6_MIN_LEN ))
-                return false;
+            if (RT_LIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 >= RTNETIPV6_MIN_LEN ))
+            { /* likely */ } else return false;
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV4_MIN_LEN + RTNETIPV6_MIN_LEN ))
-                return false;
+            if (RT_LIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 >= RTNETIPV4_MIN_LEN + RTNETIPV6_MIN_LEN ))
+            { /* likely */ } else return false;
             break;
         case PDMNETWORKGSOTYPE_INVALID:
         case PDMNETWORKGSOTYPE_END:
@@ -112,14 +112,14 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            if (RT_UNLIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 < RTNETTCP_MIN_LEN ))
-                return false;
+            if (RT_LIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 >= RTNETTCP_MIN_LEN ))
+            { /* likely */ } else return false;
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            if (RT_UNLIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 < RTNETUDP_MIN_LEN ))
-                return false;
+            if (RT_LIKELY( (unsigned)pGso->cbHdrsTotal - pGso->offHdr2 >= RTNETUDP_MIN_LEN ))
+            { /* likely */ } else return false;
             break;
         case PDMNETWORKGSOTYPE_INVALID:
         case PDMNETWORKGSOTYPE_END:
@@ -128,10 +128,10 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     }
 
     /* There must be at more than one segment. */
-    if (RT_UNLIKELY( cbFrame <= pGso->cbHdrsTotal ))
-        return false;
-    if (RT_UNLIKELY( cbFrame - pGso->cbHdrsTotal < pGso->cbMaxSeg ))
-        return false;
+    if (RT_LIKELY( cbFrame > pGso->cbHdrsTotal ))
+    { /* likely */ } else return false;
+    if (RT_LIKELY( cbFrame - pGso->cbHdrsTotal >= pGso->cbMaxSeg ))
+    { /* likely */ } else return false;
 
     return true;
 }
