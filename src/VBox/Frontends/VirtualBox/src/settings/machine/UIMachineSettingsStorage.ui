@@ -58,7 +58,7 @@
        <item>
         <layout class="QVBoxLayout" name="mLtStorage" >
          <property name="spacing" >
-          <number>0</number>
+          <number>3</number>
          </property>
          <property name="margin" >
           <number>0</number>
