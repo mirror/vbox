@@ -51,10 +51,8 @@ private:
     void prepareCommon();
     void prepareFilters();
     void prepareConsoleConnections();
-    //void loadMachineViewSettings();
 
     /* Cleanup helpers: */
-    void saveMachineViewSettings();
     //void cleanupConsoleConnections() {}
     //void cleanupFilters() {}
     //void cleanupCommon() {}
@@ -62,8 +60,8 @@ private:
     /* Hidden setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);
 
-    /** Resends guest size-hint if necessary. */
-    void maybeResendSizeHint();
+    /** Resends guest size-hint. */
+    void resendSizeHint();
 
     /** Adjusts guest-screen size to correspond current <i>machine-window</i> size. */
     void adjustGuestScreenSize();

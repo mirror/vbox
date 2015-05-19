@@ -236,8 +236,10 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
                                uisession()->isScreenVisible(screenId()),
                                false, 0, 0, size.width(), size.height(), 0);
 
-    /* And track whether we have a "normal" or "fullscreen"/"seamless" size-hint sent: */
-    gEDataManager->markLastGuestSizeHintAsFullScreen(m_uScreenId, isFullscreenOrSeamless(), vboxGlobal().managedVMUuid());
+    /* If we are in normal or scaled mode, remember the size sent for the next
+     * time we have to restore one of those two modes: */
+    if (!isFullscreenOrSeamless())
+        storeGuestSizeHint(size);
 }
 
 void UIMachineView::sltHandleNotifyChange(int iWidth, int iHeight)
@@ -825,7 +827,7 @@ UIMachineLogic* UIMachineView::machineLogic() const
 
 QSize UIMachineView::sizeHint() const
 {
-    if (m_sizeHintOverride.isValid())
+    if (m_sizeHintOverride.isValid() && uisession()->isGuestSupportsGraphics())
         return m_sizeHintOverride;
 
     /* Get frame-buffer size-hint: */

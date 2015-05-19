@@ -382,10 +382,6 @@ public:
         QSize lastGuestSizeHint(ulong uScreenIndex, const QString &strID);
         /** Defines last guest-screen @a sizeHint for screen with @a uScreenIndex. */
         void setLastGuestSizeHint(ulong uScreenIndex, const QSize &sizeHint, const QString &strID);
-        /** Returns whether guest size-hint was for full or seamless screen with @a uScreenIndex. */
-        bool wasLastGuestSizeHintForFullScreen(ulong uScreenIndex, const QString &strID);
-        /** Defines whether guest size-hint @a fWas for full or seamless screen with @a uScreenIndex. */
-        void markLastGuestSizeHintAsFullScreen(ulong uScreenIndex, bool fWas, const QString &strID);
 
         /** Returns host-screen index corresponding to passed guest-screen @a iGuestScreenIndex. */
         int hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID);

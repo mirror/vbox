@@ -56,15 +56,12 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
 #endif
                     )
 {
-    /* Resend the last resize hint if necessary: */
-    maybeResendSizeHint();
+    /* Resend the last resize hint: */
+    resendSizeHint();
 }
 
 UIMachineViewScale::~UIMachineViewScale()
 {
-    /* Save machine view settings: */
-    saveMachineViewSettings();
-
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -120,13 +117,6 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
     return UIMachineView::eventFilter(pWatched, pEvent);
 }
 
-void UIMachineViewScale::saveMachineViewSettings()
-{
-    /* If guest screen-still visible => store it's size-hint: */
-    if (uisession()->isScreenVisible(screenId()))
-        storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
-}
-
 void UIMachineViewScale::applyMachineViewScaleFactor()
 {
     /* If scaled-size is valid: */
@@ -160,20 +150,12 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
     display().ViewportChanged(screenId(), contentsX(), contentsY(), visibleWidth(), visibleHeight());
 }
 
-void UIMachineViewScale::maybeResendSizeHint()
+void UIMachineViewScale::resendSizeHint()
 {
-    if (uisession()->isGuestSupportsGraphics())
-    {
-        /* Send guest-screen size-hint if needed to reverse a transition to fullscreen or seamless: */
-        if (gEDataManager->wasLastGuestSizeHintForFullScreen(m_uScreenId, vboxGlobal().managedVMUuid()))
-        {
-            const QSize sizeHint = guestSizeHint();
-            LogRel(("UIMachineViewScale::maybeResendSizeHint: "
-                    "Restoring guest size-hint for screen %d to %dx%d\n",
-                    (int)screenId(), sizeHint.width(), sizeHint.height()));
-            sltPerformGuestResize(sizeHint);
-        }
-    }
+    const QSize sizeHint = guestSizeHint();
+    LogRel(("GUI: UIMachineViewScale::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
+            (int)screenId(), sizeHint.width(), sizeHint.height()));
+    sltPerformGuestResize(sizeHint);
 }
 
 QSize UIMachineViewScale::sizeHint() const

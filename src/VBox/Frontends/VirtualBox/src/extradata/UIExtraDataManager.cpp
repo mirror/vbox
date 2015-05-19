@@ -1776,7 +1776,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
 #ifdef Q_WS_X11
            << GUI_Fullscreen_LegacyMode
 #endif /* Q_WS_X11 */
-           << GUI_AutoresizeGuest << GUI_LastGuestSizeHint << GUI_LastGuestSizeHintWasFullscreen
+           << GUI_AutoresizeGuest << GUI_LastGuestSizeHint
            << GUI_VirtualScreenToHostScreen << GUI_AutomountGuestScreens
 #ifdef VBOX_WITH_VIDEOHWACCEL
            << GUI_Accelerate2D_StretchLinear
@@ -3107,24 +3107,6 @@ void UIExtraDataManager::setLastGuestSizeHint(ulong uScreenIndex, const QSize &s
 
     /* Re-cache corresponding extra-data: */
     setExtraDataStringList(strKey, data, strID);
-}
-
-bool UIExtraDataManager::wasLastGuestSizeHintForFullScreen(ulong uScreenIndex, const QString &strID)
-{
-    /* Choose corresponding key: */
-    const QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHintWasFullscreen, uScreenIndex);
-
-    /* 'True' only if feature is allowed: */
-    return isFeatureAllowed(strKey, strID);
-}
-
-void UIExtraDataManager::markLastGuestSizeHintAsFullScreen(ulong uScreenIndex, bool fWas, const QString &strID)
-{
-    /* Choose corresponding key: */
-    const QString strKey = extraDataKeyPerScreen(GUI_LastGuestSizeHintWasFullscreen, uScreenIndex);
-
-    /* 'True' if feature allowed, null-string otherwise: */
-    return setExtraDataString(strKey, toFeatureAllowed(fWas), strID);
 }
 
 int UIExtraDataManager::hostScreenForPassedGuestScreen(int iGuestScreenIndex, const QString &strID)

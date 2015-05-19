@@ -192,9 +192,6 @@ namespace UIExtraDataDefs
           * which holds last guest-screen size-hint per screen-index. */
         extern const char* GUI_LastGuestSizeHint;
         /** Prefix used by composite extra-data keys,
-          * which holds whether guest size-hint was for full or seamless screen per screen-index. */
-        extern const char* GUI_LastGuestSizeHintWasFullscreen;
-        /** Prefix used by composite extra-data keys,
           * which holds host-screen index per guest-screen index. */
         extern const char* GUI_VirtualScreenToHostScreen;
         /** Holds whether automatic mounting/unmounting of guest-screens enabled. */
