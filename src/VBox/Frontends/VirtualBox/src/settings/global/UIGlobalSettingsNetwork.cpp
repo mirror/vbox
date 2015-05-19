@@ -455,9 +455,13 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
         connect(m_pActionEditNetworkHost, SIGNAL(triggered(bool)), this, SLOT(sltEditNetworkHost()));
     }
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Prepare NAT network toolbar: */
     {
-        m_pToolbarNetworkNAT->setIconSize(QSize(16, 16));
+        m_pToolbarNetworkNAT->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbarNetworkNAT->setOrientation(Qt::Vertical);
         m_pToolbarNetworkNAT->addAction(m_pActionAddNetworkNAT);
         m_pToolbarNetworkNAT->addAction(m_pActionDelNetworkNAT);
@@ -465,7 +469,7 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
     }
     /* Prepare Host network toolbar: */
     {
-        m_pToolbarNetworkHost->setIconSize(QSize(16, 16));
+        m_pToolbarNetworkHost->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolbarNetworkHost->setOrientation(Qt::Vertical);
         m_pToolbarNetworkHost->addAction(m_pActionAddNetworkHost);
         m_pToolbarNetworkHost->addAction(m_pActionDelNetworkHost);
