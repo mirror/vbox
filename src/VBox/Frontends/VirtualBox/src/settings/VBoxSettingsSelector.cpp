@@ -190,12 +190,14 @@ VBoxSettingsTreeViewSelector::VBoxSettingsTreeViewSelector (QWidget *aParent /* 
     sizePolicy.setHorizontalStretch (0);
     sizePolicy.setVerticalStretch (0);
     sizePolicy.setHeightForWidth (mTwSelector->sizePolicy().hasHeightForWidth());
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
     mTwSelector->setSizePolicy (sizePolicy);
     mTwSelector->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
     mTwSelector->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
     mTwSelector->setRootIsDecorated (false);
     mTwSelector->setUniformRowHeights (true);
-    mTwSelector->setIconSize(QSize(24, 24));
+    mTwSelector->setIconSize(QSize(1.5 * iIconMetric, 1.5 * iIconMetric));
     /* Add the columns */
     mTwSelector->headerItem()->setText (treeWidget_Category, "Category");
     mTwSelector->headerItem()->setText (treeWidget_Id, "[id]");
@@ -290,15 +292,20 @@ void VBoxSettingsTreeViewSelector::setVisibleById (int aId, bool aShow)
 void VBoxSettingsTreeViewSelector::polish()
 {
     /* Get recommended size hint: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
     int iItemWidth = static_cast<QAbstractItemView*>(mTwSelector)->sizeHintForColumn(treeWidget_Category);
-    int iItemHeight = qMax(24 /* icon height */, mTwSelector->fontMetrics().height() /* text height */);
+    int iItemHeight = qMax((int)(iIconMetric * 1.5) /* icon height */,
+                           mTwSelector->fontMetrics().height() /* text height */);
     /* Add some margin to every item in the tree: */
     iItemHeight += 4 /* margin itself */ * 2 /* margin count */;
     /* Set final size hint for items: */
     mTwSelector->setSizeHintForItems(QSize(iItemWidth , iItemHeight));
 
-    /* Fix selector width to minimum possible: */
+    /* Adjust selector width/height: */
     mTwSelector->setFixedWidth(iItemWidth + 2 * mTwSelector->frameWidth());
+    mTwSelector->setMinimumHeight(mTwSelector->topLevelItemCount() * iItemHeight +
+                                  1 /* margin itself */ * 2 /* margin count */);
 
     /* Sort selector by the id column: */
     mTwSelector->sortItems(treeWidget_Id, Qt::AscendingOrder);
