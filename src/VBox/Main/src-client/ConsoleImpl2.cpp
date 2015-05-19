@@ -748,8 +748,10 @@ DECLCALLBACK(int) Console::i_configConstructor(PUVM pUVM, PVM pVM, void *pvConso
 
 /**
  * Report versions of installed drivers to release log.
+ *
+ * WARNING! This method has a side effect -- it modifies mfNDIS6.
  */
-static void reportDriverVersions(void)
+void Console::i_reportDriverVersions()
 {
     DWORD   err;
     HRESULT hrc;
@@ -760,6 +762,9 @@ static void reportDriverVersions(void)
     TCHAR  *pszSystemRoot = szSystemRoot;
     LPVOID  pVerInfo      = NULL;
     DWORD   cbVerInfo     = 0;
+
+    /* Assume NDIS6 */
+    mfNDIS6 = true;
 
     do
     {
@@ -815,6 +820,8 @@ static void reportDriverVersions(void)
             {
                 if (_tcsnicmp(TEXT("vbox"), szDriver, 4))
                     continue;
+                if (_tcsnicmp(TEXT("vboxnetflt"), szDriver, 10) == 0)
+                    mfNDIS6 = false;
             }
             else
                 continue;
@@ -882,7 +889,7 @@ static void reportDriverVersions(void)
         RTMemTmpFree(pszSystemRoot);
 }
 #else /* !RT_OS_WINDOWS */
-static void reportDriverVersions(void)
+void Console::i_reportDriverVersions(void)
 {
 }
 #endif /* !RT_OS_WINDOWS */
@@ -980,7 +987,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     ULONG maxNetworkAdapters;
     hrc = systemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);        H();
 
-    reportDriverVersions();
+    i_reportDriverVersions();
     /*
      * Get root node first.
      * This is the only node in the tree.
@@ -5321,37 +5328,8 @@ int Console::i_configNetwork(const char *pszDevice,
 
                 CoTaskMemFree(pswzBindName);
 
-                /* Assume we should use the old NDIS5.1 version of driver which uses TRUNKTYPE_NETADP */
-                trunkType = TRUNKTYPE_NETADP;
-
-                HKEY hkParams;
-                hrc = pAdaptorComponent->OpenParamKey(&hkParams);
-                Assert(hrc == S_OK);
-                if (hrc == S_OK)
-                {
-                    WCHAR swzInfSection[16];
-                    DWORD dwSize = sizeof(swzInfSection);
-                    hrc = RegQueryValueExW(hkParams, L"InfSection", NULL, NULL, (LPBYTE)swzInfSection, &dwSize);
-                    if (hrc == S_OK)
-                    {
-                        if (!_wcsnicmp(swzInfSection, L"VBoxNetAdp6.ndi", sizeof(L"VBoxNetAdp6.ndi")/2))
-                        {
-                            /*
-                             * This is NDIS 6.x miniport, it relies on NetLwf filter to
-                             * run actual traffic. We use netflt attachment instead of
-                             * netadp, which is used in case of NDIS 5.x.
-                             */
-                            trunkType = TRUNKTYPE_NETFLT;
-                        }
-                    }
-                    RegCloseKey(hkParams);
-                }
-                else
-                {
-                    LogRel(("Console::i_configNetwork: INetCfgComponent::GetId(%s) failed, err (0x%x), "
-                            "falling back to NDIS5 attachment\n", pszTrunkName, hrc));
-                    /* Nothing to do here as the trunk type defaults to NETADP */
-                }
+                /* The old NDIS5.1 version of driver uses TRUNKTYPE_NETADP */
+                trunkType = mfNDIS6 ? TRUNKTYPE_NETFLT : TRUNKTYPE_NETADP;
                 InsertConfigInteger(pCfg, "TrunkType", trunkType == TRUNKTYPE_NETFLT ? kIntNetTrunkType_NetFlt : kIntNetTrunkType_NetAdp);
 
                 pAdaptorComponent.setNull();

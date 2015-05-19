@@ -833,6 +833,8 @@ private:
     static DECLCALLBACK(int)    i_teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
+    void i_reportDriverVersions(void);
+
     bool mSavedStateDataLoaded : 1;
 
     const ComPtr<IMachine> mMachine;
@@ -988,6 +990,11 @@ private:
     ComPtr<IProgress> mptrCancelableProgress;
 
     ComPtr<IEventListener> mVmListener;
+
+#ifdef RT_OS_WINDOWS
+    /** Use NDIS6 network drivers. */
+    bool mfNDIS6;
+#endif /* RT_OS_WINDOWS */
 
     friend struct VMTask;
 };
