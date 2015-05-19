@@ -161,18 +161,25 @@ private:
 #endif
 
 /** @def RT_FAILURE
- * Check for failure. We don't expect in normal cases, that is the code path depending on
- * this check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP instead.
+ * Check for failure, predicting unlikely.
+ *
+ * We don't expect in normal cases, that is the code path depending on this
+ * check is normally NOT taken. To prevent any prediction use RT_FAILURE_NP
+ * instead.
  *
  * @returns true if rc indicates failure.
  * @returns false if rc indicates success.
  *
  * @param   rc  The iprt status code to test.
+ *
+ * @remarks Please structure your code to use the RT_SUCCESS() macro instead of
+ *          RT_FAILURE() where possible, as that gives us a better shot at good
+ *          code with the windows compilers.
  */
 #define RT_FAILURE(rc)      ( RT_UNLIKELY(!RT_SUCCESS_NP(rc)) )
 
 /** @def RT_FAILURE_NP
- * Check for failure. Don't predict the result.
+ * Check for failure, no prediction.
  *
  * @returns true if rc indicates failure.
  * @returns false if rc indicates success.
