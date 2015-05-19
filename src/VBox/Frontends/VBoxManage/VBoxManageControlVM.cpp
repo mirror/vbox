@@ -1698,12 +1698,30 @@ int handleControlVM(HandlerArg *a)
 
             BOOL fRemoveOnSuspend = FALSE;
             Bstr bstrPwId(a->argv[2]);
-            Bstr bstrPw(a->argv[3]);
+            Utf8Str strPassword;
+
+            if (!RTStrCmp(a->argv[3], "-"))
+            {
+                /* Get password from console. */
+                RTEXITCODE rcExit = readPasswordFromConsole(&strPassword, "Enter password:");
+                if (rcExit == RTEXITCODE_FAILURE)
+                    break;
+            }
+            else
+            {
+                RTEXITCODE rcExit = readPasswordFile(a->argv[3], &strPassword);
+                if (rcExit == RTEXITCODE_FAILURE)
+                {
+                    RTMsgError("Failed to read new password from file");
+                    break;
+                }
+            }
+
             if (   a->argc == 6
                 && !strcmp(a->argv[5], "yes"))
                 fRemoveOnSuspend = TRUE;
 
-            CHECK_ERROR_BREAK(console, AddDiskEncryptionPassword(bstrPwId.raw(), bstrPw.raw(), fRemoveOnSuspend));
+            CHECK_ERROR_BREAK(console, AddDiskEncryptionPassword(bstrPwId.raw(), Bstr(strPassword).raw(), fRemoveOnSuspend));
         }
         else if (!strcmp(a->argv[1], "removeencpassword"))
         {

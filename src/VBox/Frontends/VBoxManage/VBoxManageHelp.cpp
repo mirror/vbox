@@ -498,7 +498,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            cpuexecutioncap <1-100>\n"
                      "                            webcam <attach [path [settings]]> | <detach [path]> | <list>\n"
                      "                            addencpassword <id>\n"
-                     "                                           <password>\n"
+                     "                                           <password file>|-\n"
                      "                                           [--removeonsuspend <yes|no>]\n"
                      "                            removeencpassword <id>\n"
                      "                            removeallencpasswords\n"
