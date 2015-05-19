@@ -155,19 +155,18 @@ public:
  *
  *  @param   expr    Expression which should be true.
  */
-#if defined(DEBUG)
-# define ComAssert(expr)    Assert(expr)
-#else
-# define ComAssert(expr) \
+#define ComAssert(expr) \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
         else \
+        { \
+            AssertMsgFailed(("%s\n", #expr)); \
             setError(E_FAIL, \
                      "Assertion failed: [%s] at '%s' (%d) in %s.\nPlease contact the product vendor!", \
                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        } \
     } while (0)
-#endif
 
 /**
  *  Special version of the AssertFailed macro to be used within VirtualBoxBase
@@ -180,16 +179,13 @@ public:
  *  @see VirtualBoxBase::setError
  *
  */
-#if defined(DEBUG)
-# define ComAssertFailed()  AssertFailed()
-#else
-# define ComAssertFailed() \
+#define ComAssertFailed() \
     do { \
+        AssertFailed(); \
         setError(E_FAIL, \
                  "Assertion failed: at '%s' (%d) in %s.\nPlease contact the product vendor!", \
                  __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
-#endif
 
 /**
  *  Special version of the AssertMsg macro to be used within VirtualBoxBase
@@ -200,19 +196,19 @@ public:
  *  @param   expr    Expression which should be true.
  *  @param   a       printf argument list (in parenthesis).
  */
-#if defined(DEBUG)
-# define ComAssertMsg(expr, a) AssertMsg(expr, a)
-#else
-# define ComAssertMsg(expr, a) \
+#define ComAssertMsg(expr, a) \
     do { \
         if (RT_LIKELY(!!(expr))) \
         { /* likely */ } \
         else \
+        { \
+            Utf8StrFmt MyAssertMsg a; /* may throw bad_alloc */ \
+            AssertMsgFailed(("%s\n", MyAssertMsg.c_str())); \
             setError(E_FAIL, \
                      "Assertion failed: [%s] at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
-                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .c_str()); \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, MyAssertMsg.c_str()); \
+        } \
     } while (0)
-#endif
 
 /**
  *  Special version of the AssertMsgFailed macro to be used within VirtualBoxBase
@@ -222,16 +218,14 @@ public:
  *
  *  @param   a       printf argument list (in parenthesis).
  */
-#if defined(DEBUG)
-# define ComAssertMsgFailed(a)  AssertMsgFailed(a)
-#else
-# define ComAssertMsgFailed(a) \
+#define ComAssertMsgFailed(a) \
     do { \
+        Utf8StrFmt MyAssertMsg a; /* may throw bad_alloc */ \
+        AssertMsgFailed(("%s\n", MyAssertMsg.c_str())); \
         setError(E_FAIL, \
                  "Assertion failed: at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
-                 __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .c_str()); \
+                 __FILE__, __LINE__, __PRETTY_FUNCTION__, MyAssertMsg.c_str()); \
     } while (0)
-#endif
 
 /**
  *  Special version of the AssertRC macro to be used within VirtualBoxBase
@@ -241,11 +235,7 @@ public:
  *
  * @param   vrc     VBox status code.
  */
-#if defined(DEBUG)
-# define ComAssertRC(vrc)   AssertRC(vrc)
-#else
-# define ComAssertRC(vrc)   ComAssertMsgRC(vrc, ("%Rra", vrc))
-#endif
+#define ComAssertRC(vrc)            ComAssertMsgRC(vrc, ("%Rra", vrc))
 
 /**
  *  Special version of the AssertMsgRC macro to be used within VirtualBoxBase
@@ -256,11 +246,7 @@ public:
  *  @param   vrc    VBox status code.
  *  @param   msg    printf argument list (in parenthesis).
  */
-#if defined(DEBUG)
-# define ComAssertMsgRC(vrc, msg)   AssertMsgRC(vrc, msg)
-#else
-# define ComAssertMsgRC(vrc, msg)   ComAssertMsg(RT_SUCCESS(vrc), msg)
-#endif
+#define ComAssertMsgRC(vrc, msg)    ComAssertMsg(RT_SUCCESS(vrc), msg)
 
 /**
  *  Special version of the AssertComRC macro to be used within VirtualBoxBase
@@ -268,13 +254,9 @@ public:
  *
  *  See ComAssert for more info.
  *
- *  @param rc   COM result code
+ *  @param hrc  COM result code
  */
-#if defined(DEBUG)
-# define ComAssertComRC(rc) AssertComRC(rc)
-#else
-# define ComAssertComRC(rc) ComAssertMsg(SUCCEEDED(rc), ("COM RC = %Rhrc (0x%08X)", (rc), (rc)))
-#endif
+#define ComAssertComRC(hrc)         ComAssertMsg(SUCCEEDED(hrc), ("COM RC=%Rhrc (0x%08X)", (hrc), (hrc)))
 
 
 /** Special version of ComAssert that returns ret if expr fails */
@@ -564,7 +546,7 @@ public:
     do { \
         RTAssertDebugBreak(); \
         throw (a); \
-} while (0)
+    } while (0)
 #else
 # define DebugBreakThrow(a) throw (a)
 #endif
