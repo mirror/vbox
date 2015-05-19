@@ -1838,28 +1838,51 @@ static void pcnetReceiveNoSync(PPCNETSTATE pThis, const uint8_t *buf, size_t cbT
         }
         else
         {
+            PCRTNETETHERHDR pEth = (PCRTNETETHERHDR)buf;
+            bool fStrip = false;
+            size_t len_802_3;
             uint8_t   *src = &pThis->abRecvBuf[8];
             RTGCPHYS32 crda = CSR_CRDA(pThis);
             RTGCPHYS32 next_crda;
             RMD        rmd, next_rmd;
 
-            memcpy(src, buf, cbToRecv);
-            if (!CSR_ASTRP_RCV(pThis))
+            /*
+             * Ethernet framing considers these two octets to be
+             * payload type; 802.3 framing considers them to be
+             * payload length.  IEEE 802.3x-1997 restricts Ethernet
+             * type to be greater than or equal to 1536 (0x0600), so
+             * that both framings can coexist on the wire.
+             *
+             * NB: CSR_ASTRP_RCV bit affects only 802.3 frames!
+             */
+            len_802_3 = RT_BE2H_U16(pEth->EtherType);
+            if (len_802_3 < 46 && CSR_ASTRP_RCV(pThis))
             {
-                uint32_t fcs = ~0;
-                uint8_t *p = src;
+                cbToRecv = RT_MIN(sizeof(RTNETETHERHDR) + len_802_3, cbToRecv);
+                fStrip = true;
+                fAddFCS = false;
+            }
 
+            memcpy(src, buf, cbToRecv);
+
+            if (!fStrip) {
                 while (cbToRecv < 60)
                     src[cbToRecv++] = 0;
+
                 if (fAddFCS)
                 {
+                    uint32_t fcs = ~0;
+                    uint8_t *p = src;
+
                     while (p != &src[cbToRecv])
                         CRC(fcs, *p++);
+
+                    /* FCS at the end of the packet */
                     ((uint32_t *)&src[cbToRecv])[0] = htonl(fcs);
-                    /* FCS at end of packet */
                     cbToRecv += 4;
                 }
             }
+
             cbPacket = (int)cbToRecv;                           Assert((size_t)cbPacket == cbToRecv);
 
 #ifdef PCNET_DEBUG_MATCH
