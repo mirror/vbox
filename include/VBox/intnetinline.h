@@ -423,8 +423,8 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
             uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
             if (offNew >= pRingBuf->offEnd)
                 offNew = pRingBuf->offStart;
-            if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-                return VERR_WRONG_ORDER; /* race */
+            if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+            { /* likely */ } else return VERR_WRONG_ORDER; /* race */
             Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (1) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
@@ -444,8 +444,8 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
         if (offRead - pRingBuf->offStart > cb) /* not >= ! */
         {
             uint32_t offNew = pRingBuf->offStart + cb;
-            if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-                return VERR_WRONG_ORDER; /* race */
+            if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+            { /* likely */ } else return VERR_WRONG_ORDER; /* race */
             Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (2) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
@@ -464,8 +464,8 @@ DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_
     else if (offRead - offWriteInt > cb + sizeof(INTNETHDR)) /* not >= ! */
     {
         uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
-        if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-            return VERR_WRONG_ORDER; /* race */
+        if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+        { /* likely */ } else return VERR_WRONG_ORDER; /* race */
         Log2(("intnetRingAllocateFrameInternal: offWriteInt: %#x -> %#x (3) (R=%#x T=%#x S=%#x)\n", offWriteInt, offNew, offRead, u8Type, cbFrame));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
@@ -660,8 +660,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
             uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
             if (offNew >= pRingBuf->offEnd)
                 offNew = pRingBuf->offStart;
-            if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-                return VERR_WRONG_ORDER; /* race */
+            if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+            { /* likely */ } else return VERR_WRONG_ORDER; /* race */
             Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (1)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
@@ -685,8 +685,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
         if (offRead - pRingBuf->offStart > cb) /* not >= ! */
         {
             uint32_t offNew = pRingBuf->offStart + cb;
-            if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-                return VERR_WRONG_ORDER; /* race */
+            if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+            { /* likely */ } else return VERR_WRONG_ORDER; /* race */
             Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (2)\n", offWriteInt, offNew));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
@@ -709,8 +709,8 @@ DECLINLINE(int) IntNetRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
     else if (offRead - offWriteInt > cb + sizeof(INTNETHDR)) /* not >= ! */
     {
         uint32_t offNew = offWriteInt + cb + sizeof(INTNETHDR);
-        if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
-            return VERR_WRONG_ORDER; /* race */
+        if (RT_LIKELY(ASMAtomicCmpXchgU32(&pRingBuf->offWriteInt, offNew, offWriteInt)))
+        { /* likely */ } else return VERR_WRONG_ORDER; /* race */
         Log2(("IntNetRingWriteFrame: offWriteInt: %#x -> %#x (3)\n", offWriteInt, offNew));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
