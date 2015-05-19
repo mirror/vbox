@@ -751,9 +751,9 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
         void *operator new(size_t cb) RT_THROW(std::bad_alloc) \
         { \
             void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
-            if (RT_UNLIKELY(!pv)) \
-                throw std::bad_alloc(); \
-            return pv; \
+            if (RT_LIKELY(pv)) \
+                return pv; \
+            throw std::bad_alloc(); \
         } \
         void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
@@ -763,9 +763,9 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
         void *operator new[](size_t cb) RT_THROW(std::bad_alloc) \
         { \
             void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
-            if (RT_UNLIKELY(!pv)) \
-                throw std::bad_alloc(); \
-            return pv; \
+            if (RT_LIKELY(pv)) \
+                return pv; \
+            throw std::bad_alloc(); \
         } \
         void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
