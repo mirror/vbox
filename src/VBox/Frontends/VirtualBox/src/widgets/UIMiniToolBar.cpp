@@ -644,8 +644,12 @@ void UIMiniToolBar::paintEvent(QPaintEvent*)
 
 void UIMiniToolBar::prepare()
 {
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Configure toolbar: */
-    setIconSize(QSize(16, 16));
+    setIconSize(QSize(iIconMetric, iIconMetric));
 
     /* Left margin: */
 #ifdef Q_WS_X11
