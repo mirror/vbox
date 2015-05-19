@@ -110,6 +110,12 @@ int handleControlVM(HandlerArg *a)
         /* ... and session machine */
         CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
+        if (!console)
+        {
+            errorArgument("Machine '%s' is not currently running", a->argv[0]);
+            return 1;
+        }
+
         /* which command? */
         if (!strcmp(a->argv[1], "pause"))
         {
@@ -1394,9 +1400,9 @@ int handleControlVM(HandlerArg *a)
             RTFileClose(pngFile);
         }
 #ifdef VBOX_WITH_VPX
-        /* 
-         * Note: Commands starting with "vcp" are the deprecated versions and are 
-         *       kept to ensure backwards compatibility. 
+        /*
+         * Note: Commands starting with "vcp" are the deprecated versions and are
+         *       kept to ensure backwards compatibility.
          */
         else if (   !strcmp(a->argv[1], "videocap")
                  || !strcmp(a->argv[1], "vcpenabled"))
@@ -1563,7 +1569,7 @@ int handleControlVM(HandlerArg *a)
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
-            }   
+            }
 
             uint32_t uVal;
             int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
@@ -1583,7 +1589,7 @@ int handleControlVM(HandlerArg *a)
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
-            } 
+            }
 
             uint32_t uVal;
             int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
@@ -1603,7 +1609,7 @@ int handleControlVM(HandlerArg *a)
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
-            }   
+            }
 
             uint32_t uVal;
             int vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
@@ -1623,7 +1629,7 @@ int handleControlVM(HandlerArg *a)
                 errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
                 rc = E_FAIL;
                 break;
-            }   
+            }
 
             CHECK_ERROR_BREAK(sessionMachine, COMSETTER(VideoCaptureOptions)(Bstr(a->argv[3]).raw()));
         }
