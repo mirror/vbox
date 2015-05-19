@@ -50,26 +50,24 @@ void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
      */
     size_t cwc;
     int vrc = ::RTStrCalcUtf16LenEx(a_pszSrc, a_cchMax, &cwc);
-    if (RT_FAILURE(vrc))
+    if (RT_SUCCESS(vrc))
     {
-        /* ASSUME: input is valid Utf-8. Fake out of memory error. */
+        m_bstr = ::SysAllocStringByteLen(NULL, (unsigned)(cwc * sizeof(OLECHAR)));
+        if (RT_LIKELY(m_bstr))
+        {
+            PRTUTF16 pwsz = (PRTUTF16)m_bstr;
+            vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
+            if (RT_SUCCESS(vrc))
+                return;
+
+            /* This should not happen! */
+            AssertRC(vrc);
+            cleanup();
+        }
+    }
+    else /* ASSUME: input is valid Utf-8. Fake out of memory error. */
         AssertLogRelMsgFailed(("%Rrc %.*Rhxs\n", vrc, RTStrNLen(a_pszSrc, a_cchMax), a_pszSrc));
-        throw std::bad_alloc();
-    }
-
-    m_bstr = ::SysAllocStringByteLen(NULL, (unsigned)(cwc * sizeof(OLECHAR)));
-    if (RT_UNLIKELY(!m_bstr))
-        throw std::bad_alloc();
-
-    PRTUTF16 pwsz = (PRTUTF16)m_bstr;
-    vrc = ::RTStrToUtf16Ex(a_pszSrc, a_cchMax, &pwsz, cwc + 1, NULL);
-    if (RT_FAILURE(vrc))
-    {
-        /* This should not happen! */
-        AssertRC(vrc);
-        cleanup();
-        throw std::bad_alloc();
-    }
+    throw std::bad_alloc();
 }
 
 
@@ -80,20 +78,23 @@ const Utf8Str Utf8Str::Empty; /* default ctor is OK */
 void Utf8Str::cloneTo(char **pstr) const
 {
     size_t cb = length() + 1;
-    *pstr = (char*)nsMemory::Alloc(cb);
-    if (RT_UNLIKELY(!*pstr))
+    *pstr = (char *)nsMemory::Alloc(cb);
+    if (RT_LIKELY(*pstr))
+        memcpy(*pstr, c_str(), cb);
+    else
         throw std::bad_alloc();
-    memcpy(*pstr, c_str(), cb);
 }
 
 HRESULT Utf8Str::cloneToEx(char **pstr) const
 {
     size_t cb = length() + 1;
-    *pstr = (char*)nsMemory::Alloc(cb);
-    if (RT_UNLIKELY(!*pstr))
-        return E_OUTOFMEMORY;
-    memcpy(*pstr, c_str(), cb);
-    return S_OK;
+    *pstr = (char *)nsMemory::Alloc(cb);
+    if (RT_LIKELY(*pstr))
+    {
+        memcpy(*pstr, c_str(), cb);
+        return S_OK;
+    }
+    return E_OUTOFMEMORY;
 }
 #endif
 
