@@ -110,10 +110,12 @@ DECLINLINE(PRTCPUSET) RTCpuSetAnd(PRTCPUSET pSet, PRTCPUSET pAndMaskSet)
 DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
-    if (RT_UNLIKELY(iCpu < 0))
-        return -1;
-    ASMAtomicBitSet(pSet, iCpu);
-    return 0;
+    if (RT_LIKELY(iCpu >= 0))
+    {
+        ASMAtomicBitSet(pSet, iCpu);
+        return 0;
+    }
+    return -1;
 }
 
 
@@ -127,10 +129,12 @@ DECLINLINE(int) RTCpuSetAdd(PRTCPUSET pSet, RTCPUID idCpu)
  */
 DECLINLINE(int) RTCpuSetAddByIndex(PRTCPUSET pSet, int iCpu)
 {
-    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
-        return -1;
-    ASMAtomicBitSet(pSet, iCpu);
-    return 0;
+    if (RT_LIKELY((unsigned)iCpu < RTCPUSET_MAX_CPUS))
+    {
+        ASMAtomicBitSet(pSet, iCpu);
+        return 0;
+    }
+    return -1;
 }
 
 
@@ -145,10 +149,12 @@ DECLINLINE(int) RTCpuSetAddByIndex(PRTCPUSET pSet, int iCpu)
 DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
-    if (RT_UNLIKELY(iCpu < 0))
-        return -1;
-    ASMAtomicBitClear(pSet, iCpu);
-    return 0;
+    if (RT_LIKELY(iCpu >= 0))
+    {
+        ASMAtomicBitClear(pSet, iCpu);
+        return 0;
+    }
+    return -1;
 }
 
 
@@ -162,10 +168,12 @@ DECLINLINE(int) RTCpuSetDel(PRTCPUSET pSet, RTCPUID idCpu)
  */
 DECLINLINE(int) RTCpuSetDelByIndex(PRTCPUSET pSet, int iCpu)
 {
-    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
-        return -1;
-    ASMAtomicBitClear(pSet, iCpu);
-    return 0;
+    if (RT_LIKELY((unsigned)iCpu < RTCPUSET_MAX_CPUS))
+    {
+        ASMAtomicBitClear(pSet, iCpu);
+        return 0;
+    }
+    return -1;
 }
 
 
@@ -180,9 +188,9 @@ DECLINLINE(int) RTCpuSetDelByIndex(PRTCPUSET pSet, int iCpu)
 DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
 {
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
-    if (RT_UNLIKELY(iCpu < 0))
-        return false;
-    return ASMBitTest((volatile void *)pSet, iCpu);
+    if (RT_LIKELY(iCpu >= 0))
+        return ASMBitTest((volatile void *)pSet, iCpu);
+    return false;
 }
 
 
@@ -196,9 +204,9 @@ DECLINLINE(bool) RTCpuSetIsMember(PCRTCPUSET pSet, RTCPUID idCpu)
  */
 DECLINLINE(bool) RTCpuSetIsMemberByIndex(PCRTCPUSET pSet, int iCpu)
 {
-    if (RT_UNLIKELY((unsigned)iCpu >= RTCPUSET_MAX_CPUS))
-        return false;
-    return ASMBitTest((volatile void *)pSet, iCpu);
+    if (RT_LIKELY((unsigned)iCpu < RTCPUSET_MAX_CPUS))
+        return ASMBitTest((volatile void *)pSet, iCpu);
+    return false;
 }
 
 
