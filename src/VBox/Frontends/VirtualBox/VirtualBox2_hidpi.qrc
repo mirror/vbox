@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
+        <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
         <file alias="os_redhat_hidpi.png">images/hidpi/os_redhat_hidpi.png</file>
         <file alias="os_solaris_64_hidpi.png">images/hidpi/os_solaris_64_hidpi.png</file>
         <file alias="os_solaris_hidpi.png">images/hidpi/os_solaris_hidpi.png</file>

@@ -195,8 +195,12 @@
         <file alias="machine_abstract_16px_hidpi.png">images/hidpi/machine_abstract_16px_hidpi.png</file>
         <file alias="machine_warning_16px_hidpi.png">images/hidpi/machine_warning_16px_hidpi.png</file>
         <file alias="meditation_32px_hidpi.png">images/hidpi/meditation_32px_hidpi.png</file>
+        <file alias="menubar_16px_hidpi.png">images/hidpi/menubar_16px_hidpi.png</file>
+        <file alias="menubar_disabled_16px_hidpi.png">images/hidpi/menubar_disabled_16px_hidpi.png</file>
         <file alias="menubar_on_16px_hidpi.png">images/hidpi/menubar_on_16px_hidpi.png</file>
         <file alias="menubar_on_disabled_16px_hidpi.png">images/hidpi/menubar_on_disabled_16px_hidpi.png</file>
+        <file alias="menubar_settings_16px_hidpi.png">images/hidpi/menubar_settings_16px_hidpi.png</file>
+        <file alias="menubar_settings_disabled_16px_hidpi.png">images/hidpi/menubar_settings_disabled_16px_hidpi.png</file>
         <file alias="minimize_16px_hidpi.png">images/hidpi/minimize_16px_hidpi.png</file>
         <file alias="mouse_16px_hidpi.png">images/hidpi/mouse_16px_hidpi.png</file>
         <file alias="mouse_can_seamless_16px_hidpi.png">images/hidpi/mouse_can_seamless_16px_hidpi.png</file>
@@ -267,7 +271,5 @@
         <file alias="os_os2warp4_hidpi.png">images/hidpi/os_os2warp4_hidpi.png</file>
         <file alias="os_other_64_hidpi.png">images/hidpi/os_other_64_hidpi.png</file>
         <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
-        <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
-        <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
     </qresource>
 </RCC>
