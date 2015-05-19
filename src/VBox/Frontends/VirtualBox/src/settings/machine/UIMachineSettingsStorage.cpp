@@ -122,8 +122,12 @@ QPixmap UIIconPoolStorageSettings::pixmap(PixmapType pixmapType) const
                     ("Undefined icon for type '%s'.", (int)pixmapType),
                     nullPixmap);
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Return pixmap of first available size: */
-    return icon.pixmap(availableSizes.first());
+    return icon.pixmap(QSize(iIconMetric, iIconMetric));
 }
 
 QIcon UIIconPoolStorageSettings::icon(PixmapType pixmapType,
@@ -1418,7 +1422,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         }
         case R_IconSize:
         {
-            return 16;
+            return QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
         }
 
         case R_HDPixmapEn:
@@ -2024,8 +2028,12 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mTwStorageTree->setRootIndex (mStorageModel->root());
     mTwStorageTree->setCurrentIndex (mStorageModel->root());
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Storage ToolBar */
-    mTbStorageBar->setIconSize (QSize (16, 16));
+    mTbStorageBar->setIconSize (QSize (iIconMetric, iIconMetric));
     mTbStorageBar->addAction (mAddAttAction);
     mTbStorageBar->addAction (mDelAttAction);
     mTbStorageBar->addAction (mAddCtrAction);

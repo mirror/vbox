@@ -186,8 +186,12 @@ UIMachineSettingsUSB::UIMachineSettingsUSB()
     mMdnAction->setIcon(UIIconPool::iconSet(":/usb_movedown_16px.png",
                                             ":/usb_movedown_disabled_16px.png"));
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Prepare tool-bar: */
-    m_pFiltersToolBar->setIconSize(QSize(16, 16));
+    m_pFiltersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
     m_pFiltersToolBar->setOrientation(Qt::Vertical);
     m_pFiltersToolBar->addAction(mNewAction);
     m_pFiltersToolBar->addAction(mAddAction);

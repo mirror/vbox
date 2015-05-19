@@ -191,8 +191,12 @@ UIMachineSettingsSF::UIMachineSettingsSF()
     mDelAction->setIcon(UIIconPool::iconSet(":/sf_remove_16px.png",
                                             ":/sf_remove_disabled_16px.png"));
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+
     /* Prepare tool-bar: */
-    m_pFoldersToolBar->setIconSize(QSize(16, 16));
+    m_pFoldersToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
     m_pFoldersToolBar->setOrientation(Qt::Vertical);
     m_pFoldersToolBar->addAction(mNewAction);
     m_pFoldersToolBar->addAction(mEdtAction);

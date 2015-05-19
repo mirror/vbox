@@ -60,12 +60,16 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
     /* Apply UI decorations: */
     Ui::UIMachineSettingsNetwork::setupUi(this);
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+
     /* Setup widgets: */
     m_pAdapterNameCombo->setInsertPolicy(QComboBox::NoInsert);
     m_pMACEditor->setValidator(new QRegExpValidator(QRegExp("[0-9A-Fa-f]{12}"), this));
     m_pMACEditor->setMinimumWidthByText(QString().fill('0', 12));
     m_pMACButton->setIcon(UIIconPool::iconSet(":/refresh_16px.png"));
-    m_pAdvancedArrow->setIconSize(QSize(10, 10));
+    m_pAdvancedArrow->setIconSize(QSize(iIconMetric, iIconMetric));
     m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
                                             UIIconPool::iconSet(":/arrow_right_10px.png"));
     m_pAdvancedArrow->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,

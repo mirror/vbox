@@ -594,8 +594,11 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
         /* Create toolbar: */
         m_pToolBar = new UIToolBar;
         {
+            /* Determine icon metric: */
+            const QStyle *pStyle = QApplication::style();
+            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
             /* Configure toolbar: */
-            m_pToolBar->setIconSize(QSize(16, 16));
+            m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
             m_pToolBar->setOrientation(Qt::Vertical);
             /* Create 'add' action: */
             m_pAddAction = new QAction(this);
