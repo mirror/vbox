@@ -240,6 +240,9 @@ void QIArrowSplitter::prepare()
         QHBoxLayout *pButtonLayout = new QHBoxLayout;
         AssertPtrReturnVoid(pButtonLayout);
         {
+            /* Determine icon metric: */
+            const QStyle *pStyle = QApplication::style();
+            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625;
             /* Configure button-layout: */
             pButtonLayout->setContentsMargins(0, 0, 0, 0);
             pButtonLayout->setSpacing(0);
@@ -248,7 +251,7 @@ void QIArrowSplitter::prepare()
             AssertPtrReturnVoid(m_pSwitchButton);
             {
                 /* Configure switch-button: */
-                m_pSwitchButton->setIconSize(QSize(10, 10));
+                m_pSwitchButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Collapsed,
                                                        UIIconPool::iconSet(":/arrow_right_10px.png"));
                 m_pSwitchButton->setIconForButtonState(QIArrowButtonSwitch::ButtonState_Expanded,
@@ -265,7 +268,7 @@ void QIArrowSplitter::prepare()
             AssertPtrReturnVoid(m_pBackButton);
             {
                 /* Configure back-button: */
-                m_pBackButton->setIconSize(QSize(10, 10));
+                m_pBackButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pBackButton->setIcon(UIIconPool::iconSet(":/arrow_left_10px.png"));
                 connect(m_pBackButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageBack()));
                 /* Add back-button into button-layout: */
@@ -276,7 +279,7 @@ void QIArrowSplitter::prepare()
             AssertPtrReturnVoid(m_pNextButton);
             {
                 /* Configure next-button: */
-                m_pNextButton->setIconSize(QSize(10, 10));
+                m_pNextButton->setIconSize(QSize(iIconMetric, iIconMetric));
                 m_pNextButton->setIcon(UIIconPool::iconSet(":/arrow_right_10px.png"));
                 connect(m_pNextButton, SIGNAL(sigClicked()), this, SLOT(sltSwitchDetailsPageNext()));
                 /* Add next-button into button-layout: */
