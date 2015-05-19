@@ -457,25 +457,26 @@ public:
     RTCListBase<T, ITYPE, MT> &operator=(const RTCListBase<T, ITYPE, MT>& other)
     {
         /* Prevent self assignment */
-        if (RT_UNLIKELY(this == &other))
-            return *this;
+        if (RT_LIKELY(this != &other))
+        {
 
-        other.m_guard.enterRead();
-        m_guard.enterWrite();
+            other.m_guard.enterRead();
+            m_guard.enterWrite();
 
-        /* Delete all items. */
-        RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cElements);
+            /* Delete all items. */
+            RTCListHelper<T, ITYPE>::eraseRange(m_pArray, 0, m_cElements);
 
-        /* Need we to realloc memory. */
-        if (other.m_cElements != m_cCapacity)
-            resizeArrayNoErase(other.m_cElements);
-        m_cElements = other.m_cElements;
+            /* Need we to realloc memory. */
+            if (other.m_cElements != m_cCapacity)
+                resizeArrayNoErase(other.m_cElements);
+            m_cElements = other.m_cElements;
 
-        /* Copy new items. */
-        RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cElements);
+            /* Copy new items. */
+            RTCListHelper<T, ITYPE>::copyTo(m_pArray, other.m_pArray, 0, other.m_cElements);
 
-        m_guard.leaveWrite();
-        other.m_guard.leaveRead();
+            m_guard.leaveWrite();
+            other.m_guard.leaveRead();
+        }
         return *this;
     }
 
@@ -634,14 +635,14 @@ public:
     T value(size_t i) const
     {
         m_guard.enterRead();
-        if (RT_UNLIKELY(i >= m_cElements))
+        if (RT_LIKELY(i < m_cElements))
         {
+            T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
             m_guard.leaveRead();
-            return T();
+            return res;
         }
-        T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
-        return res;
+        return T();
     }
 
     /**
@@ -654,14 +655,14 @@ public:
     T value(size_t i, const T &defaultVal) const
     {
         m_guard.enterRead();
-        if (RT_UNLIKELY(i >= m_cElements))
+        if (RT_LIKELY(i < m_cElements))
         {
+            T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
             m_guard.leaveRead();
-            return defaultVal;
+            return res;
         }
-        T res = RTCListHelper<T, ITYPE>::at(m_pArray, i);
         m_guard.leaveRead();
-        return res;
+        return defaultVal;
     }
 
     /**
