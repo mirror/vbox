@@ -388,9 +388,13 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
     m_offlineSnapshotIcon = UIIconPool::iconSet(":/snapshot_offline_16px.png");
     m_onlineSnapshotIcon = UIIconPool::iconSet(":/snapshot_online_16px.png");
 
+    /* Determine icon metric: */
+    const QStyle *pStyle = QApplication::style();
+    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+
     /* ToolBar creation */
     UIToolBar *toolBar = new UIToolBar (this);
-    toolBar->setIconSize (QSize (22, 22));
+    toolBar->setIconSize (QSize (iIconMetric, iIconMetric));
     toolBar->setSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     toolBar->addAction (mTakeSnapshotAction);
