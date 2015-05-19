@@ -829,10 +829,10 @@ typedef struct PDMUSBINS
     do \
     { \
         PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
-        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) )) \
-            return VERR_PDM_USBINS_VERSION_MISMATCH; \
-        if (RT_UNLIKELY(!PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
-            return VERR_PDM_USBHLPR3_VERSION_MISMATCH; \
+        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) )) \
+        { /* likely */ } else return VERR_PDM_USBINS_VERSION_MISMATCH; \
+        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
+        { /* likely */ } else return VERR_PDM_USBHLPR3_VERSION_MISMATCH; \
     } while (0)
 
 

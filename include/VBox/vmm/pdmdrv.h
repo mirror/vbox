@@ -464,9 +464,9 @@ typedef struct PDMDRVINS
     do \
     { \
         PPDMDRVINS pDrvInsTypeCheck = (pDrvIns); NOREF(pDrvInsTypeCheck); \
-        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION) \
-                        || !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pHlpR3->u32Version, PDM_DRVHLPR3_VERSION)) ) \
-            return; \
+        if (RT_LIKELY(   PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION) \
+                      && PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pHlpR3->u32Version, PDM_DRVHLPR3_VERSION)) ) \
+        { /* likely */ } else return; \
     } while (0)
 
 /**
@@ -489,8 +489,8 @@ typedef struct PDMDRVINS
     { \
         int rcValCfg = CFGMR3ValidateConfig((pDrvIns)->pCfg, "/", pszValidValues, pszValidNodes, \
                                             (pDrvIns)->pReg->szName, (pDrvIns)->iInstance); \
-        if (RT_FAILURE(rcValCfg)) \
-            return rcValCfg; \
+        if (RT_SUCCESS(rcValCfg)) \
+        { /* likely */ } else return rcValCfg; \
     } while (0)
 
 
