@@ -3598,7 +3598,9 @@ DECLINLINE(void *) ASMMemIsAll8(void const *pv, size_t cb, uint8_t u8)
 /** @todo rewrite this in inline assembly? */
     uint8_t const *pb = (uint8_t const *)pv;
     for (; cb; cb--, pb++)
-        if (RT_UNLIKELY(*pb != u8))
+        if (RT_LIKELY(*pb == u8))
+        { /* likely */ }
+        else
             return (void *)pb;
     return NULL;
 }
@@ -3623,7 +3625,9 @@ DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
 /** @todo rewrite this in inline assembly? */
     uint32_t const *pu32 = (uint32_t const *)pv;
     for (; cb; cb -= 4, pu32++)
-        if (RT_UNLIKELY(*pu32 != u32))
+        if (RT_LIKELY(*pu32 == u32))
+        { /* likely */ }
+        else
             return (uint32_t *)pu32;
     return NULL;
 }
