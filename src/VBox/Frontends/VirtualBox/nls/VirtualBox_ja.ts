@@ -1915,7 +1915,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>データを読み出し中...</translation>
+        <translation type="obsolete">データを読み出し中...</translation>
     </message>
 </context>
 <context>
@@ -1923,6 +1923,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>データのドロップ...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">データを読み出し中...</translation>
     </message>
 </context>
 <context>

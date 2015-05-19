@@ -1101,7 +1101,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>Empfange Daten ...</translation>
+        <translation type="obsolete">Empfange Daten ...</translation>
     </message>
 </context>
 <context>
@@ -1109,6 +1109,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>Kopiere Daten ...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">Empfange Daten ...</translation>
     </message>
 </context>
 <context>

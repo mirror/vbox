@@ -2151,7 +2151,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>Obtendo dados...</translation>
+        <translation type="obsolete">Obtendo dados...</translation>
     </message>
 </context>
 <context>
@@ -2160,6 +2160,10 @@
         <source>Dropping data ...</source>
         <translatorcomment>se refere a drag and drop</translatorcomment>
         <translation>Soltando dados...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">Obtendo dados...</translation>
     </message>
 </context>
 <context>

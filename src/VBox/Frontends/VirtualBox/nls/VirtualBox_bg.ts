@@ -2001,7 +2001,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>Извличане на данни ...</translation>
+        <translation type="obsolete">Извличане на данни ...</translation>
     </message>
 </context>
 <context>
@@ -2009,6 +2009,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>Отпадане на данни...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">Извличане на данни ...</translation>
     </message>
 </context>
 <context>
@@ -3079,47 +3083,47 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Фактор на мащаба</translation>
+        <translation>Фактор на мащаба</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Немащабиран HiDPI видео изход</translation>
+        <translation>Немащабиран HiDPI видео изход</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволен</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Меню лента</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранена</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Статус лента</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Позволена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Забранена</translation>
     </message>
 </context>
 <context>
@@ -3550,7 +3554,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation>&amp;VirtialBox Управление</translation>
+        <translation>&amp;VirtualBox Управление</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
@@ -5244,43 +5248,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Екран</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Фактор на мащаба:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролира фактора на мащаба на виртуалния екран.</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation type="unfinished">100%</translation>
+        <translation>100%</translation>
     </message>
     <message>
         <source>200%</source>
-        <translation type="unfinished">200%</translation>
+        <translation>200%</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation type="unfinished">HiDPI:</translation>
+        <translation>HiDPI:</translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когато е избрано, съдържанието на виртуалния екран няма да бъде мащабирано за компенсация на високи разделителни способности на реалния екран.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished">Използване на &amp;немащабиран HiDPI изход</translation>
+        <translation>Използване на &amp;немащабиран HiDPI изход</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ускорение:</translation>
     </message>
 </context>
 <context>
@@ -6718,7 +6722,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Криптиране с ключ:</translation>
     </message>
 </context>
 <context>
@@ -9080,23 +9084,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешна операция по влачене и пускане от реална към виртуална.</translation>
     </message>
     <message>
         <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно прекъсване на операцията по влачене и пускане от реална към виртуална.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешна операция по влачене и пускане от виртуална към реална.</translation>
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно свързване на кабела на мрежовия адаптер на виртуалната машина &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неуспешно откачване на кабела на мрежовия адаптер на виртуалната машина &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -10311,7 +10315,7 @@ p, li { white-space: pre-wrap; }
     <name>UIStatusBarEditorButton</name>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation>&lt;nobr&gt;&lt;b&gt;Клик&lt;/b&gt; за превключване показването на индикатора.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Влачене и пускане&lt;/b&gt; за промяна позицията на индикатора.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Клик&lt;/b&gt; за превключване показването на индикатора.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Влачене и &amp;пускане&lt;/b&gt; за промяна позицията на индикатора.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -14088,7 +14092,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Криптирано</translation>
     </message>
 </context>
 <context>
@@ -14402,11 +14406,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Некриптирано&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Криптиране с ключ:</translation>
     </message>
 </context>
 <context>

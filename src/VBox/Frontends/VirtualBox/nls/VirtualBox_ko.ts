@@ -1969,7 +1969,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>데이터 가져오는 중...</translation>
+        <translation type="obsolete">데이터 가져오는 중...</translation>
     </message>
 </context>
 <context>
@@ -1977,6 +1977,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>끌어다 놓은 데이터 처리 중...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">데이터 가져오는 중...</translation>
     </message>
 </context>
 <context>

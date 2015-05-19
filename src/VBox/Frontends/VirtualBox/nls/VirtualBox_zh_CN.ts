@@ -1830,7 +1830,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>获取数据...</translation>
+        <translation type="obsolete">获取数据...</translation>
     </message>
 </context>
 <context>
@@ -1838,6 +1838,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>丢弃数据...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">获取数据...</translation>
     </message>
 </context>
 <context>

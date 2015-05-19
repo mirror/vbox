@@ -2104,17 +2104,14 @@
     </message>
 </context>
 <context>
-    <name>UIDnDDrag</name>
-    <message>
-        <source>Retrieving data ...</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>UIDnDHandler</name>
     <message>
         <source>Dropping data ...</source>
         <translation>Descartando datos...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -2170,7 +2170,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>Recupero dei dati in corso...</translation>
+        <translation type="obsolete">Recupero dei dati in corso...</translation>
     </message>
 </context>
 <context>
@@ -2178,6 +2178,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>Rimozione dati in corso...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">Recupero dei dati in corso...</translation>
     </message>
 </context>
 <context>

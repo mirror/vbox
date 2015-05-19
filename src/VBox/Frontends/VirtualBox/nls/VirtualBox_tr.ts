@@ -1759,7 +1759,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>Veri alınıyor...</translation>
+        <translation type="obsolete">Veri alınıyor...</translation>
     </message>
 </context>
 <context>
@@ -1767,6 +1767,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>Veri kaldırılıyor...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">Veri alınıyor...</translation>
     </message>
 </context>
 <context>

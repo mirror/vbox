@@ -1015,7 +1015,7 @@
     <name>UIDnDDrag</name>
     <message>
         <source>Retrieving data ...</source>
-        <translation>正在檢索資料 ...</translation>
+        <translation type="obsolete">正在檢索資料 ...</translation>
     </message>
 </context>
 <context>
@@ -1023,6 +1023,10 @@
     <message>
         <source>Dropping data ...</source>
         <translation>正在拖放資料 ...</translation>
+    </message>
+    <message>
+        <source>Retrieving data ...</source>
+        <translation type="unfinished">正在檢索資料 ...</translation>
     </message>
 </context>
 <context>
