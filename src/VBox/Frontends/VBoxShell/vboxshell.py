@@ -2634,7 +2634,7 @@ def snapshotCmd(ctx, args):
             desc = args[4]
         else:
             desc = ""
-        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.takeSnapshot(name, desc, true)))
+        cmdAnyVm(ctx, mach, lambda ctx, mach, console, args: progressBar(ctx, mach.takeSnapshot(name, desc, true)[-1]))
         return 0
 
     if cmd == 'restore':

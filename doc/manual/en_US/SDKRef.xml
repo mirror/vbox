@@ -3906,7 +3906,10 @@ AuthResult AUTHCALL AuthEntry(
              </listitem>
            </itemizedlist>
           Small adjustments to the parameter lists have been made to reduce
-          the number of API calls when taking online snapshots etc.</para>
+          the number of API calls when taking online snapshots (no longer
+          needs explicit pausing), and taking a snapshot also returns now
+          the snapshot id (useful for finding the right snapshot if there
+          are non-unique snapshot names).</para>
         </listitem>
 
         <listitem>

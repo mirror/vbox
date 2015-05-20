@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1423,8 +1423,9 @@ void UIMachineLogic::sltTakeSnapshot()
     /* Was the dialog accepted? */
     if (fDialogAccepted)
     {
+        QString strSnapshotId;
         /* Prepare the take-snapshot progress: */
-        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true);
+        CProgress progress = machine().TakeSnapshot(strSnapshotName, strSnapshotDescription, true, strSnapshotId);
         if (machine().isOk())
         {
             /* Show the take-snapshot progress: */

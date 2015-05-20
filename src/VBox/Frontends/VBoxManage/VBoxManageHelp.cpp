@@ -518,7 +518,8 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
     if (fCategory & USAGE_SNAPSHOT)
         RTStrmPrintf(pStrm,
                            "%s snapshot %s        <uuid|vmname>\n"
-                     "                            take <name> [--description <desc>] [--live] |\n"
+                     "                            take <name> [--description <desc>] [--live]\n"
+                     "                                 [--uniquename Number,Timestamp,Space,Force] |\n"
                      "                            delete <uuid|snapname> |\n"
                      "                            restore <uuid|snapname> |\n"
                      "                            restorecurrent |\n"

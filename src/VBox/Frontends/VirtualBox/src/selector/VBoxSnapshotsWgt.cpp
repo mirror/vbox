@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -888,8 +888,9 @@ bool VBoxSnapshotsWgt::takeSnapshot()
             /* Was the dialog accepted? */
             if (fDialogAccepted)
             {
+                QString strSnapshotId;
                 /* Prepare the take-snapshot progress: */
-                CProgress progress = machine.TakeSnapshot(strSnapshotName, strSnapshotDescription, true);
+                CProgress progress = machine.TakeSnapshot(strSnapshotName, strSnapshotDescription, true, strSnapshotId);
                 if (machine.isOk())
                 {
                     /* Show the take-snapshot progress: */

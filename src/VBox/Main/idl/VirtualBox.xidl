@@ -4169,7 +4169,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="feb138aa-dbce-4a89-8ec0-380fc7ec4913"
+    uuid="520a0c22-8dbc-458d-b637-31eb078b5526"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -7391,6 +7391,10 @@ and "VAR" for unsetting. -->
           relevant when the VM is running, and distinguishes between online
           (@c true) and live (@c false) snapshots. When the VM is not running
           the result is always an offline snapshot.</desc>
+      </param>
+      <param name="id" type="uuid" mod="string" dir="out">
+        <desc>UUID of the snapshot which will be created. Useful for follow-up
+        operations after the snapshot has been created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>

@@ -1331,12 +1331,14 @@ struct SessionMachine::TakeSnapshotTask
                      Snapshot *s,
                      const Utf8Str &strName,
                      const Utf8Str &strDescription,
+                     const Guid &uuidSnapshot,
                      bool fPause,
                      uint32_t uMemSize,
                      bool fTakingSnapshotOnline)
         : SnapshotTask(m, p, t, s),
           m_strName(strName),
           m_strDescription(strDescription),
+          m_uuidSnapshot(uuidSnapshot),
           m_fPause(fPause),
           m_uMemSize(uMemSize),
           m_fTakingSnapshotOnline(fTakingSnapshotOnline)
@@ -1356,6 +1358,7 @@ struct SessionMachine::TakeSnapshotTask
 
     Utf8Str m_strName;
     Utf8Str m_strDescription;
+    Guid m_uuidSnapshot;
     Utf8Str m_strStateFilePath;
     ComPtr<IInternalSessionControl> m_pDirectControl;
     bool m_fPause;
@@ -1411,11 +1414,13 @@ struct SessionMachine::DeleteSnapshotTask
 HRESULT Machine::takeSnapshot(const com::Utf8Str &aName,
                               const com::Utf8Str &aDescription,
                               BOOL fPause,
+                              com::Guid &aId,
                               ComPtr<IProgress> &aProgress)
 {
     NOREF(aName);
     NOREF(aDescription);
     NOREF(fPause);
+    NOREF(aId);
     NOREF(aProgress);
     ReturnComNotImplemented();
 }
@@ -1423,6 +1428,7 @@ HRESULT Machine::takeSnapshot(const com::Utf8Str &aName,
 HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
                                      const com::Utf8Str &aDescription,
                                      BOOL fPause,
+                                     com::Guid &aId,
                                      ComPtr<IProgress> &aProgress)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1481,6 +1487,10 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
     if (FAILED(rc))
         return rc;
 
+    /* create an ID for the snapshot */
+    Guid snapshotId;
+    snapshotId.create();
+
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
     TakeSnapshotTask *pTask = new TakeSnapshotTask(this,
@@ -1489,6 +1499,7 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
                                                    NULL /* pSnapshot */,
                                                    aName,
                                                    aDescription,
+                                                   snapshotId,
                                                    !!fPause,
                                                    mHWData->mMemorySize,
                                                    fTakingSnapshotOnline);
@@ -1508,6 +1519,7 @@ HRESULT SessionMachine::takeSnapshot(const com::Utf8Str &aName,
     else
         i_setMachineState(MachineState_Snapshotting);
 
+    aId = snapshotId;
     pTask->m_pProgress.queryInterfaceTo(aProgress.asOutParam());
 
     return rc;
@@ -1554,7 +1566,6 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
     bool fBeganTakingSnapshot = false;
     BOOL fSuspendedBySave     = FALSE;
-    Guid snapshotId;
 
     try
     {
@@ -1605,13 +1616,10 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
 
         /* STEP 1: create the snapshot object */
 
-        /* create an ID for the snapshot */
-        snapshotId.create();
-
         /* create a snapshot machine object */
         ComObjPtr<SnapshotMachine> pSnapshotMachine;
         pSnapshotMachine.createObject();
-        rc = pSnapshotMachine->init(this, snapshotId.ref(), task.m_strStateFilePath);
+        rc = pSnapshotMachine->init(this, task.m_uuidSnapshot.ref(), task.m_strStateFilePath);
         AssertComRCThrowRC(rc);
 
         /* create a snapshot object */
@@ -1619,7 +1627,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         RTTimeNow(&time);
         task.m_pSnapshot.createObject();
         rc = task.m_pSnapshot->init(mParent,
-                                    snapshotId,
+                                    task.m_uuidSnapshot,
                                     task.m_strName,
                                     task.m_strDescription,
                                     time,
@@ -1796,7 +1804,7 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
     task.m_pProgress->i_notifyComplete(rc);
 
     if (SUCCEEDED(rc))
-        mParent->i_onSnapshotTaken(mData->mUuid, snapshotId);
+        mParent->i_onSnapshotTaken(mData->mUuid, task.m_uuidSnapshot);
     LogFlowThisFuncLeave();
 }
 

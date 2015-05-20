@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2014 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,6 +28,7 @@
 
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
+#include <iprt/time.h>
 
 #include "VBoxManage.h"
 using namespace com;
@@ -259,6 +260,51 @@ void DumpSnapshot(ComPtr<IMachine> &pMachine)
     } while (0);
 }
 
+typedef enum SnapshotUniqueFlags
+{
+    SnapshotUniqueFlags_Null = 0,
+    SnapshotUniqueFlags_Number = RT_BIT(1),
+    SnapshotUniqueFlags_Timestamp = RT_BIT(2),
+    SnapshotUniqueFlags_Space = RT_BIT(16),
+    SnapshotUniqueFlags_Force = RT_BIT(30)
+} SnapshotUniqueFlags;
+
+static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUnique)
+{
+    int rc = VINF_SUCCESS;
+    unsigned uUnique = 0;
+    while (psz && *psz && RT_SUCCESS(rc))
+    {
+        size_t len;
+        const char *pszComma = strchr(psz, ',');
+        if (pszComma)
+            len = pszComma - psz;
+        else
+            len = strlen(psz);
+        if (len > 0)
+        {
+            if (!RTStrNICmp(psz, "number", len))
+                uUnique |= SnapshotUniqueFlags_Number;
+            else if (!RTStrNICmp(psz, "timestamp", len))
+                uUnique |= SnapshotUniqueFlags_Timestamp;
+            else if (!RTStrNICmp(psz, "space", len))
+                uUnique |= SnapshotUniqueFlags_Space;
+            else if (!RTStrNICmp(psz, "force", len))
+                uUnique |= SnapshotUniqueFlags_Force;
+            else
+                rc = VERR_PARSE_ERROR;
+        }
+        if (pszComma)
+            psz += len + 1;
+        else
+            psz += len;
+    }
+
+    if (RT_SUCCESS(rc))
+        *pUnique = (SnapshotUniqueFlags)uUnique;
+    return rc;
+}
+
 /**
  * Implementation for all VBoxManage snapshot ... subcommands.
  * @param a
@@ -307,19 +353,22 @@ int handleSnapshot(HandlerArg *a)
             /* parse the optional arguments */
             Bstr desc;
             bool fPause = true; /* default is NO live snapshot */
+            SnapshotUniqueFlags enmUnique = SnapshotUniqueFlags_Null;
             static const RTGETOPTDEF s_aTakeOptions[] =
             {
                 { "--description", 'd', RTGETOPT_REQ_STRING },
                 { "-description",  'd', RTGETOPT_REQ_STRING },
                 { "-desc",         'd', RTGETOPT_REQ_STRING },
                 { "--pause",       'p', RTGETOPT_REQ_NOTHING },
-                { "--live",        'l', RTGETOPT_REQ_NOTHING }
+                { "--live",        'l', RTGETOPT_REQ_NOTHING },
+                { "--uniquename",  'u', RTGETOPT_REQ_STRING }
             };
             RTGETOPTSTATE GetOptState;
             RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTakeOptions, RT_ELEMENTS(s_aTakeOptions),
                          3, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
             int ch;
             RTGETOPTUNION Value;
+            int vrc;
             while (   SUCCEEDED(rc)
                    && (ch = RTGetOpt(&GetOptState, &Value)))
             {
@@ -337,6 +386,12 @@ int handleSnapshot(HandlerArg *a)
                         desc = Value.psz;
                         break;
 
+                    case 'u':
+                        vrc = parseSnapshotUniqueFlags(Value.psz, &enmUnique);
+                        if (RT_FAILURE(vrc))
+                            return errorArgument("Invalid unique name description '%s'", Value.psz);
+                        break;
+
                     default:
                         errorGetOpt(USAGE_SNAPSHOT, ch, &Value);
                         rc = E_FAIL;
@@ -346,13 +401,75 @@ int handleSnapshot(HandlerArg *a)
             if (FAILED(rc))
                 break;
 
+            if (enmUnique & (SnapshotUniqueFlags_Number | SnapshotUniqueFlags_Timestamp))
+            {
+                ComPtr<ISnapshot> pSnapshot;
+                rc = sessionMachine->FindSnapshot(name.raw(),
+                                                  pSnapshot.asOutParam());
+                if (SUCCEEDED(rc) || (enmUnique & SnapshotUniqueFlags_Force))
+                {
+                    /* there is a duplicate, need to create a unique name */
+                    uint32_t count = 0;
+                    RTTIMESPEC now;
+
+                    if (enmUnique & SnapshotUniqueFlags_Number)
+                    {
+                        if (enmUnique & SnapshotUniqueFlags_Force)
+                            count = 1;
+                        else
+                            count = 2;
+                    }
+                    else
+                        RTTimeNow(&now);
+
+                    while (count < 500)
+                    {
+                        Utf8Str suffix;
+                        if (enmUnique & SnapshotUniqueFlags_Number)
+                            suffix = Utf8StrFmt("%u", count);
+                        else
+                        {
+                            RTTIMESPEC nowplus = now;
+                            RTTimeSpecAddSeconds(&nowplus, count);
+                            RTTIME stamp;
+                            RTTimeExplode(&stamp, &nowplus);
+                            suffix = Utf8StrFmt("%04u-%02u-%02uT%02u:%02u:%02uZ", stamp.i32Year, stamp.u8Month, stamp.u8MonthDay, stamp.u8Hour, stamp.u8Minute, stamp.u8Second);
+                        }
+                        Bstr tryName = name;
+                        if (enmUnique & SnapshotUniqueFlags_Space)
+                            tryName = BstrFmt("%ls %s", name.raw(), suffix.c_str());
+                        else
+                            tryName = BstrFmt("%ls%s", name.raw(), suffix.c_str());
+                        count++;
+                        rc = sessionMachine->FindSnapshot(tryName.raw(),
+                                                          pSnapshot.asOutParam());
+                        if (FAILED(rc))
+                        {
+                            name = tryName;
+                            break;
+                        }
+                    }
+                    if (SUCCEEDED(rc))
+                    {
+                        errorArgument("Failed to generate a unique snapshot name");
+                        rc = E_FAIL;
+                        break;
+                    }
+                }
+                rc = S_OK;
+            }
+
             ComPtr<IProgress> progress;
+            Bstr snapId;
             CHECK_ERROR_BREAK(sessionMachine, TakeSnapshot(name.raw(), desc.raw(),
-                                                           fPause,
+                                                           fPause, snapId.asOutParam(),
                                                            progress.asOutParam()));
 
             rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
+            if (SUCCEEDED(rc))
+                RTPrintf("Snapshot taken. UUID: %ls\n", snapId.raw());
+            else
+                CHECK_PROGRESS_ERROR(progress, ("Failed to take snapshot"));
         }
         else if (    (fDelete = !strcmp(a->argv[1], "delete"))
                   || (fRestore = !strcmp(a->argv[1], "restore"))
@@ -388,7 +505,7 @@ int handleSnapshot(HandlerArg *a)
             {
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
                 CHECK_ERROR_BREAK(sessionMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                         pSnapshot.asOutParam()));
+                                                               pSnapshot.asOutParam()));
             }
 
             CHECK_ERROR_BREAK(pSnapshot, COMGETTER(Id)(bstrSnapGuid.asOutParam()));
@@ -396,7 +513,7 @@ int handleSnapshot(HandlerArg *a)
             if (fDelete)
             {
                 CHECK_ERROR_BREAK(sessionMachine, DeleteSnapshot(bstrSnapGuid.raw(),
-                                                           pProgress.asOutParam()));
+                                                                 pProgress.asOutParam()));
             }
             else
             {
@@ -427,7 +544,7 @@ int handleSnapshot(HandlerArg *a)
             else
             {
                 CHECK_ERROR_BREAK(sessionMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                         pSnapshot.asOutParam()));
+                                                               pSnapshot.asOutParam()));
             }
 
             /* parse options */

@@ -1192,6 +1192,7 @@ private:
     HRESULT takeSnapshot(const com::Utf8Str &aName,
                          const com::Utf8Str &aDescription,
                          BOOL aPause,
+                         com::Guid &aId,
                          ComPtr<IProgress> &aProgress);
     HRESULT deleteSnapshot(const com::Guid &aId,
                            ComPtr<IProgress> &aProgress);
@@ -1438,6 +1439,7 @@ private:
     HRESULT takeSnapshot(const com::Utf8Str &aName,
                          const com::Utf8Str &aDescription,
                          BOOL aPause,
+                         com::Guid &aId,
                          ComPtr<IProgress> &aProgress);
     HRESULT deleteSnapshot(const com::Guid &aId,
                            ComPtr<IProgress> &aProgress);

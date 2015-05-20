@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2014 Oracle Corporation
+ * Copyright (C) 2011-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -83,7 +83,8 @@ bool UIWizardCloneVM::cloneVM()
 
         /* Take the snapshot: */
         QString strSnapshotName = tr("Linked Base for %1 and %2").arg(m_machine.GetName()).arg(strName);
-        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true);
+        QString strSnapshotId;
+        CProgress progress = machine.TakeSnapshot(strSnapshotName, "", true, strSnapshotId);
 
         if (machine.isOk())
         {
@@ -106,7 +107,7 @@ bool UIWizardCloneVM::cloneVM()
         session.UnlockMachine();
 
         /* Get the new snapshot and the snapshot machine. */
-        const CSnapshot &newSnapshot = m_machine.FindSnapshot(strSnapshotName);
+        const CSnapshot &newSnapshot = m_machine.FindSnapshot(strSnapshotId);
         if (newSnapshot.isNull())
         {
             msgCenter().cannotFindSnapshotByName(m_machine, strSnapshotName, this);

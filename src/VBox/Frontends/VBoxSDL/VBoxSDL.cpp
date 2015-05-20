@@ -4957,9 +4957,10 @@ static int HandleHostKey(const SDL_KeyboardEvent *pEv)
             RTStrPrintf(pszSnapshotName, sizeof(pszSnapshotName), "Snapshot %d", cSnapshots + 1);
             gpProgress = NULL;
             HRESULT rc;
+            Bstr snapId;
             CHECK_ERROR(gpMachine, TakeSnapshot(Bstr(pszSnapshotName).raw(),
                                                 Bstr("Taken by VBoxSDL").raw(),
-						TRUE,
+                                                TRUE, snapId.asOutParam(),
                                                 gpProgress.asOutParam()));
             if (FAILED(rc))
             {
