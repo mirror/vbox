@@ -1236,7 +1236,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
 #endif</xsl:text>
     </xsl:if>
     <xsl:text>
-
         </xsl:text>
     <xsl:choose>
       <xsl:when test="$limitedAutoCaller = 'true'">
@@ -1247,11 +1246,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> autoCaller(this);
-        if (FAILED(autoCaller.rc()))
-            throw autoCaller.rc();
-
+        hrc = autoCaller.rc();
+        if (SUCCEEDED(hrc))
+        {
 </xsl:text>
-    <xsl:value-of select="concat('        hrc = get', $attrbasename, '(')"/>
+    <xsl:value-of select="concat('            hrc = get', $attrbasename, '(')"/>
     <xsl:variable name="passAutoCaller">
         <xsl:call-template name="checkoption">
             <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
@@ -1265,7 +1264,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:with-param name="dir" select="'out'"/>
     </xsl:apply-templates>
     <xsl:text>);
-</xsl:text>
+        }</xsl:text>
     <xsl:if test="$attrbasename != 'MidlDoesNotLikeEmptyInterfaces'">
         <xsl:text>
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
@@ -1276,8 +1275,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:with-param name="dir">out</xsl:with-param>
         </xsl:call-template>
         <xsl:text>);
-#endif
-</xsl:text>
+#endif</xsl:text>
     </xsl:if>
     <xsl:text>
     }
@@ -1292,8 +1290,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this, hrc, 1 /*hrc exception*/,</xsl:text>
     <xsl:call-template name="emitDTraceParamValNoTmp-DirNotIn"/>
     <xsl:text>);
-#endif
-</xsl:text>
+#endif</xsl:text>
     </xsl:if>
     <xsl:text>
     }
@@ -1308,8 +1305,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:text>this, hrc, 9 /*unhandled exception*/,</xsl:text>
     <xsl:call-template name="emitDTraceParamValNoTmp-DirNotIn"/>
     <xsl:text>);
-#endif
-</xsl:text>
+#endif</xsl:text>
     </xsl:if>
     <xsl:text>
     }
@@ -1380,7 +1376,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:call-template>
         <xsl:text>);
 #endif
-
         </xsl:text>
         <xsl:choose>
           <xsl:when test="$limitedAutoCaller = 'true'">
@@ -1391,11 +1386,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
           </xsl:otherwise>
         </xsl:choose>
         <xsl:text> autoCaller(this);
-        if (FAILED(autoCaller.rc()))
-            throw autoCaller.rc();
-
+        hrc = autoCaller.rc();
+        if (SUCCEEDED(hrc))
+        {
 </xsl:text>
-        <xsl:value-of select="concat('        hrc = set', $attrbasename, '(')"/>
+        <xsl:value-of select="concat('            hrc = set', $attrbasename, '(')"/>
         <xsl:if test="$passAutoCaller = 'true'">
             <xsl:text>autoCaller, </xsl:text>
         </xsl:if>
@@ -1403,7 +1398,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:with-param name="dir" select="'in'"/>
         </xsl:apply-templates>
         <xsl:text>);
-
+        }
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
         </xsl:text>
         <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_SET_', $dtraceattrname, '_RETURN('), $G_lowerCase, $G_upperCase)"/>
@@ -1803,6 +1798,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:apply-templates>
     </xsl:for-each>
     <xsl:text>
+
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_ENTER('), $G_lowerCase, $G_upperCase)"/>
@@ -1815,7 +1811,6 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     </xsl:for-each>
     <xsl:text>);
 #endif
-
         </xsl:text>
     <xsl:choose>
       <xsl:when test="$limitedAutoCaller = 'true'">
@@ -1826,11 +1821,11 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
       </xsl:otherwise>
     </xsl:choose>
     <xsl:text> autoCaller(this);
-        if (FAILED(autoCaller.rc()))
-            throw autoCaller.rc();
-
+        hrc = autoCaller.rc();
+        if (SUCCEEDED(hrc))
+        {
 </xsl:text>
-    <xsl:value-of select="concat('        hrc = ', @name, '(')"/>
+    <xsl:value-of select="concat('            hrc = ', @name, '(')"/>
     <xsl:variable name="passAutoCaller">
         <xsl:call-template name="checkoption">
             <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
@@ -1851,12 +1846,12 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:apply-templates>
         <xsl:if test="not(position()=last())">
             <xsl:text>,
-               </xsl:text>
+                   </xsl:text>
             <xsl:value-of select="$methodindent"/>
         </xsl:if>
     </xsl:for-each>
     <xsl:text>);
-
+        }
 #ifdef VBOX_WITH_DTRACE_R3_MAIN
         </xsl:text>
     <xsl:value-of select="translate(concat('VBOXAPI_', $dtracetopclass, '_', $dtracemethodname, substring($dtracenamehack, 2), '_RETURN('), $G_lowerCase, $G_upperCase)"/>
