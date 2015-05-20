@@ -270,11 +270,11 @@ static void runDisplay(struct DISPLAYSTATE *pState)
         updateSizeHintsProperty(pState);
         if (!pState->fHaveRandR12)
             notifyXServerRandR11(pState);
-        do
-            rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
-                                 | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
-                                 RT_INDEFINITE_WAIT, &fEvents);
-        while(rc == VERR_INTERRUPTED);
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, RT_INDEFINITE_WAIT,
+                             &fEvents);
+        /* Interrupted is used to re-set the mode without changing it. */
+        if (rc == VERR_INTERRUPTED)
+            rc = VINF_SUCCESS;
         if (RT_FAILURE(rc))  /* VERR_NO_MEMORY? */
             VBClFatalError(("event wait failed, rc=%Rrc\n", rc));
         /* If it is a size hint, set the new size. */
@@ -366,10 +366,15 @@ static int pause(struct VBCLSERVICE **ppInterface)
 static int resume(struct VBCLSERVICE **ppInterface)
 {
     struct DISPLAYSTATE *pSelf = getStateFromInterface(ppInterface);
+    int rc;
 
     if (!pSelf->mfInit)
         return VERR_WRONG_ORDER;
-    return enableEventsAndCaps();
+    rc = enableEventsAndCaps();
+    /* RandR 1.1-based drivers only let us change mode when we are not switched
+     * out, so interrupt the wait when we switch in and re-set it. */
+    VbglR3InterruptEventWaits();
+    return rc;
 }
 
 static void cleanup(struct VBCLSERVICE **ppInterface)
