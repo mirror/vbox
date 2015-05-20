@@ -264,31 +264,30 @@ typedef struct VBOXHDDRAW
  * Translate VD_OPEN_FLAGS_* to RTFile open flags.
  *
  * @return  RTFile open flags.
- * @param   uOpenFlags      VD_OPEN_FLAGS_* open flags.
+ * @param   fOpenFlags      VD_OPEN_FLAGS_* open flags.
  * @param   fCreate         Flag that the file should be created.
  */
-DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned uOpenFlags, bool fCreate)
+DECLINLINE(uint32_t) VDOpenFlagsToFileOpenFlags(unsigned fOpenFlags, bool fCreate)
 {
-    AssertMsg(!((uOpenFlags & VD_OPEN_FLAGS_READONLY) && fCreate), ("Image can't be opened readonly while being created\n"));
+    AssertMsg(!(fOpenFlags & VD_OPEN_FLAGS_READONLY) || !fCreate, ("Image can't be opened readonly while being created\n"));
 
-    uint32_t fOpen = 0;
-
-    if (RT_UNLIKELY(uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        fOpen |= RTFILE_O_READ | RTFILE_O_DENY_NONE;
+    uint32_t fOpen;
+    if (fOpenFlags & VD_OPEN_FLAGS_READONLY)
+        fOpen = RTFILE_O_READ | RTFILE_O_DENY_NONE;
     else
     {
-        fOpen |= RTFILE_O_READWRITE;
+        fOpen = RTFILE_O_READWRITE;
 
-        if (RT_UNLIKELY(uOpenFlags & VD_OPEN_FLAGS_SHAREABLE))
+        if (fOpenFlags & VD_OPEN_FLAGS_SHAREABLE)
             fOpen |= RTFILE_O_DENY_NONE;
         else
             fOpen |= RTFILE_O_DENY_WRITE;
     }
 
-    if (RT_UNLIKELY(fCreate))
-        fOpen |= RTFILE_O_CREATE | RTFILE_O_NOT_CONTENT_INDEXED;
-    else
+    if (!fCreate)
         fOpen |= RTFILE_O_OPEN;
+    else
+        fOpen |= RTFILE_O_CREATE | RTFILE_O_NOT_CONTENT_INDEXED;
 
     return fOpen;
 }
