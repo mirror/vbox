@@ -1,7 +1,5 @@
 /* $Id$ */
-
 /** @file
- *
  * Medium lock test cases.
  */
 
@@ -19,7 +17,6 @@
 
 #define LOG_ENABLED
 #define LOG_GROUP LOG_GROUP_MAIN
-#define LOG_INSTANCE NULL
 #include <VBox/log.h>
 
 #include <VBox/com/com.h>
