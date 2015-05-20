@@ -1354,8 +1354,8 @@
  * @param   expr        The expression that's very unlikely to be true.
  * @see     RT_LIKELY
  *
- * @remarks Please use RT_LIKELY() instead wherever possible!  That gives us a
- *          better chance of the windows compilers to generate favorable code
+ * @deprecated Please use RT_LIKELY() instead wherever possible!  That gives us
+ *          a better chance of the windows compilers to generate favorable code
  *          too.  The belief is that the compiler will by default assume the
  *          if-case is more likely than the else-case.
  */
