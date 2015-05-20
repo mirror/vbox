@@ -1842,7 +1842,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
         rcStrict = iomMMIODoRead(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
     else
         rcStrict = iomMMIODoWrite(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
-    AssertRC(rcStrict);
+    AssertMsgRC(rcStrict, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
 
     iomMmioReleaseRange(pVM, pRange);
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
