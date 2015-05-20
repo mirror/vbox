@@ -217,7 +217,7 @@ RTDECL(int) RTThreadCtxHookDestroy(RTTHREADCTXHOOK hCtxHook)
         return VINF_SUCCESS;
     RTTHREADCTX_VALID_RETURN_RC(hCtxHook, VERR_INVALID_HANDLE);
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    Assert(pThis->fEnabled || pThis->hOwner == RTThreadNativeSelf());
+    Assert(!pThis->fEnabled || pThis->hOwner == RTThreadNativeSelf());
 
     /*
      * Make sure it's disabled.
