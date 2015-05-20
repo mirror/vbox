@@ -31,7 +31,7 @@ if1of ($(KBUILD_TARGET), linux solaris)
  	VBOX_DRI
 endif
 vboxvideo_xorg_INCS = \
-    $(VBOX_PATH_X11_ROOT)/dri2proto-2.8 \
+	$(VBOX_PATH_X11_ROOT)/dri2proto-2.8 \
 	$(VBOX_PATH_X11_ROOT)/fontsproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
 	$(VBOX_PATH_X11_ROOT)/MesaLib-8.0.4-GL \
