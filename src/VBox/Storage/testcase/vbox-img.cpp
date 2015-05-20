@@ -77,7 +77,10 @@ static void printUsage(PRTSTREAM pStrm)
                  "                [--dry-run]\n"
                  "                [--format VDI|VMDK|VHD] (default: autodetect)\n"
                  "\n"
-                 "   clearcomment --filename <filename>\n",
+                 "   clearcomment --filename <filename>\n"
+                 "\n"
+                 "   resize       --filename <filename>\n"
+                 "                --size <new size>\n",
                  g_pszProgName);
 }
 
@@ -1707,6 +1710,79 @@ static int handleClearComment(HandlerArg *a)
 }
 
 
+static int handleClearResize(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+    uint64_t    cbNew = 0;
+    bool fDryRun = false;
+    VDGEOMETRY LCHSGeometry, PCHSGeometry;
+
+    memset(&LCHSGeometry, 0, sizeof(LCHSGeometry));
+    memset(&PCHSGeometry, 0, sizeof(PCHSGeometry));
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING },
+        { "--size",     's', RTGETOPT_REQ_UINT64 }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+
+            case 's':   // --size
+                cbNew = ValueUnion.u64;
+                break;
+
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                printUsage(g_pStdErr);
+                return ch;
+        }
+    }
+
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+
+    if (!cbNew)
+        return errorSyntax("Mandatory --size option missing or invalid\n");
+
+    /* just try it */
+    char *pszFormat = NULL;
+    VDTYPE enmType = VDTYPE_INVALID;
+    rc = VDGetFormat(NULL, NULL, pszFilename, &pszFormat, &enmType);
+    if (RT_FAILURE(rc))
+        return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+
+    rc = VDCreate(pVDIfs, enmType, &pDisk);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while creating the virtual disk container: %Rrc\n", rc);
+
+    /* Open the image */
+    rc = VDOpen(pDisk, pszFormat, pszFilename, VD_OPEN_FLAGS_NORMAL, NULL);
+    if (RT_FAILURE(rc))
+        return errorRuntime("Error while opening the image: %Rrc\n", rc);
+
+    rc = VDResize(pDisk, cbNew, &PCHSGeometry, &LCHSGeometry, NULL);
+    if (RT_FAILURE(rc))
+        rc = errorRuntime("Error while resizing the virtual disk: %Rrc\n", rc);
+
+    VDDestroy(pDisk);
+    return rc;
+}
+
+
 int main(int argc, char *argv[])
 {
     int exitcode = 0;
@@ -1798,7 +1874,8 @@ int main(int argc, char *argv[])
         { "createbase",   handleCreateBase   },
         { "repair",       handleRepair       },
         { "clearcomment", handleClearComment },
-        { NULL,                       NULL }
+        { "resize",       handleClearResize  },
+        { NULL,           NULL               }
     };
 
     HandlerArg handlerArg = { 0, NULL };
