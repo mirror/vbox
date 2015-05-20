@@ -2814,12 +2814,12 @@ Value: 2006.01.01</screen>
 
         <glossentry>
           <glossterm><computeroutput>hwvirtexclusive</computeroutput></glossterm>
-          <para>This specifies whether VirtualBox will make exclusive use of
+          <glossdef><para>This specifies whether VirtualBox will make exclusive use of
           the hardware virtualization extensions (Intel VT-x or AMD-V) of the
           host system's processor; see <xref linkend="hwvirt" />. If you wish to
           share these extensions with other hypervisors running at the same time,
           you must disable this setting. Doing so has negative performance implications.
-          </para>
+          </para></glossdef>
         </glossentry>
 
 
@@ -3067,43 +3067,80 @@ Value: 2006.01.01</screen>
     to control certain things inside a guest from the host. Please see <xref
     linkend="guestadd-guestcontrol" /> for an introduction.</para>
 
-    <para>Generally, the syntax is as follows:</para>
+    <para>There are two sets of subcommands here.  The first set requires guest
+      credentials to be specified, the second set does not.</para>
 
-    <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;command&gt;</screen>
+    <para>The first set of subcommands are on the following form:</para>
 
-    <para>The following subcommands are available (where
-    <computeroutput>&lt;uuid|vmname&gt;</computeroutput>, in each case, can either be a
-    VM name or a VM UUID, as with the other VBoxManage commands):<itemizedlist>
+    <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
+            [-v|--verbose] [-q|quiet] [--username &lt;name&gt;] [--domain &lt;domain&gt; ]
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;] ...
+    </screen>
+
+    <para>and the second set are on the following form:</para>
+
+    <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; &lt;sub-command&gt;
+            [-v|--verbose] [-q|quiet] ...
+    </screen>
+
+    <para>where the common parameters are:
+      <glosslist>
+        <glossentry>
+          <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+          <glossdef><para>The VM UUID or VM name. Mandatory.</para></glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
+          <glossdef><para>Name of the user the process should run under. This
+            user must exist on the guest OS. If not specified the host user
+            name is used.</para>
+          </glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--domain &lt;domain&gt;</computeroutput></glossterm>
+          <glossdef><para>User domain for windows guests, optional.</para></glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
+          <glossdef><para>Password of the specified user account to be read from
+            the given file. If not given, an empty password is assumed.</para></glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
+          <glossdef><para>Password of the specified user account. If not given,
+            an empty password is assumed.</para></glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>-v|--verbose</computeroutput></glossterm>
+          <glossdef><para>Makes the sub-command execution more noisy.</para></glossdef>
+        </glossentry>
+        <glossentry>
+          <glossterm><computeroutput>-q|--quiet</computeroutput></glossterm>
+          <glossdef><para>Makes the sub-command execution more quiet.</para></glossdef>
+        </glossentry>
+      </glosslist>
+    </para>
+
+    <para>The first set of subcommands:<itemizedlist>
         <listitem>
-          <para><emphasis role="bold"><computeroutput>execute</computeroutput></emphasis>,
-          which allows for
-          executing a program/script (process) which already is installed and
-          runnable on the guest. This command only works while a VM is up and
-          running and has the following syntax:</para>
+          <para><emphasis role="bold"><computeroutput>run</computeroutput></emphasis>,
+          allows you to execute a guest program waiting for it to complete and
+          forwarding stdout, stderr and stdin to/from the host.</para>
 
-          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; exec[ute]
-            --image &lt;path to program&gt; --username &lt;name&gt;
-            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
-            [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
-            [--verbose] [--timeout &lt;msec&gt;]
-            [--wait-exit] [--wait-stdout] [--wait-stderr]
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; run [common-options]
+            [--exe &lt;path to executable&gt;] [--timeout &lt;msec&gt;]
+            [-E|--putenv &lt;NAME&gt;[=&lt;VALUE&gt;]] [--unquoted-args]
+            [--ignore-operhaned-processes] [--no-profile]
+            [--no-wait-stdout|--wait-stdout]
+            [--no-wait-stderr|--wait-stderr]
             [--dos2unix] [--unix2dos]
-            -- [[&lt;argument1&gt;] ... [&lt;argumentN&gt;]]</screen>
+            -- &lt;program/arg0&gt; [argument1] ... [argumentN]]
+          </screen>
 
-          <para>where the parameters mean: <glosslist>
+          <para>where the options are: <glosslist>
               <glossentry>
-                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>The VM UUID or VM name. Mandatory.</para>
-                </glossdef>
-              </glossentry>
-
-              <glossentry>
-                <glossterm><computeroutput>--image "&lt;path to program&gt;"</computeroutput></glossterm>
-
-                <glossdef>
-                  <para>Absolute path and process name of process to execute
+                <glossterm><computeroutput>--exe "&lt;path to program&gt;"</computeroutput></glossterm>
+                <glossdef><para>Guest path to the guest executable that should be executed.
                   in the guest, e.g.
                   <computeroutput>C:\Windows\System32\calc.exe</computeroutput></para>
                 </glossdef>
@@ -3141,9 +3178,9 @@ Value: 2006.01.01</screen>
               <glossentry>
                 <glossterm><computeroutput>--dos2unix</computeroutput></glossterm>
 
-                <glossdef>
+                <glossdef><para>
                   Converts output from DOS/Windows guests to UNIX-compatible
-                  line endings (CR + LF -> LF). Not implemented yet.
+                  line endings (CR + LF -> LF). Not implemented yet.</para>
                 </glossdef>
               </glossentry>
 
@@ -3186,10 +3223,9 @@ Value: 2006.01.01</screen>
               <glossentry>
                 <glossterm><computeroutput>--unix2dos</computeroutput></glossterm>
 
-                <glossdef>
+                <glossdef><para>
                   Converts output from a UNIX/Linux guests to DOS-/Windows-compatible
-                  line endings (LF -> CR + LF). Not implemented yet.
-                </glossdef>
+                  line endings (LF -> CR + LF). Not implemented yet.</para></glossdef>
               </glossentry>
 
               <glossentry>
