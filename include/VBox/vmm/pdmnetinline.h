@@ -77,7 +77,7 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     /* all types requires both headers. */
     if (RT_LIKELY( pGso->offHdr1 >= sizeof(RTNETETHERHDR) ))
     { /* likely */ } else return false;
-    if (RT_LIKELY( pGso->offHdr2 < pGso->offHdr1 ))
+    if (RT_LIKELY( pGso->offHdr2 > pGso->offHdr1 ))
     { /* likely */ } else return false;
     if (RT_LIKELY( pGso->cbHdrsTotal > pGso->offHdr2 ))
     { /* likely */ } else return false;
