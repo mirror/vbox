@@ -26,6 +26,9 @@
    <string>Take Snapshot of Virtual Machine</string>
   </property>
   <layout class="QGridLayout">
+   <property name="spacing">
+    <number>20</number>
+   </property>
    <item rowspan="2" row="0" column="0">
     <layout class="QVBoxLayout">
      <item>
