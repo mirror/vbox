@@ -74,21 +74,20 @@ VirtualBoxBase::~VirtualBoxBase()
 RWLockHandle *VirtualBoxBase::lockHandle() const
 {
     /* lazy initialization */
-    if (RT_UNLIKELY(!mObjectLock))
-    {
-        AssertCompile(sizeof(RWLockHandle *) == sizeof(void *));
+    if (RT_LIKELY(mObjectLock))
+        return mObjectLock;
 
-        // getLockingClass() is overridden by many subclasses to return
-        // one of the locking classes listed at the top of AutoLock.h
-        RWLockHandle *objLock = new RWLockHandle(getLockingClass());
-        if (!ASMAtomicCmpXchgPtr(&mObjectLock, objLock, NULL))
-        {
-            delete objLock;
-            objLock = ASMAtomicReadPtrT(&mObjectLock, RWLockHandle *);
-        }
-        return objLock;
+    AssertCompile(sizeof(RWLockHandle *) == sizeof(void *));
+
+    // getLockingClass() is overridden by many subclasses to return
+    // one of the locking classes listed at the top of AutoLock.h
+    RWLockHandle *objLock = new RWLockHandle(getLockingClass());
+    if (!ASMAtomicCmpXchgPtr(&mObjectLock, objLock, NULL))
+    {
+        delete objLock;
+        objLock = ASMAtomicReadPtrT(&mObjectLock, RWLockHandle *);
     }
-    return mObjectLock;
+    return objLock;
 }
 
 /**
