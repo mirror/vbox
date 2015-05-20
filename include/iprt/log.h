@@ -397,34 +397,35 @@ typedef enum RTLOGGRPFLAGS
 {
     /** Enabled. */
     RTLOGGRPFLAGS_ENABLED      = 0x0001,
-    /** Level 1 logging. */
-    RTLOGGRPFLAGS_LEVEL_1      = 0x0002,
-    /** Level 2 logging. */
-    RTLOGGRPFLAGS_LEVEL_2      = 0x0004,
-    /** Level 3 logging. */
-    RTLOGGRPFLAGS_LEVEL_3      = 0x0008,
-    /** Level 4 logging. */
-    RTLOGGRPFLAGS_LEVEL_4      = 0x0010,
-    /** Level 5 logging. */
-    RTLOGGRPFLAGS_LEVEL_5      = 0x0020,
-    /** Level 6 logging. */
-    RTLOGGRPFLAGS_LEVEL_6      = 0x0040,
-    /** Level 7 logging. */
-    RTLOGGRPFLAGS_LEVEL_7      = 0x0080,
-    /** Level 8 logging. */
-    RTLOGGRPFLAGS_LEVEL_8      = 0x0100,
-    /** Level 9 logging. */
-    RTLOGGRPFLAGS_LEVEL_9      = 0x0200,
-    /** Level 10 logging. */
-    RTLOGGRPFLAGS_LEVEL_10     = 0x0400,
-    /** Level 11 logging. */
-    RTLOGGRPFLAGS_LEVEL_11     = 0x0800,
-    /** Level 12 logging. */
-    RTLOGGRPFLAGS_LEVEL_12     = 0x1000,
     /** Flow logging. */
-    RTLOGGRPFLAGS_FLOW         = 0x2000,
+    RTLOGGRPFLAGS_FLOW         = 0x0002,
     /** Warnings logging. */
-    RTLOGGRPFLAGS_WARN         = 0x4000,
+    RTLOGGRPFLAGS_WARN         = 0x0004,
+    /* 0x0008 for later. */
+    /** Level 1 logging. */
+    RTLOGGRPFLAGS_LEVEL_1      = 0x0010,
+    /** Level 2 logging. */
+    RTLOGGRPFLAGS_LEVEL_2      = 0x0020,
+    /** Level 3 logging. */
+    RTLOGGRPFLAGS_LEVEL_3      = 0x0040,
+    /** Level 4 logging. */
+    RTLOGGRPFLAGS_LEVEL_4      = 0x0080,
+    /** Level 5 logging. */
+    RTLOGGRPFLAGS_LEVEL_5      = 0x0100,
+    /** Level 6 logging. */
+    RTLOGGRPFLAGS_LEVEL_6      = 0x0200,
+    /** Level 7 logging. */
+    RTLOGGRPFLAGS_LEVEL_7      = 0x0400,
+    /** Level 8 logging. */
+    RTLOGGRPFLAGS_LEVEL_8      = 0x0800,
+    /** Level 9 logging. */
+    RTLOGGRPFLAGS_LEVEL_9      = 0x1000,
+    /** Level 10 logging. */
+    RTLOGGRPFLAGS_LEVEL_10     = 0x2000,
+    /** Level 11 logging. */
+    RTLOGGRPFLAGS_LEVEL_11     = 0x4000,
+    /** Level 12 logging. */
+    RTLOGGRPFLAGS_LEVEL_12     = 0x8000,
 
     /** Restrict the number of log entries. */
     RTLOGGRPFLAGS_RESTRICT     = 0x40000000,
