@@ -165,7 +165,7 @@ typedef enum PGMACCESSTYPE
 /**
  * \#PF Handler callback for physical access handler ranges in RC and R0.
  *
- * @returns VBox status code (appropriate for RC return).
+ * @returns Strict VBox status code (appropriate for ring-0 and raw-mode).
  * @param   pVM         VM Handle.
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
@@ -176,8 +176,8 @@ typedef enum PGMACCESSTYPE
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
  */
-typedef DECLCALLBACK(int) FNPGMRZPHYSPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                               RTGCPHYS GCPhysFault, void *pvUser);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMRZPHYSPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                        RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
 
@@ -188,8 +188,14 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * The handler can not raise any faults, it's mainly for monitoring write access
  * to certain pages.
  *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
+ * @returns Strict VBox status code in ring-0 and raw-mode context, in ring-3
+ *          the only supported informational status code is
+ *          VINF_PGM_HANDLER_DO_DEFAULT.
+ * @retval  VINF_SUCCESS if the handler have carried out the operation.
+ * @retval  VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the
+ *          access operation.
+ * @retval  VINF_EM_XXX in ring-0 and raw-mode context.
+ *
  * @param   pVM             VM Handle.
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
@@ -201,8 +207,8 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * @param   enmOrigin       The origin of this call.
  * @param   pvUser          User argument.
  */
-typedef DECLCALLBACK(int) FNPGMPHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
-                                           PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMPHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMPHYSHANDLER *PFNPGMPHYSHANDLER;
 

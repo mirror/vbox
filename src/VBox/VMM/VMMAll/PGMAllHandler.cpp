@@ -163,7 +163,7 @@ VMMDECL(int) PGMHandlerPhysicalRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhy
             break;
         case PGMPHYSHANDLERKIND_MMIO:
         case PGMPHYSHANDLERKIND_ALL:
-            /* Simplification for PGMPhysRead, PGMR0Trap0eHandlerNPMisconfig and others. */
+            /* Simplification for PGMPhysRead, PGMR0Trap0eHandlerNPMisconfig and others: Full pages. */
             AssertMsgReturn(!(GCPhys & PAGE_OFFSET_MASK), ("%RGp\n", GCPhys), VERR_INVALID_PARAMETER);
             AssertMsgReturn((GCPhysLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK, ("%RGp\n", GCPhysLast), VERR_INVALID_PARAMETER);
             break;
@@ -1454,16 +1454,14 @@ VMM_INT_DECL(bool) PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr)
 /**
  * Search for virtual handler with matching physical address
  *
- * @returns VBox status code
+ * @returns Pointer to the virtual handler structure if found, otherwise NULL.
  * @param   pVM         Pointer to the VM.
  * @param   GCPhys      GC physical address to search for.
- * @param   ppVirt      Where to store the pointer to the virtual handler structure.
  * @param   piPage      Where to store the pointer to the index of the cached physical page.
  */
-int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *ppVirt, unsigned *piPage)
+PPGMVIRTHANDLER pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, unsigned *piPage)
 {
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
-    Assert(ppVirt);
 
     pgmLock(pVM);
     PPGMPHYS2VIRTHANDLER pCur;
@@ -1471,22 +1469,21 @@ int pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, PPGMVIRTHANDLER *p
     if (pCur)
     {
         /* found a match! */
-        *ppVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
-        *piPage = pCur - &(*ppVirt)->aPhysToVirt[0];
+        PPGMVIRTHANDLER pVirt = (PPGMVIRTHANDLER)((uintptr_t)pCur + pCur->offVirtHandler);
+        *piPage = pCur - &pVirt->aPhysToVirt[0];
         pgmUnlock(pVM);
 
 #ifdef VBOX_STRICT_PGM_HANDLER_VIRTUAL
         AssertRelease(pCur->offNextAlias & PGMPHYS2VIRTHANDLER_IS_HEAD);
 #endif
-        LogFlow(("PHYS2VIRT: found match for %RGp -> %RGv *piPage=%#x\n", GCPhys, (*ppVirt)->Core.Key, *piPage));
+        LogFlow(("PHYS2VIRT: found match for %RGp -> %RGv *piPage=%#x\n", GCPhys, pVirt->Core.Key, *piPage));
         STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
-        return VINF_SUCCESS;
+        return pVirt;
     }
 
     pgmUnlock(pVM);
-    *ppVirt = NULL;
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,VirtHandlerSearchByPhys), a);
-    return VERR_PGM_HANDLER_NOT_FOUND;
+    return NULL;
 }
 
 

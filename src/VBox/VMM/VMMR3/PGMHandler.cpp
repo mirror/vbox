@@ -410,6 +410,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHA
     switch (pType->enmKind)
     {
         case PGMVIRTHANDLERKIND_ALL:
+            /* Simplification for PGMPhysRead and others: Full pages. */
             AssertReleaseMsgReturn(   (GCPtr     & PAGE_OFFSET_MASK) == 0
                                    && (GCPtrLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK,
                                    ("PGMVIRTHANDLERKIND_ALL: GCPtr=%RGv GCPtrLast=%RGv\n", GCPtr, GCPtrLast),

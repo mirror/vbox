@@ -254,8 +254,8 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
      * Attempt to emulate the instruction and sync the affected entries.
      */
     uint32_t cb;
-    int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-    if (RT_SUCCESS(rc) && cb)
+    VBOXSTRICTRC rcStrict = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+    if (RT_SUCCESS(rcStrict) && cb)
     {
         /* Check if the LDT was in any way affected.  Do not sync the
            shadow GDT if that's the case or we might have trouble in
@@ -267,51 +267,51 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
         {
             Log(("LDTR selector change -> fall back to HC!!\n"));
             VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-            rc = VINF_SELM_SYNC_GDT;
+            rcStrict = VINF_SELM_SYNC_GDT;
             /** @todo Implement correct stale LDT handling.  */
         }
         else
         {
             /* Sync the shadow GDT and continue provided the update didn't
                cause any segment registers to go stale in any way. */
-            int rc2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE1);
-            if (rc2 == VINF_SUCCESS || rc2 == VINF_EM_RESCHEDULE_REM)
+            VBOXSTRICTRC rcStrict2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE1);
+            if (rcStrict2 == VINF_SUCCESS || rcStrict2 == VINF_EM_RESCHEDULE_REM)
             {
-                if (rc == VINF_SUCCESS)
-                    rc = rc2;
+                if (rcStrict == VINF_SUCCESS)
+                    rcStrict = rcStrict2;
 
                 if (iGDTE1 != iGDTE2)
                 {
-                    rc2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE2);
-                    if (rc == VINF_SUCCESS)
-                        rc = rc2;
+                    rcStrict2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE2);
+                    if (rcStrict == VINF_SUCCESS)
+                        rcStrict = rcStrict2;
                 }
 
-                if (rc2 == VINF_SUCCESS || rc2 == VINF_EM_RESCHEDULE_REM)
+                if (rcStrict2 == VINF_SUCCESS || rcStrict2 == VINF_EM_RESCHEDULE_REM)
                 {
                     /* VINF_EM_RESCHEDULE_REM - bad idea if we're in a patch. */
-                    if (rc2 == VINF_EM_RESCHEDULE_REM)
-                        rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
+                    if (rcStrict2 == VINF_EM_RESCHEDULE_REM)
+                        rcStrict = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
                     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
-                    return rc;
+                    return VBOXSTRICTRC_TODO(rcStrict);
                 }
             }
 
             /* sync failed, return to ring-3 and resync the GDT. */
-            if (rc == VINF_SUCCESS || RT_FAILURE(rc2))
-                rc = rc2;
+            if (rcStrict == VINF_SUCCESS || RT_FAILURE(rcStrict2))
+                rcStrict = rcStrict2;
         }
     }
     else
     {
-        Assert(RT_FAILURE(rc));
-        if (rc == VERR_EM_INTERPRETER)
-            rc = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
+        Assert(RT_FAILURE(rcStrict));
+        if (rcStrict == VERR_EM_INTERPRETER)
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
 
     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 #endif /* SELM_TRACK_GUEST_GDT_CHANGES */
 
@@ -399,11 +399,11 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
      * Try emulate the access.
      */
     uint32_t cb;
-    int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-    if (    RT_SUCCESS(rc)
-        &&  cb)
+    VBOXSTRICTRC rcStrict = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+    if (   RT_SUCCESS(rcStrict)
+        && cb)
     {
-        rc = VINF_SUCCESS;
+        rcStrict = VINF_SUCCESS;
 
         /*
          * If it's on the same page as the esp0 and ss0 fields or actually one of them,
@@ -448,8 +448,8 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
                 uint16_t padding_ss0;
             } s;
             AssertCompileSize(s, 8);
-            rc = selmRCReadTssBits(pVM, &s, &pGuestTss->esp0, sizeof(s));
-            if (    rc == VINF_SUCCESS
+            rcStrict = selmRCReadTssBits(pVM, &s, &pGuestTss->esp0, sizeof(s));
+            if (    rcStrict == VINF_SUCCESS
                 &&  (    s.esp0 !=  pVM->selm.s.Tss.esp1
                      ||  s.ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
                )
@@ -495,9 +495,9 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
                     /** @todo only update the changed part. */
                     for (uint32_t i = 0; i < sizeof(pVM->selm.s.Tss.IntRedirBitmap) / 8; i++)
                     {
-                        rc = selmRCReadTssBits(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8],
-                                               (uint8_t *)pGuestTss + offIntRedirBitmap + i * 8, 8);
-                        if (rc != VINF_SUCCESS)
+                        rcStrict = selmRCReadTssBits(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8],
+                                                     (uint8_t *)pGuestTss + offIntRedirBitmap + i * 8, 8);
+                        if (rcStrict != VINF_SUCCESS)
                             break;
                     }
                     STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
@@ -506,25 +506,25 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
         }
 
         /* Return to ring-3 for a full resync if any of the above fails... (?) */
-        if (rc != VINF_SUCCESS)
+        if (rcStrict != VINF_SUCCESS)
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-            if (RT_SUCCESS(rc))
-                rc = VINF_SUCCESS;
+            if (RT_SUCCESS(rcStrict))
+                rcStrict = VINF_SUCCESS;
         }
 
         STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandled);
     }
     else
     {
-        AssertMsg(RT_FAILURE(rc), ("cb=%u rc=%#x\n", cb, rc));
+        AssertMsg(RT_FAILURE(rcStrict), ("cb=%u rcStrict=%#x\n", cb, VBOXSTRICTRC_VAL(rcStrict)));
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
         STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSUnhandled);
-        if (rc == VERR_EM_INTERPRETER)
-            rc = VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
+        if (rcStrict == VERR_EM_INTERPRETER)
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
     }
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 #endif /* SELM_TRACK_GUEST_TSS_CHANGES */
 

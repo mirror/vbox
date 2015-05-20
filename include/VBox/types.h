@@ -204,9 +204,6 @@ typedef enum VMSTATE
       || defined(DEBUG) \
       || defined(DOXYGEN_RUNNING) )
 # define VBOXSTRICTRC_STRICT_ENABLED 1
-# ifdef _MSC_VER
-#  pragma warning(disable:4190)
-# endif
 #endif
 
 /** We need RTERR_STRICT_RC.  */
@@ -282,6 +279,9 @@ private:
     VBOXSTRICTRC(int64_t rc)  : m_rc(-999)          { NOREF(rc); }
     /** @} */
 };
+# ifdef _MSC_VER
+#  pragma warning(disable:4190)
+# endif
 #else
 typedef int32_t VBOXSTRICTRC;
 #endif

@@ -123,7 +123,7 @@ VMMRC_INT_DECL(VBOXSTRICTRC) PATMRCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE 
                 return VINF_PGM_HANDLER_DO_DEFAULT;
             }
             LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %RRv\n", pRegFrame->eip, GCPtr));
-            int rc = EMInterpretInstruction(VMMGetCpu0(pVM), pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr);
+            int rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(VMMGetCpu0(pVM), pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr));
             if (rc == VINF_SUCCESS)
             {
                 STAM_COUNTER_INC(&pVM->patm.s.StatPatchWriteInterpreted);
@@ -552,8 +552,8 @@ VMMRC_INT_DECL(int) PATMRCHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            rc = EMInterpretInstructionDisasState(pVCpu, &cpu, pRegFrame, 0 /* not relevant here */,
-                                                  EMCODETYPE_SUPERVISOR);
+            rc = VBOXSTRICTRC_TODO(EMInterpretInstructionDisasState(pVCpu, &cpu, pRegFrame, 0 /* not relevant here */,
+                                                                    EMCODETYPE_SUPERVISOR));
 #endif
             if (RT_FAILURE(rc))
             {

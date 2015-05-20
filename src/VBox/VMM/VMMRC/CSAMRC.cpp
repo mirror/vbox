@@ -115,7 +115,7 @@ DECLEXPORT(int) csamRCCodePageWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
         VBOXSTRICTRC rcStrict = PATMRCHandleWriteToPatchPage(pVM, pRegFrame, (RTRCPTR)((RTRCUINTPTR)pvRange + offRange),
                                                              4 /** @todo */);
         if (rcStrict == VINF_SUCCESS)
-            return rcStrict;
+            return VBOXSTRICTRC_TODO(rcStrict);
         if (rcStrict == VINF_EM_RAW_EMULATE_INSTR)
         {
             STAM_COUNTER_INC(&pVM->csam.s.StatDangerousWrite);
