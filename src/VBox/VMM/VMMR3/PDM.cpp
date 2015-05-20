@@ -2102,6 +2102,31 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
     uint64_t cNsElapsed = RTTimeNanoTS();
 
     /*
+     * Clear the suspended flags on all devices and drivers first because they
+     * might have been set during a suspend but the power off callbacks should
+     * be called in any case.
+     */
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+    {
+        pDevIns->Internal.s.fIntFlags &= ~PDMDEVINSINT_FLAGS_SUSPENDED;
+
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                pDrvIns->Internal.s.fVMSuspended = false;
+    }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        pUsbIns->Internal.s.fVMSuspended = false;
+
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                pDrvIns->Internal.s.fVMSuspended = false;
+    }
+#endif
+
+    /*
      * The outer loop repeats until there are no more async requests.
      */
     PDMNOTIFYASYNCSTATS Async;
