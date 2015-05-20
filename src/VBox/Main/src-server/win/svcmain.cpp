@@ -98,7 +98,7 @@ void CExeModule::MonitorShutdown()
              * log rotation: there might be another API service process
              * running at this point which would rotate the logs concurrently,
              * creating a mess. */
-            PRTLOGGER pReleaseLogger = RTLogRelDefaultInstance();
+            PRTLOGGER pReleaseLogger = RTLogRelGetDefaultInstance();
             if (pReleaseLogger)
             {
                 char szDest[1024];

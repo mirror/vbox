@@ -28,10 +28,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_USB_DRV
-#ifdef DEBUG_ramshankar
-# define LOG_ENABLED
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #include <VBox/version.h>
 #include <VBox/log.h>
 #include <VBox/err.h>

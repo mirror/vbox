@@ -29,10 +29,10 @@
 
 /* Misc wrappers */
 #define fflush(file)            RTLogFlush(NULL)
-#define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+#define printf(...)             LogIt(0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 /* If DEBUG_TMP_LOGGING - goes to QEMU log file */
 #ifndef DEBUG_TMP_LOGGING
-# define fprintf(logfile, ...)  LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+# define fprintf(logfile, ...)  LogIt(0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 #endif
 
 #define assert(cond)            Assert(cond)

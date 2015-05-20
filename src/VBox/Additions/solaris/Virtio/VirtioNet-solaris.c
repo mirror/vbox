@@ -27,9 +27,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef DEBUG_ramshankar
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #include "Virtio-solaris.h"
 #include "VirtioPci-solaris.h"
 

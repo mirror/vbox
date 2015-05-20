@@ -28,9 +28,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef DEBUG_ramshankar
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #undef offsetof     /* This gets redefined in drmP.h */
 #include "include/drmP.h"
 #include "include/drm.h"

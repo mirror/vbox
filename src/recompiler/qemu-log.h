@@ -49,7 +49,7 @@ extern int loglevel;
 #else
 # define qemu_log_vprintf(fmt, va) do { \
         if (LogIsEnabled()) \
-            RTLogLoggerExV(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, fmt, va); \
+            RTLogLoggerExV(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, fmt, va); \
     } while (0)
 #endif
 
@@ -99,7 +99,7 @@ extern int loglevel;
 #ifndef VBOX
 #define qemu_log_flush() fflush(logfile)
 #else
-# define qemu_log_flush()           RTLogFlush(LOG_INSTANCE)
+# define qemu_log_flush()           RTLogFlush(NULL)
 #endif
 
 /* Close the log file */

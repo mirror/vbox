@@ -222,7 +222,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
 # ifdef VBOX_WITH_RC_RELEASE_LOGGING
     PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
     if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-        RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+        RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
 # endif
 #endif
 

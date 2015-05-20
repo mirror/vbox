@@ -28,10 +28,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
-#ifdef DEBUG_ramshankar
-# define LOG_ENABLED
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/intnetinline.h>

@@ -1217,7 +1217,7 @@ static DECLCALLBACK(int) dbgcCmdLogFlags(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
 static DECLCALLBACK(int) dbgcCmdLogFlush(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     RTLogFlush(NULL);
-    PRTLOGGER pLogRel = RTLogRelDefaultInstance();
+    PRTLOGGER pLogRel = RTLogRelGetDefaultInstance();
     if (pLogRel)
         RTLogFlush(pLogRel);
 

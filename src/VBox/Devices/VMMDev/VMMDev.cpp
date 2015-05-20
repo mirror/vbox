@@ -2176,7 +2176,7 @@ static int vmmdevReqHandler_LogString(PVMMDEV pThis, VMMDevRequestHeader *pReqHd
     AssertMsgReturn(pReq->szString[pReq->header.size - RT_OFFSETOF(VMMDevReqLogString, szString) - 1] == '\0',
                     ("not null terminated\n"), VERR_INVALID_PARAMETER);
 
-    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("DEBUG LOG: %s", pReq->szString));
+    LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("DEBUG LOG: %s", pReq->szString));
     return VINF_SUCCESS;
 }
 #endif /* DEBUG */
@@ -2865,10 +2865,10 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
         /* The raw version. */
         switch (u32)
         {
-            case '\r': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <return>\n")); break;
-            case '\n': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <newline>\n")); break;
-            case '\t': LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <tab>\n")); break;
-            default:   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: %c (%02x)\n", u32, u32)); break;
+            case '\r': LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <return>\n")); break;
+            case '\n': LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <newline>\n")); break;
+            case '\t': LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: <tab>\n")); break;
+            default:   LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP_DEV_VMM_BACKDOOR, ("vmmdev: %c (%02x)\n", u32, u32)); break;
         }
 
         /* The readable, buffered version. */
@@ -2876,7 +2876,7 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
         {
             pThis->szMsg[pThis->iMsg] = '\0';
             if (pThis->iMsg)
-                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
+                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
             pThis->iMsg = 0;
         }
         else
@@ -2884,7 +2884,7 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
             if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
             {
                 pThis->szMsg[pThis->iMsg] = '\0';
-                LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
+                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
                 pThis->iMsg = 0;
             }
             pThis->szMsg[pThis->iMsg] = (char )u32;

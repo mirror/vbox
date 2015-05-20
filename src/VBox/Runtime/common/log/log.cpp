@@ -2575,12 +2575,9 @@ RT_EXPORT_SYMBOL(RTLogFlush);
 
 
 /**
- * Gets the default logger instance, creating it if necessary.
- *
- * @returns Pointer to default logger instance.
- * @returns NULL if no default logger instance available.
+ * Common worker for RTLogDefaultInstance and RTLogDefaultInstanceEx.
  */
-RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
+DECL_FORCE_INLINE(PRTLOGGER) rtLogDefaultInstanceCommon(void)
 {
 #ifdef IN_RC
     return &g_Logger;
@@ -2608,16 +2605,36 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
     return g_pLogger;
 #endif /* !IN_RC */
 }
+
+
+RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
+{
+    return rtLogDefaultInstanceCommon();
+}
 RT_EXPORT_SYMBOL(RTLogDefaultInstance);
 
 
+RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+{
+    PRTLOGGER pLogger = rtLogDefaultInstanceCommon();
+    if (pLogger)
+    {
+        if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
+            pLogger = NULL;
+        else if (   iGroup != UINT32_MAX
+                 && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
+                     != (fFlags | RTLOGGRPFLAGS_ENABLED)))
+            pLogger = NULL;
+    }
+    return pLogger;
+}
+RT_EXPORT_SYMBOL(RTLogDefaultInstanceEx);
+
+
 /**
- * Gets the default logger instance.
- *
- * @returns Pointer to default logger instance.
- * @returns NULL if no default logger instance available.
+ * Common worker for RTLogGetDefaultInstance and RTLogGetDefaultInstanceEx.
  */
-RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
+DECL_FORCE_INLINE(PRTLOGGER) rtLogGetDefaultInstanceCommon(void)
 {
 #ifdef IN_RC
     return &g_Logger;
@@ -2639,7 +2656,30 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void)
     return g_pLogger;
 #endif
 }
+
+
+RTDECL(PRTLOGGER) RTLogGetDefaultInstance(void)
+{
+    return rtLogGetDefaultInstanceCommon();
+}
 RT_EXPORT_SYMBOL(RTLogGetDefaultInstance);
+
+
+RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+{
+    PRTLOGGER pLogger = rtLogGetDefaultInstanceCommon();
+    if (pLogger)
+    {
+        if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
+            pLogger = NULL;
+        else if (   iGroup != UINT32_MAX
+                 && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
+                     != (fFlags | RTLOGGRPFLAGS_ENABLED)))
+            pLogger = NULL;
+    }
+    return pLogger;
+}
+RT_EXPORT_SYMBOL(RTLogGetDefaultInstanceEx);
 
 
 #ifndef IN_RC

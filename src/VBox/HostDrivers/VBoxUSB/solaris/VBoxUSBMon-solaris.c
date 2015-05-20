@@ -28,10 +28,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP  LOG_GROUP_USB_DRV
-#ifdef DEBUG_ramshankar
-# define LOG_ENABLED
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #include "VBoxUSBFilterMgr.h"
 #include <VBox/usblib-solaris.h>
 #include <VBox/version.h>

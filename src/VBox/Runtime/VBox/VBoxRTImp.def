@@ -609,6 +609,7 @@ EXPORTS
     RTLogCreateForR0
     RTLogDefaultInit
     RTLogDefaultInstance
+    RTLogDefaultInstanceEx
     RTLogDestinations
     RTLogDestroy
     RTLogFlags
@@ -617,6 +618,7 @@ EXPORTS
     RTLogFlushToLogger
     RTLogFormatV
     RTLogGetDefaultInstance
+    RTLogGetDefaultInstanceEx
     RTLogGetDestinations
     RTLogGetFlags
     RTLogGetGroupSettings
@@ -627,7 +629,8 @@ EXPORTS
     RTLogLoggerV
     RTLogPrintf
     RTLogPrintfV
-    RTLogRelDefaultInstance
+    RTLogRelGetDefaultInstance
+    RTLogRelGetDefaultInstanceEx
     RTLogRelLogger
     RTLogRelLoggerV
     RTLogRelPrintf

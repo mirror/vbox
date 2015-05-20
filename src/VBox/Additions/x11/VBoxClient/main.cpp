@@ -300,8 +300,7 @@ int main(int argc, char *argv[])
         {
             /* If the user is running in "no daemon" mode anyway, send critical
              * logging to stdout as well. */
-            PRTLOGGER pReleaseLog = RTLogRelDefaultInstance();
-
+            PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
             if (pReleaseLog)
                 rc = RTLogDestinations(pReleaseLog, "stdout");
             if (pReleaseLog && RT_FAILURE(rc))

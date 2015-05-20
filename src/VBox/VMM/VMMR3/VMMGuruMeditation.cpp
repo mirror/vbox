@@ -154,7 +154,7 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
     /*
      * The loggers.
      */
-    pHlp->pRelLogger  = RTLogRelDefaultInstance();
+    pHlp->pRelLogger  = RTLogRelGetDefaultInstance();
 #ifdef LOG_ENABLED
     pHlp->pLogger     = RTLogDefaultInstance();
 #else

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,6 +26,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -35,7 +36,14 @@
 
 
 /* All release logging goes to the backdoor logger anyway. */
-RTDECL(PRTLOGGER) RTLogRelDefaultInstance(void)
+RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void)
+{
+    return NULL;
+}
+
+
+/* All release logging goes to the backdoor logger anyway. */
+RTDECL(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
 {
     return NULL;
 }
@@ -47,11 +55,20 @@ RTDECL(PRTLOGGER) RTLogDefaultInstance(void)
     return NULL;
 }
 
+
+/* All logging goes to the backdoor logger anyway. */
+RTDECL(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+{
+    return NULL;
+}
+
+
 /* All logging goes to the backdoor logger anyway. */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger)
 {
     return NULL;
 }
+
 
 RTDECL(void) RTLogRelPrintf(const char *pszFormat, ...)
 {
@@ -107,3 +124,4 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, RTUINT fFlags, const char *pszGroup
 {
     return VERR_NOT_IMPLEMENTED;
 }
+

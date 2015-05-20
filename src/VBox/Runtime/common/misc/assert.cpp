@@ -145,7 +145,7 @@ RTDECL(void) RTAssertMsg1(const char *pszExpr, unsigned uLine, const char *pszFi
 #  endif
 # endif
 
-        PRTLOGGER pLog = RTLogRelDefaultInstance();
+        PRTLOGGER pLog = RTLogRelGetDefaultInstance();
         if (pLog)
         {
             RTLogRelPrintf("\n!!Assertion Failed!!\n"
@@ -254,7 +254,7 @@ static void rtAssertMsg2Worker(bool fInitial, const char *pszFormat, va_list va)
 #  endif
 # endif
 
-        PRTLOGGER pLog = RTLogRelDefaultInstance();
+        PRTLOGGER pLog = RTLogRelGetDefaultInstance();
         if (pLog)
         {
             va_copy(vaCopy, va);

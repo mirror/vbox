@@ -1083,6 +1083,11 @@ static const REMPARMDESC g_aArgsRTAssertMsg2V[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
     { REMPARMDESC_FLAGS_VALIST,     0,                          NULL }
 };
+static const REMPARMDESC g_aArgsRTLogGetDefaultInstanceEx[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
+};
 static const REMPARMDESC g_aArgsRTLogFlags[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER),          NULL },
@@ -1336,7 +1341,9 @@ static REMFNDESC g_aRTImports[] =
     { "RTAssertMsg2Weak",                       (void *)(uintptr_t)&RTAssertMsg2Weak,               &g_aArgsRTAssertMsg2[0],                    RT_ELEMENTS(g_aArgsRTAssertMsg2),                      REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },
     { "RTAssertShouldPanic",                    (void *)(uintptr_t)&RTAssertShouldPanic,            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "RTLogDefaultInstance",                   (void *)(uintptr_t)&RTLogDefaultInstance,           NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
-    { "RTLogRelDefaultInstance",                (void *)(uintptr_t)&RTLogRelDefaultInstance,        NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
+    { "RTLogRelGetDefaultInstance",             (void *)(uintptr_t)&RTLogRelGetDefaultInstance,     NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
+    { "RTLogDefaultInstanceEx",                 (void *)(uintptr_t)&RTLogDefaultInstance,           &g_aArgsRTLogGetDefaultInstanceEx[0],       RT_ELEMENTS(g_aArgsRTLogGetDefaultInstanceEx),         REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
+    { "RTLogRelGetDefaultInstanceEx",           (void *)(uintptr_t)&RTLogRelGetDefaultInstance,     &g_aArgsRTLogGetDefaultInstanceEx[0],       RT_ELEMENTS(g_aArgsRTLogGetDefaultInstanceEx),         REMFNDESC_FLAGS_RET_INT,    sizeof(PRTLOGGER),  NULL },
     { "RTLogFlags",                             (void *)(uintptr_t)&RTLogFlags,                     &g_aArgsRTLogFlags[0],                      RT_ELEMENTS(g_aArgsRTLogFlags),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTLogFlush",                             (void *)(uintptr_t)&RTLogFlush,                     &g_aArgsRTLogFlush[0],                      RT_ELEMENTS(g_aArgsRTLogFlush),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "RTLogLoggerEx",                          (void *)(uintptr_t)&RTLogLoggerEx,                  &g_aArgsRTLogLoggerEx[0],                   RT_ELEMENTS(g_aArgsRTLogLoggerEx),                     REMFNDESC_FLAGS_RET_VOID | REMFNDESC_FLAGS_ELLIPSIS, 0, NULL },

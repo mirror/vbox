@@ -2075,7 +2075,7 @@ DECLEXPORT(void) RTCALL RTAssertMsg2WeakV(const char *pszFormat, va_list va)
         RTLogFormatV(rtLogOutput, pLog, pszFormat, vaCopy);
         va_end(vaCopy);
     }
-    pLog = RTLogRelDefaultInstance();
+    pLog = RTLogRelGetDefaultInstance();
     if (pLog)
     {
         va_copy(vaCopy, va);

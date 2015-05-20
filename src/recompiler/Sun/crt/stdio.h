@@ -60,8 +60,8 @@ DECLINLINE(int) fprintf(FILE *ignored, const char *pszFormat, ...)
 }
 
 #define fflush(file)            RTLogFlush(NULL)
-#define printf(...)             LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
-#define fprintf(logfile, ...)   LogIt(LOG_INSTANCE, 0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+#define printf(...)             LogIt(0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
+#define fprintf(logfile, ...)   LogIt(0, LOG_GROUP_REM_PRINTF, (__VA_ARGS__))
 
 #ifdef DEBUG_TMP_LOGGING
 # error "DEBUG_TMP_LOGGING doesn't work with the Sun/crt/stdio.h wrapper."

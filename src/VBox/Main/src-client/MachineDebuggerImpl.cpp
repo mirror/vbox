@@ -528,22 +528,19 @@ HRESULT MachineDebugger::getLogDbgDestinations(com::Utf8Str &aLogDbgDestinations
 
 HRESULT MachineDebugger::getLogRelFlags(com::Utf8Str &aLogRelFlags)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelDefaultInstance(), RTLogGetFlags, "RTGetFlags", aLogRelFlags);
-
+    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", aLogRelFlags);
     return hrc;
 }
 
 HRESULT MachineDebugger::getLogRelGroups(com::Utf8Str &aLogRelGroups)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", aLogRelGroups);
-
+    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", aLogRelGroups);
     return hrc;
 }
 
 HRESULT MachineDebugger::getLogRelDestinations(com::Utf8Str &aLogRelDestinations)
 {
-    HRESULT hrc = i_logStringProps(RTLogRelDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", aLogRelDestinations);
-
+    HRESULT hrc = i_logStringProps(RTLogRelGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", aLogRelDestinations);
     return hrc;
 }
 

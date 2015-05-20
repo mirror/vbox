@@ -69,13 +69,7 @@ static PRTLOGGER                    g_pRelLogger;
 #endif /* !IN_RC */
 
 
-/**
- * Gets the default release logger instance.
- *
- * @returns Pointer to default release logger instance.
- * @returns NULL if no default release logger instance available.
- */
-RTDECL(PRTLOGGER)   RTLogRelDefaultInstance(void)
+RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstance(void)
 {
 #ifdef IN_RC
     return &g_RelLogger;
@@ -83,7 +77,28 @@ RTDECL(PRTLOGGER)   RTLogRelDefaultInstance(void)
     return g_pRelLogger;
 #endif /* !IN_RC */
 }
-RT_EXPORT_SYMBOL(RTLogRelDefaultInstance);
+RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstance);
+
+
+RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+{
+#ifdef IN_RC
+    PRTLOGGER pLogger = &g_RelLogger;
+#else /* !IN_RC */
+    PRTLOGGER pLogger = g_pRelLogger;
+#endif /* !IN_RC */
+    if (pLogger)
+    {
+        if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
+            pLogger = NULL;
+        else if (   iGroup != UINT32_MAX
+                 && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
+                     != (fFlags | RTLOGGRPFLAGS_ENABLED)))
+            pLogger = NULL;
+    }
+    return pLogger;
+}
+RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstanceEx);
 
 
 #ifndef IN_RC
@@ -122,7 +137,7 @@ RTDECL(void) RTLogRelLoggerV(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup
      */
     if (!pLogger)
     {
-        pLogger = RTLogRelDefaultInstance();
+        pLogger = RTLogRelGetDefaultInstance();
         if (!pLogger)
             return;
     }
@@ -156,7 +171,7 @@ RT_EXPORT_SYMBOL(RTLogRelPrintfV);
  */
 RTDECL(bool) RTLogRelSetBuffering(bool fBuffered)
 {
-    PRTLOGGER pLogger = RTLogRelDefaultInstance();
+    PRTLOGGER pLogger = RTLogRelGetDefaultInstance();
     if (pLogger)
         return RTLogSetBuffering(pLogger, fBuffered);
     return false;

@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
- *
  * VirtualBox Main Logging
  */
 
@@ -18,7 +17,7 @@
 
 
 /*
- *  Main now always uses the default LOG_INSTANCE for logging,
- *  so nothing to do here for now.
+ *  Main now always uses the defaults for logging, so nothing to do
+ *  here for now.
  */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

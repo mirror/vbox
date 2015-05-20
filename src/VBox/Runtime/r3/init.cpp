@@ -167,7 +167,7 @@ static void rtR3ExitCallback(void)
         if (pLogger)
             RTLogFlush(pLogger);
 
-        pLogger = RTLogRelDefaultInstance();
+        pLogger = RTLogRelGetDefaultInstance();
         if (pLogger)
             RTLogFlush(pLogger);
     }

@@ -1971,7 +1971,7 @@ void remR3DmaRun(CPUX86State *env)
 void remR3TimersRun(CPUX86State *env)
 {
     LogFlow(("remR3TimersRun:\n"));
-    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("remR3TimersRun\n"));
+    LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("remR3TimersRun\n"));
     remR3ProfileStop(STATS_QEMU_RUN_EMULATED_CODE);
     remR3ProfileStart(STATS_QEMU_RUN_TIMERS);
     TMR3TimerQueuesDo(env->pVM);
@@ -4297,15 +4297,15 @@ REMR3DECL(void) REMR3NotifyTimerPending(PVM pVM, PVMCPU pVCpuDst)
     {
         if (pVM->rem.s.Env.pVCpu == pVCpuDst)
         {
-            LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: setting\n"));
+            LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: setting\n"));
             ASMAtomicOrS32((int32_t volatile *)&pVM->rem.s.Env.interrupt_request,
                            CPU_INTERRUPT_EXTERNAL_TIMER);
         }
         else
-            LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: pVCpu:%p != pVCpuDst:%p\n", pVM->rem.s.Env.pVCpu, pVCpuDst));
+            LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: pVCpu:%p != pVCpuDst:%p\n", pVM->rem.s.Env.pVCpu, pVCpuDst));
     }
     else
-        LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: !fInREM; cpu state=%d\n", VMCPU_GET_STATE(pVCpuDst)));
+        LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP_TM, ("REMR3NotifyTimerPending: !fInREM; cpu state=%d\n", VMCPU_GET_STATE(pVCpuDst)));
 #endif
 }
 

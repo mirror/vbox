@@ -38,7 +38,9 @@ EXPORTS
     IOMMMIOResetRegion
     IOMMMIOMapMMIO2Page
     RTLogDefaultInstance
-    RTLogRelDefaultInstance
+    RTLogDefaultInstanceEx
+    RTLogRelGetDefaultInstance
+    RTLogRelGetDefaultInstanceEx
     RTLogLogger
     RTLogLoggerEx
     RTLogLoggerExV

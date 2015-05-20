@@ -123,26 +123,19 @@ typedef enum RTLOGGROUP
 # define LOG_GROUP          RTLOGGROUP_DEFAULT
 #endif
 
-/** @def LOG_INSTANCE
- * Active logging instance.
- */
-#ifndef LOG_INSTANCE
-# define LOG_INSTANCE       NULL
-#endif
-
-/** @def LOG_REL_INSTANCE
- * Active release logging instance.
- */
-#ifndef LOG_REL_INSTANCE
-# define LOG_REL_INSTANCE   NULL
-#endif
-
 /** @def LOG_FN_FMT
  * You can use this to specify you desired way of printing __PRETTY_FUNCTION__
  * if you dislike the default one.
  */
 #ifndef LOG_FN_FMT
 # define LOG_FN_FMT "%Rfn"
+#endif
+
+#ifdef LOG_INSTANCE
+# error "LOG_INSTANCE is no longer supported."
+#endif
+#ifdef LOG_REL_INSTANCE
+# error "LOG_REL_INSTANCE is no longer supported."
 #endif
 
 /** Logger structure. */
@@ -522,41 +515,47 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_ENABLED
 # if defined(LOG_USE_C99)
-#  define _LogRemoveParentheseis(...)                           __VA_ARGS__
-#  define _LogIt(a_pvInst, a_fFlags, a_iGroup, ...)             RTLogLoggerEx((PRTLOGGER)a_pvInst, a_fFlags, a_iGroup, __VA_ARGS__)
-#  define LogIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)          _LogIt(a_pvInst, a_fFlags, a_iGroup, _LogRemoveParentheseis fmtargs)
-#  define _LogItAlways(a_pvInst, a_fFlags, a_iGroup, ...)       RTLogLoggerEx((PRTLOGGER)a_pvInst, a_fFlags, ~0U, __VA_ARGS__)
-#  define LogItAlways(a_pvInst, a_fFlags, a_iGroup, fmtargs)    _LogItAlways(a_pvInst, a_fFlags, a_iGroup, _LogRemoveParentheseis fmtargs)
+#  define _LogRemoveParentheseis(...)                   __VA_ARGS__
+#  define _LogIt(a_fFlags, a_iGroup, ...) \
+   do \
+   { \
+        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(a_fFlags, a_iGroup); \
+        if (RT_LIKELY(!LogIt_pLogger)) \
+        {   /* likely */ } \
+        else \
+            RTLogLoggerEx(LogIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+   } while (0)
+#  define LogIt(a_fFlags, a_iGroup, fmtargs)            _LogIt(a_fFlags, a_iGroup, _LogRemoveParentheseis fmtargs)
+#  define _LogItAlways(a_fFlags, a_iGroup, ...)          RTLogLoggerEx(NULL, a_fFlags, UINT32_MAX, __VA_ARGS__)
+#  define LogItAlways(a_fFlags, a_iGroup, fmtargs)      _LogItAlways(a_fFlags, a_iGroup, _LogRemoveParentheseis fmtargs)
         /** @todo invent a flag or something for skipping the group check so we can pass iGroup. LogItAlways. */
 # else
-#  define LogIt(a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+#  define LogIt(a_fFlags, a_iGroup, fmtargs) \
     do \
     { \
-        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogDefaultInstance(); \
-        if (    LogIt_pLogger \
-            && !(LogIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(a_fFlags, a_iGroup); \
+        if (RT_LIKELY(!LogIt_pLogger)) \
+        {   /* likely */ } \
+        else \
         { \
-            register unsigned LogIt_fFlags = LogIt_pLogger->afGroups[(unsigned)(a_iGroup) < LogIt_pLogger->cGroups ? (unsigned)(a_iGroup) : 0]; \
-            if ((LogIt_fFlags & ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) \
-                LogIt_pLogger->pfnLogger fmtargs; \
+            LogIt_pLogger->pfnLogger fmtargs; \
         } \
     } while (0)
-#  define LogItAlways(a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+#  define LogItAlways(a_fFlags, a_iGroup, fmtargs) \
     do \
     { \
-        register PRTLOGGER LogIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogDefaultInstance(); \
-        if (   LogIt_pLogger \
-            && !(LogIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+        register PRTLOGGER LogIt_pLogger = RTLogDefaultInstanceEx(0, UINT32_MAX); \
+        if (LogIt_pLogger) \
             LogIt_pLogger->pfnLogger fmtargs; \
     } while (0)
 # endif
 #else
-# define LogIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)       do { } while (0)
-# define LogItAlways(a_pvInst, a_fFlags, a_iGroup, fmtargs) do { } while (0)
+# define LogIt(a_fFlags, a_iGroup, fmtargs)             do { } while (0)
+# define LogItAlways(a_fFlags, a_iGroup, fmtargs)       do { } while (0)
 # if defined(LOG_USE_C99)
-#  define _LogRemoveParentheseis(...)                       __VA_ARGS__
-#  define _LogIt(a_pvInst, a_fFlags, a_iGroup, ...)         do { } while (0)
-#  define _LogItAlways(a_pvInst, a_fFlags, a_iGroup, ...)   do { } while (0)
+#  define _LogRemoveParentheseis(...)                   __VA_ARGS__
+#  define _LogIt(a_fFlags, a_iGroup, ...)               do { } while (0)
+#  define _LogItAlways(a_fFlags, a_iGroup, ...)         do { } while (0)
 # endif
 #endif
 
@@ -564,98 +563,98 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def Log
  * Level 1 logging that works regardless of the group settings.
  */
-#define LogAlways(a)    LogItAlways(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
+#define LogAlways(a)    LogItAlways(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
 
 /** @def Log
  * Level 1 logging.
  */
-#define Log(a)          LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
+#define Log(a)          LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
 
 /** @def Log2
  * Level 2 logging.
  */
-#define Log2(a)         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
+#define Log2(a)         LogIt(RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
 
 /** @def Log3
  * Level 3 logging.
  */
-#define Log3(a)         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
+#define Log3(a)         LogIt(RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
 
 /** @def Log4
  * Level 4 logging.
  */
-#define Log4(a)         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
+#define Log4(a)         LogIt(RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
 
 /** @def Log5
  * Level 5 logging.
  */
-#define Log5(a)         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
+#define Log5(a)         LogIt(RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
 
 /** @def Log6
  * Level 6 logging.
  */
-#define Log6(a)         LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
+#define Log6(a)         LogIt(RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
 
 /** @def LogFlow
  * Logging of execution flow.
  */
-#define LogFlow(a)      LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
+#define LogFlow(a)      LogIt(RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
 /** @def LogLelik
  *  lelik logging.
  */
-#define LogLelik(a)     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LELIK,    LOG_GROUP, a)
+#define LogLelik(a)     LogIt(RTLOGGRPFLAGS_LELIK,    LOG_GROUP, a)
 
 
 /** @def LogMichael
  * michael logging.
  */
-#define LogMichael(a)   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_MICHAEL,  LOG_GROUP, a)
+#define LogMichael(a)   LogIt(RTLOGGRPFLAGS_MICHAEL,  LOG_GROUP, a)
 
 /** @def LogSunlover
  * sunlover logging.
  */
-#define LogSunlover(a)  LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_SUNLOVER, LOG_GROUP, a)
+#define LogSunlover(a)  LogIt(RTLOGGRPFLAGS_SUNLOVER, LOG_GROUP, a)
 
 /** @def LogAchim
  * Achim logging.
  */
-#define LogAchim(a)     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_ACHIM,    LOG_GROUP, a)
+#define LogAchim(a)     LogIt(RTLOGGRPFLAGS_ACHIM,    LOG_GROUP, a)
 
 /** @def LogSander
  * Sander logging.
  */
-#define LogSander(a)    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_SANDER,   LOG_GROUP, a)
+#define LogSander(a)    LogIt(RTLOGGRPFLAGS_SANDER,   LOG_GROUP, a)
 
 /** @def LogKlaus
  *  klaus logging.
  */
-#define LogKlaus(a)     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_KLAUS,    LOG_GROUP, a)
+#define LogKlaus(a)     LogIt(RTLOGGRPFLAGS_KLAUS,    LOG_GROUP, a)
 
 /** @def LogFrank
  *  frank logging.
  */
-#define LogFrank(a)     LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FRANK,    LOG_GROUP, a)
+#define LogFrank(a)     LogIt(RTLOGGRPFLAGS_FRANK,    LOG_GROUP, a)
 
 /** @def LogBird
  * bird logging.
  */
-#define LogBird(a)      LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_BIRD,     LOG_GROUP, a)
+#define LogBird(a)      LogIt(RTLOGGRPFLAGS_BIRD,     LOG_GROUP, a)
 
 /** @def LogAleksey
  * aleksey logging.
  */
-#define LogAleksey(a)   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_ALEKSEY,  LOG_GROUP, a)
+#define LogAleksey(a)   LogIt(RTLOGGRPFLAGS_ALEKSEY,  LOG_GROUP, a)
 
 /** @def LogDJ
  * dj logging.
  */
-#define LogDJ(a)        LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_DJ,  LOG_GROUP, a)
+#define LogDJ(a)        LogIt(RTLOGGRPFLAGS_DJ,  LOG_GROUP, a)
 
 /** @def LogNoName
  * NoName logging.
  */
-#define LogNoName(a)    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
+#define LogNoName(a)    LogIt(RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
 
 /** @def LogWarning
  * The same as Log(), but prepents a <tt>"WARNING! "</tt> string to the message.
@@ -664,7 +663,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #if defined(LOG_USE_C99)
 # define LogWarning(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "WARNING! %M", _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "WARNING! %M", _LogRemoveParentheseis a )
 #else
 # define LogWarning(a) \
     do { Log(("WARNING! ")); Log(a); } while (0)
@@ -685,7 +684,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogTraceMsg(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, ">>>>> %s (%d): " LOG_FN_FMT ": %M", __FILE__, __LINE__, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, ">>>>> %s (%d): " LOG_FN_FMT ": %M", __FILE__, __LINE__, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogTraceMsg(a) \
     do {  LogFlow((">>>>> %s (%d): " LOG_FN_FMT ": ", __FILE__, __LINE__, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
@@ -701,7 +700,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogFunc(a) \
     do { Log((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log(a); } while (0)
@@ -717,7 +716,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define Log2Func(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log2Func(a) \
     do { Log2((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log2(a); } while (0)
@@ -733,7 +732,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define Log3Func(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log3Func(a) \
     do { Log3((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log3(a); } while (0)
@@ -749,7 +748,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define Log4Func(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log4Func(a) \
     do { Log4((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log4(a); } while (0)
@@ -765,7 +764,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define Log5Func(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log5Func(a) \
     do { Log5((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log5(a); } while (0)
@@ -781,7 +780,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define Log6Func(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log6Func(a) \
     do { Log6((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log6(a); } while (0)
@@ -795,7 +794,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogThisFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogThisFunc(a) \
     do { Log(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
@@ -811,7 +810,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogFlowFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogFlowFunc(a) \
     do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
@@ -824,7 +823,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogWarningFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": WARNING! %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogWarningFunc(a) \
     do { Log((LOG_FN_FMT ": WARNING! ", __PRETTY_FUNCTION__)); Log(a); } while (0)
@@ -838,7 +837,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogFlowThisFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogFlowThisFunc(a) \
     do { LogFlow(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogFlow(a); } while (0)
@@ -852,7 +851,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogWarningThisFunc(a) \
-    _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": WARNING! %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogWarningThisFunc(a) \
     do { Log(("{%p} " LOG_FN_FMT ": WARNING! ", this, __PRETTY_FUNCTION__)); Log(a); } while (0)
@@ -896,46 +895,46 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * Checks whether the specified logging group is enabled or not.
  */
 #ifdef LOG_ENABLED
-# define LogIsItEnabled(a_pvInst, a_fFlags, a_iGroup) \
-    LogIsItEnabledInternal((a_pvInst), (unsigned)(a_iGroup), (unsigned)(a_fFlags))
+# define LogIsItEnabled(a_fFlags, a_iGroup) \
+    LogIsItEnabledInternal((unsigned)(a_iGroup), (unsigned)(a_fFlags))
 #else
-# define LogIsItEnabled(a_pvInst, a_fFlags, a_iGroup) (false)
+# define LogIsItEnabled(a_fFlags, a_iGroup) (false)
 #endif
 
 /** @def LogIsEnabled
  * Checks whether level 1 logging is enabled.
  */
-#define LogIsEnabled()      LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP)
+#define LogIsEnabled()      LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP)
 
 /** @def LogIs2Enabled
  * Checks whether level 2 logging is enabled.
  */
-#define LogIs2Enabled()     LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP)
+#define LogIs2Enabled()     LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP)
 
 /** @def LogIs3Enabled
  * Checks whether level 3 logging is enabled.
  */
-#define LogIs3Enabled()     LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP)
+#define LogIs3Enabled()     LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP)
 
 /** @def LogIs4Enabled
  * Checks whether level 4 logging is enabled.
  */
-#define LogIs4Enabled()     LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP)
+#define LogIs4Enabled()     LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP)
 
 /** @def LogIs5Enabled
  * Checks whether level 5 logging is enabled.
  */
-#define LogIs5Enabled()     LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP)
+#define LogIs5Enabled()     LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP)
 
 /** @def LogIs6Enabled
  * Checks whether level 6 logging is enabled.
  */
-#define LogIs6Enabled()     LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP)
+#define LogIs6Enabled()     LogIsItEnabled(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP)
 
 /** @def LogIsFlowEnabled
  * Checks whether execution flow logging is enabled.
  */
-#define LogIsFlowEnabled()  LogIsItEnabled(LOG_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
+#define LogIsFlowEnabled()  LogIsItEnabled(RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
 /** @name Passing Function Call Position When Logging.
@@ -1008,6 +1007,9 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogRelIt
  * Write to specific logger if group enabled.
  */
+/** @def LogRelItLikely
+ * Write to specific logger if group enabled, assuming it likely it is enabled.
+ */
 /** @def LogRelMaxIt
  * Write to specific logger if group enabled and at less than a_cMax messages
  * have hit the log.  Uses a static variable to count.
@@ -1015,22 +1017,33 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 #ifdef RTLOG_REL_ENABLED
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                    __VA_ARGS__
-#  define _LogRelIt(a_pvInst, a_fFlags, a_iGroup, ...) \
+#  define _LogRelIt(a_fFlags, a_iGroup, ...) \
     do \
     { \
-        PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
-        if (   LogRelIt_pLogger \
-            && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+        if (RT_LIKELY(!LogRelIt_pLogger)) \
+        { /* likely */ } \
+        else \
             RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
-        _LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, __VA_ARGS__); \
+        _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
     } while (0)
-#  define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)   _LogRelIt(a_pvInst, a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
-#  define _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, ...) \
+#  define LogRelIt(a_fFlags, a_iGroup, fmtargs) \
+    _LogRelIt(a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
+#  define _LogRelItLikely(a_fFlags, a_iGroup, ...) \
     do \
     { \
-        PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
-        if (   LogRelIt_pLogger \
-            && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+        if (LogRelIt_pLogger) \
+            RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
+        _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
+    } while (0)
+#  define LogRelItLikely(a_fFlags, a_iGroup, fmtargs) \
+    _LogRelItLikely(a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
+#  define _LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, ...) \
+    do \
+    { \
+        PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+        if (LogRelIt_pLogger) \
         { \
             static uint32_t s_LogRelMaxIt_cLogged = 0; \
             if (s_LogRelMaxIt_cLogged < (a_cMax)) \
@@ -1039,52 +1052,58 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
                 RTLogLoggerEx(LogRelIt_pLogger, a_fFlags, a_iGroup, __VA_ARGS__); \
             } \
         } \
-        _LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, __VA_ARGS__); \
+        _LogIt(a_fFlags, a_iGroup, __VA_ARGS__); \
     } while (0)
-#  define LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, fmtargs) \
-    _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
+#  define LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, fmtargs) \
+    _LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, _LogRelRemoveParentheseis fmtargs)
 # else
-#  define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+#  define LogRelItLikely(a_fFlags, a_iGroup, fmtargs) \
    do \
    { \
-       PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
-       if (   LogRelIt_pLogger \
-           && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+       if (LogRelIt_pLogger) \
        { \
-           unsigned LogIt_fFlags = LogRelIt_pLogger->afGroups[(unsigned)(a_iGroup) < LogRelIt_pLogger->cGroups ? (unsigned)(a_iGroup) : 0]; \
-           if ((LogIt_fFlags & ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) \
-               LogRelIt_pLogger->pfnLogger fmtargs; \
+           LogRelIt_pLogger->pfnLogger fmtargs; \
        } \
-       LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, fmtargs); \
+       LogIt(a_fFlags, a_iGroup, fmtargs); \
   } while (0)
-#  define LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, fmtargs) \
+#  define LogRelIt(a_fFlags, a_iGroup, fmtargs) \
    do \
    { \
-       PRTLOGGER LogRelIt_pLogger = (PRTLOGGER)(a_pvInst) ? (PRTLOGGER)(a_pvInst) : RTLogRelDefaultInstance(); \
-       if (   LogRelIt_pLogger \
-           && !(LogRelIt_pLogger->fFlags & RTLOGFLAGS_DISABLED)) \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+       if (RT_LIKELY(!LogRelIt_pLogger)) \
+       { /* likely */ } \
+       else \
        { \
-           unsigned LogIt_fFlags = LogRelIt_pLogger->afGroups[(unsigned)(a_iGroup) < LogRelIt_pLogger->cGroups ? (unsigned)(a_iGroup) : 0]; \
-           if ((LogIt_fFlags & ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) == ((a_fFlags) | RTLOGGRPFLAGS_ENABLED)) \
+           LogRelIt_pLogger->pfnLogger fmtargs; \
+       } \
+       LogIt(a_fFlags, a_iGroup, fmtargs); \
+  } while (0)
+#  define LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, fmtargs) \
+   do \
+   { \
+       PRTLOGGER LogRelIt_pLogger = RTLogRelGetDefaultInstanceEx(a_fFlags, a_iGroup); \
+       if (LogRelIt_pLogger) \
+       { \
+           static uint32_t s_LogRelMaxIt_cLogged = 0; \
+           if (s_LogRelMaxIt_cLogged < (a_cMax)) \
            { \
-               static uint32_t s_LogRelMaxIt_cLogged = 0; \
-               if (s_LogRelMaxIt_cLogged < (a_cMax)) \
-               { \
-                   s_LogRelMaxIt_cLogged++; \
-                   LogRelIt_pLogger->pfnLogger fmtargs; \
-               } \
+               s_LogRelMaxIt_cLogged++; \
+               LogRelIt_pLogger->pfnLogger fmtargs; \
            } \
        } \
-       LogIt(LOG_INSTANCE, a_fFlags, a_iGroup, fmtargs); \
+       LogIt(a_fFlags, a_iGroup, fmtargs); \
   } while (0)
 # endif
 #else   /* !RTLOG_REL_ENABLED */
-# define LogRelIt(a_pvInst, a_fFlags, a_iGroup, fmtargs)    do { } while (0)
-# define LogRelMaxIt(a_pvInst, a_fFlags, a_iGroup, fmtargs) do { } while (0)
+# define LogRelIt(a_fFlags, a_iGroup, fmtargs)              do { } while (0)
+# define LogRelItLikely(a_fFlags, a_iGroup, fmtargs)        do { } while (0)
+# define LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, fmtargs)   do { } while (0)
 # if defined(LOG_USE_C99)
 #  define _LogRelRemoveParentheseis(...)                    __VA_ARGS__
-#  define _LogRelIt(a_pvInst, a_fFlags, a_iGroup, ...)      do { } while (0)
-#  define _LogRelMaxIt(a_cMax, a_pvInst, a_fFlags, a_iGroup, ...) do { } while (0)
+#  define _LogRelIt(a_fFlags, a_iGroup, ...)                do { } while (0)
+#  define _LogRelItLikely(a_fFlags, a_iGroup, ...)          do { } while (0)
+#  define _LogRelMaxIt(a_cMax, a_fFlags, a_iGroup, ...)     do { } while (0)
 # endif
 #endif  /* !RTLOG_REL_ENABLED */
 
@@ -1092,37 +1111,37 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogRel
  * Level 1 logging.
  */
-#define LogRel(a)          LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
+#define LogRel(a)          LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
 
 /** @def LogRel2
  * Level 2 logging.
  */
-#define LogRel2(a)         LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
+#define LogRel2(a)         LogRelIt(RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
 
 /** @def LogRel3
  * Level 3 logging.
  */
-#define LogRel3(a)         LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
+#define LogRel3(a)         LogRelIt(RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
 
 /** @def LogRel4
  * Level 4 logging.
  */
-#define LogRel4(a)         LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
+#define LogRel4(a)         LogRelIt(RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
 
 /** @def LogRel5
  * Level 5 logging.
  */
-#define LogRel5(a)         LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
+#define LogRel5(a)         LogRelIt(RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
 
 /** @def LogRel6
  * Level 6 logging.
  */
-#define LogRel6(a)         LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
+#define LogRel6(a)         LogRelIt(RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
 
 /** @def LogRelFlow
  * Logging of execution flow.
  */
-#define LogRelFlow(a)      LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
+#define LogRelFlow(a)      LogRelIt(RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
 /** @def LogRelFunc
  * Release logging.  Prepends the given log message with the function name
@@ -1130,9 +1149,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelFunc(a) \
-    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
-# define LogFunc(a) \
-           _LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelFunc(a) \
     do { LogRel((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
@@ -1144,7 +1161,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelThisFunc(a) \
-    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelItLikely(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelThisFunc(a) \
     do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
@@ -1160,7 +1177,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelFlowFunc(a) \
-    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogRelIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelFlowFunc(a) \
     do { LogRelFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
@@ -1169,83 +1186,83 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogRelLelik
  *  lelik logging.
  */
-#define LogRelLelik(a)     LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LELIK,    LOG_GROUP, a)
+#define LogRelLelik(a)              LogRelIt(RTLOGGRPFLAGS_LELIK,    LOG_GROUP, a)
 
 /** @def LogRelMichael
  * michael logging.
  */
-#define LogRelMichael(a)   LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_MICHAEL,  LOG_GROUP, a)
+#define LogRelMichael(a)            LogRelIt(RTLOGGRPFLAGS_MICHAEL,  LOG_GROUP, a)
 
 /** @def LogRelSunlover
  * sunlover logging.
  */
-#define LogRelSunlover(a)  LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_SUNLOVER, LOG_GROUP, a)
+#define LogRelSunlover(a)           LogRelIt(RTLOGGRPFLAGS_SUNLOVER, LOG_GROUP, a)
 
 /** @def LogRelAchim
  * Achim logging.
  */
-#define LogRelAchim(a)     LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_ACHIM,    LOG_GROUP, a)
+#define LogRelAchim(a)              LogRelIt(RTLOGGRPFLAGS_ACHIM,    LOG_GROUP, a)
 
 /** @def LogRelSander
  * Sander logging.
  */
-#define LogRelSander(a)    LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_SANDER,   LOG_GROUP, a)
+#define LogRelSander(a)             LogRelIt(RTLOGGRPFLAGS_SANDER,   LOG_GROUP, a)
 
 /** @def LogRelKlaus
  *  klaus logging.
  */
-#define LogRelKlaus(a)     LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_KLAUS,    LOG_GROUP, a)
+#define LogRelKlaus(a)              LogRelIt(RTLOGGRPFLAGS_KLAUS,    LOG_GROUP, a)
 
 /** @def LogRelFrank
  *  frank logging.
  */
-#define LogRelFrank(a)     LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FRANK,    LOG_GROUP, a)
+#define LogRelFrank(a)              LogRelIt(RTLOGGRPFLAGS_FRANK,    LOG_GROUP, a)
 
 /** @def LogRelBird
  * bird logging.
  */
-#define LogRelBird(a)      LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_BIRD,     LOG_GROUP, a)
+#define LogRelBird(a)               LogRelIt(RTLOGGRPFLAGS_BIRD,     LOG_GROUP, a)
 
 /** @def LogRelNoName
  * NoName logging.
  */
-#define LogRelNoName(a)    LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
+#define LogRelNoName(a)             LogRelIt(RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
 
 
 /** @def LogRelMax
  * Level 1 logging.
  */
-#define LogRelMax(a_cMax, a)        LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
+#define LogRelMax(a_cMax, a)        LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, a)
 
 /** @def LogRelMax2
  * Level 2 logging.
  */
-#define LogRelMax2(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
+#define LogRelMax2(a_cMax, a)       LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_2,  LOG_GROUP, a)
 
 /** @def LogRelMax3
  * Level 3 logging.
  */
-#define LogRelMax3(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
+#define LogRelMax3(a_cMax, a)       LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_3,  LOG_GROUP, a)
 
 /** @def LogRelMax4
  * Level 4 logging.
  */
-#define LogRelMax4(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
+#define LogRelMax4(a_cMax, a)       LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_4,  LOG_GROUP, a)
 
 /** @def LogRelMax5
  * Level 5 logging.
  */
-#define LogRelMax5(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
+#define LogRelMax5(a_cMax, a)       LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_5,  LOG_GROUP, a)
 
 /** @def LogRelMax6
  * Level 6 logging.
  */
-#define LogRelMax6(a_cMax, a)       LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
+#define LogRelMax6(a_cMax, a)       LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_6,  LOG_GROUP, a)
 
 /** @def LogRelFlow
  * Logging of execution flow.
  */
-#define LogRelMaxFlow(a_cMax, a)    LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
+#define LogRelMaxFlow(a_cMax, a)    LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
 /** @def LogRelMaxFunc
  * Release logging.  Prepends the given log message with the function name
@@ -1253,10 +1270,10 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
                  __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 # define LogFuncMax(a_cMax, a) \
-    _LogItMax(a_cMax, LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
+    _LogItMax(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", \
               __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFunc(a_cMax, a) \
@@ -1271,7 +1288,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxThisFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", \
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", \
                  this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxThisFunc(a_cMax, a) \
@@ -1289,7 +1306,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogRelMaxFlowFunc(a_cMax, a) \
-    _LogRelMaxIt(a_cMax, LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", \
+    _LogRelMaxIt(a_cMax, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", \
                  __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogRelMaxFlowFunc(a_cMax, a) \
@@ -1300,43 +1317,43 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
 /** @def LogRelIsItEnabled
  * Checks whether the specified logging group is enabled or not.
  */
-#define LogRelIsItEnabled(a_pvInst, a_fFlags, a_iGroup) \
-    LogRelIsItEnabledInternal((a_pvInst), (unsigned)(a_iGroup), (unsigned)(a_fFlags))
+#define LogRelIsItEnabled(a_fFlags, a_iGroup) \
+    ( RTLogRelGetDefaultInstanceEx((uint32_t)(a_fFlags), (uint32_t)(a_iGroup)) != NULL )
 
 /** @def LogRelIsEnabled
  * Checks whether level 1 logging is enabled.
  */
-#define LogRelIsEnabled()      LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP)
+#define LogRelIsEnabled()      LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP)
 
 /** @def LogRelIs2Enabled
  * Checks whether level 2 logging is enabled.
  */
-#define LogRelIs2Enabled()     LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP)
+#define LogRelIs2Enabled()     LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_2, LOG_GROUP)
 
 /** @def LogRelIs3Enabled
  * Checks whether level 3 logging is enabled.
  */
-#define LogRelIs3Enabled()     LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP)
+#define LogRelIs3Enabled()     LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_3, LOG_GROUP)
 
 /** @def LogRelIs4Enabled
  * Checks whether level 4 logging is enabled.
  */
-#define LogRelIs4Enabled()     LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP)
+#define LogRelIs4Enabled()     LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_4, LOG_GROUP)
 
 /** @def LogRelIs5Enabled
  * Checks whether level 5 logging is enabled.
  */
-#define LogRelIs5Enabled()     LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP)
+#define LogRelIs5Enabled()     LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_5, LOG_GROUP)
 
 /** @def LogRelIs6Enabled
  * Checks whether level 6 logging is enabled.
  */
-#define LogRelIs6Enabled()     LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP)
+#define LogRelIs6Enabled()     LogRelIsItEnabled(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP)
 
 /** @def LogRelIsFlowEnabled
  * Checks whether execution flow logging is enabled.
  */
-#define LogRelIsFlowEnabled()  LogRelIsItEnabled(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP)
+#define LogRelIsFlowEnabled()  LogRelIsItEnabled(RTLOGGRPFLAGS_FLOW, LOG_GROUP)
 
 
 #ifndef IN_RC
@@ -1352,26 +1369,18 @@ RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger);
 /**
  * Gets the default release logger instance.
  *
- * @returns Pointer to default release logger instance.
- * @returns NULL if no default release logger instance available.
+ * @returns Pointer to default release logger instance if availble, otherwise NULL.
  */
-RTDECL(PRTLOGGER) RTLogRelDefaultInstance(void);
+RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void);
 
-/** Internal worker function.
- * Don't call directly, use the LogRelIsItEnabled macro!
+/**
+ * Gets the default release logger instance.
+ *
+ * @returns Pointer to default release logger instance if availble, otherwise NULL.
+ * @param   fFlags      The logging group flags required.
+ * @param   iGroup      The group.
  */
-DECLINLINE(bool) LogRelIsItEnabledInternal(void *pvInst, unsigned iGroup, unsigned fFlags)
-{
-    register PRTLOGGER pLogger = (PRTLOGGER)pvInst ? (PRTLOGGER)pvInst : RTLogRelDefaultInstance();
-    if (   pLogger
-        && !(pLogger->fFlags & RTLOGFLAGS_DISABLED))
-    {
-        register unsigned fGrpFlags = pLogger->afGroups[(unsigned)iGroup < pLogger->cGroups ? (unsigned)iGroup : 0];
-        if ((fGrpFlags & (fFlags | RTLOGGRPFLAGS_ENABLED)) == (fFlags | RTLOGGRPFLAGS_ENABLED))
-            return true;
-    }
-    return false;
-}
+RTDECL(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup);
 
 /**
  * Write to a logger instance, defaulting to the release one.
@@ -1538,7 +1547,7 @@ RTDECL(bool) RTLogRelSetBuffering(bool fBuffered);
 # define LogRel(a)      LogRelBackdoor(a)
 # if defined(LOG_USE_C99)
 #  undef _LogIt
-#  define _LogIt(a_pvInst, a_fFlags, a_iGroup, ...)  LogBackdoor((__VA_ARGS__))
+#  define _LogIt(a_fFlags, a_iGroup, ...)  LogBackdoor((__VA_ARGS__))
 # endif
 #endif
 
@@ -1549,18 +1558,36 @@ RTDECL(bool) RTLogRelSetBuffering(bool fBuffered);
 /**
  * Gets the default logger instance, creating it if necessary.
  *
- * @returns Pointer to default logger instance.
- * @returns NULL if no default logger instance available.
+ * @returns Pointer to default logger instance if availble, otherwise NULL.
  */
 RTDECL(PRTLOGGER)   RTLogDefaultInstance(void);
 
 /**
+ * Gets the logger instance if enabled, creating it if necessary.
+ *
+ * @returns Pointer to default logger instance, if group has the specified
+ *          flags enabled.  Otherwise NULL is returned.
+ * @param   fFlags      The logging group flags required.
+ * @param   iGroup      The group.
+ */
+RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup);
+
+/**
  * Gets the default logger instance.
  *
- * @returns Pointer to default logger instance.
- * @returns NULL if no default logger instance available.
+ * @returns Pointer to default logger instance if availble, otherwise NULL.
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
+
+/**
+ * Gets the default logger instance if enabled.
+ *
+ * @returns Pointer to default logger instance, if group has the specified
+ *          flags enabled.  Otherwise NULL is returned.
+ * @param   fFlags      The logging group flags required.
+ * @param   iGroup      The group.
+ */
+RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup);
 
 #ifndef IN_RC
 /**
@@ -1569,7 +1596,7 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
  * @returns The old default instance.
  * @param   pLogger     The new default logger instance.
  */
-RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger);
+RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
 #endif /* !IN_RC */
 
 #ifdef IN_RING0
@@ -1583,7 +1610,7 @@ RTDECL(PRTLOGGER) RTLogSetDefaultInstance(PRTLOGGER pLogger);
  *                      order to only deregister the instance associated with the
  *                      current thread use 0.
  */
-RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
+RTDECL(int)         RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
 #endif /* IN_RING0 */
 
 
@@ -1591,9 +1618,9 @@ RTDECL(int) RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t uKey);
 /** Internal worker function.
  * Don't call directly, use the LogIsItEnabled macro!
  */
-DECLINLINE(bool) LogIsItEnabledInternal(void *pvInst, unsigned iGroup, unsigned fFlags)
+DECLINLINE(bool)    LogIsItEnabledInternal(unsigned iGroup, unsigned fFlags)
 {
-    register PRTLOGGER pLogger = (PRTLOGGER)pvInst ? (PRTLOGGER)pvInst : RTLogDefaultInstance();
+    register PRTLOGGER pLogger = RTLogDefaultInstance();
     if (   pLogger
         && !(pLogger->fFlags & RTLOGFLAGS_DISABLED))
     {

@@ -19,9 +19,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef DEBUG_ramshankar
-# define LOG_INSTANCE       RTLogRelDefaultInstance()
-#endif
 #include <VBox/usblib.h>
 #include <VBox/err.h>
 #include <VBox/log.h>

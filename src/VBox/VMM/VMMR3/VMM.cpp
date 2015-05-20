@@ -381,7 +381,7 @@ static int vmmR3InitLoggers(PVM pVM)
      */
     if (!HMIsEnabled(pVM))
     {
-        PRTLOGGER pRelLogger = RTLogRelDefaultInstance();
+        PRTLOGGER pRelLogger = RTLogRelGetDefaultInstance();
         if (pRelLogger)
         {
             pVM->vmm.s.cbRCRelLogger = RT_OFFSETOF(RTLOGGERRC, afGroups[pRelLogger->cGroups]);
@@ -607,7 +607,7 @@ VMMR3_INT_DECL(int) VMMR3InitRC(PVM pVM)
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
             PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
             if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-                RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+                RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
 #endif
             if (rc != VINF_VMM_CALL_HOST)
                 break;
@@ -916,7 +916,7 @@ VMMR3_INT_DECL(int) VMMR3UpdateLoggers(PVM pVM)
         AssertReleaseMsgRC(rc, ("vmmGCRelLoggerWrapper not found! rc=%Rra\n", rc));
 
         pVM->vmm.s.pRCRelLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCRelLoggerR3);
-        rc = RTLogCloneRC(RTLogRelDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
+        rc = RTLogCloneRC(RTLogRelGetDefaultInstance(), pVM->vmm.s.pRCRelLoggerR3, pVM->vmm.s.cbRCRelLogger,
                           RCPtrLoggerWrapper, RCPtrLoggerFlush, RTLOGFLAGS_BUFFERED);
         AssertReleaseMsgRC(rc, ("RTLogCloneRC failed! rc=%Rra\n", rc));
     }
@@ -1318,7 +1318,7 @@ VMMR3_INT_DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
 #endif
         if (rc != VINF_VMM_CALL_HOST)
         {
@@ -2004,7 +2004,7 @@ VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list
 #ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
 #endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
             VMMR3FatalDump(pVM, pVCpu, rc);
@@ -2114,7 +2114,7 @@ VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 # ifdef VBOX_WITH_RC_RELEASE_LOGGING
         PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
         if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
-            RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+            RTLogFlushRC(RTLogRelGetDefaultInstance(), pRelLogger);
 # endif
         if (rc == VERR_TRPM_PANIC || rc == VERR_TRPM_DONT_PANIC)
             VMMR3FatalDump(pVM, pVCpu, rc);

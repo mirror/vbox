@@ -44,7 +44,7 @@ static PRTLOGGER dbgfR3LogResolvedLogger(const char **ppsz)
     if (!strncmp(psz, RT_STR_TUPLE("release:")))
     {
         *ppsz += sizeof("release:") - 1;
-        pLogger = RTLogRelDefaultInstance();
+        pLogger = RTLogRelGetDefaultInstance();
     }
     else
     {

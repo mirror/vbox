@@ -36,7 +36,9 @@ EXPORTS
     PGMPhysWriteGCPtr
     PGMPhysSimpleDirtyWriteGCPtr
     RTLogDefaultInstance
-    RTLogRelDefaultInstance
+    RTLogDefaultInstanceEx
+    RTLogRelGetDefaultInstance
+    RTLogRelGetDefaultInstanceEx
     RTTimeMilliTS
     RTTraceBufAddMsgF
     RTTraceBufAddPos
