@@ -123,6 +123,7 @@ public:
     void unsetCurrentItem();
     void addToCurrentItems(UIGChooserItem *pItem);
     void removeFromCurrentItems(UIGChooserItem *pItem);
+    void makeSureSomeItemIsSelected();
     void notifyCurrentItemChanged();
     bool isSingleGroupSelected() const;
     bool isAllItemsOfOneGroupSelected() const;

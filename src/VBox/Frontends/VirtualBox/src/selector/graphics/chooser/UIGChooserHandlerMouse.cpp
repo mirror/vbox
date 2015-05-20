@@ -108,6 +108,7 @@ bool UIGChooserHandlerMouse::handleMousePress(QGraphicsSceneMouseEvent *pEvent) 
                             model()->addToCurrentItems(pClickedItem);
                         /* Move focus to clicked item: */
                         model()->setFocusItem(pClickedItem);
+                        model()->makeSureSomeItemIsSelected();
                     }
                     /* Was no modifiers pressed? */
                     else if (pEvent->modifiers() == Qt::NoModifier)
