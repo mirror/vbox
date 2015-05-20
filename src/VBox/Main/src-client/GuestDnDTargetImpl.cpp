@@ -604,9 +604,77 @@ int GuestDnDTarget::i_cancelOperation(void)
     return GuestDnDInst()->hostCall(DragAndDropSvc::HOST_DND_HG_EVT_CANCEL, 0 /* cParms */, NULL /*paParms*/);
 }
 
+/* static */
+Utf8Str GuestDnDTarget::i_guestErrorToString(int guestRc)
+{
+    Utf8Str strError;
+
+    switch (guestRc)
+    {
+        case VERR_ACCESS_DENIED:
+            strError += Utf8StrFmt(tr("For one or more guest files or directories selected for transferring to the host your guest "
+                                      "user does not have the appropriate access rights for. Please make sure that all selected "
+                                      "elements can be accessed and that your guest user has the appropriate rights."));
+            break;
+
+        case VERR_NOT_FOUND:
+            /* Should not happen due to file locking on the guest, but anyway ... */
+            strError += Utf8StrFmt(tr("One or more guest files or directories selected for transferring to the host were not"
+                                      "found on the guest anymore. This can be the case if the guest files were moved and/or"
+                                      "altered while the drag and drop operation was in progress."));
+            break;
+
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(tr("One or more guest files or directories selected for transferring to the host were locked. "
+                                      "Please make sure that all selected elements can be accessed and that your guest user has "
+                                      "the appropriate rights."));
+            break;
+
+        default:
+            strError += Utf8StrFmt(tr("Drag and drop error from guest (%Rrc)"), guestRc);
+            break;
+    }
+
+    return strError;
+}
+
+/* static */
+Utf8Str GuestDnDTarget::i_hostErrorToString(int hostRc)
+{
+    Utf8Str strError;
+
+    switch (hostRc)
+    {
+        case VERR_ACCESS_DENIED:
+            strError += Utf8StrFmt(tr("For one or more host files or directories selected for transferring to the guest your host "
+                                      "user does not have the appropriate access rights for. Please make sure that all selected "
+                                      "elements can be accessed and that your host user has the appropriate rights."));
+            break;
+
+        case VERR_NOT_FOUND:
+            /* Should not happen due to file locking on the host, but anyway ... */
+            strError += Utf8StrFmt(tr("One or more host files or directories selected for transferring to the host were not"
+                                      "found on the host anymore. This can be the case if the host files were moved and/or"
+                                      "altered while the drag and drop operation was in progress."));
+            break;
+
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(tr("One or more host files or directories selected for transferring to the guest were locked. "
+                                      "Please make sure that all selected elements can be accessed and that your host user has "
+                                      "the appropriate rights."));
+            break;
+
+        default:
+            strError += Utf8StrFmt(tr("Drag and drop error from host (%Rrc)"), hostRc);
+            break;
+    }
+
+    return strError;
+}
+
 int GuestDnDTarget::i_sendData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 {
-    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     GuestDnD *pInst = GuestDnDInst();
     if (!pInst)
@@ -681,7 +749,7 @@ int GuestDnDTarget::i_sendFile(PSENDDATACTX pCtx, GuestDnDMsg *pMsg, DnDURIObjec
         rc = aFile.OpenEx(strPathSrc, DnDURIObject::File, DnDURIObject::Source,
                           RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE, 0 /* fFlags */);
         if (RT_FAILURE(rc))
-            LogRel2(("DnD: Error opening host file \"%s\", rc=%Rrc\n", strPathSrc.c_str(), rc));
+            LogRel(("DnD: Error opening host file \"%s\", rc=%Rrc\n", strPathSrc.c_str(), rc));
     }
 
     bool fSendFileData = false;
@@ -813,7 +881,10 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
 
     LogFlowFunc(("pThis=%p, uMsg=%RU32\n", pThis, uMsg));
 
-    int rc = VINF_SUCCESS;
+    int rc = VINF_SUCCESS; /* Will be reported back to guest. */
+
+    int rcCallback = VINF_SUCCESS; /* rc for the callback. */
+    bool fNotify = false;
 
     switch (uMsg)
     {
@@ -857,9 +928,14 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
-            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+
+            if (RT_SUCCESS(pCBData->rc))
+                pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
+
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc,
+                                           GuestDnDTarget::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
-                rc = pCBData->rc;
+                rcCallback = VERR_GSTDND_GUEST_ERROR;
             break;
         }
         case DragAndDropSvc::HOST_DND_HG_SND_DIR:
@@ -914,20 +990,28 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
             break;
     }
 
+    if (   RT_FAILURE(rc)
+        || RT_FAILURE(rcCallback))
+    {
+        fNotify = true;
+        if (RT_SUCCESS(rcCallback))
+            rcCallback = rc;
+    }
+
     if (RT_FAILURE(rc))
     {
         switch (rc)
         {
             case VERR_NO_DATA:
-                LogRel2(("DnD: Transfer complete\n"));
+                LogRel2(("DnD: Transfer to guest complete\n"));
                 break;
 
             case VERR_CANCELLED:
-                LogRel2(("DnD: Transfer canceled\n"));
+                LogRel2(("DnD: Transfer to guest canceled\n"));
                 break;
 
             default:
-                LogRel(("DnD: Error %Rrc occurred, aborting transfer\n", rc));
+                LogRel(("DnD: Error %Rrc occurred, aborting transfer to guest\n", rc));
                 break;
         }
 
@@ -935,9 +1019,13 @@ DECLCALLBACK(int) GuestDnDTarget::i_sendURIDataCallback(uint32_t uMsg, void *pvP
         AssertPtr(pCtx->mpResp);
         int rc2 = pCtx->mpResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
         AssertRC(rc2);
+    }
 
-        /* Notify waiters. */
-        rc2 = pCtx->mCallback.Notify(rc);
+    LogFlowFunc(("fNotify=%RTbool, rcCallback=%Rrc, rc=%Rrc\n", fNotify, rcCallback, rc));
+
+    if (fNotify)
+    {
+        int rc2 = pCtx->mCallback.Notify(rcCallback);
         AssertRC(rc2);
     }
 
@@ -1043,7 +1131,19 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
         rc = GuestDnDInst()->hostCall(MsgSndData.getType(), MsgSndData.getCount(), MsgSndData.getParms());
         if (RT_SUCCESS(rc))
+        {
             rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_CANCELLED)
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
+                                                   GuestDnDTarget::i_hostErrorToString(rc));
+            }
+            else
+                rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+        }
 
     } while (0);
 
@@ -1064,6 +1164,8 @@ int GuestDnDTarget::i_sendURIData(PSENDDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     /*
      * Now that we've cleaned up tell the guest side to cancel.
+     * This does not imply we're waiting for the guest to react, as the
+     * host side never must depend on anything from the guest.
      */
     if (rc == VERR_CANCELLED)
     {

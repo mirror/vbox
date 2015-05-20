@@ -324,7 +324,7 @@ HRESULT GuestDnDSource::drop(const com::Utf8Str &aFormat, DnDAction_T aAction, C
 
         RecvDataTask *pTask = new RecvDataTask(this, &mData.mRecvCtx);
         AssertReturn(pTask->isOk(), pTask->getRC());
-        
+
         LogFlowFunc(("Starting thread ...\n"));
 
         int rc = RTThreadCreate(NULL, GuestDnDSource::i_receiveDataThread,
@@ -414,6 +414,75 @@ HRESULT GuestDnDSource::receiveData(std::vector<BYTE> &aData)
 /////////////////////////////////////////////////////////////////////////////
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+/* static */
+Utf8Str GuestDnDSource::i_guestErrorToString(int guestRc)
+{
+    Utf8Str strError;
+
+    switch (guestRc)
+    {
+        case VERR_ACCESS_DENIED:
+            strError += Utf8StrFmt(tr("For one or more guest files or directories selected for transferring to the host your guest "
+                                      "user does not have the appropriate access rights for. Please make sure that all selected "
+                                      "elements can be accessed and that your guest user has the appropriate rights."));
+            break;
+
+        case VERR_NOT_FOUND:
+            /* Should not happen due to file locking on the guest, but anyway ... */
+            strError += Utf8StrFmt(tr("One or more guest files or directories selected for transferring to the host were not"
+                                      "found on the guest anymore. This can be the case if the guest files were moved and/or"
+                                      "altered while the drag and drop operation was in progress."));
+            break;
+
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(tr("One or more guest files or directories selected for transferring to the host were locked. "
+                                      "Please make sure that all selected elements can be accessed and that your guest user has "
+                                      "the appropriate rights."));
+            break;
+
+        default:
+            strError += Utf8StrFmt(tr("Drag and drop error from guest (%Rrc)"), guestRc);
+            break;
+    }
+
+    return strError;
+}
+
+
+/* static */
+Utf8Str GuestDnDSource::i_hostErrorToString(int hostRc)
+{
+    Utf8Str strError;
+
+    switch (hostRc)
+    {
+        case VERR_ACCESS_DENIED:
+            strError += Utf8StrFmt(tr("For one or more host files or directories selected for transferring to the guest your host "
+                                      "user does not have the appropriate access rights for. Please make sure that all selected "
+                                      "elements can be accessed and that your host user has the appropriate rights."));
+            break;
+
+        case VERR_NOT_FOUND:
+            /* Should not happen due to file locking on the host, but anyway ... */
+            strError += Utf8StrFmt(tr("One or more host files or directories selected for transferring to the host were not"
+                                      "found on the host anymore. This can be the case if the host files were moved and/or"
+                                      "altered while the drag and drop operation was in progress."));
+            break;
+
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(tr("One or more host files or directories selected for transferring to the guest were locked. "
+                                      "Please make sure that all selected elements can be accessed and that your host user has "
+                                      "the appropriate rights."));
+            break;
+
+        default:
+            strError += Utf8StrFmt(tr("Drag and drop error from host (%Rrc)"), hostRc);
+            break;
+    }
+
+    return strError;
+}
+
 int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint32_t cbData, uint64_t cbTotalSize)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
@@ -838,7 +907,19 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          * the host and therefore now waiting for the actual raw data. */
         rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
+        {
             rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_CANCELLED)
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
+                                                   GuestDnDSource::i_hostErrorToString(rc));
+            }
+            else
+                rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+        }
 
     } while (0);
 
@@ -918,7 +999,19 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
          * the host and therefore now waiting for the actual URI data. */
         rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
+        {
             rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
+            if (RT_FAILURE(rc))
+            {
+                if (rc == VERR_CANCELLED)
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
+                                                   GuestDnDSource::i_hostErrorToString(rc));
+            }
+            else
+                rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+        }
 
     } while (0);
 
@@ -970,6 +1063,9 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
 
     int rc = VINF_SUCCESS;
 
+    int rcCallback = VINF_SUCCESS; /* rc for the callback. */
+    bool fNotify = false;
+
     switch (uMsg)
     {
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -991,9 +1087,14 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveRawDataCallback(uint32_t uMsg, void *
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
-            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+
+            if (RT_SUCCESS(pCBData->rc))
+                pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
+
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc,
+                                           GuestDnDSource::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
-                rc = pCBData->rc;
+                rcCallback = VERR_GSTDND_GUEST_ERROR;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
@@ -1115,6 +1216,29 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
         fNotify = true;
         if (RT_SUCCESS(rcCallback))
             rcCallback = rc;
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        switch (rc)
+        {
+            case VERR_NO_DATA:
+                LogRel2(("DnD: Transfer to host complete\n"));
+                break;
+
+            case VERR_CANCELLED:
+                LogRel2(("DnD: Transfer to host canceled\n"));
+                break;
+
+            default:
+                LogRel(("DnD: Error %Rrc occurred, aborting transfer to host\n", rc));
+                break;
+        }
+
+        /* Unregister this callback. */
+        AssertPtr(pCtx->mpResp);
+        int rc2 = pCtx->mpResp->setCallback(uMsg, NULL /* PFNGUESTDNDCALLBACK */);
+        AssertRC(rc2);
     }
 
     /* All URI data processed? */

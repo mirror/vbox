@@ -67,8 +67,18 @@ private:
 
 protected:
 
+    static Utf8Str i_guestErrorToString(int guestRc);
+    static Utf8Str i_hostErrorToString(int hostRc);
+
+    /** @name Thread callbacks.
+     * @{ */
     static DECLCALLBACK(int) i_sendDataThread(RTTHREAD Thread, void *pvUser);
+    /** @}  */
+
+    /** @name Callbacks for dispatch handler.
+     * @{ */
     static DECLCALLBACK(int) i_sendURIDataCallback(uint32_t uMsg, void *pvParms, size_t cbParms, void *pvUser);
+    /** @}  */
 
 protected:
 

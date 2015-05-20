@@ -2645,6 +2645,13 @@
 #define VERR_MAIN_CONFIG_CONSTRUCTOR_IPE            (-6401)
 /** @} */
 
+/** @name VBox Drag and Drop Status Codes
+ * @{
+ */
+/** Guest side reported an error. */
+#define VERR_GSTDND_GUEST_ERROR                     (-6500)
+/** @} */
+
 
 /* SED-END */
 

@@ -176,7 +176,7 @@ int GuestDnDCallbackEvent::Reset(void)
     return rc;
 }
 
-int GuestDnDCallbackEvent::Notify(int rc)
+int GuestDnDCallbackEvent::Notify(int rc /* = VINF_SUCCESS */)
 {
     mRc = rc;
     return RTSemEventSignal(mSemEvent);
@@ -206,40 +206,6 @@ GuestDnDResponse::~GuestDnDResponse(void)
 
     int rc = RTSemEventDestroy(m_EventSem);
     AssertRC(rc);
-}
-
-/* static */
-Utf8Str GuestDnDResponse::errorToString(const ComObjPtr<Guest>& pGuest, int guestRc)
-{
-    Utf8Str strError;
-
-    switch (guestRc)
-    {
-        case VERR_ACCESS_DENIED:
-            strError += Utf8StrFmt(pGuest->tr("For one or more guest files or directories selected for transferring to the host your guest "
-                                              "user does not have the appropriate access rights for. Please make sure that all selected "
-                                              "elements can be accessed and that your guest user has the appropriate rights."));
-            break;
-
-        case VERR_NOT_FOUND:
-            /* Should not happen due to file locking on the guest, but anyway ... */
-            strError += Utf8StrFmt(pGuest->tr("One or more guest files or directories selected for transferring to the host were not"
-                                              "found on the guest anymore. This can be the case if the guest files were moved and/or"
-                                              "altered while the drag and drop operation was in progress."));
-            break;
-
-        case VERR_SHARING_VIOLATION:
-            strError += Utf8StrFmt(pGuest->tr("One or more guest files or directories selected for transferring to the host were locked. "
-                                              "Please make sure that all selected elements can be accessed and that your guest user has "
-                                              "the appropriate rights."));
-            break;
-
-        default:
-            strError += Utf8StrFmt("Drag and drop guest error (%Rrc)", guestRc);
-            break;
-    }
-
-    return strError;
 }
 
 int GuestDnDResponse::notifyAboutGuestResponse(void) const
@@ -311,10 +277,11 @@ int GuestDnDResponse::setCallback(uint32_t uMsg, PFNGUESTDNDCALLBACK pfnCallback
 }
 
 int GuestDnDResponse::setProgress(unsigned uPercentage,
-                                  uint32_t uStatus, int rcOp /* = VINF_SUCCESS */)
+                                  uint32_t uStatus,
+                                  int rcOp /* = VINF_SUCCESS */, const Utf8Str &strMsg /* = "" */)
 {
-    LogFlowFunc(("uStatus=%RU32, uPercentage=%RU32, rcOp=%Rrc\n",
-                 uStatus, uPercentage, rcOp));
+    LogFlowFunc(("uStatus=%RU32, uPercentage=%RU32, rcOp=%Rrc, strMsg=%s\n",
+                 uStatus, uPercentage, rcOp, strMsg.c_str()));
 
     int rc = VINF_SUCCESS;
     if (!m_progress.isNull())
@@ -337,8 +304,7 @@ int GuestDnDResponse::setProgress(unsigned uPercentage,
                 {
                     hr = m_progress->i_notifyComplete(VBOX_E_IPRT_ERROR,
                                                       COM_IIDOF(IGuest),
-                                                      m_parent->getComponentName(),
-                                                      GuestDnDResponse::errorToString(m_parent, rcOp).c_str());
+                                                      m_parent->getComponentName(), strMsg.c_str());
                     reset();
                     break;
                 }
@@ -897,7 +863,7 @@ int GuestDnDBase::waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Ev
         /*
          * Wait until our desired callback triggered the
          * wait event. As we don't want to block if the guest does not
-         * respond, so do busy waiting here.
+         * respond, do busy waiting here.
          */
         rc = Event.Wait(500 /* ms */);
         if (RT_SUCCESS(rc))
@@ -907,16 +873,17 @@ int GuestDnDBase::waitForEvent(RTMSINTERVAL msTimeout, GuestDnDCallbackEvent &Ev
             break;
         }
         else if (rc == VERR_TIMEOUT) /* Continue waiting. */
-            rc = VINF_SUCCESS;
+            continue;
 
         if (   msTimeout != RT_INDEFINITE_WAIT
             && RTTimeMilliTS() - tsStart > msTimeout)
         {
             rc = VERR_TIMEOUT;
+            LogFlowFunc(("Guest did not respond within time\n"));
         }
-        else if (pResp->isProgressCanceled())
+        else if (pResp->isProgressCanceled()) /** @todo GuestDnDResponse *pResp needs to go. */
         {
-            pResp->setProgress(100 /* Percent */, DragAndDropSvc::DND_PROGRESS_CANCELLED);
+            LogFlowFunc(("Canceled by user\n"));
             rc = VERR_CANCELLED;
         }
 

@@ -73,7 +73,13 @@ protected:
 
 protected:
 
+    static Utf8Str i_guestErrorToString(int guestRc);
+    static Utf8Str i_hostErrorToString(int hostRc);
+
+    /** @name Thread callbacks.
+     * @{ */
     static DECLCALLBACK(int) i_receiveDataThread(RTTHREAD Thread, void *pvUser);
+    /** @}  */
 
     /** @name Callbacks for dispatch handler.
      * @{ */
