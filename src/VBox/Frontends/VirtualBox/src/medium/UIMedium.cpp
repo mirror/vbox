@@ -174,7 +174,7 @@ void UIMedium::refresh()
     if (!m_medium.isNull())
     {
         /* Refresh medium ID: */
-        m_strId = m_medium.GetId();
+        m_strId = normalizedID(m_medium.GetId());
         /* Refresh root medium ID: */
         m_strRootId = m_strId;
 
@@ -230,7 +230,7 @@ void UIMedium::refresh()
             /* Refresh parent hard drive ID: */
             CMedium parentMedium = m_medium.GetParent();
             if (!parentMedium.isNull())
-                m_strParentId = parentMedium.GetId();
+                m_strParentId = normalizedID(parentMedium.GetId());
 
             /* Only for created and accessible mediums: */
             if (m_state != KMediumState_Inaccessible && m_state != KMediumState_NotCreated)
@@ -238,7 +238,7 @@ void UIMedium::refresh()
                 /* Refresh root hard drive ID: */
                 while (!parentMedium.isNull())
                 {
-                    m_strRootId = parentMedium.GetId();
+                    m_strRootId = normalizedID(parentMedium.GetId());
                     parentMedium = parentMedium.GetParent();
                 }
 
@@ -395,7 +395,7 @@ void UIMedium::updateParentID()
     {
         CMedium parentMedium = m_medium.GetParent();
         if (!parentMedium.isNull())
-            m_strParentId = parentMedium.GetId();
+            m_strParentId = normalizedID(parentMedium.GetId());
     }
 }
 
@@ -525,6 +525,15 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 QString UIMedium::nullID()
 {
     return m_sstrNullID;
+}
+
+/* static */
+QString UIMedium::normalizedID(const QString &strID)
+{
+    AssertMsgReturn(QUuid(strID).toString().remove('{').remove('}') == strID,
+                    ("CMedium UUID is not valid: '%s'\n", strID.toAscii().constData()),
+                    nullID());
+    return strID;
 }
 
 /* static */

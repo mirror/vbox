@@ -120,8 +120,13 @@ public:
     /** Returns the CMedium wrapped by this UIMedium object. */
     const CMedium& medium() const { return m_medium; }
 
-    /** Returns @c true if CMedium wrapped by this UIMedium object is a NULL object. */
-    bool isNull() const { return m_medium.isNull(); }
+    /** Returns @c true if CMedium wrapped by this UIMedium object has ID == #nullID().
+      * @note   Also make sure wrapped CMedium is NULL object if his ID == #nullID(). */
+    bool isNull() const
+    {
+        AssertReturn(m_strId != nullID() || m_medium.isNull(), true);
+        return m_strId == nullID();
+    }
 
     /** Returns the medium state.
       * @param fNoDiffs @c true to enable user-friendly "don't show diffs" mode.
@@ -283,6 +288,9 @@ public:
 
     /** Returns NULL medium ID. */
     static QString nullID();
+
+    /** Returns passed @a strID if it's valid or #nullID() overwise. */
+    static QString normalizedID(const QString &strID);
 
     /** Determines if passed @a medium is attached to hidden machines only. */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
