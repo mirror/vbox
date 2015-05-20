@@ -54,17 +54,17 @@ static unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *p
 {
     DISPLAYFBINFO *pInfo = pInfos;
     unsigned uScreenId;
-    LogSunlover(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
+    Log9(("mapCoordsToScreen: %d,%d %dx%d\n", *px, *py, *pw, *ph));
     for (uScreenId = 0; uScreenId < cInfos; uScreenId++, pInfo++)
     {
-        LogSunlover(("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
+        Log9(("    [%d] %d,%d %dx%d\n", uScreenId, pInfo->xOrigin, pInfo->yOrigin, pInfo->w, pInfo->h));
         if (   (pInfo->xOrigin <= *px && *px < pInfo->xOrigin + (int)pInfo->w)
             && (pInfo->yOrigin <= *py && *py < pInfo->yOrigin + (int)pInfo->h))
         {
             /* The rectangle belongs to the screen. Correct coordinates. */
             *px -= pInfo->xOrigin;
             *py -= pInfo->yOrigin;
-            LogSunlover(("    -> %d,%d", *px, *py));
+            Log9(("    -> %d,%d", *px, *py));
             break;
         }
     }
@@ -73,7 +73,7 @@ static unsigned mapCoordsToScreen(DISPLAYFBINFO *pInfos, unsigned cInfos, int *p
         /* Map to primary screen. */
         uScreenId = 0;
     }
-    LogSunlover((" scr %d\n", uScreenId));
+    Log9((" scr %d\n", uScreenId));
     return uScreenId;
 }
 
@@ -104,12 +104,12 @@ static void vbvaRgnInit(VBVADIRTYREGION *prgn, DISPLAYFBINFO *paFramebuffers, un
 
 static void vbvaRgnDirtyRect(VBVADIRTYREGION *prgn, unsigned uScreenId, VBVACMDHDR *phdr)
 {
-    LogSunlover(("x = %d, y = %d, w = %d, h = %d\n",
-                 phdr->x, phdr->y, phdr->w, phdr->h));
+    Log9(("x = %d, y = %d, w = %d, h = %d\n", phdr->x, phdr->y, phdr->w, phdr->h));
 
     /*
      * Here update rectangles are accumulated to form an update area.
-     * @todo
+     */
+    /** @todo
      * Now the simplest method is used which builds one rectangle that
      * includes all update areas. A bit more advanced method can be
      * employed here. The method should be fast however.

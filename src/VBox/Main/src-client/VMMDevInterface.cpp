@@ -371,7 +371,7 @@ DECLCALLBACK(int) iface_VideoAccelEnable(PPDMIVMMDEVCONNECTOR pInterface, bool f
 
     if (display)
     {
-        LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelEnable: %d, %p\n", fEnable, pVbvaMemory));
+        Log9(("MAIN::VMMDevInterface::iface_VideoAccelEnable: %d, %p\n", fEnable, pVbvaMemory));
         return display->VideoAccelEnableVMMDev(fEnable, pVbvaMemory);
     }
 
@@ -386,7 +386,7 @@ DECLCALLBACK(void) iface_VideoAccelFlush(PPDMIVMMDEVCONNECTOR pInterface)
 
     if (display)
     {
-        LogSunlover(("MAIN::VMMDevInterface::iface_VideoAccelFlush\n"));
+        Log9(("MAIN::VMMDevInterface::iface_VideoAccelFlush\n"));
         display->VideoAccelFlushVMMDev();
     }
 }
@@ -605,7 +605,7 @@ static DECLCALLBACK(int) iface_hgcmConnect(PPDMIHGCMCONNECTOR pInterface, PVBOXH
                                            PHGCMSERVICELOCATION pServiceLocation,
                                            uint32_t *pu32ClientID)
 {
-    LogSunlover(("Enter\n"));
+    Log9(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, HGCMConnector);
 
@@ -624,7 +624,7 @@ static DECLCALLBACK(int) iface_hgcmConnect(PPDMIHGCMCONNECTOR pInterface, PVBOXH
 
 static DECLCALLBACK(int) iface_hgcmDisconnect(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID)
 {
-    LogSunlover(("Enter\n"));
+    Log9(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, HGCMConnector);
 
@@ -637,7 +637,7 @@ static DECLCALLBACK(int) iface_hgcmDisconnect(PPDMIHGCMCONNECTOR pInterface, PVB
 static DECLCALLBACK(int) iface_hgcmCall(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCMCMD pCmd, uint32_t u32ClientID,
                                         uint32_t u32Function, uint32_t cParms, PVBOXHGCMSVCPARM paParms)
 {
-    LogSunlover(("Enter\n"));
+    Log9(("Enter\n"));
 
     PDRVMAINVMMDEV pDrv = RT_FROM_MEMBER(pInterface, DRVMAINVMMDEV, HGCMConnector);
 
@@ -656,7 +656,7 @@ static DECLCALLBACK(int) iface_hgcmCall(PPDMIHGCMCONNECTOR pInterface, PVBOXHGCM
  */
 static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 {
-    LogSunlover(("Enter\n"));
+    Log9(("Enter\n"));
     return HGCMHostSaveState(pSSM);
 }
 

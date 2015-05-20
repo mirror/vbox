@@ -802,8 +802,7 @@ void VirtualBox::uninit()
              */
             int vrc = RTThreadWait(m->threadAsyncEvent, 60000, NULL);
             if (RT_FAILURE(vrc))
-                LogWarningFunc(("RTThreadWait(%RTthrd) -> %Rrc\n",
-                                m->threadAsyncEvent, vrc));
+                Log1WarningFunc(("RTThreadWait(%RTthrd) -> %Rrc\n", m->threadAsyncEvent, vrc));
         }
         else
         {
@@ -2005,8 +2004,7 @@ HRESULT VirtualBox::setExtraData(const com::Utf8Str &aKey,
         {
             const char *sep = error.isEmpty() ? "" : ": ";
             CBSTR err = error.raw();
-            LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
-                            sep, err));
+            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, err));
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
                             strKey.c_str(),
@@ -2303,8 +2301,8 @@ HRESULT VirtualBox::i_postEvent(Event *event)
     if (SUCCEEDED((rc = autoCaller.rc())))
     {
         if (getObjectState().getState() != ObjectState::Ready)
-            LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
-                            getObjectState().getState()));
+            Log1WarningFunc(("VirtualBox has been uninitialized (state=%d), the event is discarded!\n",
+                             getObjectState().getState()));
             // return S_OK
         else if (    (m->pAsyncEventQ)
                   && (m->pAsyncEventQ->postEvent(event))
@@ -4819,8 +4817,8 @@ void *VirtualBox::CallbackEvent::handler()
     AutoCaller autoCaller(mVirtualBox);
     if (!autoCaller.isOk())
     {
-        LogWarningFunc(("VirtualBox has been uninitialized (state=%d), the callback event is discarded!\n",
-                        mVirtualBox->getObjectState().getState()));
+        Log1WarningFunc(("VirtualBox has been uninitialized (state=%d), the callback event is discarded!\n",
+                         mVirtualBox->getObjectState().getState()));
         /* We don't need mVirtualBox any more, so release it */
         mVirtualBox = NULL;
         return NULL;

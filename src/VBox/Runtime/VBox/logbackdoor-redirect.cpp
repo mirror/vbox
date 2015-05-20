@@ -43,7 +43,7 @@ RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void)
 
 
 /* All release logging goes to the backdoor logger anyway. */
-RTDECL(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER) RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
     return NULL;
 }
@@ -57,7 +57,7 @@ RTDECL(PRTLOGGER) RTLogDefaultInstance(void)
 
 
 /* All logging goes to the backdoor logger anyway. */
-RTDECL(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
     return NULL;
 }

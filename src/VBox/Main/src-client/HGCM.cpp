@@ -1331,7 +1331,7 @@ int HGCMService::CreateAndConnectClient(uint32_t *pu32ClientIdOut, uint32_t u32C
 
     if (!pClient)
     {
-        LogWarningFunc(("Could not allocate HGCMClient!!!\n"));
+        Log1WarningFunc(("Could not allocate HGCMClient!!!\n"));
         return VERR_NO_MEMORY;
     }
 

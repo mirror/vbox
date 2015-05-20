@@ -1787,8 +1787,8 @@ static unsigned rtlogGroupFlags(const char *psz)
         {
             { "eo",         RTLOGGRPFLAGS_ENABLED },
             { "enabledonly",RTLOGGRPFLAGS_ENABLED },
-            { "e",          RTLOGGRPFLAGS_ENABLED | RTLOGGRPFLAGS_LEVEL_1 },
-            { "enabled",    RTLOGGRPFLAGS_ENABLED | RTLOGGRPFLAGS_LEVEL_1 },
+            { "e",          RTLOGGRPFLAGS_ENABLED | RTLOGGRPFLAGS_LEVEL_1 | RTLOGGRPFLAGS_WARN },
+            { "enabled",    RTLOGGRPFLAGS_ENABLED | RTLOGGRPFLAGS_LEVEL_1 | RTLOGGRPFLAGS_WARN },
             { "l1",         RTLOGGRPFLAGS_LEVEL_1 },
             { "level1",     RTLOGGRPFLAGS_LEVEL_1 },
             { "l",          RTLOGGRPFLAGS_LEVEL_2 },
@@ -1802,26 +1802,25 @@ static unsigned rtlogGroupFlags(const char *psz)
             { "level5",     RTLOGGRPFLAGS_LEVEL_5 },
             { "l6",         RTLOGGRPFLAGS_LEVEL_6 },
             { "level6",     RTLOGGRPFLAGS_LEVEL_6 },
+            { "l7",         RTLOGGRPFLAGS_LEVEL_7 },
+            { "level7",     RTLOGGRPFLAGS_LEVEL_7 },
+            { "l8",         RTLOGGRPFLAGS_LEVEL_8 },
+            { "level8",     RTLOGGRPFLAGS_LEVEL_8 },
+            { "l9",         RTLOGGRPFLAGS_LEVEL_9 },
+            { "level9",     RTLOGGRPFLAGS_LEVEL_9 },
+            { "l10",        RTLOGGRPFLAGS_LEVEL_10 },
+            { "level10",    RTLOGGRPFLAGS_LEVEL_10 },
+            { "l11",        RTLOGGRPFLAGS_LEVEL_11 },
+            { "level11",    RTLOGGRPFLAGS_LEVEL_11 },
+            { "l12",        RTLOGGRPFLAGS_LEVEL_12 },
+            { "level12",    RTLOGGRPFLAGS_LEVEL_12 },
             { "f",          RTLOGGRPFLAGS_FLOW },
             { "flow",       RTLOGGRPFLAGS_FLOW },
+            { "w",          RTLOGGRPFLAGS_WARN },
+            { "warn",       RTLOGGRPFLAGS_WARN },
+            { "warning",    RTLOGGRPFLAGS_WARN },
             { "restrict",   RTLOGGRPFLAGS_RESTRICT },
 
-            { "lelik",      RTLOGGRPFLAGS_LELIK },
-            { "michael",    RTLOGGRPFLAGS_MICHAEL },
-            { "sunlover",   RTLOGGRPFLAGS_SUNLOVER },
-            { "achim",      RTLOGGRPFLAGS_ACHIM },
-            { "achimha",    RTLOGGRPFLAGS_ACHIM },
-            { "s",          RTLOGGRPFLAGS_SANDER },
-            { "sander",     RTLOGGRPFLAGS_SANDER },
-            { "sandervl",   RTLOGGRPFLAGS_SANDER },
-            { "klaus",      RTLOGGRPFLAGS_KLAUS },
-            { "frank",      RTLOGGRPFLAGS_FRANK },
-            { "b",          RTLOGGRPFLAGS_BIRD },
-            { "bird",       RTLOGGRPFLAGS_BIRD },
-            { "aleksey",    RTLOGGRPFLAGS_ALEKSEY },
-            { "dj",         RTLOGGRPFLAGS_DJ },
-            { "n",          RTLOGGRPFLAGS_NONAME },
-            { "noname",     RTLOGGRPFLAGS_NONAME }
         };
         unsigned    i;
         bool        fFound = false;
@@ -2614,17 +2613,22 @@ RTDECL(PRTLOGGER)   RTLogDefaultInstance(void)
 RT_EXPORT_SYMBOL(RTLogDefaultInstance);
 
 
-RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER)   RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
     PRTLOGGER pLogger = rtLogDefaultInstanceCommon();
     if (pLogger)
     {
         if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
             pLogger = NULL;
-        else if (   iGroup != UINT32_MAX
+        else
+        {
+            uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
+            uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
+            if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | RTLOGGRPFLAGS_ENABLED)))
             pLogger = NULL;
+        }
     }
     return pLogger;
 }
@@ -2665,17 +2669,22 @@ RTDECL(PRTLOGGER) RTLogGetDefaultInstance(void)
 RT_EXPORT_SYMBOL(RTLogGetDefaultInstance);
 
 
-RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
     PRTLOGGER pLogger = rtLogGetDefaultInstanceCommon();
     if (pLogger)
     {
         if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
             pLogger = NULL;
-        else if (   iGroup != UINT32_MAX
+        else
+        {
+            uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
+            uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
+            if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | RTLOGGRPFLAGS_ENABLED)))
             pLogger = NULL;
+        }
     }
     return pLogger;
 }
@@ -3757,18 +3766,14 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
                         case RTLOGGRPFLAGS_LEVEL_4:     pszGroup = "level 4" ;  cch = sizeof("level 4" ) - 1; break;
                         case RTLOGGRPFLAGS_LEVEL_5:     pszGroup = "level 5" ;  cch = sizeof("level 5" ) - 1; break;
                         case RTLOGGRPFLAGS_LEVEL_6:     pszGroup = "level 6" ;  cch = sizeof("level 6" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_7:     pszGroup = "level 7" ;  cch = sizeof("level 7" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_8:     pszGroup = "level 8" ;  cch = sizeof("level 8" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_9:     pszGroup = "level 9" ;  cch = sizeof("level 9" ) - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_10:    pszGroup = "level 10";  cch = sizeof("level 10") - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_11:    pszGroup = "level 11";  cch = sizeof("level 11") - 1; break;
+                        case RTLOGGRPFLAGS_LEVEL_12:    pszGroup = "level 12";  cch = sizeof("level 12") - 1; break;
                         case RTLOGGRPFLAGS_FLOW:        pszGroup = "flow"    ;  cch = sizeof("flow"    ) - 1; break;
-
-                        /* personal groups */
-                        case RTLOGGRPFLAGS_LELIK:       pszGroup = "lelik"   ;  cch = sizeof("lelik"   ) - 1; break;
-                        case RTLOGGRPFLAGS_MICHAEL:     pszGroup = "Michael" ;  cch = sizeof("Michael" ) - 1; break;
-                        case RTLOGGRPFLAGS_SUNLOVER:    pszGroup = "sunlover";  cch = sizeof("sunlover") - 1; break;
-                        case RTLOGGRPFLAGS_ACHIM:       pszGroup = "Achim"   ;  cch = sizeof("Achim"   ) - 1; break;
-                        case RTLOGGRPFLAGS_SANDER:      pszGroup = "Sander"  ;  cch = sizeof("Sander"  ) - 1; break;
-                        case RTLOGGRPFLAGS_KLAUS:       pszGroup = "Klaus"   ;  cch = sizeof("Klaus"   ) - 1; break;
-                        case RTLOGGRPFLAGS_FRANK:       pszGroup = "Frank"   ;  cch = sizeof("Frank"   ) - 1; break;
-                        case RTLOGGRPFLAGS_BIRD:        pszGroup = "bird"    ;  cch = sizeof("bird"    ) - 1; break;
-                        case RTLOGGRPFLAGS_NONAME:      pszGroup = "noname"  ;  cch = sizeof("noname"  ) - 1; break;
+                        case RTLOGGRPFLAGS_WARN:        pszGroup = "warn"    ;  cch = sizeof("warn"    ) - 1; break;
                         default:                        pszGroup = "????????";  cch = sizeof("????????") - 1; break;
                     }
                     psz = rtLogStPNCpyPad(psz, pszGroup, 16, 8);

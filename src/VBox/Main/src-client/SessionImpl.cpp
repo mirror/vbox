@@ -546,7 +546,7 @@ HRESULT Session::uninitialize()
     }
     else
     {
-        LogWarningThisFunc(("UNEXPECTED uninitialization!\n"));
+        Log1WarningThisFunc(("UNEXPECTED uninitialization!\n"));
         rc = autoCaller.rc();
     }
 

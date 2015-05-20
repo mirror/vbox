@@ -760,9 +760,7 @@ HRESULT Machine::i_registeredInit()
 
         /* fetch the current error info */
         mData->mAccessError = com::ErrorInfo();
-        LogWarning(("Machine {%RTuuid} is inaccessible! [%ls]\n",
-                    mData->mUuid.raw(),
-                    mData->mAccessError.getText().raw()));
+        Log1Warning(("Machine {%RTuuid} is inaccessible! [%ls]\n", mData->mUuid.raw(), mData->mAccessError.getText().raw()));
 
         /* rollback all changes */
         i_rollback(false /* aNotify */);
@@ -837,12 +835,12 @@ void Machine::uninit()
          * after we return from this method (it expects the Machine instance is
          * still valid). We'll call it ourselves below.
          */
-        LogWarningThisFunc(("Session machine is not NULL (%p), the direct session is still open!\n",
-                            (SessionMachine*)mData->mSession.mMachine));
+        Log1WarningThisFunc(("Session machine is not NULL (%p), the direct session is still open!\n",
+                             (SessionMachine*)mData->mSession.mMachine));
 
         if (Global::IsOnlineOrTransient(mData->mMachineState))
         {
-            LogWarningThisFunc(("Setting state to Aborted!\n"));
+            Log1WarningThisFunc(("Setting state to Aborted!\n"));
             /* set machine state using SessionMachine reimplementation */
             static_cast<Machine*>(mData->mSession.mMachine)->i_setMachineState(MachineState_Aborted);
         }
@@ -873,7 +871,7 @@ void Machine::uninit()
     // has machine been modified?
     if (mData->flModifications)
     {
-        LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
+        Log1WarningThisFunc(("Discarding unsaved settings changes!\n"));
         i_rollback(false /* aNotify */);
     }
 
@@ -4973,8 +4971,7 @@ HRESULT Machine::setExtraData(const com::Utf8Str &aKey, const com::Utf8Str &aVal
         {
             const char *sep = error.isEmpty() ? "" : ": ";
             CBSTR err = error.raw();
-            LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
-                            sep, err));
+            Log1WarningFunc(("Someone vetoed! Change refused%s%ls\n", sep, err));
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%s' to '%s'%s%ls"),
                             aKey.c_str(),
@@ -12193,8 +12190,7 @@ void Machine::i_registerMetrics(PerformanceCollector *aCollector, Machine *aMach
     /* Guest metrics collector */
     mCollectorGuest = new pm::CollectorGuest(aMachine, pid);
     aCollector->registerGuest(mCollectorGuest);
-    LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
-                this, __PRETTY_FUNCTION__, mCollectorGuest));
+    Log7(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n", this, __PRETTY_FUNCTION__, mCollectorGuest));
 
     /* Create sub metrics */
     pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/CPU/Load/User",
@@ -12545,8 +12541,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      */
     i_unregisterMetrics(mParent->i_performanceCollector(), mPeer);
     /* The guest must be unregistered after its metrics (@bugref{5949}). */
-    LogAleksey(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n",
-                this, __PRETTY_FUNCTION__, mCollectorGuest));
+    Log7(("{%p} " LOG_FN_FMT ": mCollectorGuest=%p\n", this, __PRETTY_FUNCTION__, mCollectorGuest));
     if (mCollectorGuest)
     {
         mParent->i_performanceCollector()->unregisterGuest(mCollectorGuest);
@@ -12557,8 +12552,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
     if (aReason == Uninit::Abnormal)
     {
-        LogWarningThisFunc(("ABNORMAL client termination! (wasBusy=%d)\n",
-                             Global::IsOnlineOrTransient(lastState)));
+        Log1WarningThisFunc(("ABNORMAL client termination! (wasBusy=%d)\n", Global::IsOnlineOrTransient(lastState)));
 
         /* reset the state to Aborted */
         if (mData->mMachineState != MachineState_Aborted)
@@ -12568,7 +12562,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     // any machine settings modified?
     if (mData->flModifications)
     {
-        LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
+        Log1WarningThisFunc(("Discarding unsaved settings changes!\n"));
         i_rollback(false /* aNotify */);
     }
 
@@ -12596,7 +12590,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
             HRESULT rc = (*it)->Uninitialize();
             LogFlowThisFunc(("  remoteControl->Uninitialize() returned %08X\n", rc));
             if (FAILED(rc))
-                LogWarningThisFunc(("Forgot to close the remote session?\n"));
+                Log1WarningThisFunc(("Forgot to close the remote session?\n"));
             ++it;
         }
         mData->mSession.mRemoteControls.clear();
@@ -12642,7 +12636,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
      */
 
     if ((aReason == Uninit::Unexpected))
-        LogWarningThisFunc(("Unexpected SessionMachine uninitialization!\n"));
+        Log1WarningThisFunc(("Unexpected SessionMachine uninitialization!\n"));
 
     if (aReason != Uninit::Normal)
     {

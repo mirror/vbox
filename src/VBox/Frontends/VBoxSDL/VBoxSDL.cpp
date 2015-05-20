@@ -2342,7 +2342,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
                     default:
                     {
-                        LogBird(("VBoxSDL: Unknown SDL event %d (pre)\n", event.type));
+                        Log8(("VBoxSDL: Unknown SDL event %d (pre)\n", event.type));
                         break;
                     }
                 }
@@ -2904,7 +2904,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
             default:
             {
-                LogBird(("unknown SDL event %d\n", event.type));
+                Log8(("unknown SDL event %d\n", event.type));
                 break;
             }
         }

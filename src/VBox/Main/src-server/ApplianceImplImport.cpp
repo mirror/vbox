@@ -3182,8 +3182,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                     if (!vsdeTargetHD)
                     {
                         /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
-                        LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
-                                    oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                        Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
+                                     oit->first.c_str(), vmNameEntry->strOvf.c_str()));
                         NOREF(vmNameEntry);
                         ++oit;
                         continue;
@@ -3404,8 +3404,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
              */
             if(cImportedDisks < avsdeHDs.size())
             {
-                LogWarning(("Not all disk images were imported for VM %s. Check OVF description file.",
-                            vmNameEntry->strOvf.c_str()));
+                Log1Warning(("Not all disk images were imported for VM %s. Check OVF description file.",
+                             vmNameEntry->strOvf.c_str()));
             }
 
             // only now that we're done with all disks, close the session
@@ -3688,8 +3688,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
             if (!vsdeTargetHD)
             {
                 /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
-                LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
-                            oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                Log1Warning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
+                             oit->first.c_str(), vmNameEntry->strOvf.c_str()));
                 NOREF(vmNameEntry);
                 ++oit;
                 continue;
@@ -3933,8 +3933,8 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
      */
     if(cImportedDisks < avsdeHDs.size())
     {
-        LogWarning(("Not all disk images were imported for VM %s. Check OVF description file.",
-                    vmNameEntry->strOvf.c_str()));
+        Log1Warning(("Not all disk images were imported for VM %s. Check OVF description file.",
+                     vmNameEntry->strOvf.c_str()));
     }
 
     /*

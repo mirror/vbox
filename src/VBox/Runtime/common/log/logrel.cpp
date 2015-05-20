@@ -80,7 +80,7 @@ RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstance(void)
 RT_EXPORT_SYMBOL(RTLogRelGetDefaultInstance);
 
 
-RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
 #ifdef IN_RC
     PRTLOGGER pLogger = &g_RelLogger;
@@ -91,10 +91,15 @@ RTDECL(PRTLOGGER)   RTLogRelGetDefaultInstanceEx(uint32_t fFlags, uint32_t iGrou
     {
         if (pLogger->fFlags & RTLOGFLAGS_DISABLED)
             pLogger = NULL;
-        else if (   iGroup != UINT32_MAX
+        else
+        {
+            uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
+            uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
+            if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
                      != (fFlags | RTLOGGRPFLAGS_ENABLED)))
             pLogger = NULL;
+        }
     }
     return pLogger;
 }

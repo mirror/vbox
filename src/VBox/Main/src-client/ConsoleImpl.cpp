@@ -8656,8 +8656,7 @@ HRESULT Console::i_attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs,
     }
     else
     {
-        LogWarningThisFunc(("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n",
-                            Address.c_str(), uuid.raw(), vrc));
+        Log1WarningThisFunc(("Failed to create proxy device for '%s' {%RTuuid} (%Rrc)\n", Address.c_str(), uuid.raw(), vrc));
 
         switch (vrc)
         {
@@ -9329,8 +9328,7 @@ void Console::i_processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC 
 
         if (cbDevList < e->oNext)
         {
-            LogWarningThisFunc(("cbDevList %d > oNext %d\n",
-                                 cbDevList, e->oNext));
+            Log1WarningThisFunc(("cbDevList %d > oNext %d\n", cbDevList, e->oNext));
             break;
         }
 

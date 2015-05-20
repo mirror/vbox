@@ -472,7 +472,7 @@ void VBoxNetBaseService::shutdown(void)
             {
                 rc = RTThreadWait(m->m_hThrRecv, 60000, NULL);
                 if (RT_FAILURE(rc))
-                    LogWarningFunc(("RTThreadWait(%RTthrd) -> %Rrc\n", m->m_hThrRecv, rc));
+                    Log1WarningFunc(("RTThreadWait(%RTthrd) -> %Rrc\n", m->m_hThrRecv, rc));
             }
             else
             {

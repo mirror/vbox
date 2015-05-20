@@ -232,7 +232,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTLogGetDefaultInstanceEx",              (void *)RTLogGetDefaultInstanceEx },
     { "RTLogLoggerExV",                         (void *)RTLogLoggerExV },
     { "RTLogPrintfV",                           (void *)RTLogPrintfV },
-    { "RTLogRelDefaultInstance",                (void *)RTLogRelGetDefaultInstance },
     { "RTLogRelGetDefaultInstance",             (void *)RTLogRelGetDefaultInstance },
     { "RTLogRelGetDefaultInstanceEx",           (void *)RTLogRelGetDefaultInstanceEx },
     { "RTLogSetDefaultInstanceThread",          (void *)RTLogSetDefaultInstanceThread },

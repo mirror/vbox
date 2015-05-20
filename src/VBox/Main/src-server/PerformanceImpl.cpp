@@ -581,8 +581,8 @@ void PerformanceCollector::registerBaseMetric(pm::BaseMetric *baseMetric)
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__,
-                (void *)baseMetric->getObject(), baseMetric->getName()));
+    Log7(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__,
+          (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back (baseMetric);
     //LogFlowThisFuncLeave();
 }
@@ -594,8 +594,7 @@ void PerformanceCollector::registerMetric(pm::Metric *metric)
     if (!SUCCEEDED(autoCaller.rc())) return;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__,
-                (void *)metric->getObject(), metric->getName()));
+    Log7(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back (metric);
     //LogFlowThisFuncLeave();
 }
@@ -617,8 +616,8 @@ void PerformanceCollector::unregisterBaseMetricsFor(const ComPtr<IUnknown> &aObj
             (*it)->unregister();
             ++n;
         }
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, name=%s, marked %d metrics\n",
-                this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str(), n));
+    Log7(("{%p} " LOG_FN_FMT ": obj=%p, name=%s, marked %d metrics\n",
+          this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str(), n));
     //LogFlowThisFuncLeave();
 }
 
@@ -631,8 +630,7 @@ void PerformanceCollector::unregisterMetricsFor(const ComPtr<IUnknown> &aObject,
     pm::Filter filter(name, aObject);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p, name=%s\n", this,
-                __PRETTY_FUNCTION__, (void *)aObject, name.c_str()));
+    Log7(("{%p} " LOG_FN_FMT ": obj=%p, name=%s\n", this, __PRETTY_FUNCTION__, (void *)aObject, name.c_str()));
     MetricList::iterator it;
     for (it = m.metrics.begin(); it != m.metrics.end();)
         if (filter.match((*it)->getObject(), (*it)->getName()))
@@ -755,13 +753,10 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
      * again to see if any base metrics are marked as unregistered.
      * Those should be destroyed now.
      */
-    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__,
-                toBeCollected.size()));
+    Log7(("{%p} " LOG_FN_FMT ": before remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
     toBeCollected.remove_if(std::mem_fun(&pm::BaseMetric::isUnregistered));
-    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__,
-                toBeCollected.size()));
-    LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__,
-                m.baseMetrics.size()));
+    Log7(("{%p} " LOG_FN_FMT ": after remove_if: toBeCollected.size()=%d\n", this, __PRETTY_FUNCTION__, toBeCollected.size()));
+    Log7(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
         if ((*it)->isUnregistered())
         {
@@ -770,8 +765,7 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
         }
         else
             ++it;
-    LogAleksey(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__,
-                m.baseMetrics.size()));
+    Log7(("{%p} " LOG_FN_FMT ": after remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     /*
      * Now when we have destroyed all base metrics that could
      * try to pull data from unregistered CollectorGuest objects

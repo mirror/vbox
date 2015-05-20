@@ -363,7 +363,7 @@ HRESULT SharedFolder::getAccessible(BOOL *aAccessible)
                                        m->strHostPath.c_str(),
                                        vrc);
 
-    LogWarningThisFunc(("m.lastAccessError=\"%s\"\n", m->strLastAccessError.c_str()));
+    Log1WarningThisFunc(("m.lastAccessError=\"%s\"\n", m->strLastAccessError.c_str()));
 
     *aAccessible = FALSE;
 

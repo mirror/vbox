@@ -179,9 +179,9 @@ struct vboxguest_module_info
     void* (*_RTMemTmpAllocTag)(size_t cb, const char *pszTag);
     void (*_RTMemTmpFree)(void *pv);
     PRTLOGGER(*_RTLogDefaultInstance)(void);
-    PRTLOGGER(*_RTLogDefaultInstanceEx)(uint32_t fFlags, uint32_t iGroup);
+    PRTLOGGER(*_RTLogDefaultInstanceEx)(uint32_t fFlagsAndGroup);
     PRTLOGGER(*_RTLogRelGetDefaultInstance)(void);
-    PRTLOGGER(*_RTLogRelGetDefaultInstanceEx)(uint32_t fFlags, uint32_t iGroup);
+    PRTLOGGER(*_RTLogRelGetDefaultInstanceEx)(uint32_t fFlagsAndGroup);
     int (*_RTErrConvertToErrno)(int iErr);
     int (*_VbgdCommonIoCtl)(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                  void *pvData, size_t cbData, size_t *pcbDataReturned);

@@ -1085,7 +1085,6 @@ static const REMPARMDESC g_aArgsRTAssertMsg2V[] =
 };
 static const REMPARMDESC g_aArgsRTLogGetDefaultInstanceEx[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsRTLogFlags[] =

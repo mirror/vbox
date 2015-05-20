@@ -363,8 +363,8 @@ void ConsoleVRDPServer::onMousePointerShapeChange(BOOL visible,
                                                   ULONG height,
                                                   ComSafeArrayIn(BYTE,inShape))
 {
-    LogSunlover(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n",
-                 visible, alpha, width, height, xHot, yHot));
+    Log9(("VRDPConsoleListener::OnMousePointerShapeChange: %d, %d, %lux%lu, @%lu,%lu\n",
+          visible, alpha, width, height, xHot, yHot));
 
     com::SafeArray <BYTE> aShape(ComSafeArrayInArg(inShape));
     if (aShape.size() == 0)

@@ -6443,9 +6443,8 @@ HRESULT Medium::i_queryInfo(bool fSetImageId, bool fSetParentId, AutoCaller &aut
     else
     {
         m->strLastAccessError = lastAccessError;
-        LogWarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
-                        location.c_str(), m->strLastAccessError.c_str(),
-                        rc, vrc));
+        Log1WarningFunc(("'%s' is not accessible (error='%s', rc=%Rhrc, vrc=%Rrc)\n",
+                         location.c_str(), m->strLastAccessError.c_str(), rc, vrc));
     }
 
     /* Set the proper state according to the result of the check */

@@ -614,7 +614,7 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         /* Signal exit event. */
         if (hEventToSignal != NIL_RTSEMEVENT)
         {
-            LogBird(("Signalling %#x\n", hEventToSignal));
+            Log8(("Signalling %#x\n", hEventToSignal));
             int rc = RTSemEventSignal(hEventToSignal);
             AssertRC(rc);
         }

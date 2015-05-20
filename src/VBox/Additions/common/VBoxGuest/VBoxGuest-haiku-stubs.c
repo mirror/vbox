@@ -330,9 +330,9 @@ RTDECL(PRTLOGGER) RTLogDefaultInstance(void)
 {
     return g_VBoxGuest->_RTLogDefaultInstance();
 }
-RTDECL(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlags, uint32_t iGroup)
+RTDECL(PRTLOGGER) RTLogDefaultInstanceEx(uint32_t fFlagsAndGroup)
 {
-    return g_VBoxGuest->_RTLogDefaultInstanceEx(fFlags, iGroup);
+    return g_VBoxGuest->_RTLogDefaultInstanceEx(fFlagsAndGroup);
 }
 RTDECL(PRTLOGGER) RTLogRelGetDefaultInstance(void)
 {

@@ -212,9 +212,9 @@ typedef SUPREQHDR *PSUPREQHDR;
  *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
- *          - Remove RTLogRelDefaultInstance export from SUPDrv.cpp.
+ *          - nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x00220001
+#define SUPDRV_IOC_VERSION                              0x00230000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
