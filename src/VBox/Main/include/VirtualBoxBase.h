@@ -350,7 +350,7 @@ public:
  */
 #define CheckComArgNotNull(arg) \
     do { \
-        if (RT_LIKELY((arg) == NULL)) \
+        if (RT_LIKELY((arg) != NULL)) \
         { /* likely */ }\
         else \
             return setError(E_INVALIDARG, tr("Argument %s is NULL"), #arg); \
