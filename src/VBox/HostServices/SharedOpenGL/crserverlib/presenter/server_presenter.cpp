@@ -3993,6 +3993,14 @@ int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip, uint32_t cbCm
             return 0;
         }
     }
+    else
+    {
+        /* Prior to r100476 guest WDDM driver was not supplying us with sub-rectangles
+         * data obtained in DxgkDdiPresentNew() callback. Therefore, in order to support backward compatibility,
+         * lets play in old way if no rectangles were supplied. */
+        const RTRECT *pRect = CrVrScrCompositorRectGet(&hFb->Compositor);
+        crServerDispatchVBoxTexPresent(hostId, idFb, 0, 0, 1, (const GLint*)pRect);
+    }
 
     return -1;
 }
