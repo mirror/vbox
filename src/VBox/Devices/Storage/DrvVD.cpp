@@ -2329,11 +2329,13 @@ static DECLCALLBACK(int) drvvdLoadDone(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
 *******************************************************************************/
 
 /**
- * @copydoc FNPDMDRVPOWEROFF
+ * Worker for the power off or destruct callback.
+ *
+ * @returns nothing.
+ * @param   pDrvIns    The driver instance.
  */
-static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
+static void drvvdPowerOffOrDestruct(PPDMDRVINS pDrvIns)
 {
-    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlowFunc(("\n"));
 
@@ -2364,6 +2366,15 @@ static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
         pThis->pDisk = NULL;
     }
     drvvdFreeImages(pThis);
+}
+
+/**
+ * @copydoc FNPDMDRVPOWEROFF
+ */
+static DECLCALLBACK(void) drvvdPowerOff(PPDMDRVINS pDrvIns)
+{
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+    drvvdPowerOffOrDestruct(pDrvIns);
 }
 
 /**
@@ -2470,6 +2481,12 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlowFunc(("\n"));
 
+    /*
+     * Make sure the block cache and disks are closed when this driver is
+     * destroyed. This method will get called without calling the power off
+     * callback first when we reconfigure the driver chain after a snapshot.
+     */
+    drvvdPowerOffOrDestruct(pDrvIns);
     if (pThis->MergeLock != NIL_RTSEMRW)
     {
         int rc = RTSemRWDestroy(pThis->MergeLock);
