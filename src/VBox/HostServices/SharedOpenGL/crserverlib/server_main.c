@@ -3552,14 +3552,14 @@ static DECLCALLBACK(int8_t) crVBoxCrCmdCmd(HVBOXCRCMDSVR hSvr, const VBOXCMDVBVA
         {
             const VBOXCMDVBVA_FLIP *pFlip;
 
-            if (cbCmd < sizeof (VBOXCMDVBVA_FLIP))
+            if (cbCmd < VBOXCMDVBVA_SIZEOF_FLIPSTRUCT_MIN)
             {
-                WARN(("invalid buffer size"));
+                WARN(("invalid buffer size (cbCmd(%u) < sizeof(VBOXCMDVBVA_FLIP)(%u))", cbCmd, sizeof(VBOXCMDVBVA_FLIP)));
                 return -1;
             }
 
             pFlip = (const VBOXCMDVBVA_FLIP*)pCmd;
-            return crVBoxServerCrCmdFlipProcess(pFlip);
+            return crVBoxServerCrCmdFlipProcess(pFlip, cbCmd);
         }
         case VBOXCMDVBVA_OPTYPE_BLT:
         {

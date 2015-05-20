@@ -3954,9 +3954,12 @@ int8_t crVBoxServerCrCmdBltProcess(const VBOXCMDVBVA_BLT_HDR *pCmd, uint32_t cbC
     }
 }
 
-int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
+int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip, uint32_t cbCmd)
 {
     uint32_t hostId;
+    const VBOXCMDVBVA_RECT *pPRects = pFlip->aRects;
+    uint32_t cRects;
+
     if (pFlip->Hdr.u8Flags & VBOXCMDVBVA_OPF_OPERAND1_ISID)
     {
         hostId = pFlip->src.u.id;
@@ -3980,9 +3983,18 @@ int8_t crVBoxServerCrCmdFlipProcess(const VBOXCMDVBVA_FLIP *pFlip)
         return 0;
     }
 
-    const RTRECT *pRect = CrVrScrCompositorRectGet(&hFb->Compositor);
-    crServerDispatchVBoxTexPresent(hostId, idFb, 0, 0, 1, (const GLint*)pRect);
-    return 0;
+    cRects = (cbCmd - VBOXCMDVBVA_SIZEOF_FLIPSTRUCT_MIN) / sizeof (VBOXCMDVBVA_RECT);
+    if (cRects > 0)
+    {
+        RTRECT *pRects = crVBoxServerCrCmdBltRecsUnpack(pPRects, cRects);
+        if (pRects)
+        {
+            crServerDispatchVBoxTexPresent(hostId, idFb, 0, 0, cRects, (const GLint*)pRects);
+            return 0;
+        }
+    }
+
+    return -1;
 }
 
 typedef struct CRSERVER_CLIENT_CALLOUT

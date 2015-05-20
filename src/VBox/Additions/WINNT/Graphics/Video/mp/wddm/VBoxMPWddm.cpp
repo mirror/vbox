@@ -6156,6 +6156,16 @@ DxgkDdiPresentNew(
         return STATUS_INVALID_PARAMETER;
     }
 
+#ifdef VBOX_WDDM_DUMP_REGIONS_ON_PRESENT
+    LogRel(("%s: [%ld, %ld, %ld, %ld] -> [%ld, %ld, %ld, %ld] (SubRectCnt=%u)\n",
+        pPresent->Flags.Blt ? "Blt" : (pPresent->Flags.Flip ? "Flip" : (pPresent->Flags.ColorFill ? "ColorFill" : "Unknown OP")),
+        pPresent->SrcRect.left, pPresent->SrcRect.top, pPresent->SrcRect.right, pPresent->SrcRect.bottom,
+        pPresent->DstRect.left, pPresent->DstRect.top, pPresent->DstRect.right, pPresent->DstRect.bottom,
+        pPresent->SubRectCnt));
+    for (unsigned int i = 0; i < pPresent->SubRectCnt; i++)
+        LogRel(("\tsub#%u = [%ld, %ld, %ld, %ld]\n", i, pPresent->pDstSubRects[i].left, pPresent->pDstSubRects[i].top, pPresent->pDstSubRects[i].right, pPresent->pDstSubRects[i].bottom));
+#endif
+
     if (pPresent->Flags.Blt)
     {
         Assert(pPresent->Flags.Value == 1); /* only Blt is set, we do not support anything else for now */
@@ -6294,7 +6304,8 @@ DxgkDdiPresentNew(
         }
 
         cbBuffer = VBOXWDDM_DUMMY_DMABUFFER_SIZE;
-        cbPrivateData = sizeof (*pFlip);
+        paRects = pFlip->aRects;
+        cbPrivateData = VBOXCMDVBVA_SIZEOF_FLIPSTRUCT_MIN;
     }
     else if (pPresent->Flags.ColorFill)
     {
