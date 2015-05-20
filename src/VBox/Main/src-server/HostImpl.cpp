@@ -403,6 +403,8 @@ HRESULT Host::init(VirtualBox *aParent)
                 LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
                 m->fVTSupported = m->fNestedPagingSupported = false;
             }
+            rc = SUPR3Term(false);
+            AssertRC(rc);
         }
         else
             m->fRecheckVTSupported = true; /* Try again later when the driver is loaded. */
@@ -1053,6 +1055,9 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
                     LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
                     m->fVTSupported = m->fNestedPagingSupported = true;
                 }
+                rc = SUPR3Term(false);
+                AssertRC(rc);
+                m->fRecheckVTSupported = false; /* No need to try again, we cached everything. */
             }
 
             alock.acquire();
