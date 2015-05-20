@@ -32,10 +32,8 @@
 # undef DEBUG /* Warning: disables RT_STRICT */
 # undef RT_STRICT
 # define LOG_DISABLED
-  /** @todo RTLOGREL_DISABLED */
+# define RTLOG_REL_DISABLED
 # include <iprt/log.h>
-# undef LogRelIt
-# define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
 #endif
 
 #include <sys/fcntl.h>
