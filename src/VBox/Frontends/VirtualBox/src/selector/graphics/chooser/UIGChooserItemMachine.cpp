@@ -541,6 +541,13 @@ void UIGChooserItemMachine::removeAll(const QString &strId)
     if (id() != strId)
         return;
 
+    /* Exclude itself from the current items: */
+    if (model()->currentItems().contains(this))
+        model()->removeFromCurrentItems(this);
+    /* Move the focus item to the first available current after that: */
+    if (model()->focusItem() == this && !model()->currentItems().isEmpty())
+        model()->setFocusItem(model()->currentItems().first());
+
     /* Remove item: */
     delete this;
 }
