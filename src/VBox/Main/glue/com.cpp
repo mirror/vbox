@@ -403,19 +403,4 @@ const nsID *SafeGUIDArray::nsIDRef::Empty = (const nsID *)Guid::Empty.raw();
 
 #endif /* (VBOX_WITH_XPCOM) */
 
-/**
- * Used by ComPtr and friends to log details about reference counting.
- * @param pcszFormat
- */
-void LogRef(const char *pcszFormat, ...)
-{
-    char *pszNewMsg;
-    va_list args;
-    va_start(args, pcszFormat);
-    RTStrAPrintfV(&pszNewMsg, pcszFormat, args);
-    LogDJ((pszNewMsg));
-    RTStrFree(pszNewMsg);
-    va_end(args);
-}
-
 } /* namespace com */
