@@ -33,6 +33,12 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** For expanding symbol in slickedit and other products tagging and
+ *  crossreferencing IEM symbols. */
+#ifndef IEM_STATIC
+# define IEM_STATIC static
+#endif
+
 /** @def IEM_VERIFICATION_MODE_FULL
  * Shorthand for:
  *    defined(IEM_VERIFICATION_MODE) && !defined(IEM_VERIFICATION_MODE_MINIMAL)
