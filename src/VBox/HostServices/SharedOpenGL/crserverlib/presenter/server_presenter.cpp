@@ -195,6 +195,10 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
     CR_TEXDATA *pEnteredTex = NULL;
     PCR_BLITTER pEnteredBlitter = NULL;
 
+    /* Scaled texture size and rect calculated for every new "entered" texture. */
+    uint32_t width = 0, height = 0;
+    RTRECT ScaledSrcRect = {0};
+
     VBOXVR_SCR_COMPOSITOR_CONST_ITERATOR Iter;
     int32_t srcWidth = pSrcRectSize->cx;
     int32_t srcHeight = pSrcRectSize->cy;
@@ -226,10 +230,6 @@ static int crFbBltGetContentsScaledDirect(HCR_FRAMEBUFFER hFb, const RTRECTSIZE 
         RTPOINT ScaledEntryPoint;
         ScaledEntryPoint.x = CR_FLOAT_RCAST(int32_t, strX * CrVrScrCompositorEntryRectGet(pEntry)->xLeft) + pDstRect->xLeft;
         ScaledEntryPoint.y = CR_FLOAT_RCAST(int32_t, strY * CrVrScrCompositorEntryRectGet(pEntry)->yTop) + pDstRect->yTop;
-
-        /* Scaled texture size and rect. */
-        uint32_t width = 0, height = 0;
-        RTRECT ScaledSrcRect = {0};
 
         CR_TEXDATA *pTex = CrVrScrCompositorEntryTexGet(pEntry);
 
