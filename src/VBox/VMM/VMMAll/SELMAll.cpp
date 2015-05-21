@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <VBox/vmm/vmm.h>
 #include <iprt/x86.h>
+#include <iprt/string.h>
 
 #include "SELMInline.h"
 
