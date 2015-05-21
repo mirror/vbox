@@ -4565,13 +4565,13 @@ bool VBoxGlobal::switchToMachine(CMachine &machine)
 
 bool VBoxGlobal::launchMachine(CMachine &machine, LaunchMode enmLaunchMode /* = LaunchMode_Default */)
 {
+    /* Switch to machine window(s) if possible: */
+    if (   machine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
+        && machine.CanShowConsoleWindow())
+        return VBoxGlobal::switchToMachine(machine);
+
     if (enmLaunchMode != LaunchMode_Separate)
     {
-        /* Switch to machine window(s) if possible: */
-        if (   machine.GetSessionState() == KSessionState_Locked /* precondition for CanShowConsoleWindow() */
-            && machine.CanShowConsoleWindow())
-            return VBoxGlobal::switchToMachine(machine);
-
         /* Make sure machine-state is one of required: */
         KMachineState state = machine.GetState(); NOREF(state);
         AssertMsg(   state == KMachineState_PoweredOff
