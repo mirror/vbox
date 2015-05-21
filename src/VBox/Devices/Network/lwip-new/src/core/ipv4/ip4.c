@@ -878,7 +878,7 @@ err_t ip_output_if_opt(struct pbuf *p, ip_addr_t *src, ip_addr_t *dest,
 #if ENABLE_LOOPBACK
   if (ip_addr_cmp(dest, &netif->ip_addr)) {
     /* Packet to self, enqueue it for loopback */
-    LWIP_DEBUGF(IP_DEBUG, ("netif_loop_output()"));
+    LWIP_DEBUGF(IP_DEBUG, ("netif_loop_output()\n"));
     return netif_loop_output(netif, p);
   }
 #if LWIP_IGMP
@@ -894,7 +894,7 @@ err_t ip_output_if_opt(struct pbuf *p, ip_addr_t *src, ip_addr_t *dest,
   }
 #endif /* IP_FRAG */
 
-  LWIP_DEBUGF(IP_DEBUG, ("netif->output()"));
+  LWIP_DEBUGF(IP_DEBUG, ("netif->output()\n"));
   return netif->output(netif, p, dest);
 }
 
