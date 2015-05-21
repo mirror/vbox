@@ -160,11 +160,14 @@ void UIGChooserItemMachine::enumerateMachineItems(const QList<UIGChooserItem*> &
         {
             /* Get the iterated machine-item: */
             UIGChooserItemMachine *pMachineItem = pItem->toMachineItem();
-            /* Skip if this item is already enumerated but we need unique: */
+            /* Skip if exactly this item is already enumerated: */
+            if (ol.contains(pMachineItem))
+                continue;
+            /* Skip if item with same ID is already enumerated but we need unique: */
             if ((iEnumerationFlags & UIGChooserItemMachineEnumerationFlag_Unique) &&
                 contains(ol, pMachineItem))
                 continue;
-            /* Skip if ths item is accessible and we no need it: */
+            /* Skip if this item is accessible and we no need it: */
             if ((iEnumerationFlags & UIGChooserItemMachineEnumerationFlag_Inaccessible) &&
                 pMachineItem->accessible())
                 continue;
