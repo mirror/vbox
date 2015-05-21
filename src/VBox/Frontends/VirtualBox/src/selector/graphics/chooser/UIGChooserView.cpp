@@ -30,7 +30,7 @@
 
 
 UIGChooserView::UIGChooserView(QWidget *pParent)
-    : QGraphicsView(pParent)
+    : QIGraphicsView(pParent)
     , m_iMinimumWidthHint(0)
     , m_iMinimumHeightHint(0)
 {
@@ -90,7 +90,7 @@ void UIGChooserView::sltFocusChanged(UIGChooserItem *pFocusItem)
 void UIGChooserView::resizeEvent(QResizeEvent *pEvent)
 {
     /* Call to base-class: */
-    QGraphicsView::resizeEvent(pEvent);
+    QIGraphicsView::resizeEvent(pEvent);
     /* Notify listeners: */
     emit sigResized();
 }
