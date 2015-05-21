@@ -2592,11 +2592,18 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
 #endif
                                 }
 
+#if 0
+                                /* Allocation from the CPU invisible second segment does not
+                                 * work apparently and actually fails on Vista.
+                                 *
+                                 * @todo Find out what exactly is wrong.
+                                 */
 //                                if (pAllocInfo->hostID)
                                 {
                                     pAllocationInfo->SupportedReadSegmentSet = 2;
                                     pAllocationInfo->SupportedWriteSegmentSet = 2;
                                 }
+#endif
                             }
                             break;
                         case VBOXWDDM_ALLOC_TYPE_STD_SHADOWSURFACE:
