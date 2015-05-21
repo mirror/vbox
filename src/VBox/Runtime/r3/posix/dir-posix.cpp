@@ -440,15 +440,15 @@ static void rtDirSetDummyInfo(PRTFSOBJINFO pInfo, RTDIRENTRYTYPE enmType)
     switch (enmType)
     {
         default:
-        case RTDIRENTRYTYPE_UNKNOWN:    pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL;
-        case RTDIRENTRYTYPE_FIFO:       pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FIFO;
-        case RTDIRENTRYTYPE_DEV_CHAR:   pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_DEV_CHAR;
-        case RTDIRENTRYTYPE_DIRECTORY:  pInfo->Attr.fMode = RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY;
-        case RTDIRENTRYTYPE_DEV_BLOCK:  pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_DEV_BLOCK;
-        case RTDIRENTRYTYPE_FILE:       pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE;
-        case RTDIRENTRYTYPE_SYMLINK:    pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_SYMLINK;
-        case RTDIRENTRYTYPE_SOCKET:     pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_SOCKET;
-        case RTDIRENTRYTYPE_WHITEOUT:   pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_WHITEOUT;
+        case RTDIRENTRYTYPE_UNKNOWN:    pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL;                       break;
+        case RTDIRENTRYTYPE_FIFO:       pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FIFO;      break;
+        case RTDIRENTRYTYPE_DEV_CHAR:   pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_DEV_CHAR;  break;
+        case RTDIRENTRYTYPE_DIRECTORY:  pInfo->Attr.fMode = RTFS_DOS_DIRECTORY | RTFS_TYPE_DIRECTORY; break;
+        case RTDIRENTRYTYPE_DEV_BLOCK:  pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_DEV_BLOCK; break;
+        case RTDIRENTRYTYPE_FILE:       pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_FILE;      break;
+        case RTDIRENTRYTYPE_SYMLINK:    pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_SYMLINK;   break;
+        case RTDIRENTRYTYPE_SOCKET:     pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_SOCKET;    break;
+        case RTDIRENTRYTYPE_WHITEOUT:   pInfo->Attr.fMode = RTFS_DOS_NT_NORMAL | RTFS_TYPE_WHITEOUT;  break;
     }
 }
 
