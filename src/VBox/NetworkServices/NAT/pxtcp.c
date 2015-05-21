@@ -1543,6 +1543,8 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
     }
 
     if (forwarded > 0) {
+        DPRINTF2(("forward_outbound: pxtcp %p, pcb %p: sent %d bytes\n",
+                  (void *)pxtcp, (void *)pxtcp->pcb, (int)forwarded));
         tcp_recved(pxtcp->pcb, (u16_t)forwarded);
     }
 
@@ -1567,6 +1569,8 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
             pbuf_header(q, -(s16_t)qoff);
         }
         pxtcp->unsent = q;
+        DPRINTF2(("forward_outbound: pxtcp %p, pcb %p: kept %d bytes\n",
+                  (void *)pxtcp, (void *)pxtcp->pcb, (int)q->tot_len));
 
         /*
          * Have sendmsg() failed?
@@ -1579,6 +1583,9 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
          */
         if (sockerr != 0 && sockerr != ECONNRESET) {
             struct tcp_pcb *pcb = pxtcp->pcb;
+            DPRINTF2(("forward_outbound: pxtcp %p, pcb %p: %R[sockerr]\n",
+                      (void *)pxtcp, (void *)pcb, sockerr));
+
             pxtcp_pcb_dissociate(pxtcp);
 
             tcp_abort(pcb);
