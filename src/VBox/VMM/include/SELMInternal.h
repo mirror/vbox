@@ -229,16 +229,23 @@ typedef struct SELM
 
 RT_C_DECLS_BEGIN
 
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCGuestGDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCGuestLDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCGuestTSSWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCShadowGDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCShadowLDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) selmRCShadowTSSWritePfHandler;
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  selmGuestGDTWriteHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCGuestGDTWritePfHandler;
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  selmGuestLDTWriteHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCGuestLDTWritePfHandler;
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  selmGuestTSSWriteHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCGuestTSSWritePfHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCShadowGDTWritePfHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCShadowLDTWritePfHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    selmRCShadowTSSWritePfHandler;
 
-void           selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
+void            selmRCSyncGdtSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry);
+void            selmRCGuestGdtPreWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestGdt, uint32_t cbWrite, PCPUMCTX pCtx);
+VBOXSTRICTRC    selmRCGuestGdtPostWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestTss, uint32_t cbWrite, PCPUMCTX pCtx);
+VBOXSTRICTRC    selmRCGuestTssPostWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestTss, uint32_t cbWrite);
+void            selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
 #ifdef VBOX_WITH_RAW_RING1
-void           selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
+void            selmSetRing2Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp);
 #endif
 
 RT_C_DECLS_END

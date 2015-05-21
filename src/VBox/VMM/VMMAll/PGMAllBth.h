@@ -718,22 +718,23 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     &&  pvFault - pCur->Core.Key < pCur->cb
                     &&  uErr & X86_TRAP_PF_RW)
                 {
+                    VBOXSTRICTRC rcStrict;
 #   ifdef IN_RC
                     STAM_PROFILE_START(&pCur->Stat, h);
                     PPGMVIRTHANDLERTYPEINT pCurType = PGMVIRTANDLER_GET_TYPE(pVM, pCur);
                     void *pvUser = pCur->CTX_SUFF(pvUser);
                     pgmUnlock(pVM);
-                    rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
-                                                          pvFault - pCur->Core.Key, pvUser);
+                    rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
+                                                                pvFault - pCur->Core.Key, pvUser);
                     pgmLock(pVM);
                     STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else
                     AssertFailed();
-                    rc = VINF_EM_RAW_EMULATE_INSTR; /* can't happen with VMX */
+                    rcStrict = VINF_EM_RAW_EMULATE_INSTR; /* can't happen with VMX */
 #   endif
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eHandlersMapping);
                     STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2Mapping; });
-                    return rc;
+                    return VBOXSTRICTRC_TODO(rcStrict);
                 }
 
                 /*
@@ -815,19 +816,20 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 &&  (    uErr & X86_TRAP_PF_RW
                      ||  pCurType->enmKind != PGMVIRTHANDLERKIND_WRITE ) )
             {
+                VBOXSTRICTRC rcStrict;
 #   ifdef IN_RC
                 STAM_PROFILE_START(&pCur->Stat, h);
                 void *pvUser = pCur->CTX_SUFF(pvUser);
                 pgmUnlock(pVM);
-                rc = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
-                                                      pvFault - pCur->Core.Key, pvUser);
+                rcStrict = pCurType->CTX_SUFF(pfnPfHandler)(pVM, pVCpu, uErr, pRegFrame, pvFault, pCur->Core.Key,
+                                                            pvFault - pCur->Core.Key, pvUser);
                 pgmLock(pVM);
                 STAM_PROFILE_STOP(&pCur->Stat, h);
 #   else
-                rc = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
+                rcStrict = VINF_EM_RAW_EMULATE_INSTR; /** @todo for VMX */
 #   endif
                 STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZTrap0eTime2HndVirt; });
-                return rc;
+                return VBOXSTRICTRC_TODO(rcStrict);
             }
         }
     }

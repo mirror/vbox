@@ -24,6 +24,22 @@
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pgm.h>
 
+RT_C_DECLS_BEGIN
+
+
+/** @defgroup grp_trpm_int   Internals
+ * @ingroup grp_trpm
+ * @internal
+ * @{
+ */
+
+
+#ifdef VBOX_WITH_RAW_MODE
+/** Enable or disable tracking of Guest's IDT. */
+# define TRPM_TRACK_GUEST_IDT_CHANGES
+/** Enable or disable tracking of Shadow IDT. */
+# define TRPM_TRACK_SHADOW_IDT_CHANGES
+#endif
 
 
 /** Enable to allow trap forwarding in GC. */
@@ -34,14 +50,6 @@
 /** First interrupt handler. Used for validating input. */
 #define TRPM_HANDLER_INT_BASE  0x20
 
-RT_C_DECLS_BEGIN
-
-
-/** @defgroup grp_trpm_int   Internals
- * @ingroup grp_trpm
- * @internal
- * @{
- */
 
 /** @name   TRPMGCTrapIn* flags.
  * The lower bits are offsets into the CPUMCTXCORE structure.
@@ -248,8 +256,9 @@ typedef TRPMCPU *PTRPMCPU;
 #pragma pack()
 
 
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) trpmRCGuestIDTWritePfHandler;
-DECLEXPORT(FNPGMRCVIRTPFHANDLER) trpmRCShadowIDTWritePfHandler;
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  trpmGuestIDTWriteHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    trpmRCGuestIDTWritePfHandler;
+DECLEXPORT(FNPGMRCVIRTPFHANDLER)    trpmRCShadowIDTWritePfHandler;
 
 /**
  * Clear guest trap/interrupt gate handler

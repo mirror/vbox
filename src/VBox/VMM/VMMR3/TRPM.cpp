@@ -423,13 +423,6 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 };
 
 
-#ifdef VBOX_WITH_RAW_MODE
-/** Enable or disable tracking of Guest's IDT. */
-# define TRPM_TRACK_GUEST_IDT_CHANGES
-/** Enable or disable tracking of Shadow IDT. */
-# define TRPM_TRACK_SHADOW_IDT_CHANGES
-#endif
-
 /** TRPM saved state version. */
 #define TRPM_SAVED_STATE_VERSION        9
 #define TRPM_SAVED_STATE_VERSION_UNI    8   /* SMP support bumped the version */
@@ -440,9 +433,6 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 *******************************************************************************/
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-#ifdef TRPM_TRACK_GUEST_IDT_CHANGES
-static FNPGMR3VIRTHANDLER trpmR3GuestIDTWriteHandler;
-#endif
 
 
 /**
@@ -522,7 +512,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
         AssertRCReturn(rc, rc);
 # endif
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
-                                             NULL /*pfnInvalidateR3*/, trpmR3GuestIDTWriteHandler,
+                                             NULL /*pfnInvalidateR3*/, trpmGuestIDTWriteHandler,
                                              "trpmRCGuestIDTWritePfHandler",
                                              "Guest IDT write access handler", &pVM->trpm.s.hGuestIdtWriteHandlerType);
         AssertRCReturn(rc, rc);
@@ -1168,40 +1158,6 @@ VMMR3DECL(int) TRPMR3SyncIDT(PVM pVM, PVMCPU pVCpu)
     STAM_PROFILE_STOP(&pVM->trpm.s.StatSyncIDT, a);
     return VINF_SUCCESS;
 }
-
-
-# ifdef TRPM_TRACK_GUEST_IDT_CHANGES
-/**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       The origin of this call.
- * @param   pvUser          User argument.
- */
-static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("trpmR3GuestIDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
-    NOREF(pvPtr); NOREF(pvUser); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
-    Assert(!HMIsEnabled(pVM));
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_TRPM_SYNC_IDT);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-# endif /* TRPM_TRACK_GUEST_IDT_CHANGES */
 
 
 /**

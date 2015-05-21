@@ -94,9 +94,6 @@
 static DECLCALLBACK(int)  selmR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(int)  selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM);
-static FNPGMR3VIRTHANDLER selmR3GuestGDTWriteHandler;
-static FNPGMR3VIRTHANDLER selmR3GuestLDTWriteHandler;
-static FNPGMR3VIRTHANDLER selmR3GuestTSSWriteHandler;
 static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -221,17 +218,17 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
         AssertRCReturn(rc, rc);
 # endif
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
-                                             NULL /*pfnInvalidateR3*/, selmR3GuestGDTWriteHandler,
+                                             NULL /*pfnInvalidateR3*/, selmGuestGDTWriteHandler,
                                              "selmRCGuestGDTWritePfHandler",
                                              "Guest GDT write access handler", &pVM->selm.s.hGuestGdtWriteHandlerType);
         AssertRCReturn(rc, rc);
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
-                                             NULL /*pfnInvalidateR3*/, selmR3GuestLDTWriteHandler,
+                                             NULL /*pfnInvalidateR3*/, selmGuestLDTWriteHandler,
                                              "selmRCGuestLDTWritePfHandler",
                                              "Guest LDT write access handler", &pVM->selm.s.hGuestLdtWriteHandlerType);
         AssertRCReturn(rc, rc);
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
-                                             NULL /*pfnInvalidateR3*/, selmR3GuestTSSWriteHandler,
+                                             NULL /*pfnInvalidateR3*/, selmGuestTSSWriteHandler,
                                              "selmRCGuestTSSWritePfHandler",
                                              "Guest TSS write access handler", &pVM->selm.s.hGuestTssWriteHandlerType);
         AssertRCReturn(rc, rc);
@@ -1478,111 +1475,6 @@ VMMR3DECL(VBOXSTRICTRC) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
     return rcStrict;
 }
 
-#endif /*VBOX_WITH_RAW_MODE*/
-
-#ifdef SELM_TRACK_GUEST_GDT_CHANGES
-/**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          Unused.
- */
-static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("selmR3GuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
-    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-#endif
-
-#ifdef SELM_TRACK_GUEST_LDT_CHANGES
-/**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          Unused.
- */
-static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("selmR3GuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
-    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-#endif
-
-
-#ifdef SELM_TRACK_GUEST_TSS_CHANGES
-/**
- * \#PF Handler callback for virtual access handler ranges.
- *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          Unused.
- */
-static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
-{
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
-    Log(("selmR3GuestTSSWriteHandler: write %.*Rhxs to %RGv size %d\n", RT_MIN(8, cbBuf), pvBuf, GCPtr, cbBuf));
-    NOREF(pvBuf); NOREF(GCPtr); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser); NOREF(pvPtr);
-
-    /** @todo This can be optimized by checking for the ESP0 offset and tracking TR
-     *        reloads in REM (setting VM_FF_SELM_SYNC_TSS if TR is reloaded). We
-     *        should probably also deregister the virtual handler if TR.base/size
-     *        changes while we're in REM. */
-
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-    return VINF_PGM_HANDLER_DO_DEFAULT;
-}
-#endif
-
-#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Synchronize the shadowed fields in the TSS.
@@ -1834,7 +1726,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
 {
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     PVMCPU pVCpu = VMMGetCpu(pVM);
     AssertReturn(!HMIsEnabled(pVM), VERR_SELM_HM_IPE);
 
@@ -1955,9 +1847,9 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         pLDTE++;
     }
 
-#else  /* !VBOX_STRICT */
+# else  /* !VBOX_STRICT */
     NOREF(pVM);
-#endif /* !VBOX_STRICT */
+# endif /* !VBOX_STRICT */
 
     return VINF_SUCCESS;
 }
@@ -1972,7 +1864,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
  */
 VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 {
-#if defined(VBOX_STRICT) && defined(SELM_TRACK_GUEST_TSS_CHANGES)
+# if defined(VBOX_STRICT) && defined(SELM_TRACK_GUEST_TSS_CHANGES)
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS))
@@ -2098,10 +1990,10 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
 
     return true;
 
-#else  /* !VBOX_STRICT */
+# else  /* !VBOX_STRICT */
     NOREF(pVM);
     return true;
-#endif /* !VBOX_STRICT */
+# endif /* !VBOX_STRICT */
 }
 
 

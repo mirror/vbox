@@ -281,9 +281,9 @@ inline RTRCPTR CSAMResolveBranch(PDISCPUSTATE pCpu, RTRCPTR pBranchInstrGC)
 #endif
 }
 
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER)  csamCodePageWriteHandler;
 RT_C_DECLS_BEGIN
 DECLEXPORT(FNPGMRCVIRTPFHANDLER)    csamRCCodePageWritePfHandler;
 RT_C_DECLS_END
-PGM_ALL_CB2_DECL(FNPGMR3VIRTHANDLER)  csamCodePageWriteHandler;
 
 #endif

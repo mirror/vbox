@@ -714,7 +714,7 @@ typedef struct PGMVIRTANDLERTYPEINT
     /** Pointer to the R3 callback function for invalidation. */
     R3PTRTYPE(PFNPGMR3VIRTINVALIDATE)   pfnInvalidateR3;
     /** Pointer to R3 callback function. */
-    R3PTRTYPE(PFNPGMR3VIRTHANDLER)      pfnHandlerR3;
+    R3PTRTYPE(PFNPGMVIRTHANDLER)        pfnHandlerR3;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
 } PGMVIRTHANDLERTYPEINT;

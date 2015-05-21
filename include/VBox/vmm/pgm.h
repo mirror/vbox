@@ -175,6 +175,7 @@ typedef enum PGMACCESSTYPE
  * @param   pvFault     The fault address (cr2).
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      User argument.
+ * @thread  EMT(pVCpu)
  */
 typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMRZPHYSPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                         RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
@@ -183,10 +184,10 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
 
 
 /**
- * \#PF Handler callback for physical access handler ranges (MMIO among others) in HC.
+ * Access handler callback for physical access handler ranges.
  *
  * The handler can not raise any faults, it's mainly for monitoring write access
- * to certain pages.
+ * to certain pages (like MMIO).
  *
  * @returns Strict VBox status code in ring-0 and raw-mode context, in ring-3
  *          the only supported informational status code is
@@ -206,6 +207,7 @@ typedef FNPGMRZPHYSPFHANDLER *PFNPGMRZPHYSPFHANDLER;
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       The origin of this call.
  * @param   pvUser          User argument.
+ * @thread  EMT(pVCpu)
  */
 typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMPHYSHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                                                     PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
@@ -229,12 +231,12 @@ typedef enum PGMVIRTHANDLERKIND
 } PGMVIRTHANDLERKIND;
 
 /**
- * \#PF Handler callback for virtual access handler ranges, RC.
+ * \#PF handler callback for virtual access handler ranges, RC.
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.
  *
- * @returns VBox status code (appropriate for GC return).
+ * @returns Strict VBox status code (appropriate for raw-mode).
  * @param   pVM             VM Handle.
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
@@ -245,14 +247,15 @@ typedef enum PGMVIRTHANDLERKIND
  * @param   offRange        The offset of the access into this range.
  *                          (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser          User argument.
+ * @thread  EMT(pVCpu)
  */
-typedef DECLCALLBACK(int) FNPGMRCVIRTPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                               RTGCPTR pvRange, uintptr_t offRange, void *pvUser);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMRCVIRTPFHANDLER(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                        RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser);
 /** Pointer to PGM access callback. */
 typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
 
 /**
- * \#PF Handler callback for virtual access handler ranges, R3.
+ * Access handler callback for virtual access handler ranges.
  *
  * Important to realize that a physical page in a range can have aliases, and
  * for ALL and WRITE handlers these will also trigger.
@@ -269,11 +272,12 @@ typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       Who is calling.
  * @param   pvUser          User argument.
+ * @thread  EMT(pVCpu)
  */
-typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                             PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPGMVIRTHANDLER(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser);
 /** Pointer to PGM access callback. */
-typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
+typedef FNPGMVIRTHANDLER *PFNPGMVIRTHANDLER;
 
 /**
  * \#PF Handler callback for invalidation of virtual access handler ranges.
@@ -283,6 +287,7 @@ typedef FNPGMR3VIRTHANDLER *PFNPGMR3VIRTHANDLER;
  *                          calling EMT.
  * @param   GCPtr           The virtual address the guest has changed.
  * @param   pvUser          User argument.
+ * @thread  EMT(pVCpu)
  */
 typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser);
 /** Pointer to PGM invalidation callback. */
@@ -612,12 +617,12 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
                                                      PPGMPHYSHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                       PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
-                                                      PFNPGMR3VIRTHANDLER pfnHandlerR3,
+                                                      PFNPGMVIRTHANDLER pfnHandlerR3,
                                                       RCPTRTYPE(FNPGMRCVIRTPFHANDLER) pfnPfHandlerRC,
                                                       const char *pszDesc, PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
-                                                    PFNPGMR3VIRTHANDLER pfnHandlerR3,
+                                                    PFNPGMVIRTHANDLER pfnHandlerR3,
                                                     const char *pszPfHandlerRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHANDLERTYPE hType, RTGCPTR GCPtr,

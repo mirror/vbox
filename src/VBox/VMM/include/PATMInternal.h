@@ -686,6 +686,6 @@ void patmR3DbgTerm(PVM pVM);
 void patmR3DbgReset(PVM pVM);
 void patmR3DbgAddPatch(PVM pVM, PPATMPATCHREC pPatchRec);
 
-PGM_ALL_CB2_DECL(FNPGMR3VIRTHANDLER) patmVirtPageHandler;
+PGM_ALL_CB2_DECL(FNPGMVIRTHANDLER) patmVirtPageHandler;
 
 #endif

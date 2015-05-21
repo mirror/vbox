@@ -47,23 +47,24 @@ static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "F
 
 
 #ifdef SELM_TRACK_GUEST_GDT_CHANGES
+
 /**
  * Synchronizes one GDT entry (guest -> shadow).
  *
  * @returns VBox strict status code (appropriate for trap handling and GC
  *          return).
+ * @retval  VINF_SUCCESS
  * @retval  VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
  * @retval  VINF_SELM_SYNC_GDT
- * @retval  VINF_EM_RESCHEDULE_REM
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current virtual CPU.
- * @param   pRegFrame   Trap register frame.
+ * @param   pCtx        CPU context for the current CPU.
  * @param   iGDTEntry   The GDT entry to sync.
  *
  * @remarks Caller checks that this isn't the LDT entry!
  */
-static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
+static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, unsigned iGDTEntry)
 {
     Log2(("GDT %04X LDTR=%04X\n", iGDTEntry, CPUMGetGuestLDTR(pVCpu)));
 
@@ -89,7 +90,8 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
         {
             VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3); /* paranoia */
-            return VINF_EM_RESCHEDULE_REM;
+            /* return VINF_EM_RESCHEDULE_REM; - bad idea if we're in a patch. */
+            return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
         }
     }
 
@@ -135,7 +137,6 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
      * Detect and mark stale registers.
      */
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    PCPUMCTX     pCtx     = CPUMQueryGuestCtxPtr(pVCpu); Assert(CPUMCTX2CORE(pCtx) == pRegFrame);
     PCPUMSELREG  paSReg   = CPUMCTX_FIRST_SREG(pCtx);
     for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
     {
@@ -179,10 +180,10 @@ static VBOXSTRICTRC selmRCSyncGDTEntry(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       The current virtual CPU.
- * @param   pRegFrame   Trap register frame.
+ * @param   pCtx        The CPU context.
  * @param   iGDTEntry   The GDT entry to sync.
  */
-static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, unsigned iGDTEntry)
+void selmRCSyncGdtSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, unsigned iGDTEntry)
 {
     /*
      * Validate the offset.
@@ -199,7 +200,6 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
      */
     PCX86DESC       pDesc    = &pVM->selm.s.CTX_SUFF(paGdt)[iGDTEntry];
     uint32_t        uCpl     = CPUMGetGuestCPL(pVCpu);
-    PCPUMCTX        pCtx     = CPUMQueryGuestCtxPtr(pVCpu); Assert(CPUMCTX2CORE(pCtx) == pRegFrame);
     PCPUMSELREG     paSReg   = CPUMCTX_FIRST_SREG(pCtx);
     for (unsigned iSReg = 0; iSReg <= X86_SREG_COUNT; iSReg++)
     {
@@ -218,26 +218,93 @@ static void selmRCSyncGDTSegRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
             }
         }
     }
-
 }
 
 
 /**
- * \#PF Virtual Handler callback for Guest write access to the Guest's own GDT.
+ * Syncs hidden selector register parts before emulating a GDT change.
  *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * This is shared between the selmRCGuestGDTWritePfHandler and
+ * selmGuestGDTWriteHandler.
+ *
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   offGuestTss     The offset into the TSS of the write that was made.
+ * @param   cbWrite         The number of bytes written.
+ * @param   pCtx            The current CPU context.
  */
-DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+void selmRCGuestGdtPreWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestGdt, uint32_t cbWrite, PCPUMCTX pCtx)
+{
+    uint32_t       iGdt      = offGuestGdt >> X86_SEL_SHIFT;
+    uint32_t const iGdtLast  = (offGuestGdt + cbWrite - 1) >> X86_SEL_SHIFT;
+    do
+    {
+        selmRCSyncGdtSegRegs(pVM, pVCpu, pCtx, iGdt);
+        iGdt++;
+    } while (iGdt <= iGdtLast);
+}
+
+
+/**
+ * Checks the guest GDT for changes after a write has been emulated.
+ *
+ *
+ * This is shared between the selmRCGuestGDTWritePfHandler and
+ * selmGuestGDTWriteHandler.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VINF_SELM_SYNC_GDT
+ * @retval  VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT
+ *
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   offGuestTss     The offset into the TSS of the write that was made.
+ * @param   cbWrite         The number of bytes written.
+ * @param   pCtx            The current CPU context.
+ */
+VBOXSTRICTRC selmRCGuestGdtPostWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestGdt, uint32_t cbWrite, PCPUMCTX pCtx)
+{
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
+    /* Check if the LDT was in any way affected.  Do not sync the
+       shadow GDT if that's the case or we might have trouble in
+       the world switcher (or so they say). */
+    uint32_t const iGdtFirst = offGuestGdt >> X86_SEL_SHIFT;
+    uint32_t const iGdtLast  = (offGuestGdt + cbWrite - 1) >> X86_SEL_SHIFT;
+    uint32_t const iLdt      = CPUMGetGuestLDTR(pVCpu) >> X86_SEL_SHIFT;
+    if (iGdtFirst <= iLdt && iGdtLast >= iLdt)
+    {
+        Log(("LDTR selector change -> fall back to HC!!\n"));
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+        rcStrict = VINF_SELM_SYNC_GDT;
+        /** @todo Implement correct stale LDT handling.  */
+    }
+    else
+    {
+        /* Sync the shadow GDT and continue provided the update didn't
+           cause any segment registers to go stale in any way. */
+        uint32_t iGdt = iGdtFirst;
+        do
+        {
+            VBOXSTRICTRC rcStrict2 = selmRCSyncGDTEntry(pVM, pVCpu, pCtx, iGdt);
+            Assert(rcStrict2 == VINF_SUCCESS || rcStrict2 == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT || rcStrict2 == VINF_SELM_SYNC_GDT);
+            if (rcStrict == VINF_SUCCESS)
+                rcStrict = rcStrict2;
+            iGdt++;
+        } while (   iGdt <= iGdtLast
+                 && (rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT));
+        if (rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT)
+            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
+    }
+    return rcStrict;
+}
+
+
+/**
+ * @callback_method_impl{FNPGMVIRTHANDLER, Guest GDT write access \#PF handler }
+ */
+DECLEXPORT(VBOXSTRICTRC) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                      RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogFlow(("selmRCGuestGDTWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
     NOREF(pvRange); NOREF(pvUser);
@@ -245,10 +312,7 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
     /*
      * Check if any selectors might be affected.
      */
-    unsigned const iGDTE1 = offRange >> X86_SEL_SHIFT;
-    selmRCSyncGDTSegRegs(pVM, pVCpu, pRegFrame, iGDTE1);
-    if (((offRange + 8) >> X86_SEL_SHIFT) != iGDTE1)
-        selmRCSyncGDTSegRegs(pVM, pVCpu, pRegFrame, iGDTE1 + 1);
+    selmRCGuestGdtPreWriteCheck(pVM, pVCpu, offRange, 8 /*cbWrite*/, CPUMCTX_FROM_CORE(pRegFrame));
 
     /*
      * Attempt to emulate the instruction and sync the affected entries.
@@ -256,52 +320,7 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
     uint32_t cb;
     VBOXSTRICTRC rcStrict = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
     if (RT_SUCCESS(rcStrict) && cb)
-    {
-        /* Check if the LDT was in any way affected.  Do not sync the
-           shadow GDT if that's the case or we might have trouble in
-           the world switcher (or so they say). */
-        unsigned const iLdt   = CPUMGetGuestLDTR(pVCpu) >> X86_SEL_SHIFT;
-        unsigned const iGDTE2 = (offRange + cb - 1) >> X86_SEL_SHIFT;
-        if (   iGDTE1 == iLdt
-            || iGDTE2 == iLdt)
-        {
-            Log(("LDTR selector change -> fall back to HC!!\n"));
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
-            rcStrict = VINF_SELM_SYNC_GDT;
-            /** @todo Implement correct stale LDT handling.  */
-        }
-        else
-        {
-            /* Sync the shadow GDT and continue provided the update didn't
-               cause any segment registers to go stale in any way. */
-            VBOXSTRICTRC rcStrict2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE1);
-            if (rcStrict2 == VINF_SUCCESS || rcStrict2 == VINF_EM_RESCHEDULE_REM)
-            {
-                if (rcStrict == VINF_SUCCESS)
-                    rcStrict = rcStrict2;
-
-                if (iGDTE1 != iGDTE2)
-                {
-                    rcStrict2 = selmRCSyncGDTEntry(pVM, pVCpu, pRegFrame, iGDTE2);
-                    if (rcStrict == VINF_SUCCESS)
-                        rcStrict = rcStrict2;
-                }
-
-                if (rcStrict2 == VINF_SUCCESS || rcStrict2 == VINF_EM_RESCHEDULE_REM)
-                {
-                    /* VINF_EM_RESCHEDULE_REM - bad idea if we're in a patch. */
-                    if (rcStrict2 == VINF_EM_RESCHEDULE_REM)
-                        rcStrict = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
-                    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
-                    return VBOXSTRICTRC_TODO(rcStrict);
-                }
-            }
-
-            /* sync failed, return to ring-3 and resync the GDT. */
-            if (rcStrict == VINF_SUCCESS || RT_FAILURE(rcStrict2))
-                rcStrict = rcStrict2;
-        }
-    }
+        rcStrict = selmRCGuestGdtPostWriteCheck(pVM, pVCpu, offRange, cb, CPUMCTX_FROM_CORE(pRegFrame));
     else
     {
         Assert(RT_FAILURE(rcStrict));
@@ -310,32 +329,23 @@ DECLEXPORT(int) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
 
-    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
-    return VBOXSTRICTRC_TODO(rcStrict);
+    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
+    else
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
+    return rcStrict;
 }
-#endif /* SELM_TRACK_GUEST_GDT_CHANGES */
 
+#endif /* SELM_TRACK_GUEST_GDT_CHANGES */
 
 #ifdef SELM_TRACK_GUEST_LDT_CHANGES
 /**
- * \#PF Virtual Handler callback for Guest write access to the Guest's own LDT.
- *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode   CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Unused.
+ * @callback_method_impl{FNPGMVIRTHANDLER, Guest LDT write access \#PF handler }
  */
-DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                      RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
-    /** @todo To be implemented. */
+    /** @todo To be implemented... or not. */
     ////LogCom(("selmRCGuestLDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
 
@@ -347,6 +357,7 @@ DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
 
 
 #ifdef SELM_TRACK_GUEST_TSS_CHANGES
+
 /**
  * Read wrapper used by selmRCGuestTSSWriteHandler.
  * @returns VBox status code (appropriate for trap handling and GC return).
@@ -355,10 +366,8 @@ DECLEXPORT(int) selmRCGuestLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
  * @param   pvSrc       Guest address to read from.
  * @param   cb          The number of bytes to read.
  */
-DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_t cb)
+DECLINLINE(int) selmRCReadTssBits(PVM pVM, PVMCPU pVCpu, void *pvDst, void const *pvSrc, size_t cb)
 {
-    PVMCPU pVCpu = VMMGetCpu0(pVM);
-
     int rc = MMGCRamRead(pVM, pvDst, (void *)pvSrc, cb);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -374,23 +383,140 @@ DECLINLINE(int) selmRCReadTssBits(PVM pVM, void *pvDst, void const *pvSrc, size_
     return rc;
 }
 
+
 /**
- * \#PF Virtual Handler callback for Guest write access to the Guest's own current TSS.
+ * Checks the guest TSS for changes after a write has been emulated.
  *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   pvRange     The base address of the handled virtual range.
- * @param   offRange    The offset of the access into this range.
- *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
- * @param   pvUser      Unused.
+ * This is shared between the
+ *
+ * @returns Strict VBox status code appropriate for raw-mode returns.
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pVCpu           Pointer to the cross context virtual CPU structure.
+ * @param   offGuestTss     The offset into the TSS of the write that was made.
+ * @param   cbWrite         The number of bytes written.
  */
-DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+VBOXSTRICTRC selmRCGuestTssPostWriteCheck(PVM pVM, PVMCPU pVCpu, uint32_t offGuestTss, uint32_t cbWrite)
+{
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
+
+    /*
+     * If it's on the same page as the esp0 and ss0 fields or actually one of them,
+     * then check if any of these has changed.
+     */
+/** @todo just read the darn fields and put them on the stack. */
+    PCVBOXTSS pGuestTss = (PVBOXTSS)(uintptr_t)pVM->selm.s.GCPtrGuestTss;
+    if (   PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS(&pGuestTss->padding_ss0)
+        && PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS((uint8_t *)pGuestTss + offGuestTss)
+        && (   pGuestTss->esp0 !=  pVM->selm.s.Tss.esp1
+            || pGuestTss->ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
+       )
+    {
+        Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+             (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)pGuestTss->ss0, (RTGCPTR)pGuestTss->esp0));
+        pVM->selm.s.Tss.esp1 = pGuestTss->esp0;
+        pVM->selm.s.Tss.ss1  = pGuestTss->ss0 | 1;
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
+    }
+# ifdef VBOX_WITH_RAW_RING1
+    else if (   EMIsRawRing1Enabled(pVM)
+             && PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS(&pGuestTss->padding_ss1)
+             && PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS((uint8_t *)pGuestTss + offGuestTss)
+             && (   pGuestTss->esp1 !=  pVM->selm.s.Tss.esp2
+                 || pGuestTss->ss1  != ((pVM->selm.s.Tss.ss2 & ~2) | 1)) /* undo raw-r1 */
+            )
+    {
+        Log(("selmRCGuestTSSWritePfHandler: R1 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
+             (RTSEL)((pVM->selm.s.Tss.ss2 & ~2) | 1), (RTGCPTR)pVM->selm.s.Tss.esp2, (RTSEL)pGuestTss->ss1, (RTGCPTR)pGuestTss->esp1));
+        pVM->selm.s.Tss.esp2 = pGuestTss->esp1;
+        pVM->selm.s.Tss.ss2  = (pGuestTss->ss1 & ~1) | 2;
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
+    }
+# endif
+    /* Handle misaligned TSS in a safe manner (just in case). */
+    else if (   offGuestTss >= RT_UOFFSETOF(VBOXTSS, esp0)
+             && offGuestTss < RT_UOFFSETOF(VBOXTSS, padding_ss0))
+    {
+        struct
+        {
+            uint32_t esp0;
+            uint16_t ss0;
+            uint16_t padding_ss0;
+        } s;
+        AssertCompileSize(s, 8);
+        rcStrict = selmRCReadTssBits(pVM, pVCpu, &s, &pGuestTss->esp0, sizeof(s));
+        if (   rcStrict == VINF_SUCCESS
+            && (    s.esp0 !=  pVM->selm.s.Tss.esp1
+                ||  s.ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
+           )
+        {
+            Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv [x-page]\n",
+                 (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)s.ss0, (RTGCPTR)s.esp0));
+            pVM->selm.s.Tss.esp1 = s.esp0;
+            pVM->selm.s.Tss.ss1  = s.ss0 | 1;
+            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
+        }
+    }
+
+    /*
+     * If VME is enabled we need to check if the interrupt redirection bitmap
+     * needs updating.
+     */
+    if (   offGuestTss >= RT_UOFFSETOF(VBOXTSS, offIoBitmap)
+        && (CPUMGetGuestCR4(pVCpu) & X86_CR4_VME))
+    {
+        if (offGuestTss - RT_UOFFSETOF(VBOXTSS, offIoBitmap) < sizeof(pGuestTss->offIoBitmap))
+        {
+            uint16_t offIoBitmap = pGuestTss->offIoBitmap;
+            if (offIoBitmap != pVM->selm.s.offGuestIoBitmap)
+            {
+                Log(("TSS offIoBitmap changed: old=%#x new=%#x -> resync in ring-3\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            }
+            else
+                Log(("TSS offIoBitmap: old=%#x new=%#x [unchanged]\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
+        }
+        else
+        {
+            /** @todo not sure how the partial case is handled; probably not allowed */
+            uint32_t offIntRedirBitmap = pVM->selm.s.offGuestIoBitmap - sizeof(pVM->selm.s.Tss.IntRedirBitmap);
+            if (   offIntRedirBitmap <= offGuestTss
+                && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) >= offGuestTss + cbWrite
+                && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
+            {
+                Log(("TSS IntRedirBitmap Changed: offIoBitmap=%x offIntRedirBitmap=%x cbTSS=%x offGuestTss=%x cbWrite=%x\n",
+                     pVM->selm.s.offGuestIoBitmap, offIntRedirBitmap, pVM->selm.s.cbGuestTss, offGuestTss, cbWrite));
+
+                /** @todo only update the changed part. */
+                for (uint32_t i = 0; rcStrict == VINF_SUCCESS && i < sizeof(pVM->selm.s.Tss.IntRedirBitmap) / 8; i++)
+                    rcStrict = selmRCReadTssBits(pVM, pVCpu, &pVM->selm.s.Tss.IntRedirBitmap[i * 8],
+                                                 (uint8_t *)pGuestTss + offIntRedirBitmap + i * 8, 8);
+                STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
+            }
+        }
+    }
+
+    /*
+     * Return to ring-3 for a full resync if any of the above fails... (?)
+     */
+    if (rcStrict != VINF_SUCCESS)
+    {
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+        if (RT_SUCCESS(rcStrict))
+            rcStrict = VINF_SUCCESS;
+    }
+
+    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandled);
+    return rcStrict;
+}
+
+
+/**
+ * @callback_method_impl{FNPGMVIRTHANDLER, Guest TSS write access \#PF handler}
+ */
+DECLEXPORT(VBOXSTRICTRC) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                      RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogFlow(("selmRCGuestTSSWritePfHandler errcode=%x fault=%RGv offRange=%08x\n", (uint32_t)uErrorCode, pvFault, offRange));
     NOREF(pvRange); NOREF(pvUser);
@@ -402,120 +528,7 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
     VBOXSTRICTRC rcStrict = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
     if (   RT_SUCCESS(rcStrict)
         && cb)
-    {
-        rcStrict = VINF_SUCCESS;
-
-        /*
-         * If it's on the same page as the esp0 and ss0 fields or actually one of them,
-         * then check if any of these has changed.
-         */
-        PCVBOXTSS pGuestTss = (PVBOXTSS)(uintptr_t)pVM->selm.s.GCPtrGuestTss;
-        if (    PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS(&pGuestTss->padding_ss0)
-            &&  PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS((uint8_t *)pGuestTss + offRange)
-            &&  (    pGuestTss->esp0 !=  pVM->selm.s.Tss.esp1
-                 ||  pGuestTss->ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
-           )
-        {
-            Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
-                 (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)pGuestTss->ss0, (RTGCPTR)pGuestTss->esp0));
-            pVM->selm.s.Tss.esp1 = pGuestTss->esp0;
-            pVM->selm.s.Tss.ss1  = pGuestTss->ss0 | 1;
-            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
-        }
-#ifdef VBOX_WITH_RAW_RING1
-        else if (    EMIsRawRing1Enabled(pVM)
-                 &&  PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS(&pGuestTss->padding_ss1)
-                 &&  PAGE_ADDRESS(&pGuestTss->esp1) == PAGE_ADDRESS((uint8_t *)pGuestTss + offRange)
-                 &&  (    pGuestTss->esp1 !=  pVM->selm.s.Tss.esp2
-                      ||  pGuestTss->ss1  != ((pVM->selm.s.Tss.ss2 & ~2) | 1)) /* undo raw-r1 */
-                )
-        {
-            Log(("selmRCGuestTSSWritePfHandler: R1 stack: %RTsel:%RGv -> %RTsel:%RGv\n",
-                 (RTSEL)((pVM->selm.s.Tss.ss2 & ~2) | 1), (RTGCPTR)pVM->selm.s.Tss.esp2, (RTSEL)pGuestTss->ss1, (RTGCPTR)pGuestTss->esp1));
-            pVM->selm.s.Tss.esp2 = pGuestTss->esp1;
-            pVM->selm.s.Tss.ss2  = (pGuestTss->ss1 & ~1) | 2;
-            STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
-        }
-#endif
-        /* Handle misaligned TSS in a safe manner (just in case). */
-        else if (   offRange >= RT_UOFFSETOF(VBOXTSS, esp0)
-                 && offRange < RT_UOFFSETOF(VBOXTSS, padding_ss0))
-        {
-            struct
-            {
-                uint32_t esp0;
-                uint16_t ss0;
-                uint16_t padding_ss0;
-            } s;
-            AssertCompileSize(s, 8);
-            rcStrict = selmRCReadTssBits(pVM, &s, &pGuestTss->esp0, sizeof(s));
-            if (    rcStrict == VINF_SUCCESS
-                &&  (    s.esp0 !=  pVM->selm.s.Tss.esp1
-                     ||  s.ss0  != (pVM->selm.s.Tss.ss1 & ~1)) /* undo raw-r0 */
-               )
-            {
-                Log(("selmRCGuestTSSWritePfHandler: R0 stack: %RTsel:%RGv -> %RTsel:%RGv [x-page]\n",
-                     (RTSEL)(pVM->selm.s.Tss.ss1 & ~1), (RTGCPTR)pVM->selm.s.Tss.esp1, (RTSEL)s.ss0, (RTGCPTR)s.esp0));
-                pVM->selm.s.Tss.esp1 = s.esp0;
-                pVM->selm.s.Tss.ss1  = s.ss0 | 1;
-                STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandledChanged);
-            }
-        }
-
-        /*
-         * If VME is enabled we need to check if the interrupt redirection bitmap
-         * needs updating.
-         */
-        if (    offRange >= RT_UOFFSETOF(VBOXTSS, offIoBitmap)
-            &&  (CPUMGetGuestCR4(pVCpu) & X86_CR4_VME))
-        {
-            if (offRange - RT_UOFFSETOF(VBOXTSS, offIoBitmap) < sizeof(pGuestTss->offIoBitmap))
-            {
-                uint16_t offIoBitmap = pGuestTss->offIoBitmap;
-                if (offIoBitmap != pVM->selm.s.offGuestIoBitmap)
-                {
-                    Log(("TSS offIoBitmap changed: old=%#x new=%#x -> resync in ring-3\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-                    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-                }
-                else
-                    Log(("TSS offIoBitmap: old=%#x new=%#x [unchanged]\n", pVM->selm.s.offGuestIoBitmap, offIoBitmap));
-            }
-            else
-            {
-                /** @todo not sure how the partial case is handled; probably not allowed */
-                uint32_t offIntRedirBitmap = pVM->selm.s.offGuestIoBitmap - sizeof(pVM->selm.s.Tss.IntRedirBitmap);
-                if (   offIntRedirBitmap <= offRange
-                    && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) >= offRange + cb
-                    && offIntRedirBitmap + sizeof(pVM->selm.s.Tss.IntRedirBitmap) <= pVM->selm.s.cbGuestTss)
-                {
-                    Log(("TSS IntRedirBitmap Changed: offIoBitmap=%x offIntRedirBitmap=%x cbTSS=%x offRange=%x cb=%x\n",
-                         pVM->selm.s.offGuestIoBitmap, offIntRedirBitmap, pVM->selm.s.cbGuestTss, offRange, cb));
-
-                    /** @todo only update the changed part. */
-                    for (uint32_t i = 0; i < sizeof(pVM->selm.s.Tss.IntRedirBitmap) / 8; i++)
-                    {
-                        rcStrict = selmRCReadTssBits(pVM, &pVM->selm.s.Tss.IntRedirBitmap[i * 8],
-                                                     (uint8_t *)pGuestTss + offIntRedirBitmap + i * 8, 8);
-                        if (rcStrict != VINF_SUCCESS)
-                            break;
-                    }
-                    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSRedir);
-                }
-            }
-        }
-
-        /* Return to ring-3 for a full resync if any of the above fails... (?) */
-        if (rcStrict != VINF_SUCCESS)
-        {
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-            if (RT_SUCCESS(rcStrict))
-                rcStrict = VINF_SUCCESS;
-        }
-
-        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestTSSHandled);
-    }
+        rcStrict = selmRCGuestTssPostWriteCheck(pVM, pVCpu, offRange, cb);
     else
     {
         AssertMsg(RT_FAILURE(rcStrict), ("cb=%u rcStrict=%#x\n", cb, VBOXSTRICTRC_VAL(rcStrict)));
@@ -524,10 +537,10 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
         if (rcStrict == VERR_EM_INTERPRETER)
             rcStrict = VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT;
     }
-    return VBOXSTRICTRC_TODO(rcStrict);
+    return rcStrict;
 }
-#endif /* SELM_TRACK_GUEST_TSS_CHANGES */
 
+#endif /* SELM_TRACK_GUEST_TSS_CHANGES */
 
 #ifdef SELM_TRACK_SHADOW_GDT_CHANGES
 /**
@@ -545,8 +558,8 @@ DECLEXPORT(int) selmRCGuestTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowGDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);
@@ -571,8 +584,8 @@ DECLEXPORT(int) selmRCShadowGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uE
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowLDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     Assert(pvFault - (uintptr_t)pVM->selm.s.pvLdtRC < (unsigned)(65536U + PAGE_SIZE));
@@ -598,8 +611,8 @@ DECLEXPORT(int) selmRCShadowLDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uE
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) selmRCShadowTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) selmRCShadowTSSWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: selmRCShadowTSSWritePfHandler: eip=%08X pvFault=%RGv pvRange=%RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(pVM); NOREF(pVCpu); NOREF(uErrorCode); NOREF(pRegFrame); NOREF(pvFault); NOREF(pvRange); NOREF(offRange); NOREF(pvUser);

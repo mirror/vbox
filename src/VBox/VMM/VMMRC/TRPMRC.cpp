@@ -104,8 +104,8 @@ VMMRCDECL(void) TRPMGCHyperReturnToHost(PVM pVM, int rc)
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                             RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) trpmRCGuestIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                      RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     uint16_t    cbIDT;
     RTGCPTR     GCPtrIDT    = (RTGCPTR)CPUMGetGuestIDTR(pVCpu, &cbIDT);
@@ -170,8 +170,8 @@ DECLEXPORT(int) trpmRCGuestIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uEr
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
  * @param   pvUser      Unused.
  */
-DECLEXPORT(int) trpmRCShadowIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault,
-                                              RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
+DECLEXPORT(VBOXSTRICTRC) trpmRCShadowIDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
+                                                       RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange, void *pvUser)
 {
     LogRel(("FATAL ERROR: trpmRCShadowIDTWritePfHandler: eip=%08X pvFault=%RGv pvRange=%08RGv\r\n", pRegFrame->eip, pvFault, pvRange));
     NOREF(uErrorCode); NOREF(offRange); NOREF(pvUser);

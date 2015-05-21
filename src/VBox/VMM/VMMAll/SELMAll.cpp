@@ -47,6 +47,100 @@ static char const g_aszSRegNms[X86_SREG_COUNT][4] = { "ES", "CS", "SS", "DS", "F
 #endif
 
 
+#ifndef IN_RING0
+
+# ifdef SELM_TRACK_GUEST_GDT_CHANGES
+/**
+ * @callback_method_impl{FNPGMVIRTHANDLER}
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+selmGuestGDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Log(("selmGuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
+
+#  ifdef IN_RING3
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+
+#  else  /* IN_RC: */
+    /*
+     * Execute the write, doing necessary pre and post shadow GDT checks.
+     */
+    PCPUMCTX pCtx        = CPUMQueryGuestCtxPtr(pVCpu);
+    uint32_t offGuestGdt = pCtx->gdtr.pGdt - GCPtr;
+    selmRCGuestGdtPreWriteCheck(pVM, pVCpu, offGuestGdt, cbBuf, pCtx);
+    memcpy(pvBuf, pvPtr, cbBuf);
+    VBOXSTRICTRC rcStrict = selmRCGuestGdtPostWriteCheck(pVM, pVCpu, offGuestGdt, cbBuf, pCtx);
+    if (!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT))
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTHandled);
+    else
+        STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestGDTUnhandled);
+    return rcStrict;
+#  endif
+}
+# endif
+
+
+# ifdef SELM_TRACK_GUEST_LDT_CHANGES
+/**
+ * @callback_method_impl{FNPGMVIRTHANDLER}
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+selmGuestLDTWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Log(("selmGuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(enmOrigin); NOREF(pvUser);
+
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_LDT);
+#  ifdef IN_RING3
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+#  else
+    STAM_COUNTER_INC(&pVM->selm.s.StatRCWriteGuestLDT);
+    return VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT;
+#  endif
+}
+# endif
+
+
+# ifdef SELM_TRACK_GUEST_TSS_CHANGES
+/**
+ * @callback_method_impl{FNPGMVIRTHANDLER}
+ */
+PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+selmGuestTSSWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                         PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+{
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Log(("selmGuestTSSWriteHandler: write %.*Rhxs to %RGv size %d\n", RT_MIN(8, cbBuf), pvBuf, GCPtr, cbBuf));
+    NOREF(pvBuf); NOREF(GCPtr); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser); NOREF(pvPtr);
+
+#  ifdef IN_RING3
+    /** @todo This can be optimized by checking for the ESP0 offset and tracking TR
+     *        reloads in REM (setting VM_FF_SELM_SYNC_TSS if TR is reloaded). We
+     *        should probably also deregister the virtual handler if TR.base/size
+     *        changes while we're in REM.  May also share
+     *        selmRCGuestTssPostWriteCheck code. */
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_TSS);
+    return VINF_PGM_HANDLER_DO_DEFAULT;
+
+#  else  /* IN_RC */
+    /*
+     * Do the write and check if anything relevant changed.
+     */
+    Assert(pVM->selm.s.GCPtrGuestTss != (uintptr_t)RTRCPTR_MAX);
+    memcpy(pvPtr, pvBuf, cbBuf);
+    return selmRCGuestTssPostWriteCheck(pVM, pVCpu, GCPtr - pVM->selm.s.GCPtrGuestTss, cbBuf);
+#  endif
+}
+# endif
+
+#endif /* IN_RING0 */
+
 
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 /**
