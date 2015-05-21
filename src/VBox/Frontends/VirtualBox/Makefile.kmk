@@ -922,14 +922,13 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 # Precompiled header - non-functional atm.
 #
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
- VirtualBox_DEFS          += VBOX_WITH_PRECOMPILED_HEADERS
+ VirtualBox_DEFS           += VBOX_WITH_PRECOMPILED_HEADERS
+ VirtualBox_INCS           <= $(VirtualBoxPch_0_OUTDIR)/src
  if1of ($(KBUILD_TARGET),win)
- # VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
- # VirtualBox_INCS          <= $(VirtualBoxPch_0_OUTDIR)/src
- # VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/precomp.h.gch
+  VirtualBox_CXXFLAGS      += -Yuprecomp.h -Fp$$(VirtualBoxPch_0_OUTDIR)/src/precomp.pch
+  VirtualBox_INTERMEDIATES += $(VirtualBoxPch_0_OUTDIR)/src/precomp.pch
  else
   VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
-  VirtualBox_INCS          <= $(VirtualBoxPch_0_OUTDIR)/src
   $(foreach x,$(filter-out include/COMWrappers.cpp, $(filter %.cpp, \
   	$(VirtualBox_SOURCES) \
 	$(VirtualBox_SOURCES.$(KBUILD_TARGET)) \
@@ -946,12 +945,14 @@ endif
  VirtualBoxPch_EXTENDS = VirtualBox
  VirtualBoxPch_LDTOOL   = VirtualBoxPchLinker
  VirtualBoxPch_INSTTYPE = none
- VirtualBoxPch_INTERMEDIATES   = $(filter-out %.h.gch, $(VirtualBox_INTERMEDIATES))
  VirtualBoxPch_NAME            = VirtualBoxPch
  if1of ($(KBUILD_TARGET),win)
+  VirtualBoxPch_INTERMEDIATES  = $(filter-out %.pch, $(VirtualBox_INTERMEDIATES))
   VirtualBoxPch_SOURCES        = src/precomp.cpp
-  VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS))
+  VirtualBoxPch_CXXFLAGS       = $(filter-out -Yu%, $(VirtualBox_CXXFLAGS)) -Ycprecomp.h -Yd -FR\tmp\foo.sbr
+  $$(VirtualBoxPch_0_OUTDIR)/src/precomp.pch: $$(VirtualBoxPch_0_OUTDIR)/src/precomp.obj
  else
+  VirtualBoxPch_INTERMEDIATES  = $(filter-out %.h.gch, $(VirtualBox_INTERMEDIATES))
   VirtualBoxPch_SOURCES        = src/precomp.h
   VirtualBoxPch_CXXFLAGS       = $(filter-out -Winvalid-pch -fpch-preprocess, $(VirtualBox_CXXFLAGS)) -x c++-header
   VirtualBoxPch_CXXOBJSUFF     = .h.gch
