@@ -898,6 +898,10 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     /* Update action appearance: */
     updateActionsAppearance();
 
+    /* Refresh details-pane even if there are no items selected: */
+    if (fRefreshDetails)
+        m_pDetails->setItems(currentItems());
+
     /* If currently selected VM item is accessible: */
     if (pItem && pItem->accessible())
     {
@@ -907,8 +911,6 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
         else
             m_pContainer->setCurrentWidget(m_pDetails);
 
-        if (fRefreshDetails)
-            m_pDetails->setItems(currentItems());
         if (fRefreshSnapshots)
         {
             m_pVMDesktop->updateSnapshots(pItem, pItem->machine());
