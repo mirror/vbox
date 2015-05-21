@@ -74,18 +74,10 @@ VMMDECL(VBOXSTRICTRC) pgmPhysPfHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCUI
 
 
 /**
- * \#PF Handler callback for Guest ROM range write access.
- * We simply ignore the writes or fall back to the recompiler if we don't support the instruction.
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF access handler callback for guest ROM range write access.}
  *
- * @returns VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument. Pointer to the ROM range structure.
+ * @remarks The @a pvUser argument points to the PGMROMRANGE.
  */
 DECLEXPORT(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                   RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
@@ -152,19 +144,10 @@ DECLEXPORT(VBOXSTRICTRC) pgmPhysRomWritePfHandler(PVM pVM, PVMCPU pVCpu, RTGCUIN
 
 
 /**
- * Access handler callback for ROM write accesses.
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Access handler callback for ROM write accesses.}
  *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
+ * @remarks The @a pvUser argument points to the PGMROMRANGE.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)
 pgmPhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
@@ -240,6 +223,12 @@ pgmPhysRomWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, voi
                 {
                     memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
                     pRomPage->LiveSave.fWrittenTo = true;
+
+                    AssertMsg(    rc == VINF_SUCCESS
+                              || (  rc == VINF_PGM_SYNC_CR3
+                                  && VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+                              , ("%Rrc\n", rc));
+                    rc = VINF_SUCCESS;
                 }
 
                 pgmUnlock(pVM);
@@ -2250,9 +2239,23 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
 # else
         pPhys = NULL; /* might not be valid anymore. */
 # endif
+# ifdef IN_RING3
         AssertLogRelMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_PGM_HANDLER_DO_DEFAULT,
                         ("rcStrict=%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys));
-
+# else
+        AssertLogRelMsg(   rcStrict == VINF_SUCCESS
+                        || rcStrict == VINF_PGM_HANDLER_DO_DEFAULT
+                        || rcStrict == VINF_IOM_R3_MMIO_READ
+                        || rcStrict == VINF_IOM_R3_MMIO_READ_WRITE
+                        || rcStrict == VINF_EM_DBG_STOP
+                        || rcStrict == VINF_EM_DBG_BREAKPOINT
+                        || rcStrict == VINF_EM_OFF
+                        || rcStrict == VINF_EM_SUSPEND
+                        || rcStrict == VINF_EM_RESET
+                        //|| rcStrict == VINF_EM_HALT       /* ?? */
+                        //|| rcStrict == VINF_EM_NO_MEMORY  /* ?? */
+                        , ("rcStrict=%Rrc GCPhys=%RGp\n", VBOXSTRICTRC_VAL(rcStrict), GCPhys));
+# endif
 #else
         /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
         //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cb));

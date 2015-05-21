@@ -479,22 +479,11 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Unmap(PVM pVM, PGIMMMIO2REGION pRegion)
 
 
 /**
- * Write access handler for a mapped MMIO2 region. At present, this handler
- * simply ignores writes.
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Write access handler for mapped MMIO2 pages.  Currently ignores writes.}
  *
- * In the future we might want to let the GIM provider decide what the handler
- * should do (like throwing #GP faults).
- *
- * @returns VBox status code.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The guest-physical address of the region.
- * @param   pvPhys          Pointer to the region in the guest address space.
- * @param   pvBuf           Pointer to the data being read/written.
- * @param   cbBuf           The size of the buffer in @a pvBuf.
- * @param   enmAccessType   The type of access.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument (NULL, not used).
+ * @todo In the future we might want to let the GIM provider decide what the
+ *       handler should do (like throwing #GP faults).
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 gimR3Mmio2WriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,

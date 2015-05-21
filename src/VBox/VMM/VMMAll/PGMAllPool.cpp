@@ -1041,18 +1041,10 @@ DECLINLINE(int) pgmPoolAccessPfHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPo
 
 
 /**
- * \#PF Handler callback for PT write accesses.
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF access handler callback for page table pages.}
  *
- * @returns VBox status code (appropriate for GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- *                      NULL on DMA and other non CPU access.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
+ * @remarks The @a pvUser argument points to the PGMPOOLPAGE.
  */
 DECLEXPORT(VBOXSTRICTRC) pgmPoolAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                 RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
@@ -1352,22 +1344,8 @@ flushPage:
 # endif /* !IN_RING3 */
 
 /**
- * Access handler callback for PT write accesses.
- *
- * The handler can not raise any faults, it's mainly for monitoring write access
- * to certain pages.
- *
- * @returns VINF_SUCCESS if the handler has carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Access handler for shadowed page table pages.}
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)
 pgmPoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,

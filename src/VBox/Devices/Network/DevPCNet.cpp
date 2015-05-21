@@ -384,6 +384,7 @@ typedef struct PCNETSTATE
     uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 2 : 6];
 
 #ifdef PCNET_NO_POLLING
+    PGMPHYSHANDLERTYPE                  hNoPollingHandlerType;
     RTGCPHYS32                          TDRAPhysOld;
     uint32_t                            cbTDRAOld;
 
@@ -630,13 +631,15 @@ AssertCompileSize(RMD, 16);
         (R)->rmd2.rcc, (R)->rmd2.rpc, (R)->rmd2.mcnt,   \
         (R)->rmd2.zeros))
 
+#ifndef PCNET_NO_POLLING
 static void pcnetPollTimerStart(PPCNETSTATE pThis);
+#endif
 static int  pcnetXmitPending(PPCNETSTATE pThis, bool fOnWorkerThread);
 #ifdef PCNET_NO_POLLING
-PGM_ALL_CB_DECL(FNPGMPHYSHANDLER)           pcnetHandleRingWrite;
+PGM_ALL_CB_DECL(FNPGMPHYSHANDLER)   pcnetHandleRingWrite;
 # ifndef IN_RING3
 RT_C_DECLS_BEGIN
-DECLEXPORT(CTX_SUFF(FNPGM,PHYSPFHANDLER))   pcnetHandleRingWritePf;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pcnetHandleRingWritePf;
 RT_C_DECLS_END
 # endif
 #endif
@@ -1099,16 +1102,10 @@ static int      pcnetBCRWriteU16(PPCNETSTATE pThis, uint32_t u32RAP, uint32_t va
 
 # ifndef IN_RING3
 /**
- * #PF Virtual Handler callback for Guest write access to the ring descriptor page(pThis)
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF write access handler for a PCNET ring.}
  *
- * @return  VBox status code (appropriate for trap handling and GC return).
- * @param   pVM         VM Handle.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
+ * @remarks The @a pvUser argument points to the PCNETSTATE.
  */
 DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                        RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
@@ -1118,13 +1115,13 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
     Log(("#%d pcnetHandleRingWritePf: write to %#010x\n", PCNET_INST_NR, GCPhysFault));
 
     uint32_t cb;
-    int rc = CTXALLSUFF(pThis->pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
+    int rc = pThis->CTX_SUFF(pfnEMInterpretInstruction)(pVM, pRegFrame, pvFault, &cb);
     if (RT_SUCCESS(rc) && cb)
     {
         if (    (GCPhysFault >= pThis->GCTDRA && GCPhysFault + cb < pcnetTdraAddr(pThis, 0))
-#ifdef PCNET_MONITOR_RECEIVE_RING
+#  ifdef PCNET_MONITOR_RECEIVE_RING
             ||  (GCPhysFault >= pThis->GCRDRA && GCPhysFault + cb < pcnetRdraAddr(pThis, 0))
-#endif
+#  endif
            )
         {
             uint32_t offsetTDRA = (GCPhysFault - pThis->GCTDRA);
@@ -1132,7 +1129,7 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
             if (RT_SUCCESS(rc))
             {
-                STAM_COUNTER_INC(&CTXALLSUFF(pThis->StatRingWrite)); ;
+                STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWrite));
 
                 /* Check if we can do something now */
                 pcnetPollRxTx(pThis);
@@ -1144,33 +1141,18 @@ DECLEXPORT(int) pcnetHandleRingWritePf(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCod
         }
         else
         {
-            STAM_COUNTER_INC(&CTXALLSUFF(pThis->StatRingWriteOutside)); ;
+            STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWriteOutside));
             return VINF_SUCCESS;    /* outside of the ring range */
         }
     }
-    STAM_COUNTER_INC(&CTXALLSUFF(pThis->StatRingWriteFailed)); ;
+    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWriteFailed)); ;
     return VINF_IOM_R3_MMIO_WRITE; /* handle in ring3 */
 }
-#endif /* !IN_RING3 */
-
+# endif /* !IN_RING3 */
 
 /**
- * #PF Handler callback for physical access handler ranges (MMIO among others).
- *
- * The handler can not raise any faults, it's mainly for monitoring write access
- * to certain pages.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             VM Handle.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          User argument.
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      Write access handler for a PCNET ring.}
  */
 PGM_ALL_CB_DECL(VBOXSTRICTRC)
 pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
@@ -1180,13 +1162,13 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
     PPCNETSTATE pThis   = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
 
     Log(("#%d pcnetHandleRingWrite: write to %#010x\n", PCNET_INST_NR, GCPhys));
-#ifdef VBOX_WITH_STATISTICS
-    STAM_COUNTER_INC(&CTXSUFF(pThis->StatRingWrite));
+# ifdef VBOX_WITH_STATISTICS
+    STAM_COUNTER_INC(&pThis->CTX_SUFF(StatRingWrite));
     if (GCPhys >= pThis->GCRDRA && GCPhys < pcnetRdraAddr(pThis, 0))
         STAM_COUNTER_INC(&pThis->StatRCVRingWrite);
     else if (GCPhys >= pThis->GCTDRA && GCPhys < pcnetTdraAddr(pThis, 0))
         STAM_COUNTER_INC(&pThis->StatTXRingWrite);
-#endif
+# endif
     /* Perform the actual write */
     memcpy((char *)pvPhys, pvBuf, cbBuf);
 
@@ -1194,9 +1176,9 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
     if (PDMCritSectIsOwner(&pThis->CritSect) == false)
     {
         if (    (GCPhys >= pThis->GCTDRA && GCPhys + cbBuf < pcnetTdraAddr(pThis, 0))
-#ifdef PCNET_MONITOR_RECEIVE_RING
+# ifdef PCNET_MONITOR_RECEIVE_RING
             ||  (GCPhys >= pThis->GCRDRA && GCPhys + cbBuf < pcnetRdraAddr(pThis, 0))
-#endif
+# endif
            )
         {
             int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
@@ -1209,6 +1191,7 @@ pcnetHandleRingWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void 
     }
     return VINF_SUCCESS;
 }
+
 #endif /* PCNET_NO_POLLING */
 
 static void pcnetSoftReset(PPCNETSTATE pThis)
@@ -1401,9 +1384,9 @@ static void pcnetUpdateRingHandlers(PPCNETSTATE pThis)
                                             pThis->GCTDRA & ~PAGE_OFFSET_MASK,
                                             RT_ALIGN(pcnetTdraAddr(pThis, 0), PAGE_SIZE) - 1,
                                             pThis->hNoPollingHandlerType,
-                                            pDevIns,
-                                            pThis->pDevInsHC->pvInstanceDataHC,
-                                            pThis->pDevInsHC->pvInstanceDataRC,
+                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataR3,
+                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataR0,
+                                            pThis->CTX_SUFF(pDevIns)->pvInstanceDataRC,
                                             "PCNet transmit ring write access handler");
             AssertRC(rc);
 
@@ -1539,7 +1522,9 @@ static void pcnetStart(PPCNETSTATE pThis)
         pThis->aCSR[0] |= 0x0020;    /* set RXON */
     pThis->aCSR[0] &= ~0x0004;       /* clear STOP bit */
     pThis->aCSR[0] |=  0x0002;       /* STRT */
+#ifndef PCNET_NO_POLLING
     pcnetPollTimerStart(pThis);      /* start timer if it was stopped */
+#endif
 }
 
 /**
@@ -2691,6 +2676,7 @@ static void pcnetPollRxTx(PPCNETSTATE pThis)
 }
 
 
+#ifndef PCNET_NO_POLLING
 /**
  * Start the poller timer.
  * Poll timer interval is fixed to 500Hz. Don't stop it.
@@ -2700,6 +2686,7 @@ static void pcnetPollTimerStart(PPCNETSTATE pThis)
 {
     TMTimerSetMillies(pThis->CTX_SUFF(pTimerPoll), 2);
 }
+#endif
 
 
 /**
@@ -4484,7 +4471,9 @@ static DECLCALLBACK(int) pcnetNetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
          * is true -- even if (transmit) polling is disabled (CSR_DPOLL). */
         rc2 = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
         AssertReleaseRC(rc2);
+#ifndef PCNET_NO_POLLING
         pcnetPollTimerStart(pThis);
+#endif
         PDMCritSectLeave(&pThis->CritSect);
         RTSemEventWait(pThis->hEventOutOfRxSpace, cMillies);
     }
@@ -4999,7 +4988,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     rc = PDMR3LdrGetSymbolR0Lazy(PDMDevHlpGetVM(pDevIns), NULL, NULL, "EMInterpretInstruction", &pThis->pfnEMInterpretInstructionR0);
     if (RT_SUCCESS(rc))
-        rc = PDMR3LdrGetSymbolRCLazy(PDMDevHlpGetVM(pDevIns), NULL, NULL, "EMInterpretInstruction", (RTGCPTR *)&pThis->pfnEMInterpretInstructionRC);
+        rc = PDMR3LdrGetSymbolRCLazy(PDMDevHlpGetVM(pDevIns), NULL, NULL, "EMInterpretInstruction", &pThis->pfnEMInterpretInstructionRC);
     AssertLogRelMsgRCReturn(rc, ("PDMR3LdrGetSymbolRCLazy(EMInterpretInstruction) -> %Rrc\n", rc), rc);
 
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,

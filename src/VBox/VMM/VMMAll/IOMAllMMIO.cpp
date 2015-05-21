@@ -1732,18 +1732,12 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
     return rc;
 }
 
+
 /**
- * \#PF Handler callback for MMIO ranges.
+ * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
+ *      \#PF access handler callback for MMIO pages.}
  *
- * @returns VBox status code (appropriate for GC return).
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the cross context CPU context for the
- *                      calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pCtxCore    Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      Pointer to the MMIO ring-3 range entry.
+ * @remarks The @a pvUser argument points to the IOMMMIORANGE.
  */
 DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPTR pvFault,
                                           RTGCPHYS GCPhysFault, void *pvUser)
@@ -1752,6 +1746,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uError
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
     return iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pvUser);
 }
+
 
 /**
  * Physical access handler for MMIO ranges.
@@ -1790,19 +1785,9 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorC
 
 
 /**
- * \#PF Handler callback for MMIO ranges.
+ * @callback_method_impl{FNPGMPHYSHANDLER, MMIO page accesses}
  *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           The cross context CPU structure for the calling EMT.
- * @param   GCPhys          The physical address the guest is writing to.
- * @param   pvPhys          The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making the access.
- * @param   pvUser          Pointer to the MMIO range entry.
+ * @remarks The @a pvUser argument points to the MMIO range entry.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhysFault, void *pvPhys, void *pvBuf,
                                               size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
@@ -1827,25 +1812,39 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
     iomMmioRetainRange(pRange);
     PPDMDEVINS pDevIns = pRange->CTX_SUFF(pDevIns);
     IOM_UNLOCK_SHARED(pVM);
-    rc = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_MMIO_READ_WRITE);
-    if (rc != VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict = PDMCritSectEnter(pDevIns->CTX_SUFF(pCritSectRo), VINF_IOM_R3_MMIO_READ_WRITE);
+    if (rcStrict == VINF_SUCCESS)
     {
+        /*
+         * Perform the access.
+         */
+        if (enmAccessType == PGMACCESSTYPE_READ)
+            rcStrict = iomMMIODoRead(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
+        else
+            rcStrict = iomMMIODoWrite(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
+
+        /* Check the return code. */
+#ifdef IN_RING3
+        AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc - %RGp - %s\n", VBOXSTRICTRC_VAL(rcStrict), GCPhysFault, pRange->pszDesc));
+#else
+        AssertMsg(   rcStrict == VINF_SUCCESS
+                  || rcStrict == (enmAccessType == PGMACCESSTYPE_READ ? VINF_IOM_R3_MMIO_READ :  VINF_IOM_R3_MMIO_WRITE)
+                  || rcStrict == VINF_IOM_R3_MMIO_READ_WRITE
+                  || rcStrict == VINF_EM_DBG_STOP
+                  || rcStrict == VINF_EM_DBG_BREAKPOINT
+                  || rcStrict == VINF_EM_OFF
+                  || rcStrict == VINF_EM_SUSPEND
+                  || rcStrict == VINF_EM_RESET
+                  //|| rcStrict == VINF_EM_HALT       /* ?? */
+                  //|| rcStrict == VINF_EM_NO_MEMORY  /* ?? */
+                  , ("%Rrc - %RGp - %p\n", VBOXSTRICTRC_VAL(rcStrict), GCPhysFault, pDevIns));
+#endif
+
         iomMmioReleaseRange(pVM, pRange);
-        return rc;
+        PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     }
-
-    /*
-     * Perform the access.
-     */
-    VBOXSTRICTRC rcStrict;
-    if (enmAccessType == PGMACCESSTYPE_READ)
-        rcStrict = iomMMIODoRead(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
     else
-        rcStrict = iomMMIODoWrite(pVM, pVCpu, pRange, GCPhysFault, pvBuf, (unsigned)cbBuf);
-    AssertMsgRC(rcStrict, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-
-    iomMmioReleaseRange(pVM, pRange);
-    PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+        iomMmioReleaseRange(pVM, pRange);
     return rcStrict;
 }
 

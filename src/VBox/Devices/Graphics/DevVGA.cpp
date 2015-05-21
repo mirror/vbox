@@ -3552,7 +3552,8 @@ PDMBOTHCBDECL(VBOXSTRICTRC) vgaLbfAccessPfHandler(PVM pVM, PVMCPU pVCpu, RTGCUIN
 
 
 /**
- * @callback_method_impl{FNPGMPHYSHANDLER, HC access handler for the LFB.}
+ * @callback_method_impl{FNPGMPHYSHANDLER,
+ *      VBE LFB write access handler for the dirty tracking.}
  */
 PGM_ALL_CB_DECL(VBOXSTRICTRC) vgaLFBAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
                                                   PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
