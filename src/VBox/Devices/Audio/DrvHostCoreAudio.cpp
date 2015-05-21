@@ -336,40 +336,72 @@ static DECLCALLBACK(OSStatus) drvHostCoreAudioDefaultDeviceChanged(AudioObjectID
                                                                    const AudioObjectPropertyAddress properties[],
                                                                    void *pvUser)
 {
-    PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pvUser;
-
     OSStatus err = noErr;
 
-    switch (propertyID)
+    LogFlowFunc(("propertyID=%u nAddresses=%u pvUser=%p\n", propertyID, nAddresses, pvUser));
+
+    for (UInt32 idxAddress = 0; idxAddress < nAddresses; idxAddress++)
     {
-        case kAudioHardwarePropertyDefaultInputDevice:
+        const AudioObjectPropertyAddress *pProperty = &properties[idxAddress];
+
+        switch (pProperty->mSelector)
         {
-            /* This listener is called on every change of the hardware
-             * device. So check if the default device has really changed. */
-            AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultInputDevice,
-                                                   kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
-
-            UInt32 uSize = sizeof(pStreamIn->deviceID);
-            UInt32 uResp;
-            err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &propAdr, 0, NULL, &uSize, &uResp);
-
-            if (err == noErr)
+            case kAudioHardwarePropertyDefaultInputDevice:
             {
-                if (pStreamIn->deviceID != uResp)
+                PCOREAUDIOSTREAMIN pStreamIn = (PCOREAUDIOSTREAMIN)pvUser;
+
+                /* This listener is called on every change of the hardware
+                 * device. So check if the default device has really changed. */
+                UInt32 uSize = sizeof(pStreamIn->deviceID);
+                UInt32 uResp;
+                err = AudioObjectGetPropertyData(kAudioObjectSystemObject, pProperty, 0, NULL, &uSize, &uResp);
+
+                if (err == noErr)
                 {
-                    LogRel(("CoreAudio: Default input device has changed\n"));
+                    if (pStreamIn->deviceID != uResp)
+                    {
+                        LogRel(("CoreAudio: Default input device has changed\n"));
 
-                    /* We move the reinitialization to the next input event.
-                     * This make sure this thread isn't blocked and the
-                     * reinitialization is done when necessary only. */
-                    ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_REINIT);
+                        /* We move the reinitialization to the next input event.
+                         * This make sure this thread isn't blocked and the
+                         * reinitialization is done when necessary only. */
+                        ASMAtomicXchgU32(&pStreamIn->status, CA_STATUS_REINIT);
+                    }
                 }
+                break;
             }
-            break;
-        }
 
-        default:
-            break;
+            case kAudioHardwarePropertyDefaultOutputDevice:
+            {
+                PCOREAUDIOSTREAMOUT pStreamOut = (PCOREAUDIOSTREAMOUT)pvUser;
+
+                /* This listener is called on every change of the hardware
+                 * device. So check if the default device has really changed. */
+                AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultOutputDevice,
+                                                       kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMaster };
+
+                UInt32 uSize = sizeof(pStreamOut->deviceID);
+                UInt32 uResp;
+                err = AudioObjectGetPropertyData(kAudioObjectSystemObject, &propAdr, 0, NULL, &uSize, &uResp);
+
+                if (err == noErr)
+                {
+                    if (pStreamOut->deviceID != uResp)
+                    {
+                        LogRel(("CoreAudio: Default output device has changed\n"));
+
+                        /* We move the reinitialization to the next input event.
+                         * This make sure this thread isn't blocked and the
+                         * reinitialization is done when necessary only. */
+                        ASMAtomicXchgU32(&pStreamOut->status, CA_STATUS_REINIT);
+                    }
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
     }
 
     return noErr;
@@ -1707,7 +1739,7 @@ static DECLCALLBACK(int) drvHostCoreAudioFiniIn(PPDMIHOSTAUDIO pInterface, PPDMA
         /*
          * Unregister input device callbacks.
          */
-        AudioObjectPropertyAddress propAdr = { kAudioDeviceProcessorOverload, kAudioUnitScope_Global,
+        AudioObjectPropertyAddress propAdr = { kAudioDeviceProcessorOverload, kAudioObjectPropertyScopeGlobal,
                                                kAudioObjectPropertyElementMaster };
 #ifdef DEBUG
         err = AudioObjectRemovePropertyListener(pStreamIn->deviceID, &propAdr,
@@ -1805,7 +1837,7 @@ static DECLCALLBACK(int) drvHostCoreAudioFiniOut(PPDMIHOSTAUDIO pInterface, PPDM
         OSStatus err;
         if (pStreamOut->fDefDevChgListReg)
         {
-            AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultOutputDevice, kAudioUnitScope_Global,
+            AudioObjectPropertyAddress propAdr = { kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal,
                                                    kAudioObjectPropertyElementMaster };
             err = AudioObjectRemovePropertyListener(pStreamOut->deviceID, &propAdr,
                                                     drvHostCoreAudioDefaultDeviceChanged, NULL);
