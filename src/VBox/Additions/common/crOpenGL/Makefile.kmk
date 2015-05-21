@@ -580,6 +580,10 @@ VBoxOGLpackspu_LIBS        = \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker$(VBOX_SUFF_LIB)
+VBoxOGLpackspu_LIBS.win += \
+	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi$(VBOX_SUFF_LIB)
+
 ifdef VBOX_WITH_CRHGSMI
 VBoxOGLpackspu_DEFS.win   += VBOX_WITH_CRHGSMI
 endif
@@ -603,6 +607,9 @@ VBoxOGLpackspu-x86_LIBS = $(VBOX_LIB_OGL_CRUTIL_X86) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLspuload-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrstate-x86$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/additions/VBoxOGLcrpacker-x86$(VBOX_SUFF_LIB)
+VBoxOGLpackspu-x86_LIBS.win += \
+	$(PATH_STAGE_LIB)/additions/VBoxDispMpLogger-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/additions/VBoxCrHgsmi-x86$(VBOX_SUFF_LIB)
 VBoxOGLpackspu-x86_DEFS = $(VBoxOGLpackspu_DEFS) VBOX_WDDM_WOW64
 endif
 
