@@ -2249,7 +2249,7 @@ class SessionWrapper(TdTaskBase):
                and self.oVM.state is vboxcon.MachineState_Running:
                 self.o.console.pause();
             if self.fpApiVer >= 5.0:
-                (oProgressCom, _id) = self.o.machine.takeSnapshot(sName, sDescription, True);
+                (oProgressCom, _) = self.o.machine.takeSnapshot(sName, sDescription, True);
             else:
                 oProgressCom = self.o.console.takeSnapshot(sName, sDescription);
             oProgress = ProgressWrapper(oProgressCom, self.oVBoxMgr, self.oTstDrv, 'Take Snapshot %s' % (sName));
