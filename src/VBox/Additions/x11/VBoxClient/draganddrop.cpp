@@ -898,8 +898,8 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
             /* Is the requestor asking for the possible MIME types? */
             if (e.xselectionrequest.target == xAtom(XA_TARGETS))
             {
-                LogFlowThisFunc(("wnd=%#x '%s' asking for target list\n",
-                                 e.xselectionrequest.requestor, propName.value));
+                LogFlowThisFunc(("wnd=%#x ('%s') asking for target list\n",
+                                 e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>"));
 
                 /* If so, set the window property with the formats on the requestor
                  * window. */
@@ -915,8 +915,8 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
             /* Is the requestor asking for a specific MIME type (we support)? */
             else if (m_lstFormats.contains(e.xselectionrequest.target))
             {
-                LogFlowThisFunc(("wnd=%#x '%s' asking for data, format=%s\n",
-                                 e.xselectionrequest.requestor, propName.value,
+                LogFlowThisFunc(("wnd=%#x ('%s') asking for data, format=%s\n",
+                                 e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>",
                                  xAtomToString(e.xselectionrequest.target).c_str()));
 
                 /* If so, we need to inform the host about this request. Save the
@@ -932,8 +932,8 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                 }
                 else
                 {
-                    LogFlowThisFunc(("Saving selection notify message of wnd=%#x '%s'\n",
-                                     e.xselectionrequest.requestor, propName.value));
+                    LogFlowThisFunc(("Saving selection notify message of wnd=%#x ('%s')\n",
+                                     e.xselectionrequest.requestor, propName.value ? (const char *)propName.value : "<No name>"));
 
                     memcpy(&m_eventHgSelection, &e, sizeof(XEvent));
 
@@ -947,7 +947,8 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
             /* Anything else. */
             else
             {
-                LogFlowThisFunc(("Refusing unknown command of wnd=%#x '%s'\n", e.xselectionrequest.requestor, propName.value));
+                LogFlowThisFunc(("Refusing unknown command of wnd=%#x ('%s')\n", e.xselectionrequest.requestor, 
+                                 propName.value ? (const char *)propName.value : "<No name>"));
 
                 /* We don't understand this request message and therefore answer with an
                  * refusal messages. */
@@ -1421,7 +1422,7 @@ int DragInstance::hgMove(uint32_t u32xPos, uint32_t u32yPos, uint32_t uDefaultAc
  */
 int DragInstance::hgDrop(void)
 {
-    LogFlowThisFunc(("wndCur=%#x, wndProxy=%#x, mode=%RU32, state=%RU32\n", m_wndProxy, m_wndCur, m_enmMode, m_enmState));
+    LogFlowThisFunc(("wndCur=%#x, wndProxy=%#x, mode=%RU32, state=%RU32\n", m_wndCur, m_wndProxy, m_enmMode, m_enmState));
 
     if (   m_enmMode  != HG
         || m_enmState != Dragging)
@@ -1446,7 +1447,7 @@ int DragInstance::hgDrop(void)
 
     int xRc = XSendEvent(m_pDisplay, m_wndCur, False, NoEventMask, reinterpret_cast<XEvent*>(&m));
     if (RT_UNLIKELY(xRc == 0))
-        logError("Error sending XA_XdndDrop event to current window=%#x: %s\n", m_wndCur, gX11->xErrorToString(xRc).c_str());
+        logError("Error sending XA_XdndDrop event to wndCur=%#x: %s\n", m_wndCur, gX11->xErrorToString(xRc).c_str());
 
     m_wndCur = None;
     m_curVer = -1;
