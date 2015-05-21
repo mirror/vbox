@@ -372,7 +372,7 @@ template<> QString toString(const KPortMode &mode)
         case KPortMode_HostDevice:   return QApplication::translate("VBoxGlobal", "Host Device", "PortMode");
         case KPortMode_RawFile:      return QApplication::translate("VBoxGlobal", "Raw File", "PortMode");
         case KPortMode_TCP:          return QApplication::translate("VBoxGlobal", "TCP", "PortMode");
-        AssertMsgFailed(("No text for %d", mode)); break;
+        default: AssertMsgFailed(("No text for %d", mode)); break;
     }
     return QString();
 }
@@ -385,7 +385,7 @@ template<> QString toString(const KUSBControllerType &type)
         case KUSBControllerType_OHCI: return QApplication::translate("VBoxGlobal", "OHCI", "USBControllerType");
         case KUSBControllerType_EHCI: return QApplication::translate("VBoxGlobal", "EHCI", "USBControllerType");
         case KUSBControllerType_XHCI: return QApplication::translate("VBoxGlobal", "xHCI", "USBControllerType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -401,7 +401,7 @@ template<> QString toString(const KUSBDeviceState &state)
         case KUSBDeviceState_Available:    return QApplication::translate("VBoxGlobal", "Available", "USBDeviceState");
         case KUSBDeviceState_Held:         return QApplication::translate("VBoxGlobal", "Held", "USBDeviceState");
         case KUSBDeviceState_Captured:     return QApplication::translate("VBoxGlobal", "Captured", "USBDeviceState");
-        AssertMsgFailed(("No text for %d", state)); break;
+        default: AssertMsgFailed(("No text for %d", state)); break;
     }
     return QString();
 }
@@ -413,7 +413,7 @@ template<> QString toString(const KUSBDeviceFilterAction &action)
     {
         case KUSBDeviceFilterAction_Ignore: return QApplication::translate("VBoxGlobal", "Ignore", "USBDeviceFilterAction");
         case KUSBDeviceFilterAction_Hold:   return QApplication::translate("VBoxGlobal", "Hold", "USBDeviceFilterAction");
-        AssertMsgFailed(("No text for %d", action)); break;
+        default: AssertMsgFailed(("No text for %d", action)); break;
     }
     return QString();
 }
@@ -432,7 +432,7 @@ template<> QString toString(const KAudioDriverType &type)
         // case KAudioDriverType_MMPM:
         case KAudioDriverType_Pulse:       return QApplication::translate("VBoxGlobal", "PulseAudio", "AudioDriverType");
         case KAudioDriverType_SolAudio:    return QApplication::translate("VBoxGlobal", "Solaris Audio", "AudioDriverType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -445,7 +445,7 @@ template<> QString toString(const KAudioControllerType &type)
         case KAudioControllerType_AC97: return QApplication::translate("VBoxGlobal", "ICH AC97", "AudioControllerType");
         case KAudioControllerType_SB16: return QApplication::translate("VBoxGlobal", "SoundBlaster 16", "AudioControllerType");
         case KAudioControllerType_HDA:  return QApplication::translate("VBoxGlobal", "Intel HD Audio", "AudioControllerType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -458,7 +458,7 @@ template<> QString toString(const KAuthType &type)
         case KAuthType_Null:     return QApplication::translate("VBoxGlobal", "Null", "AuthType");
         case KAuthType_External: return QApplication::translate("VBoxGlobal", "External", "AuthType");
         case KAuthType_Guest:    return QApplication::translate("VBoxGlobal", "Guest", "AuthType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -473,7 +473,7 @@ template<> QString toString(const KStorageBus &bus)
         case KStorageBus_SCSI:   return QApplication::translate("VBoxGlobal", "SCSI", "StorageBus");
         case KStorageBus_Floppy: return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
         case KStorageBus_SAS:    return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
-        AssertMsgFailed(("No text for %d", bus)); break;
+        default: AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
 }
@@ -492,7 +492,7 @@ template<> QString toString(const KStorageControllerType &type)
         case KStorageControllerType_I82078:      return QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType");
         case KStorageControllerType_LsiLogicSas: return QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType");
         case KStorageControllerType_USB:         return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -504,7 +504,7 @@ template<> QString toString(const KChipsetType &type)
     {
         case KChipsetType_PIIX3: return QApplication::translate("VBoxGlobal", "PIIX3", "ChipsetType");
         case KChipsetType_ICH9:  return QApplication::translate("VBoxGlobal", "ICH9", "ChipsetType");
-        AssertMsgFailed(("No text for %d", type)); break;
+        default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
 }
@@ -516,7 +516,7 @@ template<> QString toString(const KNATProtocol &protocol)
     {
         case KNATProtocol_UDP: return QApplication::translate("VBoxGlobal", "UDP", "NATProtocol");
         case KNATProtocol_TCP: return QApplication::translate("VBoxGlobal", "TCP", "NATProtocol");
-        AssertMsgFailed(("No text for %d", protocol)); break;
+        default: AssertMsgFailed(("No text for %d", protocol)); break;
     }
     return QString();
 }
@@ -529,11 +529,7 @@ template<> QString toInternalString(const KNATProtocol &protocol)
     {
         case KNATProtocol_UDP: strResult = "udp"; break;
         case KNATProtocol_TCP: strResult = "tcp"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for protocol type=%d", protocol));
-            break;
-        }
+        default: AssertMsgFailed(("No text for protocol type=%d", protocol)); break;
     }
     return strResult;
 }
