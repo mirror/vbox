@@ -60,7 +60,7 @@ static const struct
 {
     {
         "0 1 \"\"2'' '3' 4 5 '''''6' 7 8 9 10 11",
-        "0 1 \"\"2 3 4 5 \"6\" 7 8 \"\"\"\"\"\"9\"\"\"\" 10 11",
+        "0 1 \"\"2 3 4 5 \"6\" 7 8 \"\"9\"\" 10 11",
         NULL,
         12,
         {
@@ -82,10 +82,14 @@ static const struct
         "0 1 2 3 4 5 6 7 8 9 10 11"
     },
     {
-        "\t\" asdf \"  '\"'xyz  \"\t\"  '\n'  '\"'  \"'\"\n\r ",
-        "\t\" asdf \"  \\\"xyz  \"\t\"  \"\n\"  \"\\\"\"  '\n\r ",
+        "\t\" asdf \"  '\"'xyz  \"\t\"  '\n'    '\"'    \"'\"\n\r  \\\"xyz",
+        /* Note! Two things here to make CommandLineArgW happy. First, it doesn't use IFS including newline/return, so
+                 we skip that bit of the test.  Second, it uses pre-2008 doubledouble quoting rules, unlike the CRT and IPRT
+                 which uses the post-2008 rules. We work around that by putting that test last.
+                 See http://www.daviddeley.com/autohotkey/parameters/parameters.htm */
+        "\t\" asdf \"  \\\"xyz  \"\t\"  \"\n\"  \"\\\"\"  '  \"\"\"xyz\"",
         NULL,
-        6,
+        7,
         {
             " asdf ",
             "\"xyz",
@@ -93,11 +97,12 @@ static const struct
             "\n",
             "\"",
             "\'",
-            NULL, NULL,
+            "\"xyz",
+            NULL,
             NULL, NULL, NULL, NULL,  NULL, NULL, NULL, NULL,
         },
-        "' asdf ' '\"xyz' '\t' '\n' '\"' ''\"'\"''",
-        "\" asdf \" \"\\\"xyz\" \"\t\" \"\n\" \"\\\"\" '"
+        "' asdf ' '\"xyz' '\t' '\n' '\"' ''\"'\"'' '\"xyz'",
+        "\" asdf \" \"\\\"xyz\" \"\t\" \"\n\" \"\\\"\" ' \"\\\"xyz\""
     },
     {
         ":0::1::::2:3:4:5:",
@@ -285,7 +290,8 @@ static void tst4(void)
                                   i, iArg, papszArgs1[iArg], g_aTests[i].apszArgs[iArg],
                                   g_aTests[i].pszInMsCrt, g_aTests[i].pszSeparators);
             RTTESTI_CHECK_RETV(papszArgs1[cArgs1] == NULL);
-            tstCheckNativeMsCrtToArgv(g_aTests[i].pszInMsCrt, g_aTests[i].cArgs, g_aTests[i].apszArgs);
+            if (g_aTests[i].pszSeparators == NULL)
+                tstCheckNativeMsCrtToArgv(g_aTests[i].pszInMsCrt, g_aTests[i].cArgs, g_aTests[i].apszArgs);
 
             /* Second */
             char *pszArgs2 = NULL;
@@ -310,7 +316,8 @@ static void tst4(void)
                             RTTestIFailed("g_aTests[%i]/3: argv[%i] differs: got '%s', expected '%s' (RTGetOptArgvFromString(,,'%s',))",
                                           i, iArg, papszArgs3[iArg], g_aTests[i].apszArgs[iArg], pszArgs2);
                     RTTESTI_CHECK_RETV(papszArgs3[cArgs3] == NULL);
-                    tstCheckNativeMsCrtToArgv(pszArgs2, g_aTests[i].cArgs, g_aTests[i].apszArgs);
+                    if (g_aTests[i].pszSeparators == NULL)
+                        tstCheckNativeMsCrtToArgv(pszArgs2, g_aTests[i].cArgs, g_aTests[i].apszArgs);
 
                     /*
                      * Fourth

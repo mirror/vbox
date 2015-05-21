@@ -333,7 +333,20 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
                 if (RT_FAILURE(rc) || !Cp)
                     break;
                 if (Cp == '"')
-                    fInQuote = !fInQuote;
+                {
+                    /* Two double quotes insides a quoted string in an escape
+                       sequence and we output one double quote char.
+                       See http://www.daviddeley.com/autohotkey/parameters/parameters.htm */
+                    if (!fInQuote)
+                        fInQuote = true;
+                    else if (*pszSrc != '"')
+                        fInQuote = false;
+                    else
+                    {
+                        pszDst = RTStrPutCp(pszDst, '"');
+                        pszSrc++;
+                    }
+                }
                 else if (!fInQuote && rtGetOptIsCpInSet(Cp, pszSeparators, cchSeparators))
                     break;
                 else if (Cp != '\\')
@@ -342,30 +355,30 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
                 {
                     /* A backslash sequence is only relevant if followed by
                        a double quote, then it will work like an escape char. */
-                    size_t cQuotes = 1;
+                    size_t cSlashes = 1;
                     while (*pszSrc == '\\')
                     {
-                        cQuotes++;
+                        cSlashes++;
                         pszSrc++;
                     }
                     if (*pszSrc != '"')
                         /* Not an escape sequence.  */
-                        while (cQuotes-- > 0)
+                        while (cSlashes-- > 0)
                             pszDst = RTStrPutCp(pszDst, '\\');
                     else
                     {
                         /* Escape sequence.  Output half of the slashes.  If odd
                            number, output the escaped double quote . */
-                        while (cQuotes >= 2)
+                        while (cSlashes >= 2)
                         {
                             pszDst = RTStrPutCp(pszDst, '\\');
-                            cQuotes -= 2;
+                            cSlashes -= 2;
                         }
-                        if (!cQuotes)
-                            fInQuote = !fInQuote;
-                        else
+                        if (cSlashes)
+                        {
                             pszDst = RTStrPutCp(pszDst, '"');
-                        pszSrc++;
+                            pszSrc++;
+                        }
                     }
                 }
             }
