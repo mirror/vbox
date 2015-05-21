@@ -403,6 +403,8 @@ class Build(object): # pylint: disable=R0903
             self.sGuestAdditionsIso = '%s/VBoxGuestAdditions.iso' % (self.sInstallPath,);
         elif self.sOs == 'darwin':
             self.sGuestAdditionsIso = '%s/VBoxGuestAdditions.iso' % (self.sInstallPath,);
+        elif self.sOs == 'solaris':
+            self.sGuestAdditionsIso = '%s/VBoxGuestAdditions.iso' % (self.sInstallPath,);
         else:
             self.sGuestAdditionsIso = '%s/additions/VBoxGuestAdditions.iso' % (self.sInstallPath,);
 
