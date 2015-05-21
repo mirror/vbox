@@ -1209,7 +1209,7 @@ HRESULT MachineDebugger::queryOSKernelLog(ULONG aMaxMessages, com::Utf8Str &aDme
                 while (vrc == VERR_BUFFER_OVERFLOW && cbBuf < 16*_1M && cTries-- > 0)
                 {
                     cbBuf = RT_ALIGN_Z(cbActual + _4K, _4K);
-                    int vrc = aDmesg.reserveNoThrow(cbBuf);
+                    vrc = aDmesg.reserveNoThrow(cbBuf);
                     if (RT_SUCCESS(vrc))
                         vrc = pDmesg->pfnQueryKernelLog(pDmesg, ptrVM.rawUVM(), 0 /*fFlags*/, cMessages,
                                                         aDmesg.mutableRaw(), cbBuf, &cbActual);
