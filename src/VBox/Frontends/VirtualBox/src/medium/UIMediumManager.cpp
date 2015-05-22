@@ -1134,7 +1134,9 @@ void UIMediumManager::prepareToolBar()
     AssertPtrReturnVoid(m_pToolBar);
     {
         /* Configure tool-bar: */
-        m_pToolBar->setIconSize(QSize(22, 22));
+        const QStyle *pStyle = QApplication::style();
+        const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+        m_pToolBar->setIconSize(QSize(iIconMetric, iIconMetric));
         m_pToolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
         m_pToolBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         /* Add tool-bar actions: */
