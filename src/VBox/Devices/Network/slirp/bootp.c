@@ -345,7 +345,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     }
     /* Temporary fix: do not pollute ARP cache from BOOTP because it may result
        in network loss due to cache entry override w/ invalid MAC address. */
-    //slirp_arp_cache_update_or_add(pData, rbp->bp_yiaddr.s_addr, bc->macaddr);
+    /*slirp_arp_cache_update_or_add(pData, rbp->bp_yiaddr.s_addr, bc->macaddr);*/
     return q - rbp->bp_vend; /*return offset */
 }
 
