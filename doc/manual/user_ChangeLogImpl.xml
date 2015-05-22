@@ -30,7 +30,7 @@
       </listitem>
 
       <listitem>
-        <para>Disk image encryption (see </para>
+        <para>Disk image encryption (see <xref linkend="diskencryption" />)</para>
       </listitem>
 
       <listitem>
