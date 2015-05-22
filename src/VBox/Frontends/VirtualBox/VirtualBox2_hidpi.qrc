@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_other_hidpi.png">images/hidpi/os_other_hidpi.png</file>
         <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
         <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
         <file alias="os_redhat_hidpi.png">images/hidpi/os_redhat_hidpi.png</file>
@@ -272,5 +271,7 @@
         <file alias="vtx_amdv_disabled_16px_hidpi.png">images/hidpi/vtx_amdv_disabled_16px_hidpi.png</file>
         <file alias="web_camera_16px_hidpi.png">images/hidpi/web_camera_16px_hidpi.png</file>
         <file alias="web_camera_disabled_16px_hidpi.png">images/hidpi/web_camera_disabled_16px_hidpi.png</file>
+        <file alias="web_camera_unavailable_16px_hidpi.png">images/hidpi/web_camera_unavailable_16px_hidpi.png</file>
+        <file alias="web_camera_unavailable_disabled_16px_hidpi.png">images/hidpi/web_camera_unavailable_disabled_16px_hidpi.png</file>
     </qresource>
 </RCC>
