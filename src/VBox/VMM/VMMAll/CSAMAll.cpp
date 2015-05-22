@@ -139,7 +139,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
                                                              (RTRCPTR)GCPtrMonitored, cbBuf);
         if (   rcStrict == VINF_PGM_HANDLER_DO_DEFAULT
             || rcStrict == VINF_SUCCESS)
-            return VBOXSTRICTRC_TODO(rcStrict);
+            return rcStrict;
         if (rcStrict == VINF_EM_RAW_EMULATE_INSTR)
         {
             STAM_COUNTER_INC(&pVM->csam.s.StatDangerousWrite);
