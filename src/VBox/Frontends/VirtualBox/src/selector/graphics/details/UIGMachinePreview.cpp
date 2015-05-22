@@ -212,10 +212,13 @@ void UIGMachinePreview::sltRecreatePreview()
                     if (!m_machine.isOk() || screenData.isEmpty())
                         break;
 
-                    /* Calculate aspect-ratio: */
-                    double dAspectRatio = (double)uGuestWidth / uGuestHeight;
-                    /* Look for the best aspect-ratio preset: */
-                    preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
+                    if (uGuestWidth > 0 && uGuestHeight > 0)
+                    {
+                        /* Calculate aspect-ratio: */
+                        const double dAspectRatio = (double)uGuestWidth / uGuestHeight;
+                        /* Look for the best aspect-ratio preset: */
+                        preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
+                    }
 
                     /* Create image based on shallow copy or screenshot data,
                      * scale image down if necessary to the size possible to reflect: */
@@ -245,21 +248,18 @@ void UIGMachinePreview::sltRecreatePreview()
                     if (!console.isOk() || display.isNull())
                         break;
 
-                    /* Calculate aspect-ratio: */
-                    LONG iOriginX, iOriginY;
-                    ULONG uGuestWidth, uGuestHeight, uBpp;
+                    /* Acquire guest-screen attributes: */
+                    LONG iOriginX = 0, iOriginY = 0;
+                    ULONG uGuestWidth = 0, uGuestHeight = 0, uBpp = 0;
                     KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
                     display.GetScreenResolution(0, uGuestWidth, uGuestHeight, uBpp, iOriginX, iOriginY, monitorStatus);
-                    if (uGuestWidth == 0 || uGuestHeight == 0)
+                    if (uGuestWidth > 0 && uGuestHeight > 0)
                     {
-                        AssertMsgFailed(("Acquired guest screen resolution is %dx%d\n",
-                                         uGuestWidth, uGuestHeight));
-                        break;
+                        /* Calculate aspect-ratio: */
+                        const double dAspectRatio = (double)uGuestWidth / uGuestHeight;
+                        /* Look for the best aspect-ratio preset: */
+                        preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
                     }
-
-                    double dAspectRatio = (double)uGuestWidth / uGuestHeight;
-                    /* Look for the best aspect-ratio preset preset: */
-                    preset = bestAspectRatioPreset(dAspectRatio, m_ratios);
 
                     /* Calculate size corresponding to aspect-ratio: */
                     const QSize size = imageAspectRatioSize(m_vRect.size(), QSize(uGuestWidth, uGuestHeight));
@@ -523,7 +523,8 @@ QSize UIGMachinePreview::imageAspectRatioSize(const QSize &hostSize, const QSize
 {
     /* Make sure host-size and guest-size are valid: */
     AssertReturn(!hostSize.isNull(), QSize());
-    AssertReturn(!guestSize.isNull(), hostSize);
+    if (guestSize.isNull())
+        return hostSize;
 
     /* Calculate host/guest aspect-ratio: */
     const double dHostAspectRatio = (double)hostSize.width() / hostSize.height();
