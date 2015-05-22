@@ -260,13 +260,6 @@ int emR3HmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
             rc = emR3ExecuteInstruction(pVM, pVCpu, "TSS FAULT: ");
             break;
-        case VINF_EM_RAW_EMULATE_INSTR_PD_FAULT:
-            rc = emR3ExecuteInstruction(pVM, pVCpu, "PD FAULT: ");
-            break;
-        case VINF_EM_RAW_EMULATE_INSTR_HLT:
-            /** @todo skip instruction and go directly to the halt state. (see REM for implementation details) */
-            rc = emR3RawPrivileged(pVM, pVCpu);
-            break;
 #endif
 
 #ifdef EMHANDLERC_WITH_PATM

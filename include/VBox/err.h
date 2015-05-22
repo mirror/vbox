@@ -206,18 +206,12 @@
 /** Reason for leaving RC: Unhandled IDT write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT 1130
-/** Reason for leaving RC: Unhandled GDT write.
+/** Reason for leaving RC: Partly handled GDT write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT 1131
-/** Reason for leaving RC: Unhandled Page Directory write.
- * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_PD_FAULT  1132
 /** Reason for leaving RC: jump inside generated patch jump.
  * Fatal error. */
 #define VERR_EM_RAW_PATCH_CONFLICT          (-1133)
-/** Reason for leaving RC: Hlt instruction.
- * Recompiler gets control. */
-#define VINF_EM_RAW_EMULATE_INSTR_HLT       1134
 /** Reason for leaving RZ: Ring-3 operation pending. */
 #define VINF_EM_RAW_TO_R3                   1135
 /** Reason for leaving RZ: Timer pending. */

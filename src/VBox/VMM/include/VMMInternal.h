@@ -349,7 +349,6 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetGDTFault;
     STAMCOUNTER                 StatRZRetIDTFault;
     STAMCOUNTER                 StatRZRetTSSFault;
-    STAMCOUNTER                 StatRZRetPDFault;
     STAMCOUNTER                 StatRZRetCSAMTask;
     STAMCOUNTER                 StatRZRetSyncCR3;
     STAMCOUNTER                 StatRZRetMisc;
