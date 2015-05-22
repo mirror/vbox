@@ -534,6 +534,7 @@ void UIMenuBarEditorWidget::prepareMenuMachine()
     AssertPtrReturnVoid(pMenu);
     {
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_Settings));
+        pMenu->addSeparator();
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
         prepareCopiedAction(pMenu, actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
         pMenu->addSeparator();
