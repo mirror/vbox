@@ -770,7 +770,7 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
     /* Compare the old and the new states and set the delta bits accordingly. */
     if ((newMsr & UART_MSR_DCD) != (pThis->msr & UART_MSR_DCD))
         newMsr |= UART_MSR_DDCD;
-    if ((newMsr & UART_MSR_RI) == 1 && (pThis->msr & UART_MSR_RI) == 0)
+    if ((newMsr & UART_MSR_RI) != 0 && (pThis->msr & UART_MSR_RI) == 0)
         newMsr |= UART_MSR_TERI;
     if ((newMsr & UART_MSR_DSR) != (pThis->msr & UART_MSR_DSR))
         newMsr |= UART_MSR_DDSR;
