@@ -3579,7 +3579,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="2cfec73b-4447-4ff8-bae5-e4306e6197e8"
+    uuid="ec36f437-ad4d-4512-94dd-f4c568143aa7"
     internal="yes"
     wsmap="suppress"
     >
@@ -3804,11 +3804,6 @@
       <param name="flags" type="wstring" dir="in">
         <desc>
           The flags of the property.
-        </desc>
-      </param>
-      <param name="notify" type="boolean" dir="return">
-        <desc>
-          Returns if a guest property change notification event should be fired.
         </desc>
       </param>
     </method>
@@ -4169,7 +4164,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="520a0c22-8dbc-458d-b637-31eb078b5526"
+    uuid="6bf820b3-a08f-49a7-ac08-b88efbd3a313"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -4796,14 +4791,6 @@
     <attribute name="dnDMode" type="DnDMode">
       <desc>
         Sets or retrieves the current drag'n drop mode.
-      </desc>
-    </attribute>
-
-    <attribute name="guestPropertyNotificationPatterns" type="wstring">
-      <desc>
-        A comma-separated list of simple glob patterns. Changes to guest
-        properties whose name matches one of the patterns will generate an
-        <link to="IGuestPropertyChangedEvent"/> signal.
       </desc>
     </attribute>
 
@@ -6047,12 +6034,14 @@ and "VAR" for unsetting. -->
 
     <method name="getStorageControllerByInstance" const="yes">
       <desc>
-        Returns a storage controller with the given instance number.
+        Returns a storage controller of a specific storage bus
+        with the given instance number.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           A storage controller with given instance number doesn't exist.
         </result>
       </desc>
+      <param name="connectionType" type="StorageBus" dir="in"/>
       <param name="instance" type="unsigned long" dir="in"/>
       <param name="storageController" type="IStorageController" dir="return"/>
     </method>
@@ -17803,17 +17792,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBController" extends="$unknown"
-    uuid="d2745291-65f7-4d75-9556-38047d802319"
+    uuid="2598fa52-3044-4ff5-8a61-2b09088a9e3c"
     wsmap="managed"
     >
 
-    <attribute name="name" type="wstring" readonly="yes">
+    <attribute name="name" type="wstring">
       <desc>
         The USB Controller name.
       </desc>
     </attribute>
 
-    <attribute name="type" type="USBControllerType" readonly="yes">
+    <attribute name="type" type="USBControllerType">
       <desc>
         The USB Controller type.
       </desc>
@@ -19486,7 +19475,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="a1556333-09b6-46d9-bfb7-fc239b7fbe1e"
+    uuid="802bb9c0-fe71-43ab-b55a-322fdf77358f"
     wsmap="managed"
     >
     <desc>
@@ -19508,7 +19497,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         significantly different virtual hardware.
     </desc>
 
-    <attribute name="name" type="wstring" readonly="yes">
+    <attribute name="name" type="wstring">
       <desc>
         Name of the storage controller, as originally specified with
         <link to="IMachine::addStorageController" />. This then uniquely

@@ -973,7 +973,6 @@ struct Hardware
     bool                fPageFusionEnabled;
 
     GuestPropertiesList llGuestProperties;
-    com::Utf8Str        strNotificationPatterns;
 
     IOSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
     HostPCIDeviceAttachmentList pciAttachments; // requires settings version 1.12 (VirtualBox 4.1)

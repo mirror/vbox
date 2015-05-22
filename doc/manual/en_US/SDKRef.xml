@@ -3947,10 +3947,25 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
+          <para>The method <xref linkend="IMachine__getStorageControllerByInstance"
+          xreflabel="IMachine::getStorageControllerByInstance()" /> now has an
+          additional parameter (first parameter), for specifying the storage
+          bus which the storage controller must be using. The method was not
+          useful before, as the instance numbers are only unique for a specfic
+          storage bus.</para>
+        </listitem>
+
+        <listitem>
           <para>The attribute <computeroutput>IMachine::sessionType</computeroutput>
           has been renamed to <xref linkend="IMachine__sessionName"
           xreflabel="IMachine::sessionName()" />. This cleans up the confusing
           terminology (as the session type is something different).</para>
+        </listitem>
+
+        <listitem>
+          <para>The attribute <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>
+          has been removed. In practice it was not usable because it is too
+          global and didn't distinguish between API clients.</para>
         </listitem>
 
         <listitem><para>Drag'n drop APIs were changed as follows:<itemizedlist>
@@ -5764,9 +5779,8 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>New attributes in IMachine: <xref
           linkend="IMachine__accelerate3DEnabled"
-          xreflabel="accelerate3DEnabled" />, HWVirtExVPIDEnabled, <xref
-          linkend="IMachine__guestPropertyNotificationPatterns"
-          xreflabel="guestPropertyNotificationPatterns" />, <xref
+          xreflabel="accelerate3DEnabled" />, HWVirtExVPIDEnabled, 
+          <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>, <xref
           linkend="IMachine__CPUCount" xreflabel="CPUCount" />.</para>
         </listitem>
 

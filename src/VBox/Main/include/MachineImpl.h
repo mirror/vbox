@@ -306,7 +306,6 @@ public:
 
         typedef std::map<Utf8Str, GuestProperty> GuestPropertyMap;
         GuestPropertyMap    mGuestProperties;
-        Utf8Str             mGuestPropertyNotificationPatterns;
 
         FirmwareType_T      mFirmwareType;
         KeyboardHIDType_T   mKeyboardHIDType;
@@ -590,6 +589,14 @@ public:
                                  BOOL *aRegistered = NULL);
     void i_releaseStateDependency();
 
+    HRESULT i_getStorageControllerByName(const Utf8Str &aName,
+                                         ComObjPtr<StorageController> &aStorageController,
+                                         bool aSetError = false);
+
+    HRESULT i_getUSBControllerByName(const Utf8Str &aName,
+                                     ComObjPtr<USBController> &aUSBController,
+                                     bool aSetError = false);
+
     HRESULT i_getBandwidthGroup(const Utf8Str &strBandwidthGroup,
                                 ComObjPtr<BandwidthGroup> &pBandwidthGroup,
                                 bool fSetError = false)
@@ -642,16 +649,8 @@ protected:
                                  ComObjPtr<Snapshot> &aSnapshot,
                                  bool aSetError = false);
 
-    HRESULT i_getStorageControllerByName(const Utf8Str &aName,
-                                         ComObjPtr<StorageController> &aStorageController,
-                                         bool aSetError = false);
-
     HRESULT i_getMediumAttachmentsOfController(const Utf8Str &aName,
                                                MediaData::AttachmentList &aAttachments);
-
-    HRESULT i_getUSBControllerByName(const Utf8Str &aName,
-                                     ComObjPtr<USBController> &aUSBController,
-                                     bool aSetError = false);
 
     ULONG   i_getUSBControllerCountByType(USBControllerType_T enmType);
 
@@ -942,8 +941,6 @@ private:
     HRESULT setClipboardMode(ClipboardMode_T aClipboardMode);
     HRESULT getDnDMode(DnDMode_T *aDnDMode);
     HRESULT setDnDMode(DnDMode_T aDnDMode);
-    HRESULT getGuestPropertyNotificationPatterns(com::Utf8Str &aGuestPropertyNotificationPatterns);
-    HRESULT setGuestPropertyNotificationPatterns(const com::Utf8Str &aGuestPropertyNotificationPatterns);
     HRESULT getTeleporterEnabled(BOOL *aTeleporterEnabled);
     HRESULT setTeleporterEnabled(BOOL aTeleporterEnabled);
     HRESULT getTeleporterPort(ULONG *aTeleporterPort);
@@ -1068,7 +1065,8 @@ private:
                                  ComPtr<IStorageController> &aController);
     HRESULT getStorageControllerByName(const com::Utf8Str &aName,
                                        ComPtr<IStorageController> &aStorageController);
-    HRESULT getStorageControllerByInstance(ULONG aInstance,
+    HRESULT getStorageControllerByInstance(StorageBus_T aConnectionType,
+                                           ULONG aInstance,
                                            ComPtr<IStorageController> &aStorageController);
     HRESULT removeStorageController(const com::Utf8Str &aName);
     HRESULT setStorageControllerBootable(const com::Utf8Str &aName,
@@ -1232,8 +1230,7 @@ private:
     HRESULT pushGuestProperty(const com::Utf8Str &aName,
                               const com::Utf8Str &aValue,
                               LONG64 aTimestamp,
-                              const com::Utf8Str &aFlags,
-                              BOOL *aNotify);
+                              const com::Utf8Str &aFlags);
     HRESULT lockMedia();
     HRESULT unlockMedia();
     HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,
@@ -1381,8 +1378,7 @@ private:
     HRESULT pushGuestProperty(const com::Utf8Str &aName,
                               const com::Utf8Str &aValue,
                               LONG64 aTimestamp,
-                              const com::Utf8Str &aFlags,
-                              BOOL *aNotify);
+                              const com::Utf8Str &aFlags);
     HRESULT lockMedia();
     HRESULT unlockMedia();
     HRESULT ejectMedium(const ComPtr<IMediumAttachment> &aAttachment,

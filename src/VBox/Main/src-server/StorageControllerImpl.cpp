@@ -322,16 +322,42 @@ HRESULT StorageController::getName(com::Utf8Str &aName)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* mName is constant during life time, no need to lock */
-    aName = m->bd.data()->strName;
+    aName = m->bd->strName;
+
+    return S_OK;
+}
+
+HRESULT StorageController::setName(const com::Utf8Str &aName)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoMultiWriteLock2 alock(m->pParent, this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->strName != aName)
+    {
+        ComObjPtr<StorageController> ctrl;
+        HRESULT rc = m->pParent->i_getStorageControllerByName(aName, ctrl, false /* aSetError */);
+        if (SUCCEEDED(rc))
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("Storage controller named '%s' already exists"),
+                            aName.c_str());
+
+        m->bd.backup();
+        m->bd->strName = aName;
+
+        m->pParent->i_setModified(Machine::IsModified_Storage);
+        alock.release();
+
+        m->pParent->i_onStorageControllerChange();
+    }
 
     return S_OK;
 }
 
 HRESULT StorageController::getBus(StorageBus_T *aBus)
 {
-    CheckComArgOutPointerValid(aBus);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aBus = m->bd->mStorageBus;
@@ -341,8 +367,6 @@ HRESULT StorageController::getBus(StorageBus_T *aBus)
 
 HRESULT StorageController::getControllerType(StorageControllerType_T *aControllerType)
 {
-    CheckComArgOutPointerValid(aControllerType);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aControllerType = m->bd->mStorageControllerType;
@@ -352,6 +376,10 @@ HRESULT StorageController::getControllerType(StorageControllerType_T *aControlle
 
 HRESULT StorageController::setControllerType(StorageControllerType_T aControllerType)
 {
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
@@ -399,6 +427,7 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
         }
         default:
             AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
+            rc = E_INVALIDARG;
     }
 
     if (!SUCCEEDED(rc))
@@ -406,15 +435,24 @@ HRESULT StorageController::setControllerType(StorageControllerType_T aController
                         tr ("Invalid controller type %d"),
                         aControllerType);
 
-    m->bd->mStorageControllerType = aControllerType;
+    if (m->bd->mStorageControllerType != aControllerType)
+    {
+        m->bd.backup();
+        m->bd->mStorageControllerType = aControllerType;
+
+        alock.release();
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
+        m->pParent->i_setModified(Machine::IsModified_Storage);
+        mlock.release();
+
+        m->pParent->i_onStorageControllerChange();
+    }
 
     return S_OK;
 }
 
 HRESULT StorageController::getMaxDevicesPerPortCount(ULONG *aMaxDevicesPerPortCount)
 {
-    CheckComArgOutPointerValid(aMaxDevicesPerPortCount);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = m->pSystemProperties->GetMaxDevicesPerPortForStorageBus(m->bd->mStorageBus, aMaxDevicesPerPortCount);
@@ -424,8 +462,6 @@ HRESULT StorageController::getMaxDevicesPerPortCount(ULONG *aMaxDevicesPerPortCo
 
 HRESULT StorageController::getMinPortCount(ULONG *aMinPortCount)
 {
-    CheckComArgOutPointerValid(aMinPortCount);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = m->pSystemProperties->GetMinPortCountForStorageBus(m->bd->mStorageBus, aMinPortCount);
@@ -434,8 +470,6 @@ HRESULT StorageController::getMinPortCount(ULONG *aMinPortCount)
 
 HRESULT StorageController::getMaxPortCount(ULONG *aMaxPortCount)
 {
-    CheckComArgOutPointerValid(aMaxPortCount);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = m->pSystemProperties->GetMaxPortCountForStorageBus(m->bd->mStorageBus, aMaxPortCount);
 
@@ -444,8 +478,6 @@ HRESULT StorageController::getMaxPortCount(ULONG *aMaxPortCount)
 
 HRESULT StorageController::getPortCount(ULONG *aPortCount)
 {
-    CheckComArgOutPointerValid(aPortCount);
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aPortCount = m->bd->mPortCount;
@@ -455,7 +487,11 @@ HRESULT StorageController::getPortCount(ULONG *aPortCount)
 
 HRESULT StorageController::setPortCount(ULONG aPortCount)
 {
-    LogFlowThisFunc(("aPortCount=%u\n", aPortCount));
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     switch (m->bd->mStorageBus)
     {
@@ -528,15 +564,6 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
             AssertMsgFailed(("Invalid controller type %d\n", m->bd->mStorageBus));
     }
 
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     if (m->bd->mPortCount != aPortCount)
     {
         m->bd.backup();
@@ -555,8 +582,6 @@ HRESULT StorageController::setPortCount(ULONG aPortCount)
 
 HRESULT StorageController::getInstance(ULONG *aInstance)
 {
-    /* The machine doesn't need to be mutable. */
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aInstance = m->bd->mInstance;
@@ -566,19 +591,30 @@ HRESULT StorageController::getInstance(ULONG *aInstance)
 
 HRESULT StorageController::setInstance(ULONG aInstance)
 {
-    /* The machine doesn't need to be mutable. */
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->bd->mInstance = aInstance;
+    if (m->bd->mInstance != aInstance)
+    {
+        m->bd.backup();
+        m->bd->mInstance = aInstance;
+
+        alock.release();
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
+        m->pParent->i_setModified(Machine::IsModified_Storage);
+        mlock.release();
+
+        m->pParent->i_onStorageControllerChange();
+    }
 
     return S_OK;
 }
 
 HRESULT StorageController::getUseHostIOCache(BOOL *fUseHostIOCache)
 {
-    /* The machine doesn't need to be mutable. */
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *fUseHostIOCache = m->bd->fUseHostIOCache;
@@ -612,9 +648,6 @@ HRESULT StorageController::setUseHostIOCache(BOOL fUseHostIOCache)
 
 HRESULT StorageController::getBootable(BOOL *fBootable)
 {
-
-    /* The machine doesn't need to be mutable. */
-
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *fBootable = m->bd->fBootable;

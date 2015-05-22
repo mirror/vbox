@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2005-2013 Oracle Corporation
+ * Copyright (C) 2005-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -237,8 +237,38 @@ void USBController::uninit()
 /////////////////////////////////////////////////////////////////////////////
 HRESULT USBController::getName(com::Utf8Str &aName)
 {
-    /* strName is constant during life time, no need to lock */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     aName = m->bd->strName;
+
+    return S_OK;
+}
+
+HRESULT USBController::setName(const com::Utf8Str &aName)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoMultiWriteLock2 alock(m->pParent, this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->strName != aName)
+    {
+        ComObjPtr<USBController> ctrl;
+        HRESULT rc = m->pParent->i_getUSBControllerByName(aName, ctrl, false /* aSetError */);
+        if (SUCCEEDED(rc))
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("USB controller named '%s' already exists"),
+                            aName.c_str());
+
+        m->bd.backup();
+        m->bd->strName = aName;
+
+        m->pParent->i_setModified(Machine::IsModified_USB);
+        alock.release();
+
+        m->pParent->i_onUSBControllerChange();
+    }
 
     return S_OK;
 }
@@ -248,6 +278,28 @@ HRESULT USBController::getType(USBControllerType_T *aType)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aType = m->bd->enmType;
+
+    return S_OK;
+}
+
+HRESULT USBController::setType(USBControllerType_T aType)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pParent);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoMultiWriteLock2 alock(m->pParent, this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd->enmType != aType)
+    {
+        m->bd.backup();
+        m->bd->enmType = aType;
+
+        m->pParent->i_setModified(Machine::IsModified_USB);
+        alock.release();
+
+        m->pParent->i_onUSBControllerChange();
+    }
 
     return S_OK;
 }

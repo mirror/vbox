@@ -71,6 +71,7 @@ private:
 
     // Wrapped IStorageController properties
     HRESULT getName(com::Utf8Str &aName);
+    HRESULT setName(const com::Utf8Str &aName);
     HRESULT getMaxDevicesPerPortCount(ULONG *aMaxDevicesPerPortCount);
     HRESULT getMinPortCount(ULONG *aMinPortCount);
     HRESULT getMaxPortCount(ULONG *aMaxPortCount);

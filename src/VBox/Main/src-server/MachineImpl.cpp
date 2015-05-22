@@ -206,7 +206,6 @@ Machine::HWData::HWData()
 
     mClipboardMode = ClipboardMode_Disabled;
     mDnDMode = DnDMode_Disabled;
-    mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
     mKeyboardHIDType = KeyboardHIDType_PS2Keyboard;
@@ -2842,35 +2841,6 @@ HRESULT Machine::setDnDMode(DnDMode_T aDnDMode)
         i_saveSettings(NULL);
 
     return S_OK;
-}
-
-HRESULT Machine::getGuestPropertyNotificationPatterns(com::Utf8Str &aGuestPropertyNotificationPatterns)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    try
-    {
-        aGuestPropertyNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
-    }
-    catch (...)
-    {
-        return VirtualBoxBase::handleUnexpectedExceptions(this, RT_SRC_POS);
-    }
-
-    return S_OK;
-}
-
-HRESULT Machine::setGuestPropertyNotificationPatterns(const com::Utf8Str &aGuestPropertyNotificationPatterns)
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT rc = i_checkStateDependency(MutableOrSavedOrRunningStateDep);
-    if (FAILED(rc)) return rc;
-
-    i_setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mGuestPropertyNotificationPatterns = aGuestPropertyNotificationPatterns;
-    return rc;
 }
 
 HRESULT Machine::getStorageControllers(std::vector<ComPtr<IStorageController> > &aStorageControllers)
@@ -5751,15 +5721,7 @@ HRESULT Machine::i_setGuestPropertyToService(const com::Utf8Str &aName, const co
             }
         }
 
-        if (   SUCCEEDED(rc)
-            && (   mHWData->mGuestPropertyNotificationPatterns.isEmpty()
-                || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.c_str(),
-                                                RTSTR_MAX,
-                                                aName.c_str(),
-                                                RTSTR_MAX,
-                                                NULL)
-               )
-           )
+        if (SUCCEEDED(rc))
         {
             alock.release();
 
@@ -6096,7 +6058,8 @@ HRESULT Machine::getStorageControllerByName(const com::Utf8Str &aName,
     return rc;
 }
 
-HRESULT Machine::getStorageControllerByInstance(ULONG aInstance,
+HRESULT Machine::getStorageControllerByInstance(StorageBus_T aConnectionType,
+                                                ULONG aInstance,
                                                 ComPtr<IStorageController> &aStorageController)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -6105,7 +6068,8 @@ HRESULT Machine::getStorageControllerByInstance(ULONG aInstance,
          it != mStorageControllers->end();
          ++it)
     {
-        if ((*it)->i_getInstance() == aInstance)
+        if (   (*it)->i_getStorageBus() == aConnectionType
+            && (*it)->i_getInstance() == aInstance)
         {
             (*it).queryInterfaceTo(aStorageController.asOutParam());
             return S_OK;
@@ -9079,8 +9043,6 @@ HRESULT Machine::i_loadHardware(const settings::Hardware &data, const settings::
             mHWData->mGuestProperties[prop.strName] = property;
             ++it;
         }
-
-        mHWData->mGuestPropertyNotificationPatterns = data.strNotificationPatterns;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
         rc = i_loadDebugging(pDbg);
@@ -10381,7 +10343,6 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
             data.llGuestProperties.push_back(prop);
         }
 
-        data.strNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
         /* I presume this doesn't require a backup(). */
         mData->mGuestPropertiesModified = FALSE;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
@@ -13392,15 +13353,12 @@ HRESULT SessionMachine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
                                           const com::Utf8Str &aValue,
                                           LONG64 aTimestamp,
-                                          const com::Utf8Str &aFlags,
-                                          BOOL *aNotify)
+                                          const com::Utf8Str &aFlags)
 {
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
-
-    *aNotify = FALSE;
 
     try
     {
@@ -13468,24 +13426,12 @@ HRESULT SessionMachine::pushGuestProperty(const com::Utf8Str &aName,
             mData->mGuestPropertiesModified = TRUE;
         }
 
-        /*
-         * Send a callback notification if appropriate
-         */
-        if (    mHWData->mGuestPropertyNotificationPatterns.isEmpty()
-             || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.c_str(),
-                                             RTSTR_MAX,
-                                             aName.c_str(),
-                                             RTSTR_MAX, NULL)
-           )
-        {
-            alock.release();
+        alock.release();
 
-            mParent->i_onGuestPropertyChange(mData->mUuid,
-                                             Bstr(aName).raw(),
-                                             Bstr(aValue).raw(),
-                                             Bstr(aFlags).raw());
-            *aNotify = TRUE;
-        }
+        mParent->i_onGuestPropertyChange(mData->mUuid,
+                                         Bstr(aName).raw(),
+                                         Bstr(aValue).raw(),
+                                         Bstr(aFlags).raw());
     }
     catch (...)
     {
@@ -14756,14 +14702,12 @@ HRESULT Machine::pullGuestProperties(std::vector<com::Utf8Str> &aNames,
 HRESULT Machine::pushGuestProperty(const com::Utf8Str &aName,
                                    const com::Utf8Str &aValue,
                                    LONG64 aTimestamp,
-                                   const com::Utf8Str &aFlags,
-                                   BOOL *aNotify)
+                                   const com::Utf8Str &aFlags)
 {
     NOREF(aName);
     NOREF(aValue);
     NOREF(aTimestamp);
     NOREF(aFlags);
-    NOREF(aNotify);
     ReturnComNotImplemented();
 }
 

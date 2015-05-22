@@ -2081,7 +2081,6 @@ bool Hardware::operator==(const Hardware& h) const
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
                   && (fPageFusionEnabled        == h.fPageFusionEnabled)
                   && (llGuestProperties         == h.llGuestProperties)
-                  && (strNotificationPatterns   == h.strNotificationPatterns)
                   && (ioSettings                == h.ioSettings)
                   && (pciAttachments            == h.pciAttachments)
                   && (strDefaultFrontend        == h.strDefaultFrontend)
@@ -2690,8 +2689,6 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
         pelmProp->getAttributeValue("flags", prop.strFlags);
         hw.llGuestProperties.push_back(prop);
     }
-
-    elmGuestProperties.getAttributeValue("notificationPatterns", hw.strNotificationPatterns);
 }
 
 /**
@@ -4852,9 +4849,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         pelmProp->setAttribute("timestamp", prop.timestamp);
         pelmProp->setAttribute("flags", prop.strFlags);
     }
-
-    if (hw.strNotificationPatterns.length())
-        pelmGuestProps->setAttribute("notificationPatterns", hw.strNotificationPatterns);
 }
 
 /**
