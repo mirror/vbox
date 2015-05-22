@@ -833,6 +833,8 @@ typedef struct VBVABUFFER
     uint8_t  au8Data[1]; /* variable size for the rest of the VBVABUFFER area in VRAM. */
 } VBVABUFFER;
 
+#define VBVA_MAX_RECORD_SIZE (128*_1M)
+
 /* guest->host commands */
 #define VBVA_QUERY_CONF32 1
 #define VBVA_SET_CONF32   2
@@ -928,6 +930,8 @@ typedef struct VBVAHOSTCMD
 #define VBOX_VBVA_CONF32_CURSOR_CAPABILITIES  4
 /** Returns the supported flags in VBVAINFOSCREEN::u8Flags. */
 #define VBOX_VBVA_CONF32_SCREEN_FLAGS 5
+/** Returns the max size of VBVA record. */
+#define VBOX_VBVA_CONF32_MAX_RECORD_SIZE 6
 
 typedef struct VBVACONF32
 {
