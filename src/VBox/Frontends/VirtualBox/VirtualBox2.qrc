@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file alias="os_ubuntu_64.png">images/os_ubuntu_64.png</file>
         <file alias="os_win10.png">images/os_win10.png</file>
         <file alias="os_win10_64.png">images/os_win10_64.png</file>
         <file alias="os_win2k.png">images/os_win2k.png</file>
@@ -229,9 +230,7 @@
         <file alias="vm_open_filemanager_16px.png">images/vm_open_filemanager_16px.png</file>
         <file alias="vm_open_filemanager_disabled_16px.png">images/vm_open_filemanager_disabled_16px.png</file>
         <file alias="vm_pause_16px.png">images/vm_pause_16px.png</file>
-        <file alias="vm_pause_32px.png">images/vm_pause_32px.png</file>
         <file alias="vm_pause_disabled_16px.png">images/vm_pause_disabled_16px.png</file>
-        <file alias="vm_pause_disabled_32px.png">images/vm_pause_disabled_32px.png</file>
         <file alias="vm_pause_on_16px.png">images/vm_pause_on_16px.png</file>
         <file alias="vm_pause_on_disabled_16px.png">images/vm_pause_on_disabled_16px.png</file>
         <file alias="vm_poweroff_16px.png">images/vm_poweroff_16px.png</file>
