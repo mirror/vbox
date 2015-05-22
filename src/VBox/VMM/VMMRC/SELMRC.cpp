@@ -325,7 +325,7 @@ DECLEXPORT(VBOXSTRICTRC) selmRCGuestGDTWritePfHandler(PVM pVM, PVMCPU pVCpu, RTG
     {
         Assert(RT_FAILURE(rcStrict));
         if (rcStrict == VERR_EM_INTERPRETER)
-            rcStrict = VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR; /* No, not VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT, see PGM_PHYS_RW_IS_SUCCESS.  */
         VMCPU_FF_SET(pVCpu, VMCPU_FF_SELM_SYNC_GDT);
     }
 
