@@ -754,15 +754,15 @@
     </message>
     <message>
         <source>Opens window to configure status-bar</source>
-        <translation>Öffnet ein Fenster zum Konfigurieren der Statuszeile</translation>
+        <translation>Öffnet ein Fenster zum Konfigurieren der Statusleiste</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation>Zeige &amp;Statuszeile</translation>
+        <translation>Zeige &amp;Statusleiste</translation>
     </message>
     <message>
         <source>Toggle status-bar visibility for this machine</source>
-        <translation>Statuszeile für diese virtuelle Maschine ein-/ausschalten</translation>
+        <translation>Statusleiste für diese virtuelle Maschine ein-/ausschalten</translation>
     </message>
     <message>
         <source>&amp;Input</source>
@@ -1112,7 +1112,7 @@
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished">Empfange Daten ...</translation>
+        <translation>Empfange Daten ...</translation>
     </message>
 </context>
 <context>
@@ -1581,47 +1581,47 @@
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Skalierungsfaktor</translation>
+        <translation>Skalierungsfaktor</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished">Nicht skalierte HiDPI-Auflösung</translation>
+        <translation>Nicht skalierte HiDPI-Auflösung</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Menüleiste</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Statusleiste</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
 </context>
 <context>
@@ -1659,7 +1659,7 @@
     <name>UIGlobalSettingsDisplay</name>
     <message>
         <source>Maximum Guest Screen &amp;Size:</source>
-        <translation>Maximale &amp;Größe Gastbildschirm:</translation>
+        <translation>Maximale &amp;Größe Gast-Bildschirm:</translation>
     </message>
     <message>
         <source>&amp;Width:</source>
@@ -1667,7 +1667,7 @@
     </message>
     <message>
         <source>Specifies the maximum width which we would like the guest to use.</source>
-        <translation>Legt die maximale Breite des Gastbildschirms fest, die der Gast einstellen darf.</translation>
+        <translation>Legt die maximale Breite des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
     </message>
     <message>
         <source>&amp;Height:</source>
@@ -1675,7 +1675,7 @@
     </message>
     <message>
         <source>Specifies the maximum height which we would like the guest to use.</source>
-        <translation>Legt die maximale Höhe des Gastbildschirms fest, die der Gast einstellen darf.</translation>
+        <translation>Legt die maximale Höhe des Gast-Bildschirms fest, die der Gast einstellen darf.</translation>
     </message>
     <message>
         <source>Automatic</source>
@@ -1702,7 +1702,7 @@
     </message>
     <message>
         <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
-        <translation>Setzt die maximale Größe des Gastbildschirms. Der Gast wird diese Angabe nur befolgen, wenn die Gasterweiterungen installiert sind.</translation>
+        <translation>Setzt die maximale Größe des Gast-Bildschirms. Der Gast wird diese Angabe nur befolgen, wenn die Gasterweiterungen installiert sind.</translation>
     </message>
     <message>
         <source>Machine Windows:</source>
@@ -2967,43 +2967,43 @@
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bildschirm</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Skalierungsfaktor:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellung des Skalierungsfaktors des Gast-Bildschirms.</translation>
     </message>
     <message>
         <source>100%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>200%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>HiDPI:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verhindert die Skalierung des Gast-Bildschirminhaltes auf hochauflösenden Host-Bildschirmen.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished">&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
+        <translation>&amp;Nicht-skalierte HiDPI-Ausgabe</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>Beschleunigung:</translation>
     </message>
 </context>
 <context>
@@ -3186,7 +3186,7 @@
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation>Ändern der Statuszeile des VM-Fensters.</translation>
+        <translation>Ändern der Statusleiste des VM-Fensters.</translation>
     </message>
 </context>
 <context>
@@ -3954,7 +3954,7 @@
     </message>
     <message>
         <source>When checked the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bei Aktivierung wird diese virtuelle Platte als hot-pluggable markiert.</translation>
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
@@ -3994,7 +3994,7 @@
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Verschlüsselt mit:</translation>
     </message>
 </context>
 <context>
@@ -4829,7 +4829,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statuszeile wird so &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeiger-Integration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeiger-Integration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Die virtuelle Maschine meldet Unterstützung der &lt;b&gt;Mauszeiger-Integration&lt;/b&gt; durch das Gastsystem. Dies bedeutet, dass die Maus nicht gefangen werden muss, um es im Gastsystem zu benutzen, sondern alle Mausaktionen über der VM-Anzeigebereich werden direkt an den Gast weitergeleitet. Der Fangmodus wird automatisch aufgehoben, falls die Maus momentan gefangen ist.&lt;/p&gt;&lt;p&gt;Das Mausicon in der Statusleiste wird so &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;aussehen, um anzuzeigen, dass die Mauszeiger-Integration durch den Gast unterstützt und momentan aktiv ist.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Beachten Sie&lt;/b&gt;: Einige Anwendungen verhalten sich möglicherweise inkorrekt, wenn die Mauszeiger-Integration aktiv ist. Sie können diesen Modus durch Auswahl des entsprechenden Eintrages in der Menüzeile jederzeit deaktivieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
