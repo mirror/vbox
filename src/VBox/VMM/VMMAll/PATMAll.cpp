@@ -39,23 +39,10 @@
 
 
 /**
- * Access handler callback for virtual access handler ranges.
+ * @callback_method_impl{FNPGMPHYSHANDLER, PATM all access handler callback.}
  *
- * Important to realize that a physical page in a range can have aliases, and
- * for ALL and WRITE handlers these will also trigger.
- *
- * @returns VINF_SUCCESS if the handler have carried out the operation.
- * @returns VINF_PGM_HANDLER_DO_DEFAULT if the caller should carry out the access operation.
- * @param   pVM             Pointer to the VM.
- * @param   pVCpu           Pointer to the cross context CPU context for the
- *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
- * @param   pvPtr           The HC mapping of that address.
- * @param   pvBuf           What the guest is reading/writing.
- * @param   cbBuf           How much it's reading/writing.
- * @param   enmAccessType   The access type.
- * @param   enmOrigin       Who is making this write.
- * @param   pvUser          The address of the guest page we're monitoring.
+ * @remarks The @a pvUser argument is the base address of the page being
+ *          monitored.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC) patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
                                                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
