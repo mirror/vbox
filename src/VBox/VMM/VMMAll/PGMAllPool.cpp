@@ -1346,6 +1346,8 @@ flushPage:
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER,
  *      Access handler for shadowed page table pages.}
+ *
+ * @remarks Only uses the VINF_PGM_HANDLER_DO_DEFAULT status.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)
 pgmPoolAccessHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
