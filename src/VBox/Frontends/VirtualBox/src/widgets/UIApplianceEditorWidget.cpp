@@ -36,6 +36,7 @@
 # include "VBoxOSTypeSelectorButton.h"
 # include "UILineTextEdit.h"
 # include "UIConverter.h"
+# include "UIIconPool.h"
 
 /* COM includes: */
 # include "CSystemProperties.h"
@@ -266,34 +267,36 @@ QVariant HardwareItem::data(int column, int role) const
             {
                 switch (m_type)
                 {
-                    case KVirtualSystemDescriptionType_Name:                   v = QIcon(":/name_16px.png"); break;
+                    case KVirtualSystemDescriptionType_Name:                   v = UIIconPool::iconSet(":/name_16px.png"); break;
                     case KVirtualSystemDescriptionType_Product:
                     case KVirtualSystemDescriptionType_ProductUrl:
                     case KVirtualSystemDescriptionType_Vendor:
                     case KVirtualSystemDescriptionType_VendorUrl:
                     case KVirtualSystemDescriptionType_Version:
                     case KVirtualSystemDescriptionType_Description:
-                    case KVirtualSystemDescriptionType_License:                v = QIcon(":/description_16px.png"); break;
-                    case KVirtualSystemDescriptionType_OS:                     v = QIcon(":/os_type_16px.png"); break;
-                    case KVirtualSystemDescriptionType_CPU:                    v = QIcon(":/cpu_16px.png"); break;
-                    case KVirtualSystemDescriptionType_Memory:                 v = QIcon(":/ram_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerIDE:  v = QIcon(":/ide_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = QIcon(":/sata_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = QIcon(":/scsi_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  v = QIcon(":/scsi_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskImage:          v = QIcon(":/hd_16px.png"); break;
-                    case KVirtualSystemDescriptionType_CDROM:                  v = QIcon(":/cd_16px.png"); break;
-                    case KVirtualSystemDescriptionType_Floppy:                 v = QIcon(":/fd_16px.png"); break;
-                    case KVirtualSystemDescriptionType_NetworkAdapter:         v = QIcon(":/nw_16px.png"); break;
-                    case KVirtualSystemDescriptionType_USBController:          v = QIcon(":/usb_16px.png"); break;
-                    case KVirtualSystemDescriptionType_SoundCard:              v = QIcon(":/sound_16px.png"); break;
+                    case KVirtualSystemDescriptionType_License:                v = UIIconPool::iconSet(":/description_16px.png"); break;
+                    case KVirtualSystemDescriptionType_OS:                     v = UIIconPool::iconSet(":/os_type_16px.png"); break;
+                    case KVirtualSystemDescriptionType_CPU:                    v = UIIconPool::iconSet(":/cpu_16px.png"); break;
+                    case KVirtualSystemDescriptionType_Memory:                 v = UIIconPool::iconSet(":/ram_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerIDE:  v = UIIconPool::iconSet(":/ide_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = UIIconPool::iconSet(":/sata_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = UIIconPool::iconSet(":/scsi_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  v = UIIconPool::iconSet(":/scsi_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskImage:          v = UIIconPool::iconSet(":/hd_16px.png"); break;
+                    case KVirtualSystemDescriptionType_CDROM:                  v = UIIconPool::iconSet(":/cd_16px.png"); break;
+                    case KVirtualSystemDescriptionType_Floppy:                 v = UIIconPool::iconSet(":/fd_16px.png"); break;
+                    case KVirtualSystemDescriptionType_NetworkAdapter:         v = UIIconPool::iconSet(":/nw_16px.png"); break;
+                    case KVirtualSystemDescriptionType_USBController:          v = UIIconPool::iconSet(":/usb_16px.png"); break;
+                    case KVirtualSystemDescriptionType_SoundCard:              v = UIIconPool::iconSet(":/sound_16px.png"); break;
                     default: break;
                 }
             }
             else if (column == ConfigValueSection &&
                      m_type == KVirtualSystemDescriptionType_OS)
             {
-                v = vboxGlobal().vmGuestOSTypeIcon(m_strConfigValue).scaledToHeight(16, Qt::SmoothTransformation);
+                const QStyle *pStyle = QApplication::style();
+                const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
+                v = vboxGlobal().vmGuestOSTypeIcon(m_strConfigValue).scaledToHeight(iIconMetric, Qt::SmoothTransformation);
             }
             break;
         }

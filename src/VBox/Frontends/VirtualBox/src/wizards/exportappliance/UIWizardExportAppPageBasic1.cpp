@@ -51,9 +51,11 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
         QString strUuid;
         bool fInSaveState = false;
         bool fEnabled = false;
+        const QStyle *pStyle = QApplication::style();
+        const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize);
         if (machine.GetAccessible())
         {
-            pixIcon = vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()).scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            pixIcon = vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()).scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
             strName = machine.GetName();
             strUuid = machine.GetId();
             fEnabled = machine.GetSessionState() == KSessionState_Unlocked;
@@ -64,7 +66,7 @@ void UIWizardExportAppPage1::populateVMSelectorItems(const QStringList &selected
             QString settingsFile = machine.GetSettingsFilePath();
             QFileInfo fi(settingsFile);
             strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
-            pixIcon = QPixmap(":/os_other.png").scaled(16, 16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            pixIcon = QPixmap(":/os_other.png").scaled(iIconMetric, iIconMetric, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
         QListWidgetItem *pItem = new VMListWidgetItem(pixIcon, strName, strUuid, fInSaveState, m_pVMSelector);
         if (!fEnabled)
