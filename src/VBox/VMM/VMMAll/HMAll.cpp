@@ -296,7 +296,7 @@ VMM_INT_DECL(bool) HMIsNestedPagingActive(PVM pVM)
 /**
  * Checks if both nested paging and unhampered guest execution are enabled.
  *
- * The almost complete guest execution in harware is only applicable to VT-x.
+ * The almost complete guest execution in hardware is only applicable to VT-x.
  *
  * @returns true if we have both enabled, otherwise false.
  * @param   pVM         Pointer to the VM.

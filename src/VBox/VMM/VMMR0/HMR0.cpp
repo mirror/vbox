@@ -1650,7 +1650,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
     if (!g_HvmR0.vmx.fSupported)
         return VINF_SUCCESS;
 
-    /* Check if the swithcing we're up to is safe. */
+    /* Check if the switching we're up to is safe. */
     switch (enmSwitcher)
     {
         case VMMSWITCHER_32_TO_32:
@@ -1675,7 +1675,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
         return VINF_SUCCESS;
     }
 
-    /** @todo Check if this code is presumtive wrt other VT-x users on the
+    /** @todo Check if this code is presumptive wrt other VT-x users on the
     *        system... */
 
     /* Nothing to do if we haven't enabled VT-x. */
