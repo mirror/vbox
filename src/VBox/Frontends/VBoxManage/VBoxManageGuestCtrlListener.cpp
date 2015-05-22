@@ -203,7 +203,7 @@ void GuestSessionEventListener::uninit(void)
             itProc->first->Release();
         }
 
-        itProc++;
+        ++itProc;
     }
     mProcs.clear();
 
@@ -224,7 +224,7 @@ void GuestSessionEventListener::uninit(void)
             itFile->first->Release();
         }
 
-        itFile++;
+        ++itFile;
     }
     mFiles.clear();
 }
@@ -430,7 +430,7 @@ void GuestEventListener::uninit(void)
             itSession->first->Release();
         }
 
-        itSession++;
+        ++itSession;
     }
     mSessions.clear();
 }

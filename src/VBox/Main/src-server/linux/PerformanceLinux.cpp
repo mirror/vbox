@@ -127,7 +127,7 @@ int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */
         if (RT_SUCCESS(rc))
             mProcessStats[*it] = vmStats;
     }
-    if (hints.isHostCpuLoadCollected() || mProcessStats.size())
+    if (hints.isHostCpuLoadCollected() || !mProcessStats.empty())
     {
         _getRawHostCpuLoad();
     }

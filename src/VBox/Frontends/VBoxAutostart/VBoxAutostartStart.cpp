@@ -113,7 +113,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
         }
 
         if (   SUCCEEDED(rc)
-            && listVM.size())
+            && !listVM.empty())
         {
             ULONG uDelayCurr = 0;
 
@@ -121,7 +121,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
             listVM.sort(autostartVMCmp);
 
             std::list<AUTOSTARTVM>::iterator it;
-            for (it = listVM.begin(); it != listVM.end(); it++)
+            for (it = listVM.begin(); it != listVM.end(); ++it)
             {
                 ComPtr<IMachine> machine;
                 ComPtr<IProgress> progress;

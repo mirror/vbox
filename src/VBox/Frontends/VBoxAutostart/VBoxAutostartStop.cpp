@@ -146,10 +146,10 @@ DECLHIDDEN(RTEXITCODE) autostartStopMain(PCFGAST pCfgAst)
         }
 
         if (   SUCCEEDED(rc)
-            && listVM.size())
+            && !listVM.empty())
         {
             std::list<AUTOSTOPVM>::iterator it;
-            for (it = listVM.begin(); it != listVM.end(); it++)
+            for (it = listVM.begin(); it != listVM.end(); ++it)
             {
                 MachineState_T enmMachineState;
                 ComPtr<IMachine> machine;

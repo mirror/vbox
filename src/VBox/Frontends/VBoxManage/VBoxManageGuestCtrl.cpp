@@ -3275,7 +3275,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
             if (pCtx->cVerbose > 1)
                 RTPrintf("Warning: Cannot stat for element \"%s\": No such element\n",
                          strCurSource.c_str());
-            it++;
+            ++it;
             continue; /* Skip. */
         }
 
@@ -3308,7 +3308,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
                                                                    ComSafeArrayAsInParam(aRenameFlags)));
         }
 
-        it++;
+        ++it;
     }
 
     if (   (it != vecSources.end())
@@ -3537,7 +3537,7 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleStat(PGCTLCMDCTX pCtx, int argc, char 
             /** @todo: Show more information about this element. */
         }
 
-        it++;
+        ++it;
     }
 
     return rcExit;

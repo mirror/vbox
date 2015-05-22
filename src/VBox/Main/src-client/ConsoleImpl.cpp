@@ -7243,8 +7243,8 @@ HRESULT Console::i_powerUp(IProgress **aProgress, bool aPaused)
 
         // If there is immutable drive the process that.
         VMPowerUpTask::ProgressList progresses(task->hardDiskProgresses);
-        if (aProgress && progresses.size() > 0){
-
+        if (aProgress && progresses.size() > 0)
+        {
             for (VMPowerUpTask::ProgressList::const_iterator it = progresses.begin(); it !=  progresses.end(); ++it)
             {
                 ++cOperations;

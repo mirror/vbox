@@ -749,7 +749,7 @@ int GuestSession::i_directoryRemoveFromList(GuestDirectory *pDirectory)
             break;
         }
 
-        itDirs++;
+        ++itDirs;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1191,7 +1191,7 @@ int GuestSession::i_fileRemoveFromList(GuestFile *pFile)
             break;
         }
 
-        itFiles++;
+        ++itFiles;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1847,7 +1847,7 @@ int GuestSession::i_processRemoveFromList(GuestProcess *pProcess)
             break;
         }
 
-        itProcs++;
+        ++itProcs;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1995,7 +1995,7 @@ inline int GuestSession::i_processGetByPID(ULONG uPID, ComObjPtr<GuestProcess> *
     /* pProcess is optional. */
 
     SessionProcesses::iterator itProcs = mData.mProcesses.begin();
-    for (; itProcs != mData.mProcesses.end(); itProcs++)
+    for (; itProcs != mData.mProcesses.end(); ++itProcs)
     {
         ComObjPtr<GuestProcess> pCurProc = itProcs->second;
         AutoCaller procCaller(pCurProc);

@@ -872,7 +872,7 @@ int VBoxNetLwipNAT::init()
 
     AddressToOffsetMapping tmp;
     rc = localMappings(m_net, tmp);
-    if (RT_SUCCESS(rc) && tmp.size() != 0)
+    if (RT_SUCCESS(rc) && !tmp.empty())
     {
         unsigned long i = 0;
         for (AddressToOffsetMapping::iterator it = tmp.begin();

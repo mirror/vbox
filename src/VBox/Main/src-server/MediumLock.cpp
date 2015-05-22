@@ -230,7 +230,7 @@ HRESULT MediumLockList::Lock(bool fSkipOverLockedMedia /* = false */)
         {
             for (MediumLockList::Base::iterator it2 = mMediumLocks.begin();
                  it2 != it;
-                 it2++)
+                 ++it2)
             {
                 HRESULT rc2 = it2->Unlock();
                 AssertComRC(rc2);
@@ -351,7 +351,7 @@ HRESULT MediumLockListMap::Lock()
         {
             for (MediumLockListMap::Base::const_iterator it2 = mMediumLocks.begin();
                  it2 != it;
-                 it2++)
+                 ++it2)
             {
                 HRESULT rc2 = it2->second->Unlock();
                 AssertComRC(rc2);

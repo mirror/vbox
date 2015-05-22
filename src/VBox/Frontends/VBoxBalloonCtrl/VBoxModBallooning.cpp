@@ -489,7 +489,7 @@ static DECLCALLBACK(int) VBoxModBallooningMain(void)
         if (RT_FAILURE(rc))
             break;
 
-        it++;
+        ++it;
     }
 
     return rc;

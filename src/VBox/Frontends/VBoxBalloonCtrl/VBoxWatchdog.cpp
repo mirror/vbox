@@ -396,7 +396,7 @@ static int machineAdd(const Bstr &strUuid)
                 itGroups->second.push_back(strUuid);
             serviceLogVerbose(("Group \"%s\" has now %ld machine(s)\n",
                                itGroup->first.c_str(), itGroups->second.size()));
-            itGroup++;
+            ++itGroup;
         }
 
         /*
@@ -466,7 +466,7 @@ static int machineDestroy(const Bstr &strUuid)
                 g_mapGroup.erase(itGroup);
             }
 
-            itGroups++;
+            ++itGroups;
         }
 
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL

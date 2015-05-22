@@ -2775,7 +2775,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
 
     std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
-    if (vsdeNW.size() == 0)
+    if (vsdeNW.empty())
     {
         /* No network adapters, so we have to disable our default one */
         ComPtr<INetworkAdapter> nwVBox;
@@ -2927,7 +2927,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (cIDEControllers > 2)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many IDE controllers in OVF; import facility only supports two"));
-    if (vsdeHDCIDE.size() > 0)
+    if (!vsdeHDCIDE.empty())
     {
         // one or two IDE controllers present in OVF: add one VirtualBox controller
         ComPtr<IStorageController> pController;
@@ -2954,7 +2954,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSATA.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SATA controllers in OVF; import facility only supports one"));
-    if (vsdeHDCSATA.size() > 0)
+    if (!vsdeHDCSATA.empty())
     {
         ComPtr<IStorageController> pController;
         const Utf8Str &hdcVBox = vsdeHDCSATA.front()->strVBoxCurrent;
@@ -2977,7 +2977,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSCSI.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SCSI controllers in OVF; import facility only supports one"));
-    if (vsdeHDCSCSI.size() > 0)
+    if (!vsdeHDCSCSI.empty())
     {
         ComPtr<IStorageController> pController;
         Bstr bstrName(L"SCSI Controller");
@@ -3012,7 +3012,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
     if (vsdeHDCSAS.size() > 1)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many SAS controllers in OVF; import facility only supports one"));
-    if (vsdeHDCSAS.size() > 0)
+    if (!vsdeHDCSAS.empty())
     {
         ComPtr<IStorageController> pController;
         rc = pNewMachine->AddStorageController(Bstr(L"SAS Controller").raw(),
@@ -3040,8 +3040,8 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many floppy controllers in OVF; import facility only supports one"));
     std::list<VirtualSystemDescriptionEntry*> vsdeCDROM = vsdescThis->i_findByType(VirtualSystemDescriptionType_CDROM);
-    if (    (vsdeFloppy.size() > 0)
-         || (vsdeCDROM.size() > 0)
+    if (    !vsdeFloppy.empty()
+         || !vsdeCDROM.empty()
        )
     {
         // If there's an error here we need to close the session, so
@@ -3114,7 +3114,7 @@ void Appliance::i_importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
     // create the hard disks & connect them to the appropriate controllers
     std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->i_findByType(VirtualSystemDescriptionType_HardDiskImage);
-    if (avsdeHDs.size() > 0)
+    if (!avsdeHDs.empty())
     {
         // If there's an error here we need to close the session, so
         // we need another try/catch block.
@@ -3551,7 +3551,7 @@ void Appliance::i_importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescT
     }
     /* Now iterate over all network entries. */
     std::list<VirtualSystemDescriptionEntry*> avsdeNWs = vsdescThis->i_findByType(VirtualSystemDescriptionType_NetworkAdapter);
-    if (avsdeNWs.size() > 0)
+    if (!avsdeNWs.empty())
     {
         /* Iterate through all network adapter entries and search for the
          * corresponding one in the machine config. If one is found, configure
@@ -4063,19 +4063,19 @@ void Appliance::i_importMachines(ImportStack &stack,
             vsdescThis->i_findByType(VirtualSystemDescriptionType_USBController);
         // USB support is enabled if there's at least one such entry; to disable USB support,
         // the type of the USB item would have been changed to "ignore"
-        stack.fUSBEnabled = vsdeUSBController.size() > 0;
+        stack.fUSBEnabled = !vsdeUSBController.empty();
 #endif
         // audio adapter
         std::list<VirtualSystemDescriptionEntry*> vsdeAudioAdapter =
             vsdescThis->i_findByType(VirtualSystemDescriptionType_SoundCard);
         /* @todo: we support one audio adapter only */
-        if (vsdeAudioAdapter.size() > 0)
+        if (!vsdeAudioAdapter.empty())
             stack.strAudioAdapter = vsdeAudioAdapter.front()->strVBoxCurrent;
 
         // for the description of the new machine, always use the OVF entry, the user may have changed it in the import config
         std::list<VirtualSystemDescriptionEntry*> vsdeDescription =
             vsdescThis->i_findByType(VirtualSystemDescriptionType_Description);
-        if (vsdeDescription.size())
+        if (!vsdeDescription.empty())
             stack.strDescription = vsdeDescription.front()->strVBoxCurrent;
 
         // import vbox:machine or OVF now

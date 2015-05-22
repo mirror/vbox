@@ -1095,7 +1095,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
     /*xml::ElementNode *pelmVirtualSystemInfo =*/ pelmVirtualSystem->createChild("Info")->addContent("A virtual machine");
 
     std::list<VirtualSystemDescriptionEntry*> llName = vsdescThis->i_findByType(VirtualSystemDescriptionType_Name);
-    if (!llName.size())
+    if (llName.empty())
         throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing VM name"));
     Utf8Str &strVMName = llName.back()->strVBoxCurrent;
     pelmVirtualSystem->setAttribute("ovf:id", strVMName);
@@ -1191,7 +1191,7 @@ void Appliance::i_buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
 
     // operating system
     std::list<VirtualSystemDescriptionEntry*> llOS = vsdescThis->i_findByType(VirtualSystemDescriptionType_OS);
-    if (!llOS.size())
+    if (llOS.empty())
         throw setError(VBOX_E_NOT_SUPPORTED, tr("Missing OS type"));
     /*  <OperatingSystemSection ovf:id="82">
             <Info>Guest Operating System</Info>

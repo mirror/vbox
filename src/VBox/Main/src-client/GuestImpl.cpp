@@ -170,7 +170,7 @@ void Guest::uninit()
         itSessions->second->Release();
 # endif
         itSessions->second->uninit();
-        itSessions++;
+        ++itSessions;
     }
     mData.mGuestSessions.clear();
 #endif

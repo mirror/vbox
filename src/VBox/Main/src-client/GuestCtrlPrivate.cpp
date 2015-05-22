@@ -606,10 +606,10 @@ int GuestBase::cancelWaitEvents(void)
                 int rc2 = pEvent->Cancel();
                 AssertRC(rc2);
 
-                itEvents++;
+                ++itEvents;
             }
 
-            itEventGroups++;
+            ++itEventGroups;
         }
 
         int rc2 = RTCritSectLeave(&mWaitEventCritSect);
@@ -736,7 +736,7 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
             /* Insert event into matching event group. This is for faster per-group
              * lookup of all events later. */
             for (GuestEventTypes::const_iterator itEvents = lstEvents.begin();
-                 itEvents != lstEvents.end(); itEvents++)
+                 itEvents != lstEvents.end(); ++itEvents)
             {
                 mWaitEventGroups[(*itEvents)].insert(
                    std::pair<uint32_t, GuestWaitEvent*>(uContextID, pEvent));
@@ -796,7 +796,7 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                     AssertPtr(itEvents->second);
                     const GuestEventTypes evTypes = itEvents->second->Types();
                     for (GuestEventTypes::const_iterator itType = evTypes.begin();
-                         itType != evTypes.end(); itType++)
+                         itType != evTypes.end(); ++itType)
                     {
                         if ((*itType) != aType) /* Only remove all other groups. */
                         {
@@ -820,7 +820,7 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                     itGroup->second.erase(itEvents++);
                 }
                 else
-                    itEvents++;
+                    ++itEvents;
 #ifdef DEBUG
                 cEvents++;
 #endif
@@ -884,7 +884,7 @@ void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
 
         const GuestEventTypes lstTypes = pEvent->Types();
         for (GuestEventTypes::const_iterator itEvents = lstTypes.begin();
-             itEvents != lstTypes.end(); itEvents++)
+             itEvents != lstTypes.end(); ++itEvents)
         {
             /** @todo Slow O(n) lookup. Optimize this. */
             GuestWaitEvents::iterator itCurEvent = mWaitEventGroups[(*itEvents)].begin();
@@ -896,7 +896,7 @@ void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
                     break;
                 }
                 else
-                    itCurEvent++;
+                    ++itCurEvent;
             }
         }
 

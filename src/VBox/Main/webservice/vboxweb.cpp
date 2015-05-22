@@ -494,7 +494,7 @@ public:
             RTSemEventMultiWait(m_event, RT_INDEFINITE_WAIT);
 
             util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
-            if (m_llSocketsQ.size())
+            if (!m_llSocketsQ.empty())
             {
                 SOAP_SOCKET socket = m_llSocketsQ.front();
                 m_llSocketsQ.pop_front();
@@ -504,7 +504,7 @@ public:
                 // reset the multi event only if the queue is now empty; otherwise
                 // another thread will also wake up when we release the mutex and
                 // process another one
-                if (m_llSocketsQ.size() == 0)
+                if (m_llSocketsQ.empty())
                     RTSemEventMultiReset(m_event);
 
                 qlock.release();
@@ -1535,9 +1535,8 @@ static bool SplitManagedObjectRef(const WSDLT_ID &id,
 {
     // 64-bit numbers in hex have 16 digits; hence
     // the object-ref string must have 16 + "-" + 16 characters
-    std::string str;
-    if (    (id.length() == 33)
-         && (id[16] == '-')
+    if (    id.length() == 33
+         && id[16] == '-'
        )
     {
         char psz[34];

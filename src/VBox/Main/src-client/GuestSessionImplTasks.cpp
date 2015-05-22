@@ -888,13 +888,13 @@ int SessionTaskUpdateAdditions::i_addProcessArguments(ProcessArguments &aArgumen
                     fFound = true;
                     break;
                 }
-                itDest++;
+                ++itDest;
             }
 
             if (!fFound)
                 aArgumentsDest.push_back((*itSource));
 
-            itSource++;
+            ++itSource;
         }
     }
     catch(std::bad_alloc &)
@@ -1443,7 +1443,7 @@ int SessionTaskUpdateAdditions::Run(void)
                         break;
                     uOffset += uStep;
 
-                    itFiles++;
+                    ++itFiles;
                 }
             }
 
@@ -1474,7 +1474,7 @@ int SessionTaskUpdateAdditions::Run(void)
                         break;
                     uOffset += uStep;
 
-                    itFiles++;
+                    ++itFiles;
                 }
             }
 
