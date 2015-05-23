@@ -590,28 +590,32 @@ static void selLoadHiddenSelectorRegFromGuestTable(PVMCPU pVCpu, PCCPUMCTX pCtx,
      * Try read the entry.
      */
     X86DESC GstDesc;
-    int rc = PGMPhysReadGCPtr(pVCpu, &GstDesc, GCPtrDesc, sizeof(GstDesc), PGMACCESSORIGIN_IOM);
-    if (RT_FAILURE(rc))
+    VBOXSTRICTRC rcStrict = PGMPhysReadGCPtr(pVCpu, &GstDesc, GCPtrDesc, sizeof(GstDesc), PGMACCESSORIGIN_SELM);
+    if (rcStrict == VINF_SUCCESS)
     {
-        Log(("SELMLoadHiddenSelectorReg: Error reading descriptor %s=%#x: %Rrc\n", g_aszSRegNms[iSReg], Sel, rc));
+        /*
+         * Validate it and load it.
+         */
+        if (selmIsGstDescGoodForSReg(pVCpu, pSReg, &GstDesc, iSReg, CPUMGetGuestCPL(pVCpu)))
+        {
+            selmLoadHiddenSRegFromGuestDesc(pVCpu, pSReg, &GstDesc);
+            Log(("SELMLoadHiddenSelectorReg: loaded %s=%#x:{b=%llx, l=%x, a=%x, vs=%x} (gst)\n",
+                 g_aszSRegNms[iSReg], Sel, pSReg->u64Base, pSReg->u32Limit, pSReg->Attr.u, pSReg->ValidSel));
+            STAM_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGst);
+        }
+        else
+        {
+            Log(("SELMLoadHiddenSelectorReg: Guest table entry is no good (%s=%#x): %.8Rhxs\n", g_aszSRegNms[iSReg], Sel, &GstDesc));
+            STAM_REL_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGstNoGood);
+        }
+    }
+    else
+    {
+        AssertMsg(RT_FAILURE_NP(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        Log(("SELMLoadHiddenSelectorReg: Error reading descriptor %s=%#x: %Rrc\n",
+             g_aszSRegNms[iSReg], Sel, VBOXSTRICTRC_VAL(rcStrict) ));
         STAM_REL_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelReadErrors);
-        return;
     }
-
-    /*
-     * Validate it and load it.
-     */
-    if (!selmIsGstDescGoodForSReg(pVCpu, pSReg, &GstDesc, iSReg, CPUMGetGuestCPL(pVCpu)))
-    {
-        Log(("SELMLoadHiddenSelectorReg: Guest table entry is no good (%s=%#x): %.8Rhxs\n", g_aszSRegNms[iSReg], Sel, &GstDesc));
-        STAM_REL_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGstNoGood);
-        return;
-    }
-
-    selmLoadHiddenSRegFromGuestDesc(pVCpu, pSReg, &GstDesc);
-    Log(("SELMLoadHiddenSelectorReg: loaded %s=%#x:{b=%llx, l=%x, a=%x, vs=%x} (gst)\n",
-         g_aszSRegNms[iSReg], Sel, pSReg->u64Base, pSReg->u32Limit, pSReg->Attr.u, pSReg->ValidSel));
-    STAM_COUNTER_INC(&pVCpu->CTX_SUFF(pVM)->selm.s.StatLoadHidSelGst);
 }
 
 

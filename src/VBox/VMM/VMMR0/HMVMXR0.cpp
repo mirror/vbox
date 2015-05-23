@@ -12063,7 +12063,8 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 {
                     Assert(sizeof(Eflags.u32) >= cbParm);
                     Eflags.u32 = 0;
-                    rc = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u32, cbParm, PGMACCESSORIGIN_HM);
+                    rc = VBOXSTRICTRC_TODO(PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u32, cbParm, PGMACCESSORIGIN_HM));
+                    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc)); /** @todo allow strict return codes here */
                 }
                 if (RT_FAILURE(rc))
                 {
@@ -12116,9 +12117,10 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 Eflags.Bits.u1RF = 0;
                 Eflags.Bits.u1VM = 0;
 
-                rc = PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u, cbParm, PGMACCESSORIGIN_HM);
-                if (RT_FAILURE(rc))
+                rc = VBOXSTRICTRC_TODO(PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u, cbParm, PGMACCESSORIGIN_HM));
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
                 {
+                    AssertMsgFailed(("%Rrc\n", rc)); /** @todo allow strict return codes here */
                     rc = VERR_EM_INTERPRETER;
                     break;
                 }
@@ -12151,7 +12153,11 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                 rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pMixedCtx), pMixedCtx->esp & uMask, SELMTOFLAT_FLAGS_CPL0,
                                   &GCPtrStack);
                 if (RT_SUCCESS(rc))
-                    rc = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &aIretFrame[0], sizeof(aIretFrame), PGMACCESSORIGIN_HM);
+                {
+                    rc = VBOXSTRICTRC_TODO(PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &aIretFrame[0], sizeof(aIretFrame),
+                                                       PGMACCESSORIGIN_HM));
+                    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc)); /** @todo allow strict return codes here */
+                }
                 if (RT_FAILURE(rc))
                 {
                     rc = VERR_EM_INTERPRETER;

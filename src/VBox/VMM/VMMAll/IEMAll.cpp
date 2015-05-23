@@ -1030,11 +1030,19 @@ IEM_STATIC VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool f
             VBOXSTRICTRC rcStrict = PGMPhysRead(pVM, GCPhys, pIemCpu->abOpcode, cbToTryRead, PGMACCESSORIGIN_IEM);
             if (RT_LIKELY(rcStrict == VINF_SUCCESS))
             { /* likely */ }
+            else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+            {
+                Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
+                     GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+                rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+            }
             else
             {
-                Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
-                     GCPtrPC, GCPhys, rc, cbToTryRead));
-                return rc;
+                Log((RT_SUCCESS(rcStrict)
+                     ? "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
+                     : "iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
+                     GCPtrPC, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+                return rcStrict;
             }
         }
         else
@@ -1157,14 +1165,36 @@ IEM_STATIC VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
      * should be no need to check again here.
      */
     if (!pIemCpu->fBypassHandlers)
-        rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead, PGMACCESSORIGIN_IEM);
-    else
-        rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
-    if (rc != VINF_SUCCESS)
     {
-        /** @todo status code handling */
-        Log(("iemOpcodeFetchMoreBytes: %RGv - read error - rc=%Rrc (!!)\n", GCPtrNext, rc));
-        return rc;
+        VBOXSTRICTRC rcStrict = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode],
+                                            cbToTryRead, PGMACCESSORIGIN_IEM);
+        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        { /* likely */ }
+        else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+        {
+            Log(("iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status -  rcStrict=%Rrc\n",
+                 GCPtrNext, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+        }
+        else
+        {
+            Log((RT_SUCCESS(rcStrict)
+                 ? "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read status - rcStrict=%Rrc\n"
+                 : "iemOpcodeFetchMoreBytes: %RGv/%RGp LB %#x - read error - rcStrict=%Rrc (!!)\n",
+                 GCPtrNext, GCPhys, VBOXSTRICTRC_VAL(rcStrict), cbToTryRead));
+            return rcStrict;
+        }
+    }
+    else
+    {
+        rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            Log(("iemOpcodeFetchMoreBytes: %RGv - read error - rc=%Rrc (!!)\n", GCPtrNext, rc));
+            return rc;
+        }
     }
     pIemCpu->cbOpcode += cbToTryRead;
     Log5(("%.*Rhxs\n", pIemCpu->cbOpcode, pIemCpu->abOpcode));
@@ -6431,8 +6461,8 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
     /*
      * Do the writing.
      */
-    int rc;
 #ifndef IEM_VERIFICATION_MODE_MINIMAL
+    PVM          pVM = IEMCPU_TO_VM(pIemCpu);
     if (   !pIemCpu->aMemBbMappings[iMemMap].fUnassigned
         && !IEM_VERIFICATION_ENABLED(pIemCpu))
     {
@@ -6441,42 +6471,121 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
         uint8_t const  *pbBuf    = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
         if (!pIemCpu->fBypassHandlers)
         {
-            rc = PGMPhysWrite(IEMCPU_TO_VM(pIemCpu),
-                              pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
-                              pbBuf,
-                              cbFirst,
-                              PGMACCESSORIGIN_IEM);
-            if (cbSecond && rc == VINF_SUCCESS)
-                rc = PGMPhysWrite(IEMCPU_TO_VM(pIemCpu),
-                                  pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
-                                  pbBuf + cbFirst,
-                                  cbSecond,
-                                  PGMACCESSORIGIN_IEM);
+            /*
+             * Carefully and efficiently dealing with access handler return
+             * codes make this a little bloated.
+             */
+            VBOXSTRICTRC rcStrict = PGMPhysWrite(pVM,
+                                                 pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
+                                                 pbBuf,
+                                                 cbFirst,
+                                                 PGMACCESSORIGIN_IEM);
+            if (rcStrict == VINF_SUCCESS)
+            {
+                if (cbSecond)
+                {
+                    rcStrict = PGMPhysWrite(pVM,
+                                            pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
+                                            pbBuf + cbFirst,
+                                            cbSecond,
+                                            PGMACCESSORIGIN_IEM);
+                    if (rcStrict == VINF_SUCCESS)
+                    { /* nothing */ }
+                    else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                    }
+                    else
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                        return rcStrict;
+                    }
+                }
+            }
+            else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+            {
+                if (!cbSecond)
+                {
+                    Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc\n",
+                         pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                }
+                else
+                {
+                    VBOXSTRICTRC rcStrict2 = PGMPhysWrite(pVM,
+                                                          pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
+                                                          pbBuf + cbFirst,
+                                                          cbSecond,
+                                                          PGMACCESSORIGIN_IEM);
+                    if (rcStrict2 == VINF_SUCCESS)
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                        rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                    }
+                    else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict2))
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
+                        PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
+                        rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                    }
+                    else
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, VBOXSTRICTRC_VAL(rcStrict2) ));
+                        return rcStrict2;
+                    }
+                }
+            }
+            else
+            {
+                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysWrite GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, VBOXSTRICTRC_VAL(rcStrict),
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                return rcStrict;
+            }
         }
         else
         {
-            rc = PGMPhysSimpleWriteGCPhys(IEMCPU_TO_VM(pIemCpu),
-                                          pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
-                                          pbBuf,
-                                          cbFirst);
-            if (cbSecond && rc == VINF_SUCCESS)
-                rc = PGMPhysSimpleWriteGCPhys(IEMCPU_TO_VM(pIemCpu),
-                                              pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
-                                              pbBuf + cbFirst,
-                                              cbSecond);
-        }
-        if (rc != VINF_SUCCESS)
-        {
-            /** @todo status code handling */
-            Log(("iemMemBounceBufferCommitAndUnmap: %s GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
-                 pIemCpu->fBypassHandlers ? "PGMPhysWrite" : "PGMPhysSimpleWriteGCPhys",
-                 pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
-                 pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
+            /*
+             * No access handlers, much simpler.
+             */
+            int rc = PGMPhysSimpleWriteGCPhys(pVM, pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, pbBuf, cbFirst);
+            if (RT_SUCCESS(rc))
+            {
+                if (cbSecond)
+                {
+                    rc = PGMPhysSimpleWriteGCPhys(pVM, pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, pbBuf + cbFirst, cbSecond);
+                    if (RT_SUCCESS(rc))
+                    { /* likely */ }
+                    else
+                    {
+                        Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x GCPhysSecond=%RGp/%#x %Rrc (!!)\n",
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst,
+                             pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond, rc));
+                        return rc;
+                    }
+                }
+            }
+            else
+            {
+                Log(("iemMemBounceBufferCommitAndUnmap: PGMPhysSimpleWriteGCPhys GCPhysFirst=%RGp/%#x %Rrc [GCPhysSecond=%RGp/%#x] (!!)\n",
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst, cbFirst, rc,
+                     pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond, cbSecond));
+                return rc;
+            }
         }
     }
-    else
 #endif
-        rc = VINF_SUCCESS;
 
 #if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
     /*
@@ -6513,19 +6622,16 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
     }
 #endif
 #if defined(IEM_VERIFICATION_MODE_MINIMAL) || defined(IEM_LOG_MEMORY_WRITES)
-    if (rc == VINF_SUCCESS)
-    {
-        Log(("IEM Wrote %RGp: %.*Rhxs\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
-             RT_MAX(RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbFirst, 64), 1), &pIemCpu->aBounceBuffers[iMemMap].ab[0]));
-        if (pIemCpu->aMemBbMappings[iMemMap].cbSecond)
-            Log(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
-                 RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbSecond, 64),
-                 &pIemCpu->aBounceBuffers[iMemMap].ab[pIemCpu->aMemBbMappings[iMemMap].cbFirst]));
+    Log(("IEM Wrote %RGp: %.*Rhxs\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst,
+         RT_MAX(RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbFirst, 64), 1), &pIemCpu->aBounceBuffers[iMemMap].ab[0]));
+    if (pIemCpu->aMemBbMappings[iMemMap].cbSecond)
+        Log(("IEM Wrote %RGp: %.*Rhxs [2nd page]\n", pIemCpu->aMemBbMappings[iMemMap].GCPhysSecond,
+             RT_MIN(pIemCpu->aMemBbMappings[iMemMap].cbSecond, 64),
+             &pIemCpu->aBounceBuffers[iMemMap].ab[pIemCpu->aMemBbMappings[iMemMap].cbFirst]));
 
-        size_t cbWrote = pIemCpu->aMemBbMappings[iMemMap].cbFirst + pIemCpu->aMemBbMappings[iMemMap].cbSecond;
-        g_cbIemWrote = cbWrote;
-        memcpy(g_abIemWrote, &pIemCpu->aBounceBuffers[iMemMap].ab[0], RT_MIN(cbWrote, sizeof(g_abIemWrote)));
-    }
+    size_t cbWrote = pIemCpu->aMemBbMappings[iMemMap].cbFirst + pIemCpu->aMemBbMappings[iMemMap].cbSecond;
+    g_cbIemWrote = cbWrote;
+    memcpy(g_abIemWrote, &pIemCpu->aBounceBuffers[iMemMap].ab[0], RT_MIN(cbWrote, sizeof(g_abIemWrote)));
 #endif
 
     /*
@@ -6534,7 +6640,7 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsign
     pIemCpu->aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
     Assert(pIemCpu->cActiveMappings != 0);
     pIemCpu->cActiveMappings--;
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -6560,6 +6666,7 @@ iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap, void **ppvMem, size
         return rcStrict;
     GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
+    PVM pVM = IEMCPU_TO_VM(pIemCpu);
 #ifdef IEM_VERIFICATION_MODE_FULL
     /*
      * Detect problematic memory when verifying so we can select
@@ -6567,11 +6674,9 @@ iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap, void **ppvMem, size
      */
     if (IEM_FULL_VERIFICATION_ENABLED(pIemCpu))
     {
-        int rc2 = PGMPhysIemQueryAccess(IEMCPU_TO_VM(pIemCpu), GCPhysFirst,
-                                        RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE), pIemCpu->fBypassHandlers);
+        int rc2 = PGMPhysIemQueryAccess(pVM, GCPhysFirst,  RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE), pIemCpu->fBypassHandlers);
         if (RT_SUCCESS(rc2))
-            rc2 = PGMPhysIemQueryAccess(IEMCPU_TO_VM(pIemCpu), GCPhysSecond,
-                                        RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE), pIemCpu->fBypassHandlers);
+            rc2 = PGMPhysIemQueryAccess(pVM, GCPhysSecond, RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE), pIemCpu->fBypassHandlers);
         if (RT_FAILURE(rc2))
             pIemCpu->fProblematicMemory = true;
     }
@@ -6588,38 +6693,70 @@ iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap, void **ppvMem, size
 
     if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC | IEM_ACCESS_PARTIAL_WRITE))
     {
-        int rc;
         if (!pIemCpu->fBypassHandlers)
         {
-            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbFirstPage, PGMACCESSORIGIN_IEM);
-            if (rc != VINF_SUCCESS)
+            /*
+             * Must carefully deal with access handler status codes here,
+             * makes the code a bit bloated.
+             */
+            rcStrict = PGMPhysRead(pVM, GCPhysFirst, pbBuf, cbFirstPage, PGMACCESSORIGIN_IEM);
+            if (rcStrict == VINF_SUCCESS)
             {
-                /** @todo status code handling */
-                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
-                return rc;
+                rcStrict = PGMPhysRead(pVM, GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage, PGMACCESSORIGIN_IEM);
+                if (rcStrict == VINF_SUCCESS)
+                { /*likely */ }
+                else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                else
+                {
+                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (!!)\n",
+                         GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict) ));
+                    return rcStrict;
+                }
             }
-            rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage, PGMACCESSORIGIN_IEM);
-            if (rc != VINF_SUCCESS)
+            else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
             {
-                /** @todo status code handling */
-                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
-                return rc;
+                VBOXSTRICTRC rcStrict2 = PGMPhysRead(pVM, GCPhysSecond, pbBuf + cbFirstPage, cbSecondPage, PGMACCESSORIGIN_IEM);
+                if (PGM_PHYS_RW_IS_SUCCESS(rcStrict2))
+                {
+                    PGM_PHYS_RW_DO_UPDATE_STRICT_RC(rcStrict, rcStrict2);
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                }
+                else
+                {
+                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysSecond=%RGp rcStrict2=%Rrc (rcStrict=%Rrc) (!!)\n",
+                         GCPhysSecond, VBOXSTRICTRC_VAL(rcStrict2), VBOXSTRICTRC_VAL(rcStrict2) ));
+                    return rcStrict2;
+                }
+            }
+            else
+            {
+                Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                     GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                return rcStrict;
             }
         }
         else
         {
-            rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbFirstPage);
-            if (rc != VINF_SUCCESS)
+            /*
+             * No informational status codes here, much more straight forward.
+             */
+            int rc = PGMPhysSimpleReadGCPhys(pVM, pbBuf, GCPhysFirst, cbFirstPage);
+            if (RT_SUCCESS(rc))
             {
-                /** @todo status code handling */
-                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
-                return rc;
+                Assert(rc == VINF_SUCCESS);
+                rc = PGMPhysSimpleReadGCPhys(pVM, pbBuf + cbFirstPage, GCPhysSecond, cbSecondPage);
+                if (RT_SUCCESS(rc))
+                    Assert(rc == VINF_SUCCESS);
+                else
+                {
+                    Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
+                    return rc;
+                }
             }
-            rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf + cbFirstPage, GCPhysSecond, cbSecondPage);
-            if (rc != VINF_SUCCESS)
+            else
             {
-                /** @todo status code handling */
-                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysSecond=%RGp rc=%Rrc (!!)\n", GCPhysSecond, rc));
+                Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rc=%Rrc (!!)\n", GCPhysFirst, rc));
                 return rc;
             }
         }
@@ -6655,8 +6792,6 @@ iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap, void **ppvMem, size
 #ifdef VBOX_STRICT
     else
         memset(pbBuf, 0xcc, cbMem);
-#endif
-#ifdef VBOX_STRICT
     if (cbMem < sizeof(pIemCpu->aBounceBuffers[iMemMap].ab))
         memset(pbBuf + cbMem, 0xaa, sizeof(pIemCpu->aBounceBuffers[iMemMap].ab) - cbMem);
 #endif
@@ -6711,15 +6846,30 @@ IEM_STATIC VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMem
         {
             int rc;
             if (!pIemCpu->fBypassHandlers)
-                rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbMem, PGMACCESSORIGIN_IEM);
-            else
-                rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbMem);
-            if (rc != VINF_SUCCESS)
             {
-                /** @todo status code handling */
-                Log(("iemMemBounceBufferMapPhys: %s GCPhysFirst=%RGp rc=%Rrc (!!)\n",
-                     pIemCpu->fBypassHandlers ? "PGMPhysRead" : "PGMPhysSimpleReadGCPhys",  GCPhysFirst, rc));
-                return rc;
+                VBOXSTRICTRC rcStrict = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhysFirst, pbBuf, cbMem, PGMACCESSORIGIN_IEM);
+                if (rcStrict == VINF_SUCCESS)
+                { /* nothing */ }
+                else if (PGM_PHYS_RW_IS_SUCCESS(rcStrict))
+                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                else
+                {
+                    Log(("iemMemBounceBufferMapPhys: PGMPhysRead GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                         GCPhysFirst, VBOXSTRICTRC_VAL(rcStrict) ));
+                    return rcStrict;
+                }
+            }
+            else
+            {
+                rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pbBuf, GCPhysFirst, cbMem);
+                if (RT_SUCCESS(rc))
+                { /* likely */ }
+                else
+                {
+                    Log(("iemMemBounceBufferMapPhys: PGMPhysSimpleReadGCPhys GCPhysFirst=%RGp rcStrict=%Rrc (!!)\n",
+                         GCPhysFirst, rc));
+                    return rc;
+                }
             }
         }
 

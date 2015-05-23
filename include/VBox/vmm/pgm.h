@@ -265,7 +265,9 @@ typedef FNPGMRCVIRTPFHANDLER *PFNPGMRCVIRTPFHANDLER;
  * @param   pVM             VM Handle.
  * @param   pVCpu           Pointer to the cross context CPU context for the
  *                          calling EMT.
- * @param   GCPtr           The virtual address the guest is writing to. (not correct if it's an alias!)
+ * @param   GCPtr           The virtual address the guest is writing to.  This
+ *                          is the registered address corresponding to the
+ *                          access, so no aliasing trouble here.
  * @param   pvPtr           The HC mapping of that address.
  * @param   pvBuf           What the guest is reading/writing.
  * @param   cbBuf           How much it's reading/writing.
@@ -463,10 +465,87 @@ VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(int)        PGMPhysGCPtr2GCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTGCPHYS pGCPhys);
 VMMDECL(void)       PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
-VMMDECL(int)        PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, PGMACCESSORIGIN enmOrigin);
-VMMDECL(int)        PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, PGMACCESSORIGIN enmOrigin);
-VMMDECL(int)        PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, PGMACCESSORIGIN enmOrigin);
-VMMDECL(int)        PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb, PGMACCESSORIGIN enmOrigin);
+
+/** @def PGM_PHYS_RW_IS_SUCCESS
+ * Check whether a PGMPhysRead, PGMPhysWrite, PGMPhysReadGCPtr or
+ * PGMPhysWriteGCPtr call completed the given task.
+ *
+ * @returns true if completed, false if not.
+ * @param   a_rcStrict      The status code.
+ * @sa      IOM_SUCCESS
+ */
+#ifdef IN_RING3
+# define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
+    (   (a_rcStrict) == VINF_SUCCESS )
+#elif defined(IN_RING0)
+# define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
+    (   (a_rcStrict) == VINF_SUCCESS \
+     || (a_rcStrict) == VINF_EM_OFF \
+     || (a_rcStrict) == VINF_EM_SUSPEND \
+     || (a_rcStrict) == VINF_EM_RESET \
+     || (a_rcStrict) == VINF_EM_HALT \
+    )
+#elif defined(IN_RC)
+# define PGM_PHYS_RW_IS_SUCCESS(a_rcStrict) \
+    (   (a_rcStrict) == VINF_SUCCESS \
+     || (a_rcStrict) == VINF_EM_OFF \
+     || (a_rcStrict) == VINF_EM_SUSPEND \
+     || (a_rcStrict) == VINF_EM_RESET \
+     || (a_rcStrict) == VINF_EM_HALT \
+     || (a_rcStrict) == VINF_SELM_SYNC_GDT \
+     || (a_rcStrict) == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT \
+    )
+#endif
+/** @def PGM_PHYS_RW_DO_UPDATE_STRICT_RC
+ * Updates the return code with a new result.
+ *
+ * Both status codes must be successes according to PGM_PHYS_RW_IS_SUCCESS.
+ *
+ * @param   a_rcStrict      The current return code, to be updated.
+ * @param   a_rcStrict2     The new return code to merge in.
+ */
+#ifdef IN_RING3
+# define PGM_PHYS_RW_DO_UPDATE_STRICT_RC(a_rcStrict, a_rcStrict2) \
+    do { \
+        Assert(rcStrict == VINF_SUCCESS); \
+        Assert(rcStrict2 == VINF_SUCCESS); \
+    } while (0)
+#elif defined(IN_RING0)
+# define PGM_PHYS_RW_DO_UPDATE_STRICT_RC(a_rcStrict, a_rcStrict2) \
+    do { \
+        Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict)); \
+        Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict2)); \
+        if ((a_rcStrict2) == VINF_SUCCESS || (a_rcStrict) == (a_rcStrict2)) \
+        { /* likely */ } \
+        else if (   (a_rcStrict) == VINF_SUCCESS \
+                 || (a_rcStrict) > (a_rcStrict2)) \
+            (a_rcStrict) = (a_rcStrict2); \
+    } while (0)
+#elif defined(IN_RC)
+# define PGM_PHYS_RW_DO_UPDATE_STRICT_RC(a_rcStrict, a_rcStrict2) \
+    do { \
+        Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict)); \
+        Assert(PGM_PHYS_RW_IS_SUCCESS(rcStrict2)); \
+        AssertCompile(VINF_SELM_SYNC_GDT > VINF_EM_LAST); \
+        AssertCompile(VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT > VINF_EM_LAST); \
+        AssertCompile(VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT < VINF_SELM_SYNC_GDT); \
+        if ((a_rcStrict2) == VINF_SUCCESS || (a_rcStrict) == (a_rcStrict2)) \
+        { /* likely */ } \
+        else if (   (a_rcStrict) == VINF_SUCCESS \
+                 || (   (a_rcStrict) > (a_rcStrict2) \
+                     && (   (a_rcStrict2) <= VINF_EM_RESET  \
+                         || (a_rcStrict) != VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT) ) \
+                 || (   (a_rcStrict2) == VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT \
+                     && (a_rcStrict) > VINF_EM_RESET) ) \
+            (a_rcStrict) = (a_rcStrict2); \
+    } while (0)
+#endif
+
+VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead, PGMACCESSORIGIN enmOrigin);
+VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite, PGMACCESSORIGIN enmOrigin);
+VMMDECL(VBOXSTRICTRC) PGMPhysReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb, PGMACCESSORIGIN enmOrigin);
+VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPU pVCpu, RTGCPTR GCPtrDst, const void *pvSrc, size_t cb, PGMACCESSORIGIN enmOrigin);
+
 VMMDECL(int)        PGMPhysSimpleReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleWriteGCPhys(PVM pVM, RTGCPHYS GCPhysDst, const void *pvSrc, size_t cb);
 VMMDECL(int)        PGMPhysSimpleReadGCPtr(PVMCPU pVCpu, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);

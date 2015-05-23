@@ -3564,7 +3564,8 @@ void remR3PhysRead(RTGCPHYS SrcGCPhys, void *pvDst, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemRead, a);
     VBOX_CHECK_ADDR(SrcGCPhys);
-    PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb, PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysRead(cpu_single_env->pVM, SrcGCPhys, pvDst, cb, PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("read(%d): %08x\n", cb, (uint32_t)SrcGCPhys));
 #endif
@@ -3735,7 +3736,8 @@ void remR3PhysWrite(RTGCPHYS DstGCPhys, const void *pvSrc, unsigned cb)
 {
     STAM_PROFILE_ADV_START(&gStatMemWrite, a);
     VBOX_CHECK_ADDR(DstGCPhys);
-    PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb, PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysWrite(cpu_single_env->pVM, DstGCPhys, pvSrc, cb, PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
     STAM_PROFILE_ADV_STOP(&gStatMemWrite, a);
 #ifdef VBOX_DEBUG_PHYS
     LogRel(("write(%d): %08x\n", cb, (uint32_t)DstGCPhys));
@@ -3890,7 +3892,8 @@ static uint32_t remR3HandlerReadU8(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint8_t u8;
     Log2(("remR3HandlerReadU8: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysRead((PVM)pvVM, GCPhys, &u8, sizeof(u8), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
     return u8;
 }
 
@@ -3898,7 +3901,8 @@ static uint32_t remR3HandlerReadU16(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint16_t u16;
     Log2(("remR3HandlerReadU16: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysRead((PVM)pvVM, GCPhys, &u16, sizeof(u16), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
     return u16;
 }
 
@@ -3906,26 +3910,30 @@ static uint32_t remR3HandlerReadU32(void *pvVM, target_phys_addr_t GCPhys)
 {
     uint32_t u32;
     Log2(("remR3HandlerReadU32: GCPhys=%RGp\n", (RTGCPHYS)GCPhys));
-    PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysRead((PVM)pvVM, GCPhys, &u32, sizeof(u32), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
     return u32;
 }
 
 static void     remR3HandlerWriteU8(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU8: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint8_t), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
 }
 
 static void     remR3HandlerWriteU16(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU16: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint16_t), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
 }
 
 static void     remR3HandlerWriteU32(void *pvVM, target_phys_addr_t GCPhys, uint32_t u32)
 {
     Log2(("remR3HandlerWriteU32: GCPhys=%RGp u32=%#x\n", (RTGCPHYS)GCPhys, u32));
-    PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t), PGMACCESSORIGIN_REM);
+    VBOXSTRICTRC rcStrict = PGMPhysWrite((PVM)pvVM, GCPhys, &u32, sizeof(uint32_t), PGMACCESSORIGIN_REM);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
 }
 
 /* -+- disassembly -+- */

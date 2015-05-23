@@ -4145,10 +4145,11 @@ int             pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHY
 int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
 int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
 void            pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
-PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER) pgmPhysRomWriteHandler;
+PGM_ALL_CB2_DECL(FNPGMPHYSHANDLER)  pgmPhysRomWriteHandler;
 #ifndef IN_RING3
-DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysPfHandlerRedirectToHC;
-DECLEXPORT(FNPGMRZPHYSPFHANDLER) pgmPhysRomWritePfHandler;
+DECLEXPORT(FNPGMPHYSHANDLER)        pgmPhysHandlerRedirectToHC;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysPfHandlerRedirectToHC;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    pgmPhysRomWritePfHandler;
 #endif
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysInvalidRamRangeTlbs(PVM pVM);

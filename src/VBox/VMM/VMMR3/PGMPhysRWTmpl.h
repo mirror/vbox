@@ -30,7 +30,8 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys, PGMACCESS
 {
     Assert(VM_IS_EMT(pVM));
     PGMPHYS_DATATYPE val;
-    PGMPhysRead(pVM, GCPhys, &val, sizeof(val), enmOrigin);
+    VBOXSTRICTRC rcStrict = PGMPhysRead(pVM, GCPhys, &val, sizeof(val), enmOrigin);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
     return val;
 }
 
@@ -49,7 +50,8 @@ VMMDECL(PGMPHYS_DATATYPE) PGMPHYSFN_READNAME(PVM pVM, RTGCPHYS GCPhys, PGMACCESS
 VMMDECL(void) PGMPHYSFN_WRITENAME(PVM pVM, RTGCPHYS GCPhys, PGMPHYS_DATATYPE val, PGMACCESSORIGIN enmOrigin)
 {
     Assert(VM_IS_EMT(pVM));
-    PGMPhysWrite(pVM, GCPhys, &val, sizeof(val), enmOrigin);
+    VBOXSTRICTRC rcStrict = PGMPhysWrite(pVM, GCPhys, &val, sizeof(val), enmOrigin);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); NOREF(rcStrict);
 }
 
 #undef PGMPHYSFN_READNAME

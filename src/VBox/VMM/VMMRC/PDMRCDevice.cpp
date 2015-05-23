@@ -200,11 +200,11 @@ static DECLCALLBACK(int) pdmRCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
     LogFlow(("pdmRCDevHlp_PhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
-    int rc = PGMPhysRead(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbRead, PGMACCESSORIGIN_DEVICE);
-    AssertRC(rc); /** @todo track down the users for this bugger. */
+    VBOXSTRICTRC rcStrict = PGMPhysRead(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbRead, PGMACCESSORIGIN_DEVICE);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); /** @todo track down the users for this bugger. */
 
-    Log(("pdmRCDevHlp_PhysRead: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
-    return rc;
+    Log(("pdmRCDevHlp_PhysRead: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict) ));
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
@@ -215,11 +215,11 @@ static DECLCALLBACK(int) pdmRCDevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
     LogFlow(("pdmRCDevHlp_PhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
-    int rc = PGMPhysWrite(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbWrite, PGMACCESSORIGIN_DEVICE);
-    AssertRC(rc); /** @todo track down the users for this bugger. */
+    VBOXSTRICTRC rcStrict = PGMPhysWrite(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbWrite, PGMACCESSORIGIN_DEVICE);
+    AssertMsg(rcStrict == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict))); /** @todo track down the users for this bugger. */
 
-    Log(("pdmRCDevHlp_PhysWrite: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
-    return rc;
+    Log(("pdmRCDevHlp_PhysWrite: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict) ));
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 
