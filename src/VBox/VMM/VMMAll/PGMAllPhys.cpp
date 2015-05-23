@@ -2748,6 +2748,8 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else /* The handler is somewhere else in the page, deal with it below. */
             rcStrict = VINF_SUCCESS;
     }
+    else
+        rcStrict = VINF_SUCCESS;
 
     /*
      * Deal with all the odd ends.
