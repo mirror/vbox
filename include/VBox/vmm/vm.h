@@ -283,7 +283,7 @@ typedef struct VMCPU
 
 
 /** The name of the Guest Context VMM Core module. */
-#define VMMGC_MAIN_MODULE_NAME          "VMMGC.gc"
+#define VMMRC_MAIN_MODULE_NAME          "VMMGC.gc"
 /** The name of the Ring 0 Context VMM Core module. */
 #define VMMR0_MAIN_MODULE_NAME          "VMMR0.r0"
 

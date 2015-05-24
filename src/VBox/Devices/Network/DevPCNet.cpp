@@ -4993,8 +4993,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     rc = PGMR3HandlerPhysicalTypeRegister(PDMDevHlpGetVM(pDevIns), PGMPHYSHANDLERKIND_WRITE,
                                           pcnetHandleRingWrite,
-                                          g_DevicePCNet.szR0Mod, "pcnetHandleRingWritePf",
-                                          g_DevicePCNet.szRCMod, "pcnetHandleRingWritePf",
+                                          g_DevicePCNet.szR0Mod, NULL, "pcnetHandleRingWritePf",
+                                          g_DevicePCNet.szRCMod, NULL, "pcnetHandleRingWritePf",
                                           "PCNet ring write access handler",
                                           &pThis->hNoPollingHandlerType);
     AssertRCReturn(rc, rc);

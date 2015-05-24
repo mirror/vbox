@@ -58,7 +58,7 @@ static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM
      * Preps.
      */
     RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestReadMsrs", &RCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMRCTestReadMsrs", &RCPtrEP);
     AssertMsgRCReturn(rc, ("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc), rc);
 
     uint32_t const      cMsrsPerCall = 16384;
@@ -196,7 +196,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -252,7 +252,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     RTPrintf("VMM: testing 0%x / %d - %s\n", u8Trap, uVariation, pszDesc);
 
     RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -286,7 +286,7 @@ static int vmmR3DoTrapTest(PVM pVM, uint8_t u8Trap, unsigned uVariation, int rcE
     else if (pszFaultEIP)
     {
         RTRCPTR RCPtrFault;
-        int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, pszFaultEIP, &RCPtrFault);
+        int rc2 = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, pszFaultEIP, &RCPtrFault);
         if (RT_FAILURE(rc2))
             RTPrintf("VMM: FAILURE - Failed to resolve symbol '%s', %Rrc!\n", pszFaultEIP, rc);
         else if (RCPtrFault != CPUMGetHyperEIP(pVCpu))
@@ -348,7 +348,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
      * Setup stack for calling VMMGCEntry().
      */
     RTRCPTR RCPtrEP;
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
@@ -678,7 +678,7 @@ VMMR3DECL(int) VMMDoHmTest(PVM pVM)
      * Setup stack for calling VMMGCEntry().
      */
     RTRCPTR RCPtrEP;
-    rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
+    rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMGCEntry", &RCPtrEP);
     if (RT_SUCCESS(rc))
     {
         RTPrintf("VMM: VMMGCEntry=%RRv\n", RCPtrEP);
@@ -862,7 +862,7 @@ VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
      * Preps.
      */
     RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestTestWriteMsr", &RCPtrEP);
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMRC_MAIN_MODULE_NAME, "VMMRCTestTestWriteMsr", &RCPtrEP);
     AssertMsgRCReturn(rc, ("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc), rc);
 
     uint64_t *pauValues;

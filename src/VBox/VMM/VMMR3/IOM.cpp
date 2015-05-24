@@ -187,10 +187,9 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
          */
         rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
                                               iomMmioHandler,
-                                              NULL, "iomMmioPfHandler",
-                                              NULL, "iomMmioPfHandler",
-                                              "MMIO",
-                                              &pVM->iom.s.hMmioHandlerType);
+                                              NULL, NULL, "iomMmioPfHandler",
+                                              NULL, NULL, "iomMmioPfHandler",
+                                              "MMIO", &pVM->iom.s.hMmioHandlerType);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {

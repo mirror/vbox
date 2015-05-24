@@ -546,8 +546,8 @@ VMMR3_INT_DECL(int) GIMR3Mmio2Map(PVM pVM, PGIMMMIO2REGION pRegion, RTGCPHYS GCP
         if (pVM->gim.s.hSemiReadOnlyMmio2Handler == NIL_PGMPHYSHANDLERTYPE)
             rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_WRITE,
                                                   gimR3Mmio2WriteHandler,
-                                                  NULL /* pszModR0 */, NULL /* pszHandlerR0 */,
-                                                  NULL /* pszModRC */, NULL /* pszHandlerRC */,
+                                                  NULL /* pszModR0 */, NULL /* pszHandlerR0 */, NULL /* pszPfHandlerR0 */,
+                                                  NULL /* pszModRC */, NULL /* pszHandlerRC */, NULL /* pszPfHandlerRC */,
                                                   "GIM read-only MMIO2 handler",
                                                   &pVM->gim.s.hSemiReadOnlyMmio2Handler);
         if (RT_SUCCESS(rc))

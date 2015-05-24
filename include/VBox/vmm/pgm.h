@@ -686,13 +686,16 @@ VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t 
 
 VMMR3_INT_DECL(int) PGMR3HandlerPhysicalTypeRegisterEx(PVM pVM, PGMPHYSHANDLERKIND enmKind,
                                                        PFNPGMPHYSHANDLER pfnHandlerR3,
+                                                       R0PTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerR0,
                                                        R0PTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerR0,
+                                                       RCPTRTYPE(PFNPGMPHYSHANDLER)     pfnHandlerRC,
                                                        RCPTRTYPE(PFNPGMRZPHYSPFHANDLER) pfnPfHandlerRC,
                                                        const char *pszDesc, PPGMPHYSHANDLERTYPE phType);
 VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND enmKind,
                                                      R3PTRTYPE(PFNPGMPHYSHANDLER) pfnHandlerR3,
-                                                     const char *pszModR0, const char *pszPfHandlerR0,
-                                                     const char *pszModRC, const char *pszPfHandlerRC, const char *pszDesc,
+                                                     const char *pszModR0, const char *pszHandlerR0, const char *pszPfHandlerR0,
+                                                     const char *pszModRC, const char *pszHandlerRC, const char *pszPfHandlerRC,
+                                                     const char *pszDesc,
                                                      PPGMPHYSHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                       PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
