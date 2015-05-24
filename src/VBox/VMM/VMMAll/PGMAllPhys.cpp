@@ -133,8 +133,6 @@
 /**
  * @callback_method_impl{FNPGMPHYSHANDLER,
  *      Dummy for forcing ring-3 handling of the access.}
- *
- * @remarks The @a pvUser argument points to the PGMROMRANGE.
  */
 DECLEXPORT(VBOXSTRICTRC)
 pgmPhysHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
@@ -142,6 +140,7 @@ pgmPhysHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
 {
     NOREF(pVM); NOREF(pVCpu); NOREF(GCPhys); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf);
     NOREF(enmAccessType); NOREF(enmOrigin); NOREF(pvUser);
+AssertFailed(); /// dont commit me!!!
     return VINF_EM_RAW_EMULATE_INSTR;
 }
 
@@ -149,8 +148,6 @@ pgmPhysHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
 /**
  * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
  *      Dummy for forcing ring-3 handling of the access.}
- *
- * @remarks The @a pvUser argument points to the PGMROMRANGE.
  */
 VMMDECL(VBOXSTRICTRC) pgmPhysPfHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame,
                                                    RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
@@ -2306,7 +2303,7 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
         Assert((pPhys->Core.Key     & PAGE_OFFSET_MASK) == 0);
         Assert((pPhys->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 #ifndef IN_RING3
-        //if (enmOrigin != PGMACCESSORIGIN_IOM)
+        if (enmOrigin != PGMACCESSORIGIN_IOM)
         {
             /* Cannot reliably handle informational status codes in this context */
             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
@@ -2356,7 +2353,7 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
         Assert(GCPhys >= pVirt->aPhysToVirt[iPage].Core.Key && GCPhys <= pVirt->aPhysToVirt[iPage].Core.KeyLast);
 
 # ifndef IN_RING3
-        //if (enmOrigin != PGMACCESSORIGIN_IOM)
+        if (enmOrigin != PGMACCESSORIGIN_IOM)
         {
             /* Cannot reliably handle informational status codes in this context */
             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
@@ -2599,7 +2596,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         {
             Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
 #ifndef IN_RING3
-            //if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IOM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
@@ -2676,7 +2673,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         if (pVirt)
         {
 # ifndef IN_RING3
-            //if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IOM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
@@ -2850,7 +2847,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else if (!offPhys && offVirt)
         {
 #ifndef IN_RING3
-            //if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IOM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
@@ -2889,7 +2886,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else if (offPhys && !offVirt)
         {
 # ifndef IN_RING3
-            //if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IOM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
@@ -2919,7 +2916,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else
         {
 # ifndef IN_RING3
-            //if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IOM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
