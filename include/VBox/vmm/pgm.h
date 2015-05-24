@@ -290,6 +290,9 @@ typedef FNPGMVIRTHANDLER *PFNPGMVIRTHANDLER;
  * @param   GCPtr           The virtual address the guest has changed.
  * @param   pvUser          User argument.
  * @thread  EMT(pVCpu)
+ *
+ * @todo    FNPGMR3VIRTINVALIDATE might not longer actually be called! Don't
+ *          know for how long...
  */
 typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser);
 /** Pointer to PGM invalidation callback. */
@@ -700,12 +703,13 @@ VMMR3DECL(int)      PGMR3HandlerPhysicalTypeRegister(PVM pVM, PGMPHYSHANDLERKIND
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                       PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                       PFNPGMVIRTHANDLER pfnHandlerR3,
+                                                      RCPTRTYPE(FNPGMVIRTHANDLER) pfnHandlerRC,
                                                       RCPTRTYPE(FNPGMRCVIRTPFHANDLER) pfnPfHandlerRC,
                                                       const char *pszDesc, PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND enmKind, bool fRelocUserRC,
                                                     PFNPGMR3VIRTINVALIDATE pfnInvalidateR3,
                                                     PFNPGMVIRTHANDLER pfnHandlerR3,
-                                                    const char *pszPfHandlerRC, const char *pszDesc,
+                                                    const char *pszHandlerRC, const char *pszPfHandlerRC, const char *pszDesc,
                                                     PPGMVIRTHANDLERTYPE phType);
 VMMR3_INT_DECL(int) PGMR3HandlerVirtualRegister(PVM pVM, PVMCPU pVCpu, PGMVIRTHANDLERTYPE hType, RTGCPTR GCPtr,
                                                 RTGCPTR GCPtrLast, void *pvUserR3, RTRCPTR pvUserRC, const char *pszDesc);

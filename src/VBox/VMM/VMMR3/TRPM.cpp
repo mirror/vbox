@@ -507,13 +507,13 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
 # ifdef TRPM_TRACK_SHADOW_IDT_CHANGES
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_HYPERVISOR, false /*fRelocUserRC*/,
                                              NULL /*pfnInvalidateR3*/, NULL /*pfnHandlerR3*/,
-                                             "trpmRCShadowIDTWritePfHandler",
+                                             NULL /*pszHandlerRC*/, "trpmRCShadowIDTWritePfHandler",
                                              "Shadow IDT write access handler", &pVM->trpm.s.hShadowIdtWriteHandlerType);
         AssertRCReturn(rc, rc);
 # endif
         rc = PGMR3HandlerVirtualTypeRegister(pVM, PGMVIRTHANDLERKIND_WRITE, false /*fRelocUserRC*/,
                                              NULL /*pfnInvalidateR3*/, trpmGuestIDTWriteHandler,
-                                             "trpmRCGuestIDTWritePfHandler",
+                                             "trpmGuestIDTWriteHandler", "trpmRCGuestIDTWritePfHandler",
                                              "Guest IDT write access handler", &pVM->trpm.s.hGuestIdtWriteHandlerType);
         AssertRCReturn(rc, rc);
     }
