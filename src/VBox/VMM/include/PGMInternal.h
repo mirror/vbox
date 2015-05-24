@@ -710,7 +710,7 @@ typedef struct PGMVIRTANDLERTYPEINT
     uint32_t                            uState;
     /** Whether the pvUserRC argument should be automatically relocated or not. */
     bool                                fRelocUserRC;
-    bool                                afPadding[HC_ARCH_BITS == 64 ? 3 : 7];
+    bool                                afPadding[HC_ARCH_BITS == 64 ? 7 : 3];
     /** Pointer to RC callback function. */
     RCPTRTYPE(PFNPGMVIRTHANDLER)        pfnHandlerRC;
     /** Pointer to RC callback function for \#PFs. */
