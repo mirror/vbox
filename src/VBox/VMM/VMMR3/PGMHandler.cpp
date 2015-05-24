@@ -313,6 +313,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
  * @param   fRelocUserRC    Whether the pvUserRC argument should be
  *                          automatically relocated or not.
  * @param   pfnInvalidateR3 Pointer to the ring-3 invalidation handler callback.
+ *                          Warning! This callback stopped working in VBox v1.2!
  * @param   pfnHandlerR3    Pointer to the ring-3 handler callback.
  * @param   pfnHandlerRC    Pointer to the raw-mode context handler callback.
  * @param   pfnPfHandlerRC  Pointer to the raw-mode context \#PF handler
@@ -338,7 +339,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegisterEx(PVM pVM, PGMVIRTHANDLERKIN
     {
         AssertPtrNullReturn(pfnInvalidateR3, VERR_INVALID_POINTER);
         AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
-        AssertPtrReturn(pfnHandlerRC, VERR_INVALID_POINTER);
+        AssertReturn(pfnHandlerRC != NIL_RTRCPTR, VERR_INVALID_POINTER);
     }
     else
     {
@@ -424,7 +425,7 @@ VMMR3_INT_DECL(int) PGMR3HandlerVirtualTypeRegister(PVM pVM, PGMVIRTHANDLERKIND 
     if (RT_SUCCESS(rc))
     {
         RTRCPTR pfnPfHandlerRC = NIL_RTRCPTR;
-        int rc = PDMR3LdrGetSymbolRCLazy(pVM, VMMRC_MAIN_MODULE_NAME, NULL /*pszSearchPath*/, pszPfHandlerRC, &pfnPfHandlerRC);
+        rc = PDMR3LdrGetSymbolRCLazy(pVM, VMMRC_MAIN_MODULE_NAME, NULL /*pszSearchPath*/, pszPfHandlerRC, &pfnPfHandlerRC);
         if (RT_SUCCESS(rc))
             return PGMR3HandlerVirtualTypeRegisterEx(pVM, enmKind, fRelocUserRC,
                                                      pfnInvalidateR3, pfnHandlerR3,

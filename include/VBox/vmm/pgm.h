@@ -291,8 +291,9 @@ typedef FNPGMVIRTHANDLER *PFNPGMVIRTHANDLER;
  * @param   pvUser          User argument.
  * @thread  EMT(pVCpu)
  *
- * @todo    FNPGMR3VIRTINVALIDATE might not longer actually be called! Don't
- *          know for how long...
+ * @todo    FNPGMR3VIRTINVALIDATE will not actually be called! It was introduced
+ *          in r13179 (1.1) and stopped working with r13806 (PGMPool merge,
+ *          v1.2), exactly a month later.
  */
 typedef DECLCALLBACK(int) FNPGMR3VIRTINVALIDATE(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvUser);
 /** Pointer to PGM invalidation callback. */
