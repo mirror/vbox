@@ -2230,7 +2230,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 }
 
 
-#if !defined(VBOX_WITH_FIRST_IEM_STEP) || defined(IN_RC) /* Latter for IOMRCIOPortHandler */
+#ifdef IN_RC /* Latter for IOMRCIOPortHandler */
 /**
  * [REP*] INSB/INSW/INSD
  * ES:EDI,DX[,ECX]
@@ -2273,7 +2273,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFr
 
     return IOMInterpretINSEx(pVM, pVCpu, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
 }
-#endif /* !IEM || RC */
+#endif /* RC */
 
 
 /**
@@ -2399,7 +2399,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
 }
 
 
-#if !defined(VBOX_WITH_FIRST_IEM_STEP) || defined(IN_RC) /* Latter for IOMRCIOPortHandler */
+#ifdef IN_RC /* Latter for IOMRCIOPortHandler */
 /**
  * [REP*] OUTSB/OUTSW/OUTSD
  * DS:ESI,DX[,ECX]
@@ -2444,7 +2444,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
 
     return IOMInterpretOUTSEx(pVM, pVCpu, pRegFrame, Port, pCpu->fPrefix, (DISCPUMODE)pCpu->uAddrMode, cb);
 }
-#endif /* !IEM || RC */
+#endif /* RC */
 
 #ifndef IN_RC
 
