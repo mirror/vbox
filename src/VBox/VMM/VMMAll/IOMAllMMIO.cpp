@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2013 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+//#define IOM_USE_IEM_FOR_MMIO
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -28,7 +29,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/trpm.h>
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+#if defined(IOM_USE_IEM_FOR_MMIO) || (defined(IEM_VERIFICATION_MODE) && defined(IN_RING3))
 # include <VBox/vmm/iem.h>
 #endif
 #include "IOMInternal.h"
@@ -571,6 +572,8 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
 }
 
 
+#ifndef IOM_USE_IEM_FOR_MMIO
+
 /**
  * MOV      reg, mem         (read)
  * MOVZX    reg, mem         (read)
@@ -665,6 +668,8 @@ static int iomInterpretMOVxXWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame,
         iomMMIOStatLength(pVM, cb);
     return rc;
 }
+
+#endif /* !IOM_USE_IEM_FOR_MMIO */
 
 
 /** Wrapper for reading virtual memory. */
@@ -964,6 +969,8 @@ static uint64_t iomDisModeToMask(DISCPUMODE enmCpuMode)
     }
 }
 
+
+#ifndef IOM_USE_IEM_FOR_MMIO
 
 /**
  * [REP] STOSB
@@ -1496,6 +1503,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
     return rc;
 }
 
+#endif /* !IOM_USE_IEM_FOR_MMIO */
 
 /**
  * \#PF Handler callback for MMIO ranges.
@@ -1509,7 +1517,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pvUser      Pointer to the MMIO ring-3 range entry.
  */
-static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault, void *pvUser)
+static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault, void *pvUser)
 {
     int rc = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -1585,6 +1593,20 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
         return rc;
     }
 
+#ifdef IOM_USE_IEM_FOR_MMIO
+
+    /*
+     * Let IEM call us back via iomMmioHandler.
+     */
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+
+    STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
+    PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+    iomMmioReleaseRange(pVM, pRange);
+    return rcStrict;
+
+#else
+
     /*
      * Disassemble the instruction and interpret it.
      */
@@ -1616,7 +1638,7 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
         }
 
 
-#ifdef IOM_WITH_MOVS_SUPPORT
+# ifdef IOM_WITH_MOVS_SUPPORT
         case OP_MOVSB:
         case OP_MOVSWD:
         {
@@ -1631,7 +1653,7 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
             }
             break;
         }
-#endif
+# endif
 
         case OP_STOSB:
         case OP_STOSWD:
@@ -1712,7 +1734,7 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
     else
     {
         STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOFailures);
-#if defined(VBOX_WITH_STATISTICS) && !defined(IN_RING3)
+# if defined(VBOX_WITH_STATISTICS) && !defined(IN_RING3)
         switch (rc)
         {
             case VINF_IOM_R3_MMIO_READ:
@@ -1723,13 +1745,14 @@ static int iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, PCPUMCTXCO
                 STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
                 break;
         }
-#endif
+# endif
     }
 
     STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     iomMmioReleaseRange(pVM, pRange);
     return rc;
+#endif /* !IOM_USE_IEM_FOR_MMIO */
 }
 
 
