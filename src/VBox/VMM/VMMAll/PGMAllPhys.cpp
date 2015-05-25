@@ -140,7 +140,6 @@ pgmPhysHandlerRedirectToHC(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, void *pvPhys,
 {
     NOREF(pVM); NOREF(pVCpu); NOREF(GCPhys); NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf);
     NOREF(enmAccessType); NOREF(enmOrigin); NOREF(pvUser);
-AssertFailed(); /// dont commit me!!!
     return VINF_EM_RAW_EMULATE_INSTR;
 }
 
@@ -2303,7 +2302,7 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
         Assert((pPhys->Core.Key     & PAGE_OFFSET_MASK) == 0);
         Assert((pPhys->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
 #ifndef IN_RING3
-        if (enmOrigin != PGMACCESSORIGIN_IOM)
+        if (enmOrigin != PGMACCESSORIGIN_IEM)
         {
             /* Cannot reliably handle informational status codes in this context */
             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
@@ -2353,7 +2352,7 @@ static VBOXSTRICTRC pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys,
         Assert(GCPhys >= pVirt->aPhysToVirt[iPage].Core.Key && GCPhys <= pVirt->aPhysToVirt[iPage].Core.KeyLast);
 
 # ifndef IN_RING3
-        if (enmOrigin != PGMACCESSORIGIN_IOM)
+        if (enmOrigin != PGMACCESSORIGIN_IEM)
         {
             /* Cannot reliably handle informational status codes in this context */
             pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
@@ -2512,7 +2511,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t 
                     else
                     {
                         pgmUnlock(pVM);
-                        return rcStrict;
+                        return rcStrict2;
                     }
                 }
 
@@ -2596,7 +2595,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         {
             Assert(GCPhys >= pCur->Core.Key && GCPhys <= pCur->Core.KeyLast);
 #ifndef IN_RING3
-            if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IEM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
@@ -2673,7 +2672,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         if (pVirt)
         {
 # ifndef IN_RING3
-            if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IEM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
@@ -2847,7 +2846,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else if (!offPhys && offVirt)
         {
 #ifndef IN_RING3
-            if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IEM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
@@ -2886,7 +2885,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else if (offPhys && !offVirt)
         {
 # ifndef IN_RING3
-            if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IEM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
@@ -2916,7 +2915,7 @@ static VBOXSTRICTRC pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
         else
         {
 # ifndef IN_RING3
-            if (enmOrigin != PGMACCESSORIGIN_IOM)
+            if (enmOrigin != PGMACCESSORIGIN_IEM)
                 /* Cannot reliably handle informational status codes in this context */
                 return VERR_PGM_PHYS_WR_HIT_HANDLER;
 # endif
@@ -3135,7 +3134,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, 
                     else
                     {
                         pgmUnlock(pVM);
-                        return rcStrict;
+                        return rcStrict2;
                     }
                 }
 
