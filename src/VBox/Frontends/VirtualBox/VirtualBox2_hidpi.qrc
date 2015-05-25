@@ -7,6 +7,7 @@
         <file alias="os_solaris_hidpi.png">images/hidpi/os_solaris_hidpi.png</file>
         <file alias="os_turbolinux_64_hidpi.png">images/hidpi/os_turbolinux_64_hidpi.png</file>
         <file alias="os_turbolinux_hidpi.png">images/hidpi/os_turbolinux_hidpi.png</file>
+        <file alias="os_type_16px_hidpi.png">images/hidpi/os_type_16px_hidpi.png</file>
         <file alias="os_ubuntu_64_hidpi.png">images/hidpi/os_ubuntu_64_hidpi.png</file>
         <file alias="os_ubuntu_hidpi.png">images/hidpi/os_ubuntu_hidpi.png</file>
         <file alias="os_win10_64_hidpi.png">images/hidpi/os_win10_64_hidpi.png</file>
