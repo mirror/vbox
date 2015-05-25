@@ -266,6 +266,7 @@ private slots:
 
     /* "View" menu functionality: */
     void sltToggleGuestAutoresize(bool fEnabled);
+    void sltMinimizeWindow();
     void sltAdjustWindow();
     void sltTakeScreenshot();
     void sltOpenVideoCaptureOptions();

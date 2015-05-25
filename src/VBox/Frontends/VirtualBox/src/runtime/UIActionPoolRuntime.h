@@ -56,6 +56,7 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_Fullscreen,
     UIActionIndexRT_M_View_T_Seamless,
     UIActionIndexRT_M_View_T_Scale,
+    UIActionIndexRT_M_View_S_MinimizeWindow,
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
     UIActionIndexRT_M_View_S_TakeScreenshot,

@@ -465,6 +465,9 @@ void UIMachineLogicFullscreen::prepareActionGroups()
     actionPool()->toRuntime()->setRestrictionForMenuView(UIActionRestrictionLevel_Logic,
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType)
                                                          (UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow |
+#ifdef Q_WS_MAC
+                                                          UIExtraDataMetaDefs::RuntimeMenuViewActionType_MinimizeWindow |
+#endif /* Q_WS_MAC */
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_MenuBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_StatusBar |
                                                           UIExtraDataMetaDefs::RuntimeMenuViewActionType_Resize));
