@@ -497,6 +497,41 @@ protected:
     }
 };
 
+class UIActionSimplePerformWindowAdjust : public UIActionSimple
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionSimplePerformWindowAdjust(UIActionPool *pParent)
+        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png") {}
+
+protected:
+
+    /** Returns action extra-data ID. */
+    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow; }
+    /** Returns action extra-data key. */
+    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
+    /** Returns whether action is allowed. */
+    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
+
+    QString shortcutExtraDataID() const
+    {
+        return QString("WindowAdjust");
+    }
+
+    QKeySequence defaultShortcut(UIActionPoolType) const
+    {
+        return QKeySequence("A");
+    }
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Adjust Window Size"));
+        setStatusTip(QApplication::translate("UIActionPool", "Adjust window size and position to best fit the guest display"));
+    }
+};
+
 class UIActionToggleGuestAutoresize : public UIActionToggle
 {
     Q_OBJECT;
@@ -531,41 +566,6 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Auto-resize &Guest Display"));
         setStatusTip(QApplication::translate("UIActionPool", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
-    }
-};
-
-class UIActionSimplePerformWindowAdjust : public UIActionSimple
-{
-    Q_OBJECT;
-
-public:
-
-    UIActionSimplePerformWindowAdjust(UIActionPool *pParent)
-        : UIActionSimple(pParent, ":/adjust_win_size_16px.png", ":/adjust_win_size_disabled_16px.png") {}
-
-protected:
-
-    /** Returns action extra-data ID. */
-    virtual int extraDataID() const { return UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow; }
-    /** Returns action extra-data key. */
-    virtual QString extraDataKey() const { return gpConverter->toInternalString(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
-    /** Returns whether action is allowed. */
-    virtual bool isAllowed() const { return actionPool()->toRuntime()->isAllowedInMenuView(UIExtraDataMetaDefs::RuntimeMenuViewActionType_AdjustWindow); }
-
-    QString shortcutExtraDataID() const
-    {
-        return QString("WindowAdjust");
-    }
-
-    QKeySequence defaultShortcut(UIActionPoolType) const
-    {
-        return QKeySequence("A");
-    }
-
-    void retranslateUi()
-    {
-        setName(QApplication::translate("UIActionPool", "&Adjust Window Size"));
-        setStatusTip(QApplication::translate("UIActionPool", "Adjust window size and position to best fit the guest display"));
     }
 };
 
@@ -2030,8 +2030,8 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleFullscreenMode(this);
     m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleSeamlessMode(this);
     m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
-    m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
+    m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);
     m_pool[UIActionIndexRT_M_View_M_VideoCapture] = new UIActionMenuVideoCapture(this);
     m_pool[UIActionIndexRT_M_View_M_VideoCapture_S_Settings] = new UIActionSimpleShowVideoCaptureSettingsDialog(this);
