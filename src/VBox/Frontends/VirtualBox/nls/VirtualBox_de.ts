@@ -2097,11 +2097,11 @@
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation>Das Host-Interface &lt;b&gt;%1&lt;/b&gt; hat keine gültige kleinste Adresse für den Bereich gültiger DHCP-Adressen.</translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige kleinste Adresse für den Bereich gültiger DHCP-Adressen.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation>Das Host-Interface &lt;b&gt;%1&lt;/b&gt; hat keine gültige größte Adresse für den Bereich gültiger DHCP-Adressen.</translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige größte Adresse für den Bereich gültiger DHCP-Adressen.</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
@@ -8437,7 +8437,7 @@
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation>kein</translation>
+        <translation>keine</translation>
     </message>
     <message>
         <source>Default</source>
@@ -8675,7 +8675,7 @@
     </message>
     <message>
         <source>Attached to:</source>
-        <translation>Angeschlossen an:</translation>
+        <translation>angeschlossen an:</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
@@ -8699,11 +8699,11 @@
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;nicht&amp;nbsp;verschlüsselt&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>verschlüsselt mit:</translation>
     </message>
 </context>
 <context>
