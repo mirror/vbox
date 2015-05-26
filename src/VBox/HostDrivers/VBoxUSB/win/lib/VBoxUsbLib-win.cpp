@@ -599,7 +599,7 @@ static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT id
                          &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        AssertMsgFailed(("Getting USB descriptor failed with error %ld\n", dwErr));
+        LogRel(("Getting USB descriptor failed with error %ld\n", dwErr));
         return RTErrConvertFromWin32(dwErr);
     }
 
@@ -662,7 +662,10 @@ static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCR
     /* Read string descriptor zero to determine what languages are available. */
     int rc = usbLibDevStrDrEntryGet(hHub, iPort, 0, 0, ppList);
     if (RT_FAILURE(rc))
+    {
+        AssertRC(rc);
         return rc;
+    }
 
     PUSB_STRING_DESCRIPTOR pLandStrDr = &(*ppList)->StrDr;
     USHORT *pIdLang = pLandStrDr->bString;
