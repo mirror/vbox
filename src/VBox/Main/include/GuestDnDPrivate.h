@@ -207,13 +207,14 @@ public:
             for (uint32_t i = 0; i < cParms; i++)
             {
                 if (   paParms[i].type == VBOX_HGCM_SVC_PARM_PTR
-                    && paParms[i].u.pointer.addr)
+                    && paParms[i].u.pointer.size)
                 {
+                    AssertPtr(paParms[i].u.pointer.addr);
                     RTMemFree(paParms[i].u.pointer.addr);
                 }
             }
 
-            delete paParms;
+            RTMemFree(paParms);
         }
     }
 
