@@ -326,7 +326,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
             && m_enmMode != DNDMODE_GUESTTOHOST) /* Wrong mode set? */
             return VINF_SUCCESS;
 
-        if (m_fIsPending) /* Pendig operation is in progress. */
+        if (m_fIsPending) /* Pending operation is in progress. */
             return VINF_SUCCESS;
     }
 
