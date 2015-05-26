@@ -59,13 +59,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/log.h>
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-# include "AudioMixer.h"
-#else
- extern "C" {
-  #include "audio.h"
- }
-#endif
+#include "AudioMixer.h"
 
 /** Current saved state version. */
 #define SB16_SAVE_STATE_VERSION         2
@@ -82,7 +76,6 @@
 
 static const char e3[] = "COPYRIGHT (C) CREATIVE TECHNOLOGY LTD, 1992.";
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct SB16OUTPUTSTREAM
 {
     /** PCM output stream. */
@@ -123,7 +116,6 @@ typedef struct SB16DRIVER
     /** Stream for output. */
     SB16OUTPUTSTREAM                   Out;
 } SB16DRIVER, *PSB16DRIVER;
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 typedef struct SB16STATE
 {
@@ -149,12 +141,7 @@ typedef struct SB16STATE
     int fmt_stereo;
     int fmt_signed;
     int fmt_bits;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PDMAUDIOFMT fmt;
-#else
-    audfmt_e fmt;
-    QEMUSoundCard card;
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     int dma_auto;
     int block_size;
     int fifo;
@@ -190,7 +177,6 @@ typedef struct SB16STATE
     int bytes_per_second;
     int align;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     RTLISTANCHOR                   lstDrv;
     /** The device' software mixer. */
     R3PTRTYPE(PAUDIOMIXER)         pMixer;
@@ -200,10 +186,6 @@ typedef struct SB16STATE
     PTMTIMERR3                     pTimerIO;
     /** Timer ticks for handling the LUN drivers. */
     uint64_t                       uTicksIO;
-#else
-    uint32_t audio_free;
-    SWVoiceOut *voice;
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     PTMTIMER  pTimerIRQ;
     PPDMIBASE pDrvBase;
@@ -215,11 +197,8 @@ typedef struct SB16STATE
     uint8_t mixer_regs[256];
 } SB16STATE, *PSB16STATE;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg);
-#endif
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 /**
  * Attach command.
  *
@@ -291,13 +270,8 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
     LogFunc(("iLUN=%u, fFlags=0x%x, rc=%Rrc\n", uLUN, fFlags, rc));
     return rc;
 }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 static void sb16AudioCallback(void *pvContext, uint32_t cbFree);
-#else
-static void sb16AudioCallback(void *pvContext, int cbFree);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 static int magic_of_irq(int irq)
 {
@@ -367,31 +341,21 @@ static void sb16Control(PSB16STATE pThis, int hold)
 
     LogFlowFunc(("hold %d high %d dma %d\n", hold, pThis->use_hdma, dma));
 
-# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
-# endif
     if (hold)
     {
         PDMDevHlpDMASetDREQ (pThis->pDevIns, dma, 1);
         PDMDevHlpDMASchedule (pThis->pDevIns);
-# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
             pDrv->pConnector->pfnEnableOut(pDrv->pConnector,
                                            pDrv->Out.pStrmOut, true /* fEnable */);
-# else
-        AUD_set_active_out (pThis->voice, 1);
-# endif
     }
     else
     {
         PDMDevHlpDMASetDREQ (pThis->pDevIns, dma, 0);
-# ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
             pDrv->pConnector->pfnEnableOut(pDrv->pConnector,
                                            pDrv->Out.pStrmOut, false /* fEnable */);
-# else
-        AUD_set_active_out (pThis->voice, 0);
-# endif
     }
 }
 
@@ -409,7 +373,6 @@ static void continue_dma8(PSB16STATE pThis)
 {
     if (pThis->freq > 0)
     {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         PDMAUDIOSTREAMCFG streamCfg;
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
@@ -418,23 +381,6 @@ static void continue_dma8(PSB16STATE pThis)
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
-#else
-        pThis->audio_free = 0;
-
-        audsettings_t streamCfg;
-        streamCfg.freq = pThis->freq;
-        streamCfg.nchannels = 1 << pThis->fmt_stereo;
-        streamCfg.fmt = pThis->fmt;
-        streamCfg.endianness = 0;
-        pThis->voice = AUD_open_out (
-            &pThis->card,
-            pThis->voice,
-            "sb16",
-            pThis,
-            sb16AudioCallback,
-            &streamCfg
-            );
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
 
     sb16Control(pThis, 1);
@@ -562,7 +508,6 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
 
     if (pThis->freq)
     {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         PDMAUDIOSTREAMCFG streamCfg;
         streamCfg.uHz           = pThis->freq;
         streamCfg.cChannels     = 1 << pThis->fmt_stereo;
@@ -571,23 +516,6 @@ static void dma_cmd(PSB16STATE pThis, uint8_t cmd, uint8_t d0, int dma_len)
 
         int rc = sb16OpenOut(pThis, &streamCfg);
         AssertRC(rc);
-#else
-        pThis->audio_free = 0;
-
-        audsettings_t streamCfg;
-        streamCfg.freq = pThis->freq;
-        streamCfg.nchannels = 1 << pThis->fmt_stereo;
-        streamCfg.fmt = pThis->fmt;
-        streamCfg.endianness = 0;
-        pThis->voice = AUD_open_out (
-            &pThis->card,
-            pThis->voice,
-            "sb16",
-            pThis,
-            sb16AudioCallback,
-            &streamCfg
-            );
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     }
 
     sb16Control(pThis, 1);
@@ -1069,36 +997,20 @@ static uint8_t sb16MixRegToVol(PSB16STATE pThis, int reg)
 
 static void sb16SetMasterVolume(PSB16STATE pThis)
 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x30);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x31);
     PDMAUDIOVOLUME vol = { false, lvol, rvol };
     AudioMixerSetMasterVolume(pThis->pMixer, &vol);
-#else
-    int     mute = 0;
-    uint8_t lvol = pThis->mixer_regs[0x30];
-    uint8_t rvol = pThis->mixer_regs[0x31];
-
-    AUD_set_volume(AUD_MIXER_VOLUME, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 }
 
 static void sb16SetPcmOutVolume(PSB16STATE pThis)
 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /* There's no mute switch, only volume controls. */
     uint8_t lvol = sb16MixRegToVol(pThis, 0x32);
     uint8_t rvol = sb16MixRegToVol(pThis, 0x33);
     PDMAUDIOVOLUME vol = { false, lvol, rvol };
     AudioMixerSetSinkVolume(pThis->pSinkOutput, &vol);
-#else
-    int     mute = 0;
-    uint8_t lvol = pThis->mixer_regs[0x32];
-    uint8_t rvol = pThis->mixer_regs[0x33];
-
-    AUD_set_volume(AUD_MIXER_PCM, &mute, &lvol, &rvol);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 }
 
 static void sb16ResetLegacy(PSB16STATE pThis)
@@ -1108,33 +1020,14 @@ static void sb16ResetLegacy(PSB16STATE pThis)
     pThis->fmt_bits   = 8;
     pThis->fmt_stereo = 0;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PDMAUDIOSTREAMCFG streamCfg;
     streamCfg.uHz           = pThis->freq;
     streamCfg.cChannels     = 1; /* Mono */
     streamCfg.enmFormat     = AUD_FMT_U8;
     streamCfg.enmEndianness = PDMAUDIOHOSTENDIANNESS;
 
-    int rc = sb16OpenOut(pThis, &streamCfg);
-    AssertRC(rc);
-#else
-    audsettings_t streamCfg;
-    streamCfg.freq = pThis->freq;
-    streamCfg.nchannels = 1;
-    streamCfg.fmt = AUD_FMT_U8;
-    streamCfg.endianness = 0;
-    pThis->voice = AUD_open_out (
-        &pThis->card,
-        pThis->voice,
-        "sb16",
-        pThis,
-        sb16AudioCallback,
-        &streamCfg
-        );
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-
-    /* Not sure about that... */
-    /* AUD_set_active_out (pThis->voice, 1); */
+    int rc2 = sb16OpenOut(pThis, &streamCfg);
+    AssertRC(rc2);
 }
 
 static void sb16Reset(PSB16STATE pThis)
@@ -1337,7 +1230,6 @@ static IO_READ_PROTO(dsp_read)
 
 static void sb16MixerReset(PSB16STATE pThis)
 {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -1350,10 +1242,9 @@ static void sb16MixerReset(PSB16STATE pThis)
         AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-    memset (pThis->mixer_regs, 0xff, 0x7f);
-    memset (pThis->mixer_regs + 0x83, 0xff, sizeof (pThis->mixer_regs) - 0x83);
+    memset(pThis->mixer_regs, 0xff, 0x7f);
+    memset(pThis->mixer_regs + 0x83, 0xff, sizeof (pThis->mixer_regs) - 0x83);
 
     pThis->mixer_regs[0x02] = 4;    /* master volume 3bits */
     pThis->mixer_regs[0x06] = 4;    /* MIDI volume 3bits */
@@ -1381,7 +1272,6 @@ static void sb16MixerReset(PSB16STATE pThis)
     for (int i = 0x44; i < 0x48; i++)
         pThis->mixer_regs[i] = 0x80;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     int rc2 = AudioMixerCreate("SB16 Mixer", 0 /* uFlags */, &pThis->pMixer);
     if (RT_SUCCESS(rc2))
     {
@@ -1400,7 +1290,6 @@ static void sb16MixerReset(PSB16STATE pThis)
                                 AUDMIXSINKDIR_OUTPUT, &pThis->pSinkOutput);
         AssertRC(rc2);
     }
-#endif
 
     /* Update the master (mixer) and PCM out volumes. */
     sb16SetMasterVolume(pThis);
@@ -1416,8 +1305,7 @@ static IO_WRITE_PROTO(mixer_write_indexb)
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-uint32_t popcount (uint32_t u) /** @todo r=andy WTF? */
+uint32_t popcount(uint32_t u) /** @todo r=andy WTF? */
 {
     u = ((u&0x55555555) + ((u>>1)&0x55555555));
     u = ((u&0x33333333) + ((u>>2)&0x33333333));
@@ -1427,11 +1315,10 @@ uint32_t popcount (uint32_t u) /** @todo r=andy WTF? */
     return u;
 }
 
-uint32_t lsbindex (uint32_t u)
+uint32_t lsbindex(uint32_t u)
 {
-    return popcount ((u & -(int32_t)u) - 1);
+    return popcount((u & -(int32_t)u) - 1);
 }
-#endif
 
 /* Convert SB16 to SB Pro mixer volume (left). */
 static inline void sb16ConvVolumeL(PSB16STATE pThis, unsigned reg, uint8_t val)
@@ -1655,7 +1542,6 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
         int rc = PDMDevHlpDMAReadMemory(pThis->pDevIns, nchan, tmpbuf, dma_pos, cbToRead, &cbRead);
         AssertMsgRC(rc, ("DMAReadMemory -> %Rrc\n", rc));
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         uint32_t cbWritten;
 
         /* Just multiplex the output to the connected backends.
@@ -1672,9 +1558,6 @@ static int sb16WriteAudio(PSB16STATE pThis, int nchan, uint32_t dma_pos,
             cbWrittenMin = RT_MIN(cbWrittenMin, cbWritten);
             LogFlowFunc(("\tLUN#%RU8: cbWritten=%RU32, cWrittenMin=%RU32\n", pDrv->uLUN, cbWritten, cbWrittenMin));
         }
-#else
-        cbWrittenMin = AUD_write (pThis->voice, tmpbuf, cbToRead);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
         Assert(cbToWrite >= cbWrittenMin);
         cbToWrite      -= cbWrittenMin;
@@ -1703,7 +1586,6 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     if (pThis->left_till_irq < 0)
         pThis->left_till_irq = pThis->block_size;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
 
     uint32_t cbOutMin = UINT32_MAX;
@@ -1727,16 +1609,6 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
         if ((free <= 0) || !dma_len)
             return dma_pos;
     }
-#else
-    if (pThis->voice)
-    {
-        free = pThis->audio_free & ~pThis->align;
-        if ((free <= 0) || !dma_len)
-            return dma_pos;
-    }
-    else
-        free = dma_len;
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     copy = free;
     till = pThis->left_till_irq;
@@ -1785,16 +1657,6 @@ static DECLCALLBACK(uint32_t) sb16DMARead(PPDMDEVINS pDevIns, void *opaque, unsi
     return dma_pos;
 }
 
-#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-static void sb16AudioCallback(void *pvContext, int cbFree)
-{
-    PSB16STATE pState = (PSB16STATE)pvContext;
-    AssertPtrReturnVoid(pState);
-    pState->audio_free = cbFree;
-    /* New space available, see if we can transfer more. There is no cyclic DMA timer in VBox. */
-    PDMDevHlpDMASchedule(pState->pDevIns);
-}
-#else
 static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
@@ -1861,7 +1723,6 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 
     TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTicksIO);
 }
-#endif /* !VBOX_WITH_PDM_AUDIO_DRIVER */
 
 static void sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
 {
@@ -1969,7 +1830,6 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
     SSMR3GetS32(pSSM, &pThis->mixer_nreg);
     SSMR3GetMem(pSSM, pThis->mixer_regs, 256);
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 #if 0
     PSB16DRIVER pDrv;
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -1981,16 +1841,11 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
         }
     }
 #endif
-#else
-    AUD_close_out (&pThis->card, pThis->voice);
-    pThis->voice = NULL;
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     if (pThis->dma_running)
     {
         if (pThis->freq)
         {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             PDMAUDIOSTREAMCFG streamCfg;
             streamCfg.uHz           = pThis->freq;
             streamCfg.cChannels     = 1 << pThis->fmt_stereo;
@@ -1999,23 +1854,6 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis, int version_id)
 
             int rc = sb16OpenOut(pThis, &streamCfg);
             AssertRC(rc);
-#else
-            pThis->audio_free = 0;
-
-            audsettings_t as;
-            as.freq = pThis->freq;
-            as.nchannels = 1 << pThis->fmt_stereo;
-            as.fmt = pThis->fmt;
-            as.endianness = 0;
-            pThis->voice = AUD_open_out (
-                &pThis->card,
-                pThis->voice,
-                "sb16",
-                pThis,
-                sb16AudioCallback,
-                &as
-                );
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
         }
 
         sb16Control(pThis, 1);
@@ -2095,7 +1933,6 @@ static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
@@ -2141,7 +1978,6 @@ static int sb16OpenOut(PSB16STATE pThis, PPDMAUDIOSTREAMCFG pCfg)
 
     return rc;
 }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
@@ -2195,7 +2031,6 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 {
     PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     PSB16DRIVER pDrv;
 
     RTListForEach(&pThis->lstDrv, pDrv, SB16DRIVER, Node)
@@ -2208,7 +2043,6 @@ static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
         AudioMixerDestroy(pThis->pMixer);
         pThis->pMixer = NULL;
     }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     return VINF_SUCCESS;
 }
@@ -2283,9 +2117,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->csp_regs[5]             = 1;
     pThis->csp_regs[9]             = 0xf8;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     RTListInit(&pThis->lstDrv);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     sb16MixerReset(pThis);
 
@@ -2322,7 +2154,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Attach driver.
      */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     uint8_t uLUN;
     for (uLUN = 0; uLUN < UINT8_MAX; uLUN)
     {
@@ -2339,18 +2170,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
-#else
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Driver Port");
-    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        LogFunc(("SB16: No attached driver!\n"));
-    else if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Failed to attach SB16 LUN #0! rc=%Rrc\n", rc));
-        return rc;
-    }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     sb16ResetLegacy(pThis);
 
     PSB16DRIVER pDrv;
@@ -2408,23 +2228,6 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             TMTimerSet(pThis->pTimerIO, TMTimerGet(pThis->pTimerIO) + pThis->uTicksIO);
         }
     }
-#else
-    AUD_register_card("sb16", &pThis->card);
-    sb16ResetLegacy(pThis);
-
-    if (!AUD_is_host_voice_out_ok(pThis->voice))
-    {
-        LogRel (("SB16: WARNING: Unable to open PCM OUT!\n"));
-        AUD_close_out (&pThis->card, pThis->voice);
-        pThis->voice = NULL;
-
-        AUD_init_null();
-
-        PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-            N_("No audio devices could be opened. Selecting the NULL audio backend "
-               "with the consequence that no sound is audible"));
-    }
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
     return VINF_SUCCESS;
 }

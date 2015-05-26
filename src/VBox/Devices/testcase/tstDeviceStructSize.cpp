@@ -104,9 +104,8 @@
 # include "../Bus/DevPciRaw.cpp"
 #endif
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-# include <VBox/vmm/pdmaudioifs.h>
-#endif
+#include <VBox/vmm/pdmaudioifs.h>
+
 #undef LOG_GROUP
 #include "../Audio/DevIchAc97.cpp"
 #undef LOG_GROUP

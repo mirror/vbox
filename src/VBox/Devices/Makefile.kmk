@@ -25,9 +25,7 @@ endif
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
-ifdef VBOX_WITH_PDM_AUDIO_DRIVER
- include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
-endif
+include $(PATH_SUB_CURRENT)/Audio/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Input/testcase/Makefile.kmk
 if defined(VBOX_WITH_INTEL_PXE) || defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/PC/PXE/Makefile.kmk
@@ -521,120 +519,61 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  # --- Audio bits. ---
 
- ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-  VBoxDD_DEFS            += VBOX_WITH_PDM_AUDIO_DRIVER
-  VBoxDD_SOURCES         += \
-	Audio/AudioMixBuffer.cpp \
-	Audio/AudioMixer.cpp \
-	Audio/DrvAudio.cpp \
-	Audio/DrvAudioCommon.cpp \
-	Audio/DrvHostNullAudio.cpp
+ VBoxDD_SOURCES         += \
+   Audio/AudioMixBuffer.cpp \
+   Audio/AudioMixer.cpp \
+   Audio/DrvAudio.cpp \
+   Audio/DrvAudioCommon.cpp \
+   Audio/DrvHostNullAudio.cpp
 
-  ifeq ($(KBUILD_TARGET),darwin)
-   VBoxDD_SOURCES += \
-	Audio/DrvHostCoreAudio.cpp
-  endif
-
-  ifeq ($(KBUILD_TARGET),win)
-   VBoxDD_SOURCES += \
-	Audio/DrvHostDSound.cpp
-   VBoxDD_LIBS    += \
-	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/dsound.lib
-  endif
-
-  ifeq ($(KBUILD_TARGET),linux)
-   VBoxDD_SOURCES += \
-		Audio/DrvHostOSSAudio.cpp
-
-   ifdef VBOX_WITH_PULSE
-    VBoxDD_DEFS    += VBOX_WITH_PULSE
-    VBoxDD_SOURCES += \
-	Audio/DrvHostPulseAudio.cpp \
-	Audio/pulse_stubs.c
-   endif
-
-   ifdef VBOX_WITH_ALSA
-    VBoxDD_DEFS    += VBOX_WITH_ALSA
-    VBoxDD_SOURCES += \
-		Audio/DrvHostALSAAudio.cpp \
-		Audio/alsa_stubs.c
-   endif
-  endif
-
-  ifeq ($(KBUILD_TARGET),freebsd)
-   VBoxDD_SOURCES  += \
-		Audio/DrvHostOSSAudio.cpp
-   ifdef VBOX_WITH_PULSE
-    VBoxDD_DEFS    += VBOX_WITH_PULSE
-    VBoxDD_SOURCES += \
-	Audio/DrvHostPulseAudio.cpp \
-	Audio/pulse_stubs.c
-   endif
-  endif
-
-  ifeq ($(KBUILD_TARGET),solaris)
-   ifdef VBOX_WITH_SOLARIS_OSS
-    VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
-    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
-   endif
-  endif
-
- else # !VBOX_WITH_PDM_AUDIO_DRIVER
-
+ ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES += \
- 	 Audio/audio.c \
- 	 Audio/audiosniffer.c \
- 	 Audio/noaudio.c \
- 	 Audio/filteraudio.c \
-	 Audio/mixeng.c
+   Audio/DrvHostCoreAudio.cpp
+ endif
 
-  ifeq ($(KBUILD_TARGET),win)
+ ifeq ($(KBUILD_TARGET),win)
+  VBoxDD_SOURCES += \
+   Audio/DrvHostDSound.cpp
+  VBoxDD_LIBS    += \
+   $(PATH_SDK_$(VBOX_WINDDK)_LIB)/dsound.lib
+ endif
+
+ ifeq ($(KBUILD_TARGET),linux)
+  VBoxDD_SOURCES += \
+   	Audio/DrvHostOSSAudio.cpp
+
+  ifdef VBOX_WITH_PULSE
+   VBoxDD_DEFS    += VBOX_WITH_PULSE
    VBoxDD_SOURCES += \
-	Audio/dsoundaudio.c
+   Audio/DrvHostPulseAudio.cpp \
+   Audio/pulse_stubs.c
   endif
 
-  VBoxDD_SOURCES.darwin  += \
-  	Audio/coreaudio.c
-
-  ifeq ($(KBUILD_TARGET),solaris)
+  ifdef VBOX_WITH_ALSA
+   VBoxDD_DEFS    += VBOX_WITH_ALSA
    VBoxDD_SOURCES += \
- 	Audio/solaudio.c
-   ifdef VBOX_WITH_SOLARIS_OSS
-    VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
-    VBoxDD_SOURCES += \
-	Audio/ossaudio.c
-   endif
+   	Audio/DrvHostALSAAudio.cpp \
+   	Audio/alsa_stubs.c
   endif
+ endif
 
-  ifeq ($(KBUILD_TARGET),linux)
+ ifeq ($(KBUILD_TARGET),freebsd)
+  VBoxDD_SOURCES  += \
+   	Audio/DrvHostOSSAudio.cpp
+  ifdef VBOX_WITH_PULSE
+   VBoxDD_DEFS    += VBOX_WITH_PULSE
    VBoxDD_SOURCES += \
- 	  Audio/ossaudio.c
-   ifdef VBOX_WITH_PULSE
-    VBoxDD_DEFS    += VBOX_WITH_PULSE
-    VBoxDD_SOURCES += \
- 	  Audio/pulseaudio.c \
- 	  Audio/pulse_stubs.c
-   endif
-   ifdef VBOX_WITH_ALSA
-    VBoxDD_DEFS    += VBOX_WITH_ALSA
-    VBoxDD_SOURCES += \
- 	  Audio/alsaaudio.c \
- 	  Audio/alsa_stubs.c
-   endif
+   Audio/DrvHostPulseAudio.cpp \
+   Audio/pulse_stubs.c
   endif
+ endif
 
-  ifeq ($(KBUILD_TARGET),freebsd)
-   VBoxDD_SOURCES += \
- 	  Audio/ossaudio.c
-   ifdef VBOX_WITH_PULSE
-    VBoxDD_DEFS    += VBOX_WITH_PULSE
-    VBoxDD_SOURCES += \
- 	  Audio/pulseaudio.c \
- 	  Audio/pulse_stubs.c
-   endif
+ ifeq ($(KBUILD_TARGET),solaris)
+  ifdef VBOX_WITH_SOLARIS_OSS
+   VBoxDD_SOURCES += Audio/DrvHostOSSAudio.cpp
+   VBoxDD_DEFS    += VBOX_WITH_SOLARIS_OSS
   endif
-
- endif # !VBOX_WITH_PDM_AUDIO_DRIVER
+ endif
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
  VBOX_SLIRP_SOURCES = \

@@ -109,22 +109,12 @@ typedef struct HDACODEC
     const uint8_t           u8AdcVolsLineIn;
     const uint8_t           u8DacLineOut;
 #endif
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /* Callbacks to the HDA controller, mostly used for multiplexing to the various host backends. */
     DECLR3CALLBACKMEMBER(void, pfnCloseIn, (PHDASTATE pThis, PDMAUDIORECSOURCE enmRecSource));
     DECLR3CALLBACKMEMBER(void, pfnCloseOut, (PHDASTATE pThis));
     DECLR3CALLBACKMEMBER(int, pfnOpenIn, (PHDASTATE pThis, const char *pszName, PDMAUDIORECSOURCE enmRecSource, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnOpenOut, (PHDASTATE pThis, const char *pszName, PPDMAUDIOSTREAMCFG pCfg));
     DECLR3CALLBACKMEMBER(int, pfnSetVolume, (PHDASTATE pThis, ENMSOUNDSOURCE enmSource, bool fMute, uint8_t uVolLeft, uint8_t uVolRight));
-#else
-    QEMUSoundCard           card;
-    /** PCM in */
-    SWVoiceIn              *SwVoiceIn;
-    /** PCM out */
-    SWVoiceOut             *SwVoiceOut;
-    /* Callbacks for host driver backends. */
-    DECLR3CALLBACKMEMBER(int, pfnTransfer, (PHDACODEC pCodec, ENMSOUNDSOURCE enmSource, uint32_t cbAvail));
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
     /* Callbacks by codec implementation. */
     DECLR3CALLBACKMEMBER(int, pfnLookup, (PHDACODEC pThis, uint32_t verb, PPFNHDACODECVERBPROCESSOR));
     DECLR3CALLBACKMEMBER(int, pfnReset, (PHDACODEC pThis));
@@ -138,11 +128,7 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis, uint16_t uLUN, PCFGMN
 int hdaCodecDestruct(PHDACODEC pThis);
 int hdaCodecSaveState(PHDACODEC pThis, PSSMHANDLE pSSM);
 int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion);
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 int hdaCodecOpenStream(PHDACODEC pThis, PDMAUDIORECSOURCE enmRecSource, PDMAUDIOSTREAMCFG *pAudioSettings);
-#else
-int hdaCodecOpenVoice(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings);
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 #define HDA_SSM_VERSION   4
 #define HDA_SSM_VERSION_1 1

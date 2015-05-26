@@ -29,16 +29,6 @@
 #include <VBox/types.h>
 #include <iprt/list.h>
 
-#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-typedef struct
-{
-    int mute;
-    uint32_t r;
-    uint32_t l;
-} volume_t;
-#endif
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef uint32_t PDMAUDIODRVFLAGS;
 
 /** No flags set. */
@@ -62,7 +52,6 @@ typedef enum PDMAUDIOFMT
     /** Hack to blow the type up to 32-bit. */
     AUD_FMT_32BIT_HACK = 0x7fffffff
 } PDMAUDIOFMT;
-#endif
 
 /**
  * Audio configuration of a certain backend.
@@ -102,7 +91,6 @@ typedef enum PDMAUDIOENDIANNESS
     PDMAUDIOENDIANNESS_32BIT_HACK = 0x7fffffff
 } PDMAUDIOENDIANNESS;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 typedef struct PDMAUDIOSTREAMCFG
 {
     /** Frequency in Hertz (Hz). */
@@ -114,7 +102,6 @@ typedef struct PDMAUDIOSTREAMCFG
     /** @todo Use RT_LE2H_*? */
     PDMAUDIOENDIANNESS enmEndianness;
 } PDMAUDIOSTREAMCFG, *PPDMAUDIOSTREAMCFG;
-#endif
 
 #if defined(RT_LITTLE_ENDIAN)
 # define PDMAUDIOHOSTENDIANNESS PDMAUDIOENDIANNESS_LITTLE
@@ -392,8 +379,6 @@ typedef struct PDMAUDIOGSTSTRMOUT
     /** Pointer to the associated host output stream. */
     PPDMAUDIOHSTSTRMOUT    pHstStrmOut;
 } PDMAUDIOGSTSTRMOUT, *PPDMAUDIOGSTSTRMOUT;
-
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 
 /** Pointer to a audio connector interface. */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
@@ -673,8 +658,6 @@ typedef struct PDMIHOSTAUDIO
 
 } PDMIHOSTAUDIO;
 #define PDMIHOSTAUDIO_IID                           "39feea4f-c824-4197-bcff-7d4a6ede7420"
-
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
 
 #endif /* ___VBox_vmm_pdmaudioifs_h */
 

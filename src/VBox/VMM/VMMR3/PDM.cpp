@@ -1036,12 +1036,11 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         {
             bool fSkip = false;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-            /* Skip the non-existing "AudioSniffer" device stored in the saved state. */
+            /* Skip the non-existing (deprecated) "AudioSniffer" device stored in the saved state. */
             if (   uVersion <= PDM_SAVED_STATE_VERSION_PRE_PDM_AUDIO
                 && !RTStrCmp(szName, "AudioSniffer"))
                 fSkip = true;
-#endif
+
             if (!fSkip)
             {
                 LogRel(("Device '%s'/%d not found in current config\n", szName, iInstance));

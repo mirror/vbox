@@ -34,11 +34,6 @@
 #include <iprt/cpp/utils.h>
 
 #include "VBoxDD.h"
-#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-extern "C" {
-#include "audio.h"
-}
-#endif
 #include "DevIchHdaCodec.h"
 
 
@@ -1166,31 +1161,18 @@ DECLISNODEOFTYPE(Reserved)
 /*
  * Misc helpers.
  */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 static int hdaCodecToAudVolume(PHDACODEC pThis, AMPLIFIER *pAmp, PDMAUDIOMIXERCTL mt)
-#else
-static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
-#endif
 {
     uint32_t dir = AMPLIFIER_OUT;
     ENMSOUNDSOURCE enmSrc;
     switch (mt)
     {
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         case PDMAUDIOMIXERCTL_PCM:
             enmSrc = PO_INDEX;
-#else
-        case AUD_MIXER_VOLUME:
-        case AUD_MIXER_PCM:
-#endif
             dir = AMPLIFIER_OUT;
             break;
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         case PDMAUDIOMIXERCTL_LINE_IN:
             enmSrc = PI_INDEX;
-#else
-        case AUD_MIXER_LINE_IN:
-#endif
             dir = AMPLIFIER_IN;
             break;
         default:
@@ -1213,13 +1195,7 @@ static int hdaCodecToAudVolume(AMPLIFIER *pAmp, audmixerctl_t mt)
     lVol = (lVol + 1) * (2 * 255) / 256;
     rVol = (rVol + 1) * (2 * 255) / 256;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-    /** @todo In SetVolume no passing audmixerctl_in as its not used in DrvAudio.cpp. */
-    pThis->pfnSetVolume(pThis->pHDAState, enmSrc, RT_BOOL(mute), lVol, rVol);
-#else
-    AUD_set_volume(mt, &mute, &lVol, &rVol);
-#endif
-    return VINF_SUCCESS;
+    return pThis->pfnSetVolume(pThis->pHDAState, enmSrc, RT_BOOL(mute), lVol, rVol);
 }
 
 DECLINLINE(void) hdaCodecSetRegister(uint32_t *pu32Reg, uint32_t u32Cmd, uint8_t u8Offset, uint32_t mask)
@@ -1359,11 +1335,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_IN, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
         /** @todo Fix ID of u8AdcVolsLineIn! */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_LINE_IN);
-#else
-        hdaCodecToAudVolume(pAmplifier, AUD_MIXER_LINE_IN);
-#endif
     }
     if (fIsOut)
     {
@@ -1373,11 +1345,7 @@ static DECLCALLBACK(int) vrbProcSetAmplifier(PHDACODEC pThis, uint32_t cmd, uint
             hdaCodecSetRegisterU8(&AMPLIFIER_REGISTER(*pAmplifier, AMPLIFIER_OUT, AMPLIFIER_RIGHT, u8Index), cmd, 0);
 
         /** @todo Fix ID of u8DacLineOut! */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         hdaCodecToAudVolume(pThis, pAmplifier, PDMAUDIOMIXERCTL_PCM);
-#else
-        hdaCodecToAudVolume(pAmplifier, AUD_MIXER_VOLUME);
-#endif
     }
 
     return VINF_SUCCESS;
@@ -2274,24 +2242,9 @@ static int codecLookup(PHDACODEC pThis, uint32_t cmd, PPFNHDACODECVERBPROCESSOR 
     return VINF_SUCCESS;
 }
 
-#ifndef VBOX_WITH_PDM_AUDIO_DRIVER
-static void pi_callback(void *opaque, int avail)
-{
-    PHDACODEC pThis = (PHDACODEC)opaque;
-    pThis->pfnTransfer(pThis, PI_INDEX, avail);
-}
-
-static void po_callback(void *opaque, int avail)
-{
-    PHDACODEC pThis = (PHDACODEC)opaque;
-    pThis->pfnTransfer(pThis, PO_INDEX, avail);
-}
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-
 /*
  * APIs exposed to DevHDA.
  */
-
 
 /**
  *
@@ -2301,11 +2254,7 @@ static void po_callback(void *opaque, int avail)
  * @todo Probably passed settings should be verified (if AFG's declared proposed
  *       format) before enabling.
  */
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
 int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, PPDMAUDIOSTREAMCFG pCfg)
-#else
-int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettings_t *pAudioSettings)
-#endif
 {
     AssertPtrReturn(pThis, VERR_INVALID_POINTER);
 
@@ -2314,33 +2263,18 @@ int hdaCodecOpenStream(PHDACODEC pThis, ENMSOUNDSOURCE enmSoundSource, audsettin
     switch (enmSoundSource)
     {
         case PI_INDEX:
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-                rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in",
-                                      PDMAUDIORECSOURCE_LINE_IN, pCfg);
-#else
-                pThis->SwVoiceIn = AUD_open_in(&pThis->card, pThis->SwVoiceIn, "hda.in", pThis, pi_callback, pAudioSettings);
-                rc = pThis->SwVoiceIn ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
-#endif
+            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.in", PDMAUDIORECSOURCE_LINE_IN, pCfg);
             break;
 
         case PO_INDEX:
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
             rc = pThis->pfnOpenOut(pThis->pHDAState, "hda.out", pCfg);
-#else
-            pThis->SwVoiceOut = AUD_open_out(&pThis->card, pThis->SwVoiceOut, "hda.out", pThis, po_callback, pAudioSettings);
-            rc = pThis->SwVoiceOut ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
-#endif
             break;
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-# ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_HDA_MIC_IN
         case MC_INDEX:
-            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc",
-                                  PDMAUDIORECSOURCE_MIC, pCfg);
+            rc = pThis->pfnOpenIn(pThis->pHDAState, "hda.mc", PDMAUDIORECSOURCE_MIC, pCfg);
             break;
-# endif
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
-
+#endif
         default:
             AssertMsgFailed(("Index %ld not implemented\n", enmSoundSource));
             rc = VERR_NOT_IMPLEMENTED;
@@ -2415,19 +2349,10 @@ int hdaCodecLoadState(PHDACODEC pThis, PSSMHANDLE pSSM, uint32_t uVersion)
      * Update stuff after changing the state.
      */
     if (hdaCodecIsDacNode(pThis, pThis->u8DacLineOut))
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
-#else
-        hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
-#endif
     else if (hdaCodecIsSpdifOutNode(pThis, pThis->u8DacLineOut))
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
         hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, PDMAUDIOMIXERCTL_PCM);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
-#else
-        hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
-    hdaCodecToAudVolume(&pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
-#endif
 
     return VINF_SUCCESS;
 }
@@ -2467,33 +2392,20 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     pThis->paNodes[1].node.au32F00_param[5] = CODEC_MAKE_F00_05(1, CODEC_F00_05_AFG);
     pThis->paNodes[1].afg.u32F20_param = CODEC_MAKE_F20(pThis->u16VendorId, pThis->u8BSKU, pThis->u8AssemblyId);
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     /* 44.1 kHz. */
     PDMAUDIOSTREAMCFG as;
     as.uHz           = 44100;
     as.cChannels     = 2;
     as.enmFormat     = AUD_FMT_S16;
     as.enmEndianness = PDMAUDIOHOSTENDIANNESS;
-#else
-    AUD_register_card("ICH0", &pThis->card);
-
-    /* 44.1 kHz */
-    audsettings_t as;
-    as.freq = 44100;
-    as.nchannels = 2;
-    as.fmt = AUD_FMT_S16;
-    as.endianness = 0;
-#endif
 
     pThis->paNodes[1].node.au32F00_param[0xA] = CODEC_F00_0A_16_BIT;
 
     hdaCodecOpenStream(pThis, PI_INDEX, &as);
     hdaCodecOpenStream(pThis, PO_INDEX, &as);
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
-# ifdef VBOX_WITH_HDA_MIC_IN
+#ifdef VBOX_WITH_HDA_MIC_IN
     hdaCodecOpenStream(pThis, MC_INDEX, &as);
-# endif
-#endif /* VBOX_WITH_PDM_AUDIO_DRIVER */
+#endif
 
     pThis->paNodes[1].node.au32F00_param[0xA] |= CODEC_F00_0A_44_1KHZ;
 
@@ -2504,53 +2416,8 @@ int hdaCodecConstruct(PPDMDEVINS pDevIns, PHDACODEC pThis,
     for (i = 0; i < pThis->cTotalNodes; ++i)
         pThis->pfnCodecNodeReset(pThis, i, &pThis->paNodes[i]);
 
-#ifdef VBOX_WITH_PDM_AUDIO_DRIVER
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8DacLineOut].dac.B_params, PDMAUDIOMIXERCTL_PCM);
     hdaCodecToAudVolume(pThis, &pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, PDMAUDIOMIXERCTL_LINE_IN);
-
-
-#else
-    hdaCodecToAudVolume(&pThis->paNodes[pThis->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
-    hdaCodecToAudVolume(&pThis->paNodes[pThis->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
-
-    if (!AUD_is_host_voice_in_ok(pThis->SwVoiceIn))
-        LogRel (("HDA: WARNING: Unable to open PCM IN!\n"));
-    if (!AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-        LogRel (("HDA: WARNING: Unable to open PCM OUT!\n"));
-
-    if (   !AUD_is_host_voice_in_ok(pThis->SwVoiceIn)
-        && !AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-    {
-        AUD_close_in(&pThis->card, pThis->SwVoiceIn);
-        AUD_close_out(&pThis->card, pThis->SwVoiceOut);
-
-        pThis->SwVoiceOut = NULL;
-        pThis->SwVoiceIn = NULL;
-
-        AUD_init_null ();
-
-        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-            N_ ("No audio devices could be opened. Selecting the NULL audio backend "
-                "with the consequence that no sound is audible"));
-    }
-    else if (   !AUD_is_host_voice_in_ok(pThis->SwVoiceIn)
-             || !AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-    {
-        char   szMissingVoices[128];
-        size_t len = 0;
-
-        if (!AUD_is_host_voice_in_ok(pThis->SwVoiceIn))
-            len = RTStrPrintf (szMissingVoices, sizeof(szMissingVoices), "PCM_in");
-        if (!AUD_is_host_voice_out_ok(pThis->SwVoiceOut))
-            len += RTStrPrintf (szMissingVoices + len, sizeof(szMissingVoices) - len, len ? ", PCM_out" : "PCM_out");
-
-        PDMDevHlpVMSetRuntimeError (pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-            N_ ("Some audio devices (%s) could not be opened. Guest applications generating audio "
-                "output or depending on audio input may hang. Make sure your host audio device "
-                "is working properly. Check the logfile for error messages of the audio "
-                "subsystem"), szMissingVoices);
-    }
-#endif
 
     return VINF_SUCCESS;
 }
