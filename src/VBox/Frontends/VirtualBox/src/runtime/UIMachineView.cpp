@@ -181,7 +181,10 @@ void UIMachineView::destroy(UIMachineView *pMachineView)
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     if (pMachineView->m_pDnDHandler)
+    {
         delete pMachineView->m_pDnDHandler;
+        pMachineView->m_pDnDHandler = NULL;
+    }
 #endif
     delete pMachineView;
 }
@@ -1416,9 +1419,18 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+bool UIMachineView::dragAndDropIsActive(void) const
+{
+    return (   m_pDnDHandler
+            && machine().GetDnDMode() != KDnDMode_Disabled);
+}
+
 void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
+
+    if (!dragAndDropIsActive())
+        return;
 
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
@@ -1440,6 +1452,9 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
+    if (!dragAndDropIsActive())
+        return;
+
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());
 
@@ -1460,6 +1475,9 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
+    if (!dragAndDropIsActive())
+        return;
+
     m_pDnDHandler->dragLeave(screenId());
 
     pEvent->accept();
@@ -1467,6 +1485,9 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 
 void UIMachineView::dragIsPending(void)
 {
+    if (!dragAndDropIsActive())
+        return;
+
     /** @todo Add guest->guest DnD functionality here by getting
      *        the source of guest B (when copying from B to A). */
     m_pDnDHandler->dragIsPending(screenId());
@@ -1475,6 +1496,9 @@ void UIMachineView::dragIsPending(void)
 void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
+
+    if (!dragAndDropIsActive())
+        return;
 
     /* Get mouse-pointer location. */
     const QPoint &cpnt = viewportToContents(pEvent->pos());

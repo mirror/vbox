@@ -258,6 +258,12 @@ protected:
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /**
+     * Returns @true if drag and drop for this machine is active 
+     * (that is, host->guest, guest->host or bidirectional), @false if not. 
+     */
+    bool dragAndDropIsActive(void) const;
+
+    /**
      * Host -> Guest: Issued when the host cursor enters the guest (VM) window.
      *                The guest will receive the relative cursor coordinates of the
      *                appropriate screen ID.
