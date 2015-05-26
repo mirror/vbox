@@ -268,9 +268,9 @@ static VBOXSTRICTRC iomRCInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
      * And get the I/O register size from the opcode / prefix.
      */
     uint64_t    Port = 0;
+    unsigned    cb;
     bool fRc = iomGetRegImmData(pCpu, &pCpu->Param1, pRegFrame, &Port, &cb);
     AssertMsg(fRc, ("Failed to get reg/imm port number!\n")); NOREF(fRc);
-    unsigned cb;
     if (pCpu->pCurInstr->uOpcode == OP_OUTSB)
         cb = 1;
     else
