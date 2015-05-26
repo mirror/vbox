@@ -1205,30 +1205,66 @@ void UISelectorWindow::prepareMenuFile(QMenu *pMenu)
     if (!pMenu->isEmpty())
         return;
 
-    /* Populate File-menu: */
+    /* The Application / 'File' menu contents is very different depending on host type. */
+
 #ifdef Q_WS_MAC
+    /* 'About' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_About));
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-#endif /* Q_WS_MAC */
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
-    pMenu->addSeparator();
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
-#ifdef DEBUG
-    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
-#endif /* DEBUG */
-#ifndef Q_WS_MAC
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
-#endif /* Q_WS_MAC */
-    pMenu->addSeparator();
-#ifdef VBOX_GUI_WITH_NETWORK_MANAGER
-    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* 'Check for Updates' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
-# ifndef Q_WS_MAC
-    pMenu->addSeparator();
-# endif /* Q_WS_MAC */
-#endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    /* 'Network Access Manager' action goes to Application menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    /* 'Reset Warnings' action goes to Application menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
+    /* 'Preferences' action goes to Application menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+    /* 'Close' action goes to Application menu: */
     pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
+
+    /* 'Import Appliance' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+    /* 'Export Appliance' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+# ifdef DEBUG
+    /* 'Show Extra-data Manager' action goes to 'File' menu for Debug build: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+# endif /* DEBUG */
+    /* 'Show Medium Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+
+#else /* !Q_WS_MAC */
+
+    /* 'Preferences' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_Preferences));
+    /* Separator after 'Preferences' action of the 'File' menu: */
+    pMenu->addSeparator();
+    /* 'Import Appliance' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ImportAppliance));
+    /* 'Export Appliance' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ExportAppliance));
+    /* Separator after 'Export Appliance' action of the 'File' menu: */
+    pMenu->addSeparator();
+# ifdef DEBUG
+    /* 'Extra-data Manager' action goes to 'File' menu for Debug build: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowExtraDataManager));
+# endif /* DEBUG */
+    /* 'Show Medium Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_ShowMediumManager));
+# ifdef VBOX_GUI_WITH_NETWORK_MANAGER
+    /* 'Network Access Manager' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_NetworkAccessManager));
+    /* 'Check for Updates' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_CheckForUpdates));
+# endif /* VBOX_GUI_WITH_NETWORK_MANAGER */
+    /* 'Reset Warnings' action goes 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndex_M_Application_S_ResetWarnings));
+    /* Separator after 'Reset Warnings' action of the 'File' menu: */
+    pMenu->addSeparator();
+    /* 'Close' action goes to 'File' menu: */
+    pMenu->addAction(actionPool()->action(UIActionIndexST_M_File_S_Close));
+#endif /* !Q_WS_MAC */
 }
 
 void UISelectorWindow::prepareMenuGroup(QMenu *pMenu)
