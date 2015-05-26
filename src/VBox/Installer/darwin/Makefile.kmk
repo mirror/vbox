@@ -812,7 +812,7 @@ $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg: \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VirtualBox "$$@"'
 	$(APPEND) -tn  $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxManage \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxManage "$$@"'
-	$(APPEND)  -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxVRDP \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxVRDP \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxHeadless "$$@"'
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxHeadless \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/VBoxHeadless "$$@"'
@@ -821,7 +821,7 @@ ifdef VBOX_WITH_WEBSERVICES
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vboxwebsrv "$$@"'
 endif
 if defined(VBOX_WITH_VBOX_IMG) || defined(VBOX_WITH_TESTCASES)
-	$(APPEND) $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img \
+	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/vbox-img \
 		'#!/bin/bash' 'exec /Applications/VirtualBox.app/Contents/MacOS/vbox-img "$$@"'
 endif
 	$(APPEND) -tn $(VBOX_PATH_PACK_TMP)/VirtualBoxCLI.pkg.root/usr/bin/VBoxBalloonCtrl \
