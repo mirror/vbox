@@ -15,7 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-//#define IOM_USE_IEM_FOR_MMIO
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -29,9 +28,7 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/trpm.h>
-#if defined(IOM_USE_IEM_FOR_MMIO) || (defined(IEM_VERIFICATION_MODE) && defined(IN_RING3))
-# include <VBox/vmm/iem.h>
-#endif
+#include <VBox/vmm/iem.h>
 #include "IOMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
@@ -722,7 +719,7 @@ DECLINLINE(void) iomMMIOStatLength(PVM pVM, unsigned cb)
 }
 
 
-#ifndef IOM_USE_IEM_FOR_MMIO
+#ifndef VBOX_WITH_2ND_IEM_STEP
 
 /**
  * MOV      reg, mem         (read)
@@ -818,8 +815,6 @@ static int iomInterpretMOVxXWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame,
         iomMMIOStatLength(pVM, cb);
     return rc;
 }
-
-#endif /* !IOM_USE_IEM_FOR_MMIO */
 
 
 /** Wrapper for reading virtual memory. */
@@ -1119,8 +1114,6 @@ static uint64_t iomDisModeToMask(DISCPUMODE enmCpuMode)
     }
 }
 
-
-#ifndef IOM_USE_IEM_FOR_MMIO
 
 /**
  * [REP] STOSB
@@ -1653,7 +1646,7 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
     return rc;
 }
 
-#endif /* !IOM_USE_IEM_FOR_MMIO */
+#endif /* !VBOX_WITH_2ND_IEM_STEP */
 
 /**
  * \#PF Handler callback for MMIO ranges.
@@ -1743,7 +1736,7 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
         return rc;
     }
 
-#ifdef IOM_USE_IEM_FOR_MMIO
+#ifdef VBOX_WITH_2ND_IEM_STEP
 
     /*
      * Let IEM call us back via iomMmioHandler.
@@ -1902,7 +1895,7 @@ static VBOXSTRICTRC iomMMIOHandler(PVM pVM, PVMCPU pVCpu, uint32_t uErrorCode, P
     PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
     iomMmioReleaseRange(pVM, pRange);
     return rc;
-#endif /* !IOM_USE_IEM_FOR_MMIO */
+#endif /* !VBOX_WITH_2ND_IEM_STEP */
 }
 
 
@@ -2021,6 +2014,8 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandler(PVM pVM, PVMCPU pVCpu, RTGCPHYS GC
     return rcStrict;
 }
 
+
+#ifdef IN_RING3 /* Only used by REM. */
 
 /**
  * Reads a MMIO register.
@@ -2260,6 +2255,8 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, uint3
     return VINF_SUCCESS;
 }
 
+#endif /* IN_RING3 - only used by REM. */
+#ifndef VBOX_WITH_2ND_IEM_STEP
 
 /**
  * [REP*] INSB/INSW/INSD
@@ -2502,6 +2499,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
     return rcStrict;
 }
 
+#endif /* !VBOX_WITH_2ND_IEM_STEP */
+
 
 #ifndef IN_RC
 
@@ -2605,14 +2604,14 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
     /*
      * Lookup the context range node the page belongs to.
      */
-#ifdef VBOX_STRICT
+#  ifdef VBOX_STRICT
     /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
     PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(pVM, pVCpu, GCPhys);
     AssertMsgReturn(pRange,
             ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
     Assert((pRange->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
-#endif
+#  endif
 
     /*
      * Do the aliasing; page align the addresses since PGM is picky.
@@ -2633,7 +2632,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
-#endif /* !IEM_VERIFICATION_MODE_FULL */
+# endif /* !IEM_VERIFICATION_MODE_FULL */
 
 
 /**
@@ -2659,14 +2658,14 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     /*
      * Lookup the context range node the page belongs to.
      */
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     /* Can't lock IOM here due to potential deadlocks in the VGA device; not safe to access. */
     PIOMMMIORANGE pRange = iomMMIOGetRangeUnsafe(pVM, pVCpu, GCPhys);
     AssertMsgReturn(pRange,
             ("Handlers and page tables are out of sync or something! GCPhys=%RGp\n", GCPhys), VERR_IOM_MMIO_RANGE_NOT_FOUND);
     Assert((pRange->GCPhys       & PAGE_OFFSET_MASK) == 0);
     Assert((pRange->Core.KeyLast & PAGE_OFFSET_MASK) == PAGE_OFFSET_MASK);
-#endif
+# endif
 
     /*
      * Call PGM to do the job work.
@@ -2677,7 +2676,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
     int rc = PGMHandlerPhysicalReset(pVM, GCPhys);
     AssertRC(rc);
 
-#ifdef VBOX_STRICT
+# ifdef VBOX_STRICT
     if (!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
     {
         uint32_t cb = pRange->cb;
@@ -2692,7 +2691,7 @@ VMMDECL(int) IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys)
             GCPhys += PAGE_SIZE;
         }
     }
-#endif
+# endif
     return rc;
 }
 

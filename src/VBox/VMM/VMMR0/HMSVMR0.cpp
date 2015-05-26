@@ -4778,6 +4778,52 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     VBOXSTRICTRC rcStrict;
     if (IoExitInfo.n.u1STR)
     {
+#ifdef VBOX_WITH_2ND_IEM_STEP
+        /* INS/OUTS - I/O String instruction. */
+        /** @todo Huh? why can't we use the segment prefix information given by AMD-V
+         *        in EXITINFO1? Investigate once this thing is up and running. */
+        Log4(("CS:RIP=%04x:%08RX64 %#06x/%u %c str\n", pCtx->cs.Sel, pCtx->rip, IoExitInfo.n.u16Port, cbValue,
+              IoExitInfo.n.u1Type == SVM_IOIO_WRITE ? 'w' : 'r'));
+        AssertReturn(pCtx->dx == IoExitInfo.n.u16Port, VERR_SVM_IPE_2);
+        static IEMMODE const s_aenmAddrMode[8] =
+        {
+            (IEMMODE)-1, IEMMODE_16BIT, IEMMODE_32BIT, (IEMMODE)-1, IEMMODE_64BIT, (IEMMODE)-1, (IEMMODE)-1, (IEMMODE)-1
+        };
+        IEMMODE enmAddrMode = s_aenmAddrMode[(IoExitInfo.u >> 7) & 0x7];
+        if (enmAddrMode != (IEMMODE)-1)
+        {
+            uint64_t cbInstr = pVmcb->ctrl.u64ExitInfo2 - pCtx->rip;
+            if (cbInstr <= 15 && cbInstr >= 2)
+            {
+                if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
+                {
+                    if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
+                        rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr,
+                                                        IoExitInfo.n.u3SEG);
+                    else
+                        rcStrict = IEMExecOne(pVCpu);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
+                }
+                else
+                {
+                    AssertMsg(IoExitInfo.n.u3SEG == X86_SREG_ES /*=0*/, ("%#x\n", IoExitInfo.n.u3SEG));
+                    rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, IoExitInfo.n.u1REP, (uint8_t)cbInstr);
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
+                }
+            }
+            else
+            {
+                AssertMsgFailed(("rip=%RX64 nrip=%#RX64 cbInstr=%#RX64\n", pCtx->rip, pVmcb->ctrl.u64ExitInfo2, cbInstr));
+                rcStrict = IEMExecOne(pVCpu);
+            }
+        }
+        else
+        {
+            AssertMsgFailed(("IoExitInfo=%RX64\n", IoExitInfo.u));
+            rcStrict = IEMExecOne(pVCpu);
+        }
+
+#else
         /* INS/OUTS - I/O String instruction. */
         PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
 
@@ -4802,6 +4848,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         }
         else
             rcStrict = VINF_EM_RAW_EMULATE_INSTR;
+#endif
     }
     else
     {
@@ -4819,11 +4866,11 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         else
         {
             uint32_t u32Val = 0;
-
             rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
             if (IOM_SUCCESS(rcStrict))
             {
                 /* Save result of I/O IN instr. in AL/AX/EAX. */
+                /** @todo r=bird: 32-bit op size should clear high bits of rax! */
                 pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
             }
             else if (rcStrict == VINF_IOM_R3_IOPORT_READ)

@@ -11185,7 +11185,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     PVM pVM                 = pVCpu->CTX_SUFF(pVM);
     if (fIOString)
     {
-#if 0       /* Not yet ready. IEM gurus with debian 32-bit guest without NP (on ATA reads). See @bugref{5752#c158} */
+#ifdef VBOX_WITH_2ND_IEM_STEP /* This used to gurus with debian 32-bit guest without NP (on ATA reads). See @bugref{5752#c158}. Should work now. */
         /*
          * INS/OUTS - I/O String instruction.
          *
