@@ -8253,7 +8253,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
             /* Restore longjmp state. */
             VMMRZCallRing3Enable(pVCpu);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatPreemptPreempting);
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPreempt);
             break;
         }
 
@@ -8739,7 +8739,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
         /* This ASSUMES that pfnStartVM has been set up already. */
         int rc = hmR0VmxSaveHostState(pVM, pVCpu);
         AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatPreemptSaveHostState);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPreemptSaveHostState);
     }
     Assert(!HMCPU_CF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT));
 

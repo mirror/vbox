@@ -950,9 +950,6 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitApicAccess;
     STAMCOUNTER             StatPendingHostIrq;
 
-    STAMCOUNTER             StatPreemptPreempting;
-    STAMCOUNTER             StatPreemptSaveHostState;
-
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
     STAMCOUNTER             StatFlushPhysPageManual;
@@ -975,6 +972,8 @@ typedef struct HMCPU
     STAMCOUNTER             StatSwitchMaxResumeLoops;
     STAMCOUNTER             StatSwitchHltToR3;
     STAMCOUNTER             StatSwitchApicAccessToR3;
+    STAMCOUNTER             StatSwitchPreempt;
+    STAMCOUNTER             StatSwitchPreemptSaveHostState;
 
     STAMCOUNTER             StatTscParavirt;
     STAMCOUNTER             StatTscOffset;
