@@ -711,7 +711,7 @@ struct AudioAdapter
     bool                    fEnabled;
     AudioControllerType_T   controllerType;
     AudioDriverType_T       driverType;
-    std::map<com::Utf8Str, com::Utf8Str> properties;
+    settings::StringsMap properties;
 };
 
 /**

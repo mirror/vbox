@@ -38,7 +38,7 @@ struct AudioAdapterData
     BOOL mEnabled;
     AudioDriverType_T mAudioDriver;
     AudioControllerType_T mAudioController;
-    std::map<com::Utf8Str, com::Utf8Str>  properties;
+    settings::StringsMap  properties;
 };
 
 struct AudioAdapter::Data
@@ -438,7 +438,7 @@ HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
     mData->m->mAudioController = data.controllerType;
     mData->m->mAudioDriver = data.driverType;
 
-    std::map<com::Utf8Str, com::Utf8Str>::const_iterator cit = data.properties.begin();
+    settings::StringsMap::const_iterator cit = data.properties.begin();
     while(cit!=data.properties.end())
     {
         mData->m->properties[cit->first] = cit->second;
@@ -466,7 +466,7 @@ HRESULT AudioAdapter::i_saveSettings(settings::AudioAdapter &data)
     data.controllerType = mData->m->mAudioController;
     data.driverType = mData->m->mAudioDriver;
 
-    std::map<com::Utf8Str, com::Utf8Str>::const_iterator cit = mData->m->properties.begin();
+    settings::StringsMap::const_iterator cit = mData->m->properties.begin();
     while(cit!=mData->m->properties.end())
     {
         data.properties[cit->first] = cit->second;
