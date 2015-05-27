@@ -1949,8 +1949,8 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 {
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        LogRel(("PCI: Read from extended register %d fallen back to generic code\n",
-                u32Address));
+        LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
+                pDev->name, pDev->pDevIns->iInstance, u32Address));
         return 0;
     }
 
@@ -2047,8 +2047,8 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     if ((u32Address + len) > 256 && (u32Address + len) < 4096)
     {
-        LogRel(("PCI: Write to extended register %d fallen back to generic code\n",
-                u32Address));
+        LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
+                pDev->name, pDev->pDevIns->iInstance, u32Address));
         return;
     }
 
