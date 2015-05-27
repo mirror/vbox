@@ -87,22 +87,11 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <layout class="QHBoxLayout">
-         <item>
-          <widget class="QSpinBox" name="m_pEditorMemorySize">
-           <property name="whatsThis">
-            <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="m_pLabelMemoryUnits">
-           <property name="text">
-            <string>MB</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <widget class="QSpinBox" name="m_pEditorMemorySize">
+         <property name="whatsThis">
+          <string>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</string>
+         </property>
+        </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="m_pLabelBootOrder">
@@ -343,7 +332,7 @@
        <item row="8" column="1" colspan="3">
         <widget class="QCheckBox" name="m_pCheckBoxUseUTC" >
          <property name="whatsThis" >
-          <string>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
+          <string>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
          </property>
          <property name="text" >
           <string>Hardware Clock in &amp;UTC Time</string>
@@ -501,6 +490,9 @@
         <widget class="QSpinBox" name="m_pEditorCPUExecCap">
          <property name="whatsThis">
           <string>Limits the amount of time that each virtual CPU is allowed to run for. Each virtual CPU will be allowed to use up to this percentage of the processing time available on one physical CPU. The execution cap can be disabled by setting it to 100%. Setting the cap too low can make the machine feel slow to respond.</string>
+         </property>
+         <property name="suffix">
+          <string>%</string>
          </property>
         </widget>
        </item>

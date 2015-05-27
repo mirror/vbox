@@ -443,16 +443,17 @@ void UIMachineSettingsSystem::retranslateUi()
     adjustBootOrderTWSize();
 
     /* Retranslate the memory slider legend: */
-    m_pLabelMemoryMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_pSliderMemorySize->minRAM()));
-    m_pLabelMemoryMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_pSliderMemorySize->maxRAM()));
+    m_pEditorMemorySize->setSuffix(QString(" %1").arg(tr("MB")));
+    m_pLabelMemoryMin->setText(tr("%1 MB").arg(m_pSliderMemorySize->minRAM()));
+    m_pLabelMemoryMax->setText(tr("%1 MB").arg(m_pSliderMemorySize->maxRAM()));
 
     /* Retranslate the cpu slider legend: */
-    m_pLabelCPUMin->setText(tr("<qt>%1&nbsp;CPU</qt>", "%1 is 1 for now").arg(m_uMinGuestCPU));
-    m_pLabelCPUMax->setText(tr("<qt>%1&nbsp;CPUs</qt>", "%1 is host cpu count * 2 for now").arg(m_uMaxGuestCPU));
+    m_pLabelCPUMin->setText(tr("%1 CPU", "%1 is 1 for now").arg(m_uMinGuestCPU));
+    m_pLabelCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxGuestCPU));
 
     /* Retranslate the cpu cap slider legend: */
-    m_pLabelCPUExecCapMin->setText(tr("<qt>%1%</qt>", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
-    m_pLabelCPUExecCapMax->setText(tr("<qt>%1%</qt>", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
+    m_pLabelCPUExecCapMin->setText(tr("%1%", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
+    m_pLabelCPUExecCapMax->setText(tr("%1%", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
 
     /* Retranslate combo-boxes: */
     retranslateComboChipsetType();
@@ -469,7 +470,6 @@ void UIMachineSettingsSystem::polishPage()
     m_pLabelMemorySize->setEnabled(isMachineOffline());
     m_pLabelMemoryMin->setEnabled(isMachineOffline());
     m_pLabelMemoryMax->setEnabled(isMachineOffline());
-    m_pLabelMemoryUnits->setEnabled(isMachineOffline());
     m_pSliderMemorySize->setEnabled(isMachineOffline());
     m_pEditorMemorySize->setEnabled(isMachineOffline());
     m_pLabelBootOrder->setEnabled(isMachineOffline());
