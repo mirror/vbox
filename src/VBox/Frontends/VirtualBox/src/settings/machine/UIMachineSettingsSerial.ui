@@ -156,7 +156,7 @@
       <item row="1" column="1" >
        <widget class="QComboBox" name="mCbMode" >
         <property name="whatsThis" >
-         <string>Controls the working mode of this serial port. If you select &lt;b>Disconnected&lt;/b>, the guest OS will detect the serial port but will not be able to operate it.</string>
+         <string>Selects the working mode of this serial port. If you select &lt;b>Disconnected&lt;/b>, the guest OS will detect the serial port but will not be able to operate it.</string>
         </property>
        </widget>
       </item>
@@ -176,7 +176,7 @@
       <item row="2" column="1" colspan="5" >
        <widget class="QCheckBox" name="mCbPipe" >
         <property name="whatsThis" >
-         <string>If checked, the virtual machine will assume that the pipe or socket specified in the &lt;b>Path/Address&lt;/b> field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</string>
+         <string>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b>Path/Address&lt;/b> field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</string>
         </property>
         <property name="text" >
          <string>&amp;Connect to existing pipe/socket</string>
