@@ -1871,6 +1871,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     return rc;
 }
 
+#if 0 /* XXX: temporarily disable */
 static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 {
     PVBOXNETFLTINS     pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv4);
@@ -1937,6 +1938,7 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
 
     return rc;
 }
+#endif /* 0 */
 
 
 bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
@@ -2166,6 +2168,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         || !try_module_get(THIS_MODULE))
         return VERR_INTNET_FLT_IF_FAILED;
 
+#if 0 /* XXX: temporarily disable */
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
     {
         struct net *net = VBOX_DEV_NET(pThis->u.s.pDev);
@@ -2253,6 +2256,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     }
     else
         Log(("%s: uwe: pfnNotifyHostAddress is NULL\n", __FUNCTION__));
+#endif
 
     return VINF_SUCCESS;
 }
