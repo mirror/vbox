@@ -43,65 +43,84 @@
 using namespace com;
 
 #if defined(VBOX_WITH_NETFLT) && !defined(RT_OS_SOLARIS)
-static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
+static RTEXITCODE handleCreate(HandlerArg *a)
 {
-//    if (a->argc - iStart < 1)
-//        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
+    /*
+     * Parse input.
+     */
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, NULL, 0, 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    int ch = RTGetOpt(&GetState, &ValueUnion);
+    if (ch != 0)
+        return errorGetOpt(USAGE_HOSTONLYIFS, ch, &ValueUnion);
 
-    int index = iStart;
-    HRESULT rc;
-//    Bstr name(a->argv[iStart]);
-//    index++;
-
+    /*
+     * Do the work.
+     */
     ComPtr<IHost> host;
-    CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
+    CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
 
     ComPtr<IHostNetworkInterface> hif;
     ComPtr<IProgress> progress;
 
-    CHECK_ERROR_RET(host, CreateHostOnlyNetworkInterface (hif.asOutParam(), progress.asOutParam()), 1);
+    CHECK_ERROR2I_RET(host, CreateHostOnlyNetworkInterface(hif.asOutParam(), progress.asOutParam()), RTEXITCODE_FAILURE);
 
-    rc = showProgress(progress);
-    *pcProcessed = index - iStart;
-    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create the host-only adapter"), 1);
+    HRESULT hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to create the host-only adapter"), RTEXITCODE_FAILURE);
 
-    Bstr name;
-    CHECK_ERROR(hif, COMGETTER(Name) (name.asOutParam()));
+    Bstr bstrName;
+    CHECK_ERROR2I(hif, COMGETTER(Name)(bstrName.asOutParam()));
 
-    RTPrintf("Interface '%ls' was successfully created\n", name.raw());
+    RTPrintf("Interface '%ls' was successfully created\n", bstrName.raw());
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
-static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
+static RTEXITCODE  handleRemove(HandlerArg *a)
 {
-    *pcProcessed = 0;
-    if (a->argc - iStart < 1)
-        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
+    /*
+     * Parse input.
+     */
+    const char *pszName = NULL;
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, NULL, 0, 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        switch (ch)
+        {
+            case VINF_GETOPT_NOT_OPTION:
+                if (pszName)
+                    return errorSyntax(USAGE_HOSTONLYIFS, "Only one interface name can be specified");
+                pszName = ValueUnion.psz;
+                break;
 
-    int index = iStart;
-    HRESULT rc;
+            default:
+                return errorGetOpt(USAGE_HOSTONLYIFS, ch, &ValueUnion);
+        }
+    if (!pszName)
+        return errorSyntax(USAGE_HOSTONLYIFS, "No interface name was specified");
 
-    Bstr name(a->argv[iStart]);
-    index++;
-
+    /*
+     * Do the work.
+     */
     ComPtr<IHost> host;
-    CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
+    CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
 
     ComPtr<IHostNetworkInterface> hif;
-    CHECK_ERROR_RET(host, FindHostNetworkInterfaceByName(name.raw(), hif.asOutParam()), 1);
+    CHECK_ERROR2I_RET(host, FindHostNetworkInterfaceByName(Bstr(pszName).raw(), hif.asOutParam()), RTEXITCODE_FAILURE);
 
     Bstr guid;
-    CHECK_ERROR_RET(hif, COMGETTER(Id)(guid.asOutParam()), 1);
+    CHECK_ERROR2I_RET(hif, COMGETTER(Id)(guid.asOutParam()), RTEXITCODE_FAILURE);
 
     ComPtr<IProgress> progress;
-    CHECK_ERROR_RET(host, RemoveHostOnlyNetworkInterface(guid.raw(), progress.asOutParam()), 1);
+    CHECK_ERROR2I_RET(host, RemoveHostOnlyNetworkInterface(guid.raw(), progress.asOutParam()), RTEXITCODE_FAILURE);
 
-    rc = showProgress(progress);
-    *pcProcessed = index - iStart;
-    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to remove the host-only adapter"), 1);
+    HRESULT hrc = showProgress(progress);
+    CHECK_PROGRESS_ERROR_RET(progress, ("Failed to remove the host-only adapter"), RTEXITCODE_FAILURE);
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 #endif
 
@@ -119,192 +138,119 @@ static const RTGETOPTDEF g_aHostOnlyIPOptions[]
         { "-netmasklengthv6",   'l', RTGETOPT_REQ_UINT8 }       // deprecated
       };
 
-static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
+static RTEXITCODE handleIpConfig(HandlerArg *a)
 {
-    if (a->argc - iStart < 2)
-        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
-
-    int index = iStart;
-    HRESULT rc;
-
-    Bstr name(a->argv[iStart]);
-    index++;
-
-    bool bDhcp = false;
-    bool bNetmasklengthv6 = false;
-    uint32_t uNetmasklengthv6 = (uint32_t)-1;
-    const char *pIpv6 = NULL;
-    const char *pIp = NULL;
-    const char *pNetmask = NULL;
+    bool        fDhcp = false;
+    bool        fNetmasklengthv6 = false;
+    uint32_t    uNetmasklengthv6 = UINT32_MAX;
+    const char *pszIpv6 = NULL;
+    const char *pszIp = NULL;
+    const char *pszNetmask = NULL;
+    const char *pszName = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState,
-                 a->argc,
-                 a->argv,
-                 g_aHostOnlyIPOptions,
-                 RT_ELEMENTS(g_aHostOnlyIPOptions),
-                 index,
-                 RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aHostOnlyIPOptions, RT_ELEMENTS(g_aHostOnlyIPOptions),
+                 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'd':   // --dhcp
-                if (bDhcp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --dhcp once.");
-                else
-                    bDhcp = true;
-            break;
+                fDhcp = true;
+                break;
             case 'a':   // --ip
-                if(pIp)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --ip once.");
-                else
-                    pIp = ValueUnion.psz;
-            break;
+                if (pszIp)
+                    RTMsgWarning("The --ip option is specified more than once");
+                pszIp = ValueUnion.psz;
+                break;
             case 'm':   // --netmask
-                if(pNetmask)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --netmask once.");
-                else
-                    pNetmask = ValueUnion.psz;
-            break;
+                if (pszNetmask)
+                    RTMsgWarning("The --netmask option is specified more than once");
+                pszNetmask = ValueUnion.psz;
+                break;
             case 'b':   // --ipv6
-                if(pIpv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --ipv6 once.");
-                else
-                    pIpv6 = ValueUnion.psz;
-            break;
+                if (pszIpv6)
+                    RTMsgWarning("The --ipv6 option is specified more than once");
+                pszIpv6 = ValueUnion.psz;
+                break;
             case 'l':   // --netmasklengthv6
-                if(bNetmasklengthv6)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "You can only specify --netmasklengthv6 once.");
-                else
-                {
-                    bNetmasklengthv6 = true;
-                    uNetmasklengthv6 = ValueUnion.u8;
-                }
-            break;
+                if (fNetmasklengthv6)
+                    RTMsgWarning("The --netmasklengthv6 option is specified more than once");
+                fNetmasklengthv6 = true;
+                uNetmasklengthv6 = ValueUnion.u8;
+                break;
             case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_HOSTONLYIFS, "unhandled parameter: %s", ValueUnion.psz);
-            break;
+                if (pszName)
+                    return errorSyntax(USAGE_HOSTONLYIFS, "Only one interface name can be specified");
+                pszName = ValueUnion.psz;
+                break;
             default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_HOSTONLYIFS, "unhandled option: -%c", c);
-                    else
-                        return errorSyntax(USAGE_HOSTONLYIFS, "unhandled option: %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "unknown option: %s", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_HOSTONLYIFS, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_HOSTONLYIFS, "%Rrs", c);
+                return errorGetOpt(USAGE_HOSTONLYIFS, c, &ValueUnion);
         }
     }
 
     /* parameter sanity check */
-    if (bDhcp && (bNetmasklengthv6 || pIpv6 || pIp || pNetmask))
+    if (fDhcp && (fNetmasklengthv6 || pszIpv6 || pszIp || pszNetmask))
         return errorSyntax(USAGE_HOSTONLYIFS, "You can not use --dhcp with static ip configuration parameters: --ip, --netmask, --ipv6 and --netmasklengthv6.");
-    if((pIp || pNetmask) && (bNetmasklengthv6 || pIpv6))
+    if ((pszIp || pszNetmask) && (fNetmasklengthv6 || pszIpv6))
         return errorSyntax(USAGE_HOSTONLYIFS, "You can not use ipv4 configuration (--ip and --netmask) with ipv6 (--ipv6 and --netmasklengthv6) simultaneously.");
 
     ComPtr<IHost> host;
-    CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
+    CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), RTEXITCODE_FAILURE);
 
     ComPtr<IHostNetworkInterface> hif;
-    CHECK_ERROR(host, FindHostNetworkInterfaceByName(name.raw(),
-                                                     hif.asOutParam()));
+    CHECK_ERROR2I_RET(host, FindHostNetworkInterfaceByName(Bstr(pszName).raw(), hif.asOutParam()), RTEXITCODE_FAILURE);
+    if (hif.isNull())
+        return errorArgument("Could not find interface '%s'", pszName);
 
-    if (FAILED(rc))
-        return errorArgument("Could not find interface '%s'", a->argv[iStart]);
-
-    if (bDhcp)
+    if (fDhcp)
+        CHECK_ERROR2I_RET(hif, EnableDynamicIPConfig(), RTEXITCODE_FAILURE);
+    else if (pszIp)
     {
-        CHECK_ERROR(hif, EnableDynamicIPConfig ());
+        if (!pszNetmask)
+            pszNetmask = "255.255.255.0"; /* ?? */
+        CHECK_ERROR2I_RET(hif, EnableStaticIPConfig(Bstr(pszIp).raw(), Bstr(pszNetmask).raw()), RTEXITCODE_FAILURE);
     }
-    else if (pIp)
+    else if (pszIpv6)
     {
-        if (!pNetmask)
-            pNetmask = "255.255.255.0"; /* ?? */
-
-        CHECK_ERROR(hif, EnableStaticIPConfig(Bstr(pIp).raw(),
-                                              Bstr(pNetmask).raw()));
-    }
-    else if (pIpv6)
-    {
-        if (uNetmasklengthv6 == (uint32_t)-1)
-            uNetmasklengthv6 = 64; /* ?? */
-
-        BOOL bIpV6Supported;
-        CHECK_ERROR(hif, COMGETTER(IPV6Supported)(&bIpV6Supported));
-        if (!bIpV6Supported)
+        BOOL fIpV6Supported;
+        CHECK_ERROR2I_RET(hif, COMGETTER(IPV6Supported)(&fIpV6Supported), RTEXITCODE_FAILURE);
+        if (!fIpV6Supported)
         {
             RTMsgError("IPv6 setting is not supported for this adapter");
-            return 1;
+            return RTEXITCODE_FAILURE;
         }
 
-
-        Bstr ipv6str(pIpv6);
-        CHECK_ERROR(hif, EnableStaticIPConfigV6(ipv6str.raw(),
-                                                (ULONG)uNetmasklengthv6));
+        if (uNetmasklengthv6 == UINT32_MAX)
+            uNetmasklengthv6 = 64; /* ?? */
+        CHECK_ERROR2I_RET(hif, EnableStaticIPConfigV6(Bstr(pszIpv6).raw(), (ULONG)uNetmasklengthv6), RTEXITCODE_FAILURE);
     }
     else
-    {
-        return errorSyntax(USAGE_HOSTONLYIFS, "neither -dhcp nor -ip nor -ipv6 was spcfified");
-    }
+        return errorSyntax(USAGE_HOSTONLYIFS, "Neither -dhcp nor -ip nor -ipv6 was specfified");
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
-int handleHostonlyIf(HandlerArg *a)
+RTEXITCODE handleHostonlyIf(HandlerArg *a)
 {
-    int result = 0;
     if (a->argc < 1)
-        return errorSyntax(USAGE_HOSTONLYIFS, "Not enough parameters");
+        return errorSyntax(USAGE_HOSTONLYIFS, "No sub-command specified");
 
-    for (int i = 0; i < a->argc; i++)
-    {
-        if (strcmp(a->argv[i], "ipconfig") == 0)
-        {
-            int cProcessed;
-            result = handleIpconfig(a, i+1, &cProcessed);
-            break;
-//            if(!rc)
-//                i+= cProcessed;
-//            else
-//                break;
-        }
+    RTEXITCODE rcExit;
+    if (!strcmp(a->argv[0], "ipconfig"))
+        rcExit = handleIpConfig(a);
 #if defined(VBOX_WITH_NETFLT) && !defined(RT_OS_SOLARIS)
-        else if (strcmp(a->argv[i], "create") == 0)
-        {
-            int cProcessed;
-            result = handleCreate(a, i+1, &cProcessed);
-            if(!result)
-                i+= cProcessed;
-            else
-                break;
-        }
-        else if (strcmp(a->argv[i], "remove") == 0)
-        {
-            int cProcessed;
-            result = handleRemove(a, i+1, &cProcessed);
-            if(!result)
-                i+= cProcessed;
-            else
-                break;
-        }
+    else if (!strcmp(a->argv[0], "create"))
+        rcExit = handleCreate(a);
+    else if (!strcmp(a->argv[0], "remove"))
+        rcExit = handleRemove(a);
 #endif
-        else
-        {
-            result = errorSyntax(USAGE_HOSTONLYIFS, "Invalid parameter '%s'", Utf8Str(a->argv[i]).c_str());
-            break;
-        }
-    }
-
-    return result;
+    else
+        rcExit = errorSyntax(USAGE_HOSTONLYIFS, "Unknown sub-command '%s'", a->argv[0]);
+    return rcExit;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

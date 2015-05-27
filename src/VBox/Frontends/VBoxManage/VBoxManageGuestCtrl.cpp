@@ -4244,9 +4244,9 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleWatch(PGCTLCMDCTX pCtx, int argc, char
  * @returns program exit code.
  * @note see the command line API description for parameters
  */
-int handleGuestControl(HandlerArg *pArg)
+RTEXITCODE handleGuestControl(HandlerArg *pArg)
 {
-    AssertPtrReturn(pArg, VERR_INVALID_POINTER);
+    AssertPtr(pArg);
 
 #ifdef DEBUG_andy_disabled
     if (RT_FAILURE(tstTranslatePath()))

@@ -85,9 +85,9 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
         return;
     }
 
-    CHECK_ERROR2_STMT(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), return);
+    CHECK_ERROR2I_STMT(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), return);
 
-    CHECK_ERROR2_STMT(pDisplay, QueryFramebuffer(screenId, pFramebuffer.asOutParam()), return);
+    CHECK_ERROR2I_STMT(pDisplay, QueryFramebuffer(screenId, pFramebuffer.asOutParam()), return);
 
     if (!pFramebuffer)
         return;

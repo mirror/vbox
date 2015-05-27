@@ -112,7 +112,7 @@ static const RTGETOPTDEF g_aDHCPIPOptions[]
 
       };
 
-static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
+static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 {
     if (a->argc - iStart < 2)
         return errorSyntax(USAGE_DHCPSERVER, "Not enough parameters");
@@ -430,27 +430,28 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             return errorArgument("Failed to remove server");
     }
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
-int handleDHCPServer(HandlerArg *a)
+RTEXITCODE handleDHCPServer(HandlerArg *a)
 {
     if (a->argc < 1)
         return errorSyntax(USAGE_DHCPSERVER, "Not enough parameters");
 
-    int result;
+    RTEXITCODE rcExit;
     int cProcessed;
     if (strcmp(a->argv[0], "modify") == 0)
-        result = handleOp(a, OP_MODIFY, 1, &cProcessed);
+        rcExit = handleOp(a, OP_MODIFY, 1, &cProcessed);
     else if (strcmp(a->argv[0], "add") == 0)
-        result = handleOp(a, OP_ADD, 1, &cProcessed);
+        rcExit = handleOp(a, OP_ADD, 1, &cProcessed);
     else if (strcmp(a->argv[0], "remove") == 0)
-        result = handleOp(a, OP_REMOVE, 1, &cProcessed);
+        rcExit = handleOp(a, OP_REMOVE, 1, &cProcessed);
     else
-        result = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
+        rcExit = errorSyntax(USAGE_DHCPSERVER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 
-    return result;
+    return rcExit;
 }
 
 #endif /* !VBOX_ONLY_DOCS */
+

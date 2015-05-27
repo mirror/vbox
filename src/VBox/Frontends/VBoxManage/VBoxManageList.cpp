@@ -693,10 +693,10 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     ComObjPtr<IExtPackManager> ptrExtPackMgr;
-    CHECK_ERROR2_RET(pVirtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), hrcCheck);
 
     SafeIfaceArray<IExtPack> extPacks;
-    CHECK_ERROR2_RET(ptrExtPackMgr, COMGETTER(InstalledExtPacks)(ComSafeArrayAsOutParam(extPacks)), hrcCheck);
+    CHECK_ERROR2I_RET(ptrExtPackMgr, COMGETTER(InstalledExtPacks)(ComSafeArrayAsOutParam(extPacks)), hrcCheck);
     RTPrintf("Extension Packs: %u\n", extPacks.size());
 
     HRESULT hrc = S_OK;
@@ -704,21 +704,21 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &pVirtualBox)
     {
         /* Read all the properties. */
         Bstr bstrName;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Name)(bstrName.asOutParam()),          hrc = hrcCheck; bstrName.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Name)(bstrName.asOutParam()),          hrc = hrcCheck; bstrName.setNull());
         Bstr bstrDesc;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Description)(bstrDesc.asOutParam()),   hrc = hrcCheck; bstrDesc.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Description)(bstrDesc.asOutParam()),   hrc = hrcCheck; bstrDesc.setNull());
         Bstr bstrVersion;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Version)(bstrVersion.asOutParam()),    hrc = hrcCheck; bstrVersion.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Version)(bstrVersion.asOutParam()),    hrc = hrcCheck; bstrVersion.setNull());
         ULONG uRevision;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Revision)(&uRevision),                 hrc = hrcCheck; uRevision = 0);
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Revision)(&uRevision),                 hrc = hrcCheck; uRevision = 0);
         Bstr bstrEdition;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Edition)(bstrEdition.asOutParam()),    hrc = hrcCheck; bstrEdition.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Edition)(bstrEdition.asOutParam()),    hrc = hrcCheck; bstrEdition.setNull());
         Bstr bstrVrdeModule;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam()),hrc=hrcCheck; bstrVrdeModule.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam()),hrc=hrcCheck; bstrVrdeModule.setNull());
         BOOL fUsable;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Usable)(&fUsable),                     hrc = hrcCheck; fUsable = FALSE);
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(Usable)(&fUsable),                     hrc = hrcCheck; fUsable = FALSE);
         Bstr bstrWhy;
-        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(WhyUnusable)(bstrWhy.asOutParam()),    hrc = hrcCheck; bstrWhy.setNull());
+        CHECK_ERROR2I_STMT(extPacks[i], COMGETTER(WhyUnusable)(bstrWhy.asOutParam()),    hrc = hrcCheck; bstrWhy.setNull());
 
         /* Display them. */
         if (i)
@@ -755,7 +755,7 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &pVirtualBox)
 static HRESULT listGroups(const ComPtr<IVirtualBox> &pVirtualBox)
 {
     SafeArray<BSTR> groups;
-    CHECK_ERROR2_RET(pVirtualBox, COMGETTER(MachineGroups)(ComSafeArrayAsOutParam(groups)), hrcCheck);
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(MachineGroups)(ComSafeArrayAsOutParam(groups)), hrcCheck);
 
     for (size_t i = 0; i < groups.size(); i++)
     {
@@ -1208,7 +1208,7 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
  * @returns Appropriate exit code.
  * @param   a                   Handler argument.
  */
-int handleList(HandlerArg *a)
+RTEXITCODE handleList(HandlerArg *a)
 {
     bool                fOptLong      = false;
     bool                fOptMultiple  = false;
@@ -1297,7 +1297,7 @@ int handleList(HandlerArg *a)
                 {
                     HRESULT hrc = produceList((enum enmListType)ch, fOptLong, a->virtualBox);
                     if (FAILED(hrc))
-                        return 1;
+                        return RTEXITCODE_FAILURE;
                 }
                 break;
 
@@ -1318,10 +1318,10 @@ int handleList(HandlerArg *a)
     {
         HRESULT hrc = produceList(enmOptCommand, fOptLong, a->virtualBox);
         if (FAILED(hrc))
-            return 1;
+            return RTEXITCODE_FAILURE;
     }
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

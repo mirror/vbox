@@ -57,9 +57,9 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
     Bstr name;
     Bstr uuid;
     Bstr description;
-    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Name)(name.asOutParam()), hrcCheck);
-    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Id)(uuid.asOutParam()), hrcCheck);
-    CHECK_ERROR2_RET(rootSnapshot, COMGETTER(Description)(description.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(rootSnapshot, COMGETTER(Name)(name.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(rootSnapshot, COMGETTER(Id)(uuid.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(rootSnapshot, COMGETTER(Description)(description.asOutParam()), hrcCheck);
     bool fCurrent = (rootSnapshot == currentSnapshot);
     if (details == VMINFO_MACHINEREADABLE)
     {
@@ -90,7 +90,7 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
     /* get the children */
     HRESULT hrc = S_OK;
     SafeIfaceArray <ISnapshot> coll;
-    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Children)(ComSafeArrayAsOutParam(coll)), hrcCheck);
+    CHECK_ERROR2I_RET(rootSnapshot,COMGETTER(Children)(ComSafeArrayAsOutParam(coll)), hrcCheck);
     if (!coll.isNull())
     {
         for (size_t index = 0; index < coll.size(); ++index)
@@ -373,7 +373,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         BOOL f; \
-        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
         else \
@@ -384,7 +384,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         BOOL f; \
-        CHECK_ERROR2_RET(a_pObj, a_Invocation, hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, a_Invocation, hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
         else \
@@ -395,7 +395,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         Bstr bstr; \
-        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             outputMachineReadableString(a_szMachine, &bstr); \
         else \
@@ -406,7 +406,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         SafeArray<BSTR> array; \
-        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(ComSafeArrayAsOutParam(array)), hrcCheck); \
         Utf8Str str; \
         for (size_t i = 0; i < array.size(); i++) \
         { \
@@ -428,7 +428,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         ULONG u32; \
-        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf(a_szMachine "=%u\n", u32); \
         else \
@@ -439,7 +439,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     do \
     { \
         LONG64 i64; \
-        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
+        CHECK_ERROR2I_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf(a_szMachine "=%lld\n", i64); \
         else \
@@ -459,7 +459,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
      */
 
     BOOL fAccessible;
-    CHECK_ERROR2_RET(machine, COMGETTER(Accessible)(&fAccessible), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(Accessible)(&fAccessible), hrcCheck);
     if (!fAccessible)
     {
         Bstr uuid;
@@ -506,9 +506,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_STRING_PROP(      machine, Name,                       "name",                 "Name");
 
     Bstr osTypeId;
-    CHECK_ERROR2_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
     ComPtr<IGuestOSType> osType;
-    CHECK_ERROR2_RET(pVirtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(pVirtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
     SHOW_STRINGARRAY_PROP( machine, Groups,                     "groups",               "Groups");
     SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS");
     SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID");
@@ -523,7 +523,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_BOOLEAN_PROP(     machine, HPETEnabled,                "hpet",                 "HPET");
 
     ChipsetType_T chipsetType;
-    CHECK_ERROR2_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);
     const char *pszChipsetType;
     switch (chipsetType)
     {
@@ -538,7 +538,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("Chipset:         %s\n", pszChipsetType);
 
     FirmwareType_T firmwareType;
-    CHECK_ERROR2_RET(machine, COMGETTER(FirmwareType)(&firmwareType), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(FirmwareType)(&firmwareType), hrcCheck);
     const char *pszFirmwareType;
     switch (firmwareType)
     {
@@ -589,10 +589,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("None\n");
 
     ComPtr<IBIOSSettings> biosSettings;
-    CHECK_ERROR2_RET(machine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()), hrcCheck);
 
     BIOSBootMenuMode_T bootMenuMode;
-    CHECK_ERROR2_RET(biosSettings, COMGETTER(BootMenuMode)(&bootMenuMode), hrcCheck);
+    CHECK_ERROR2I_RET(biosSettings, COMGETTER(BootMenuMode)(&bootMenuMode), hrcCheck);
     const char *pszBootMenu;
     switch (bootMenuMode)
     {
@@ -617,13 +617,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
         RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
 
     ComPtr<ISystemProperties> systemProperties;
-    CHECK_ERROR2_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
+    CHECK_ERROR2I_RET(pVirtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
     ULONG maxBootPosition = 0;
-    CHECK_ERROR2_RET(systemProperties, COMGETTER(MaxBootPosition)(&maxBootPosition), hrcCheck);
+    CHECK_ERROR2I_RET(systemProperties, COMGETTER(MaxBootPosition)(&maxBootPosition), hrcCheck);
     for (ULONG i = 1; i <= maxBootPosition; i++)
     {
         DeviceType_T bootOrder;
-        CHECK_ERROR2_RET(machine, GetBootOrder(i, &bootOrder), hrcCheck);
+        CHECK_ERROR2I_RET(machine, GetBootOrder(i, &bootOrder), hrcCheck);
         if (bootOrder == DeviceType_Floppy)
         {
             if (details == VMINFO_MACHINEREADABLE)
@@ -686,7 +686,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &f), "vtxux", "VT-x unr. exec.");
 
     ParavirtProvider_T paravirtProvider;
-    CHECK_ERROR2_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(ParavirtProvider)(&paravirtProvider), hrcCheck);
     const char *pszParavirtProvider;
     switch (paravirtProvider)
     {
@@ -745,7 +745,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
 
     MachineState_T machineState;
-    CHECK_ERROR2_RET(machine, COMGETTER(State)(&machineState), hrcCheck);
+    CHECK_ERROR2I_RET(machine, COMGETTER(State)(&machineState), hrcCheck);
     const char *pszState = machineStateToName(machineState, details == VMINFO_MACHINEREADABLE /*=fShort*/);
 
     LONG64 stateSince;
@@ -1204,7 +1204,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
 
                 /* promisc policy */
                 NetworkAdapterPromiscModePolicy_T enmPromiscModePolicy;
-                CHECK_ERROR2_RET(nic, COMGETTER(PromiscModePolicy)(&enmPromiscModePolicy), hrcCheck);
+                CHECK_ERROR2I_RET(nic, COMGETTER(PromiscModePolicy)(&enmPromiscModePolicy), hrcCheck);
                 const char *pszPromiscuousGuestPolicy;
                 switch (enmPromiscModePolicy)
                 {
@@ -2646,7 +2646,7 @@ static const RTGETOPTDEF g_aShowVMInfoOptions[] =
     { "--log",              'l', RTGETOPT_REQ_UINT32 },
 };
 
-int handleShowVMInfo(HandlerArg *a)
+RTEXITCODE handleShowVMInfo(HandlerArg *a)
 {
     HRESULT rc;
     const char *VMNameOrUuid = NULL;
@@ -2686,19 +2686,7 @@ int handleShowVMInfo(HandlerArg *a)
                 break;
 
             default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_PRINT(c))
-                        return errorSyntax(USAGE_SHOWVMINFO, "Invalid option -%c", c);
-                    else
-                        return errorSyntax(USAGE_SHOWVMINFO, "Invalid option case %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_SHOWVMINFO, "unknown option: %s\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_SHOWVMINFO, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_SHOWVMINFO, "error: %Rrs", c);
+                return errorGetOpt(USAGE_SHOWVMINFO, c, &ValueUnion);
         }
     }
 
@@ -2711,7 +2699,7 @@ int handleShowVMInfo(HandlerArg *a)
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
                                            machine.asOutParam()));
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     /* Printing the log is exclusive. */
     if (fLog && (fMachinereadable || fDetails))
@@ -2775,7 +2763,7 @@ int handleShowVMInfo(HandlerArg *a)
         a->session->UnlockMachine();
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

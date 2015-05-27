@@ -143,7 +143,7 @@ static const RTGETOPTDEF g_aImportApplianceOptions[] =
     { "--options",              'O', RTGETOPT_REQ_STRING },
 };
 
-int handleImportAppliance(HandlerArg *arg)
+RTEXITCODE handleImportAppliance(HandlerArg *arg)
 {
     HRESULT rc = S_OK;
 
@@ -946,7 +946,7 @@ static const RTGETOPTDEF g_aExportOptions[] =
     { "--options",              'O', RTGETOPT_REQ_STRING },
 };
 
-int handleExportAppliance(HandlerArg *a)
+RTEXITCODE handleExportAppliance(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
@@ -1191,7 +1191,7 @@ int handleExportAppliance(HandlerArg *a)
                         {
                             RTMsgError("Cannot read license file \"%s\" which should be included in the virtual system %u.",
                                        itD->second.c_str(), i);
-                            return 1;
+                            return RTEXITCODE_FAILURE;
                         }
                     }
                 }

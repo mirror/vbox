@@ -58,7 +58,7 @@ using namespace com;
 
 
 
-int handleRegisterVM(HandlerArg *a)
+RTEXITCODE handleRegisterVM(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -76,10 +76,7 @@ int handleRegisterVM(HandlerArg *a)
         char szVMFileAbs[RTPATH_MAX] = "";
         int vrc = RTPathAbs(a->argv[0], szVMFileAbs, sizeof(szVMFileAbs));
         if (RT_FAILURE(vrc))
-        {
-            RTMsgError("Cannot convert filename \"%s\" to absolute path", a->argv[0]);
-            return 1;
-        }
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot convert filename \"%s\" to absolute path: %Rrc", a->argv[0], vrc);
         CHECK_ERROR(a->virtualBox, OpenMachine(Bstr(szVMFileAbs).raw(),
                                                machine.asOutParam()));
     }
@@ -91,7 +88,7 @@ int handleRegisterVM(HandlerArg *a)
         ASSERT(machine);
         CHECK_ERROR(a->virtualBox, RegisterMachine(machine));
     }
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aUnregisterVMOptions[] =
@@ -100,7 +97,7 @@ static const RTGETOPTDEF g_aUnregisterVMOptions[] =
     { "-delete",        'd', RTGETOPT_REQ_NOTHING },    // deprecated
 };
 
-int handleUnregisterVM(HandlerArg *a)
+RTEXITCODE handleUnregisterVM(HandlerArg *a)
 {
     HRESULT rc;
     const char *VMName = NULL;
@@ -197,7 +194,7 @@ static const RTGETOPTDEF g_aCreateVMOptions[] =
     { "-register",        'r', RTGETOPT_REQ_NOTHING },
 };
 
-int handleCreateVM(HandlerArg *a)
+RTEXITCODE handleCreateVM(HandlerArg *a)
 {
     HRESULT rc;
     Bstr bstrBaseFolder;
@@ -291,7 +288,7 @@ int handleCreateVM(HandlerArg *a)
     }
     while (0);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aCloneVMOptions[] =
@@ -354,7 +351,7 @@ static int parseCloneOptions(const char *psz, com::SafeArray<CloneOptions_T> *op
     return rc;
 }
 
-int handleCloneVM(HandlerArg *a)
+RTEXITCODE handleCloneVM(HandlerArg *a)
 {
     HRESULT                        rc;
     const char                    *pszSrcName       = NULL;
@@ -493,7 +490,7 @@ int handleCloneVM(HandlerArg *a)
     return RTEXITCODE_SUCCESS;
 }
 
-int handleStartVM(HandlerArg *a)
+RTEXITCODE handleStartVM(HandlerArg *a)
 {
     HRESULT rc = S_OK;
     std::list<const char *> VMs;
@@ -628,10 +625,10 @@ int handleStartVM(HandlerArg *a)
             rc = rc2;
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleDiscardState(HandlerArg *a)
+RTEXITCODE handleDiscardState(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -657,10 +654,10 @@ int handleDiscardState(HandlerArg *a)
         } while (0);
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleAdoptState(HandlerArg *a)
+RTEXITCODE handleAdoptState(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -675,10 +672,7 @@ int handleAdoptState(HandlerArg *a)
         char szStateFileAbs[RTPATH_MAX] = "";
         int vrc = RTPathAbs(a->argv[1], szStateFileAbs, sizeof(szStateFileAbs));
         if (RT_FAILURE(vrc))
-        {
-            RTMsgError("Cannot convert filename \"%s\" to absolute path", a->argv[0]);
-            return 1;
-        }
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Cannot convert filename \"%s\" to absolute path: %Rrc", a->argv[0], vrc);
 
         do
         {
@@ -694,10 +688,10 @@ int handleAdoptState(HandlerArg *a)
         } while (0);
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleGetExtraData(HandlerArg *a)
+RTEXITCODE handleGetExtraData(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
@@ -773,10 +767,10 @@ int handleGetExtraData(HandlerArg *a)
             }
         }
     }
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleSetExtraData(HandlerArg *a)
+RTEXITCODE handleSetExtraData(HandlerArg *a)
 {
     HRESULT rc = S_OK;
 
@@ -804,10 +798,10 @@ int handleSetExtraData(HandlerArg *a)
         if (machine)
         {
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
             /* get the session machine */
             ComPtr<IMachine> sessionMachine;
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
             /** @todo passing NULL is deprecated */
             if (a->argc < 3)
                 CHECK_ERROR(sessionMachine, SetExtraData(Bstr(a->argv[1]).raw(),
@@ -819,10 +813,10 @@ int handleSetExtraData(HandlerArg *a)
                 return errorSyntax(USAGE_SETEXTRADATA, "Too many parameters");
         }
     }
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleSetProperty(HandlerArg *a)
+RTEXITCODE handleSetProperty(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -915,10 +909,10 @@ int handleSetProperty(HandlerArg *a)
     else
         return errorSyntax(USAGE_SETPROPERTY, "Invalid parameter '%s'", a->argv[0]);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleSharedFolder(HandlerArg *a)
+RTEXITCODE handleSharedFolder(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -930,7 +924,7 @@ int handleSharedFolder(HandlerArg *a)
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]).raw(),
                                            machine.asOutParam()));
     if (!machine)
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     if (!strcmp(a->argv[0], "add"))
     {
@@ -995,14 +989,14 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr<IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
 
             /* get the session machine */
             ComPtr<IMachine> sessionMachine;
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
 
             /* get the session console */
-            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
 
             CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(),
                                                     Bstr(hostpath).raw(),
@@ -1013,7 +1007,7 @@ int handleSharedFolder(HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
 
             /* get the mutable session machine */
             ComPtr<IMachine> sessionMachine;
@@ -1065,12 +1059,12 @@ int handleSharedFolder(HandlerArg *a)
             ComPtr<IConsole> console;
 
             /* open an existing session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
             /* get the session machine */
             ComPtr<IMachine> sessionMachine;
-            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
             /* get the session console */
-            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), 1);
+            CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
 
             CHECK_ERROR(console, RemoveSharedFolder(Bstr(name).raw()));
 
@@ -1080,7 +1074,7 @@ int handleSharedFolder(HandlerArg *a)
         else
         {
             /* open a session for the VM */
-            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
+            CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
 
             /* get the mutable session machine */
             ComPtr<IMachine> sessionMachine;
@@ -1096,16 +1090,16 @@ int handleSharedFolder(HandlerArg *a)
     else
         return errorSyntax(USAGE_SHAREDFOLDER, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
 
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
-int handleExtPack(HandlerArg *a)
+RTEXITCODE handleExtPack(HandlerArg *a)
 {
     if (a->argc < 1)
         return errorSyntax(USAGE_EXTPACK, "Incorrect number of parameters");
 
     ComObjPtr<IExtPackManager> ptrExtPackMgr;
-    CHECK_ERROR2_RET(a->virtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), RTEXITCODE_FAILURE);
+    CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), RTEXITCODE_FAILURE);
 
     RTGETOPTSTATE   GetState;
     RTGETOPTUNION   ValueUnion;
@@ -1152,10 +1146,10 @@ int handleExtPack(HandlerArg *a)
         Bstr bstrTarball(szPath);
         Bstr bstrName;
         ComPtr<IExtPackFile> ptrExtPackFile;
-        CHECK_ERROR2_RET(ptrExtPackMgr, OpenExtPackFile(bstrTarball.raw(), ptrExtPackFile.asOutParam()), RTEXITCODE_FAILURE);
-        CHECK_ERROR2_RET(ptrExtPackFile, COMGETTER(Name)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(ptrExtPackMgr, OpenExtPackFile(bstrTarball.raw(), ptrExtPackFile.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(ptrExtPackFile, COMGETTER(Name)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
         ComPtr<IProgress> ptrProgress;
-        CHECK_ERROR2_RET(ptrExtPackFile, Install(fReplace, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(ptrExtPackFile, Install(fReplace, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
         hrc = showProgress(ptrProgress);
         CHECK_PROGRESS_ERROR_RET(ptrProgress, ("Failed to install \"%s\"", szPath), RTEXITCODE_FAILURE);
 
@@ -1195,7 +1189,7 @@ int handleExtPack(HandlerArg *a)
 
         Bstr bstrName(pszName);
         ComPtr<IProgress> ptrProgress;
-        CHECK_ERROR2_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(ptrExtPackMgr, Uninstall(bstrName.raw(), fForced, NULL, ptrProgress.asOutParam()), RTEXITCODE_FAILURE);
         hrc = showProgress(ptrProgress);
         CHECK_PROGRESS_ERROR_RET(ptrProgress, ("Failed to uninstall \"%s\"", pszName), RTEXITCODE_FAILURE);
 
@@ -1206,7 +1200,7 @@ int handleExtPack(HandlerArg *a)
         if (a->argc > 1)
             return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack cleanup\"");
 
-        CHECK_ERROR2_RET(ptrExtPackMgr, Cleanup(), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(ptrExtPackMgr, Cleanup(), RTEXITCODE_FAILURE);
         RTPrintf("Successfully performed extension pack cleanup\n");
     }
     else

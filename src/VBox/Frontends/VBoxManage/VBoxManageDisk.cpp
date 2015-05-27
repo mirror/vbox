@@ -231,7 +231,7 @@ static const RTGETOPTDEF g_aCreateMediumOptions[] =
     { "-variant",       'm', RTGETOPT_REQ_STRING },     // deprecated
 };
 
-int handleCreateMedium(HandlerArg *a)
+RTEXITCODE handleCreateMedium(HandlerArg *a)
 {
     HRESULT rc;
     int vrc;
@@ -378,21 +378,18 @@ int handleCreateMedium(HandlerArg *a)
                         AccessMode_ReadWrite, pParentMedium,
                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
         if (FAILED(rc))
-            return 1;
+            return RTEXITCODE_FAILURE;
         if (pParentMedium.isNull())
-        {
-            RTMsgError("Invalid parent hard disk reference, avoiding crash");
-            return 1;
-        }
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid parent hard disk reference, avoiding crash");
         MediumState_T state;
         CHECK_ERROR(pParentMedium, COMGETTER(State)(&state));
         if (FAILED(rc))
-            return 1;
+            return RTEXITCODE_FAILURE;
         if (state == MediumState_Inaccessible)
         {
             CHECK_ERROR(pParentMedium, RefreshState(&state));
             if (FAILED(rc))
-                return 1;
+                return RTEXITCODE_FAILURE;
         }
     }
     /* check for filename extension */
@@ -460,7 +457,7 @@ int handleCreateMedium(HandlerArg *a)
 
         //CHECK_ERROR(pMedium, Close());
     }
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aModifyMediumOptions[] =
@@ -482,7 +479,7 @@ static const RTGETOPTDEF g_aModifyMediumOptions[] =
     { "--resizebyte",   'R', RTGETOPT_REQ_UINT64 }
 };
 
-int handleModifyMedium(HandlerArg *a)
+RTEXITCODE handleModifyMedium(HandlerArg *a)
 {
     HRESULT rc;
     int vrc;
@@ -642,11 +639,11 @@ int handleModifyMedium(HandlerArg *a)
     else
         rc = E_INVALIDARG; /* cannot happen but make gcc happy */
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
     if (pMedium.isNull())
     {
         RTMsgError("Invalid medium reference, avoiding crash");
-        return 1;
+        return RTEXITCODE_FAILURE;
     }
 
     if (fModifyMediumType)
@@ -704,7 +701,7 @@ int handleModifyMedium(HandlerArg *a)
         }
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aCloneMediumOptions[] =
@@ -721,7 +718,7 @@ static const RTGETOPTDEF g_aCloneMediumOptions[] =
     { "-variant",       'm', RTGETOPT_REQ_STRING },
 };
 
-int handleCloneMedium(HandlerArg *a)
+RTEXITCODE handleCloneMedium(HandlerArg *a)
 {
     HRESULT rc;
     int vrc;
@@ -837,7 +834,7 @@ int handleCloneMedium(HandlerArg *a)
     else
         rc = E_INVALIDARG; /* cannot happen but make gcc happy */
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     do
     {
@@ -903,7 +900,7 @@ int handleCloneMedium(HandlerArg *a)
     }
     while (0);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
@@ -917,7 +914,7 @@ static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
     { "--uuid",         'u', RTGETOPT_REQ_STRING },
 };
 
-RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
+RTEXITCODE handleConvertFromRaw(HandlerArg *a)
 {
     int rc = VINF_SUCCESS;
     bool fReadFromStdIn = false;
@@ -934,7 +931,7 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, argc, argv, g_aConvertFromRawHardDiskOptions, RT_ELEMENTS(g_aConvertFromRawHardDiskOptions),
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aConvertFromRawHardDiskOptions, RT_ELEMENTS(g_aConvertFromRawHardDiskOptions),
                  0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
@@ -1340,7 +1337,7 @@ static const RTGETOPTDEF g_aShowMediumInfoOptions[] =
     { "floppy",         'f', RTGETOPT_REQ_NOTHING },
 };
 
-int handleShowMediumInfo(HandlerArg *a)
+RTEXITCODE handleShowMediumInfo(HandlerArg *a)
 {
     HRESULT rc;
     enum {
@@ -1424,7 +1421,7 @@ int handleShowMediumInfo(HandlerArg *a)
                         AccessMode_ReadOnly, pMedium,
                         false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     Utf8Str strParentUUID("base");
     ComPtr<IMedium> pParent;
@@ -1438,7 +1435,7 @@ int handleShowMediumInfo(HandlerArg *a)
 
     rc = showMediumInfo(a->virtualBox, pMedium, strParentUUID.c_str(), true);
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aCloseMediumOptions[] =
@@ -1449,7 +1446,7 @@ static const RTGETOPTDEF g_aCloseMediumOptions[] =
     { "--delete",       'r', RTGETOPT_REQ_NOTHING },
 };
 
-int handleCloseMedium(HandlerArg *a)
+RTEXITCODE handleCloseMedium(HandlerArg *a)
 {
     HRESULT rc = S_OK;
     enum {
@@ -1554,10 +1551,10 @@ int handleCloseMedium(HandlerArg *a)
         CHECK_ERROR(pMedium, Close());
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleMediumProperty(HandlerArg *a)
+RTEXITCODE handleMediumProperty(HandlerArg *a)
 {
     HRESULT rc = S_OK;
     const char *pszCmd = NULL;
@@ -1649,7 +1646,7 @@ int handleMediumProperty(HandlerArg *a)
         }
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static const RTGETOPTDEF g_aEncryptMediumOptions[] =
@@ -1660,7 +1657,7 @@ static const RTGETOPTDEF g_aEncryptMediumOptions[] =
     { "--newpasswordid", 'i', RTGETOPT_REQ_STRING }
 };
 
-int handleEncryptMedium(HandlerArg *a)
+RTEXITCODE handleEncryptMedium(HandlerArg *a)
 {
     HRESULT rc;
     ComPtr<IMedium> hardDisk;
@@ -1777,12 +1774,9 @@ int handleEncryptMedium(HandlerArg *a)
                     AccessMode_ReadWrite, hardDisk,
                     false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
-    {
-        RTMsgError("Invalid hard disk reference, avoiding crash");
-        return 1;
-    }
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid hard disk reference, avoiding crash");
 
     ComPtr<IProgress> progress;
     CHECK_ERROR(hardDisk, ChangeEncryption(Bstr(strPasswordOld).raw(), Bstr(pszCipher).raw(),
@@ -1802,10 +1796,10 @@ int handleEncryptMedium(HandlerArg *a)
             RTMsgError("Failed to encrypt hard disk!");
     }
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-int handleCheckMediumPassword(HandlerArg *a)
+RTEXITCODE handleCheckMediumPassword(HandlerArg *a)
 {
     HRESULT rc;
     ComPtr<IMedium> hardDisk;
@@ -1839,17 +1833,14 @@ int handleCheckMediumPassword(HandlerArg *a)
                     AccessMode_ReadWrite, hardDisk,
                     false /* fForceNewUuidOnOpen */, false /* fSilent */);
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
     if (hardDisk.isNull())
-    {
-        RTMsgError("Invalid hard disk reference, avoiding crash");
-        return 1;
-    }
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Invalid hard disk reference, avoiding crash");
 
     CHECK_ERROR(hardDisk, CheckEncryptionPassword(Bstr(strPassword).raw()));
     if (SUCCEEDED(rc))
         RTPrintf("The given password is correct\n");
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

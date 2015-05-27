@@ -31,6 +31,7 @@
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // definitions
@@ -154,6 +155,7 @@ typedef enum
     VMINFO_COMPACT          = 4
 } VMINFO_DETAILS;
 
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // global variables
@@ -161,6 +163,7 @@ typedef enum
 ////////////////////////////////////////////////////////////////////////////////
 
 extern bool g_fDetailedProgress;        // in VBoxManage.cpp
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -189,11 +192,11 @@ void showLogo(PRTSTREAM pStrm);
 RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd);
 RTEXITCODE readPasswordFromConsole(com::Utf8Str *pPassword, const char *pszPrompt, ...);
 
-int handleInternalCommands(HandlerArg *a);
+RTEXITCODE handleInternalCommands(HandlerArg *a);
 #endif /* !VBOX_ONLY_DOCS */
 
 /* VBoxManageControlVM.cpp */
-int handleControlVM(HandlerArg *a);
+RTEXITCODE handleControlVM(HandlerArg *a);
 #ifndef VBOX_ONLY_DOCS
 unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach);
 #endif
@@ -202,10 +205,10 @@ unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach);
 #ifndef VBOX_ONLY_DOCS
 void parseGroups(const char *pcszGroups, com::SafeArray<BSTR> *pGroups);
 #endif
-int handleModifyVM(HandlerArg *a);
+RTEXITCODE handleModifyVM(HandlerArg *a);
 
 /* VBoxManageDebugVM.cpp */
-int handleDebugVM(HandlerArg *a);
+RTEXITCODE handleDebugVM(HandlerArg *a);
 
 /* VBoxManageGuestProp.cpp */
 extern void usageGuestProperty(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSep2);
@@ -215,10 +218,10 @@ extern void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char 
 
 #ifndef VBOX_ONLY_DOCS
 /* VBoxManageGuestProp.cpp */
-extern int handleGuestProperty(HandlerArg *a);
+RTEXITCODE handleGuestProperty(HandlerArg *a);
 
 /* VBoxManageGuestCtrl.cpp */
-extern int handleGuestControl(HandlerArg *a);
+RTEXITCODE handleGuestControl(HandlerArg *a);
 
 /* VBoxManageVMInfo.cpp */
 HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
@@ -226,7 +229,7 @@ HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
                       VMINFO_DETAILS details,
                       const com::Utf8Str &prefix = "",
                       int level = 0);
-int handleShowVMInfo(HandlerArg *a);
+RTEXITCODE handleShowVMInfo(HandlerArg *a);
 HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                    ComPtr<IMachine> pMachine,
                    ComPtr<ISession> pSession,
@@ -236,73 +239,74 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
                             VMINFO_DETAILS details);
 
 /* VBoxManageList.cpp */
-int handleList(HandlerArg *a);
+RTEXITCODE handleList(HandlerArg *a);
 
 /* VBoxManageMetrics.cpp */
-int handleMetrics(HandlerArg *a);
+RTEXITCODE handleMetrics(HandlerArg *a);
 
 /* VBoxManageMisc.cpp */
-int handleRegisterVM(HandlerArg *a);
-int handleUnregisterVM(HandlerArg *a);
-int handleCreateVM(HandlerArg *a);
-int handleCloneVM(HandlerArg *a);
-int handleStartVM(HandlerArg *a);
-int handleDiscardState(HandlerArg *a);
-int handleAdoptState(HandlerArg *a);
-int handleGetExtraData(HandlerArg *a);
-int handleSetExtraData(HandlerArg *a);
-int handleSetProperty(HandlerArg *a);
-int handleSharedFolder(HandlerArg *a);
-int handleExtPack(HandlerArg *a);
+RTEXITCODE handleRegisterVM(HandlerArg *a);
+RTEXITCODE handleUnregisterVM(HandlerArg *a);
+RTEXITCODE handleCreateVM(HandlerArg *a);
+RTEXITCODE handleCloneVM(HandlerArg *a);
+RTEXITCODE handleStartVM(HandlerArg *a);
+RTEXITCODE handleDiscardState(HandlerArg *a);
+RTEXITCODE handleAdoptState(HandlerArg *a);
+RTEXITCODE handleGetExtraData(HandlerArg *a);
+RTEXITCODE handleSetExtraData(HandlerArg *a);
+RTEXITCODE handleSetProperty(HandlerArg *a);
+RTEXITCODE handleSharedFolder(HandlerArg *a);
+RTEXITCODE handleExtPack(HandlerArg *a);
 
 /* VBoxManageDisk.cpp */
 HRESULT openMedium(HandlerArg *a, const char *pszFilenameOrUuid,
                    DeviceType_T enmDevType, AccessMode_T enmAccessMode,
                    ComPtr<IMedium> &pMedium, bool fForceNewUuidOnOpen,
                    bool fSilent);
-int handleCreateMedium(HandlerArg *a);
-int handleModifyMedium(HandlerArg *a);
-int handleCloneMedium(HandlerArg *a);
-int handleMediumProperty(HandlerArg *a);
-int handleEncryptMedium(HandlerArg *a);
-int handleCheckMediumPassword(HandlerArg *a);
-RTEXITCODE handleConvertFromRaw(int argc, char *argv[]);
+RTEXITCODE handleCreateMedium(HandlerArg *a);
+RTEXITCODE handleModifyMedium(HandlerArg *a);
+RTEXITCODE handleCloneMedium(HandlerArg *a);
+RTEXITCODE handleMediumProperty(HandlerArg *a);
+RTEXITCODE handleEncryptMedium(HandlerArg *a);
+RTEXITCODE handleCheckMediumPassword(HandlerArg *a);
+RTEXITCODE handleConvertFromRaw(HandlerArg *a);
 HRESULT showMediumInfo(const ComPtr<IVirtualBox> &pVirtualBox,
                        const ComPtr<IMedium> &pMedium,
                        const char *pszParentUUID,
                        bool fOptLong);
-int handleShowMediumInfo(HandlerArg *a);
-int handleCloseMedium(HandlerArg *a);
+RTEXITCODE handleShowMediumInfo(HandlerArg *a);
+RTEXITCODE handleCloseMedium(HandlerArg *a);
 int parseMediumType(const char *psz, MediumType_T *penmMediumType);
 int parseBool(const char *psz, bool *pb);
 
 /* VBoxManageStorageController.cpp */
-int handleStorageAttach(HandlerArg *a);
-int handleStorageController(HandlerArg *a);
+RTEXITCODE handleStorageAttach(HandlerArg *a);
+RTEXITCODE handleStorageController(HandlerArg *a);
 
 // VBoxManageImport.cpp
-int handleImportAppliance(HandlerArg *a);
-int handleExportAppliance(HandlerArg *a);
+RTEXITCODE handleImportAppliance(HandlerArg *a);
+RTEXITCODE handleExportAppliance(HandlerArg *a);
 
 // VBoxManageSnapshot.cpp
-int handleSnapshot(HandlerArg *a);
+RTEXITCODE handleSnapshot(HandlerArg *a);
 
 /* VBoxManageUSB.cpp */
-int handleUSBFilter(HandlerArg *a);
+RTEXITCODE handleUSBFilter(HandlerArg *a);
 
 /* VBoxManageHostonly.cpp */
-int handleHostonlyIf(HandlerArg *a);
+RTEXITCODE handleHostonlyIf(HandlerArg *a);
 
 /* VBoxManageDHCPServer.cpp */
-int handleDHCPServer(HandlerArg *a);
+RTEXITCODE handleDHCPServer(HandlerArg *a);
 
 /* VBoxManageNATNetwork.cpp */
-int handleNATNetwork(HandlerArg *a);
+RTEXITCODE handleNATNetwork(HandlerArg *a);
 
 
 /* VBoxManageBandwidthControl.cpp */
-int handleBandwidthControl(HandlerArg *a);
+RTEXITCODE handleBandwidthControl(HandlerArg *a);
 
 #endif /* !VBOX_ONLY_DOCS */
 
 #endif /* !___H_VBOXMANAGE */
+

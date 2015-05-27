@@ -81,7 +81,7 @@ unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach)
 }
 
 
-int handleControlVM(HandlerArg *a)
+RTEXITCODE handleControlVM(HandlerArg *a)
 {
     using namespace com;
     bool fNeedsSaving = false;
@@ -95,10 +95,10 @@ int handleControlVM(HandlerArg *a)
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
 
     ComPtr<IConsole> console;
     ComPtr<IMachine> sessionMachine;
@@ -113,7 +113,7 @@ int handleControlVM(HandlerArg *a)
         if (!console)
         {
             errorArgument("Machine '%s' is not currently running", a->argv[0]);
-            return 1;
+            return RTEXITCODE_FAILURE;
         }
 
         /* which command? */
@@ -425,7 +425,7 @@ int handleControlVM(HandlerArg *a)
                 {
                     if (a->argv[2])
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile)(Bstr(a->argv[2]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile)(Bstr(a->argv[2]).raw()), RTEXITCODE_FAILURE);
                     }
                     else
                     {
@@ -468,11 +468,11 @@ int handleControlVM(HandlerArg *a)
                 {
                     if (!strcmp(a->argv[2], "on"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(TRUE), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "off"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(FALSE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(FALSE), RTEXITCODE_FAILURE);
                     }
                     else
                     {
@@ -718,15 +718,15 @@ int handleControlVM(HandlerArg *a)
                 {
                     if (!strcmp(a->argv[2], "null"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Null), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Null), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "nat"))
                     {
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
                         if (a->argc == 4)
-                            CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NAT), 1);
+                            CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NAT), RTEXITCODE_FAILURE);
                     }
                     else if (  !strcmp(a->argv[2], "bridged")
                             || !strcmp(a->argv[2], "hostif")) /* backward compatibility */
@@ -737,9 +737,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(BridgedInterface)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(BridgedInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Bridged), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "intnet"))
                     {
@@ -749,9 +749,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Internal), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Internal), RTEXITCODE_FAILURE);
                     }
 #if defined(VBOX_WITH_NETFLT)
                     else if (!strcmp(a->argv[2], "hostonly"))
@@ -762,9 +762,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostOnlyInterface)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostOnlyInterface)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_HostOnly), RTEXITCODE_FAILURE);
                     }
 #endif
                     else if (!strcmp(a->argv[2], "generic"))
@@ -775,9 +775,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(GenericDriver)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(GenericDriver)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), RTEXITCODE_FAILURE);
                     }
                     else if (!strcmp(a->argv[2], "natnetwork"))
                     {
@@ -787,9 +787,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork), RTEXITCODE_FAILURE);
                     }
                     /** @todo obsolete, remove eventually */
                     else if (!strcmp(a->argv[2], "vde"))
@@ -800,9 +800,9 @@ int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
-                        CHECK_ERROR_RET(adapter, SetProperty(Bstr("name").raw(), Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), RTEXITCODE_FAILURE);
+                        CHECK_ERROR_RET(adapter, SetProperty(Bstr("name").raw(), Bstr(a->argv[3]).raw()), RTEXITCODE_FAILURE);
                     }
                     else
                     {
@@ -1415,11 +1415,11 @@ int handleControlVM(HandlerArg *a)
             }
             if (!strcmp(a->argv[2], "on"))
             {
-                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(TRUE), 1);
+                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(TRUE), RTEXITCODE_FAILURE);
             }
             else if (!strcmp(a->argv[2], "off"))
             {
-                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(FALSE), 1);
+                CHECK_ERROR_RET(sessionMachine, COMSETTER(VideoCaptureEnabled)(FALSE), RTEXITCODE_FAILURE);
             }
             else
             {
@@ -1756,5 +1756,5 @@ int handleControlVM(HandlerArg *a)
 
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }

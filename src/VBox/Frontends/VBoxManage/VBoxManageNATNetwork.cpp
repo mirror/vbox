@@ -58,7 +58,7 @@
 
 using namespace com;
 
-typedef enum enMainOpCodes
+typedef enum
 {
     OP_ADD = 1000,
     OP_REMOVE,
@@ -66,21 +66,6 @@ typedef enum enMainOpCodes
     OP_START,
     OP_STOP
 } OPCODE;
-
-static const RTGETOPTDEF g_aNATNetworkIPOptions[]
-    = {
-        { "--netname",          't', RTGETOPT_REQ_STRING },
-        { "--network",          'n', RTGETOPT_REQ_STRING },
-        { "--dhcp",             'h', RTGETOPT_REQ_BOOL },
-        { "--ipv6",             '6', RTGETOPT_REQ_BOOL},
-        { "--enable",           'e', RTGETOPT_REQ_NOTHING },
-        { "--disable",          'd', RTGETOPT_REQ_NOTHING },
-        { "--port-forward-4",   'p', RTGETOPT_REQ_STRING },
-        { "--port-forward-6",   'P', RTGETOPT_REQ_STRING },
-        { "--loopback-4",       'l', RTGETOPT_REQ_STRING },
-        { "--loopback-6",       'L', RTGETOPT_REQ_STRING },
-
-      };
 
 typedef struct PFNAME2DELETE
 {
@@ -97,13 +82,10 @@ typedef VPF2ADD::const_iterator VPF2ADDITERATOR;
 typedef std::vector<std::string>  LOOPBACK2DELETEADD;
 typedef LOOPBACK2DELETEADD::iterator LOOPBACK2DELETEADDITERATOR;
 
-static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
+static RTEXITCODE handleOp(HandlerArg *a, OPCODE enmCode)
 {
-    if (a->argc - iStart < 2)
+    if (a->argc - 1 <= 1)
         return errorSyntax(USAGE_NATNETWORK, "Not enough parameters");
-
-    int index = iStart;
-    HRESULT rc;
 
     const char *pNetName = NULL;
     const char *pNetworkCidr = NULL;
@@ -119,47 +101,52 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
     LONG loopback6Offset = 0; /* ignore me */
 
+    static const RTGETOPTDEF g_aNATNetworkIPOptions[] =
+    {
+        { "--netname",          't', RTGETOPT_REQ_STRING  },
+        { "--network",          'n', RTGETOPT_REQ_STRING  },
+        { "--dhcp",             'h', RTGETOPT_REQ_BOOL    },
+        { "--ipv6",             '6', RTGETOPT_REQ_BOOL    },
+        { "--enable",           'e', RTGETOPT_REQ_NOTHING },
+        { "--disable",          'd', RTGETOPT_REQ_NOTHING },
+        { "--port-forward-4",   'p', RTGETOPT_REQ_STRING  },
+        { "--port-forward-6",   'P', RTGETOPT_REQ_STRING  },
+        { "--loopback-4",       'l', RTGETOPT_REQ_STRING  },
+        { "--loopback-6",       'L', RTGETOPT_REQ_STRING  },
+    };
+
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-
-    RTGetOptInit(&GetState,
-                 a->argc,
-                 a->argv,
-                 g_aNATNetworkIPOptions,
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aNATNetworkIPOptions,
                  enmCode != OP_REMOVE ? RT_ELEMENTS(g_aNATNetworkIPOptions) : 4, /* we use only --netname and --ifname for remove*/
-                 index,
-                 RTGETOPTINIT_FLAGS_NO_STD_OPTS);
-    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+                 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 't':   // --netname
                 if (pNetName)
                     return errorSyntax(USAGE_NATNETWORK, "You can only specify --netname only once.");
-                else
-                    pNetName = ValueUnion.psz;
+                pNetName = ValueUnion.psz;
                 break;
 
             case 'n':   // --network
                 if (pNetworkCidr)
                     return errorSyntax(USAGE_NATNETWORK, "You can only specify --network only once.");
-                else
-                    pNetworkCidr = ValueUnion.psz;
+                pNetworkCidr = ValueUnion.psz;
                 break;
 
             case 'e':   // --enable
                 if (enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
-                else
-                    enable = 1;
+                enable = 1;
                 break;
 
             case 'd':   // --disable
                 if (enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
-                else
-                    enable = 0;
+                enable = 0;
                 break;
 
             case 'h':
@@ -198,12 +185,13 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                         vLoopback2Delete.push_back(std::string(Addr2Delete.psz));
                     }
                 }
-                else /* addition */
+                else
                 {
+                    /* addition */
                     if (c == 'L')
-                      loopback6Offset = ValueUnion.u32;
+                        loopback6Offset = ValueUnion.u32;
                     else
-                      vLoopback2Add.push_back(std::string(ValueUnion.psz));
+                        vLoopback2Add.push_back(std::string(ValueUnion.psz));
                 }
                 break;
 
@@ -212,83 +200,52 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             {
                 if (RTStrCmp(ValueUnion.psz, "delete") != 0)
                 {
-                    PORTFORWARDRULE Pfr;
-
+                    /* addition */
                     /* netPfStrToPf will clean up the Pfr */
+                    PORTFORWARDRULE Pfr;
                     int irc = netPfStrToPf(ValueUnion.psz, (c == 'P'), &Pfr);
                     if (RT_FAILURE(irc))
-                        return errorSyntax(USAGE_NATNETWORK,
-                                           "Invalid port-forward rule %s\n",
-                                           ValueUnion.psz);
+                        return errorSyntax(USAGE_NATNETWORK, "Invalid port-forward rule %s\n", ValueUnion.psz);
 
                     vPf2Add.push_back(Pfr);
                 }
                 else
                 {
-                    int vrc;
-                    RTGETOPTUNION NamePf2DeleteUnion;
-                    PFNAME2DELETE Name2Delete;
-
+                    /* deletion */
                     if (enmCode != OP_MODIFY)
                         return errorSyntax(USAGE_NATNETWORK,
                                            "Port-forward could be deleted on modify \n");
 
-                    vrc = RTGetOptFetchValue(&GetState,
-                                             &NamePf2DeleteUnion,
-                                             RTGETOPT_REQ_STRING);
+                    RTGETOPTUNION NamePf2DeleteUnion;
+                    int vrc = RTGetOptFetchValue(&GetState, &NamePf2DeleteUnion, RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
-                        return errorSyntax(USAGE_NATNETWORK,
-                                           "Not enough parmaters\n");
+                        return errorSyntax(USAGE_NATNETWORK, "Not enough parmaters\n");
 
                     if (strlen(NamePf2DeleteUnion.psz) > PF_NAMELEN)
-                        return errorSyntax(USAGE_NATNETWORK,
-                                           "Port-forward rule name is too long\n");
+                        return errorSyntax(USAGE_NATNETWORK, "Port-forward rule name is too long\n");
 
+                    PFNAME2DELETE Name2Delete;
                     RT_ZERO(Name2Delete);
                     RTStrCopy(Name2Delete.szName, PF_NAMELEN, NamePf2DeleteUnion.psz);
                     Name2Delete.fIPv6 = (c == 'P');
-
                     vPfName2Delete.push_back(Name2Delete);
                 }
                 break;
             }
 
-            case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_NATNETWORK,
-                                   "unhandled parameter: %s",
-                                   ValueUnion.psz);
-
             default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_NATNETWORK,
-                                           "unhandled option: -%c", c);
-                    else
-                        return errorSyntax(USAGE_NATNETWORK,
-                                           "unhandled option: %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_NATNETWORK,
-                                       "unknown option: %s", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_NATNETWORK,
-                                       "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    return errorSyntax(USAGE_NATNETWORK, "%Rrs", c);
+                return errorGetOpt(USAGE_NATNETWORK, c, &ValueUnion);
         }
     }
 
     if (!pNetName)
-        return errorSyntax(USAGE_NATNETWORK,
-                           "You need to specify the --netname option");
+        return errorSyntax(USAGE_NATNETWORK, "You need to specify the --netname option");
     /* verification */
     switch (enmCode)
     {
         case OP_ADD:
             if (!pNetworkCidr)
-                return errorSyntax(USAGE_NATNETWORK,
-                                   "You need to specify the --network option");
+                return errorSyntax(USAGE_NATNETWORK, "You need to specify the --network option");
             break;
         case OP_MODIFY:
         case OP_REMOVE:
@@ -296,9 +253,10 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         case OP_STOP:
             break;
         default:
-            AssertMsgFailedReturn(("Unknown operation (:%d)", enmCode), VERR_NOT_IMPLEMENTED);
+            AssertMsgFailedReturn(("Unknown operation (:%d)", enmCode), RTEXITCODE_FAILURE);
     }
 
+    HRESULT rc;
     Bstr NetName;
     NetName = Bstr(pNetName);
 
@@ -383,7 +341,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                 if (loopback6Offset == -1)
                     loopback6Offset = 0; /* deletion */
 
-                CHECK_ERROR_RET(net, COMSETTER(LoopbackIp6)(loopback6Offset), rc);
+                CHECK_ERROR_RET(net, COMSETTER(LoopbackIp6)(loopback6Offset), RTEXITCODE_FAILURE);
             }
 
             /* addLocalMapping (hostid, offset) */
@@ -410,7 +368,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
                     bstrAddress = Bstr(address.c_str());
 
-                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), lOffset), rc);
+                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), lOffset), RTEXITCODE_FAILURE);
                 }
             }
 
@@ -425,7 +383,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     Bstr bstrAddress;
                     bstrAddress = Bstr(it->c_str());
 
-                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), 0), rc);
+                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), 0), RTEXITCODE_FAILURE);
                 }
             }
 
@@ -460,31 +418,29 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         }
         default:;
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
-int handleNATNetwork(HandlerArg *a)
+RTEXITCODE handleNATNetwork(HandlerArg *a)
 {
     if (a->argc < 1)
         return errorSyntax(USAGE_NATNETWORK, "Not enough parameters");
 
-    int result;
-    int cProcessed;
+    RTEXITCODE rcExit;
     if (strcmp(a->argv[0], "modify") == 0)
-        result = handleOp(a, OP_MODIFY, 1, &cProcessed);
+        rcExit = handleOp(a, OP_MODIFY);
     else if (strcmp(a->argv[0], "add") == 0)
-        result = handleOp(a, OP_ADD, 1, &cProcessed);
+        rcExit = handleOp(a, OP_ADD);
     else if (strcmp(a->argv[0], "remove") == 0)
-        result = handleOp(a, OP_REMOVE, 1, &cProcessed);
+        rcExit = handleOp(a, OP_REMOVE);
     else if (strcmp(a->argv[0], "start") == 0)
-        result = handleOp(a, OP_START, 1, &cProcessed);
+        rcExit = handleOp(a, OP_START);
     else if (strcmp(a->argv[0], "stop") == 0)
-        result = handleOp(a, OP_STOP, 1, &cProcessed);
+        rcExit = handleOp(a, OP_STOP);
     else
-        result = errorSyntax(USAGE_NATNETWORK, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
-
-    return result;
+        rcExit = errorSyntax(USAGE_NATNETWORK, "Invalid parameter '%s'", Utf8Str(a->argv[0]).c_str());
+    return rcExit;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

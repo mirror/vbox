@@ -198,7 +198,7 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &pMachi
     if (pSnapshot)
     {
         ComPtr<ISnapshot> pCurrentSnapshot;
-        CHECK_ERROR2_RET(pMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2I_RET(pMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
         hrc = showSnapshots(pSnapshot, pCurrentSnapshot, enmDetails);
         if (FAILED(hrc))
             return RTEXITCODE_FAILURE;
@@ -310,7 +310,7 @@ static int parseSnapshotUniqueFlags(const char *psz, SnapshotUniqueFlags *pUniqu
  * @param a
  * @return
  */
-int handleSnapshot(HandlerArg *a)
+RTEXITCODE handleSnapshot(HandlerArg *a)
 {
     HRESULT rc;
 
@@ -324,10 +324,10 @@ int handleSnapshot(HandlerArg *a)
     CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine.raw(),
                                            pMachine.asOutParam()));
     if (!pMachine)
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     /* we have to open a session for this task (new or shared) */
-    CHECK_ERROR_RET(pMachine, LockMachine(a->session, LockType_Shared), 1);
+    CHECK_ERROR_RET(pMachine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
     do
     {
         /* replace the (read-only) IMachine object by a writable one */
@@ -618,6 +618,6 @@ int handleSnapshot(HandlerArg *a)
 
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 

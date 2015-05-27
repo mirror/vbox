@@ -72,7 +72,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--intnet",           'I', RTGETOPT_REQ_NOTHING },
 };
 
-int handleStorageAttach(HandlerArg *a)
+RTEXITCODE handleStorageAttach(HandlerArg *a)
 {
     int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
     HRESULT rc = S_OK;
@@ -311,20 +311,20 @@ int handleStorageAttach(HandlerArg *a)
     }
 
     if (FAILED(rc))
-        return 1;
+        return RTEXITCODE_FAILURE;
 
     if (!pszCtl)
         return errorSyntax(USAGE_STORAGEATTACH, "Storage controller name not specified");
 
     /* get the virtualbox system properties */
-    CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), 1);
+    CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), RTEXITCODE_FAILURE);
 
     // find the machine, lock it, get the mutable session machine
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()), 1);
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
+                                               machine.asOutParam()), RTEXITCODE_FAILURE);
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
     SessionType_T st;
-    CHECK_ERROR_RET(a->session, COMGETTER(Type)(&st), 1);
+    CHECK_ERROR_RET(a->session, COMGETTER(Type)(&st), RTEXITCODE_FAILURE);
     a->session->COMGETTER(Machine)(machine.asOutParam());
 
     try
@@ -346,11 +346,11 @@ int handleStorageAttach(HandlerArg *a)
             throw Utf8StrFmt("Could not find a controller named '%s'\n", pszCtl);
 
         StorageBus_T storageBus = StorageBus_Null;
-        CHECK_ERROR_RET(storageCtl, COMGETTER(Bus)(&storageBus), 1);
+        CHECK_ERROR_RET(storageCtl, COMGETTER(Bus)(&storageBus), RTEXITCODE_FAILURE);
         ULONG maxPorts = 0;
-        CHECK_ERROR_RET(systemProperties, GetMaxPortCountForStorageBus(storageBus, &maxPorts), 1);
+        CHECK_ERROR_RET(systemProperties, GetMaxPortCountForStorageBus(storageBus, &maxPorts), RTEXITCODE_FAILURE);
         ULONG maxDevices = 0;
-        CHECK_ERROR_RET(systemProperties, GetMaxDevicesPerPortForStorageBus(storageBus, &maxDevices), 1);
+        CHECK_ERROR_RET(systemProperties, GetMaxDevicesPerPortForStorageBus(storageBus, &maxDevices), RTEXITCODE_FAILURE);
 
         if (port == ~0U)
         {
@@ -935,7 +935,7 @@ int handleStorageAttach(HandlerArg *a)
 leave:
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 
@@ -950,10 +950,9 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--bootable",         'b', RTGETOPT_REQ_STRING },
 };
 
-int handleStorageController(HandlerArg *a)
+RTEXITCODE handleStorageController(HandlerArg *a)
 {
     int               c;
-    HRESULT           rc             = S_OK;
     const char       *pszCtl         = NULL;
     const char       *pszBusType     = NULL;
     const char       *pszCtlType     = NULL;
@@ -973,80 +972,54 @@ int handleStorageController(HandlerArg *a)
     RTGetOptInit (&GetState, a->argc, a->argv, g_aStorageControllerOptions,
                   RT_ELEMENTS(g_aStorageControllerOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
-    while (   SUCCEEDED(rc)
-           && (c = RTGetOpt(&GetState, &ValueUnion)))
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
         switch (c)
         {
             case 'n':   // controller name
-            {
-                if (ValueUnion.psz)
-                    pszCtl = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
+                Assert(ValueUnion.psz);
+                pszCtl = ValueUnion.psz;
                 break;
-            }
 
             case 'a':   // controller bus type <ide/sata/scsi/floppy>
-            {
-                if (ValueUnion.psz)
-                    pszBusType = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
+                Assert(ValueUnion.psz);
+                pszBusType = ValueUnion.psz;
                 break;
-            }
 
             case 'c':   // controller <lsilogic/buslogic/intelahci/piix3/piix4/ich6/i82078>
-            {
-                if (ValueUnion.psz)
-                    pszCtlType = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
+                Assert(ValueUnion.psz);
+                pszCtlType = ValueUnion.psz;
                 break;
-            }
 
             case 'p':   // portcount
-            {
                 portcount = ValueUnion.u32;
                 break;
-            }
 
             case 'r':   // remove controller
-            {
                 fRemoveCtl = true;
                 break;
-            }
 
             case 'i':
-            {
                 pszHostIOCache = ValueUnion.psz;
                 break;
-            }
 
             case 'b':
-            {
                 pszBootable = ValueUnion.psz;
                 break;
-            }
 
             default:
-            {
-                errorGetOpt(USAGE_STORAGECONTROLLER, c, &ValueUnion);
-                rc = E_FAIL;
-                break;
-            }
+                return errorGetOpt(USAGE_STORAGECONTROLLER, c, &ValueUnion);
         }
     }
 
-    if (FAILED(rc))
-        return 1;
+    HRESULT rc;
 
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
-                                               machine.asOutParam()), 1);
+                                               machine.asOutParam()), RTEXITCODE_FAILURE);
 
     /* open a session for the VM */
-    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), 1);
+    CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Write), RTEXITCODE_FAILURE);
 
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -1055,8 +1028,7 @@ int handleStorageController(HandlerArg *a)
     {
         /* it's important to always close sessions */
         a->session->UnlockMachine();
-        errorSyntax(USAGE_STORAGECONTROLLER, "Storage controller name not specified\n");
-        return 1;
+        return errorSyntax(USAGE_STORAGECONTROLLER, "Storage controller name not specified\n");
     }
 
     if (fRemoveCtl)
@@ -1255,7 +1227,7 @@ int handleStorageController(HandlerArg *a)
     /* it's important to always close sessions */
     a->session->UnlockMachine();
 
-    return SUCCEEDED(rc) ? 0 : 1;
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */

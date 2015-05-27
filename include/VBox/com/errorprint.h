@@ -52,6 +52,49 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
                                 uint32_t ulLine);
 
 /**
+ * Extended macro that implements all the other CHECK_ERROR2XXX macros.
+ *
+ * Calls the method of the given interface and checks the return status code.
+ * If the status indicates failure, as much information as possible is reported
+ * about the error, including current source file and line.
+ *
+ * After reporting an error, the statement |stmtError| is executed.
+ *
+ * This macro family is intended for command line tools like VBoxManage, but
+ * could also be handy for debugging.
+ *
+ * @param   type        For defining @a hrc locally inside the the macro
+ *                      expansion, pass |HRESULT| otherwise |RT_NOTHING|.
+ * @param   hrc         Name of the HRESULT variable to assign the result of the
+ *                      method call to.
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   stmtError   Statement to be executed after reporting failures.  This
+ *                      can be a |break| or |return| statement, if so desired.
+ *
+ * @remarks Unlike CHECK_ERROR, CHECK_ERROR_RET and family, this macro family
+ *          does not presuppose a |rc| variable but instead either let the user
+ *          specify the variable to use or employs  a local variable |hrcCheck|
+ *          within its own scope.
+ *
+ * @sa      CHECK_ERROR2, CHECK_ERROR2I, CHECK_ERROR2_STMT, CHECK_ERROR2I_STMT,
+ *          CHECK_ERROR2_BREAK, CHECK_ERROR2I_BREAK, CHECK_ERROR2_RET,
+ *          CHECK_ERROR2I_RET
+ */
+#define CHECK_ERROR2_EX(type, hrc, iface, method, stmtError) \
+    if (1) { \
+        type hrc = iface->method; \
+        if (SUCCEEDED(hrc)) \
+        { /*likely*/ } \
+        else \
+        { \
+            com::GlueHandleComError(iface, #method, (hrc), __FILE__, __LINE__); \
+            stmtError; \
+        } \
+    } else do { /* nothing */ } while (0)
+
+
+/**
  *  Calls the given method of the given interface and then checks if the return
  *  value (COM result code) indicates a failure. If so, prints the failed
  *  function/line/file, the description of the result code and attempts to
@@ -60,6 +103,7 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
  *
  *  Used by command line tools or for debugging and assumes the |HRESULT rc|
  *  variable is accessible for assigning in the current scope.
+ * @sa CHECK_ERROR2, CHECK_ERROR2I
  */
 #define CHECK_ERROR(iface, method) \
     do { \
@@ -67,10 +111,31 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
         if (FAILED(rc)) \
             com::GlueHandleComError(iface, #method, rc, __FILE__, __LINE__); \
     } while (0)
+/**
+ * Simplified version of CHECK_ERROR2_EX, no error statement or type necessary.
+ *
+ * @param   hrc         Name of the HRESULT variable to assign the result of the
+ *                      method call to.
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @sa CHECK_ERROR2I, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2(hrc, iface, method)            CHECK_ERROR2_EX(RT_NOTHING, hrc, iface, method, (void)1)
+/**
+ * Simplified version of CHECK_ERROR2_EX that uses an internal variable
+ * |hrcCheck| for holding the result and have no error statement.
+ *
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @sa CHECK_ERROR2, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2I(iface, method)                CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, (void)1)
+
 
 /**
  * Same as CHECK_ERROR except that it also executes the statement |stmt| on
  * failure.
+ * @sa CHECK_ERROR2_STMT, CHECK_ERROR2I_STMT
  */
 #define CHECK_ERROR_STMT(iface, method, stmt) \
     do { \
@@ -81,25 +146,33 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
             stmt; \
         } \
     } while (0)
-
 /**
- * Same as CHECK_ERROR_STMT except that it uses an internal variable |hrcCheck|
- * for holding the result.
+ * Simplified version of CHECK_ERROR2_EX (no @a hrc type).
+ *
+ * @param   hrc         Name of the HRESULT variable to assign the result of the
+ *                      method call to.
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   stmt        Statement to be executed after reporting failures.
+ * @sa CHECK_ERROR2I_STMT, CHECK_ERROR2_EX
  */
-#define CHECK_ERROR2_STMT(iface, method, stmt) \
-    do { \
-        HRESULT hrcCheck = iface->method; \
-        if (FAILED(hrcCheck)) \
-        { \
-            com::GlueHandleComError(iface, #method, hrcCheck, __FILE__, __LINE__); \
-            stmt; \
-        } \
-    } while (0)
+#define CHECK_ERROR2_STMT(hrc, iface, method, stmt) CHECK_ERROR2_EX(RT_NOTHING, hrc, iface, method, stmt)
+/**
+ * Simplified version of CHECK_ERROR2_EX that uses an internal variable
+ * |hrcCheck| for holding the result.
+ *
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   stmt        Statement to be executed after reporting failures.
+ * @sa CHECK_ERROR2_STMT, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2I_STMT(iface, method, stmt)     CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, stmt)
 
 
 /**
  *  Does the same as CHECK_ERROR(), but executes the |break| statement on
  *  failure.
+ * @sa CHECK_ERROR2_BREAK, CHECK_ERROR2I_BREAK
  */
 #ifdef __GNUC__
 # define CHECK_ERROR_BREAK(iface, method) \
@@ -125,10 +198,32 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
     } \
     else do {} while (0)
 #endif
+/**
+ * Simplified version of CHECK_ERROR2_EX that executes the |break| statement
+ * after error reporting (no @a hrc type).
+ *
+ * @param   hrc         The result variable (type HRESULT).
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @sa CHECK_ERROR2I_BREAK, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2_BREAK(hrc, iface, method)      CHECK_ERROR2_EX(RT_NOTHING, hrc, iface, method, break)
+/**
+ * Simplified version of CHECK_ERROR2_EX that executes the |break| statement
+ * after error reporting and that uses an internal variable |hrcCheck| for
+ * holding the result.
+ *
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @sa CHECK_ERROR2_BREAK, CHECK_ERROR2_EX
+ */
+#define CHECK_ERROR2I_BREAK(iface, method)          CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, break)
+
 
 /**
- *  Does the same as CHECK_ERROR(), but executes the |return ret| statement on
- *  failure.
+ * Does the same as CHECK_ERROR(), but executes the |return ret| statement on
+ * failure.
+ * @sa CHECK_ERROR2_RET, CHECK_ERROR2I_RET
  */
 #define CHECK_ERROR_RET(iface, method, ret) \
     do { \
@@ -139,50 +234,49 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
             return (ret); \
         } \
     } while (0)
-
 /**
- * Does the same as CHECK_ERROR(), but returns @a ret on failure.
+ * Simplified version of CHECK_ERROR2_EX that executes the |return (rcRet)|
+ * statement after error reporting.
  *
- * Unlike CHECK_ERROR and CHECK_ERROR_RET, this macro does not presuppose a
- * |rc| variable but instead employs a local variable |hrcCheck| in its own
- * scope.  This |hrcCheck| variable can be referenced by the @a rcRet
- * parameter.
+ * @param   iface       The interface pointer (can be a smart pointer object).
+ * @param   method      The method to invoke together with the parameters.
+ * @param   rcRet       What to return on failure.
+ */
+#define CHECK_ERROR2_RET(hrc, iface, method, rcRet) CHECK_ERROR2_EX(RT_NOTHING, hrc, iface, method, return (rcRet))
+/**
+ * Simplified version of CHECK_ERROR2_EX that executes the |return (rcRet)|
+ * statement after error reporting and that uses an internal variable |hrcCheck|
+ * for holding the result.
  *
  * @param   iface       The interface pointer (can be a smart pointer object).
  * @param   method      The method to invoke together with the parameters.
  * @param   rcRet       What to return on failure.  Use |hrcCheck| to return
  *                      the status code of the method call.
  */
-#define CHECK_ERROR2_RET(iface, method, rcRet) \
-    do { \
-        HRESULT hrcCheck = iface->method; \
-        if (FAILED(hrcCheck)) \
-        { \
-            com::GlueHandleComError(iface, #method, hrcCheck, __FILE__, __LINE__); \
-            return (rcRet); \
-        } \
-    } while (0)
+#define CHECK_ERROR2I_RET(iface, method, rcRet)     CHECK_ERROR2_EX(HRESULT, hrcCheck, iface, method, return (rcRet))
 
 
 /**
  * Check the progress object for an error and if there is one print out the
  * extended error information.
+ * @remarks Requires HRESULT variable named @a rc.
  */
 #define CHECK_PROGRESS_ERROR(progress, msg) \
     do { \
         LONG iRc; \
         rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(iRc)) \
+        if (FAILED(rc) || FAILED(iRc)) \
         { \
-            rc = iRc; \
+            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
         } \
     } while (0)
 
 /**
- *  Does the same as CHECK_PROGRESS_ERROR(), but executes the |break| statement
- *  on failure.
+ * Does the same as CHECK_PROGRESS_ERROR(), but executes the |break| statement
+ * on failure.
+ * @remarks Requires HRESULT variable named @a rc.
  */
 #ifdef __GNUC__
 # define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
@@ -190,23 +284,23 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
     ({ \
         LONG iRc; \
         rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(iRc)) \
+        if (FAILED(rc) || FAILED(iRc)) \
         { \
-            rc = iRc; \
+            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
             break; \
         } \
     })
 #else
-# define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
+#define CHECK_PROGRESS_ERROR_BREAK(progress, msg) \
     if (1) \
     { \
         LONG iRc; \
         rc = progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(iRc)) \
+        if (FAILED(rc) || FAILED(iRc)) \
         { \
-            rc = iRc; \
+            if (SUCCEEDED(rc)) rc = iRc; else iRc = rc; \
             RTMsgError msg; \
             com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
             break; \
@@ -216,17 +310,20 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
 #endif
 
 /**
- *  Does the same as CHECK_PROGRESS_ERROR(), but executes the |return ret|
- *  statement on failure.
+ * Does the same as CHECK_PROGRESS_ERROR(), but executes the |return ret|
+ * statement on failure.
  */
 #define CHECK_PROGRESS_ERROR_RET(progress, msg, ret) \
     do { \
         LONG iRc; \
-        progress->COMGETTER(ResultCode)(&iRc); \
-        if (FAILED(iRc)) \
+        HRESULT hrcCheck = progress->COMGETTER(ResultCode)(&iRc); \
+        if (SUCCEEDED(hrcCheck) && SUCCEEDED(iRc)) \
+        { /* likely */ } \
+        else \
         { \
             RTMsgError msg; \
-            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, iRc, __FILE__, __LINE__); \
+            com::GlueHandleComErrorProgress(progress, __PRETTY_FUNCTION__, \
+                                            SUCCEEDED(hrcCheck) ? iRc : hrcCheck, __FILE__, __LINE__); \
             return (ret); \
         } \
     } while (0)
@@ -247,15 +344,17 @@ void GlueHandleComErrorProgress(ComPtr<IProgress> progress,
 #endif
 
 /**
- *  Does the same as ASSERT(), but executes the |return ret| statement if the
- *  expression to assert is false;
+ * Does the same as ASSERT(), but executes the |return ret| statement if the
+ * expression to assert is false;
+ * @remarks WARNING! @a expr is evalutated TWICE!
  */
 #define ASSERT_RET(expr, ret) \
     do { ASSERT(expr); if (!(expr)) return (ret); } while (0)
 
 /**
- *  Does the same as ASSERT(), but executes the |break| statement if the
- *  expression to assert is false;
+ * Does the same as ASSERT(), but executes the |break| statement if the
+ * expression to assert is false;
+ * @remarks WARNING! @a expr is evalutated TWICE!
  */
 #define ASSERT_BREAK(expr, ret) \
     if (1) { ASSERT(expr); if (!(expr)) break; } else do {} while (0)
