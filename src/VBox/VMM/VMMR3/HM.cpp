@@ -467,9 +467,10 @@ VMMR3_INT_DECL(int) HMR3Init(PVM pVM)
                 rc = SUPR3QueryVTxSupported();
                 if (RT_SUCCESS(rc))
                 {
-                    LogRel(("HM: HMR3Init: VT-x%s%s\n",
+                    LogRel(("HM: HMR3Init: VT-x%s%s%s\n",
                             fCaps & SUPVTCAPS_NESTED_PAGING ? " w/ nested paging" : "",
-                            fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : ""));
+                            fCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST ? " and unrestricted guest execution" : "",
+                            (fCaps & (SUPVTCAPS_NESTED_PAGING | SUPVTCAPS_VTX_UNRESTRICTED_GUEST)) ? " hw support" : ""));
                     pVM->hm.s.vmx.fSupported = true;
                 }
                 else
