@@ -698,7 +698,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Network Operations Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show Network Operations Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Network Operations Manager window"));
     }
 };
 
