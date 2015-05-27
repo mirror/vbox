@@ -2622,18 +2622,21 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
                                          AudioAdapter &aa)
 {
 
-    // get all properties
-    xml::NodesLoop nl1(elmAudioAdapter, "Property");
-    const xml::ElementNode *pelmModeChild;
-    while ((pelmModeChild = nl1.forAllNodes()))
+    if (m->sv >= SettingsVersion_v1_15)
     {
-        Utf8Str strPropName, strPropValue;
-        if (   pelmModeChild->getAttributeValue("name", strPropName)
-            && pelmModeChild->getAttributeValue("value", strPropValue) )
-            aa.properties[strPropName] = strPropValue;
-        else
-            throw ConfigFileError(this, pelmModeChild, N_("Required AudioAdapter/Property/@name or @value attribute "
-                                                          "is missing"));
+        // get all properties
+        xml::NodesLoop nl1(elmAudioAdapter, "Property");
+        const xml::ElementNode *pelmModeChild;
+        while ((pelmModeChild = nl1.forAllNodes()))
+        {
+            Utf8Str strPropName, strPropValue;
+            if (   pelmModeChild->getAttributeValue("name", strPropName)
+                && pelmModeChild->getAttributeValue("value", strPropValue) )
+                aa.properties[strPropName] = strPropValue;
+            else
+                throw ConfigFileError(this, pelmModeChild, N_("Required AudioAdapter/Property/@name or @value attribute "
+                                                              "is missing"));
+        }
     }
 
     elmAudioAdapter.getAttributeValue("enabled", aa.fEnabled);
@@ -4745,7 +4748,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     pelmAudio->setAttribute("enabled", hw.audioAdapter.fEnabled);
 
-    if (hw.audioAdapter.properties.size() > 0)
+    if (m->sv >= SettingsVersion_v1_15 && hw.audioAdapter.properties.size() > 0)
     {
         for (StringsMap::const_iterator it = hw.audioAdapter.properties.begin();
              it != hw.audioAdapter.properties.end();
