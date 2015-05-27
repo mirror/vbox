@@ -72,7 +72,7 @@
             </sizepolicy>
            </property>
            <property name="whatsThis">
-            <string>Controls the audio output driver. The &lt;b>Null Audio Driver&lt;/b> makes the guest see an audio card, however every access to it will be ignored.</string>
+            <string>Selects the audio output driver. The &lt;b>Null Audio Driver&lt;/b> makes the guest see an audio card, however every access to it will be ignored.</string>
            </property>
           </widget>
          </item>
