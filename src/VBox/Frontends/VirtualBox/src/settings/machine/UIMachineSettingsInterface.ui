@@ -55,10 +55,10 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</string>
+      <string>When checked, show the Mini ToolBar in full-screen and seamless modes.</string>
      </property>
      <property name="text">
-      <string>Show in &amp;Fullscreen/Seamless</string>
+      <string>Show in &amp;Full-screen/Seamless</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -74,7 +74,7 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</string>
+      <string>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</string>
      </property>
      <property name="text">
       <string>Show at &amp;Top of Screen</string>
