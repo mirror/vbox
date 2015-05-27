@@ -1030,6 +1030,10 @@ STDMETHODIMP UIFrameBufferPrivate::Notify3DEvent(ULONG uType, ComSafeArrayIn(BYT
         return E_FAIL;
     }
 
+    Q_UNUSED(data);
+#ifdef VBOX_WITH_XPCOM
+    Q_UNUSED(dataSize);
+#endif /* VBOX_WITH_XPCOM */
     // com::SafeArray<BYTE> eventData(ComSafeArrayInArg(data));
     switch (uType)
     {
