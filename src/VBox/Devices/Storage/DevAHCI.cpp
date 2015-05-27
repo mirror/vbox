@@ -2023,6 +2023,8 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     fAllTasksCanceled = ahciCancelActiveTasks(pAhciPort, NULL);
     Assert(fAllTasksCanceled);
 
+    Assert(pAhciPort->cTasksActive == 0);
+
     pAhciPort->regIS   = 0;
     pAhciPort->regIE   = 0;
     pAhciPort->regCMD  = AHCI_PORT_CMD_CPD  | /* Cold presence detection */
@@ -2052,8 +2054,6 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->u32TasksFinished = 0;
     pAhciPort->u32QueuedTasksFinished = 0;
     pAhciPort->u32CurrentCommandSlot = 0;
-
-    pAhciPort->cTasksActive = 0;
 
     ASMAtomicWriteU32(&pAhciPort->MediaEventStatus, ATA_EVENT_STATUS_UNCHANGED);
     ASMAtomicWriteU32(&pAhciPort->MediaTrackType, ATA_MEDIA_TYPE_UNKNOWN);
@@ -6011,13 +6011,6 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
     bool fPortReset = ASMAtomicReadBool(&pAhciPort->fPortReset);
     bool fXchg = ASMAtomicCmpXchgPtr(&pAhciPort->aActiveTasks[pAhciReq->uTag], NULL, pAhciReq);
 
-    if (fXchg)
-    {
-        AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
-                         ("Inconsistent request counter\n"));
-        ASMAtomicDecU32(&pAhciPort->cTasksActive);
-    }
-
     /*
      * Leave a release log entry if the request was active for more than 25 seconds
      * (30 seconds is the timeout of the guest).
@@ -6187,6 +6180,21 @@ static bool ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcR
                         pAhciReq->uOffset,
                         pAhciReq->cbTransfer, rcReq));
          }
+    }
+
+    /*
+     * Decrement the active task counter as the last step or we might run into a
+     * hang during power off otherwise (see @bugref{7859}).
+     * Before it could happen that we signal PDM that we are done while we still have to
+     * copy the data to the guest but EMT might be busy destroying the driver chains
+     * below us while we have to delegate copying data to EMT instead of doing it
+     * on this thread.
+     */
+    if (fXchg)
+    {
+        AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
+                         ("Inconsistent request counter\n"));
+        ASMAtomicDecU32(&pAhciPort->cTasksActive);
     }
 
     if (pAhciPort->cTasksActive == 0 && pAhciPort->pAhciR3->fSignalIdle)
