@@ -359,17 +359,17 @@ int main(int argc, char *argv[])
     bool fShowHelp = false;
     int  iCmd      = 1;
     int  iCmdArg;
-    const char *g_pszSettingsPw = NULL;
-    const char *g_pszSettingsPwFile = NULL;
+    const char *pszSettingsPw = NULL;
+    const char *pszSettingsPwFile = NULL;
 
     for (int i = 1; i < argc || argc <= iCmd; i++)
     {
         if (    argc <= iCmd
             ||  !strcmp(argv[i], "help")
+            ||  !strcmp(argv[i], "--help")
             ||  !strcmp(argv[i], "-?")
             ||  !strcmp(argv[i], "-h")
-            ||  !strcmp(argv[i], "-help")
-            ||  !strcmp(argv[i], "--help"))
+            ||  !strcmp(argv[i], "-help"))
         {
             if (i >= argc - 1)
             {
@@ -383,18 +383,19 @@ int main(int argc, char *argv[])
             continue;
         }
 
-        if (   !strcmp(argv[i], "-v")
-            || !strcmp(argv[i], "-version")
-            || !strcmp(argv[i], "-Version")
-            || !strcmp(argv[i], "--version"))
+        if (   !strcmp(argv[i], "-V")
+            || !strcmp(argv[i], "--version")
+            || !strcmp(argv[i], "-v")       /* deprecated */
+            || !strcmp(argv[i], "-version") /* deprecated */
+            || !strcmp(argv[i], "-Version") /* deprecated */)
         {
             /* Print version number, and do nothing else. */
-            RTPrintf("%sr%d\n", VBOX_VERSION_STRING, RTBldCfgRevision());
+            RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
             return 0;
         }
 
         if (   !strcmp(argv[i], "--dumpopts")
-            || !strcmp(argv[i], "-dumpopts"))
+            || !strcmp(argv[i], "-dumpopts") /* deprecated */)
         {
             /* Special option to dump really all commands,
              * even the ones not understood on this platform. */
@@ -403,8 +404,8 @@ int main(int argc, char *argv[])
         }
 
         if (   !strcmp(argv[i], "--nologo")
-            || !strcmp(argv[i], "-nologo")
-            || !strcmp(argv[i], "-q"))
+            || !strcmp(argv[i], "-q")
+            || !strcmp(argv[i], "-nologo") /* deprecated */)
         {
             /* suppress the logo */
             fShowLogo = false;
@@ -419,19 +420,17 @@ int main(int argc, char *argv[])
         }
         else if (!strcmp(argv[i], "--settingspw"))
         {
-            if (i >= argc-1)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "Password expected");
+            if (i >= argc - 1)
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Password expected");
             /* password for certain settings */
-            g_pszSettingsPw = argv[i+1];
+            pszSettingsPw = argv[i + 1];
             iCmd += 2;
         }
         else if (!strcmp(argv[i], "--settingspwfile"))
         {
             if (i >= argc-1)
-                return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                      "No password file specified");
-            g_pszSettingsPwFile = argv[i+1];
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "No password file specified");
+            pszSettingsPwFile = argv[i+1];
             iCmd += 2;
         }
         else
@@ -574,19 +573,19 @@ int main(int argc, char *argv[])
             { NULL,               0,                       NULL }
         };
 
-        if (g_pszSettingsPw)
+        if (pszSettingsPw)
         {
             int rc;
-            CHECK_ERROR(virtualBox, SetSettingsSecret(Bstr(g_pszSettingsPw).raw()));
+            CHECK_ERROR(virtualBox, SetSettingsSecret(Bstr(pszSettingsPw).raw()));
             if (FAILED(rc))
             {
                 rcExit = RTEXITCODE_FAILURE;
                 break;
             }
         }
-        else if (g_pszSettingsPwFile)
+        else if (pszSettingsPwFile)
         {
-            rcExit = settingsPasswordFile(virtualBox, g_pszSettingsPwFile);
+            rcExit = settingsPasswordFile(virtualBox, pszSettingsPwFile);
             if (rcExit != RTEXITCODE_SUCCESS)
                 break;
         }
