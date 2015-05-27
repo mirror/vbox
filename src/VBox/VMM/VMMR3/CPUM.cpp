@@ -2454,12 +2454,12 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
      */
     bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
     RTCPUSET OnlineSet;
-    LogRel(("Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
+    LogRel(("CPUM: Logical host processors: %u present, %u max, %u online, online mask: %016RX64\n",
                 (unsigned)RTMpGetPresentCount(), (unsigned)RTMpGetCount(), (unsigned)RTMpGetOnlineCount(),
                 RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
     RTCPUID cCores = RTMpGetCoreCount();
     if (cCores)
-        LogRel(("Physical host cores: %u\n", (unsigned)cCores));
+        LogRel(("CPUM: Physical host cores: %u\n", (unsigned)cCores));
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
