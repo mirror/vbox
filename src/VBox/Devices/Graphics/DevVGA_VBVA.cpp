@@ -966,14 +966,14 @@ static void vbvaVHWACommandPend(PVGASTATE pVGAState, PVBOXVHWACMD pCommand)
                 return;
             }
             PDMCritSectLeave(&pVGAState->CritSect);
-            LogRel(("Pending command count has reached its threshold.. completing them all.."));
+            LogRel(("VBVA: Pending command count has reached its threshold.. completing them all.."));
             RTMemFree(pPend);
         }
         else
             rc = VERR_NO_MEMORY;
     }
     else
-        LogRel(("Pending command count has reached its threshold, completing them all.."));
+        LogRel(("VBVA: Pending command count has reached its threshold, completing them all.."));
 
     vbvaVHWACommandCompleteAllPending(pVGAState, rc);
 
@@ -1991,7 +1991,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
                     if (u32 != VBOXVBVASAVEDSTATE_VHWAUNAVAILABLE_MAGIC)
                     {
-                        LogRel(("2D data while 2D is not supported\n"));
+                        LogRel(("VBVA: 2D data while 2D is not supported\n"));
                         return VERR_NOT_SUPPORTED;
                     }
                 }
@@ -2003,7 +2003,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
 
                     if (u32)
                     {
-                        LogRel(("2D pending command while 2D is not supported\n"));
+                        LogRel(("VBVA: 2D pending command while 2D is not supported\n"));
                         return VERR_NOT_SUPPORTED;
                     }
                 }
@@ -2183,7 +2183,7 @@ int VBVAInfoView(PVGASTATE pVGAState, const VBVAINFOVIEW *pView)
         return VINF_SUCCESS;
     }
 
-    LogRelFlow(("VBVA_INFO_VIEW: invalid data: index %d(%d), offset 0x%x, size 0x%x, max 0x%x, vram size 0x%x\n",
+    LogRelFlow(("VBVA: InfoView: invalid data! index %d(%d), offset 0x%x, size 0x%x, max 0x%x, vram size 0x%x\n",
                 view.u32ViewIndex, pCtx->cViews, view.u32ViewOffset, view.u32ViewSize,
                 view.u32MaxScreenSize, pVGAState->vram_size));
     return VERR_INVALID_PARAMETER;
@@ -2193,7 +2193,7 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen)
 {
     const VBVAINFOSCREEN screen = *pScreen;
 
-    LogRel(("VBVA_INFO_SCREEN: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
+    LogRel(("VBVA: InfoScreen: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
             screen.u32ViewIndex, screen.i32OriginX, screen.i32OriginY,
             screen.u32Width, screen.u32Height,
             screen.u32LineSize, screen.u16BitsPerPixel, screen.u16Flags));
@@ -2221,14 +2221,15 @@ int VBVAInfoScreen(PVGASTATE pVGAState, const VBVAINFOSCREEN *pScreen)
                 return VINF_SUCCESS;
             }
 
-            LogRelFlow(("VBVA_INFO_SCREEN: invalid data: size 0x%RX64, max 0x%RX32\n",
+            /** @todo why not use "%#RX" instead of "0x%RX"? */
+            LogRelFlow(("VBVA: InfoScreen: invalid data! size 0x%RX64, max 0x%RX32\n",
                         u64ScreenSize, pView->u32MaxScreenSize));
         }
     }
     else
     {
-        LogRelFlow(("VBVA_INFO_SCREEN: invalid data: index %RU32(%RU32)\n",
-                     screen.u32ViewIndex, pCtx->cViews));
+        LogRelFlow(("VBVA: InfoScreen: invalid data! index %RU32(%RU32)\n", screen.u32ViewIndex,
+                    pCtx->cViews));
     }
 
     return VERR_INVALID_PARAMETER;
@@ -2342,7 +2343,7 @@ static int vbvaHandleQueryModeHints(PVGASTATE pVGAState, const VBVAQUERYMODEHINT
 
     const VBVAQUERYMODEHINTS parms = *pQueryModeHints;
 
-    LogRelFlowFunc(("VBVA_QUERY_MODE_HINTS: cHintsQueried=%RU16, cbHintStructureGuest=%RU16\n",
+    LogRelFlowFunc(("VBVA: HandleQueryModeHints: cHintsQueried=%RU16, cbHintStructureGuest=%RU16\n",
                     parms.cHintsQueried, parms.cbHintStructureGuest));
 
     if (cbBuffer <   sizeof(VBVAQUERYMODEHINTS)
@@ -2680,7 +2681,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
             }
 
             const VBVAREPORTINPUTMAPPING inputMapping = *(VBVAREPORTINPUTMAPPING *)pvBuffer;
-            LogRelFlowFunc(("VBVA_REPORT_INPUT_MAPPING: x=%RI32, y=%RI32, cx=%RU32, cy=%RU32\n",
+            LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_REPORT_INPUT_MAPPING: x=%RI32, y=%RI32, cx=%RU32, cy=%RU32\n",
                             inputMapping.x, inputMapping.y, inputMapping.cx, inputMapping.cy));
             pVGAState->pDrv->pfnVBVAInputMappingUpdate(pVGAState->pDrv,
                                                        inputMapping.x, inputMapping.y,
@@ -2697,7 +2698,7 @@ static DECLCALLBACK(int) vbvaChannelHandler(void *pvHandler, uint16_t u16Channel
 
             VBVACURSORPOSITION *pReport = (VBVACURSORPOSITION *)pvBuffer;
 
-            LogRelFlowFunc(("VBVA_CURSOR_POSITION: fReportPosition=%RTbool, x=%RU32, y=%RU32\n",
+            LogRelFlowFunc(("VBVA: ChannelHandler: VBVA_CURSOR_POSITION: fReportPosition=%RTbool, x=%RU32, y=%RU32\n",
                             RT_BOOL(pReport->fReportPosition), pReport->x, pReport->y));
 
             pReport->x = pCtx->xCursor;
