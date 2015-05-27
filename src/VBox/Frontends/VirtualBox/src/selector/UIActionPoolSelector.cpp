@@ -453,7 +453,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Gro&up"));
-        setStatusTip(QApplication::translate("UIActionPool", "Add a new group based on the items selected"));
+        setStatusTip(QApplication::translate("UIActionPool", "Add a new group based on the selected virtual machines"));
     }
 };
 
@@ -483,7 +483,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Manage the virtual machine settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window"));
         setToolTip(text().remove('&').remove('.') +
                    (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
@@ -787,7 +787,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of the selected virtual machines"));
     }
 };
 
@@ -812,7 +812,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Refresh the accessibility state of the selected virtual machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh the accessibility state of the selected virtual machines"));
     }
 };
 
@@ -836,13 +836,13 @@ protected:
     {
 #if defined(Q_WS_MAC)
         setName(QApplication::translate("UIActionPool", "Show in Finder"));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition file in Finder"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition files in Finder"));
 #elif defined(Q_WS_WIN)
         setName(QApplication::translate("UIActionPool", "Show in Explorer"));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition file in Explorer"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition files in Explorer"));
 #else
         setName(QApplication::translate("UIActionPool", "Show in File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition file in the File Manager"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show the VirtualBox Machine Definition files in the File Manager"));
 #endif
     }
 };
@@ -867,10 +867,10 @@ protected:
     {
 #if defined(Q_WS_MAC)
         setName(QApplication::translate("UIActionPool", "Create Alias on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an alias file to the VirtualBox Machine Definition file on your desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates an alias files to the VirtualBox Machine Definition files on your desktop"));
 #else
         setName(QApplication::translate("UIActionPool", "Create Shortcut on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Creates an shortcut file to the VirtualBox Machine Definition file on your desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Creates a shortcut files to the VirtualBox Machine Definition files on your desktop"));
 #endif
     }
 };
@@ -894,7 +894,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Sort"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the group of the first selected machine alphabetically"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort the group of the first selected virtual machine alphabetically"));
     }
 };
 
@@ -940,7 +940,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Save State"));
-        setStatusTip(QApplication::translate("UIActionPool", "Save the machine state of the selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Save the state of the selected virtual machines"));
     }
 };
 
@@ -968,7 +968,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Power Button press event to the selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Shutdown signal to the selected virtual machines"));
     }
 };
 
