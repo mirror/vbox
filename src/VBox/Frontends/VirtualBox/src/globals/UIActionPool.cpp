@@ -525,7 +525,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Minimize"));
-        setStatusTip(QApplication::translate("UIActionPool", "Minimize active machine-window"));
+        setStatusTip(QApplication::translate("UIActionPool", "Minimize active window"));
     }
 };
 #endif /* RT_OS_DARWIN */

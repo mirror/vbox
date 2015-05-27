@@ -529,7 +529,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Minimize Window"));
-        setStatusTip(QApplication::translate("UIActionPool", "Minimize currently active window"));
+        setStatusTip(QApplication::translate("UIActionPool", "Minimize active window"));
     }
 };
 #endif /* !RT_OS_DARWIN */
@@ -602,7 +602,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Auto-resize &Guest Display"));
-        setStatusTip(QApplication::translate("UIActionPool", "Automatically resize the guest display when the window is resized (requires Guest Additions)"));
+        setStatusTip(QApplication::translate("UIActionPool", "Automatically resize the guest display when the window is resized"));
     }
 };
 
@@ -1381,7 +1381,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Network"));
+        setName(QApplication::translate("UIActionPool", "&Network"));
     }
 };
 
@@ -2446,8 +2446,7 @@ void UIActionPoolRuntime::updateMenuView()
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
                                                                  ":/virtual_screen_disabled_16px.png"),
-                                             QApplication::translate("UIMultiScreenLayout",
-                                                                     "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+                                             QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
@@ -2462,8 +2461,7 @@ void UIActionPoolRuntime::updateMenuView()
                 /* Add 'Virtual Screen %1' menu: */
                 QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
                                                                      ":/virtual_screen_disabled_16px.png"),
-                                                 QApplication::translate("UIMultiScreenLayout",
-                                                                         "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+                                                 QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
                 pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
                 connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewMultiscreen()));
             }
@@ -2510,8 +2508,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
             /* Add 'Virtual Screen %1' menu: */
             QMenu *pSubMenu = pMenu->addMenu(UIIconPool::iconSet(":/virtual_screen_16px.png",
                                                                  ":/virtual_screen_disabled_16px.png"),
-                                             QApplication::translate("UIMultiScreenLayout",
-                                                                     "Virtual Screen %1").arg(iGuestScreenIndex + 1));
+                                             QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
             connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
         }
@@ -2615,8 +2612,8 @@ void UIActionPoolRuntime::updateMenuViewScaleFactor()
         foreach (const double &dScaleFactor, factors)
         {
             /* Create exclusive 'scale-factor' action: */
-            QAction *pAction = pActionGroup->addAction(tr("%1%", "scale-factor")
-                                                          .arg(dScaleFactor * 100));
+            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIActionPool", "%1%", "scale-factor")
+                                                                               .arg(dScaleFactor * 100));
             AssertPtrReturnVoid(pAction);
             {
                 /* Configure exclusive 'scale-factor' action: */
@@ -2666,7 +2663,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
     if (iGuestScreenIndex > 0)
     {
         /* Create 'toggle' action: */
-        QAction *pToggleAction = pMenu->addAction(UIActionPoolRuntime::tr("Enable", "Virtual Screen"),
+        QAction *pToggleAction = pMenu->addAction(QApplication::translate("UIActionPool", "Enable", "Virtual Screen"),
                                                   this, SLOT(sltHandleActionTriggerViewScreenToggle()));
         AssertPtrReturnVoid(pToggleAction);
         {
@@ -2690,7 +2687,7 @@ void UIActionPoolRuntime::updateMenuViewScreen(QMenu *pMenu)
         foreach (const QSize &size, sizes)
         {
             /* Create exclusive 'resize' action: */
-            QAction *pAction = pActionGroup->addAction(UIActionPoolRuntime::tr("Resize to %1x%2", "Virtual Screen")
+            QAction *pAction = pActionGroup->addAction(QApplication::translate("UIActionPool", "Resize to %1x%2", "Virtual Screen")
                                                                                .arg(size.width()).arg(size.height()));
             AssertPtrReturnVoid(pAction);
             {
