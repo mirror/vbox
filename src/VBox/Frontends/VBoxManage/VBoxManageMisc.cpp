@@ -920,9 +920,9 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
     if (a->argc < 2)
         return errorSyntax(USAGE_SHAREDFOLDER, "Not enough parameters");
 
+    const char *pszMachineName = a->argv[1];
     ComPtr<IMachine> machine;
-    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[1]).raw(),
-                                           machine.asOutParam()));
+    CHECK_ERROR(a->virtualBox, FindMachine(Bstr(pszMachineName).raw(), machine.asOutParam()));
     if (!machine)
         return RTEXITCODE_FAILURE;
 
@@ -997,12 +997,14 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
 
             /* get the session console */
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
+            if (console.isNull())
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "Machine '%s' is not currently running.\n", pszMachineName);
 
             CHECK_ERROR(console, CreateSharedFolder(Bstr(name).raw(),
                                                     Bstr(hostpath).raw(),
                                                     fWritable, fAutoMount));
-            if (console)
-                a->session->UnlockMachine();
+            a->session->UnlockMachine();
         }
         else
         {
@@ -1056,20 +1058,21 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
 
         if (fTransient)
         {
-            ComPtr<IConsole> console;
-
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), RTEXITCODE_FAILURE);
             /* get the session machine */
             ComPtr<IMachine> sessionMachine;
             CHECK_ERROR_RET(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()), RTEXITCODE_FAILURE);
             /* get the session console */
+            ComPtr<IConsole> console;
             CHECK_ERROR_RET(a->session, COMGETTER(Console)(console.asOutParam()), RTEXITCODE_FAILURE);
+            if (console.isNull())
+                return RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                      "Machine '%s' is not currently running.\n", pszMachineName);
 
             CHECK_ERROR(console, RemoveSharedFolder(Bstr(name).raw()));
 
-            if (console)
-                a->session->UnlockMachine();
+            a->session->UnlockMachine();
         }
         else
         {

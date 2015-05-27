@@ -697,43 +697,48 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
     CHECK_ERROR(pArgs->session, COMGETTER(Console)(ptrConsole.asOutParam()));
     if (SUCCEEDED(rc))
     {
-        ComPtr<IMachineDebugger> ptrDebugger;
-        CHECK_ERROR(ptrConsole, COMGETTER(Debugger)(ptrDebugger.asOutParam()));
-        if (SUCCEEDED(rc))
+        if (ptrConsole.isNotNull())
         {
-            /*
-             * String switch on the sub-command.
-             */
-            const char *pszSubCmd = pArgs->argv[1];
-            if (!strcmp(pszSubCmd, "dumpguestcore"))
-                rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "getregisters"))
-                rcExit = handleDebugVM_GetRegisters(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "info"))
-                rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "injectnmi"))
-                rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "log"))
-                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
-            else if (!strcmp(pszSubCmd, "logdest"))
-                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
-            else if (!strcmp(pszSubCmd, "logflags"))
-                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
-            else if (!strcmp(pszSubCmd, "osdetect"))
-                rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "osinfo"))
-                rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "osdmesg"))
-                rcExit = handleDebugVM_OSDmesg(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "setregisters"))
-                rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "show"))
-                rcExit = handleDebugVM_Show(pArgs, ptrDebugger);
-            else if (!strcmp(pszSubCmd, "statistics"))
-                rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
-            else
-                errorSyntax(USAGE_DEBUGVM, "Invalid parameter '%s'", pArgs->argv[1]);
+            ComPtr<IMachineDebugger> ptrDebugger;
+            CHECK_ERROR(ptrConsole, COMGETTER(Debugger)(ptrDebugger.asOutParam()));
+            if (SUCCEEDED(rc))
+            {
+                /*
+                 * String switch on the sub-command.
+                 */
+                const char *pszSubCmd = pArgs->argv[1];
+                if (!strcmp(pszSubCmd, "dumpguestcore"))
+                    rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "getregisters"))
+                    rcExit = handleDebugVM_GetRegisters(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "info"))
+                    rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "injectnmi"))
+                    rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "log"))
+                    rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                else if (!strcmp(pszSubCmd, "logdest"))
+                    rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                else if (!strcmp(pszSubCmd, "logflags"))
+                    rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                else if (!strcmp(pszSubCmd, "osdetect"))
+                    rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "osinfo"))
+                    rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "osdmesg"))
+                    rcExit = handleDebugVM_OSDmesg(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "setregisters"))
+                    rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "show"))
+                    rcExit = handleDebugVM_Show(pArgs, ptrDebugger);
+                else if (!strcmp(pszSubCmd, "statistics"))
+                    rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
+                else
+                    errorSyntax(USAGE_DEBUGVM, "Invalid parameter '%s'", pArgs->argv[1]);
+            }
         }
+        else
+            RTMsgError("Machine '%s' is not currently running.\n", pArgs->argv[0]);
     }
 
     pArgs->session->UnlockMachine();

@@ -111,10 +111,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
         CHECK_ERROR_BREAK(a->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
 
         if (!console)
-        {
-            errorArgument("Machine '%s' is not currently running", a->argv[0]);
-            return RTEXITCODE_FAILURE;
-        }
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine '%s' is not currently running", a->argv[0]);
 
         /* which command? */
         if (!strcmp(a->argv[1], "pause"))
