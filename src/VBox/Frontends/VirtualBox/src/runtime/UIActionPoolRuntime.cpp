@@ -96,7 +96,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Manage the virtual machine settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window"));
     }
 };
 
@@ -166,7 +166,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Session I&nformation..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show Session Information Window"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine session information window"));
     }
 };
 
@@ -268,7 +268,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Save State"));
-        setStatusTip(QApplication::translate("UIActionPool", "Save the machine state of the virtual machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Save the state of the virtual machine"));
     }
 };
 
@@ -307,7 +307,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Power Button press event to the virtual machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Shutdown signal to the virtual machine"));
     }
 };
 
@@ -635,7 +635,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Take Screensh&ot..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Take a screenshot of the virtual machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Take the guest display screenshot"));
     }
 };
 
@@ -689,7 +689,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Configure video capture settings"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure video capture"));
     }
 };
 
@@ -721,7 +721,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle video capture"));
+        setStatusTip(QApplication::translate("UIActionPool", "Activate the guest display video capture"));
     }
 };
 
@@ -753,7 +753,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "R&emote Display"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle remote desktop (RDP) connections to this machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Allow remote desktop (RDP) connections to this machine"));
     }
 };
 
@@ -807,7 +807,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Menu Bar Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Opens window to configure menu-bar"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display window to configure menu-bar"));
     }
 };
 
@@ -839,7 +839,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Show Menu &Bar"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle menu-bar visibility for this machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable menu-bar visibility"));
     }
 };
 #endif /* !RT_OS_DARWIN */
@@ -894,7 +894,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Status Bar Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Opens window to configure status-bar"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display window to configure status-bar"));
     }
 };
 
@@ -925,7 +925,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Show Status &Bar"));
-        setStatusTip(QApplication::translate("UIActionPool", "Toggle status-bar visibility for this machine"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable status-bar visibility"));
     }
 };
 
@@ -1027,7 +1027,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Keyboard Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure shortcuts"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure keyboard shortcuts"));
     }
 };
 
@@ -1301,7 +1301,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Hard Drive Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of hard drives"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure hard drives"));
     }
 };
 
@@ -1409,7 +1409,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Network Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of network adapters"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure network adapters"));
     }
 };
 
@@ -1466,7 +1466,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&USB Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Change the settings of USB devices"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure USB devices"));
     }
 };
 
@@ -1595,7 +1595,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Shared Folders Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Create or modify shared folders"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure shared folders"));
     }
 };
 
@@ -1630,7 +1630,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Insert Guest Additions CD image..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual drive"));
+        setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual optical drive"));
     }
 };
 
