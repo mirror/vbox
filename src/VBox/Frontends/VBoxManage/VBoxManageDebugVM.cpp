@@ -292,7 +292,7 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
 }
 
 /**
- * Handles the os sub-command.
+ * Handles the osdetect sub-command.
  *
  * @returns Suitable exit code.
  * @param   a                   The handler arguments.
@@ -314,7 +314,7 @@ static RTEXITCODE handleDebugVM_OSDetect(HandlerArg *a, IMachineDebugger *pDebug
 }
 
 /**
- * Handles the os sub-command.
+ * Handles the osinfo sub-command.
  *
  * @returns Suitable exit code.
  * @param   a                   The handler arguments.
@@ -331,6 +331,43 @@ static RTEXITCODE handleDebugVM_OSInfo(HandlerArg *a, IMachineDebugger *pDebugge
     CHECK_ERROR2_RET(pDebugger, COMGETTER(OSVersion)(bstrVersion.asOutParam()), RTEXITCODE_FAILURE);
     RTPrintf("Name:    %ls\n", bstrName.raw());
     RTPrintf("Version: %ls\n", bstrVersion.raw());
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handles the osdmsg sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_OSDmesg(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    /*
+     * Parse argument.
+     */
+    uint32_t                    uMaxMessages = 0;
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--lines", 'n', RTGETOPT_REQ_UINT32 },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+        switch (rc)
+        {
+            case 'n': uMaxMessages = ValueUnion.u32; break;
+            default: return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+        }
+
+    /*
+     * Do it.
+     */
+    com::Bstr bstrDmesg;
+    CHECK_ERROR2_RET(pDebugger, QueryOSKernelLog(uMaxMessages, bstrDmesg.asOutParam()), RTEXITCODE_FAILURE);
+    RTPrintf("%ls\n", bstrDmesg.raw());
     return RTEXITCODE_SUCCESS;
 }
 
@@ -684,6 +721,8 @@ int handleDebugVM(HandlerArg *pArgs)
                 rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "osinfo"))
                 rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "osdmesg"))
+                rcExit = handleDebugVM_OSDmesg(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "setregisters"))
                 rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "show"))

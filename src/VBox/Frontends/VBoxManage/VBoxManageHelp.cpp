@@ -767,6 +767,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            logflags [--release|--debug] <settings> ...|\n"
                      "                            osdetect |\n"
                      "                            osinfo |\n"
+                     "                            osdmesg [--lines|-n <N>] |\n"
                      "                            getregisters [--cpu <id>] <reg>|all ... |\n"
                      "                            setregisters [--cpu <id>] <reg>=<value> ... |\n"
                      "                            show [--human-readable|--sh-export|--sh-eval|\n"
