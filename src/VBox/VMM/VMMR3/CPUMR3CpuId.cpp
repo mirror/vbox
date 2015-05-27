@@ -3031,7 +3031,6 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         }
         else
         {
-            Assert(pCpum->GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_INTEL);
             pCurLeaf->uEax = 0;
             pCurLeaf->uEbx = 0;
             pCurLeaf->uEcx = 0;
