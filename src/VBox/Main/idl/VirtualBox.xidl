@@ -18396,6 +18396,44 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         can only be changed when the VM is not running.
       </desc>
     </attribute>
+    <attribute name="propertiesList" type="wstring" readonly="yes" safearray="yes">
+      <desc>
+        Array of names of tunable properties, which can be supported by audio driver.
+      </desc>
+    </attribute>
+
+    <method name="setProperty">
+      <desc>
+        Sets an audio specific property string.
+
+        If you pass @c null or empty string as a key @a value, the given @a key
+        will be deleted.
+
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the key to set.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Value to assign to the key.</desc>
+      </param>
+    </method>
+
+    <method name="getProperty" const="yes">
+      <desc>
+        Returns an audio specific property string.
+
+        If the requested data @a key does not exist, this function will
+        succeed and return an empty string in the @a value argument.
+
+      </desc>
+      <param name="key" type="wstring" dir="in">
+        <desc>Name of the key to get.</desc>
+      </param>
+      <param name="value" type="wstring" dir="return">
+        <desc>Value of the requested key.</desc>
+      </param>
+    </method>
+
   </interface>
 
   <enum

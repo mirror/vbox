@@ -38,6 +38,7 @@ struct AudioAdapterData
     BOOL mEnabled;
     AudioDriverType_T mAudioDriver;
     AudioControllerType_T mAudioController;
+    std::map<com::Utf8Str, com::Utf8Str>  properties;
 };
 
 struct AudioAdapter::Data
@@ -346,6 +347,61 @@ HRESULT AudioAdapter::setAudioController(AudioControllerType_T aAudioController)
     return rc;
 }
 
+HRESULT AudioAdapter::getPropertiesList(std::vector<com::Utf8Str>& aProperties)
+{
+    using namespace settings;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aProperties.resize(0);
+    StringsMap::const_iterator cit = mData->m->properties.begin();
+    while(cit!=mData->m->properties.end())
+    {
+        Utf8Str key = cit->first;
+        aProperties.push_back(cit->first);
+        ++cit;
+    }
+
+    return S_OK;
+}
+
+HRESULT AudioAdapter::getProperty(const com::Utf8Str &aKey, com::Utf8Str &aValue)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    settings::StringsMap::const_iterator cit = mData->m->properties.find(aKey);
+    if (cit != mData->m->properties.end())
+        aValue = cit->second;
+
+    return S_OK;
+}
+
+HRESULT AudioAdapter::setProperty(const com::Utf8Str &aKey, const com::Utf8Str &aValue)
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Generic properties processing.
+     * Look up the old value first; if nothing's changed then do nothing.
+     */
+    Utf8Str strOldValue;
+
+    settings::StringsMap::const_iterator cit = mData->m->properties.find(aKey);
+    if (cit != mData->m->properties.end())
+        strOldValue = cit->second;
+
+    if (strOldValue != aValue)
+    {
+        if (aValue.isEmpty())
+            mData->m->properties.erase(aKey);
+        else
+            mData->m->properties[aKey] = aValue;
+    }
+
+    alock.release();
+
+    return S_OK;
+}
+
 // IAudioAdapter methods
 /////////////////////////////////////////////////////////////////////////////
 
@@ -382,6 +438,13 @@ HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
     mData->m->mAudioController = data.controllerType;
     mData->m->mAudioDriver = data.driverType;
 
+    std::map<com::Utf8Str, com::Utf8Str>::const_iterator cit = data.properties.begin();
+    while(cit!=data.properties.end())
+    {
+        mData->m->properties[cit->first] = cit->second;
+        ++cit;
+    }
+
     return S_OK;
 }
 
@@ -402,6 +465,14 @@ HRESULT AudioAdapter::i_saveSettings(settings::AudioAdapter &data)
     data.fEnabled = !!mData->m->mEnabled;
     data.controllerType = mData->m->mAudioController;
     data.driverType = mData->m->mAudioDriver;
+
+    std::map<com::Utf8Str, com::Utf8Str>::const_iterator cit = mData->m->properties.begin();
+    while(cit!=mData->m->properties.end())
+    {
+        data.properties[cit->first] = cit->second;
+        ++cit;
+    }
+
     return S_OK;
 }
 

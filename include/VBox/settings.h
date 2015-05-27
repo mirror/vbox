@@ -704,12 +704,14 @@ struct AudioAdapter
                 || (    (fEnabled        == a.fEnabled)
                      && (controllerType  == a.controllerType)
                      && (driverType      == a.driverType)
+                     && (properties      == a.properties)
                    );
     }
 
     bool                    fEnabled;
     AudioControllerType_T   controllerType;
     AudioDriverType_T       driverType;
+    std::map<com::Utf8Str, com::Utf8Str> properties;
 };
 
 /**
