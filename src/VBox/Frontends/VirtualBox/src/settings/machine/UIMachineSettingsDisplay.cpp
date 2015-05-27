@@ -492,10 +492,13 @@ void UIMachineSettingsDisplay::retranslateUi()
 
     /* Screen stuff: */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    m_pLabelVideoMemorySizeMin->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMinVRAM));
-    m_pLabelVideoMemorySizeMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
-    m_pLabelVideoScreenCountMin->setText(tr("<qt>%1</qt>").arg(1));
-    m_pLabelVideoScreenCountMax->setText(tr("<qt>%1</qt>").arg(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
+    m_pEditorVideoMemorySize->setSuffix(QString(" %1").arg(tr("MB")));
+    m_pLabelVideoMemorySizeMin->setText(tr("%1 MB").arg(m_iMinVRAM));
+    m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
+    m_pLabelVideoScreenCountMin->setText(QString::number(1));
+    m_pLabelVideoScreenCountMax->setText(QString::number(qMin(sys.GetMaxGuestMonitors(), (ULONG)8)));
+    m_pLabelGuestScreenScaleMin->setText(tr("%1%").arg(100));
+    m_pLabelGuestScreenScaleMax->setText(tr("%1%").arg(200));
 
     /* Remote Display stuff: */
     m_pComboRemoteDisplayAuthMethod->setItemText(0, gpConverter->toString(KAuthType_Null));
@@ -503,14 +506,14 @@ void UIMachineSettingsDisplay::retranslateUi()
     m_pComboRemoteDisplayAuthMethod->setItemText(2, gpConverter->toString(KAuthType_Guest));
 
     /* Video Capture stuff: */
+    m_pEditorVideoCaptureFrameRate->setSuffix(QString(" %1").arg(tr("fps")));
+    m_pEditorVideoCaptureBitRate->setSuffix(QString(" %1").arg(tr("kbps")));
     m_pComboVideoCaptureSize->setItemText(0, tr("User Defined"));
     m_pLabelVideoCaptureFrameRateMin->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->minimum()));
     m_pLabelVideoCaptureFrameRateMax->setText(tr("%1 fps").arg(m_pSliderVideoCaptureFrameRate->maximum()));
-    m_pLabelVideoCaptureFrameRateUnits->setText(tr("fps"));
     m_pLabelVideoCaptureQualityMin->setText(tr("low", "quality"));
     m_pLabelVideoCaptureQualityMed->setText(tr("medium", "quality"));
     m_pLabelVideoCaptureQualityMax->setText(tr("high", "quality"));
-    m_pLabelVideoCaptureBitRateUnits->setText(tr("kbps"));
 
     updateVideoCaptureSizeHint();
 }
@@ -526,7 +529,6 @@ void UIMachineSettingsDisplay::polishPage()
     m_pLabelVideoMemorySizeMin->setEnabled(isMachineOffline());
     m_pLabelVideoMemorySizeMax->setEnabled(isMachineOffline());
     m_pEditorVideoMemorySize->setEnabled(isMachineOffline());
-    m_pLabelVideoMemoryUnit->setEnabled(isMachineOffline());
     m_pLabelVideoScreenCount->setEnabled(isMachineOffline());
     m_pSliderVideoScreenCount->setEnabled(isMachineOffline());
     m_pLabelVideoScreenCountMin->setEnabled(isMachineOffline());
@@ -659,12 +661,10 @@ void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
     m_pLabelVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pContainerSliderVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pEditorVideoCaptureFrameRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pLabelVideoCaptureFrameRateUnits->setEnabled(fIsVideoCaptureOptionsEnabled);
 
     m_pLabelVideoCaptureRate->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pContainerSliderVideoCaptureQuality->setEnabled(fIsVideoCaptureOptionsEnabled);
     m_pEditorVideoCaptureBitRate->setEnabled(fIsVideoCaptureOptionsEnabled);
-    m_pLabelVideoCaptureBitRateUnits->setEnabled(fIsVideoCaptureOptionsEnabled);
 
     m_pLabelVideoCaptureScreens->setEnabled(fIsVideoCaptureScreenOptionEnabled);
     m_pLabelVideoCaptureSizeHint->setEnabled(fIsVideoCaptureScreenOptionEnabled);
@@ -976,7 +976,7 @@ void UIMachineSettingsDisplay::checkVRAMRequirements()
     m_pSliderVideoMemorySize->setPageStep(calcPageStep(m_iMaxVRAMVisible));
     m_pSliderVideoMemorySize->setWarningHint(1, qMin((int)uNeedMBytes, m_iMaxVRAMVisible));
     m_pSliderVideoMemorySize->setOptimalHint(qMin((int)uNeedMBytes, m_iMaxVRAMVisible), m_iMaxVRAMVisible);
-    m_pLabelVideoMemorySizeMax->setText(tr("<qt>%1&nbsp;MB</qt>").arg(m_iMaxVRAMVisible));
+    m_pLabelVideoMemorySizeMax->setText(tr("%1 MB").arg(m_iMaxVRAMVisible));
 }
 
 bool UIMachineSettingsDisplay::shouldWeWarnAboutLowVideoMemory()

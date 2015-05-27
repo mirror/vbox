@@ -89,13 +89,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
-           <widget class="QLabel" name="m_pLabelVideoMemoryUnit">
-            <property name="text">
-             <string>MB</string>
-            </property>
-           </widget>
-          </item>
           <item row="2" column="0">
            <widget class="QLabel" name="m_pLabelVideoScreenCount">
             <property name="text">
@@ -178,11 +171,7 @@
              </widget>
             </item>
             <item row="1" column="0">
-             <widget class="QLabel" name="m_pLabelGuestScreenScaleMin">
-              <property name="text">
-               <string>100%</string>
-              </property>
-             </widget>
+             <widget class="QLabel" name="m_pLabelGuestScreenScaleMin"/>
             </item>
             <item row="1" column="1">
              <spacer name="m_pSpacerGuestScreenScale">
@@ -198,11 +187,7 @@
              </spacer>
             </item>
             <item row="1" column="2">
-             <widget class="QLabel" name="m_pLabelGuestScreenScaleMax">
-              <property name="text">
-               <string>200%</string>
-              </property>
-             </widget>
+             <widget class="QLabel" name="m_pLabelGuestScreenScaleMax"/>
             </item>
            </layout>
           </item>
@@ -219,14 +204,14 @@
           <item row="6" column="0">
            <widget class="QLabel" name="m_pLabelHiDPI">
             <property name="text">
-             <string>HiDPI:</string>
+             <string>HiDPI Support:</string>
             </property>
             <property name="alignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
-          <item row="6" column="1" colspan="2">
+          <item row="6" column="1">
            <widget class="QCheckBox" name="m_pCheckBoxUnscaledHiDPIOutput">
             <property name="sizePolicy">
              <sizepolicy vsizetype="Fixed" hsizetype="MinimumExpanding">
@@ -252,7 +237,7 @@
             </property>
            </widget>
           </item>
-          <item row="7" column="1" colspan="2">
+          <item row="7" column="1">
            <widget class="QCheckBox" name="m_pCheckbox3D">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -268,7 +253,7 @@
             </property>
            </widget>
           </item>
-          <item row="8" column="1" colspan="2">
+          <item row="8" column="1">
            <widget class="QCheckBox" name="m_pCheckbox2DVideo">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -358,7 +343,7 @@
              <item row="0" column="1">
               <widget class="QLineEdit" name="m_pEditorRemoteDisplayPort">
                <property name="whatsThis">
-                <string>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</string>
+                <string>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</string>
                </property>
               </widget>
              </item>
@@ -378,7 +363,7 @@
              <item row="1" column="1">
               <widget class="QComboBox" name="m_pComboRemoteDisplayAuthMethod">
                <property name="whatsThis">
-                <string>Defines the VRDP authentication method.</string>
+                <string>Selects the VRDP authentication method.</string>
                </property>
               </widget>
              </item>
@@ -398,7 +383,7 @@
              <item row="2" column="1">
               <widget class="QLineEdit" name="m_pEditorRemoteDisplayTimeout">
                <property name="whatsThis">
-                <string>Specifies the timeout for guest authentication, in milliseconds.</string>
+                <string>Holds the timeout for guest authentication, in milliseconds.</string>
                </property>
               </widget>
              </item>
@@ -421,7 +406,7 @@
                 </sizepolicy>
                </property>
                <property name="whatsThis">
-                <string>Specifies whether multiple simultaneous connections to the VM are permitted.</string>
+                <string>When checked, multiple simultaneous connections to the VM are permitted.</string>
                </property>
                <property name="text">
                 <string>&amp;Allow Multiple Connections</string>
@@ -508,7 +493,7 @@
              <item row="0" column="1" colspan="3">
               <widget class="VBoxFilePathSelectorWidget" name="m_pEditorVideoCapturePath">
                <property name="whatsThis">
-                <string>This setting determines the filename VirtualBox uses to save the recorded content.</string>
+                <string>Holds the filename VirtualBox uses to save the recorded content.</string>
                </property>
               </widget>
              </item>
@@ -534,21 +519,21 @@
                 </sizepolicy>
                </property>
                <property name="whatsThis">
-                <string>This setting determines the resolution (frame size) of the recorded video.</string>
+                <string>Selects the resolution (frame size) of the recorded video.</string>
                </property>
               </widget>
              </item>
              <item row="1" column="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureWidth">
                <property name="whatsThis">
-                <string>This setting determines the &lt;b>horizontal&lt;/b> resolution (frame width) of the recorded video.</string>
+                <string>Holds the &lt;b>horizontal&lt;/b> resolution (frame width) of the recorded video.</string>
                </property>
               </widget>
              </item>
              <item row="1" column="3">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureHeight">
                <property name="whatsThis">
-                <string>This setting determines the &lt;b>vertical&lt;/b> resolution (frame height) of the recorded video.</string>
+                <string>Holds the &lt;b>vertical&lt;/b> resolution (frame height) of the recorded video.</string>
                </property>
               </widget>
              </item>
@@ -574,7 +559,7 @@
                 <item row="0" column="0" colspan="3">
                  <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureFrameRate">
                   <property name="whatsThis">
-                   <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</string>
+                   <string>Controls the maximum number of &lt;b>frames per second&lt;/b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</string>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -603,15 +588,12 @@
                </layout>
               </widget>
              </item>
-             <item row="2" column="2">
+             <item row="2" column="2" colspan="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureFrameRate">
                <property name="whatsThis">
-                <string>This setting determines the maximum number of &lt;b>frames per second&lt;/b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</string>
+                <string>Controls the maximum number of &lt;b>frames per second&lt;/b>. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</string>
                </property>
               </widget>
-             </item>
-             <item row="2" column="3">
-              <widget class="QLabel" name="m_pLabelVideoCaptureFrameRateUnits"/>
              </item>
              <item row="4" column="0">
               <widget class="QLabel" name="m_pLabelVideoCaptureRate">
@@ -635,7 +617,7 @@
                 <item row="0" column="0" colspan="5">
                  <widget class="QIAdvancedSlider" name="m_pSliderVideoCaptureQuality">
                   <property name="whatsThis">
-                   <string>This setting determines the &lt;b>quality&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
+                   <string>Controls the &lt;b>quality&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Horizontal</enum>
@@ -680,15 +662,12 @@
                </layout>
               </widget>
              </item>
-             <item row="4" column="2">
+             <item row="4" column="2" colspan="2">
               <widget class="QSpinBox" name="m_pEditorVideoCaptureBitRate">
                <property name="whatsThis">
-                <string>This setting determines the bitrate in &lt;b>kilobits per second&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
+                <string>Holds the bitrate in &lt;b>kilobits per second&lt;/b>. Increasing this value will make the video look better at the cost of an increased file size.</string>
                </property>
               </widget>
-             </item>
-             <item row="4" column="3">
-              <widget class="QLabel" name="m_pLabelVideoCaptureBitRateUnits"/>
              </item>
              <item row="6" column="1">
               <widget class="QLabel" name="m_pLabelVideoCaptureSizeHint"/>
