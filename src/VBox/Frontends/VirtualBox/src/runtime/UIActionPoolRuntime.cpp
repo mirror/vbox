@@ -497,6 +497,7 @@ protected:
     }
 };
 
+#ifndef RT_OS_DARWIN
 class UIActionSimplePerformMinimizeWindow : public UIActionSimple
 {
     Q_OBJECT;
@@ -531,6 +532,7 @@ protected:
         setStatusTip(QApplication::translate("UIActionPool", "Minimize currently active window"));
     }
 };
+#endif /* !RT_OS_DARWIN */
 
 class UIActionSimplePerformWindowAdjust : public UIActionSimple
 {
@@ -2065,7 +2067,9 @@ void UIActionPoolRuntime::preparePool()
     m_pool[UIActionIndexRT_M_View_T_Fullscreen] = new UIActionToggleFullscreenMode(this);
     m_pool[UIActionIndexRT_M_View_T_Seamless] = new UIActionToggleSeamlessMode(this);
     m_pool[UIActionIndexRT_M_View_T_Scale] = new UIActionToggleScaleMode(this);
+#ifndef RT_OS_DARWIN
     m_pool[UIActionIndexRT_M_View_S_MinimizeWindow] = new UIActionSimplePerformMinimizeWindow(this);
+#endif /* !RT_OS_DARWIN */
     m_pool[UIActionIndexRT_M_View_S_AdjustWindow] = new UIActionSimplePerformWindowAdjust(this);
     m_pool[UIActionIndexRT_M_View_T_GuestAutoresize] = new UIActionToggleGuestAutoresize(this);
     m_pool[UIActionIndexRT_M_View_S_TakeScreenshot] = new UIActionSimplePerformTakeScreenshot(this);

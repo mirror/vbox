@@ -56,7 +56,9 @@ enum UIActionIndexRT
     UIActionIndexRT_M_View_T_Fullscreen,
     UIActionIndexRT_M_View_T_Seamless,
     UIActionIndexRT_M_View_T_Scale,
+#ifndef RT_OS_DARWIN
     UIActionIndexRT_M_View_S_MinimizeWindow,
+#endif /* !RT_OS_DARWIN */
     UIActionIndexRT_M_View_S_AdjustWindow,
     UIActionIndexRT_M_View_T_GuestAutoresize,
     UIActionIndexRT_M_View_S_TakeScreenshot,

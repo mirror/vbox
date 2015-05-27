@@ -265,8 +265,8 @@ private slots:
     void sltClose();
 
     /* "View" menu functionality: */
-    void sltMinimizeWindow();
-    void sltAdjustWindow();
+    void sltMinimizeActiveMachineWindow();
+    void sltAdjustMachineWindows();
     void sltToggleGuestAutoresize(bool fEnabled);
     void sltTakeScreenshot();
     void sltOpenVideoCaptureOptions();
@@ -297,7 +297,6 @@ private slots:
 
 #ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
     /* "Window" menu functionality: */
-    void sltMinimizeActiveMachineWindow();
     void sltSwitchToMachineWindow();
 
     /* "Dock" menu functionality: */

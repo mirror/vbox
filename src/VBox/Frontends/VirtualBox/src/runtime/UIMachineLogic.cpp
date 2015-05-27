@@ -970,7 +970,9 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause));
+#ifndef Q_WS_MAC
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow));
+#endif /* !Q_WS_MAC */
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot));
     m_pRunningOrPausedActions->addAction(actionPool()->action(UIActionIndexRT_M_View_M_VideoCapture));
@@ -1040,10 +1042,12 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPowerOff()), Qt::QueuedConnection);
 
     /* 'View' actions connections: */
+#ifndef Q_WS_MAC
     connect(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow), SIGNAL(triggered()),
-            this, SLOT(sltMinimizeWindow()));
+            this, SLOT(sltMinimizeActiveMachineWindow()));
+#endif /* !Q_WS_MAC */
     connect(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
-            this, SLOT(sltAdjustWindow()));
+            this, SLOT(sltAdjustMachineWindows()));
     connect(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
@@ -1537,17 +1541,18 @@ void UIMachineLogic::sltClose()
     activeMachineWindow()->close();
 }
 
-void UIMachineLogic::sltMinimizeWindow()
+void UIMachineLogic::sltMinimizeActiveMachineWindow()
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Minimize currently active machine-window: */
+    /* Minimize active machine-window: */
+    AssertPtrReturnVoid(activeMachineWindow());
     activeMachineWindow()->showMinimized();
 }
 
-void UIMachineLogic::sltAdjustWindow()
+void UIMachineLogic::sltAdjustMachineWindows()
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())
@@ -1985,13 +1990,6 @@ void UIMachineLogic::sltShowLogDialog()
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
-void UIMachineLogic::sltMinimizeActiveMachineWindow()
-{
-    /* Minimize active machine-window: */
-    AssertPtrReturnVoid(activeMachineWindow());
-    activeMachineWindow()->showMinimized();
-}
-
 void UIMachineLogic::sltSwitchToMachineWindow()
 {
     /* Acquire appropriate sender action: */
