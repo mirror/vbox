@@ -285,9 +285,9 @@ QVariant UIEncryptionDataModel::headerData(int iSection, Qt::Orientation orienta
     /* Depending on column index: */
     switch (iSection)
     {
-        case UIEncryptionDataTableSection_Status:   return tr("Status", "password table field");
-        case UIEncryptionDataTableSection_Id:       return tr("ID", "password table field");
-        case UIEncryptionDataTableSection_Password: return tr("Password", "password table field");
+        case UIEncryptionDataTableSection_Status:   return UIAddDiskEncryptionPasswordDialog::tr("Status", "password table field");
+        case UIEncryptionDataTableSection_Id:       return UIAddDiskEncryptionPasswordDialog::tr("ID", "password table field");
+        case UIEncryptionDataTableSection_Password: return UIAddDiskEncryptionPasswordDialog::tr("Password", "password table field");
         default: break;
     }
     /* Null value by default: */
@@ -346,14 +346,14 @@ QVariant UIEncryptionDataModel::data(const QModelIndex &index, int iRole /* = Qt
             /* We are generating tool-tip here and not in retranslateUi() because of the tricky plural form handling,
              * but be quiet, it's safe enough because the tool-tip being re-acquired every time on mouse-hovering. */
             const QStringList encryptedMediums = m_encryptedMediums.values(m_encryptionPasswords.keys().at(index.row()));
-            return tr("<nobr>Used by the following %n hard drive(s):</nobr><br>%1",
-                      "This text is never used with n == 0. "
-                      "Feel free to drop the %n where possible, "
-                      "we only included it because of problems with Qt Linguist "
-                      "(but the user can see how many hard drives are in the tool-tip "
-                      "and doesn't need to be told).",
-                      encryptedMediums.size())
-                      .arg(encryptedMediums.join("<br>"));
+            return UIAddDiskEncryptionPasswordDialog::tr("<nobr>Used by the following %n hard drive(s):</nobr><br>%1",
+                                                         "This text is never used with n == 0. "
+                                                         "Feel free to drop the %n where possible, "
+                                                         "we only included it because of problems with Qt Linguist "
+                                                         "(but the user can see how many hard drives are in the tool-tip "
+                                                         "and doesn't need to be told).",
+                                                         encryptedMediums.size())
+                                                         .arg(encryptedMediums.join("<br>"));
         }
         default:
             break;

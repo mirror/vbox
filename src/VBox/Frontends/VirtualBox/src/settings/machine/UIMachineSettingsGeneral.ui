@@ -275,7 +275,7 @@
           <item row="0" column="1">
            <widget class="QComboBox" name="m_pComboCipher">
             <property name="whatsThis" >
-             <string>Holds the cipher to be used for encrypting the virtual machine disks.</string>
+             <string>Selects the cipher to be used for encrypting the virtual machine disks.</string>
             </property>
            </widget>
           </item>
