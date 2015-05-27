@@ -4905,12 +4905,20 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     /* Clear leaf 0xd just in case we're loading an old state... */
     else if (pCurLeaf)
     {
-        AssertLogRel(uVersion <= CPUM_SAVED_STATE_VERSION_PUT_STRUCT);
         for (uint32_t uSubLeaf = 0; uSubLeaf < 64; uSubLeaf++)
         {
             pCurLeaf = cpumR3CpuIdGetLeaf(paLeaves, cLeaves, UINT32_C(0x0000000d), uSubLeaf);
             if (pCurLeaf)
+            {
+                AssertLogRelMsg(   uVersion <= CPUM_SAVED_STATE_VERSION_PUT_STRUCT
+                                || (   pCurLeaf->uEax == 0
+                                    && pCurLeaf->uEbx == 0
+                                    && pCurLeaf->uEcx == 0
+                                    && pCurLeaf->uEdx == 0),
+                                ("uVersion=%#x; %#x %#x %#x %#x\n",
+                                 uVersion, pCurLeaf->uEax, pCurLeaf->uEbx, pCurLeaf->uEcx, pCurLeaf->uEdx));
                 pCurLeaf->uEax = pCurLeaf->uEbx = pCurLeaf->uEcx = pCurLeaf->uEdx = 0;
+            }
         }
     }
 
