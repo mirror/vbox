@@ -106,6 +106,11 @@
       </listitem>
 
       <listitem>
+        <para>Guest Control: major overhaul, for example fixing wrong parameter quoting
+          (bug #13157)</para>
+      </listitem>
+
+      <listitem>
         <para>USB: added USB traffic capturing (see <xref linkend="usbtrafficcapturing" />)</para>
       </listitem>
 
