@@ -1,4 +1,5 @@
 #!/bin/sh
+# $Id$
 ## @file
 #
 # VirtualBox checkinstall script for Solaris.
