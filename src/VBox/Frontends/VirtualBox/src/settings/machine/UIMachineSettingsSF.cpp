@@ -407,27 +407,24 @@ void UIMachineSettingsSF::setOrderAfter (QWidget *aWidget)
 
 void UIMachineSettingsSF::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIMachineSettingsSF::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIMachineSettingsSF::retranslateUi(this);
 
-    mNewAction->setText (tr ("&Add Shared Folder"));
-    mEdtAction->setText (tr ("&Edit Shared Folder"));
-    mDelAction->setText (tr ("&Remove Shared Folder"));
+    mNewAction->setText(tr("&Add Shared Folder"));
+    mEdtAction->setText(tr("&Edit Shared Folder"));
+    mDelAction->setText(tr("&Remove Shared Folder"));
 
-    mNewAction->setToolTip (mNewAction->text().remove ('&') +
-        QString (" (%1)").arg (mNewAction->shortcut().toString()));
-    mEdtAction->setToolTip (mEdtAction->text().remove ('&') +
-        QString (" (%1)").arg (mEdtAction->shortcut().toString()));
-    mDelAction->setToolTip (mDelAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelAction->shortcut().toString()));
+    mNewAction->setWhatsThis(tr("Adds new shared folder definition."));
+    mEdtAction->setWhatsThis(tr("Edits selected shared folder definition."));
+    mDelAction->setWhatsThis(tr("Removes selected shared folder definition."));
 
-    mNewAction->setWhatsThis (tr ("Adds a new shared folder definition."));
-    mEdtAction->setWhatsThis (tr ("Edits the selected shared folder definition."));
-    mDelAction->setWhatsThis (tr ("Removes the selected shared folder definition."));
+    mNewAction->setToolTip(mNewAction->whatsThis());
+    mEdtAction->setToolTip(mEdtAction->whatsThis());
+    mDelAction->setToolTip(mDelAction->whatsThis());
 
-    mTrFull = tr ("Full");
-    mTrReadOnly = tr ("Read-only");
-    mTrYes = tr ("Yes"); /** @todo Need to figure out if this string is necessary at all! */
+    mTrFull = tr("Full");
+    mTrReadOnly = tr("Read-only");
+    mTrYes = tr("Yes");
 }
 
 void UIMachineSettingsSF::addTriggered()

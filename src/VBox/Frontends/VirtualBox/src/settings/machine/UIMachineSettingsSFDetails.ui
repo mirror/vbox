@@ -76,7 +76,7 @@
    <item row="4" column="1" >
     <widget class="QCheckBox" name="mCbPermanent" >
      <property name="toolTip" >
-      <string>If checked, this shared folder will be permanent.</string>
+      <string>When checked, this shared folder will be permanent.</string>
      </property>
      <property name="text" >
       <string>&amp;Make Permanent</string>
