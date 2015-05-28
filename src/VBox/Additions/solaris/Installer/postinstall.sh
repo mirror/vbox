@@ -93,7 +93,7 @@ fi
 if test "$currentzone" = "global"; then
     # vboxguest.sh would've been installed, we just need to call it.
     echo "Configuring VirtualBox guest kernel module..."
-    # stop all previous moduels (vboxguest, vboxfs) and start only starts vboxguest
+    # stop all previous modules (vboxguest, vboxfs) and start only starts vboxguest
     $vboxadditions_path/vboxguest.sh stopall silentunload
     $vboxadditions_path/vboxguest.sh start
 
