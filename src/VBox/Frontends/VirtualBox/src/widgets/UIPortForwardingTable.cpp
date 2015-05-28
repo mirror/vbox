@@ -426,12 +426,12 @@ QVariant UIPortForwardingModel::headerData(int iSection, Qt::Orientation orienta
         /* Switch for different columns: */
         switch (iSection)
         {
-            case UIPortForwardingDataType_Name: return tr("Name");
-            case UIPortForwardingDataType_Protocol: return tr("Protocol");
-            case UIPortForwardingDataType_HostIp: return tr("Host IP");
-            case UIPortForwardingDataType_HostPort: return tr("Host Port");
-            case UIPortForwardingDataType_GuestIp: return tr("Guest IP");
-            case UIPortForwardingDataType_GuestPort: return tr("Guest Port");
+            case UIPortForwardingDataType_Name: return UIPortForwardingTable::tr("Name");
+            case UIPortForwardingDataType_Protocol: return UIPortForwardingTable::tr("Protocol");
+            case UIPortForwardingDataType_HostIp: return UIPortForwardingTable::tr("Host IP");
+            case UIPortForwardingDataType_HostPort: return UIPortForwardingTable::tr("Host Port");
+            case UIPortForwardingDataType_GuestIp: return UIPortForwardingTable::tr("Guest IP");
+            case UIPortForwardingDataType_GuestPort: return UIPortForwardingTable::tr("Guest Port");
             default: break;
         }
     }
