@@ -573,7 +573,7 @@ Qt::Alignment UIMachineWindow::viewAlignment(UIVisualStateType visualStateType)
 void UIMachineWindow::handleNativeNotification(const QString &strNativeNotificationName, QWidget *pWidget)
 {
     /* Handle arrived notification: */
-    LogRel(("UIMachineWindow::handleNativeNotification: Notification '%s' received.\n",
+    LogRel(("GUI: UIMachineWindow::handleNativeNotification: Notification '%s' received\n",
             strNativeNotificationName.toAscii().constData()));
     if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWidget))
     {

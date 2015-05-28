@@ -659,7 +659,7 @@ void UIMachineLogic::sltKeyboardLedsChanged()
         keyboardHandler()->winSkipKeyboardEvents(false);
     }
     else
-        LogRel2(("HID LEDs Sync: already in sync\n"));
+        LogRel2(("GUI: HID LEDs Sync: already in sync\n"));
 #else
     LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states does not supported on this platform.\n"));
 #endif
@@ -708,7 +708,7 @@ void UIMachineLogic::sltShowWindows()
 
 void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)
 {
-    LogRel(("UIMachineLogic: Guest-screen count changed.\n"));
+    LogRel(("GUI: UIMachineLogic: Guest-screen count changed\n"));
 
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -717,7 +717,7 @@ void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong,
 
 void UIMachineLogic::sltHostScreenCountChange()
 {
-    LogRel(("UIMachineLogic: Host-screen count changed.\n"));
+    LogRel(("GUI: UIMachineLogic: Host-screen count changed\n"));
 
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -726,7 +726,7 @@ void UIMachineLogic::sltHostScreenCountChange()
 
 void UIMachineLogic::sltHostScreenGeometryChange()
 {
-    LogRel(("UIMachineLogic: Host-screen geometry changed.\n"));
+    LogRel(("GUI: UIMachineLogic: Host-screen geometry changed\n"));
 
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -735,7 +735,7 @@ void UIMachineLogic::sltHostScreenGeometryChange()
 
 void UIMachineLogic::sltHostScreenAvailableAreaChange()
 {
-    LogRel(("UIMachineLogic: Host-screen available-area changed.\n"));
+    LogRel(("GUI: UIMachineLogic: Host-screen available-area changed\n"));
 
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -2071,7 +2071,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     WinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
     keyboardHandler()->winSkipKeyboardEvents(false);
 #else
-    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones does not supported on this platform.\n"));
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones does not supported on this platform\n"));
 #endif
 }
 
@@ -2096,7 +2096,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
         WinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
         keyboardHandler()->winSkipKeyboardEvents(false);
 #else
-        LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states does not supported on this platform.\n"));
+        LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states does not supported on this platform\n"));
 #endif
         m_pHostLedsState = NULL;
     }
@@ -2572,14 +2572,14 @@ bool UIMachineLogic::dbgCreated()
                 return true;
             }
 
-            LogRel(("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
+            LogRel(("GUI: DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
                     m_pDbgGuiVT->u32Version, m_pDbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
         }
         else
-            LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
+            LogRel(("GUI: DBGGuiCreate failed, rc=%Rrc\n", rc));
     }
     else
-        LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
+        LogRel(("GUI: RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
 
     m_pDbgGui = 0;
     m_pDbgGuiVT = 0;

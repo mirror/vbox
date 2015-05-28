@@ -275,7 +275,7 @@ public:
         if (!fProcessed)
         {
             AssertMsgFailed(("VHWA command beinf destroyed unproceessed!"));
-            LogRel(("VHWA command being destroyed unproceessed!"));
+            LogRel(("GUI: VHWA command being destroyed unproceessed!"));
         }
 #ifdef DEBUG_misha
         g_EventCounter.dec();

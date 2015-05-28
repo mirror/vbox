@@ -90,7 +90,7 @@ bool UIMachineLogicSeamless::checkAvailability()
 
 void UIMachineLogicSeamless::adjustMachineWindowsGeometry()
 {
-    LogRel(("UIMachineLogicSeamless::adjustMachineWindowsGeometry\n"));
+    LogRel(("GUI: UIMachineLogicSeamless::adjustMachineWindowsGeometry\n"));
 
     /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
@@ -124,7 +124,7 @@ void UIMachineLogicSeamless::notifyAbout3DOverlayVisibilityChange(bool)
 
 void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
 {
-    LogRel(("UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
+    LogRel(("GUI: UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: Requested-state=%d, Machine-state=%d\n",
             uisession()->requestedVisualState(), uisession()->machineState()));
 
     /* Do not try to change visual-state type if machine was not started yet: */
@@ -138,7 +138,7 @@ void UIMachineLogicSeamless::sltCheckForRequestedVisualStateType()
     /* If 'seamless' visual-state type is no more supported: */
     if (!uisession()->isGuestSupportsSeamless())
     {
-        LogRel(("UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: "
+        LogRel(("GUI: UIMachineLogicSeamless::sltCheckForRequestedVisualStateType: "
                 "Leaving 'seamless' as it is no more supported...\n"));
         uisession()->setRequestedVisualState(UIVisualStateType_Seamless);
         uisession()->changeVisualState(UIVisualStateType_Normal);
@@ -153,7 +153,7 @@ void UIMachineLogicSeamless::sltMachineStateChanged()
     /* If machine-state changed from 'paused' to 'running': */
     if (uisession()->isRunning() && uisession()->wasPaused())
     {
-        LogRel(("UIMachineLogicSeamless::sltMachineStateChanged:"
+        LogRel(("GUI: UIMachineLogicSeamless::sltMachineStateChanged:"
                 "Machine-state changed from 'paused' to 'running': "
                 "Adjust machine-window geometry...\n"));
 
@@ -178,7 +178,7 @@ void UIMachineLogicSeamless::sltInvokePopupMenu()
 
 void UIMachineLogicSeamless::sltScreenLayoutChanged()
 {
-    LogRel(("UIMachineLogicSeamless::sltScreenLayoutChanged: Multi-screen layout changed.\n"));
+    LogRel(("GUI: UIMachineLogicSeamless::sltScreenLayoutChanged: Multi-screen layout changed.\n"));
 
     /* Make sure all machine-window(s) have proper geometry: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -187,7 +187,7 @@ void UIMachineLogicSeamless::sltScreenLayoutChanged()
 
 void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
-    LogRel(("UIMachineLogicSeamless: Guest-screen count changed.\n"));
+    LogRel(("GUI: UIMachineLogicSeamless: Guest-screen count changed.\n"));
 
     /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
@@ -198,7 +198,7 @@ void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType
 
 void UIMachineLogicSeamless::sltHostScreenCountChange()
 {
-    LogRel(("UIMachineLogicSeamless: Host-screen count changed.\n"));
+    LogRel(("GUI: UIMachineLogicSeamless: Host-screen count changed.\n"));
 
     /* Rebuild multi-screen layout: */
     m_pScreenLayout->rebuild();
