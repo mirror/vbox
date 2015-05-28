@@ -452,8 +452,8 @@ void UIMachineSettingsSystem::retranslateUi()
     m_pLabelCPUMax->setText(tr("%1 CPUs", "%1 is host cpu count * 2 for now").arg(m_uMaxGuestCPU));
 
     /* Retranslate the cpu cap slider legend: */
-    m_pLabelCPUExecCapMin->setText(tr("%1%", "Min CPU execution cap in %").arg(m_uMinGuestCPUExecCap));
-    m_pLabelCPUExecCapMax->setText(tr("%1%", "Max CPU execution cap in %").arg(m_uMaxGuestCPUExecCap));
+    m_pLabelCPUExecCapMin->setText(tr("%1%").arg(m_uMinGuestCPUExecCap));
+    m_pLabelCPUExecCapMax->setText(tr("%1%").arg(m_uMaxGuestCPUExecCap));
 
     /* Retranslate combo-boxes: */
     retranslateComboChipsetType();

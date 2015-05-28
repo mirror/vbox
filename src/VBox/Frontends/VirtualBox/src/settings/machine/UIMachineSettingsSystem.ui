@@ -148,9 +148,6 @@
              <property name="focusPolicy">
               <enum>Qt::StrongFocus</enum>
              </property>
-             <property name="toolTip">
-              <string>Move Up (Ctrl-Up)</string>
-             </property>
              <property name="whatsThis">
               <string>Moves the selected boot device up.</string>
              </property>
@@ -167,9 +164,6 @@
             <widget class="QIToolButton" name="mTbBootItemDown">
              <property name="focusPolicy">
               <enum>Qt::StrongFocus</enum>
-             </property>
-             <property name="toolTip">
-              <string>Move Down (Ctrl-Down)</string>
              </property>
              <property name="whatsThis">
               <string>Moves the selected boot device down.</string>
