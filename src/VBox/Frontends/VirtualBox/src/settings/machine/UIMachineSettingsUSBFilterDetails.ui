@@ -68,7 +68,7 @@
    <item row="1" column="1" >
     <widget class="QLineEdit" name="mLeVendorID" >
      <property name="toolTip" >
-      <string>Defines the vendor ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
+      <string>Holds the vendor ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -88,7 +88,7 @@
    <item row="2" column="1" >
     <widget class="QLineEdit" name="mLeProductID" >
      <property name="toolTip" >
-      <string>Defines the product ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
+      <string>Holds the product ID filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>XXXX&lt;/tt> where &lt;tt>X&lt;/tt> is a hexadecimal digit. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -108,7 +108,7 @@
    <item row="3" column="1" >
     <widget class="QLineEdit" name="mLeRevision" >
      <property name="toolTip" >
-      <string>Defines the revision number filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>IIFF&lt;/tt> where &lt;tt>I&lt;/tt> is a decimal digit of the integer part and &lt;tt>F&lt;/tt> is a decimal digit of the fractional part. An empty string will match any value.</string>
+      <string>Holds the revision number filter. The &lt;i>exact match&lt;/i> string format is &lt;tt>IIFF&lt;/tt> where &lt;tt>I&lt;/tt> is a decimal digit of the integer part and &lt;tt>F&lt;/tt> is a decimal digit of the fractional part. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -128,7 +128,7 @@
    <item row="4" column="1" >
     <widget class="QLineEdit" name="mLeManufacturer" >
      <property name="toolTip" >
-      <string>Defines the manufacturer filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+      <string>Holds the manufacturer filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -148,7 +148,7 @@
    <item row="5" column="1" >
     <widget class="QLineEdit" name="mLeProduct" >
      <property name="toolTip" >
-      <string>Defines the product name filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+      <string>Holds the product name filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -168,7 +168,7 @@
    <item row="6" column="1" >
     <widget class="QLineEdit" name="mLeSerialNo" >
      <property name="toolTip" >
-      <string>Defines the serial number filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+      <string>Holds the serial number filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -188,7 +188,7 @@
    <item row="7" column="1" >
     <widget class="QLineEdit" name="mLePort" >
      <property name="toolTip" >
-      <string>Defines the host USB port filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
+      <string>Holds the host USB port filter as an &lt;i>exact match&lt;/i> string. An empty string will match any value.</string>
      </property>
     </widget>
    </item>
@@ -214,7 +214,7 @@
       </sizepolicy>
      </property>
      <property name="toolTip" >
-      <string>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i>No&lt;/i>), to a VRDP client's computer (&lt;i>Yes&lt;/i>), or both (&lt;i>Any&lt;/i>).</string>
+      <string>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i>No&lt;/i>), to a VRDP client's computer (&lt;i>Yes&lt;/i>), or both (&lt;i>Any&lt;/i>).</string>
      </property>
     </widget>
    </item>
