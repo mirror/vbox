@@ -21150,8 +21150,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="ISnapshotRestoredEvent">ISnapshotRestoredEvent</link>.
       </desc>
     </const>
+    <const name="OnMediumConfigChanged" value="96">
+      <desc>
+        See <link to="IMediumConfigChangedEvent">IMediumConfigChangedEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="96">
+    <const name="Last" value="97">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -21525,6 +21530,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <desc>
       The given medium was registered or unregistered
       within this VirtualBox installation.
+      <note>This event is not yet implemented.</note>
     </desc>
 
     <attribute name="mediumId" readonly="yes" type="uuid" mod="string">
@@ -21540,6 +21546,22 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         If @c true, the medium was registered, otherwise it was
         unregistered.
       </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IMediumConfigChangedEvent" extends="IEvent"
+    uuid="dd3e2654-a161-41f1-b583-4892f4a9d5d5"
+    wsmap="managed" autogen="VBoxEvent" id="OnMediumConfigChanged"
+    >
+    <desc>
+      The configuration of the given medium was changed (location, properties,
+      child/parent or anything else).
+      <note>This event is not yet implemented.</note>
+    </desc>
+
+    <attribute name="medium" type="IMedium" readonly="yes">
+      <desc>ID of the medium this event relates to.</desc>
     </attribute>
   </interface>
 
@@ -21910,6 +21932,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Notification when a
       <link to="IMachine::mediumAttachments">medium attachment</link>
       changes.
+      <note>This event is not yet implemented.</note>
     </desc>
     <attribute name="mediumAttachment" type="IMediumAttachment" readonly="yes">
       <desc>
