@@ -28,6 +28,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/miscdevice.h>
 #include <linux/inetdevice.h>
+#include <linux/in.h>
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
 #include <net/if_inet6.h>
