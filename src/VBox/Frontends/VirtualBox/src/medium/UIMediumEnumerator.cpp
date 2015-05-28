@@ -127,7 +127,7 @@ void UIMediumEnumerator::createMedium(const UIMedium &medium)
 
     /* Insert medium: */
     m_mediums[strMediumID] = medium;
-    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} created.\n", strMediumID.toAscii().constData()));
+    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} created\n", strMediumID.toAscii().constData()));
 
     /* Notify listener: */
     emit sigMediumCreated(strMediumID);
@@ -143,7 +143,7 @@ void UIMediumEnumerator::deleteMedium(const QString &strMediumID)
 
     /* Remove medium: */
     m_mediums.remove(strMediumID);
-    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} deleted.\n", strMediumID.toAscii().constData()));
+    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} deleted\n", strMediumID.toAscii().constData()));
 
     /* Notify listener: */
     emit sigMediumDeleted(strMediumID);
@@ -286,7 +286,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     /* Get enumerated UIMedium: */
     const UIMedium uimedium = pTask->data().value<UIMedium>();
     const QString strUIMediumKey = uimedium.key();
-    LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} enumerated.\n", strUIMediumKey.toAscii().constData()));
+    LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} enumerated\n", strUIMediumKey.toAscii().constData()));
 
     /* Delete task: */
     delete m_tasks.takeAt(iIndexOfTask);
@@ -301,7 +301,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     {
         /* Delete this medium: */
         m_mediums.remove(strUIMediumKey);
-        LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} closed and deleted (after enumeration).\n", strUIMediumKey.toAscii().constData()));
+        LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} closed and deleted (after enumeration)\n", strUIMediumKey.toAscii().constData()));
 
         /* And notify listener about delete: */
         emit sigMediumDeleted(strUIMediumKey);
@@ -313,7 +313,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
         m_mediums.remove(strUIMediumKey);
         m_mediums[strUIMediumID] = uimedium;
         m_mediums[strUIMediumID].setKey(strUIMediumID);
-        LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} has it changed to {%s}.\n", strUIMediumKey.toAscii().constData(),
+        LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} has it changed to {%s}\n", strUIMediumKey.toAscii().constData(),
                                                                                            strUIMediumID.toAscii().constData()));
 
         /* And notify listener about delete/create: */
@@ -325,7 +325,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     {
         /* Just update enumerated medium: */
         m_mediums[strUIMediumID] = uimedium;
-        LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} updated.\n", strUIMediumID.toAscii().constData()));
+        LogRel2(("GUI: UIMediumEnumerator: Medium with key={%s} updated\n", strUIMediumID.toAscii().constData()));
 
         /* And notify listener about update: */
         emit sigMediumEnumerated(strUIMediumID);
@@ -529,7 +529,7 @@ void UIMediumEnumerator::recacheFromCachedUsage(const QStringList &previousUIMed
             {
                 /* Uncache corresponding UIMedium: */
                 m_mediums.remove(strMediumID);
-                LogRel(("GUI: UIMediumEnumerator:  Medium with key={%s} uncached.\n", strMediumID.toAscii().constData()));
+                LogRel(("GUI: UIMediumEnumerator:  Medium with key={%s} uncached\n", strMediumID.toAscii().constData()));
 
                 /* And notify listeners: */
                 emit sigMediumDeleted(strMediumID);
@@ -558,7 +558,7 @@ void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMedium
 
             /* Cache created UIMedium: */
             m_mediums.insert(strUIMediumKey, uimedium);
-            LogRel(("GUI: UIMediumEnumerator:  Medium with key={%s} cached.\n", strUIMediumKey.toAscii().constData()));
+            LogRel(("GUI: UIMediumEnumerator:  Medium with key={%s} cached\n", strUIMediumKey.toAscii().constData()));
 
             /* And notify listeners: */
             emit sigMediumCreated(strUIMediumKey);
