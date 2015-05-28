@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,8 +28,6 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-
-#include <iprt/queueatomic.h>
 
 struct PDMLED;
 
@@ -781,57 +779,6 @@ DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEV
 }
 #endif /* IN_RING3 */
 
-
-
-/** Pointer to a Root Hub Configuration Interface. */
-typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
-/**
- * Root Hub Configuration Interface (intended for MAIN).
- * No interface pair.
- */
-typedef struct VUSBIRHCONFIG
-{
-    /**
-     * Creates a USB proxy device and attaches it to the root hub.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the root hub configuration interface structure.
-     * @param   pUuid           Pointer to the UUID for the new device.
-     * @param   fRemote         Whether the device must use the VRDP backend.
-     * @param   pszAddress      OS specific device address.
-     * @param   pvBackend       An opaque pointer for the backend. Only used by
-     *                          the VRDP backend so far.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnCreateProxyDevice,(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend));
-
-    /**
-     * Removes a USB proxy device from the root hub and destroys it.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the root hub configuration interface structure.
-     * @param   pUuid           Pointer to the UUID for the device.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnDestroyProxyDevice,(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid));
-
-} VUSBIRHCONFIG;
-/** VUSBIRHCONFIG interface ID. */
-#define VUSBIRHCONFIG_IID                       "c354cd97-e85f-465e-bc12-b58798465f52"
-
-
-#ifdef IN_RING3
-/** @copydoc  VUSBIRHCONFIG::pfnCreateProxyDevice */
-DECLINLINE(int) VUSBIRhCreateProxyDevice(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid, bool fRemote, const char *pszAddress, void *pvBackend)
-{
-    return pInterface->pfnCreateProxyDevice(pInterface, pUuid, fRemote, pszAddress, pvBackend);
-}
-
-/** @copydoc VUSBIRHCONFIG::pfnDestroyProxyDevice */
-DECLINLINE(int) VUSBIRhDestroyProxyDevice(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid)
-{
-    return pInterface->pfnDestroyProxyDevice(pInterface, pUuid);
-}
-#endif /* IN_RING3 */
-
 #endif /* ! RDESKTOP */
 
 
@@ -1209,7 +1156,6 @@ typedef struct VUSBURB
         uint32_t        u32FrameNo;
         /** Flag indicating that the TDs have been unlinked. */
         bool            fUnlinked;
-        RTQUEUEATOMICITEM QueueItem;
     } Hci;
 
     /** The device data. */

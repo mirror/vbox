@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,7 +28,6 @@
 #include <VBox/vusb.h>
 #include <VBox/vmm/stam.h>
 #include <iprt/assert.h>
-#include <iprt/queueatomic.h>
 #include <iprt/req.h>
 
 #include "VUSBSniffer.h"
@@ -231,28 +230,7 @@ typedef struct VUSBDEV
 AssertCompileSizeAlignment(VUSBDEV, 8);
 
 
-/** Pointer to the virtual method table for a kind of USB devices. */
-typedef struct vusb_dev_ops *PVUSBDEVOPS;
-
-/** Pointer to the const virtual method table for a kind of USB devices. */
-typedef const struct vusb_dev_ops *PCVUSBDEVOPS;
-
-/**
- * Virtual method table for USB devices - these are the functions you need to
- * implement when writing a new device (or hub)
- *
- * Note that when creating your structure, you are required to zero the
- * vusb_dev fields (ie. use calloc).
- */
-typedef struct vusb_dev_ops
-{
-    /* mandatory */
-    const char *name;
-} VUSBDEVOPS;
-
-
 int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilename);
-int vusbDevCreateOld(const char *pszDeviceName, void *pvDriverInit, PCRTUUID pUuid, PVUSBDEV *ppDev);
 void vusbDevDestroy(PVUSBDEV pDev);
 
 DECLINLINE(bool) vusbDevIsRh(PVUSBDEV pDev)
@@ -271,9 +249,6 @@ bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, void *p
 
 
 /** @} */
-
-
-
 
 
 /** @name Internal Hub Operations, Structures and Constants.
