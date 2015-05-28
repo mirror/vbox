@@ -196,10 +196,10 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
     }
 
     /*
-     * Since the mouse button has been release this in any case marks 
-     * the end of the current transfer direction. So reset the current 
-     * mode as well here. 
-     */ 
+     * Since the mouse button has been release this in any case marks
+     * the end of the current transfer direction. So reset the current
+     * mode as well here.
+     */
     m_enmMode = DNDMODE_UNKNOWN;
 
     return toQtDnDAction(result);
@@ -317,7 +317,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
     int rc;
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
 
-    LogFlowFunc(("enmMode=%RU32, m_fIsPending=%RTbool, screenID=%RU32\n", m_enmMode, m_fIsPending, screenID));
+    LogFlowFunc(("enmMode=%RU32, fIsPending=%RTbool, screenID=%RU32\n", m_enmMode, m_fIsPending, screenID));
 
     {
         QMutexLocker AutoReadLock(&m_ReadLock);
@@ -350,11 +350,16 @@ int UIDnDHandler::dragIsPending(ulong screenID)
     QVector<QString> vecFmtGuest;
     QVector<KDnDAction> vecActions;
     KDnDAction defaultAction = m_dndSource.DragIsPending(screenID, vecFmtGuest, vecActions);
-    LogFlowFunc(("defaultAction=%d, numFormats=%d\n", defaultAction, vecFmtGuest.size()));
+    LogFlowFunc(("defaultAction=%d, numFormats=%d, numActions=%d\n", defaultAction,
+                 vecFmtGuest.size(), vecActions.size()));
 
     QStringList lstFmtNative;
     if (defaultAction != KDnDAction_Ignore)
     {
+        LogRel3(("DnD: Number of supported guest actions: %d\n", vecActions.size()));
+        for (int i = 0; i < vecActions.size(); i++)
+            LogRel3(("\tAction %d: 0x%x\n", i, vecActions.at(i)));
+
         /**
          * Do guest -> host format conversion, if needed.
          * On X11 this already maps to the Xdnd protocol.
@@ -362,7 +367,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
          *
          * See: https://www.iana.org/assignments/media-types/media-types.xhtml
          */
-        LogRel3(("DnD: Number of guest formats: %d\n", vecFmtGuest.size()));
+        LogRel3(("DnD: Number of supported guest formats: %d\n", vecFmtGuest.size()));
         for (int i = 0; i < vecFmtGuest.size(); i++)
         {
             const QString &strFmtGuest = vecFmtGuest.at(i);
@@ -391,7 +396,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
 # endif /* !RT_OS_WINDOWS */
         }
 
-        LogRel3(("DnD: Number of native formats: %d\n", lstFmtNative.size()));
+        LogRel3(("DnD: Number of supported host formats: %d\n", lstFmtNative.size()));
         for (int i = 0; i < lstFmtNative.size(); i++)
             LogRel3(("\tFormat %d: %s\n", i, lstFmtNative.at(i).toAscii().constData()));
     }
