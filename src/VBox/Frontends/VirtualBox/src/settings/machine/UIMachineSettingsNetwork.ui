@@ -77,7 +77,7 @@
          </sizepolicy>
         </property>
         <property name="whatsThis">
-         <string>Controls how this virtual adapter is attached to the real network of the Host OS.</string>
+         <string>Selects how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
        </widget>
       </item>
@@ -128,7 +128,7 @@
            <string>A&amp;dvanced</string>
           </property>
           <property name="whatsThis">
-           <string>Shows or hides additional network adapter options.</string>
+           <string>Shows additional network adapter options.</string>
           </property>
          </widget>
         </item>
@@ -232,14 +232,14 @@
       <item row="6" column="1" colspan="3">
        <widget class="QTextEdit" name="m_pGenericPropertiesTextEdit">
         <property name="whatsThis">
-         <string>Enter any configuration settings here for the network attachment driver you will be using. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</string>
+         <string>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</string>
         </property>
        </widget>
       </item>
       <item row="7" column="1" colspan="3">
        <widget class="QCheckBox" name="m_pCableConnectedCheckBox">
         <property name="whatsThis">
-         <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
+         <string>When checked, the virtual network cable is plugged in.</string>
         </property>
         <property name="text">
          <string>&amp;Cable Connected</string>
@@ -249,7 +249,7 @@
       <item row="8" column="1">
        <widget class="QPushButton" name="m_pPortForwardingButton">
         <property name="whatsThis">
-         <string>Opens a window to manage port forwarding rules.</string>
+         <string>Displays window to configure port forwarding rules.</string>
         </property>
         <property name="text">
          <string>&amp;Port Forwarding</string>
