@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2009-2012 Oracle Corporation
+# Copyright (C) 2009-2015 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -123,7 +123,7 @@ fi
 # Check if the Zone Access service is holding open vboxdrv, if so stop & remove it
 servicefound=`svcs -H "svc:/application/virtualbox/zoneaccess" 2> /dev/null | grep '^online'`
 if test ! -z "$servicefound"; then
-    infoprint "VirtualBox's zone access service appears to still be running."
+    infoprint "VirtualBox zone access service appears to still be running."
     infoprint "Halting & removing zone access service..."
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
     # Don't delete the service, handled by manifest class action
@@ -194,22 +194,26 @@ if test -x "$BIN_IFCONFIG"; then
     fi
 fi
 
-# If we are using SVR4 packages then make sure that SMF has finished
-# disabling any services left over from a previous installation which
-# may interfere with installing new ones.  Should only be relevant on
-# Solaris 11.
-if test -x "$BIN_PKGINFO"; then
-    for i in 1 2 3 4 5 6 7 8 9 10; do
-        svcs -a | grep virtualbox >/dev/null || break
-        if test "${i}" = "1"; then
-            printf "Waiting for services from previous installation to be removed."
-        else
-            printf "."
-        fi
-        sleep 1
-    done
-    test "${i}" = "1" || printf "\n"
-fi
+# Make sure that SMF has finished removing any services left over from a
+# previous installation which may interfere with installing new ones.
+# This is only relevant on Solaris 11 for SysV packages.
+#
+# See BugDB 14838646 for the original problem and @bugref{7866} for
+# follow up fixes.
+for i in 1 2 3 4 5 6 7 8 9 10; do
+    svcs -H "svc:/application/virtualbox/autostart"  >/dev/null 2>&1 ||
+    svcs -H "svc:/application/virtualbox/webservice" >/dev/null 2>&1 ||
+    svcs -H "svc:/application/virtualbox/zoneaccess" >/dev/null 2>&1 || break
+    if test "${i}" = "1"; then
+        printf "Waiting for services from previous installation to be removed."
+    elif test "${i}" = "10"; then
+        printf "\nWarning!!! Some service(s) still appears to not be removed completely!"
+    else
+        printf "."
+    fi
+    sleep 1
+done
+test "${i}" = "1" || printf "\n"
 
 exit 0
 
