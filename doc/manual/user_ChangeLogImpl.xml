@@ -35,6 +35,12 @@
       </listitem>
 
       <listitem>
+        <para>VMs can now be started in <emphasis>separate mode</emphasis>. The VM
+          process is started headless while the frontend runs separate process which
+          can be terminated without stopping the VM.</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: VM guest-content scaling support (including 3D acceleration)</para>
       </listitem>
 
