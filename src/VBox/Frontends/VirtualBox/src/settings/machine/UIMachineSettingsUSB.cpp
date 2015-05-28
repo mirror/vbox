@@ -538,42 +538,33 @@ void UIMachineSettingsUSB::setOrderAfter (QWidget *aWidget)
 
 void UIMachineSettingsUSB::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::UIMachineSettingsUSB::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::UIMachineSettingsUSB::retranslateUi(this);
 
-    mNewAction->setText (tr ("&Add Empty Filter"));
-    mAddAction->setText (tr ("A&dd Filter From Device"));
-    mEdtAction->setText (tr ("&Edit Filter"));
-    mDelAction->setText (tr ("&Remove Filter"));
-    mMupAction->setText (tr ("&Move Filter Up"));
-    mMdnAction->setText (tr ("M&ove Filter Down"));
+    mNewAction->setText(tr("&Add Empty Filter"));
+    mAddAction->setText(tr("A&dd Filter From Device"));
+    mEdtAction->setText(tr("&Edit Filter"));
+    mDelAction->setText(tr("&Remove Filter"));
+    mMupAction->setText(tr("&Move Filter Up"));
+    mMdnAction->setText(tr("M&ove Filter Down"));
 
-    mNewAction->setToolTip (mNewAction->text().remove ('&') +
-        QString (" (%1)").arg (mNewAction->shortcut().toString()));
-    mAddAction->setToolTip (mAddAction->text().remove ('&') +
-        QString (" (%1)").arg (mAddAction->shortcut().toString()));
-    mEdtAction->setToolTip (mEdtAction->text().remove ('&') +
-        QString (" (%1)").arg (mEdtAction->shortcut().toString()));
-    mDelAction->setToolTip (mDelAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelAction->shortcut().toString()));
-    mMupAction->setToolTip (mMupAction->text().remove ('&') +
-        QString (" (%1)").arg (mMupAction->shortcut().toString()));
-    mMdnAction->setToolTip (mMdnAction->text().remove ('&') +
-        QString (" (%1)").arg (mMdnAction->shortcut().toString()));
+    mNewAction->setWhatsThis(tr("Adds new USB filter with all fields initially set to empty strings. "
+                                "Note that such a filter will match any attached USB device."));
+    mAddAction->setWhatsThis(tr("Adds new USB filter with all fields set to the values of the "
+                                "selected USB device attached to the host PC."));
+    mEdtAction->setWhatsThis(tr("Edits selected USB filter."));
+    mDelAction->setWhatsThis(tr("Removes selected USB filter."));
+    mMupAction->setWhatsThis(tr("Moves selected USB filter up."));
+    mMdnAction->setWhatsThis(tr("Moves selected USB filter down."));
 
-    mNewAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
-                                  "initially set to empty strings. Note "
-                                  "that such a filter will match any "
-                                  "attached USB device."));
-    mAddAction->setWhatsThis (tr ("Adds a new USB filter with all fields "
-                                  "set to the values of the selected USB "
-                                  "device attached to the host PC."));
-    mEdtAction->setWhatsThis (tr ("Edits the selected USB filter."));
-    mDelAction->setWhatsThis (tr ("Removes the selected USB filter."));
-    mMupAction->setWhatsThis (tr ("Moves the selected USB filter up."));
-    mMdnAction->setWhatsThis (tr ("Moves the selected USB filter down."));
+    mNewAction->setToolTip(mNewAction->whatsThis());
+    mAddAction->setToolTip(mAddAction->whatsThis());
+    mEdtAction->setToolTip(mEdtAction->whatsThis());
+    mDelAction->setToolTip(mDelAction->whatsThis());
+    mMupAction->setToolTip(mMupAction->whatsThis());
+    mMdnAction->setToolTip(mMdnAction->whatsThis());
 
-    mUSBFilterName = tr ("New Filter %1", "usb");
+    mUSBFilterName = tr("New Filter %1", "usb");
 }
 
 void UIMachineSettingsUSB::usbAdapterToggled(bool fEnabled)
