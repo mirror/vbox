@@ -1824,6 +1824,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
 
 {
     PVBOXNETFLTINS      pThis = VBOX_FLT_NB_TO_INST(self);
+    struct net_device  *pMyDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
     struct net_device  *pDev  = netdev_notifier_info_to_dev(ptr);
 #else
@@ -1832,7 +1833,8 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     int                 rc    = NOTIFY_OK;
 
     Log(("VBoxNetFlt: got event %s(0x%lx) on %s, pDev=%p pThis=%p pThis->u.s.pDev=%p\n",
-         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *)));
+         vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType, pDev->name, pDev, pThis, pMyDev));
+
     if (    ulEventType == NETDEV_REGISTER
         && !strcmp(pDev->name, pThis->szName))
     {
@@ -1840,8 +1842,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     }
     else
     {
-        pDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
-        if (pDev == ptr)
+        if (pDev == pMyDev)
         {
             switch (ulEventType)
             {
