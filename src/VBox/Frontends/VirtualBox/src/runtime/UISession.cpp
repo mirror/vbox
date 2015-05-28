@@ -229,18 +229,18 @@ bool UISession::initialize()
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Log whether 2D video acceleration is enabled: */
-    LogRel(("GUI: 2D video acceleration is %s.\n",
+    LogRel(("GUI: 2D video acceleration is %s\n",
            machine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable()
            ? "enabled" : "disabled"));
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 /* Log whether HID LEDs sync is enabled: */
 #if defined(Q_WS_MAC) || defined(Q_WS_WIN)
-    LogRel(("GUI: HID LEDs sync is %s.\n",
+    LogRel(("GUI: HID LEDs sync is %s\n",
             uimachine()->machineLogic()->isHidLedsSyncEnabled()
             ? "enabled" : "disabled"));
 #else /* !Q_WS_MAC && !Q_WS_WIN */
-    LogRel(("GUI: HID LEDs sync is not supported on this platform.\n"));
+    LogRel(("GUI: HID LEDs sync is not supported on this platform\n"));
 #endif /* !Q_WS_MAC && !Q_WS_WIN */
 
 #ifdef VBOX_GUI_WITH_PIDFILE
