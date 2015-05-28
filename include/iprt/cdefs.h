@@ -1783,7 +1783,7 @@
  * @deprecated  Use RT_LO_U8. */
 #define RT_LOBYTE(a)                            ( (a) & 0xff )
 /** @def RT_HIBYTE
- * Gets the low byte of a 16-bit something.
+ * Gets the high byte of a 16-bit something.
  * @deprecated  Use RT_HI_U8. */
 #define RT_HIBYTE(a)                            ( (a) >> 8 )
 
