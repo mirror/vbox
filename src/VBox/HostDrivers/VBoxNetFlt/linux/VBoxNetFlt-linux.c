@@ -54,6 +54,13 @@
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
 
+typedef struct VBOXNETFLTNOTIFIER {
+    struct notifier_block Notifier;
+    PVBOXNETFLTINS pThis;
+} VBOXNETFLTNOTIFIER;
+typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
+
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 20, 0)
 # define vlan_tx_tag_get(skb)       skb_vlan_tag_get(skb)
 # define vlan_tx_tag_present(skb)   skb_vlan_tag_present(skb)
@@ -69,16 +76,16 @@
 # define VBOX_FLT_XT_TO_INST(pXT)   RT_FROM_MEMBER(pXT, VBOXNETFLTINS, u.s.XmitTask)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+# define VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr) netdev_notifier_info_to_dev(ptr)
+#else
+# define VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr) ((struct net_device *)ptr)
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
 # define VBOX_NETDEV_NAME(dev)              netdev_name(dev)
 #else
 # define VBOX_NETDEV_NAME(dev)              ((dev)->reg_state != NETREG_REGISTERED ? "(unregistered net_device)" : (dev)->name)
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
-# define VBOX_DEV_NET(dev)                  dev_net(dev)
-#else
-# define VBOX_DEV_NET(dev)                  ((dev)->nd_net)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
@@ -1825,11 +1832,7 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
 {
     PVBOXNETFLTINS      pThis = VBOX_FLT_NB_TO_INST(self);
     struct net_device  *pMyDev = ASMAtomicUoReadPtrT(&pThis->u.s.pDev, struct net_device *);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-    struct net_device  *pDev  = netdev_notifier_info_to_dev(ptr);
-#else
-    struct net_device  *pDev  = (struct net_device *)ptr;
-#endif
+    struct net_device  *pDev  = VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr);
     int                 rc    = NOTIFY_OK;
 
     Log(("VBoxNetFlt: got event %s(0x%lx) on %s, pDev=%p pThis=%p pThis->u.s.pDev=%p\n",
@@ -1872,7 +1875,71 @@ static int vboxNetFltLinuxNotifierCallback(struct notifier_block *self, unsigned
     return rc;
 }
 
-#if 0 /* XXX: temporarily disable */
+static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
+{
+    PVBOXNETFLTINS pThis = ((PVBOXNETFLTNOTIFIER)self)->pThis;
+    struct net_device *dev  = VBOX_NETDEV_NOTIFIER_INFO_TO_DEV(ptr);
+    struct in_device *in_dev;
+    struct inet6_dev *in6_dev;
+
+    if (ulEventType != NETDEV_REGISTER)
+        return NOTIFY_OK;
+
+    if (RT_UNLIKELY(pThis->pSwitchPort->pfnNotifyHostAddress == NULL))
+        return NOTIFY_OK;
+
+    /*
+     * IPv4
+     */
+    in_dev = __in_dev_get_rcu(dev);
+    if (in_dev != NULL)
+    {
+        for_ifa(in_dev) {
+            if (IN_LOOPBACK(ntohl(ifa->ifa_address)))
+                return NOTIFY_OK;
+
+            Log(("%s: %s: IPv4 addr %RTnaipv4 mask %RTnaipv4\n",
+                 __FUNCTION__, VBOX_NETDEV_NAME(dev),
+                 ifa->ifa_address, ifa->ifa_mask));
+            
+            pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
+                /* :fAdded */ true, kIntNetAddrType_IPv4, &ifa->ifa_address);
+        } endfor_ifa(in_dev);
+    }
+
+    /*
+     * IPv6
+     */
+    in6_dev = __in6_dev_get(dev);
+    if (in6_dev != NULL)
+    {
+        struct inet6_ifaddr *ifa;
+
+        read_lock_bh(&in6_dev->lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
+        list_for_each_entry(ifa, &in6_dev->addr_list, if_list)
+#else
+        for (ifa = in6_dev->addr_list; ifa != NULL; ifa = ifa->if_next)
+#endif
+        {
+            if (   dev != pThis->u.s.pDev
+                && ipv6_addr_src_scope(&ifa->addr) <= IPV6_ADDR_SCOPE_LINKLOCAL)
+                continue;
+
+            Log(("%s: %s: IPv6 addr %RTnaipv6/%u\n",
+                 __FUNCTION__, VBOX_NETDEV_NAME(dev),
+                 &ifa->addr, (unsigned)ifa->prefix_len));
+
+            pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
+                /* :fAdded */ true, kIntNetAddrType_IPv6, &ifa->addr);
+        }
+        read_unlock_bh(&in6_dev->lock);
+    }
+
+    return NOTIFY_OK;
+}
+
+
 static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 {
     PVBOXNETFLTINS     pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv4);
@@ -1939,7 +2006,6 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
 
     return rc;
 }
-#endif /* 0 */
 
 
 bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
@@ -2169,79 +2235,29 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
         || !try_module_get(THIS_MODULE))
         return VERR_INTNET_FLT_IF_FAILED;
 
-#if 0 /* XXX: temporarily disable */
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
     {
-        struct net *net = VBOX_DEV_NET(pThis->u.s.pDev);
-        struct net_device *dev;
+        VBOXNETFLTNOTIFIER Enumerator;
 
-#if !defined(for_each_netdev_rcu) /* introduced in 2.6.33 */
-        read_lock(&dev_base_lock);
-#endif
-        rcu_read_lock();
+        /*
+         * register_inetaddr_notifier() and register_inet6addr_notifier()
+         * do not call the callback for existing devices.  Enumerating
+         * all network devices explicitly is a bit of an ifdef mess,
+         * so co-opt register_netdevice_notifier() to do that for us.
+         */
+        RT_ZERO(Enumerator);
+        Enumerator.Notifier.notifier_call = vboxNetFltLinuxEnumeratorCallback;
+        Enumerator.pThis = pThis;
 
-#if !defined(for_each_netdev_rcu)
-        for_each_netdev(net, dev)
-#else
-        for_each_netdev_rcu(net, dev)
-#endif
+        err = register_netdevice_notifier(&Enumerator.Notifier);
+        if (err)
         {
-            struct in_device *in_dev;
-            struct inet6_dev *in6_dev;
-
-            /*
-             * IPv4
-             */
-            in_dev = __in_dev_get_rcu(dev);
-            if (in_dev != NULL)
-            {
-                for_ifa(in_dev) {
-                    if (ifa->ifa_address == htonl(INADDR_LOOPBACK))
-                        goto continue_netdev;
-
-                    Log(("%s: %s: IPv4: addr %RTnaipv4 mask %RTnaipv4\n",
-                         __FUNCTION__, VBOX_NETDEV_NAME(dev),
-                         ifa->ifa_address, ifa->ifa_mask));
-
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ true, kIntNetAddrType_IPv4, &ifa->ifa_address);
-                } endfor_ifa(in_dev);
-            }
-
-            /*
-             * IPv6
-             */
-            in6_dev = __in6_dev_get(dev);
-            if (in6_dev != NULL)
-            {
-                struct inet6_ifaddr *ifa;
-
-                read_lock_bh(&in6_dev->lock);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 35)
-                list_for_each_entry(ifa, &in6_dev->addr_list, if_list)
-#else
-                for (ifa = in6_dev->addr_list; ifa != NULL; ifa = ifa->if_next)
-#endif
-                {
-                    Log(("%s: %s: IPv6: addr %RTnaipv6/%u\n",
-                         __FUNCTION__, VBOX_NETDEV_NAME(dev),
-                         &ifa->addr, (unsigned)ifa->prefix_len));
-
-                    pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
-                        /* :fAdded */ true, kIntNetAddrType_IPv6, &ifa->addr);
-                }
-                read_unlock_bh(&in6_dev->lock);
-            }
-
-          continue_netdev:
-            /* continue */;
+            LogRel(("%s: failed to enumerate network devices: error %d\n",
+                    __FUNCTION__, err));
+            return VINF_SUCCESS;
         }
-        rcu_read_unlock();
-#if !defined(for_each_netdev_rcu)
-        read_unlock(&dev_base_lock);
-#endif
 
-        Log(("%s: pfnNotifyHostAddress is set, register notifiers\n", __FUNCTION__));
+        unregister_netdevice_notifier(&Enumerator.Notifier);
 
         pThis->u.s.NotifierIPv4.notifier_call = vboxNetFltLinuxNotifierIPv4Callback;
         err = register_inetaddr_notifier(&pThis->u.s.NotifierIPv4);
@@ -2255,9 +2271,6 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
             LogRel(("%s: failed to register IPv6 notifier: error %d\n",
                     __FUNCTION__, err));
     }
-    else
-        Log(("%s: uwe: pfnNotifyHostAddress is NULL\n", __FUNCTION__));
-#endif
 
     return VINF_SUCCESS;
 }
