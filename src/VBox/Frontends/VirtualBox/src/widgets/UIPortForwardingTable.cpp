@@ -822,16 +822,20 @@ void UIPortForwardingTable::sltAdjustTable()
 void UIPortForwardingTable::retranslateUi()
 {
     /* Table translations: */
-    m_pTableView->setToolTip(QApplication::translate("UIMachineSettingsPortForwardingDlg", "This table contains a list of port forwarding rules."));
+    m_pTableView->setToolTip(tr("Contains a list of port forwarding rules."));
 
     /* Set action's text: */
-    m_pAddAction->setText(QApplication::translate("UIMachineSettingsPortForwardingDlg", "Insert new rule"));
-    m_pCopyAction->setText(QApplication::translate("UIMachineSettingsPortForwardingDlg", "Copy selected rule"));
-    m_pDelAction->setText(QApplication::translate("UIMachineSettingsPortForwardingDlg", "Delete selected rule"));
-    m_pAddAction->setWhatsThis(QApplication::translate("UIMachineSettingsPortForwardingDlg", "This button adds new port forwarding rule."));
-    m_pDelAction->setWhatsThis(QApplication::translate("UIMachineSettingsPortForwardingDlg", "This button deletes selected port forwarding rule."));
-    m_pAddAction->setToolTip(QString("%1 (%2)").arg(m_pAddAction->text()).arg(m_pAddAction->shortcut().toString()));
-    m_pDelAction->setToolTip(QString("%1 (%2)").arg(m_pDelAction->text()).arg(m_pDelAction->shortcut().toString()));
+    m_pAddAction->setText(tr("&Add New Rule"));
+    m_pCopyAction->setText(tr("&Copy Selected Rule"));
+    m_pDelAction->setText(tr("&Remove Selected Rule"));
+
+    m_pAddAction->setWhatsThis(tr("Adds new port forwarding rule."));
+    m_pCopyAction->setWhatsThis(tr("Copies selected port forwarding rule."));
+    m_pDelAction->setWhatsThis(tr("Removes selected port forwarding rule."));
+
+    m_pAddAction->setToolTip(m_pAddAction->whatsThis());
+    m_pCopyAction->setToolTip(m_pCopyAction->whatsThis());
+    m_pDelAction->setToolTip(m_pDelAction->whatsThis());
 }
 
 bool UIPortForwardingTable::eventFilter(QObject *pObject, QEvent *pEvent)
