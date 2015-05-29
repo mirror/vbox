@@ -1150,10 +1150,10 @@ DECLINLINE(void) intnetR0IfAddrCacheDelete(PINTNETIF pIf, PINTNETADDRCACHE pCach
  * @param   cbAddr          The address size (optimization).
  * @param   pszMsg          Log message.
  */
-DECLINLINE(void) intnetR0NetworkAddrCacheDeleteUnlocked(PINTNETNETWORK pNetwork,
-                                                        PCRTNETADDRU pAddr, INTNETADDRTYPE enmType,
-                                                        uint8_t const cbAddr,
-                                                        const char *pszMsg)
+DECLINLINE(void) intnetR0NetworkAddrCacheDeleteLocked(PINTNETNETWORK pNetwork,
+                                                      PCRTNETADDRU pAddr, INTNETADDRTYPE enmType,
+                                                      uint8_t const cbAddr,
+                                                      const char *pszMsg)
 {
     uint32_t iIf = pNetwork->MacTab.cEntries;
     while (iIf--)
@@ -1184,7 +1184,7 @@ DECLINLINE(void) intnetR0NetworkAddrCacheDelete(PINTNETNETWORK pNetwork, PCRTNET
 {
     RTSpinlockAcquire(pNetwork->hAddrSpinlock);
 
-    intnetR0NetworkAddrCacheDeleteUnlocked(pNetwork, pAddr, enmType, cbAddr, pszMsg);
+    intnetR0NetworkAddrCacheDeleteLocked(pNetwork, pAddr, enmType, cbAddr, pszMsg);
 
     RTSpinlockRelease(pNetwork->hAddrSpinlock);
 }
@@ -5550,7 +5550,7 @@ static DECLCALLBACK(void) intnetR0NetworkNotifyHostAddress(PINTNETTRUNKSWPORT pS
         intnetR0NetworkBlacklistAdd(pNetwork, pAddr, enmType);
 
         /* kick out any guest that uses it */
-        intnetR0NetworkAddrCacheDeleteUnlocked(pNetwork, pAddr, enmType, cbAddr, "tif/host");
+        intnetR0NetworkAddrCacheDeleteLocked(pNetwork, pAddr, enmType, cbAddr, "tif/host");
     }
     else                /* address deleted from one of host interfaces */
     {
