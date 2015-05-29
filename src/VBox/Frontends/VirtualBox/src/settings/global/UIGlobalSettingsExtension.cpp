@@ -283,8 +283,8 @@ void UIGlobalSettingsExtension::retranslateUi()
     Ui::UIGlobalSettingsExtension::retranslateUi(this);
 
     /* Translate actions: */
-    m_pActionAdd->setText(tr("&Add Package"));
-    m_pActionRemove->setText(tr("&Remove Package"));
+    m_pActionAdd->setText(tr("Add Package"));
+    m_pActionRemove->setText(tr("Remove Package"));
 
     m_pActionAdd->setWhatsThis(tr("Adds new package."));
     m_pActionRemove->setWhatsThis(tr("Removes selected package."));

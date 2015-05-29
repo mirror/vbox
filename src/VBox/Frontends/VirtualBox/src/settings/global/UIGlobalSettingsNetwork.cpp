@@ -656,9 +656,9 @@ void UIGlobalSettingsNetwork::retranslateUi()
                                            << tr("Name"));
 
         /* Translate action text: */
-        m_pActionAddNetworkNAT->setText(tr("&Add NAT Network"));
-        m_pActionDelNetworkNAT->setText(tr("&Remove NAT Network"));
-        m_pActionEditNetworkNAT->setText(tr("&Edit NAT Network"));
+        m_pActionAddNetworkNAT->setText(tr("Add NAT Network"));
+        m_pActionDelNetworkNAT->setText(tr("Remove NAT Network"));
+        m_pActionEditNetworkNAT->setText(tr("Edit NAT Network"));
 
         m_pActionAddNetworkNAT->setWhatsThis(tr("Adds new NAT network."));
         m_pActionDelNetworkNAT->setWhatsThis(tr("Removes selected NAT network."));
@@ -672,9 +672,9 @@ void UIGlobalSettingsNetwork::retranslateUi()
     /* Host networks: */
     {
         /* Translate action text: */
-        m_pActionAddNetworkHost->setText(tr("&Add Host-only Network"));
-        m_pActionDelNetworkHost->setText(tr("&Remove Host-only Network"));
-        m_pActionEditNetworkHost->setText(tr("&Edit Host-only Network"));
+        m_pActionAddNetworkHost->setText(tr("Add Host-only Network"));
+        m_pActionDelNetworkHost->setText(tr("Remove Host-only Network"));
+        m_pActionEditNetworkHost->setText(tr("Edit Host-only Network"));
 
         m_pActionAddNetworkHost->setWhatsThis(tr("Adds new host-only network."));
         m_pActionDelNetworkHost->setWhatsThis(tr("Removes selected host-only network."));
