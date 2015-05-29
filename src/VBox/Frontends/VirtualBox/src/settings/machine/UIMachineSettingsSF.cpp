@@ -410,13 +410,13 @@ void UIMachineSettingsSF::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsSF::retranslateUi(this);
 
-    mNewAction->setText(tr("&Add Shared Folder"));
-    mEdtAction->setText(tr("&Edit Shared Folder"));
-    mDelAction->setText(tr("&Remove Shared Folder"));
+    mNewAction->setText(tr("Add Shared Folder"));
+    mEdtAction->setText(tr("Edit Shared Folder"));
+    mDelAction->setText(tr("Remove Shared Folder"));
 
-    mNewAction->setWhatsThis(tr("Adds new shared folder definition."));
-    mEdtAction->setWhatsThis(tr("Edits selected shared folder definition."));
-    mDelAction->setWhatsThis(tr("Removes selected shared folder definition."));
+    mNewAction->setWhatsThis(tr("Adds new shared folder."));
+    mEdtAction->setWhatsThis(tr("Edits selected shared folder."));
+    mDelAction->setWhatsThis(tr("Removes selected shared folder."));
 
     mNewAction->setToolTip(mNewAction->whatsThis());
     mEdtAction->setToolTip(mEdtAction->whatsThis());

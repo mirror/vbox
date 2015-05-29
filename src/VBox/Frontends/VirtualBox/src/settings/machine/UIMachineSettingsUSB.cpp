@@ -541,12 +541,12 @@ void UIMachineSettingsUSB::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIMachineSettingsUSB::retranslateUi(this);
 
-    mNewAction->setText(tr("&Add Empty Filter"));
-    mAddAction->setText(tr("A&dd Filter From Device"));
-    mEdtAction->setText(tr("&Edit Filter"));
-    mDelAction->setText(tr("&Remove Filter"));
-    mMupAction->setText(tr("&Move Filter Up"));
-    mMdnAction->setText(tr("M&ove Filter Down"));
+    mNewAction->setText(tr("Add Empty Filter"));
+    mAddAction->setText(tr("Add Filter From Device"));
+    mEdtAction->setText(tr("Edit Filter"));
+    mDelAction->setText(tr("Remove Filter"));
+    mMupAction->setText(tr("Move Filter Up"));
+    mMdnAction->setText(tr("Move Filter Down"));
 
     mNewAction->setWhatsThis(tr("Adds new USB filter with all fields initially set to empty strings. "
                                 "Note that such a filter will match any attached USB device."));

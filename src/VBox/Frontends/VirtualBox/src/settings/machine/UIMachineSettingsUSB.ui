@@ -85,7 +85,7 @@
          <item>
           <widget class="QRadioButton" name="mRbUSB1">
            <property name="whatsThis">
-            <string>When checked, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</string>
+            <string>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</string>
            </property>
            <property name="text">
             <string>USB &amp;1.1 (OHCI) Controller</string>
@@ -95,7 +95,7 @@
          <item>
           <widget class="QRadioButton" name="mRbUSB2">
            <property name="whatsThis">
-            <string>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
+            <string>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</string>
            </property>
            <property name="text">
             <string>USB &amp;2.0 (EHCI) Controller</string>
@@ -105,7 +105,7 @@
          <item>
           <widget class="QRadioButton" name="mRbUSB3">
            <property name="whatsThis">
-            <string>When checked, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</string>
+            <string>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</string>
            </property>
            <property name="text">
             <string>USB &amp;3.0 (xHCI) Controller</string>
