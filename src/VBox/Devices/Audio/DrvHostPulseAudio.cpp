@@ -1157,7 +1157,7 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
     LogRel(("Audio: Initializing PulseAudio driver\n"));
     
     CFGMR3QueryStringAlloc(pCfg, "StreamName", &pThis->pszStreamName);
-    LogRel(("stream name '%s'\n", pThis->pszStreamName));
+    LogRel(("PulseAudio: Stream name '%s'\n", pThis->pszStreamName));
 
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
