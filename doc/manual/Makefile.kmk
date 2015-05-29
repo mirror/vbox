@@ -322,28 +322,36 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
 		$(VBOX_PATH_MANUAL_SRC)/% \
+		$(VBOX_PATH_MANUAL_SRC)/usage-to-docbook-manual.xsl \
 		$(VBOXMANAGEPATH) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.tmp2
-	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
-	               --output $@.tmp $<
-	$(QUIET)$(SED) -e '1,/\$$VBOX_MANAGE_OUTPUT/!d' \
-	               -e 's/\$$VBOX_MANAGE_OUTPUT.*//' \
-	               --output $@ $@.tmp
+	$(QUIET)$(SED) \
+		-e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
+		-e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
+		-e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
+		-e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+		--output $@.tmp $<
+	$(QUIET)$(SED) \
+		-e '1,/\$$VBOX_MANAGE_OUTPUT/!d' \
+	        -e 's/\$$VBOX_MANAGE_OUTPUT.*//' \
+	        --output $@.tmp3 $@.tmp
 	$(QUIET)$(REDIRECT) -wo $@.tmp2 -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
 		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
 		-- \
 		$(VBOXMANAGEPATH) --dumpopts
-	$(QUIET)$(SED) -e 's/</\&lt;/g' -e 's/>/\&gt;/g' --append $@ $@.tmp2
-	$(QUIET)$(SED) -e '/\$$VBOX_MANAGE_OUTPUT/,$$!d' \
-	               -e 's/.*\$$VBOX_MANAGE_OUTPUT//' --append $@ $@.tmp
-	$(QUIET)$(RM) -f $@.tmp $@.tmp2
+	$(QUIET)$(SED) -e 's/</\&lt;/g' -e 's/>/\&gt;/g' --append $@.tmp3 $@.tmp2
+	$(QUIET)$(SED) \
+		-e '/\$$VBOX_MANAGE_OUTPUT/,$$!d' \
+		-e 's/.*\$$VBOX_MANAGE_OUTPUT//' \
+		--append $@.tmp3 $@.tmp
+	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet --output $@ \
+		$(VBOX_PATH_MANUAL_SRC)/usage-to-docbook-manual.xsl \
+		$@.tmp3
+	$(QUIET)$(RM) -f $@.tmp $@.tmp2 $@.tmp3
 
 VBOX_MANUAL_APIREF_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml
 VBOX_DOC_XIDL_SRC = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl

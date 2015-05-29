@@ -1,4 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+    user_VBoxManage.xml:
+      VBoxManage documentation for the user manual.
+
+      This XML document is also be used for generating the help text
+      built into VBoxManage as well as manpages (hacking in progress).
+
+    Copyright (C) 2006-2015 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+ -->
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
 "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="vboxmanage">
@@ -6,6 +24,7 @@
 
   <sect1>
     <title>Introduction</title>
+    <brief>xxxx - not-Australia, right, mate?</brief>
 
     <para>As briefly mentioned in <xref linkend="frontends" />, VBoxManage is
     the command-line interface to VirtualBox. With it, you can completely
