@@ -1915,10 +1915,10 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
 {
     return questionBinary(0, MessageType_Info,
-                          tr("<p>The virtual machine window will be now switched to <b>fullscreen</b> mode. "
+                          tr("<p>The virtual machine window will be now switched to <b>full-screen</b> mode. "
                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-                             "<p>Note that the main menu bar is hidden in fullscreen mode. "
+                             "<p>Note that the main menu bar is hidden in full-screen mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
                              .arg(strHotKey, UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
                           "confirmGoingFullscreen",
@@ -1954,9 +1954,9 @@ bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
 bool UIMessageCenter::cannotEnterFullscreenMode(ULONG /* uWidth */, ULONG /* uHeight */, ULONG /* uBpp */, ULONG64 uMinVRAM) const
 {
     return questionBinary(0, MessageType_Warning,
-                          tr("<p>Could not switch the guest display to fullscreen mode due to insufficient guest video memory.</p>"
+                          tr("<p>Could not switch the guest display to full-screen mode due to insufficient guest video memory.</p>"
                              "<p>You should configure the virtual machine to have at least <b>%1</b> of video memory.</p>"
-                             "<p>Press <b>Ignore</b> to switch to fullscreen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
+                             "<p>Press <b>Ignore</b> to switch to full-screen mode anyway or press <b>Cancel</b> to cancel the operation.</p>")
                              .arg(VBoxGlobal::formatSize(uMinVRAM)),
                           0 /* auto-confirm id */,
                           tr("Ignore"));
