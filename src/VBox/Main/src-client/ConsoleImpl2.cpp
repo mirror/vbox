@@ -2760,6 +2760,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pLunL0, "AttachedDriver", &pLunL1);
             InsertConfigNode(pLunL1, "Config", &pCfg);
 
+            hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
+            InsertConfigString(pCfg, "StreamName", bstr);
+
             AudioDriverType_T audioDriver;
             hrc = audioAdapter->COMGETTER(AudioDriver)(&audioDriver);                       H();
             switch (audioDriver)
@@ -2823,8 +2826,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                 }
 #endif
             }
-
-            hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
 
             /*
              * The VRDE audio backend driver. This one always is there

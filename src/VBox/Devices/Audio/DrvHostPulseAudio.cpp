@@ -74,6 +74,8 @@ typedef struct DRVHOSTPULSEAUDIO
     /** Error count for not flooding the release log.
      *  UINT32_MAX for unlimited logging. */
     uint32_t           cLogErrors;
+    /** Configuration option: stream name. */
+    char               *pszStreamName;
 } DRVHOSTPULSEAUDIO, *PDRVHOSTPULSEAUDIO;
 
 typedef struct PULSEAUDIOSTREAM
@@ -580,7 +582,9 @@ static DECLCALLBACK(int) drvHostPulseAudioInitOut(PPDMIHOSTAUDIO pInterface,
     pThisStrmOut->BufAttr.minreq      = -1; /* Pulse should set something sensible for minreq on it's own */
 
     /* Note that the struct BufAttr is updated to the obtained values after this call! */
-    int rc = drvHostPulseAudioOpen(false /* fIn */, "pa.out", &pThisStrmOut->SampleSpec, &pThisStrmOut->BufAttr,
+    char achName[64];
+    RTStrPrintf(achName, sizeof(achName), "%.32s (out)", pDrv->pszStreamName);
+    int rc = drvHostPulseAudioOpen(false /* fIn */, achName, &pThisStrmOut->SampleSpec, &pThisStrmOut->BufAttr,
                                    &pThisStrmOut->pStream);
     if (RT_FAILURE(rc))
         return rc;
@@ -661,7 +665,9 @@ static DECLCALLBACK(int) drvHostPulseAudioInitIn(PPDMIHOSTAUDIO pInterface,
     pThisStrmIn->BufAttr.maxlength   = (pThisStrmIn->BufAttr.fragsize * 3) / 2;
     /* Note: Other members of pa_buffer_attr are ignored for record streams. */
 
-    int rc = drvHostPulseAudioOpen(true /* fIn */, "pa.in", &pThisStrmIn->SampleSpec, &pThisStrmIn->BufAttr,
+    char achName[64];
+    RTStrPrintf(achName, sizeof(achName), "%.32s (in)", pDrv->pszStreamName);
+    int rc = drvHostPulseAudioOpen(true /* fIn */, achName, &pThisStrmIn->SampleSpec, &pThisStrmIn->BufAttr,
                                    &pThisStrmIn->pStream);
     if (RT_FAILURE(rc))
         return rc;
@@ -1146,10 +1152,12 @@ static DECLCALLBACK(void *) drvHostPulseAudioQueryInterface(PPDMIBASE pInterface
 static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     AssertPtrReturn(pDrvIns, VERR_INVALID_POINTER);
-    /* pCfg is optional. */
 
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
     LogRel(("Audio: Initializing PulseAudio driver\n"));
+    
+    CFGMR3QueryStringAlloc(pCfg, "StreamName", &pThis->pszStreamName);
+    LogRel(("stream name '%s'\n", pThis->pszStreamName));
 
     pThis->pDrvIns                   = pDrvIns;
     /* IBase */
