@@ -63,26 +63,56 @@ checkdep_ips()
 
 }
 
-# nothing to check for remote install
+disable_service()
+{
+    if test -z "$1" || test -z "$2"; then
+        errorprint "Missing argument to disable_service"
+        return 1
+    fi
+    servicefound=`$BIN_SVCS -H "$1" 2> /dev/null | grep '^online'`
+    if test ! -z "$servicefound"; then
+        infoprint "$2 ($1) is still enabled. Disabling..."
+        $BIN_SVCADM disable -s "$1"
+        # Don't delete the service, handled by manifest class action
+        # /usr/sbin/svccfg delete $1
+    fi
+}
+
+#
+# Begin execution
+#
+
+# Nothing to check for remote install
 REMOTE_INST=0
 if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
     BASEDIR_OPT="-R $PKG_INSTALL_ROOT"
     REMOTE_INST=1
 fi
 
-# nothing to check for non-global zones
+# Nothing to check for non-global zones
 currentzone=`zonename`
 if test "$currentzone" != "global"; then
     exit 0
 fi
 
-
-infoprint "Checking package dependencies..."
-
 PKG_MISSING_IPS=""
 PKG_MISSING_SVR4=""
 BIN_PKGINFO=`which pkginfo 2> /dev/null`
 BIN_PKG=`which pkg 2> /dev/null`
+BIN_SVCS=`which svcs 2> /dev/null`
+BIN_SVCADM=/usr/sbin/svcadm
+
+# Check if our binaries are fine
+if test ! -x "$BIN_SVCS"; then
+    errorprint "Missing or non-executable binary: svcs ($BIN_SVCS)."
+    exit 1
+fi
+if test ! -x "$BIN_SVCADM"; then
+    errorprint "Missing or non-executable binary: svcadm ($BIN_SVCADM)."
+    exit 1
+fi
+
+infoprint "Checking package dependencies..."
 
 if test -x "$BIN_PKG"; then
     checkdep_ips "runtime/python-26"
@@ -116,38 +146,16 @@ else
     infoprint "Done."
 fi
 
-# nothing more to do for remote installs
+# Nothing more to do for remote installs
 if test "$REMOTE_INST" -eq 1; then
     exit 0
 fi
 
-# Check if the Zone Access service is holding open vboxdrv, if so stop & remove it
-servicefound=`svcs -H "svc:/application/virtualbox/zoneaccess" 2> /dev/null | grep '^online'`
-if test ! -z "$servicefound"; then
-    infoprint "VirtualBox zone access service appears to still be running."
-    infoprint "Halting & removing zone access service..."
-    /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
-    # Don't delete the service, handled by manifest class action
-    # /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
-fi
-
-# Check if the Web service is running, if so stop & remove it
-servicefound=`svcs -H "svc:/application/virtualbox/webservice" 2> /dev/null | grep '^online'`
-if test ! -z "$servicefound"; then
-    infoprint "VirtualBox web service appears to still be running."
-    infoprint "Halting & removing webservice..."
-    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice
-    # Don't delete the service, handled by manifest class action
-    # /usr/sbin/svccfg delete svc:/application/virtualbox/webservice
-fi
-
-# Check if the autostart service is running, if so stop & remove it
-servicefound=`svcs -H "svc:/application/virtualbox/autostart" 2> /dev/null | grep '^online'`
-if test ! -z "$servicefound"; then
-    infoprint "VirtualBox autostart service appears to still be running."
-    infoprint "Halting & removing autostart service..."
-    /usr/sbin/svcadm disable -s svc:/application/virtualbox/autostart
-fi
+# Check & disable running services
+disable_service "svc:/application/virtualbox/zoneaccess"  "VirtualBox zone access service"
+disable_service "svc:/application/virtualbox/webservice"  "VirtualBox web service"
+disable_service "svc:/application/virtualbox/autostart"   "VirtualBox auto-start service"
+disable_service "svc:/application/virtualbox/balloonctrl" "VirtualBox balloon-control service"
 
 # Check if VBoxSVC is currently running
 VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | awk '{ print $1 }'`
@@ -202,13 +210,14 @@ fi
 # See BugDB 14838646 for the original problem and @bugref{7866} for
 # follow up fixes.
 for i in 1 2 3 4 5 6 7 8 9 10; do
-    svcs -H "svc:/application/virtualbox/autostart"  >/dev/null 2>&1 ||
-    svcs -H "svc:/application/virtualbox/webservice" >/dev/null 2>&1 ||
-    svcs -H "svc:/application/virtualbox/zoneaccess" >/dev/null 2>&1 || break
+    $BIN_SVCS -H "svc:/application/virtualbox/autostart"   >/dev/null 2>&1 ||
+    $BIN_SVCS -H "svc:/application/virtualbox/webservice"  >/dev/null 2>&1 ||
+    $BIN_SVCS -H "svc:/application/virtualbox/zoneaccess"  >/dev/null 2>&1 || 
+    $BIN_SVCS -H "svc:/application/virtualbox/balloonctrl" >/dev/null 2>&1 || break
     if test "${i}" = "1"; then
         printf "Waiting for services from previous installation to be removed."
     elif test "${i}" = "10"; then
-        printf "\nWarning!!! Some service(s) still appears to not be removed completely!"
+        printf "\nWarning!!! Some service(s) still appears to be present"
     else
         printf "."
     fi
