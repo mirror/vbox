@@ -788,7 +788,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&About VirtualBox..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display window with product information"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display a window with product information"));
     }
 };
 
