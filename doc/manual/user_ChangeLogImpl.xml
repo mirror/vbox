@@ -36,8 +36,8 @@
 
       <listitem>
         <para>VMs can now be started in <emphasis>separate mode</emphasis>. The VM
-          process is started headless while the frontend runs separate process which
-          can be terminated without stopping the VM.</para>
+          process is started headless while the frontend runs as a separate process
+          which can be terminated without stopping the VM.</para>
       </listitem>
 
       <listitem>
