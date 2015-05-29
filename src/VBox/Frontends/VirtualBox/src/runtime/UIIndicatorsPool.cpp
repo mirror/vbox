@@ -970,8 +970,9 @@ private:
     void retranslateUi()
     {
         setToolTip(QApplication::translate("UIIndicatorsPool",
-                   "Indicates whether the keyboard is captured by the guest OS "
-                   "(<img src=:/hostkey_captured_16px.png/>) or not (<img src=:/hostkey_16px.png/>)."));
+                   "Indicates whether the host keyboard is captured by the guest OS:<br>"
+                   "<nobr><img src=:/hostkey_16px.png/>&nbsp;&nbsp;keyboard is not captured</nobr><br>"
+                   "<nobr><img src=:/hostkey_captured_16px.png/>&nbsp;&nbsp;keyboard is captured</nobr>"));
     }
 
     /** Update routine. */
