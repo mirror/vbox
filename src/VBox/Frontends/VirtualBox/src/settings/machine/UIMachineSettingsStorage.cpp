@@ -1076,16 +1076,16 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     {
                         case ExpanderToolTip:
                             if (aIndex.child (0, 0).isValid())
-                                tip = UIMachineSettingsStorage::tr("<nobr>Expands/Collapses&nbsp;item</nobr>");
+                                tip = UIMachineSettingsStorage::tr("<nobr>Expands/Collapses&nbsp;item.</nobr>");
                             break;
                         case HDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;hard&nbsp;drive</nobr>");
+                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;hard&nbsp;drive.</nobr>");
                             break;
                         case CDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;optical&nbsp;drive</nobr>");
+                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;optical&nbsp;drive.</nobr>");
                             break;
                         case FDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;floppy&nbsp;drive</nobr>");
+                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;floppy&nbsp;drive.</nobr>");
                             break;
                         default:
                             break;
