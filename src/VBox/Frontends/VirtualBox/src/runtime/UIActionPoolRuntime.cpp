@@ -267,7 +267,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Save State"));
+        setName(QApplication::translate("UIActionPool", "&Save State"));
         setStatusTip(QApplication::translate("UIActionPool", "Save the state of the virtual machine"));
     }
 };
@@ -637,7 +637,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Take Screensh&ot..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Take the guest display screenshot"));
+        setStatusTip(QApplication::translate("UIActionPool", "Take a guest display screenshot"));
     }
 };
 
@@ -723,7 +723,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Video Capture"));
-        setStatusTip(QApplication::translate("UIActionPool", "Activate the guest display video capture"));
+        setStatusTip(QApplication::translate("UIActionPool", "Enable guest display video capture"));
     }
 };
 
@@ -1029,7 +1029,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Keyboard Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window to configure keyboard shortcuts"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window to configure keyboard shortcuts"));
     }
 };
 
@@ -1063,7 +1063,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Alt-Del"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Alt-Del"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Del"));
     }
 };
@@ -1099,7 +1099,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Alt-Backspace"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Alt-Backspace"));
     }
 };
@@ -1130,7 +1130,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Ctrl-Break"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Ctrl-Break"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Ctrl-Break"));
     }
 };
@@ -1160,7 +1160,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Insert %1").arg("Insert"));
+        setName(QApplication::translate("UIActionPool", "&Insert %1", "that means send the %1 key sequence to the virtual machine").arg("Insert"));
         setStatusTip(QApplication::translate("UIActionPool", "Send the %1 sequence to the virtual machine").arg("Insert"));
     }
 };
@@ -1543,7 +1543,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Drag and Drop"));
+        setName(QApplication::translate("UIActionPool", "&Drag and Drop"));
     }
 };
 

@@ -788,7 +788,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&About VirtualBox..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show a window with product information"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display window with product information"));
     }
 };
 
@@ -831,8 +831,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
+        setName(QApplication::translate("UIActionPool", "&Preferences...", "global preferences window"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window"));
     }
 };
 

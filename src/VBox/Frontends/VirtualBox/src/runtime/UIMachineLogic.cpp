@@ -831,7 +831,7 @@ void UIMachineLogic::retranslateUi()
         for (int i = 0; i < actions.size(); ++i)
         {
             QAction *pAction = actions.at(i);
-            pAction->setText(QApplication::translate("UIMachineLogic", "Preview Monitor %1").arg(pAction->data().toInt() + 1));
+            pAction->setText(QApplication::translate("UIActionPool", "Preview Monitor %1").arg(pAction->data().toInt() + 1));
         }
     }
 #endif /* Q_WS_MAC */
@@ -1409,7 +1409,7 @@ void UIMachineLogic::sltTakeSnapshot()
     pDlg->mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
 
     /* Search for the max available filter index: */
-    QString strNameTemplate = QApplication::translate("UIMachineLogic", "Snapshot %1");
+    QString strNameTemplate = VBoxTakeSnapshotDlg::tr("Snapshot %1");
     int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine(), machine().FindSnapshot(QString()), strNameTemplate);
     pDlg->mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
@@ -2197,7 +2197,8 @@ void UIMachineLogic::updateMenuDevicesNetwork(QMenu *pMenu)
     foreach (int iSlot, adapterData.keys())
     {
         QAction *pAction = pMenu->addAction(UIIconPool::iconSet(adapterData[iSlot] ? ":/connect_16px.png": ":/disconnect_16px.png"),
-                                            adapterData.size() == 1 ? tr("Connect Network Adapter") : tr("Connect Network Adapter %1").arg(iSlot + 1),
+                                            adapterData.size() == 1 ? UIActionPool::tr("&Connect Network Adapter") :
+                                                                      UIActionPool::tr("Connect Network Adapter &%1").arg(iSlot + 1),
                                             this, SLOT(sltToggleNetworkAdapterConnection()));
         pAction->setProperty("slot", iSlot);
         pAction->setCheckable(true);
@@ -2218,8 +2219,8 @@ void UIMachineLogic::updateMenuDevicesUSB(QMenu *pMenu)
         /* Add only one - "empty" action: */
         QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/usb_unavailable_16px.png",
                                                                          ":/usb_unavailable_disabled_16px.png"),
-                                                     tr("No USB Devices Connected"));
-        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
+                                                     UIActionPool::tr("No USB Devices Connected"));
+        pEmptyMenuAction->setToolTip(UIActionPool::tr("No supported devices connected to the host PC"));
         pEmptyMenuAction->setEnabled(false);
     }
     /* If device list is NOT empty: */
@@ -2264,8 +2265,8 @@ void UIMachineLogic::updateMenuDevicesWebCams(QMenu *pMenu)
         /* Add only one - "empty" action: */
         QAction *pEmptyMenuAction = pMenu->addAction(UIIconPool::iconSet(":/web_camera_unavailable_16px.png",
                                                                          ":/web_camera_unavailable_disabled_16px.png"),
-                                                     tr("No Webcams Connected"));
-        pEmptyMenuAction->setToolTip(tr("No supported webcams connected to the host PC"));
+                                                     UIActionPool::tr("No Webcams Connected"));
+        pEmptyMenuAction->setToolTip(UIActionPool::tr("No supported webcams connected to the host PC"));
         pEmptyMenuAction->setEnabled(false);
     }
     /* If webcam list is NOT empty: */
