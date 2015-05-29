@@ -283,8 +283,14 @@ void UIGlobalSettingsExtension::retranslateUi()
     Ui::UIGlobalSettingsExtension::retranslateUi(this);
 
     /* Translate actions: */
-    m_pActionAdd->setText(tr("Add package"));
-    m_pActionRemove->setText(tr("Remove package"));
+    m_pActionAdd->setText(tr("&Add Package"));
+    m_pActionRemove->setText(tr("&Remove Package"));
+
+    m_pActionAdd->setWhatsThis(tr("Adds new package."));
+    m_pActionRemove->setWhatsThis(tr("Removes selected package."));
+
+    m_pActionAdd->setToolTip(m_pActionAdd->whatsThis());
+    m_pActionRemove->setToolTip(m_pActionRemove->whatsThis());
 }
 
 void UIGlobalSettingsExtension::sltHandleCurrentItemChange(QTreeWidgetItem *pCurrentItem)

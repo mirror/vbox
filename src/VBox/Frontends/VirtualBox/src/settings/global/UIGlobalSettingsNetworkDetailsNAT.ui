@@ -24,7 +24,7 @@
       <string>&amp;Enable Network</string>
      </property>
      <property name="toolTip">
-      <string>Enable this NAT network.</string>
+      <string>When checked, this network will be enabled.</string>
      </property>
     </widget>
    </item>
@@ -103,7 +103,7 @@
          <string>Supports &amp;DHCP</string>
         </property>
         <property name="toolTip">
-         <string>Determines whether this network supports DHCP.</string>
+         <string>When checked, this network will support DHCP.</string>
         </property>
        </widget>
       </item>
@@ -113,7 +113,7 @@
          <string>Supports &amp;IPv6</string>
         </property>
         <property name="toolTip">
-         <string>Determines whether this network supports IPv6.</string>
+         <string>When checked, this network will support IPv6.</string>
         </property>
        </widget>
       </item>
@@ -123,14 +123,14 @@
          <string>Advertise Default IPv6 &amp;Route</string>
         </property>
         <property name="toolTip">
-         <string>Determines whether this network should be advertised as the default IPv6 route.</string>
+         <string>When checked, this network will be advertised as the default IPv6 route.</string>
         </property>
        </widget>
       </item>
       <item row="5" column="2">
        <widget class="QPushButton" name="m_pButtonPortForwarding">
         <property name="whatsThis">
-         <string>Opens a window to manage port forwarding rules.</string>
+         <string>Displays the window to configure port forwarding rules.</string>
         </property>
         <property name="text">
          <string>&amp;Port Forwarding</string>

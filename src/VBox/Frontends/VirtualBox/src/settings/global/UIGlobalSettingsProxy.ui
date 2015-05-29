@@ -72,7 +72,7 @@
       <item>
        <widget class="QILineEdit" name="m_pHostEditor">
         <property name="whatsThis">
-         <string>Changes the proxy host.</string>
+         <string>Holds the proxy host.</string>
         </property>
        </widget>
       </item>
@@ -92,7 +92,7 @@
       <item>
        <widget class="QILineEdit" name="m_pPortEditor">
         <property name="whatsThis">
-         <string>Changes the proxy port.</string>
+         <string>Holds the proxy port.</string>
         </property>
        </widget>
       </item>

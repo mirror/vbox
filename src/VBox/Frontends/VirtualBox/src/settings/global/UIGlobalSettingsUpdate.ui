@@ -68,7 +68,7 @@
         <item>
          <widget class="QComboBox" name="m_pComboBoxUpdatePeriod">
           <property name="whatsThis">
-           <string>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</string>
+           <string>Selects how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</string>
           </property>
           <property name="sizePolicy">
            <sizepolicy vsizetype="Fixed" hsizetype="Minimum">

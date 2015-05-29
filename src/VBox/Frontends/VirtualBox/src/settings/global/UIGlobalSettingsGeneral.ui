@@ -73,7 +73,7 @@
    <item row="2" column="0">
     <widget class="QLabel" name="m_pLabelHostScreenSaver">
      <property name="text">
-      <string>&amp;Host Screensaver:</string>
+      <string>Host Screensaver:</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -89,7 +89,7 @@
       <string>When checked, the host screensaver will be disabled whenever a virtual machine is running.</string>
      </property>
      <property name="text">
-      <string>Disable When Running Virtual Machines</string>
+      <string>&amp;Disable When Running Virtual Machines</string>
      </property>
     </widget>
    </item>

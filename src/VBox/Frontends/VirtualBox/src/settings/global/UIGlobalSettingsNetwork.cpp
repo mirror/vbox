@@ -656,33 +656,33 @@ void UIGlobalSettingsNetwork::retranslateUi()
                                            << tr("Name"));
 
         /* Translate action text: */
-        m_pActionAddNetworkNAT->setText(tr("&Add NAT network"));
-        m_pActionDelNetworkNAT->setText(tr("&Remove NAT network"));
-        m_pActionEditNetworkNAT->setText(tr("&Edit NAT network"));
+        m_pActionAddNetworkNAT->setText(tr("&Add NAT Network"));
+        m_pActionDelNetworkNAT->setText(tr("&Remove NAT Network"));
+        m_pActionEditNetworkNAT->setText(tr("&Edit NAT Network"));
 
-        /* Recompose action tool-tips: */
-        m_pActionAddNetworkNAT->setToolTip(m_pActionAddNetworkNAT->text().remove('&') +
-            QString(" (%1)").arg(m_pActionAddNetworkNAT->shortcut().toString()));
-        m_pActionDelNetworkNAT->setToolTip(m_pActionDelNetworkNAT->text().remove('&') +
-            QString(" (%1)").arg(m_pActionDelNetworkNAT->shortcut().toString()));
-        m_pActionEditNetworkNAT->setToolTip(m_pActionEditNetworkNAT->text().remove('&') +
-            QString(" (%1)").arg(m_pActionEditNetworkNAT->shortcut().toString()));
+        m_pActionAddNetworkNAT->setWhatsThis(tr("Adds new NAT network."));
+        m_pActionDelNetworkNAT->setWhatsThis(tr("Removes selected NAT network."));
+        m_pActionEditNetworkNAT->setWhatsThis(tr("Edits selected NAT network."));
+
+        m_pActionAddNetworkNAT->setToolTip(m_pActionAddNetworkNAT->whatsThis());
+        m_pActionDelNetworkNAT->setToolTip(m_pActionDelNetworkNAT->whatsThis());
+        m_pActionEditNetworkNAT->setToolTip(m_pActionEditNetworkNAT->whatsThis());
     }
 
     /* Host networks: */
     {
         /* Translate action text: */
-        m_pActionAddNetworkHost->setText(tr("&Add host-only network"));
-        m_pActionDelNetworkHost->setText(tr("&Remove host-only network"));
-        m_pActionEditNetworkHost->setText(tr("&Edit host-only network"));
+        m_pActionAddNetworkHost->setText(tr("&Add Host-only Network"));
+        m_pActionDelNetworkHost->setText(tr("&Remove Host-only Network"));
+        m_pActionEditNetworkHost->setText(tr("&Edit Host-only Network"));
 
-        /* Recompose action tool-tips: */
-        m_pActionAddNetworkHost->setToolTip(m_pActionAddNetworkHost->text().remove('&') +
-            QString(" (%1)").arg(m_pActionAddNetworkHost->shortcut().toString()));
-        m_pActionDelNetworkHost->setToolTip(m_pActionDelNetworkHost->text().remove('&') +
-            QString(" (%1)").arg(m_pActionDelNetworkHost->shortcut().toString()));
-        m_pActionEditNetworkHost->setToolTip(m_pActionEditNetworkHost->text().remove('&') +
-            QString(" (%1)").arg(m_pActionEditNetworkHost->shortcut().toString()));
+        m_pActionAddNetworkHost->setWhatsThis(tr("Adds new host-only network."));
+        m_pActionDelNetworkHost->setWhatsThis(tr("Removes selected host-only network."));
+        m_pActionEditNetworkHost->setWhatsThis(tr("Edits selected host-only network."));
+
+        m_pActionAddNetworkHost->setToolTip(m_pActionAddNetworkHost->whatsThis());
+        m_pActionDelNetworkHost->setToolTip(m_pActionDelNetworkHost->whatsThis());
+        m_pActionEditNetworkHost->setToolTip(m_pActionEditNetworkHost->whatsThis());
     }
 }
 

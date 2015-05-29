@@ -51,7 +51,7 @@
           <bool>true</bool>
          </property>
          <property name="toolTip">
-          <string>Use manual configuration for this host-only network adapter.</string>
+          <string>When checked, manual configuration will be used for this network adapter.</string>
          </property>
         </widget>
        </item>
@@ -185,7 +185,7 @@
           <string>&amp;Enable Server</string>
          </property>
          <property name="toolTip">
-          <string>Indicates whether the DHCP Server is enabled on machine startup or not.</string>
+          <string>When checked, DHCP Server will be enabled for this network on machine startup.</string>
          </property>
         </widget>
        </item>

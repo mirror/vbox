@@ -223,12 +223,10 @@ void UIGlobalSettingsInput::retranslateUi()
     /* Translate tab-widget labels: */
     m_pTabWidget->setTabText(UIHotKeyTableIndex_Selector, tr("&VirtualBox Manager"));
     m_pTabWidget->setTabText(UIHotKeyTableIndex_Machine, tr("Virtual &Machine"));
-    m_pSelectorTable->setWhatsThis(tr("Lists all the available shortcuts "
-                                      "which can be configured."));
-    m_pMachineTable->setWhatsThis(tr("Lists all the available shortcuts "
-                                     "which can be configured."));
-    m_pSelectorFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
-    m_pMachineFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
+    m_pSelectorTable->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
+    m_pMachineTable->setWhatsThis(tr("Lists all available shortcuts which can be configured."));
+    m_pSelectorFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
+    m_pMachineFilterEditor->setWhatsThis(tr("Holds a sequence to filter the shortcut list."));
 }
 
 void UIGlobalSettingsInput::prepareValidation()

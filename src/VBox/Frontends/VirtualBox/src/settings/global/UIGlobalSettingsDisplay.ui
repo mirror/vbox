@@ -63,7 +63,7 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>Specifies the maximum width which we would like the guest to use.</string>
+      <string>Holds the maximum width which we would like the guest to use.</string>
      </property>
     </widget>
    </item>
@@ -89,7 +89,7 @@
       </sizepolicy>
      </property>
      <property name="whatsThis">
-      <string>Specifies the maximum height which we would like the guest to use.</string>
+      <string>Holds the maximum height which we would like the guest to use.</string>
      </property>
     </widget>
    </item>
