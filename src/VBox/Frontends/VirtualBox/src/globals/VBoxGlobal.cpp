@@ -1785,20 +1785,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     QAction *pActionOpenExistingMedium = menu.addAction(UIIconPool::iconSet(":/select_file_16px.png"), QString(), pListener, pszSlotName);
     pActionOpenExistingMedium->setData(QVariant::fromValue(UIMediumTarget(strControllerName, currentAttachment.GetPort(), currentAttachment.GetDevice(),
                                                                           mediumType)));
-    switch (mediumType)
-    {
-        case UIMediumType_HardDisk:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual hard disk file..."));
-            break;
-        case UIMediumType_DVD:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual optical disk file..."));
-            break;
-        case UIMediumType_Floppy:
-            pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual floppy disk file..."));
-            break;
-        default:
-            break;
-    }
+    pActionOpenExistingMedium->setText(QApplication::translate("UIMachineSettingsStorage", "Choose a virtual disk image file..."));
 
 
     /* Insert separator: */

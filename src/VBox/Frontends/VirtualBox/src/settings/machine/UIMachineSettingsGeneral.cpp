@@ -478,7 +478,7 @@ void UIMachineSettingsGeneral::retranslateUi()
     AssertPtrReturnVoid(mPsSnapshot);
     mPsSnapshot->setWhatsThis(tr("Holds the path where snapshots of this "
                                  "virtual machine will be stored. Be aware that "
-                                 "snapshots can take quite a lot of disk space."));
+                                 "snapshots can take quite a lot of storage space."));
     /* Translate Shared Clipboard mode combo: */
     AssertPtrReturnVoid(mCbClipboard);
     mCbClipboard->setItemText(0, gpConverter->toString(KClipboardMode_Disabled));

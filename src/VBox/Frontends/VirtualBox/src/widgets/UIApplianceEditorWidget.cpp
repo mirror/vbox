@@ -213,10 +213,10 @@ QVariant HardwareItem::data(int column, int role) const
                     case KVirtualSystemDescriptionType_OS:                     v = UIApplianceEditorWidget::tr("Guest OS Type"); break;
                     case KVirtualSystemDescriptionType_CPU:                    v = UIApplianceEditorWidget::tr("CPU"); break;
                     case KVirtualSystemDescriptionType_Memory:                 v = UIApplianceEditorWidget::tr("RAM"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerIDE:  v = UIApplianceEditorWidget::tr("Hard Disk Controller (IDE)"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = UIApplianceEditorWidget::tr("Hard Disk Controller (SATA)"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = UIApplianceEditorWidget::tr("Hard Disk Controller (SCSI)"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  v = UIApplianceEditorWidget::tr("Hard Disk Controller (SAS)"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerIDE:  v = UIApplianceEditorWidget::tr("Storage Controller (IDE)"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSATA: v = UIApplianceEditorWidget::tr("Storage Controller (SATA)"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSCSI: v = UIApplianceEditorWidget::tr("Storage Controller (SCSI)"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  v = UIApplianceEditorWidget::tr("Storage Controller (SAS)"); break;
                     case KVirtualSystemDescriptionType_CDROM:                  v = UIApplianceEditorWidget::tr("DVD"); break;
                     case KVirtualSystemDescriptionType_Floppy:                 v = UIApplianceEditorWidget::tr("Floppy"); break;
                     case KVirtualSystemDescriptionType_NetworkAdapter:         v = UIApplianceEditorWidget::tr("Network Adapter"); break;

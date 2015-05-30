@@ -649,13 +649,13 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                       fMachineWithHardDiskPresent ?
                       tr("<p>You are about to remove following virtual machines from the machine list:</p>"
                          "<p>%1</p>"
-                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well? "
-                         "Doing this will also remove the files containing the machine's virtual hard disks "
+                         "<p>Would you like to delete the files containing the virtual machine from your hard drive as well? "
+                         "Doing this will also remove the files containing the machine's virtual hard drives "
                          "if they are not in use by another machine.</p>")
                          .arg(strMachineNames) :
                       tr("<p>You are about to remove following virtual machines from the machine list:</p>"
                          "<p>%1</p>"
-                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well?</p>")
+                         "<p>Would you like to delete the files containing the virtual machine from your hard drive as well?</p>")
                          .arg(strMachineNames);
 
     /* Prepare message itself: */
@@ -696,8 +696,7 @@ void UIMessageCenter::cannotRemoveMachine(const CMachine &machine, const CProgre
 bool UIMessageCenter::warnAboutInaccessibleMedia() const
 {
     return questionBinary(0, MessageType_Warning,
-                          tr("<p>One or more virtual hard disks, optical or "
-                             "floppy disk image files are not currently accessible. As a result, you will "
+                          tr("<p>One or more disk image files are not currently accessible. As a result, you will "
                              "not be able to operate virtual machines that use these files until "
                              "they become accessible later.</p>"
                              "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
@@ -843,7 +842,7 @@ int UIMessageCenter::confirmSnapshotRestoring(const QString &strSnapshotName, bo
 bool UIMessageCenter::confirmSnapshotRemoval(const QString &strSnapshotName) const
 {
     return questionBinary(0, MessageType_Question,
-                          tr("<p>Deleting the snapshot will cause the state information saved in it to be lost, and disk data spread over "
+                          tr("<p>Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over "
                              "several image files that VirtualBox has created together with the snapshot will be merged into one file. "
                              "This can be a lengthy process, and the information in the snapshot cannot be recovered.</p>"
                              "</p>Are you sure you want to delete the selected snapshot <b>%1</b>?</p>")
@@ -858,8 +857,8 @@ bool UIMessageCenter::warnAboutSnapshotRemovalFreeSpace(const QString &strSnapsh
                                                         const QString &strTargetFileSystemFree) const
 {
     return questionBinary(0, MessageType_Question,
-                          tr("<p>Deleting the snapshot %1 will temporarily need more disk space. In the worst case the size of image %2 will grow by %3, "
-                              "however on this filesystem there is only %4 free.</p><p>Running out of disk space during the merge operation can result in "
+                          tr("<p>Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, "
+                              "however on this filesystem there is only %4 free.</p><p>Running out of storage space during the merge operation can result in "
                               "corruption of the image and the VM configuration, i.e. loss of the VM and its data.</p><p>You may continue with deleting "
                               "the snapshot at your own risk.</p>")
                               .arg(strSnapshotName, strTargetImageName, strTargetImageMaxSize, strTargetFileSystemFree),
@@ -1063,11 +1062,11 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
 int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /* = 0*/) const
 {
     return questionTrinary(pParent, MessageType_Question,
-                           tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
-                              "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
+                           tr("<p>You are about to add a virtual hard drive to controller <b>%1</b>.</p>"
+                              "<p>Would you like to create a new, empty file to hold the drive contents or select an existing one?</p>")
                               .arg(strControllerName),
                            0 /* auto-confirm id */,
-                           tr("Create &new disk"), tr("&Choose existing disk"));
+                           tr("Create &new drive"), tr("&Choose existing drive"));
 }
 
 int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /* = 0*/) const
@@ -1111,7 +1110,7 @@ void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType t
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to attach the hard drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
@@ -1239,7 +1238,7 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pPar
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("<p>Are you sure you want to release the virtual hard disk <nobr><b>%1</b></nobr>?</p>"
+            strMessage = tr("<p>Are you sure you want to release the virtual hard drive <nobr><b>%1</b></nobr>?</p>"
                             "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
             break;
         }
@@ -1273,7 +1272,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("<p>Are you sure you want to remove the virtual hard disk "
+            strMessage = tr("<p>Are you sure you want to remove the virtual hard drive "
                             "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
             /* Compose capabilities flag: */
             qulonglong caps = 0;
@@ -1285,7 +1284,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             if (caps & KMediumFormatCapabilities_File)
             {
                 if (medium.state() == KMediumState_Inaccessible)
-                    strMessage += tr("<p>As this hard disk is inaccessible its image file"
+                    strMessage += tr("<p>As this hard drive is inaccessible its image file"
                                      " can not be deleted.</p>");
             }
             break;
@@ -1319,7 +1318,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
 int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     return questionTrinary(pParent, MessageType_Question,
-                           tr("<p>Do you want to delete the storage unit of the hard disk "
+                           tr("<p>Do you want to delete the storage unit of the hard drive "
                               "<nobr><b>%1</b></nobr>?</p>"
                               "<p>If you select <b>Delete</b> then the specified storage unit "
                               "will be permanently deleted. This operation <b>cannot be "
@@ -1358,7 +1357,7 @@ void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType t
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to detach the hard drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
@@ -1435,62 +1434,18 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
     return false;
 }
 
-void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType type, const QString &strLocation, QWidget *pParent /* = 0*/) const
+void UIMessageCenter::cannotOpenMedium(const CVirtualBox &vbox, UIMediumType /* type */, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
-    /* Prepare the message: */
-    QString strMessage;
-    switch (type)
-    {
-        case UIMediumType_HardDisk:
-        {
-            strMessage = tr("Failed to open the hard disk file <nobr><b>%1</b></nobr>.");
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            strMessage = tr("Failed to open the optical disk file <nobr><b>%1</b></nobr>.");
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            strMessage = tr("Failed to open the floppy disk file <nobr><b>%1</b></nobr>.");
-            break;
-        }
-        default:
-            break;
-    }
     /* Show the error: */
     error(pParent, MessageType_Error,
-          strMessage.arg(strLocation), formatErrorInfo(vbox));
+          tr("Failed to open the disk image file <nobr><b>%1</b></nobr>.").arg(strLocation), formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult &rc, QWidget *pParent /* = 0*/) const
 {
-    /* Prepare the message: */
-    QString strMessage;
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk:
-        {
-            strMessage = tr("Failed to close the hard disk file <nobr><b>%2</b></nobr>.");
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            strMessage = tr("Failed to close the optical disk file <nobr><b>%2</b></nobr>.");
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            strMessage = tr("Failed to close the floppy disk file <nobr><b>%2</b></nobr>.");
-            break;
-        }
-        default:
-            break;
-    }
     /* Show the error: */
     error(pParent, MessageType_Error,
-          strMessage.arg(medium.location()), formatErrorInfo(rc));
+          tr("Failed to close the disk image file <nobr><b>%1</b></nobr>.").arg(medium.location()), formatErrorInfo(rc));
 }
 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
@@ -1539,9 +1494,9 @@ void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString
 void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     alert(pParent, MessageType_Info,
-          tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
-             "You cannot create a new virtual hard disk that uses this location "
-             "because it can be already used by another virtual hard disk.</p>"
+          tr("<p>The hard drive storage unit at location <b>%1</b> already exists. "
+             "You cannot create a new virtual hard drive that uses this location "
+             "because it can be already used by another virtual hard drive.</p>"
              "<p>Please specify a different location.</p>")
              .arg(strLocation));
 }
@@ -1549,7 +1504,7 @@ void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation,
 void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(vbox));
 }
@@ -1557,7 +1512,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const
 void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(medium));
 }
@@ -1565,7 +1520,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const Q
 void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(progress));
 }
