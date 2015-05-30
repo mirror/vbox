@@ -482,30 +482,30 @@ void VBoxSnapshotsWgt::setMachine (const CMachine &aMachine)
 
 void VBoxSnapshotsWgt::retranslateUi()
 {
-    /* Translate uic generated strings */
-    Ui::VBoxSnapshotsWgt::retranslateUi (this);
+    /* Translate uic generated strings: */
+    Ui::VBoxSnapshotsWgt::retranslateUi(this);
 
-    mRestoreSnapshotAction->setText (tr ("&Restore Snapshot"));
-    mDeleteSnapshotAction->setText (tr ("&Delete Snapshot"));
-    mShowSnapshotDetailsAction->setText (tr ("S&how Details"));
-    mTakeSnapshotAction->setText (tr ("Take &Snapshot"));
+    mRestoreSnapshotAction->setText(tr("&Restore Snapshot"));
+    mDeleteSnapshotAction->setText(tr("&Delete Snapshot"));
+    mShowSnapshotDetailsAction->setText(tr("S&how Details"));
+    mTakeSnapshotAction->setText(tr("Take &Snapshot"));
     mCloneSnapshotAction->setText(tr("&Clone..."));
 
-    mRestoreSnapshotAction->setStatusTip (tr ("Restore selected snapshot of the virtual machine"));
-    mDeleteSnapshotAction->setStatusTip (tr ("Delete selected snapshot of the virtual machine"));
-    mShowSnapshotDetailsAction->setStatusTip (tr ("Show the details of selected snapshot"));
-    mTakeSnapshotAction->setStatusTip (tr ("Take a snapshot of the current virtual machine state"));
+    mRestoreSnapshotAction->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
+    mDeleteSnapshotAction->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
+    mShowSnapshotDetailsAction->setStatusTip(tr("Show the details of selected snapshot"));
+    mTakeSnapshotAction->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     mCloneSnapshotAction->setStatusTip(tr("Clone selected virtual machine"));
 
-    mRestoreSnapshotAction->setToolTip (mRestoreSnapshotAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mRestoreSnapshotAction->shortcut().toString()));
-    mDeleteSnapshotAction->setToolTip (mDeleteSnapshotAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mDeleteSnapshotAction->shortcut().toString()));
-    mShowSnapshotDetailsAction->setToolTip (mShowSnapshotDetailsAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mShowSnapshotDetailsAction->shortcut().toString()));
-    mTakeSnapshotAction->setToolTip (mTakeSnapshotAction->text().remove ('&').remove ('.') +
-        QString (" (%1)").arg (mTakeSnapshotAction->shortcut().toString()));
-    mCloneSnapshotAction->setToolTip(mCloneSnapshotAction->text().remove('&').remove('.') +
+    mRestoreSnapshotAction->setToolTip(mRestoreSnapshotAction->statusTip() +
+        QString(" (%1)").arg(mRestoreSnapshotAction->shortcut().toString()));
+    mDeleteSnapshotAction->setToolTip(mDeleteSnapshotAction->statusTip() +
+        QString(" (%1)").arg(mDeleteSnapshotAction->shortcut().toString()));
+    mShowSnapshotDetailsAction->setToolTip(mShowSnapshotDetailsAction->statusTip() +
+        QString(" (%1)").arg(mShowSnapshotDetailsAction->shortcut().toString()));
+    mTakeSnapshotAction->setToolTip(mTakeSnapshotAction->statusTip() +
+        QString(" (%1)").arg(mTakeSnapshotAction->shortcut().toString()));
+    mCloneSnapshotAction->setToolTip(mCloneSnapshotAction->statusTip() +
         QString(" (%1)").arg(mCloneSnapshotAction->shortcut().toString()));
 }
 
