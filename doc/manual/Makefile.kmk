@@ -49,14 +49,110 @@ SUB_DEPTH = ../..
 include $(KBUILD_PATH)/subheader.kmk
 
 
-##########################################################################################
 #
-#  Globals
+# Globals
 #
-##########################################################################################
-VBOX_PATH_MANUAL_SRC := $(PATH_SUB_CURRENT)
+
+# Error out if someone tries to override old globals.
+ifdef HTMLHELPOPTS
+ $(error HTMLHELPOPTS was renamed to VBOX_HTMLHELP_OPTS!)
+endif
+ifdef DOCBOOKPATH
+ $(error DOCBOOKPATH was renamed to VBOX_PATH_DOCBOOK!)
+endif
+ifdef DOCBOOKPATH
+ $(error DOCBOOKPATH was renamed to VBOX_PATH_DOCBOOK!)
+endif
+ifdef XML_CATALOG
+ $(error XML_CATALOG was renamed to VBOX_XML_CATALOG!)
+endif
+ifdef VBOX_XML_CATALOG_DOCBOOK
+ $(error XML_CATALOG_DOCBOOK was renamed to VBOX_XML_CATALOG_DOCBOOK!)
+endif
+ifdef VBOXMANAGEPATH
+ $(error VBOXMANAGEPATH was renamed to VBOXMANAGEHELP_PATH!)
+endif
+ifdef PDFLATEX_INTERACTION
+ $(error PDFLATEX_INTERACTION was renamed to VBOX_PDFLATEX_INTERACTION!)
+endif
+ifdef PDFLATEX
+ $(error PDFLATEX was renamed to VBOX_PDFLATEX_CMD!)
+endif
+ifdef HHC
+ $(error HHC was renamed to VBOX_HHC!)
+endif
+
+# Source and output locations.
+VBOX_PATH_MANUAL_SRC     := $(PATH_SUB_CURRENT)
 VBOX_PATH_MANUAL_OUTBASE := $(PATH_TARGET)/manual
-BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
+
+# tool locations
+ifndef VBOX_OSE
+ # use docbook from our tools directory
+ VBOX_PATH_DOCBOOK        ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
+ VBOX_PATH_DOCBOOK_DTD    ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
+ VBOX_XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
+ VBOX_XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
+else
+ # use docbook of the build host
+ VBOX_PATH_DOCBOOK        ?= http://docbook.sourceforge.net/release/xsl/current/
+endif
+
+# xsltproc with the catalog trick if applicable.
+ifdef VBOX_XML_CATALOG
+ VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -- $(VBOX_XSLTPROC)
+else
+ VBOX_XSLTPROC_WITH_CAT    = $(VBOX_XSLTPROC)
+endif
+
+VBOXMANAGEHELP_PATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
+
+ # VBOX_PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
+ #                                             without catting the log a million times.
+VBOX_PDFLATEX_INTERACTION ?= batchmode
+ifeq ($(KBUILD_HOST),win)
+ ifndef VBOX_PDFLATEX
+  VBOX_PDFLATEX           := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/miktex-portable/*/miktex/bin/pdflatex.exe)))
+  ifneq ($(VBOX_PDFLATEX),)
+   VBOX_PDFLATEX_CMD       = $(VBOX_PDFLATEX) -halt-on-error -interaction $(VBOX_PDFLATEX_INTERACTION)
+  endif
+ endif
+ ifndef VBOX_PDFLATEX
+  # Tell MiKTeX to automatically download packages if system wide install.
+  VBOX_PDFLATEX           := pdflatex
+  VBOX_PDFLATEX_CMD        = $(VBOX_PDFLATEX) -halt-on-error -interaction $(VBOX_PDFLATEX_INTERACTION) --enable-installer
+ endif
+else
+ VBOX_PDFLATEX            ?= pdflatex
+ VBOX_PDFLATEX_HALT        = $(shell ( $(VBOX_PDFLATEX) -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
+ VBOX_PDFLATEX_CMD         = pdflatex $(VBOX_PDFLATEX_HALT) -interaction $(VBOX_PDFLATEX_INTERACTION)
+endif
+
+# Windows HTML Help Workshop compiler (stupid thing always returns an error!)
+VBOX_HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
+
+
+# Additional xsltproc options when generating
+VBOX_HTMLHELP_OPTS ?=
+
+##
+# Non-pattern-rule approach to editing XSLT files.
+# $(evalcall2 def_vbox_replace_paths_in_xslt)
+# @param    1   The XSLT source file.
+# @param    2   Optional output subdirectory.
+define def_vbox_replace_paths_in_xslt
+CLEANS += $$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1)
+$$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1): $1 | $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,,$$@,$$<)
+	$$(QUIET)$$(SED) \
+		-e 's|@VBOX_PATH_DOCBOOK@|$$(VBOX_PATH_DOCBOOK)|g' \
+		-e 's|@VBOX_PATH_MANUAL_SRC@|$$(VBOX_PATH_MANUAL_SRC)|g' \
+		-e 's|@VBOX_PATH_MANUAL_OUTBASE@|$$(VBOX_PATH_MANUAL_OUTBASE)|g' \
+		\
+		-e 's|@CFGPATH@|$$(VBOX_PATH_MANUAL_SRC)|g' \
+		-e 's|@TARGETPATH@|$$(@D)|g' \
+		--output "$$(@)" $$<
+endef
 
 
 ##########################################################################################
@@ -64,6 +160,7 @@ BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 #  Main targets
 #
 ##########################################################################################
+BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 
 ifdef VBOX_WITH_DOCS
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
@@ -76,10 +173,9 @@ ifdef VBOX_WITH_DOCS
 
  ifdef VBOX_WITH_DOCS_CHM
   VBOX_PATH_BIN_CHM = $(PATH_STAGE_BIN)/VirtualBox.chm
- else
+ else  # Do not build chm.
   VBOX_PATH_BIN_CHM =
-        # do not build
- endif # !VBOX_WITH_DOCS_CHM
+ endif
 
  ifndef VBOX_ONLY_SDK
   VBOX_MANUAL_PACK += \
@@ -136,6 +232,9 @@ ifdef VBOX_WITH_DOCS
 
  VBOX_MANUAL_XML_FILES_INCL_CHANGELOG = $(VBOX_MANUAL_XML_FILES) \
  	user_ChangeLog.xml
+
+ VBOX_MANUAL_XML_REFENTRY_FILES = \
+ 	man_VBoxManage_extpack.xml
 
  VBOX_SDKREF_XML_FILES = \
  	SDKRef.xml
@@ -201,58 +300,6 @@ endif # VBOX_WITH_DOCS
 
 
 
-##########################################################################################
-#
-#  Options
-#
-##########################################################################################
-
-HTMLHELPOPTS =
-
-
-##########################################################################################
-#
-#  Preparations
-#
-##########################################################################################
-
-# tool locations
-ifndef VBOX_OSE
- # use docbook from our tools directory
- DOCBOOKPATH         ?= $(PATH_DEVTOOLS)/common/DocBook/v1.69.1
- DOCBOOKDTDPATH      ?= $(PATH_DEVTOOLS)/common/docbook-xml/v4.3
- XML_CATALOG         ?= $(VBOX_PATH_MANUAL_OUTBASE)/catalog
- XML_CATALOG_DOCBOOK ?= $(VBOX_PATH_MANUAL_OUTBASE)/docbook
-else
- # use docbook of the build host
- DOCBOOKPATH         ?= http://docbook.sourceforge.net/release/xsl/current/
-endif
-VBOXMANAGEPATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
-
- # PDFLATEX_INTERACTION = errorstopmode - Use this when you wants to figure out build failures
- #                                        without catting the log a million times.
- PDFLATEX_INTERACTION ?= batchmode
-ifeq ($(KBUILD_HOST),win)
- ifndef VBOX_PDFLATEX
-  VBOX_PDFLATEX      := $(firstword $(rsort $(wildcard $(PATH_DEVTOOLS)/win.x86/miktex-portable/*/miktex/bin/pdflatex.exe)))
-  ifneq ($(VBOX_PDFLATEX),)
-   PDFLATEX           = $(VBOX_PDFLATEX) -halt-on-error -interaction $(PDFLATEX_INTERACTION)
-  endif
- endif
- ifndef PDFLATEX
-  # Tell MiKTeX to automatically download packages if system wide install.
-  VBOX_PDFLATEX      := pdflatex
-  PDFLATEX            = $(VBOX_PDFLATEX) -halt-on-error -interaction $(PDFLATEX_INTERACTION) --enable-installer
- endif
-else
- PDFLATEX_HALT        = $(shell \
- 	( pdflatex -version | head -1 | grep 141592 > /dev/null ) && echo -halt-on-error )
- PDFLATEX             = pdflatex $(PDFLATEX_HALT) -interaction $(PDFLATEX_INTERACTION)
-endif
-
-# Windows HTML Help Workshop compiler (stupid thing always returns an error!)
-HHC = -$(EXEC_X86_WIN32) $(VBOX_PATH_HTML_HELP_WORKSHOP)/hhc.exe
-
 
 ##########################################################################################
 #
@@ -312,18 +359,26 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' \
 	               --output $@ $@.tmp
 	var=`$(SED) -n '/!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/p' $<`; \
-	               test -n "$${var}" && \
-	               $(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' \
-	                       --append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml; \
-                       true
+		test -n "$${var}" \
+		&& $(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' \
+			--append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml; \
+       	true
 	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/,$$!d' \
 	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' --append $@ $@.tmp
 
+# TODO: figure why the rule below doesn't cause kmk to rebuild the manual when a man page changes!
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
+$(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MANUAL_SRC)/$(lang)/user_VBoxManage.xml \
+	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES)))))
+
+# user_VBoxManage.xml currently needs some extra processing to stitch in the VBoxManage usage blob.
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
 		$(VBOX_PATH_MANUAL_SRC)/% \
-		$(VBOX_PATH_MANUAL_SRC)/usage-to-docbook-manual.xsl \
-		$(VBOXMANAGEPATH) | $$(dir $$@)
+               $$(addprefix $$(@D)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+		$(VBOX_XML_CATALOG) \
+		$(VBOX_XML_CATALOG_DOCBOOK) \
+		$(VBOXMANAGEHELP_PATH) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.tmp2
 	$(QUIET)$(SED) \
@@ -334,6 +389,8 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxMan
 		-e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
 		-e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
 		-e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+		-e 's|@VBOX_PATH_DOCBOOK@|$(VBOX_PATH_DOCBOOK)|g' \
+		-e 's|@VBOX_PATH_MANUAL_SRC@|$(VBOX_PATH_MANUAL_SRC)|g' \
 		--output $@.tmp $<
 	$(QUIET)$(SED) \
 		-e '1,/\$$VBOX_MANAGE_OUTPUT/!d' \
@@ -342,17 +399,33 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxMan
 	$(QUIET)$(REDIRECT) -wo $@.tmp2 -E 'VBOX_LOG_FLAGS=disabled' -E 'VBOX_LOG_DEST=nofile' \
 		$(if $(eq $(KBUILD_TARGET),darwin), -E 'DYLD_FALLBACK_LIBRARY_PATH=$(dir $(LIB_RUNTIME))') \
 		-- \
-		$(VBOXMANAGEPATH) --dumpopts
+		$(VBOXMANAGEHELP_PATH) --dumpopts
 	$(QUIET)$(SED) -e 's/</\&lt;/g' -e 's/>/\&gt;/g' --append $@.tmp3 $@.tmp2
 	$(QUIET)$(SED) \
 		-e '/\$$VBOX_MANAGE_OUTPUT/,$$!d' \
 		-e 's/.*\$$VBOX_MANAGE_OUTPUT//' \
 		--append $@.tmp3 $@.tmp
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet --output $@ \
+if 0 # Not currently needed.
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output $@ \
 		$(VBOX_PATH_MANUAL_SRC)/usage-to-docbook-manual.xsl \
 		$@.tmp3
+else
+	$(QUIET)$(CP) $@.tmp3 $@
+endif
 	$(QUIET)$(RM) -f $@.tmp $@.tmp2 $@.tmp3
 
+
+# Morph man pages into manual sections.
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$(VBOX_MANUAL_XML_REFENTRY_FILES))): \
+		$(VBOX_PATH_MANUAL_OUTBASE)/% : $(VBOX_PATH_MANUAL_SRC)/% \
+		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl \
+		$(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$(call MSG_GENERATE,,$@,$<)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output $@ \
+		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl $<
+
+# ????
 VBOX_MANUAL_APIREF_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef_apiref.xml
 VBOX_DOC_XIDL_SRC = $(PATH_ROOT)/src/VBox/Main/idl/VirtualBox.xidl
 VBOX_DOC_XIDL_SRC_TMP = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.xidl.tmp
@@ -398,59 +471,59 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: \
 ##########################################################################################
 
 # Create a catalog file for xsltproc that points to docbook catalog.
-ifneq ($(XML_CATALOG),)
-$(XML_CATALOG): $(MAKEFILE_CURRENT) | $$(dir $$@)
+ifdef VBOX_XML_CATALOG
+$(VBOX_XML_CATALOG): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(RM) -f $@.tmp $@
 	$(QUIET)$(APPEND) $@.tmp '<?xml version="1.0"?>'
 	$(QUIET)$(APPEND) $@.tmp '<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">'
 	$(QUIET)$(APPEND) $@.tmp '<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">'
-	$(QUIET)$(APPEND) $@.tmp '  <delegatePublic publicIdStartString="-//OASIS/ENTITIES DocBook XML"      catalog="file:///$(XML_CATALOG_DOCBOOK)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <delegatePublic publicIdStartString="-//OASIS/DTD DocBook XML"           catalog="file:///$(XML_CATALOG_DOCBOOK)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <delegateSystem systemIdStartString="http://www.oasis-open.org/docbook/" catalog="file:///$(XML_CATALOG_DOCBOOK)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <delegateURI uriStartString="http://www.oasis-open.org/docbook/"         catalog="file:///$(XML_CATALOG_DOCBOOK)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <delegatePublic publicIdStartString="-//OASIS/ENTITIES DocBook XML"      catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <delegatePublic publicIdStartString="-//OASIS/DTD DocBook XML"           catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <delegateSystem systemIdStartString="http://www.oasis-open.org/docbook/" catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <delegateURI uriStartString="http://www.oasis-open.org/docbook/"         catalog="file:///$(VBOX_XML_CATALOG_DOCBOOK)"/>'
 	$(QUIET)$(APPEND) $@.tmp '</catalog>'
 	$(QUIET)$(MV) -f $@.tmp $@
 
 # Create a docbook catalog file for xsltproc that points to the local docbook files.
-$(XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
+$(VBOX_XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Creating catalog $@)
 	$(QUIET)$(RM) -f $@.tmp $@
 	$(QUIET)$(APPEND) $@.tmp '<?xml version="1.0"?>'
 	$(QUIET)$(APPEND) $@.tmp '<!DOCTYPE catalog PUBLIC "-//OASIS//DTD Entity Resolution XML Catalog V1.0//EN" "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd">'
 	$(QUIET)$(APPEND) $@.tmp '<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ELEMENTS DocBook XML Information Pool V4.3//EN"          uri="file:///$(DOCBOOKDTDPATH)/dbpoolx.mod"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.3//EN"                                uri="file:///$(DOCBOOKDTDPATH)/docbookx.dtd"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.4//EN"                                uri="file:///$(DOCBOOKDTDPATH)/docbookx.dtd"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Character Entities V4.3//EN"        uri="file:///$(DOCBOOKDTDPATH)/dbcentx.mod"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Notations V4.3//EN"                 uri="file:///$(DOCBOOKDTDPATH)/dbnotnx.mod"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Additional General Entities V4.3//EN" uri="file:///$(DOCBOOKDTDPATH)/dbgenent.mod"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.3//EN"        uri="file:///$(DOCBOOKDTDPATH)/dbhierx.mod"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD XML Exchange Table Model 19990315//EN"               uri="file:///$(DOCBOOKDTDPATH)/soextblx.dtd"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.3//EN"               uri="file:///$(DOCBOOKDTDPATH)/calstblx.dtd"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(DOCBOOKDTDPATH)"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsa.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsb.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsc.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Negated Relations//EN" uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsn.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Ordinary//EN"          uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amso.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Relations//EN"         uri="file:///$(DOCBOOKDTDPATH)/ent/iso-amsr.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Box and Line Drawing//EN"                  uri="file:///$(DOCBOOKDTDPATH)/ent/iso-box.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Russian Cyrillic//EN"                      uri="file:///$(DOCBOOKDTDPATH)/ent/iso-cyr1.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Non-Russian Cyrillic//EN"                  uri="file:///$(DOCBOOKDTDPATH)/ent/iso-cyr2.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Diacritical Marks//EN"                     uri="file:///$(DOCBOOKDTDPATH)/ent/iso-dia.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Greek Letters//EN"                         uri="file:///$(DOCBOOKDTDPATH)/ent/iso-grk1.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Monotoniko Greek//EN"                      uri="file:///$(DOCBOOKDTDPATH)/ent/iso-grk2.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Greek Symbols//EN"                         uri="file:///$(DOCBOOKDTDPATH)/ent/iso-grk3.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Alternative Greek Symbols//EN"             uri="file:///$(DOCBOOKDTDPATH)/ent/iso-grk4.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Latin 1//EN"                         uri="file:///$(DOCBOOKDTDPATH)/ent/iso-lat1.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Latin 2//EN"                         uri="file:///$(DOCBOOKDTDPATH)/ent/iso-lat2.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN"           uri="file:///$(DOCBOOKDTDPATH)/ent/iso-num.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Publishing//EN"                            uri="file:///$(DOCBOOKDTDPATH)/ent/iso-pub.ent"/>'
-	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file:///$(DOCBOOKDTDPATH)/ent/iso-tech.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ELEMENTS DocBook XML Information Pool V4.3//EN"          uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbpoolx.mod"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.3//EN"                                uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML V4.4//EN"                                uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Character Entities V4.3//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbcentx.mod"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Notations V4.3//EN"                 uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbnotnx.mod"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ENTITIES DocBook XML Additional General Entities V4.3//EN" uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbgenent.mod"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//ELEMENTS DocBook XML Document Hierarchy V4.3//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/dbhierx.mod"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD XML Exchange Table Model 19990315//EN"               uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/soextblx.dtd"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="-//OASIS//DTD DocBook XML CALS Table Model V4.3//EN"               uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/calstblx.dtd"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.3" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteSystem systemIdStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <rewriteURI         uriStartString="http://www.oasis-open.org/docbook/xml/4.4" rewritePrefix="file:///$(VBOX_PATH_DOCBOOK_DTD)"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Arrow Relations//EN"   uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsa.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Binary Operators//EN"  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsb.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Delimiters//EN"        uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsc.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Negated Relations//EN" uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsn.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Ordinary//EN"          uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amso.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Math Symbols: Relations//EN"         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-amsr.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Box and Line Drawing//EN"                  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-box.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Russian Cyrillic//EN"                      uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr1.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Non-Russian Cyrillic//EN"                  uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-cyr2.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Diacritical Marks//EN"                     uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-dia.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Greek Letters//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk1.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Monotoniko Greek//EN"                      uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk2.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Greek Symbols//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk3.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Alternative Greek Symbols//EN"             uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-grk4.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Latin 1//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat1.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Added Latin 2//EN"                         uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-lat2.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN"           uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-num.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES Publishing//EN"                            uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-pub.ent"/>'
+	$(QUIET)$(APPEND) $@.tmp '  <public publicId="ISO 8879:1986//ENTITIES General Technical//EN"                     uri="file:///$(VBOX_PATH_DOCBOOK_DTD)/ent/iso-tech.ent"/>'
 	$(QUIET)$(APPEND) $@.tmp '</catalog>'
 	$(QUIET)$(MV) -f $@.tmp $@
 endif
@@ -460,7 +533,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/docbook-html
 		$(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing $(@F) to $@)
 	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
+	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -470,7 +543,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-ht
 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
 	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(DOCBOOKPATH)/template/titlepage.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(VBOX_PATH_DOCBOOK)/template/titlepage.xsl $<
 	$(QUIET)$(MV) -f $@.tmp $@
 
 
@@ -524,10 +597,10 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 		  $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/,$(VBOX_MANUAL_PNG_FILES_$(f)))) | $$(dir $$@)
 # PDF generation via Latex: generate the .tex file
 	$(call MSG_L1,pdflatex $< (four passes) -> $@)
-	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
-	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(PDFLATEX) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(VBOX_PDFLATEX_CMD) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(VBOX_PDFLATEX_CMD) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(VBOX_PDFLATEX_CMD) UserManual.tex
+	$(QUIET)$(REDIRECT) -w+ti /dev/null -C $(@D) -- $(VBOX_PDFLATEX_CMD) UserManual.tex
 	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
 	$(QUIET)$(SED) -n \
 		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
@@ -546,7 +619,8 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.t
 #   generate TeX source from processed docbook and store it in UserManual.tex.tmp;
 #   pass current language to xsltproc in TARGETLANG variable (extract it from the
 #   current directory, should become "de_DE" or the like)
-	$(QUIET)$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG $(notdir $(@D)) -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG $(notdir $(@D)) \
+		-o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #   for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
 	$(QUIET)$(SED) \
@@ -570,9 +644,9 @@ $(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
 # PDF generation via Latex: generate the .tex file
 	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/docs
 	$(call MSG_L1,pdflatex $< (three passes))
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(PDFLATEX) SDKRef.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
 	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
 	$(QUIET)$(SED) -n \
 		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
@@ -581,11 +655,13 @@ $(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
 	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
 # generate temporary LaTeX source from processed XML
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $(MAKEFILE_CURRENT)
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
+		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $(MAKEFILE_CURRENT)
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_SDKREF_LATEX_FILES_TARGET))
 #	generate TeX source from processed docbook and store it in SDKRef.tex.tmp
-	$(QUIET)$(VBOX_XSLTPROC) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG en_US -o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG en_US \
+		-o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #	for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
 	$(QUIET)$(SED) \
@@ -625,20 +701,18 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/VirtualBox.c
 		$(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(f))))
 	$(call MSG_L1,hhc $<,=> $@)
 	$(QUIET)$(RM) -f $@
-	$(QUIET)$(HHC) $(subst /,\\,$<)
+	$(QUIET)$(VBOX_HHC) $(subst /,\\,$<)
 
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htmlhelp.hhp): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp: \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/docbook-htmlhelp-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/titlepage-htmlhelp.xsl \
-		$(XML_CATALOG) \
-		$(XML_CATALOG_DOCBOOK)
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK)
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(if $(XML_CATALOG),XML_CATALOG_FILES=$(XML_CATALOG)) \
-		$(VBOX_XSLTPROC) --xinclude --nonet --output $(@D)/ \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output $(@D)/ \
 		--stringparam htmlhelp.chm \
 		$(subst /,\\,$(@D)/../VirtualBox.chm) \
 		$(HTMLHELPOPTS) $(@D)/../docbook-htmlhelp-formatcfg.xsl \
@@ -663,6 +737,7 @@ $(PATH_STAGE_BIN)/VBoxDocumentation.zip: $(VBOX_MANUAL_PACK)
 	$(QUIET)$(REDIRECT) -C $(PATH_STAGE_BIN) -- zip$(HOSTSUFF_EXE) -9 $@ $(notdir $^)
 endif # VBOX_WITH_DOCS_CHM
 
+
 ##########################################################################################
 #
 #  UserManual.html
@@ -674,7 +749,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl: \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing $(@F) to $@)
 	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
+	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -683,7 +758,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-html-chunks-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing $(@F) to $@)
 	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
+	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -692,9 +767,11 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml
@@ -703,9 +780,11 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US))
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
 		--stringparam chunk.section.depth 0 \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
@@ -736,7 +815,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl: \
 		$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing $(@F) to $@)
 	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(DOCBOOKPATH)|g' \
+	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
@@ -754,6 +833,24 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
 cl-html: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
+
+
+##########################################################################################
+#
+#  VBoxManage man pages.
+#
+##########################################################################################
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-man.xsl,)
+
+man-experiment: \
+		$(VBOX_PATH_MANUAL_SRC)/en_US/man_VBoxManage_extpack.xml \
+		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-man.xsl \
+		$(VBOX_XML_CATALOG) \
+		$(VBOX_XML_CATALOG_DOCBOOK)
+	$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output z:/tmp/vboxmanage-extpack.1 \
+		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-man.xsl \
+		$(VBOX_PATH_MANUAL_SRC)/en_US/man_VBoxManage_extpack.xml
+
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
