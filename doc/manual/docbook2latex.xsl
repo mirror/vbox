@@ -283,42 +283,50 @@
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='chapter'">
-        <xsl:text>&#x0a;&#x0a;\chapter{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\chapter{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='sect1'">
-        <xsl:text>&#x0a;&#x0a;\section{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\section{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='sect2'">
-        <xsl:text>&#x0a;&#x0a;\subsection{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\subsection{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='sect3'">
-        <xsl:text>&#x0a;&#x0a;\subsubsection{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\subsubsection{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
-      <xsl:when test="name(..)='sect4'">
-        <xsl:text>&#x0a;&#x0a;\paragraph{</xsl:text>
+      <xsl:when test="name(..)='sect4' or name(..)='refsect1'">
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\paragraph{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
-      <xsl:when test="name(..)='sect5'">
-        <xsl:text>&#x0a;&#x0a;\subparagraph{</xsl:text>
+      <xsl:when test="name(..)='sect5' or name(..)='refsect2'">
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\subparagraph{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='appendix'">
-        <xsl:text>&#x0a;&#x0a;\chapter{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\chapter{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='glossdiv'">
-        <xsl:text>&#x0a;&#x0a;\section*{</xsl:text>
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\section*{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
@@ -478,15 +486,32 @@
   </xsl:template>
 
   <xsl:template match="itemizedlist">
-    <xsl:text>&#x0a;&#x0a;\begin{itemize}&#x0a;</xsl:text>
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:text>&#x0a;\begin{itemize}&#x0a;</xsl:text>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{itemize}&#x0a;</xsl:text>
   </xsl:template>
 
   <xsl:template match="orderedlist">
-    <xsl:text>&#x0a;&#x0a;\begin{enumerate}&#x0a;</xsl:text>
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:text>&#x0a;\begin{enumerate}&#x0a;</xsl:text>
     <xsl:apply-templates />
     <xsl:text>&#x0a;\end{enumerate}&#x0a;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="variablelist">
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:text>&#x0a;\begin{description}&#x0a;</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>&#x0a;\end{description}&#x0a;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="varlistentry">
+    <xsl:if test="not(./term)"><xsl:message terminate="yes">Expected term element in varlistentry.</xsl:message></xsl:if>
+    <xsl:text>&#x0a;&#x0a;\item[</xsl:text>
+    <xsl:apply-templates select="term"/>
+    <xsl:text>] \hfill \\&#x0a;</xsl:text>
+    <xsl:apply-templates select="listitem/*"/>
   </xsl:template>
 
   <xsl:template match="listitem">
@@ -573,6 +598,27 @@
     </xsl:if>
   </xsl:template>
 
+  <!--
+     refentry releated stuff and isn't handled elsewhere...
+  -->
+  <xsl:template match="refsynopsisdiv">
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:text>&#x0a;\paragraph{Synopsis&#x0a;}&#x0a;</xsl:text>
+    <!-- apply templates! -->
+  </xsl:template>
+
+  <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5">
+    <xsl:message terminate="yes"><xsl:value-of select="name()"/> is not supported</xsl:message>
+  </xsl:template>
+
+  <xsl:template match="cmdsynopsis|command">
+    <xsl:text>\texttt{</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
+
+  <!--  -->
   <xsl:template match="//text()">
     <xsl:variable name="subst1">
       <xsl:call-template name="str:subst">
@@ -738,5 +784,27 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
+
+  <!--
+       xsltprocNewlineOutputHack - emits a single new line.
+
+       Hack Alert! This template helps xsltproc split up the output text elements
+                   and avoid reallocating them into the MB range. Calls to this
+                   template is made occationally while generating larger output
+                   file.  It's not necessary for small stuff like header.
+
+                   The trick we're playing on xsltproc has to do with CDATA
+                   and/or the escape setting of the xsl:text element.  It forces
+                   xsltproc to allocate a new output element, thus preventing
+                   things from growing out of proportions and slowing us down.
+
+                   This was successfully employed to reduce a 18+ seconds run to
+                   around one second (possibly less due to kmk overhead).
+   -->
+  <xsl:template name="xsltprocNewlineOutputHack">
+      <xsl:text disable-output-escaping="yes"><![CDATA[
+]]></xsl:text>
+  </xsl:template>
+
 </xsl:stylesheet>
 
