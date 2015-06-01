@@ -75,6 +75,8 @@
 <!-- Remove refmeta. -->
 <xsl:template match="refmeta"/>
 
+<!-- Remove all remarks (for now). -->
+<xsl:template match="remark"/>
 
 
 <!--
