@@ -68,9 +68,10 @@ debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb
 instmod := $(if $(filter _Ubuntu_lucid _Ubuntu_maverick _Ubuntu_natty _Ubuntu_oneiric _Debian_sid,$(debrel)),,1)
 
 # Location of custom built Qt libraries (see below)
-qtstdc6  := /home/vbox/Qt-4.7.4-stdc++6-$(arch)
+qtstdc6  := /home/vbox/Qt-4.8.6-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(filter _Debian_squeeze,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
 	     $(if $(filter _Debian_squeeze,$(debrel)),--build-libvpx,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
@@ -85,6 +86,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
 	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
+	     $(if $(filter _Debian_squeeze _Ubuntu_lucid,$(debrel)),,VBOX_WITH_VMSVGA3D=1) \
 	     VBOX_DO_STRIP= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
