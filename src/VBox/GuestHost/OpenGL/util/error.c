@@ -159,7 +159,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         case DLL_PROCESS_ATTACH:
         {
             int rc;
-            rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE); CRASSERT(rc);
+            rc = RTR3InitDll(RTR3INIT_FLAGS_UNOBTRUSIVE); CRASSERT(rc==0);
 # ifdef IN_GUEST
             rc = VbglR3Init();
 # endif
