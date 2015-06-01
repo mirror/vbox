@@ -115,6 +115,7 @@
 \usepackage{fancyvrb}
 \usepackage{alltt}
 \usepackage{color}
+\usepackage{scrextend}
 \definecolor{darkgreen}{rgb}{0,0.6,0}
 
 </xsl:text>
@@ -306,13 +307,25 @@
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
-      <xsl:when test="name(..)='sect4' or name(..)='refsect1'">
+      <xsl:when test="name(..)='sect4'">
         <xsl:call-template name="xsltprocNewlineOutputHack"/>
         <xsl:text>&#x0a;\paragraph{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:when>
-      <xsl:when test="name(..)='sect5' or name(..)='refsect2'">
+      <xsl:when test="name(..)='sect5'">
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\subparagraph{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:when>
+      <xsl:when test="name(..)='refsect1'">
+        <xsl:call-template name="xsltprocNewlineOutputHack"/>
+        <xsl:text>&#x0a;\paragraph{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+      </xsl:when>
+      <xsl:when test="name(..)='refsect2'">
         <xsl:call-template name="xsltprocNewlineOutputHack"/>
         <xsl:text>&#x0a;\subparagraph{</xsl:text>
         <xsl:apply-templates />
@@ -335,6 +348,22 @@
     <xsl:if test="$refid">
       <xsl:value-of select="concat('&#x0a;\label{', $refid, '}')" />
     </xsl:if>
+    <xsl:text>&#x0a;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="refsect1">
+    <xsl:if test="not(title)"><xsl:message terminate="yes">Expected title element in refsect1.</xsl:message></xsl:if>
+    <xsl:apply-templates/>
+    <xsl:text>&#x0a;\end{addmargin}&#x0a;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="refsect2">
+    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
+      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect2.</xsl:message>
+    </xsl:if>
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:text>\noindent</xsl:text>
+    <xsl:apply-templates/>
     <xsl:text>&#x0a;</xsl:text>
   </xsl:template>
 
@@ -424,7 +453,7 @@
   </xsl:template>
 
   <xsl:template match="para">
-    <xsl:if test="not(name(..)='footnote' or name(..)='note' or name(..)='warning')">
+    <xsl:if test="not(name(..)='footnote' or name(..)='note' or name(..)='warning' or (name(../..)='varlistentry' and position()=1))">
       <xsl:text>&#x0a;&#x0a;</xsl:text>
     </xsl:if>
     <xsl:apply-templates />
@@ -507,7 +536,9 @@
   </xsl:template>
 
   <xsl:template match="varlistentry">
-    <xsl:if test="not(./term)"><xsl:message terminate="yes">Expected term element in varlistentry.</xsl:message></xsl:if>
+    <xsl:if test="not(./term) or not(./listitem) or count(*) != 2">
+      <xsl:message terminate="yes">Expected exactly one term and one listitem element in the varlistentry.</xsl:message>
+    </xsl:if>
     <xsl:text>&#x0a;&#x0a;\item[</xsl:text>
     <xsl:apply-templates select="term"/>
     <xsl:text>] \hfill \\&#x0a;</xsl:text>
@@ -603,22 +634,81 @@
   -->
   <xsl:template match="refsynopsisdiv">
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:text>&#x0a;\paragraph{Synopsis&#x0a;}&#x0a;</xsl:text>
-    <!-- apply templates! -->
+    <xsl:text>&#x0a;\paragraph{Synopsis} \hfill \\&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+    <xsl:apply-templates />
+    <xsl:text>\end{addmargin}&#x0a;</xsl:text>
   </xsl:template>
 
   <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5">
     <xsl:message terminate="yes"><xsl:value-of select="name()"/> is not supported</xsl:message>
   </xsl:template>
 
-  <xsl:template match="cmdsynopsis|command">
-    <xsl:text>\texttt{</xsl:text>
+  <xsl:template match="cmdsynopsis">
+    <xsl:text>&#x0a;\noindent\texttt{</xsl:text>
     <xsl:apply-templates />
-    <xsl:text>}</xsl:text>
+    <xsl:text>}\linebreak</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="replaceable">
+    <xsl:choose>
+      <xsl:when test="not(ancestor::cmdsynopsis)">
+        <xsl:text>\texttt{\textit{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}}</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>\textit{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="command|option">
+    <xsl:choose>
+      <xsl:when test="not(ancestor::cmdsynopsis)">
+        <xsl:text>\texttt{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:apply-templates />
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="arg|group">
+    <!-- separator char if we're not the first child -->
+    <xsl:if test="position() > 1">
+      <xsl:choose>
+        <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
+        <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
+      </xsl:choose>
+    </xsl:if>
+    <!-- open wrapping -->
+    <xsl:choose>
+      <xsl:when test="@choice = 'opt' or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">                 <xsl:text>{</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'plain'"/>
+      <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice</xsl:message></xsl:otherwise>
+    </xsl:choose>
+    <!-- render the arg (TODO: may need to do more work here) -->
+    <xsl:apply-templates />
+    <!-- repeat wrapping -->
+    <xsl:choose>
+      <xsl:when test="@rep = 'norepeat' or @rep = ''"/>
+      <xsl:when test="@rep = 'repeat'">                 <xsl:text>...</xsl:text></xsl:when>
+      <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice</xsl:message></xsl:otherwise>
+    </xsl:choose>
+    <!-- close wrapping -->
+    <xsl:choose>
+      <xsl:when test="@choice = 'opt' or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">                 <xsl:text>}</xsl:text></xsl:when>
+    </xsl:choose>
   </xsl:template>
 
 
-  <!--  -->
+  <!-- Text magic. -->
   <xsl:template match="//text()">
     <xsl:variable name="subst1">
       <xsl:call-template name="str:subst">
@@ -632,7 +722,14 @@
       <xsl:when test="(name(..)='screen') or (name(../..)='screen')">
         <xsl:value-of select="." />
       </xsl:when>
-      <xsl:when test="(name(..)='computeroutput') or (name(../..)='computeroutput') or (name(..)='code') or (name(../..)='code')">
+      <xsl:when test="(name(..) = 'computeroutput') or (name(../..) = 'computeroutput')
+                   or (name(..) = 'code')           or (name(../..) = 'code')
+                   or (name(..) = 'arg')            or (name(../..) = 'arg')
+                   or (name(..) = 'option')         or (name(../..) = 'option')
+                   or (name(..) = 'command')        or (name(../..) = 'command')
+                   or (name(..) = 'cmdsynopsis')    or (name(../..) = 'cmdsynopsis')
+                   or (name(..) = 'replaceable')    or (name(../..) = 'replaceable')
+                     ">
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
             <xsl:with-param name="text" select="$subst1" />
