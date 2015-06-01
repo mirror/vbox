@@ -323,7 +323,7 @@
         <xsl:call-template name="xsltprocNewlineOutputHack"/>
         <xsl:text>&#x0a;\paragraph{</xsl:text>
         <xsl:apply-templates />
-        <xsl:text>}&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+        <xsl:text>}&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text> <!-- addmargin is ended by refsect1 template way further down. -->
       </xsl:when>
       <xsl:when test="name(..)='refsect2'">
         <xsl:call-template name="xsltprocNewlineOutputHack"/>
@@ -348,25 +348,6 @@
     <xsl:if test="$refid">
       <xsl:value-of select="concat('&#x0a;\label{', $refid, '}')" />
     </xsl:if>
-    <xsl:text>&#x0a;</xsl:text>
-  </xsl:template>
-
-  <xsl:template match="refsect1">
-    <xsl:if test="not(title)"><xsl:message terminate="yes">Expected title element in refsect1.</xsl:message></xsl:if>
-    <xsl:apply-templates/>
-    <xsl:text>&#x0a;\end{addmargin}&#x0a;</xsl:text>
-  </xsl:template>
-
-  <xsl:template match="refsect2">
-    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
-      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect2.</xsl:message>
-    </xsl:if>
-    <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:if test="cmdsynopsis">
-      <xsl:text>\vspace{1.2em}&#x0a;</xsl:text>
-    </xsl:if>
-    <xsl:text>\noindent</xsl:text>
-    <xsl:apply-templates/>
     <xsl:text>&#x0a;</xsl:text>
   </xsl:template>
 
@@ -633,15 +614,60 @@
   </xsl:template>
 
   <!--
-     refentry releated stuff and isn't handled elsewhere...
+     Turn the refsynopsisdiv part of a manpage into a named & indented paragraph.
   -->
   <xsl:template match="refsynopsisdiv">
+    <xsl:if test="name(*[1]) != 'cmdsynopsis'"><xsl:message terminate="yes">Expected refsynopsisdiv to start with cmdsynopsis</xsl:message></xsl:if>
+    <xsl:if test="title"><xsl:message terminate="yes">No title element supported in refsynopsisdiv</xsl:message></xsl:if>
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
     <xsl:text>&#x0a;\paragraph{Synopsis} \hfill \\&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
     <xsl:apply-templates />
     <xsl:text>\end{addmargin}&#x0a;</xsl:text>
   </xsl:template>
 
+  <!--
+    The refsect1 is used for 'Description' and such. Do same as with refsynopsisdiv
+    and turn it into a named & indented paragraph.
+
+    Note! If the section has a title, the title template way up above will begin
+          the addmargin stuff.  We'll just end it here.
+          If there is no title, we ASSUME (HACK ALERT) that this is part of the
+          VBoxManage Command Overview section in the manual.
+    -->
+  <xsl:template match="refsect1">
+    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
+      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect1.</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(title)">
+      <xsl:call-template name="xsltprocNewlineOutputHack"/>
+      <xsl:text>&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+    </xsl:if>
+    <xsl:apply-templates/>
+    <xsl:text>&#x0a;\end{addmargin}&#x0a;</xsl:text>
+  </xsl:template>
+
+  <!--
+    The refsect2 element will be turned into a subparagraph if it has a title,
+    however, that didn't work out when it didn't have a title and started with
+    a cmdsynopsis instead (subcommand docs).  So, we're doing some trickery
+    here (HACK ALERT) for the non-title case to feign a paragraph.
+    -->
+  <xsl:template match="refsect2">
+    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
+      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect2.</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(title)">
+      <xsl:call-template name="xsltprocNewlineOutputHack"/>
+      <xsl:text>\vspace{1.2em}&#x0a;</xsl:text>
+    </xsl:if>
+    <xsl:apply-templates/>
+    <xsl:text>&#x0a;</xsl:text>
+  </xsl:template>
+
+
+  <!--
+    Command Synopsis elements.
+    -->
   <xsl:template match="sbr">
     <xsl:text>\linebreak</xsl:text>
   </xsl:template>
@@ -714,7 +740,9 @@
   </xsl:template>
 
 
-  <!-- Text magic. -->
+  <!--
+    Generic element text magic.
+    -->
   <xsl:template match="//text()">
     <xsl:variable name="subst1">
       <xsl:call-template name="str:subst">
