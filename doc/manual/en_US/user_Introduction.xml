@@ -437,7 +437,7 @@
       </listitem>
 
       <listitem>
-        <para><emphasis role="bold">Mac OS X</emphasis> hosts:<footnote>
+        <para><emphasis role="bold">Mac OS X</emphasis> hosts (64-bit):<footnote>
             <para>Preliminary Mac OS X support (beta stage) was added with
             VirtualBox 1.4, full support with 1.6. Mac OS X 10.4 (Tiger)
             support was removed with VirtualBox 3.1. Mac OS X 10.7 (Lion)
@@ -469,23 +469,23 @@
             1.4.</para>
           </footnote>). Among others, this includes:<itemizedlist>
             <listitem>
-              <para>Ubuntu 10.04 to 14.10</para>
+              <para>Ubuntu 10.04 to 15.04</para>
             </listitem>
 
             <listitem>
-              <para>Debian GNU/Linux 6.0 ("squeeze") and 7.0 ("wheezy")</para>
+              <para>Debian GNU/Linux 6.0 ("Squeeze") and 8.0 ("Jessie")</para>
             </listitem>
 
             <listitem>
-              <para>Oracle Enterprise Linux 5, Oracle Linux 6</para>
+              <para>Oracle Enterprise Linux 5, Oracle Linux 6 and 7</para>
             </listitem>
 
             <listitem>
-              <para>Redhat Enterprise Linux 5 and 6</para>
+              <para>Redhat Enterprise Linux 5, 6 and 7</para>
             </listitem>
 
             <listitem>
-              <para>Fedora Core 6 to 20</para>
+              <para>Fedora Core / Fedora 6 to 22</para>
             </listitem>
 
             <listitem>
@@ -493,7 +493,7 @@
             </listitem>
 
             <listitem>
-              <para>openSUSE 11.0, 11.1, 11.2, 11.3, 11.4, 12.1, 12.2, 13.1</para>
+              <para>openSUSE 11.4, 12.1, 12.2, 13.1</para>
             </listitem>
 
             <listitem>

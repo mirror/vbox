@@ -1008,8 +1008,7 @@
 
     <para>On a Linux host, depending on your host configuration, you can also
     select between the OSS, ALSA or the PulseAudio subsystem. On newer Linux
-    distributions (Fedora 8 and above, Ubuntu 8.04 and above), the PulseAudio
-    subsystem should be preferred.</para>
+    distributions, the PulseAudio subsystem should be preferred.</para>
   </sect1>
 
   <sect1 id="settings-network">
@@ -1400,8 +1399,8 @@
     Alternatively, use the <computeroutput>VBoxManage</computeroutput> command
     line interface like this: <screen>VBoxManage modifyvm "VM name" --firmware efi</screen>
     To switch back to using the BIOS, use: <screen>VBoxManage modifyvm "VM name" --firmware bios</screen>One
-    notable user of EFI is Apple's Mac OS X, but recent Linuxes (such as Fedora
-    11) and Windows (starting with Vista) offer special versions that can be
+    notable user of EFI is Apple's Mac OS X, but more recent Linuxes
+    and Windows (starting with Vista) offer special versions that can be
     booted using EFI as well.</para>
 
     <para>Another possible use of EFI in VirtualBox is development and testing
