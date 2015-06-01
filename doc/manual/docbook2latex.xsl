@@ -722,7 +722,7 @@
       <xsl:when test="@choice = 'opt' or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
       <xsl:when test="@choice = 'req'">                 <xsl:text>{</xsl:text></xsl:when>
       <xsl:when test="@choice = 'plain'"/>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice</xsl:message></xsl:otherwise>
+      <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- render the arg (TODO: may need to do more work here) -->
     <xsl:apply-templates />
@@ -730,7 +730,7 @@
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or @rep = ''"/>
       <xsl:when test="@rep = 'repeat'">                 <xsl:text>...</xsl:text></xsl:when>
-      <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice</xsl:message></xsl:otherwise>
+      <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- close wrapping -->
     <xsl:choose>
