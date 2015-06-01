@@ -932,28 +932,28 @@
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimiert das aktive Fenster</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeige Manager für Netzoperationen</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt einen Dialog mit Produktinformationen</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="unfinished">&amp;Globale Einstellungen...</translation>
+        <translation>&amp;Globale Einstellungen...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt den Dialog für globale Einstellungen</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen der virtuellen Maschine ändern</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
@@ -961,7 +961,7 @@
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>Zustand &amp;sichern</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
@@ -973,7 +973,7 @@
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Anwendung &amp;minimieren</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
@@ -1064,7 +1064,7 @@
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Aktivieren</translation>
+        <translation>Aktivieren</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
@@ -1113,7 +1113,7 @@
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>Gruppierung &amp;aufheben</translation>
     </message>
     <message>
         <source>Ungroup the items of selected virtual machine group</source>
@@ -1121,7 +1121,7 @@
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sortieren</translation>
     </message>
     <message>
         <source>Sort the items of selected virtual machine group alphabetically</source>
@@ -1165,7 +1165,7 @@
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Verwerfen...</translation>
     </message>
     <message>
         <source>Discard the saved state of selected virtual machines</source>
@@ -1177,7 +1177,7 @@
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Aktualisieren</translation>
+        <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of selected virtual machines</source>
@@ -1286,7 +1286,6 @@
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
-            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
