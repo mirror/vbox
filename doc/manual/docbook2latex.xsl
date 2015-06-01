@@ -362,6 +362,9 @@
       <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect2.</xsl:message>
     </xsl:if>
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:if test="cmdsynopsis">
+      <xsl:text>\vspace{1.2em}&#x0a;</xsl:text>
+    </xsl:if>
     <xsl:text>\noindent</xsl:text>
     <xsl:apply-templates/>
     <xsl:text>&#x0a;</xsl:text>
