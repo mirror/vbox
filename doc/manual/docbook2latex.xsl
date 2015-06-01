@@ -719,8 +719,8 @@
     </xsl:if>
     <!-- open wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                 <xsl:text>{</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">                                 <xsl:text>{</xsl:text></xsl:when>
       <xsl:when test="@choice = 'plain'"/>
       <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
@@ -728,14 +728,14 @@
     <xsl:apply-templates />
     <!-- repeat wrapping -->
     <xsl:choose>
-      <xsl:when test="@rep = 'norepeat' or @rep = ''"/>
-      <xsl:when test="@rep = 'repeat'">                 <xsl:text>...</xsl:text></xsl:when>
+      <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
+      <xsl:when test="@rep = 'repeat'">                                 <xsl:text>...</xsl:text></xsl:when>
       <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- close wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                 <xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
+      <xsl:when test="@choice = 'req'">                                 <xsl:text>}</xsl:text></xsl:when>
     </xsl:choose>
   </xsl:template>
 
