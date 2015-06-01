@@ -867,10 +867,10 @@ protected:
     {
 #if defined(Q_WS_MAC)
         setName(QApplication::translate("UIActionPool", "Cr&eate Alias on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Create an alias files to the VirtualBox Machine Definition files on your desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create alias files to the VirtualBox Machine Definition files on your desktop"));
 #else
         setName(QApplication::translate("UIActionPool", "Cr&eate Shortcut on Desktop"));
-        setStatusTip(QApplication::translate("UIActionPool", "Create a shortcut files to the VirtualBox Machine Definition files on your desktop"));
+        setStatusTip(QApplication::translate("UIActionPool", "Create shortcut files to the VirtualBox Machine Definition files on your desktop"));
 #endif
     }
 };
