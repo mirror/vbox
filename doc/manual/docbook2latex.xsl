@@ -642,7 +642,10 @@
     <xsl:text>\end{addmargin}&#x0a;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5">
+  <xsl:template match="sbr">
+    <xsl:text>\linebreak</xsl:text>
+  </xsl:template>
+  <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5|synopfragment|synopfragmentref|cmdsynopsis/info">
     <xsl:message terminate="yes"><xsl:value-of select="name()"/> is not supported</xsl:message>
   </xsl:template>
 
