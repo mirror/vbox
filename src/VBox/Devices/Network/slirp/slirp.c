@@ -488,27 +488,12 @@ void slirp_link_up(PNATState pData)
  */
 void slirp_link_down(PNATState pData)
 {
-    struct socket *so;
     struct port_forward_rule *rule;
 
     if (link_up == 0)
         return;
 
     slirpReleaseDnsSettings(pData);
-
-    while ((so = tcb.so_next) != &tcb)
-    {
-        /* Don't miss TCB releasing */
-        if (   !sototcpcb(so)
-            && (   so->so_state & SS_NOFDREF
-                || so->s == -1))
-             sofree(pData, so);
-        else
-            tcp_close(pData, sototcpcb(so));
-    }
-
-    while ((so = udb.so_next) != &udb)
-        udp_detach(pData, so);
 
     /*
      *  Clear the active state of port-forwarding rules to force
@@ -528,9 +513,26 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
+    struct socket *so;
+
     if (pData == NULL)
         return;
+
     icmp_finit(pData);
+
+    while ((so = tcb.so_next) != &tcb)
+    {
+        /* Don't miss TCB releasing */
+        if (   !sototcpcb(so)
+            && (   so->so_state & SS_NOFDREF
+                || so->s == -1))
+             sofree(pData, so);
+        else
+            tcp_close(pData, sototcpcb(so));
+    }
+
+    while ((so = udb.so_next) != &udb)
+        udp_detach(pData, so);
 
     slirp_link_down(pData);
     ftp_alias_unload(pData);
