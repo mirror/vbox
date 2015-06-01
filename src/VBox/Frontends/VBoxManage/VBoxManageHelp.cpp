@@ -867,7 +867,6 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
 #endif
                      "\n", SEP, SEP);
     }
-#ifndef VBOX_ONLY_DOCS /* Converted to man page, not needed. */
     if (fCategory & USAGE_EXTPACK)
     {
         RTStrmPrintf(pStrm,
@@ -876,7 +875,6 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            cleanup\n"
                      "\n", SEP);
     }
-#endif
 }
 
 /**

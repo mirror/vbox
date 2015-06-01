@@ -452,15 +452,13 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 # TODO: figure why the rule below doesn't cause kmk to rebuild the manual when a man page changes!
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
 $(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MANUAL_SRC)/$(lang)/user_VBoxManage.xml \
-	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml ))
+	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES)))))
 
 # user_VBoxManage.xml currently needs some extra processing to stitch in the VBoxManage usage blob.
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
 		$(VBOX_PATH_MANUAL_SRC)/% \
                $$(addprefix $$(@D)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-		$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
 		$(VBOX_XML_CATALOG) \
 		$(VBOX_XML_CATALOG_DOCBOOK) \
 		$(VBOXMANAGEHELP_PATH) | $$(dir $$@)
@@ -516,20 +514,6 @@ $(VBOX_DOC_XIDL_SRC_TMP): $(VBOX_DOC_XIDL_SRC) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(SED) -e 's|@a \+\(\w\+\)|<tt>\1</tt>|g' \
 	       -e 's|@c \+\(\w\+\)|<tt>\1</tt>|g' \
 	       --output $@ $<
-
-# Generates the VBoxManage command overview include file (shared between
-# languages) from the refsynopsisdiv section of the man pages.
-$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-overview.xsl \
-		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(filter man_VBoxManage_%,$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-               | $$(dir $$@)
-	$(call MSG_GENERATE,,$@,en_US/man_VBoxManage_*.xml)
-	$(QUIET)$(RM) -f -- "$@"
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output "$@" \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-overview.xsl \
-		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(filter man_VBoxManage_%,$(VBOX_MANUAL_XML_REFENTRY_FILES)))
-
-xxxx:: $(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml
 
 # generate SDKRef_apiref.xml as a docbook file excerpt that will be referenced from the SDKRef.xml.
 $(VBOX_MANUAL_APIREF_TMP): $(VBOX_DOC_XIDL_SRC_TMP) $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl
