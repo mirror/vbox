@@ -493,7 +493,7 @@ void VBoxSnapshotsWgt::retranslateUi()
 
     mRestoreSnapshotAction->setStatusTip(tr("Restore selected snapshot of the virtual machine"));
     mDeleteSnapshotAction->setStatusTip(tr("Delete selected snapshot of the virtual machine"));
-    mShowSnapshotDetailsAction->setStatusTip(tr("Show details of selected snapshot"));
+    mShowSnapshotDetailsAction->setStatusTip(tr("Display a window with selected snapshot details"));
     mTakeSnapshotAction->setStatusTip(tr("Take a snapshot of the current virtual machine state"));
     mCloneSnapshotAction->setStatusTip(tr("Clone selected virtual machine"));
 
