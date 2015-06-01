@@ -1579,8 +1579,8 @@ QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidge
         case UIMediumType_HardDisk:
         {
             filters = vboxGlobal().HDDBackends();
-            strTitle = tr("Please choose a virtual hard drive file");
-            allType = tr("All virtual hard drive files (%1)");
+            strTitle = tr("Please choose a virtual hard disk file");
+            allType = tr("All virtual hard disk files (%1)");
             strLastFolder = gEDataManager->recentFolderForHardDrives();
             if (strLastFolder.isEmpty())
                 strLastFolder = gEDataManager->recentFolderForOpticalDisks();

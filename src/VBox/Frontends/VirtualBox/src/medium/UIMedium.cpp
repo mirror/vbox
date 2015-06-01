@@ -418,8 +418,8 @@ QString UIMedium::toolTip(bool fNoDiffs /* = false */, bool fCheckRO /* = false 
 
         if (fCheckRO && m_fReadOnly)
             strTip += m_sstrRow.arg("<hr>") +
-                      m_sstrRow.arg(VBoxGlobal::tr("Attaching this hard drive will be performed indirectly using "
-                                                   "a newly created differencing hard drive.", "medium"));
+                      m_sstrRow.arg(VBoxGlobal::tr("Attaching this hard disk will be performed indirectly using "
+                                                   "a newly created differencing hard disk.", "medium"));
     }
 
     return m_sstrTable.arg(strTip);
@@ -582,7 +582,7 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
             m_noDiffs.state = parentMedium.m_state;
 
             if (m_noDiffs.toolTip.isNull())
-                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the files in this hard drive chain "
+                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the files in this hard disk chain "
                                                                  "are inaccessible. Please use the Virtual Medium "
                                                                  "Manager to inspect these files.", "medium"));
 
@@ -598,8 +598,8 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
     {
         m_noDiffs.toolTip = root().tip() +
                             m_sstrRow.arg("<hr>") +
-                            m_sstrRow.arg(VBoxGlobal::tr("This base hard drive is indirectly attached using "
-                                                         "the following differencing hard drive:", "medium")) +
+                            m_sstrRow.arg(VBoxGlobal::tr("This base hard disk is indirectly attached using "
+                                                         "the following differencing hard disk:", "medium")) +
                             m_strToolTip + m_noDiffs.toolTip;
     }
 

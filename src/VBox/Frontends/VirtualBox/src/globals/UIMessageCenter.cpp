@@ -649,13 +649,13 @@ int UIMessageCenter::confirmMachineRemoval(const QList<CMachine> &machines) cons
                       fMachineWithHardDiskPresent ?
                       tr("<p>You are about to remove following virtual machines from the machine list:</p>"
                          "<p>%1</p>"
-                         "<p>Would you like to delete the files containing the virtual machine from your hard drive as well? "
-                         "Doing this will also remove the files containing the machine's virtual hard drives "
+                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well? "
+                         "Doing this will also remove the files containing the machine's virtual hard disks "
                          "if they are not in use by another machine.</p>")
                          .arg(strMachineNames) :
                       tr("<p>You are about to remove following virtual machines from the machine list:</p>"
                          "<p>%1</p>"
-                         "<p>Would you like to delete the files containing the virtual machine from your hard drive as well?</p>")
+                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well?</p>")
                          .arg(strMachineNames);
 
     /* Prepare message itself: */
@@ -1062,11 +1062,11 @@ bool UIMessageCenter::confirmSettingsReloading(QWidget *pParent /* = 0*/) const
 int UIMessageCenter::confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent /* = 0*/) const
 {
     return questionTrinary(pParent, MessageType_Question,
-                           tr("<p>You are about to add a virtual hard drive to controller <b>%1</b>.</p>"
-                              "<p>Would you like to create a new, empty file to hold the drive contents or select an existing one?</p>")
+                           tr("<p>You are about to add a virtual hard disk to controller <b>%1</b>.</p>"
+                              "<p>Would you like to create a new, empty file to hold the disk contents or select an existing one?</p>")
                               .arg(strControllerName),
                            0 /* auto-confirm id */,
-                           tr("Create &new drive"), tr("&Choose existing drive"));
+                           tr("Create &new disk"), tr("&Choose existing disk"));
 }
 
 int UIMessageCenter::confirmOpticalAttachmentCreation(const QString &strControllerName, QWidget *pParent /* = 0*/) const
@@ -1110,7 +1110,7 @@ void UIMessageCenter::cannotAttachDevice(const CMachine &machine, UIMediumType t
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("Failed to attach the hard drive (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to attach the hard disk (<nobr><b>%1</b></nobr>) to the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation).arg(gpConverter->toString(storageSlot)).arg(CMachine(machine).GetName());
             break;
         }
@@ -1232,34 +1232,11 @@ bool UIMessageCenter::confirmMediumRelease(const UIMedium &medium, QWidget *pPar
             continue;
         usage << machine.GetName();
     }
-    /* Prepare the message: */
-    QString strMessage;
-    switch (medium.type())
-    {
-        case UIMediumType_HardDisk:
-        {
-            strMessage = tr("<p>Are you sure you want to release the virtual hard drive <nobr><b>%1</b></nobr>?</p>"
-                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
-            break;
-        }
-        case UIMediumType_DVD:
-        {
-            strMessage = tr("<p>Are you sure you want to release the virtual optical disk <nobr><b>%1</b></nobr>?</p>"
-                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
-            break;
-        }
-        case UIMediumType_Floppy:
-        {
-            strMessage = tr("<p>Are you sure you want to release the virtual floppy disk <nobr><b>%1</b></nobr>?</p>"
-                            "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>");
-            break;
-        }
-        default:
-            break;
-    }
     /* Show the question: */
     return questionBinary(pParent, MessageType_Question,
-                          strMessage.arg(medium.location(), usage.join(", ")),
+                          tr("<p>Are you sure you want to release the disk image file <nobr><b>%1</b></nobr>?</p>"
+                             "<p>This will detach it from the following virtual machine(s): <b>%2</b>.</p>")
+                             .arg(medium.location(), usage.join(", ")),
                           0 /* auto-confirm id */,
                           tr("Release", "detach medium"));
 }
@@ -1272,7 +1249,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("<p>Are you sure you want to remove the virtual hard drive "
+            strMessage = tr("<p>Are you sure you want to remove the virtual hard disk "
                             "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
             /* Compose capabilities flag: */
             qulonglong caps = 0;
@@ -1284,7 +1261,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             if (caps & KMediumFormatCapabilities_File)
             {
                 if (medium.state() == KMediumState_Inaccessible)
-                    strMessage += tr("<p>As this hard drive is inaccessible its image file"
+                    strMessage += tr("<p>As this hard disk is inaccessible its image file"
                                      " can not be deleted.</p>");
             }
             break;
@@ -1318,7 +1295,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
 int UIMessageCenter::confirmDeleteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     return questionTrinary(pParent, MessageType_Question,
-                           tr("<p>Do you want to delete the storage unit of the hard drive "
+                           tr("<p>Do you want to delete the storage unit of the virtual hard disk "
                               "<nobr><b>%1</b></nobr>?</p>"
                               "<p>If you select <b>Delete</b> then the specified storage unit "
                               "will be permanently deleted. This operation <b>cannot be "
@@ -1357,7 +1334,7 @@ void UIMessageCenter::cannotDetachDevice(const CMachine &machine, UIMediumType t
     {
         case UIMediumType_HardDisk:
         {
-            strMessage = tr("Failed to detach the hard drive (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
+            strMessage = tr("Failed to detach the hard disk (<nobr><b>%1</b></nobr>) from the slot <i>%2</i> of the machine <b>%3</b>.")
                             .arg(strLocation, gpConverter->toString(storageSlot), CMachine(machine).GetName());
             break;
         }
@@ -1451,7 +1428,7 @@ void UIMessageCenter::cannotCloseMedium(const UIMedium &medium, const COMResult 
 bool UIMessageCenter::confirmHardDisklessMachine(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Warning,
-                          tr("You are about to create a new virtual machine without a hard drive. "
+                          tr("You are about to create a new virtual machine without a hard disk. "
                              "You will not be able to install an operating system on the machine "
                              "until you add one. In the mean time you will only be able to start the "
                              "machine using a virtual optical disk or from the network."),
@@ -1494,9 +1471,9 @@ void UIMessageCenter::cannotCreateClone(const CProgress &progress, const QString
 void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     alert(pParent, MessageType_Info,
-          tr("<p>The hard drive storage unit at location <b>%1</b> already exists. "
-             "You cannot create a new virtual hard drive that uses this location "
-             "because it can be already used by another virtual hard drive.</p>"
+          tr("<p>The hard disk storage unit at location <b>%1</b> already exists. "
+             "You cannot create a new virtual hard disk that uses this location "
+             "because it can be already used by another virtual hard disk.</p>"
              "<p>Please specify a different location.</p>")
              .arg(strLocation));
 }
@@ -1504,7 +1481,7 @@ void UIMessageCenter::cannotOverwriteHardDiskStorage(const QString &strLocation,
 void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(vbox));
 }
@@ -1512,7 +1489,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CVirtualBox &vbox, const
 void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(medium));
 }
@@ -1520,7 +1497,7 @@ void UIMessageCenter::cannotCreateHardDiskStorage(const CMedium &medium, const Q
 void UIMessageCenter::cannotCreateHardDiskStorage(const CProgress &progress, const QString &strLocation, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("Failed to create the hard drive storage <nobr><b>%1</b>.</nobr>")
+          tr("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
              .arg(strLocation),
           formatErrorInfo(progress));
 }

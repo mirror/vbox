@@ -116,7 +116,7 @@ void UIWizardCloneVD::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Copy Virtual Hard Drive"));
+    setWindowTitle(tr("Copy Virtual Hard Disk"));
     setButtonText(QWizard::FinishButton, tr("Copy"));
 }
 

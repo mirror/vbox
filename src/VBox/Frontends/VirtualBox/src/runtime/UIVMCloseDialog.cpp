@@ -411,7 +411,7 @@ void UIVMCloseDialog::retranslateUi()
     m_pDetachRadio->setWhatsThis(tr("<p>Close the virtual machine windows but keep the virtual machine running.</p>"
                                     "<p>You can use the VirtualBox Manager to return to running the virtual machine in a window.</p>"));
     m_pSaveRadio->setText(tr("&Save the machine state"));
-    m_pSaveRadio->setWhatsThis(tr("<p>Saves the current execution state of the virtual machine to the physical hard drive of the host PC.</p>"
+    m_pSaveRadio->setWhatsThis(tr("<p>Saves the current execution state of the virtual machine to the physical hard disk of the host PC.</p>"
                                   "<p>Next time this machine is started, it will be restored from the saved state and continue execution "
                                   "from the same place you saved it at, which will let you continue your work immediately.</p>"
                                   "<p>Note that saving the machine state may take a long time, depending on the guest operating "

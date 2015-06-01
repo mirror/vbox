@@ -112,13 +112,13 @@ void UIWizardCloneVDPageBasic1::sltHandleOpenSourceDiskClick()
 void UIWizardCloneVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Hard drive to copy"));
+    setTitle(UIWizardCloneVD::tr("Hard disk to copy"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("<p>Please select the virtual hard drive file that you would like to copy "
+    m_pLabel->setText(UIWizardCloneVD::tr("<p>Please select the virtual hard disk file that you would like to copy "
                                           "if it is not already selected. You can either choose one from the list "
                                           "or use the folder icon beside the list to select one.</p>"));
-    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard drive file to copy..."));
+    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file to copy..."));
 }
 
 void UIWizardCloneVDPageBasic1::initializePage()

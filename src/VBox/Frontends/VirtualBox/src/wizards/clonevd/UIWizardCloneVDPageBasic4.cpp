@@ -84,7 +84,7 @@ void UIWizardCloneVDPage4::onSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, thisImp(),
-                                                              UIWizardCloneVD::tr("Please choose a location for new virtual hard drive file"));
+                                                              UIWizardCloneVD::tr("Please choose a location for new virtual hard disk file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -198,12 +198,12 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageBasic4::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("New hard drive to create"));
+    setTitle(UIWizardCloneVD::tr("New hard disk to create"));
 
     /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual hard drive file into the box below or "
+    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual hard disk file into the box below or "
                                           "click on the folder icon to select a different folder to create the file in."));
-    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard drive file..."));
+    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard disk file..."));
 }
 
 void UIWizardCloneVDPageBasic4::initializePage()

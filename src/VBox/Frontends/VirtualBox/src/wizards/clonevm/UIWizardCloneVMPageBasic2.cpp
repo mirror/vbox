@@ -95,11 +95,11 @@ void UIWizardCloneVMPageBasic2::retranslateUi()
     /* Translate widgets: */
     QString strLabel = UIWizardCloneVM::tr("<p>Please choose the type of clone you wish to create.</p>"
                                            "<p>If you choose <b>Full clone</b>, "
-                                           "an exact copy (including all virtual hard drive files) "
+                                           "an exact copy (including all virtual hard disk files) "
                                            "of the original virtual machine will be created.</p>"
                                            "<p>If you choose <b>Linked clone</b>, "
-                                           "a new machine will be created, but the virtual hard drive files "
-                                           "will be tied to the virtual hard drive files of original machine "
+                                           "a new machine will be created, but the virtual hard disk files "
+                                           "will be tied to the virtual hard disk files of original machine "
                                            "and you will not be able to move the new virtual machine "
                                            "to a different computer without moving the original as well.</p>");
     if (m_fAdditionalInfo)

@@ -95,7 +95,7 @@ void UIWizardNewVDPage3::onSelectLocationButtonClicked()
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
                                                               strBackendsList, thisImp(),
-                                                              VBoxGlobal::tr("Please choose a location for new virtual hard drive file"));
+                                                              VBoxGlobal::tr("Please choose a location for new virtual hard disk file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -367,12 +367,12 @@ void UIWizardNewVDPageBasic3::retranslateUi()
     setTitle(UIWizardNewVD::tr("File location and size"));
 
     /* Translate widgets: */
-    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard drive file into the box below or "
+    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual hard disk file into the box below or "
                                                 "click on the folder icon to select a different folder to create the file in."));
-    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard drive file..."));
-    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard drive in megabytes. "
+    m_pLocationOpenButton->setToolTip(UIWizardNewVD::tr("Choose a location for new virtual hard disk file..."));
+    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual hard disk in megabytes. "
                                             "This size is the limit on the amount of file data "
-                                            "that a virtual machine will be able to store on the hard drive."));
+                                            "that a virtual machine will be able to store on the hard disk."));
 }
 
 void UIWizardNewVDPageBasic3::initializePage()

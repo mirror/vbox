@@ -1273,7 +1273,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Hard Drives"));
+        setName(QApplication::translate("UIActionPool", "&Hard Disks"));
     }
 };
 
@@ -1302,8 +1302,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Hard Drive Settings..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure hard drives"));
+        setName(QApplication::translate("UIActionPool", "&Hard Disk Settings..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the virtual machine settings window to configure hard disks"));
     }
 };
 

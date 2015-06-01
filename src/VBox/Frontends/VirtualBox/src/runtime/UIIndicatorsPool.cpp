@@ -116,7 +116,7 @@ private:
         /* Prepare tool-tip: */
         QString strToolTip = QApplication::translate("UIIndicatorsPool",
                                                      "<p style='white-space:pre'><nobr>Indicates the activity "
-                                                     "of the hard drives:</nobr>%1</p>", "HDD tooltip");
+                                                     "of the hard disks:</nobr>%1</p>", "HDD tooltip");
         QString strFullData;
 
         /* Enumerate all the controllers: */

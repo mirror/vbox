@@ -120,7 +120,7 @@ void UIWizardNewVD::retranslateUi()
     UIWizard::retranslateUi();
 
     /* Translate wizard: */
-    setWindowTitle(tr("Create Virtual Hard Drive"));
+    setWindowTitle(tr("Create Virtual Hard Disk"));
     setButtonText(QWizard::FinishButton, tr("Create"));
 }
 

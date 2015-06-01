@@ -1079,7 +1079,7 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                                 tip = UIMachineSettingsStorage::tr("<nobr>Expands/Collapses&nbsp;item.</nobr>");
                             break;
                         case HDAdderToolTip:
-                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;hard&nbsp;drive.</nobr>");
+                            tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;hard&nbsp;disk.</nobr>");
                             break;
                         case CDAdderToolTip:
                             tip = UIMachineSettingsStorage::tr("<nobr>Adds&nbsp;optical&nbsp;drive.</nobr>");
@@ -2390,7 +2390,7 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
             /* Check for emptiness: */
             if (vboxGlobal().medium(key).isNull() && attDevice == KDeviceType_HardDisk)
             {
-                message.second << tr("No hard drive is selected for <i>%1</i>.").arg (value);
+                message.second << tr("No hard disk is selected for <i>%1</i>.").arg (value);
                 fPass = false;
             }
             /* Check for coincidence: */
@@ -2458,7 +2458,7 @@ void UIMachineSettingsStorage::retranslateUi()
     mAddUSBCtrAction->setText(tr("Add USB Controller"));
     mDelCtrAction->setText(tr("Remove Controller"));
     mAddAttAction->setText(tr("Add Attachment"));
-    mAddHDAttAction->setText(tr("Add Hard Drive"));
+    mAddHDAttAction->setText(tr("Add Hard Disk"));
     mAddCDAttAction->setText(tr("Add Optical Drive"));
     mAddFDAttAction->setText(tr("Add Floppy Drive"));
     mDelAttAction->setText(tr("Remove Attachment"));
@@ -2743,10 +2743,10 @@ void UIMachineSettingsStorage::getInformation()
                 switch (device)
                 {
                     case KDeviceType_HardDisk:
-                        mLbMedium->setText(tr("Hard &Drive:"));
+                        mLbMedium->setText(tr("Hard &Disk:"));
                         mTbOpen->setIcon(iconPool()->icon(HDAttachmentNormal));
-                        mTbOpen->setWhatsThis(tr("Choose or create a virtual hard drive file. The virtual machine will see "
-                                                 "the data in the file as the contents of the virtual hard drive."));
+                        mTbOpen->setWhatsThis(tr("Choose or create a virtual hard disk file. The virtual machine will see "
+                                                 "the data in the file as the contents of the virtual hard disk."));
                         break;
                     case KDeviceType_DVD:
                         mLbMedium->setText(tr("Optical &Drive:"));
@@ -2907,11 +2907,11 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case UIMediumType_HardDisk:
             {
                 /* Add "Create a new virtual hard disk" action: */
-                QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Drive..."));
+                QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Disk..."));
                 pCreateNewHardDisk->setIcon(iconPool()->icon(HDNewEn, HDNewDis));
                 connect(pCreateNewHardDisk, SIGNAL(triggered(bool)), this, SLOT(sltCreateNewHardDisk()));
                 /* Add "Choose a virtual hard disk file" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Drive File..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk File..."));
                 /* Add recent mediums list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;

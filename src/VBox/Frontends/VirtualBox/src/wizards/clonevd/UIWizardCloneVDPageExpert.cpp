@@ -229,18 +229,18 @@ void UIWizardCloneVDPageExpert::sltSelectLocationButtonClicked()
 void UIWizardCloneVDPageExpert::retranslateUi()
 {
     /* Translate widgets: */
-    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Hard drive to &copy"));
-    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard drive file to copy..."));
-    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&New hard drive to create"));
-    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard drive file..."));
-    m_pFormatCnt->setTitle(UIWizardCloneVD::tr("Hard drive file &type"));
+    m_pSourceDiskCnt->setTitle(UIWizardCloneVD::tr("Hard disk to &copy"));
+    m_pSourceDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file to copy..."));
+    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&New hard disk to create"));
+    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a location for new virtual hard disk file..."));
+    m_pFormatCnt->setTitle(UIWizardCloneVD::tr("Hard disk file &type"));
     QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
         pButton->setText(VBoxGlobal::fullMediumFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
     }
-    m_pVariantCnt->setTitle(UIWizardCloneVD::tr("Storage on physical hard drive"));
+    m_pVariantCnt->setTitle(UIWizardCloneVD::tr("Storage on physical hard disk"));
     m_pDynamicalButton->setText(UIWizardCloneVD::tr("&Dynamically allocated"));
     m_pFixedButton->setText(UIWizardCloneVD::tr("&Fixed size"));
     m_pSplitBox->setText(UIWizardCloneVD::tr("&Split into files of less than 2GB"));
