@@ -252,7 +252,7 @@
     </message>
     <message>
         <source>Seam&amp;less Mode</source>
-        <translation type="unfinished">Режим интеграции &amp;дисплея</translation>
+        <translation>Режим &amp;интеграции экрана</translation>
     </message>
     <message>
         <source>Switch to seamless desktop integration mode</source>
@@ -312,7 +312,7 @@
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
-        <translation>Сделать снимок текущего состояния виртуальной машины</translation>
+        <translation>Сделать снимок состояния виртуальной машины</translation>
     </message>
     <message>
         <source>Session I&amp;nformation Dialog</source>
@@ -328,7 +328,7 @@
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Приостановить работу виртуальной машины</translation>
+        <translation>Приостановить виртуальную машину</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -521,7 +521,7 @@
     </message>
     <message>
         <source>Switch between normal and seamless desktop integration mode</source>
-        <translation>Переключиться в режим интеграции гостевого дисплея с рабочим столом</translation>
+        <translation>Переключиться в режим интеграции экрана гостевой ОС с рабочим столом</translation>
     </message>
     <message>
         <source>Switch to &amp;Scaled Mode</source>
@@ -529,7 +529,7 @@
     </message>
     <message>
         <source>Switch between normal and scaled mode</source>
-        <translation>Переключиться в режим масштабирования дисплея гостевой ОС</translation>
+        <translation>Переключиться в режим масштабирования экрана гостевой ОС</translation>
     </message>
     <message>
         <source>Session I&amp;nformation</source>
@@ -569,11 +569,11 @@
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Включить отображение всех отключенных ранее предупреждений и сообщений</translation>
+        <translation>Разрешить отображение всех отключенных ранее сообщений</translation>
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
-        <translation>&amp;Менеджер сетевых операций...</translation>
+        <translation>Менеджер &amp;сетевых операций...</translation>
     </message>
     <message>
         <source>Show Network Operations Manager</source>
@@ -593,7 +593,7 @@
     </message>
     <message>
         <source>Take Sn&amp;apshot...</source>
-        <translation>Сделать с&amp;нимок...</translation>
+        <translation>Сделать с&amp;нимок состояния...</translation>
     </message>
     <message>
         <source>Take Screensh&amp;ot...</source>
@@ -619,7 +619,7 @@
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Менеджер виртуальных носителей...</translation>
+        <translation>Менеджер виртуальных н&amp;осителей...</translation>
     </message>
     <message>
         <source>Display the Virtual Media Manager window</source>
@@ -736,7 +736,7 @@
     </message>
     <message>
         <source>Cl&amp;one...</source>
-        <translation>&amp;Копировать...</translation>
+        <translation>&amp;Клонировать...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
@@ -792,7 +792,7 @@
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>&amp;Разрешить все предупреждения</translation>
+        <translation>&amp;Разрешить все сообщения</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
@@ -800,7 +800,7 @@
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
-        <translation>&amp;Переименовать...</translation>
+        <translation>П&amp;ереименовать...</translation>
     </message>
     <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
@@ -860,7 +860,7 @@
     </message>
     <message>
         <source>Po&amp;wer Off</source>
-        <translation>Выключить</translation>
+        <translation>&amp;Выключить</translation>
     </message>
     <message>
         <source>Power off the selected virtual machines</source>
@@ -888,7 +888,7 @@
     </message>
     <message>
         <source>Gro&amp;up</source>
-        <translation>&amp;Сгруппировать</translation>
+        <translation>С&amp;группировать</translation>
     </message>
     <message>
         <source>Sort the group of the first selected machine alphabetically</source>
@@ -964,47 +964,47 @@
     </message>
     <message>
         <source>&amp;VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Строка &amp;меню</translation>
     </message>
     <message>
         <source>&amp;Menu Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить строку меню...</translation>
     </message>
     <message>
         <source>Show Menu &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показывать строку меню</translation>
     </message>
     <message>
         <source>&amp;Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Строка &amp;состояния</translation>
     </message>
     <message>
         <source>&amp;Status Bar Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить строку состояния...</translation>
     </message>
     <message>
         <source>Show Status &amp;Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показывать строку состояния</translation>
     </message>
     <message>
         <source>&amp;Input</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ввод</translation>
     </message>
     <message>
         <source>&amp;Keyboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Клавиатура</translation>
     </message>
     <message>
         <source>&amp;Keyboard Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить клавиатуру...</translation>
     </message>
     <message>
         <source>&amp;Mouse</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Мышь</translation>
     </message>
     <message>
         <source>Network</source>
@@ -1012,402 +1012,402 @@
     </message>
     <message>
         <source>&amp;USB Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить USB...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Общие папки</translation>
     </message>
     <message>
         <source>Show &amp;Log...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">Показать &amp;журнал...</translation>
+        <translation>Показать &amp;журнал...</translation>
     </message>
     <message>
         <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
+        <translation>Менеджер внутренних &amp;данных...</translation>
     </message>
     <message>
         <source>Display the Extra Data Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер внутренних данных</translation>
     </message>
     <message>
         <source>&amp;File</source>
-        <translation type="unfinished">&amp;Файл</translation>
+        <translation>&amp;Файл</translation>
     </message>
     <message>
         <source>&amp;Window</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Окно</translation>
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Убрать в Dock</translation>
     </message>
     <message>
         <source>&amp;Full-screen Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Режим полного экрана</translation>
     </message>
     <message>
         <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключиться в режим полного экрана</translation>
     </message>
     <message>
         <source>S&amp;caled Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Р&amp;ежим масштабирования экрана</translation>
     </message>
     <message>
         <source>S&amp;cale Factor</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Коэффициент масштабирования</translation>
     </message>
     <message>
         <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Послать последовательность клавиш %1 в виртуальную машину</translation>
     </message>
     <message>
         <source>&amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Интеграция мыши</translation>
     </message>
     <message>
         <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить интеграцию указателя мыши</translation>
     </message>
     <message>
         <source>&amp;Optical Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Оптические диски</translation>
     </message>
     <message>
         <source>&amp;Floppy Drives</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Гибкие диски</translation>
     </message>
     <message>
         <source>&amp;USB</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;USB</translation>
     </message>
     <message>
         <source>&amp;Logging</source>
         <comment>debug action</comment>
-        <translation type="unfinished"></translation>
+        <translation>С&amp;бор данных</translation>
     </message>
     <message>
         <source>&amp;Normal Start</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Запустить</translation>
     </message>
     <message>
         <source>&amp;Headless Start</source>
-        <translation type="unfinished"></translation>
+        <translation>З&amp;апустить в фоновом режиме</translation>
     </message>
     <message>
         <source>&amp;Detachable Start</source>
-        <translation type="unfinished"></translation>
+        <translation>За&amp;пустить в фоновом режиме с интерфейсом</translation>
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Свернуть активное окно</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть менеджер сетевых операций</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалоговое окно с информацией о программе</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настройки...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог глобальных настроек</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалоговое окно с информацией о сессии виртуальной машины</translation>
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сохранить состояние</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить состояние виртуальной машины</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Послать виртуальной машине сигнал завершения работы</translation>
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Свернуть окно</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Автоматически подгонять размер экрана гостевой ОС при изменении размеров окна</translation>
     </message>
     <message>
         <source>Take a guest display screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Сделать снимок экрана гостевой ОС</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window to configure video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек захвата видео</translation>
     </message>
     <message>
         <source>Enable guest display video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить захват видео экрана гостевой ОС</translation>
     </message>
     <message>
         <source>Allow remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешить удалённый доступ (RDP) к этой машине</translation>
     </message>
     <message>
         <source>Display the window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть окно настроек строки меню</translation>
     </message>
     <message>
         <source>Enable menu-bar visibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать строку меню</translation>
     </message>
     <message>
         <source>Display the window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть окно настроек строки состояния</translation>
     </message>
     <message>
         <source>Enable status-bar visibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать строку состояния</translation>
     </message>
     <message>
         <source>Display the global preferences window to configure keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог глобальных настроек на странице настроек клавиатуры</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Послать %1</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Жёсткие диски</translation>
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Настроить жёсткие диски...</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window to configure hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек жёстких дисков</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сеть</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window to configure network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек сети</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window to configure USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек USB</translation>
     </message>
     <message>
         <source>&amp;Drag and Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Функция Drag and Drop</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window to configure shared folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть диалог настроек виртуальной машины на странице настроек общих папок</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключить установочный образ диска c пакетом Дополнений гостевой ОС</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Включить</translation>
+        <translation>Включить</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Запросить разрешение в %1x%2</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished">Предпросмотр монитора %1</translation>
+        <translation>Предпросмотр монитора %1</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&amp;Подключить сетевой кабель</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключить сетевой адаптер &amp;%1</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished">Нет подсоединенных USB устройств</translation>
+        <translation>Нет подсоединённых USB устройств</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет поддерживаемых USB устройств, подсоединённых к хосту</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished">Нет подсоединённых веб-камер</translation>
+        <translation>Нет подсоединённых веб-камер</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished">Нет поддерживаемых веб-камер, подсоединённых к хосту</translation>
+        <translation>Нет поддерживаемых веб-камер, подсоединённых к хосту</translation>
     </message>
     <message>
         <source>Create new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новую виртуальную машину</translation>
     </message>
     <message>
         <source>Add existing virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить существующую виртуальную машину</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Переименовать выбранную группу виртуальных машин</translation>
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>Раз&amp;группировать</translation>
     </message>
     <message>
         <source>Ungroup the items of selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Разгруппировать выбранную группу виртуальных машин</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>Сор&amp;тировать</translation>
     </message>
     <message>
         <source>Sort the items of selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Сортировать элементы выбранной группы виртуальных машин по алфавиту</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Сгруппировать выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Клонировать выбранную виртуальную машину</translation>
     </message>
     <message>
         <source>Remove selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать окна выбранных виртуальных машин</translation>
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить выбранные виртуальные машины в фоновом режиме</translation>
     </message>
     <message>
         <source>Start selected virtual machines with the option of continuing them in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить выбранные виртуальные машины в фоновом режиме с графическим интерфейсом</translation>
     </message>
     <message>
         <source>Suspend the execution of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Приостановить выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Перезапустить выбранные виртуальные машины</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="unfinished"></translation>
+        <translation>С&amp;бросить сохранённое состояние...</translation>
     </message>
     <message>
         <source>Discard the saved state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить сохранённые состояния выбранных виртуальных машин</translation>
     </message>
     <message>
         <source>Show the log files of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать файлы журналов выбранных виртуальных машин</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">Об&amp;новить</translation>
+        <translation>Обно&amp;вить</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Перепроверить доступность выбранных виртуальных машин</translation>
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать в Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать файлы выбранных виртуальных машин в Finder</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать в проводнике</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать файлы выбранных виртуальных машин в проводнике</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Показать в файловом менеджере</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать файлы выбранных виртуальных машин в файловом менеджере</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Созд&amp;ать псевдоним на рабочем столе</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать псевдонимы выбранных виртуальных машин на Вашем рабочем столе</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Созд&amp;ать ярлык на рабочем столе</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать ярлыки выбранных виртуальных машин на Вашем рабочем столе</translation>
     </message>
     <message>
         <source>Sort the group of first selected virtual machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Сортировать группу первой из выбранных виртуальных машин по алфавиту</translation>
     </message>
     <message>
         <source>Save the state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить состояния выбранных виртуальных машин</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Послать выбранным виртуальным машинам сигналы завершения работы</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Выключить выбранные виртуальные машины</translation>
     </message>
 </context>
 <context>
@@ -1441,8 +1441,6 @@
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -1464,8 +1462,6 @@
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
@@ -8324,7 +8320,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось сбросить сохраненное состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="unfinished">Не удалось сбросить сохранённое состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -9451,7 +9447,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось скопировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="unfinished">Не удалось клонировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -9581,11 +9577,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите сбросить (удалить) сохраненное состояние следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Вы уверены, что хотите сбросить сохранённое состояние следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы действительно хотите выполнить перезапуск следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Во время перезапуска произойдет утеря несохраненных данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Вы действительно хотите выполнить перезапуск следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Во время перезапуска произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -9593,7 +9589,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы действительно хотите выключить следующие виртуальные машины?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;При выключении произойдет утеря несохраненных данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Вы действительно хотите выключить следующие виртуальные машины?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;При выключении произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
@@ -11386,7 +11382,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске основного ПК.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохраненного состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске основного ПК.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохранённого состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -11414,7 +11410,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Если стоит галочка, то состояние машины будет восстановлено из состояния, сохраненного в текущем снимке, сразу после ее выключения. Это может быть полезным, если Вы уверены, что хотите удалить результаты последнего сеанса работы с виртуальной машиной и вернуться к текущему снимку.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Если стоит галочка, то состояние машины будет восстановлено из состояния, сохранённого в текущем снимке, сразу после ее выключения. Это может быть полезным, если Вы уверены, что хотите удалить результаты последнего сеанса работы с виртуальной машиной и вернуться к текущему снимку.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -11940,11 +11936,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone Virtual Machine</source>
-        <translation>Копировать виртуальную машину</translation>
+        <translation type="unfinished">Клонировать виртуальную машину</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation>Копировать</translation>
+        <translation type="unfinished">Клонировать</translation>
     </message>
     <message>
         <source>%1 Clone</source>
@@ -11956,7 +11952,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста укажите имя новой виртуально машины. Эта машина будет копией машины &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите имя новой виртуально машины. Эта машина будет клоном машины &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
@@ -11968,7 +11964,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone type</source>
-        <translation>Укажите тип копии</translation>
+        <translation type="unfinished">Укажите тип клонирования</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
@@ -11976,23 +11972,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Связная копия&lt;/b&gt;, в копируемой машине будет создан новый снимок, являющийся частью процедуры копирования.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, в клонируемой машине будет создан новый снимок, являющийся частью процедуры клонирования.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation>&amp;Полная копия</translation>
+        <translation type="unfinished">&amp;Полное клонирование</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation>&amp;Связная копия</translation>
+        <translation type="unfinished">&amp;Связное клонирование</translation>
     </message>
     <message>
         <source>Snapshots</source>
-        <translation>Укажите, что копировать</translation>
+        <translation type="unfinished">Укажите цель клонирования</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Пожалуйста укажите, какие части виртуальной машины должны быть скопированы.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите, какие части виртуальной машины должны быть клонированы.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
@@ -12024,15 +12020,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation>&amp;Полная копия</translation>
+        <translation type="unfinished">&amp;Полное клонирование</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation>&amp;Связная копия</translation>
+        <translation type="unfinished">&amp;Связное клонирование</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите какое клонирование Вы желаете выполнить.&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Полное клонирование&lt;/b&gt;, будет создана полная копия копируемой виртуальной машины (включая все файлы виртуальных жёстких дисков).&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, будет создана новая машина, использующая файлы виртуальных жёстких дисков клонируемой машины и Вы не сможете перенести новую машину на другой компьютер без переноса клонируемой.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -16175,11 +16171,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation>Текущее состояние отличается от состояния, сохраненного в текущем снимке</translation>
+        <translation type="unfinished">Текущее состояние отличается от состояния, сохранённого в текущем снимке</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation>Текущее состояние идентично состоянию, сохраненному в текущем снимке</translation>
+        <translation type="unfinished">Текущее состояние идентично состоянию, сохранённому в текущем снимке</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -16297,7 +16293,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation>&amp;Копировать...</translation>
+        <translation type="unfinished">&amp;Клонировать...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
@@ -16317,7 +16313,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Клонировать выбранную виртуальную машину</translation>
     </message>
 </context>
 <context>
