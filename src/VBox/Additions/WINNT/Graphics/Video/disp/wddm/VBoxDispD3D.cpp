@@ -6298,6 +6298,9 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
 
     vboxVDbgPrint(("<== "__FUNCTION__", hAdapter(0x%p)\n", hAdapter));
 
+#ifdef DEBUG
+    VbglR3Term();
+#endif
     return S_OK;
 }
 
@@ -6337,6 +6340,10 @@ static BOOL vboxDispIsDDraw(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 
 HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
+#ifdef DEBUG
+    VbglR3Init();
+#endif
+
     VBOXDISP_DDI_PROLOGUE_GLBL();
 
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
