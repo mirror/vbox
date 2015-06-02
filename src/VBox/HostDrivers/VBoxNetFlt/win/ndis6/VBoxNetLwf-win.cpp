@@ -17,6 +17,7 @@
 
 //#define VBOXNETLWF_SYNC_SEND
 #define VBOXNETLWF_NO_BYPASS
+#define VBOXNETLWF_SUPRESS_REDUNDANT_NOTIFICATIONS
 
 #include <VBox/version.h>
 #include <VBox/err.h>
@@ -58,8 +59,10 @@ RT_C_DECLS_BEGIN
 #  undef  _interlockedbittestandset64
 #  undef  _interlockedbittestandreset64
 #  include <ndis.h>
+#  include <netioapi.h>
 #else
-//#  include <ntddk.h>
+#  include <ntddk.h>
+#  include <netioapi.h>
 /* can include ndis.h right away */
 #  include <ndis.h>
 #endif
@@ -187,6 +190,10 @@ typedef struct _VBOXNETLWF_MODULE {
     ANSI_STRING strMiniportName;
     /** MAC address of underlying adapter */
     RTMAC MacAddr;
+    /** Index of underlying adapter */
+    NET_IFINDEX uIfIndex;
+    /** IP address change notifier handle */
+    HANDLE hNotifier;
     /** Saved offload configuration */
     NDIS_OFFLOAD SavedOffloadConfig;
     /** the cloned request we have passed down */
@@ -793,8 +800,10 @@ static NDIS_STATUS vboxNetLwfWinAttach(IN NDIS_HANDLE hFilter, IN NDIS_HANDLE hD
         pModuleCtx->fOffloadConfigValid = true;
     }
 
-    pModuleCtx->pGlobals = pGlobals;
-    pModuleCtx->hFilter  = hFilter;
+    pModuleCtx->pGlobals  = pGlobals;
+    pModuleCtx->hFilter   = hFilter;
+    pModuleCtx->uIfIndex  = pParameters->BaseMiniportIfIndex;
+    pModuleCtx->hNotifier = NULL;
     vboxNetLwfWinChangeState(pModuleCtx, LwfState_Attaching);
     /* Insert into module chain */
     NdisAcquireSpinLock(&pGlobals->Lock);
@@ -2177,10 +2186,87 @@ int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
     return VINF_SUCCESS;
 }
 
+static void vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
+                                              IN PMIB_UNICASTIPADDRESS_ROW pRow,
+                                              IN MIB_NOTIFICATION_TYPE enmNotifType)
+{
+    PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvCtx;
+    PVBOXNETLWF_MODULE pModule = (PVBOXNETLWF_MODULE)pThis->u.s.WinIf.hModuleCtx;
+
+#ifdef VBOXNETLWF_SUPRESS_REDUNDANT_NOTIFICATIONS
+    /* Ignore notifications on the interfaces we are not attached to. */
+    if (pRow && pModule->uIfIndex != pRow->InterfaceIndex)
+    {
+        Log((__FUNCTION__ ": ignoring notification for luid %d-%d, index %d\n",
+             pRow->InterfaceLuid.Info.IfType, pRow->InterfaceLuid.Info.NetLuidIndex,
+             pRow->InterfaceIndex));
+        return;
+    }
+#endif /* VBOXNETLWF_SUPRESS_REDUNDANT_NOTIFICATIONS */
+
+    /* We are only interested in add or remove notifications. */
+    bool fAdded;
+    if (enmNotifType == MibAddInstance)
+        fAdded = true;
+    else if (enmNotifType == MibDeleteInstance)
+        fAdded = false;
+    else
+        return;
+
+    if (pRow && pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        switch (pRow->Address.si_family)
+        {
+            case AF_INET:
+                Log(("vboxNetLwfWinIpAddrChangeCallback: %s IPv4 addr=%RTnaipv4 on luid=(%u,%u)\n",
+                     fAdded ? "add" : "remove", pRow->Address.Ipv4.sin_addr,
+                     pRow->InterfaceLuid.Info.IfType, pRow->InterfaceLuid.Info.NetLuidIndex));
+                pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded, kIntNetAddrType_IPv4,
+                                                         &pRow->Address.Ipv4.sin_addr);
+                break;
+            case AF_INET6:
+                Log(("vboxNetLwfWinIpAddrChangeCallback: %s IPv6 addr=%RTnaipv6 luid=(%u,%u)\n",
+                     fAdded ? "add" : "remove", &pRow->Address.Ipv6.sin6_addr,
+                     pRow->InterfaceLuid.Info.IfType, pRow->InterfaceLuid.Info.NetLuidIndex));
+                pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded, kIntNetAddrType_IPv6,
+                                                         &pRow->Address.Ipv6.sin6_addr);
+                break;
+        }
+    }
+    else
+        Log(("vboxNetLwfWinIpAddrChangeCallback: pRow=%p pfnNotifyHostAddress=%p\n",
+             pRow, pThis->pSwitchPort->pfnNotifyHostAddress));
+}
+
+void vboxNetLwfWinRegisterIpAddrNotifier(PVBOXNETFLTINS pThis, PVBOXNETLWF_MODULE pModuleCtx)
+{
+    if (pThis->pSwitchPort && pThis->pSwitchPort->pfnNotifyHostAddress)
+    {
+        NETIO_STATUS Status;
+        Status = NotifyUnicastIpAddressChange(AF_UNSPEC, vboxNetLwfWinIpAddrChangeCallback,
+                                              pThis, false, &pModuleCtx->hNotifier);
+        if (!NETIO_SUCCESS(Status))
+            Log(("vboxNetLwfWinRegisterIpAddrNotifier: NotifyUnicastIpAddressChange failed with %x\n", Status));
+        else
+            Log(("vboxNetLwfWinRegisterIpAddrNotifier: notifier=%p\n", pModuleCtx->hNotifier));
+    }
+    else
+        pModuleCtx->hNotifier = NULL;
+}
+
+void vboxNetLwfWinUnregisterIpAddrNotifier(PVBOXNETLWF_MODULE pModuleCtx)
+{
+    Log(("vboxNetLwfWinUnregisterIpAddrNotifier: notifier=%p\n", pModuleCtx->hNotifier));
+    if (pModuleCtx->hNotifier)
+        CancelMibChangeNotify2(pModuleCtx->hNotifier);
+}
+
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
     PVBOXNETLWF_MODULE pModuleCtx = (PVBOXNETLWF_MODULE)pThis->u.s.WinIf.hModuleCtx;
     LogFlow(("==>"__FUNCTION__": instance=%p module=%p\n", pThis, pModuleCtx));
+    /* Cancel IP address change notifications */
+    vboxNetLwfWinUnregisterIpAddrNotifier(pModuleCtx);
     /* Technically it is possible that the module has already been gone by now. */
     if (pModuleCtx)
     {
@@ -2223,6 +2309,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
             pThis->u.s.WinIf.hModuleCtx = pModuleCtx;
             pModuleCtx->pNetFlt = pThis;
             vboxNetLwfWinReportCapabilities(pThis, pModuleCtx);
+            vboxNetLwfWinRegisterIpAddrNotifier(pThis, pModuleCtx);
             LogFlow(("<=="__FUNCTION__": return 0\n"));
             return VINF_SUCCESS;
         }
