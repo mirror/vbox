@@ -32,17 +32,17 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis><remark role="usage"/>
+    <cmdsynopsis id="synopsis-vboxmanage-extpack-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
       <command>VBoxManage extpack install</command>
       <arg>--replace</arg>
       <arg choice="req"><replaceable>tarball</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis><remark role="usage"/>
+    <cmdsynopsis id="synopsis-vboxmanage-extpack-uninstall">
       <command>VBoxManage extpack uninstall</command>
       <arg>--force</arg>
       <arg choice="req"><replaceable>name</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis><remark role="usage"/>
+    <cmdsynopsis id="synopsis-vboxmanage-extpack-cleanup">
       <command>VBoxManage extpack cleanup</command>
     </cmdsynopsis>
   </refsynopsisdiv>
