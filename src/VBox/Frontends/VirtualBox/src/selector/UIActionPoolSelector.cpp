@@ -601,9 +601,7 @@ class UIActionSimpleStartNormal : public UIActionSimple
 public:
 
     UIActionSimpleStartNormal(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_start_32px.png", ":/vm_start_16px.png",
-                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_start_16px.png") {}
 
 protected:
 
@@ -626,9 +624,7 @@ class UIActionSimpleStartHeadless : public UIActionSimple
 public:
 
     UIActionSimpleStartHeadless(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_start_32px.png", ":/vm_start_16px.png",
-                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_start_headless_16px.png") {}
 
 protected:
 
@@ -651,9 +647,7 @@ class UIActionSimpleStartDetachable : public UIActionSimple
 public:
 
     UIActionSimpleStartDetachable(UIActionPool *pParent)
-        : UIActionSimple(pParent,
-                         ":/vm_start_32px.png", ":/vm_start_16px.png",
-                         ":/vm_start_disabled_32px.png", ":/vm_start_disabled_16px.png") {}
+        : UIActionSimple(pParent, ":/vm_start_separate_16px.png") {}
 
 protected:
 

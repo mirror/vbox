@@ -1,6 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="os_qnx_hidpi.png">images/hidpi/os_qnx_hidpi.png</file>
         <file alias="os_redhat_64_hidpi.png">images/hidpi/os_redhat_64_hidpi.png</file>
         <file alias="os_redhat_hidpi.png">images/hidpi/os_redhat_hidpi.png</file>
         <file alias="os_solaris_64_hidpi.png">images/hidpi/os_solaris_64_hidpi.png</file>
@@ -261,6 +260,8 @@
         <file alias="vm_start_32px_hidpi.png">images/hidpi/vm_start_32px_hidpi.png</file>
         <file alias="vm_start_disabled_16px_hidpi.png">images/hidpi/vm_start_disabled_16px_hidpi.png</file>
         <file alias="vm_start_disabled_32px_hidpi.png">images/hidpi/vm_start_disabled_32px_hidpi.png</file>
+        <file alias="vm_start_headless_16px_hidpi.png">images/hidpi/vm_start_headless_16px_hidpi.png</file>
+        <file alias="vm_start_separate_16px_hidpi.png">images/hidpi/vm_start_separate_16px_hidpi.png</file>
         <file alias="vrdp_16px_hidpi.png">images/hidpi/vrdp_16px_hidpi.png</file>
         <file alias="vrdp_24px_hidpi.png">images/hidpi/vrdp_24px_hidpi.png</file>
         <file alias="vrdp_32px_hidpi.png">images/hidpi/vrdp_32px_hidpi.png</file>
