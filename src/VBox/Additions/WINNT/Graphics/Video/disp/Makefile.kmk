@@ -217,6 +217,14 @@ DumpD3DCaps9_SOURCES  = \
 DumpD3DCaps9_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) d3d9.lib
 DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
 
+PROGRAMS += D3DFeatureLevel
+D3DFeatureLevel_TEMPLATE = VBOXR3EXE
+D3DFeatureLevel_SDKS     = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
+D3DFeatureLevel_SOURCES  = \
+	wddm/dbg/D3DFeatureLevel.cpp
+D3DFeatureLevel_LIBS     = $(VBOX_LIB_IPRT_GUEST_R3) d3d11.lib
+D3DFeatureLevel_LDFLAGS.win = /SUBSYSTEM:CONSOLE
+
 endif #VBOXVIDEOWINDBG
 
 include $(FILE_KBUILD_SUB_FOOTER)
