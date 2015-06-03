@@ -3812,23 +3812,48 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
          * MSR is not yet locked; we can change it ourselves here.
          * Once the lock bit is set, this MSR can no longer be modified.
          *
-         * Set both the VMXON and SMX_VMXON bits as we can't determine SMX mode
-         * accurately. See @bugref{6873}.
+         * Set both the VMXON and SMX_VMXON bits (if supported) as we can't
+         * determine SMX mode accurately. See @bugref{6873}.
+         *
+         * The reason we are being paranoid here and (re)checking is that we don't assume all callers
+         * of this function to check it like SUPR0QueryVTCaps() currently does. If we get something
+         * wrong here, we can throw a #GP and panic the box. This isn't a performance critical path.
          */
-        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
-                    | MSR_IA32_FEATURE_CONTROL_SMX_VMXON
-                    | MSR_IA32_FEATURE_CONTROL_VMXON;
-        ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
+        uint32_t fFeaturesECX, uDummy;
+        uint32_t uMaxId, uVendorEBX, uVendorECX, uVendorEDX;
+        ASMCpuId(0, &uMaxId, &uVendorEBX, &uVendorECX, &uVendorEDX);
+        ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &uDummy);
+        if (   ASMIsValidStdRange(uMaxId)
+            && (   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
+                || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX)))
+        {
+            bool fSmxVmxHwSupport = false;
+            if (   (fFeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                && (fFeaturesECX & X86_CPUID_FEATURE_ECX_SMX))
+                fSmxVmxHwSupport = true;
 
-        /* Verify. */
-        u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-        fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-        fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-        fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-        if (fSmxVmxAllowed && fVmxAllowed)
-            rc = VINF_SUCCESS;
+            u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK
+                        | MSR_IA32_FEATURE_CONTROL_VMXON;
+            if (fSmxVmxHwSupport)
+                u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
+
+            /* Commit. */
+            ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
+
+            /* Verify. */
+            u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+            fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+            fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+            fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+            if (   fVmxAllowed
+                && (   !fSmxVmxHwSupport
+                    || fSmxVmxAllowed))
+                rc = VINF_SUCCESS;
+            else
+                rc = VERR_VMX_MSR_LOCKING_FAILED;
+        }
         else
-            rc = VERR_VMX_MSR_LOCKING_FAILED;
+            rc = VERR_VMX_IPE_5;
     }
 
     if (pfIsSmxModeAmbiguous)
