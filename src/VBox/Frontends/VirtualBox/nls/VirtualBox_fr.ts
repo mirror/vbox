@@ -2899,9 +2899,9 @@
         <translation>Pilote générique &apos;%1&apos;</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Pilote générique, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">Pilote générique, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>

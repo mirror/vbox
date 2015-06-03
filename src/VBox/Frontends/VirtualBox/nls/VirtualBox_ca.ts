@@ -3257,9 +3257,9 @@ p, li { white-space: pre-wrap; }
         <translation>Mòdul genèric, «%1»</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Mòdul genèric, «%1» {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">Mòdul genèric, «%1» { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>

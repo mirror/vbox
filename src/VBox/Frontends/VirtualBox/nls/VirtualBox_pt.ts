@@ -2668,11 +2668,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
-        <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation type="unfinished"></translation>
@@ -2815,6 +2810,11 @@
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
         <translation type="unfinished">Desactivado</translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

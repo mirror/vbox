@@ -3131,9 +3131,9 @@ p, li { white-space: pre-wrap; }
         <translation>Загальний драйвер, «%1»</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Загальний драйвер, «%1» {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">Загальний драйвер, «%1» { %2 }</translation>
     </message>
     <message>
         <source>Adapter %1</source>

@@ -1707,9 +1707,9 @@
         <translation>通用驅動程式，「%1」</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>通用驅動程式，「%1」 {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">通用驅動程式，「%1」 { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>

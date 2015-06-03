@@ -3176,9 +3176,9 @@ p, li { white-space: pre-wrap; }
         <translation>Generisk driver, &apos;%1&apos;</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>Generisk driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">Generisk driver, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>

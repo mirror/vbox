@@ -3220,9 +3220,9 @@ p, li { white-space: pre-wrap; }
         <translation>汎用ドライバー, &apos;%1&apos; </translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>汎用ドライバー, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;} </translation>
+        <translation type="unfinished">汎用ドライバー, &apos;%1&apos; { %2 } </translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>

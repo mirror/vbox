@@ -3284,9 +3284,9 @@ p, li { white-space: pre-wrap; }
         <translation>일반 드라이버, &apos;%1&apos;</translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation>일반 드라이버, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="unfinished">일반 드라이버, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
