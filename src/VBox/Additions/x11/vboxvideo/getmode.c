@@ -131,9 +131,9 @@ void vboxAddModes(ScrnInfoPtr pScrn)
     /* Add two dynamic mode entries.  When we receive a new size hint we will
      * update whichever of these is not current. */
     pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pScrn, pMode, NULL, 1024, 768);
+    vboxFillDisplayMode(pScrn, pMode, NULL, 800, 600);
     pMode = vboxAddEmptyScreenMode(pScrn);
-    vboxFillDisplayMode(pScrn, pMode, NULL, 1024, 768);
+    vboxFillDisplayMode(pScrn, pMode, NULL, 800, 600);
     /* Add any modes specified by the user.  We assume here that the mode names
      * reflect the mode sizes. */
     for (i = 0; pScrn->display->modes && pScrn->display->modes[i]; i++)
@@ -155,8 +155,8 @@ void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 
     for (i = 0; i < pVBox->cScreens; ++i)
     {
-        pVBox->pScreens[i].aPreferredSize.cx = 1024;
-        pVBox->pScreens[i].aPreferredSize.cy = 768;
+        pVBox->pScreens[i].aPreferredSize.cx = 800;
+        pVBox->pScreens[i].aPreferredSize.cy = 600;
         pVBox->pScreens[i].afConnected       = true;
     }
     /* Set up the first mode correctly to match the requested initial mode. */
