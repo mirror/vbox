@@ -92,7 +92,7 @@ protected:
     int i_receiveData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
     int i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout);
-    int i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd);
+    int i_updateProcess(PRECVDATACTX pCtx, uint64_t cbDataAdd);
 
 protected:
 

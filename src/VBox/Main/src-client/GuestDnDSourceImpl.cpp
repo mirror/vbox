@@ -525,6 +525,7 @@ int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint3
                     rc = pCtx->mURI.lstURI.RootFromURIData(&pCtx->mData.vecData[0], pCtx->mData.vecData.size(), 0 /* uFlags */);
                     if (RT_SUCCESS(rc))
                     {
+                        /* Reset processed bytes. */
                         pCtx->mData.cbProcessed = 0;
 
                         /*
@@ -533,7 +534,13 @@ int GuestDnDSource::i_onReceiveData(PRECVDATACTX pCtx, const void *pvData, uint3
                          */
                         pCtx->mData.cbToProcess = cbTotalSize;
 
-                        LogFlowFunc(("URI data => cbToProcess=%RU64\n", pCtx->mData.cbToProcess));
+                        /* Update our process with the data we already received.
+                         * Note: The total size will consist of the meta data (in vecData) and
+                         *       the actual accumulated file/directory data from the guest. */
+                        rc = i_updateProcess(pCtx, (uint64_t)pCtx->mData.vecData.size());
+
+                        LogFlowFunc(("URI data => cbProcessed=%RU64, cbToProcess=%RU64, rc=%Rrc\n",
+                                     pCtx->mData.cbProcessed, pCtx->mData.cbToProcess, rc));
                     }
                 }
             }
@@ -562,48 +569,12 @@ int GuestDnDSource::i_onReceiveDir(PRECVDATACTX pCtx, const char *pszPath, uint3
     {
         rc = RTDirCreateFullPath(pszDir, fMode);
         if (RT_FAILURE(rc))
-            LogRel2(("DnD: Error creating guest directory \"%s\" on the host, rc=%Rrc\n", pszDir, rc));
+            LogRel2(("DnD: Error creating guest directory '%s' on the host, rc=%Rrc\n", pszDir, rc));
 
         RTStrFree(pszDir);
     }
     else
          rc = VERR_NO_MEMORY;
-
-    if (RT_SUCCESS(rc))
-    {
-        if (mDataBase.mProtocolVersion <= 2)
-        {
-            /*
-             * Protocols v1/v2 do *not* send root element names (files/directories)
-             * in URI format. The initial GUEST_DND_GH_SND_DATA message(s) however
-             * did take those element names into account, but *with* URI decoration
-             * when it comes to communicating the total bytes being sent.
-             *
-             * So translate the path into a valid URI path and add the resulting
-             * length (+ "\r\n" and termination) to the total bytes received
-             * to keep the accounting right.
-             */
-            char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
-                                           pszPath /* pszPath */,
-                                           NULL /* pszQuery */, NULL /* pszFragment */);
-            if (pszPathURI)
-            {
-                bool fHasPath = RTPathHasPath(pszPath); /* Use original data received. */
-                if (!fHasPath) /* Root path? */
-                {
-                    cbPath  = strlen(pszPathURI);
-                    cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
-
-                    rc = i_updateProcess(pCtx, cbPath);
-                }
-
-                LogFlowFunc(("URI pszPathURI=%s, fHasPath=%RTbool, cbPath=%RU32\n", pszPathURI, fHasPath, cbPath));
-                RTStrFree(pszPathURI);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -624,16 +595,17 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
 
     do
     {
-        if (!pCtx->mURI.objURI.IsComplete())
+        if (    pCtx->mURI.objURI.IsOpen()
+            && !pCtx->mURI.objURI.IsComplete())
         {
-            LogFlowFunc(("Warning: Object \"%s\" not complete yet\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' not complete yet\n", pCtx->mURI.objURI.GetDestPath().c_str()));
             rc = VERR_INVALID_PARAMETER;
             break;
         }
 
         if (pCtx->mURI.objURI.IsOpen()) /* File already opened? */
         {
-            LogFlowFunc(("Warning: Current opened object is \"%s\"\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Current opened object is '%s'\n", pCtx->mURI.objURI.GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
@@ -681,42 +653,6 @@ int GuestDnDSource::i_onReceiveFileHdr(PRECVDATACTX pCtx, const char *pszPath, u
             break;
         }
 
-        if (mDataBase.mProtocolVersion <= 2)
-        {
-            /*
-             * Protocols v1/v2 do *not* send root element names (files/directories)
-             * in URI format. The initial GUEST_DND_GH_SND_DATA message(s) however
-             * did take those element names into account, but *with* URI decoration
-             * when it comes to communicating the total bytes being sent.
-             *
-             * So translate the path into a valid URI path and add the resulting
-             * length (+ "\r\n" and termination) to the total bytes received
-             * to keep the accounting right.
-             */
-            char *pszPathURI = RTUriCreate("file" /* pszScheme */, "/" /* pszAuthority */,
-                                           pszPath /* pszPath */,
-                                           NULL /* pszQuery */, NULL /* pszFragment */);
-            if (pszPathURI)
-            {
-                bool fHasPath = RTPathHasPath(pszPath); /* Use original data received. */
-                if (!fHasPath) /* Root path? */
-                {
-                    cbPath  = strlen(pszPathURI);
-                    cbPath += 3;                  /* Include "\r" + "\n" + termination -- see above. */
-
-                    rc = i_updateProcess(pCtx, cbPath);
-                }
-
-                LogFlowFunc(("URI pszPathURI=%s, fHasPath=%RTbool, cbPath=%RU32\n", pszPathURI, fHasPath, cbPath));
-                RTStrFree(pszPathURI);
-            }
-            else
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-        }
-
     } while (0);
 
     LogFlowFuncLeaveRC(rc);
@@ -735,14 +671,14 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
     {
         if (pCtx->mURI.objURI.IsComplete())
         {
-            LogFlowFunc(("Warning: Object \"%s\" already completed\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' already completed\n", pCtx->mURI.objURI.GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
 
         if (!pCtx->mURI.objURI.IsOpen()) /* File opened on host? */
         {
-            LogFlowFunc(("Warning: Object \"%s\" not opened\n", pCtx->mURI.objURI.GetDestPath().c_str()));
+            LogFlowFunc(("Warning: Object '%s' not opened\n", pCtx->mURI.objURI.GetDestPath().c_str()));
             rc = VERR_WRONG_ORDER;
             break;
         }
@@ -775,7 +711,10 @@ int GuestDnDSource::i_onReceiveFileData(PRECVDATACTX pCtx, const void *pvData, u
             }
         }
         else
-            LogRel(("DnD: Error writing guest file to host to \"%s\": %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+        {
+            /** @todo What to do when the host's disk is full? */
+            LogRel(("DnD: Error writing guest file to host to '%s': %Rrc\n", pCtx->mURI.objURI.GetDestPath().c_str(), rc));
+        }
 
     } while (0);
 
@@ -1260,9 +1199,12 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
     return rc; /* Tell the guest. */
 }
 
-int GuestDnDSource::i_updateProcess(PRECVDATACTX pCtx, uint32_t cbDataAdd)
+int GuestDnDSource::i_updateProcess(PRECVDATACTX pCtx, uint64_t cbDataAdd)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("cbProcessed=%RU64 (+ %RU64 = %RU64), cbToProcess=%RU64\n",
+                 pCtx->mData.cbProcessed, cbDataAdd, pCtx->mData.cbProcessed + cbDataAdd, pCtx->mData.cbToProcess));
 
     pCtx->mData.cbProcessed += cbDataAdd;
     Assert(pCtx->mData.cbProcessed <= pCtx->mData.cbToProcess);
