@@ -224,7 +224,6 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     RT_ASSERT_INTS_ON();
 
-    int rc;
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
@@ -258,7 +257,6 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 {
     RT_ASSERT_INTS_ON();
 
-    int rc;
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
