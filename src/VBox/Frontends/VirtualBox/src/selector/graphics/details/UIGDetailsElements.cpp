@@ -750,7 +750,7 @@ void UIGDetailsUpdateThreadNetwork::run()
                             QString strGenericDriverProperties(summarizeGenericProperties(adapter));
                             strAttachmentType = strGenericDriverProperties.isNull() ?
                                       strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1'", "details (network)").arg(adapter.GetGenericDriver())) :
-                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' {&nbsp;%2&nbsp;}", "details (network)")
+                                      strAttachmentType.arg(QApplication::translate("UIGDetails", "Generic Driver, '%1' { %2 }", "details (network)")
                                                             .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
                             break;
                         }
