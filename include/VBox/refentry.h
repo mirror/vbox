@@ -88,6 +88,8 @@ typedef struct REFENTRY
     REFENTRYSTRTAB Synopsis;
     /** Full help. */
     REFENTRYSTRTAB Help;
+    /** Brief command description. */
+    const char    *pszBrief;
 } REFENTRY;
 /** Pointer to a read-only refentry help extract structure. */
 typedef REFENTRY const *PCREFENTRY;
