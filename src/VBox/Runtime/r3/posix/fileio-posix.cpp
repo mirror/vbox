@@ -390,7 +390,6 @@ RTFILE rtFileGetStandard(RTHANDLESTD enmStdHandle)
         case RTHANDLESTD_INPUT:  fd = 0; break;
         case RTHANDLESTD_OUTPUT: fd = 1; break;
         case RTHANDLESTD_ERROR:  fd = 2; break;
-            break;
         default:
             AssertFailedReturn(NIL_RTFILE);
     }

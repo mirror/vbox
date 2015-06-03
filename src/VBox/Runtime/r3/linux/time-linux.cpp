@@ -81,12 +81,11 @@ DECLINLINE(int) mono_clock(struct timespec *ts)
          */
         case -1:
         {
-            int rc;
 #ifdef CLOCK_MONOTONIC
             /*
              * Real-Time API.
              */
-            rc = clock_gettime(CLOCK_MONOTONIC, ts);
+            int rc = clock_gettime(CLOCK_MONOTONIC, ts);
             if (!rc)
             {
                 iWorking = 0;
