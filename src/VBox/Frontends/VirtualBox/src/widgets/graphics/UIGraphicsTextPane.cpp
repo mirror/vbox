@@ -386,7 +386,7 @@ QTextLayout* UIGraphicsTextPane::buildTextLayout(const QFont &font, QPaintDevice
         line.setLineWidth(iWidth);
         iHeight += iLeading;
         line.setPosition(QPointF(0, iHeight));
-        iHeight += line.height();
+        iHeight += (int)line.height();
     }
     pTextLayout->endLayout();
 

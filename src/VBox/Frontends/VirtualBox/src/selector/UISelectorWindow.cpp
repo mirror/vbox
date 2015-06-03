@@ -1628,8 +1628,8 @@ void UISelectorWindow::loadSettings()
         if (sizes[0] == 0 && sizes[1] == 0)
         {
             /* Propose some 'default' based on current dialog width: */
-            sizes[0] = (double)width()     / 3 * .9;
-            sizes[1] = (double)width() * 2 / 3 * .9;
+            sizes[0] = (int)(width() * .9 * (1.0 / 3));
+            sizes[1] = (int)(width() * .9 * (2.0 / 3));
         }
         /* Pass hints to the splitter: */
         m_pSplitter->setSizes(sizes);

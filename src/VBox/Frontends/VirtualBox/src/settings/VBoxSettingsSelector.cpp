@@ -197,7 +197,7 @@ VBoxSettingsTreeViewSelector::VBoxSettingsTreeViewSelector (QWidget *aParent /* 
     mTwSelector->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
     mTwSelector->setRootIsDecorated (false);
     mTwSelector->setUniformRowHeights (true);
-    mTwSelector->setIconSize(QSize(1.5 * iIconMetric, 1.5 * iIconMetric));
+    mTwSelector->setIconSize(QSize((int)(1.5 * iIconMetric), (int)(1.5 * iIconMetric)));
     /* Add the columns */
     mTwSelector->headerItem()->setText (treeWidget_Category, "Category");
     mTwSelector->headerItem()->setText (treeWidget_Id, "[id]");

@@ -72,7 +72,7 @@ bool QIGraphicsView::event(QEvent *pEvent)
             {
                 /* Determine vertical shift (inverted): */
                 const QTouchEvent::TouchPoint point = pTouchEvent->touchPoints().first();
-                const int iShift = point.startPos().y() - point.pos().y();
+                const int iShift = (int)(point.startPos().y() - point.pos().y());
                 /* Calculate new scroll-bar value according calculated shift: */
                 int iNewScrollBarValue = m_iVerticalScrollBarPosition + iShift;
                 /* Make sure new scroll-bar value is within the minimum/maximum bounds: */

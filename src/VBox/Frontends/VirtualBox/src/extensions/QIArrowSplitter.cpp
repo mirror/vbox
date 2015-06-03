@@ -73,9 +73,9 @@ QSize QIDetailsBrowser::minimumSizeHint() const
     /* Get document size as the basis: */
     QSize documentSize = document()->size().toSize();
     /* But only document ideal-width can advice wise width: */
-    const int iDocumentIdealWidth = document()->idealWidth();
+    const int iDocumentIdealWidth = (int)document()->idealWidth();
     /* Moreover we should take document margins into account: */
-    const int iDocumentMargin = document()->documentMargin();
+    const int iDocumentMargin = (int)document()->documentMargin();
 
     /* Compose minimum size-hint on the basis of values above: */
     documentSize.setWidth(iDocumentIdealWidth + iDocumentMargin);
@@ -242,7 +242,7 @@ void QIArrowSplitter::prepare()
         {
             /* Determine icon metric: */
             const QStyle *pStyle = QApplication::style();
-            const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625;
+            const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * .625);
             /* Configure button-layout: */
             pButtonLayout->setContentsMargins(0, 0, 0, 0);
             pButtonLayout->setSpacing(0);

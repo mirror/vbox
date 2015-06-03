@@ -390,7 +390,7 @@ VBoxSnapshotsWgt::VBoxSnapshotsWgt (QWidget *aParent)
 
     /* Determine icon metric: */
     const QStyle *pStyle = QApplication::style();
-    const int iIconMetric = pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375;
+    const int iIconMetric = (int)(pStyle->pixelMetric(QStyle::PM_SmallIconSize) * 1.375);
 
     /* ToolBar creation */
     UIToolBar *toolBar = new UIToolBar (this);

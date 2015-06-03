@@ -153,7 +153,7 @@ void UIMachineSettingsDisplay::getFromCache()
 
     /* Load Screen data to page: */
     m_pEditorVideoScreenCount->setValue(displayData.m_cGuestScreenCount);
-    m_pEditorGuestScreenScale->setValue(displayData.m_dScaleFactor * 100);
+    m_pEditorGuestScreenScale->setValue((int)(displayData.m_dScaleFactor * 100));
 #ifdef Q_WS_MAC
     m_pCheckBoxUnscaledHiDPIOutput->setChecked(displayData.m_fUseUnscaledHiDPIOutput);
 #endif /* Q_WS_MAC */

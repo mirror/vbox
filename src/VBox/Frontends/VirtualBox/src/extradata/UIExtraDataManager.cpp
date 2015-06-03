@@ -3576,8 +3576,8 @@ QList<int> UIExtraDataManager::extraDataManagerSplitterHints(QWidget *pWidget)
     }
     else
     {
-        hints << pWidget->width() * .9 * (1.0 / 3);
-        hints << pWidget->width() * .9 * (2.0 / 3);
+        hints << (int)(pWidget->width() * .9 * (1.0 / 3));
+        hints << (int)(pWidget->width() * .9 * (2.0 / 3));
     }
 
     /* Return hints: */

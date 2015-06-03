@@ -4431,10 +4431,10 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
         const double yScaleFactor = mSizeInfo.visualState() == UIVisualStateType_Scale ?
                                     (double)scaledSize.height() / mSizeInfo.height() : dScaleFactor;
         /* Adjust corresponding viewport part: */
-        rect.moveTo(floor((double)rect.x() * xScaleFactor) - 1,
-                    floor((double)rect.y() * yScaleFactor) - 1);
-        rect.setSize(QSize(ceil((double)rect.width()  * xScaleFactor) + 2,
-                           ceil((double)rect.height() * yScaleFactor) + 2));
+        rect.moveTo((int)floor((double)rect.x() * xScaleFactor) - 1,
+                    (int)floor((double)rect.y() * yScaleFactor) - 1);
+        rect.setSize(QSize((int)ceil((double)rect.width()  * xScaleFactor) + 2,
+                           (int)ceil((double)rect.height() * yScaleFactor) + 2));
     }
 
 #ifdef Q_WS_MAC
@@ -4444,10 +4444,10 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG uX, ULONG uY,
         const double dBackingScaleFactor = darwinBackingScaleFactor(mpViewport->window());
         if (dBackingScaleFactor > 1.0)
         {
-            rect.moveTo(floor((double)rect.x() / dBackingScaleFactor) - 1,
-                        floor((double)rect.y() / dBackingScaleFactor) - 1);
-            rect.setSize(QSize(ceil((double)rect.width()  / dBackingScaleFactor) + 2,
-                               ceil((double)rect.height() / dBackingScaleFactor) + 2));
+            rect.moveTo((int)floor((double)rect.x() / dBackingScaleFactor) - 1,
+                        (int)floor((double)rect.y() / dBackingScaleFactor) - 1);
+            rect.setSize(QSize((int)ceil((double)rect.width()  / dBackingScaleFactor) + 2,
+                               (int)ceil((double)rect.height() / dBackingScaleFactor) + 2));
         }
     }
 #endif /* Q_WS_MAC */
