@@ -119,7 +119,6 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 int main( int argc, char **argv)
 {
     int rc = VINF_SUCCESS;
-    char ach[2];
 
     RTR3InitExe(argc, &argv, 0);
     RTPrintf("VirtualBox guest additions X11 seamless mode testcase\n");

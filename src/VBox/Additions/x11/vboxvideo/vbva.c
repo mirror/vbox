@@ -239,7 +239,6 @@ vboxEnableVbva(ScrnInfoPtr pScrn)
 void
 vboxDisableVbva(ScrnInfoPtr pScrn)
 {
-    int rc;
     unsigned i;
     VBOXPtr pVBox = pScrn->driverPrivate;
 

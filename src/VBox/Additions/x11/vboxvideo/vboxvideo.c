@@ -263,7 +263,6 @@ static Bool adjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     int adjustedWidth = pScrn->bitsPerPixel == 16 ? (width + 1) & ~1 : width;
     int cbLine = adjustedWidth * pScrn->bitsPerPixel / 8;
     PixmapPtr pPixmap;
-    int rc;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
     VBVXASSERT(width >= 0 && height >= 0, ("Invalid negative width (%d) or height (%d)\n", width, height));
@@ -558,14 +557,13 @@ static DisplayModePtr vbox_output_add_mode(VBOXPtr pVBox, DisplayModePtr *pModes
 static DisplayModePtr
 vbox_output_get_modes (xf86OutputPtr output)
 {
-    unsigned i, cIndex = 0;
+    unsigned cIndex = 0;
     DisplayModePtr pModes = NULL, pMode;
     ScrnInfoPtr pScrn = output->scrn;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     TRACE_ENTRY();
-    uint32_t x, y, iScreen;
-    iScreen = (uintptr_t)output->driver_private;
+    uint32_t iScreen = (uintptr_t)output->driver_private;
     pMode = vbox_output_add_mode(pVBox, &pModes, NULL,
                                  RT_CLAMP(pVBox->pScreens[iScreen].aPreferredSize.cx, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL),
                                  RT_CLAMP(pVBox->pScreens[iScreen].aPreferredSize.cy, VBOX_VIDEO_MIN_SIZE, VBOX_VIDEO_MAX_VIRTUAL),
@@ -823,7 +821,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     VBOXPtr pVBox;
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
-    unsigned DispiId;
 
     TRACE_ENTRY();
     /* Are we really starting the server, or is this just a dummy run? */
@@ -1201,7 +1198,6 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
     ScrnInfoPtr pScrn = xf86ScreenToScrn(pScreen);
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     VisualPtr visual;
-    unsigned flags;
 
     TRACE_ENTRY();
 
@@ -1499,7 +1495,6 @@ static Bool VBOXCloseScreen(ScreenPtr pScreen)
 
 static Bool VBOXSwitchMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 {
-    VBOXPtr pVBox;
     Bool rc = TRUE;
 
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);

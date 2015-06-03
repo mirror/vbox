@@ -151,7 +151,6 @@ void vboxAddModes(ScrnInfoPtr pScrn)
 void VBoxInitialiseSizeHints(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
-    DisplayModePtr pMode;
     unsigned i;
 
     for (i = 0; i < pVBox->cScreens; ++i)
@@ -203,7 +202,6 @@ void vbvxReadSizesAndCursorIntegrationFromProperties(ScrnInfoPtr pScrn, bool *pf
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     size_t cPropertyElements, cDummy;
     int32_t *paModeHints,  *pfCursorCapabilities;
-    int rc;
     unsigned i;
     bool fChanged;
     bool fNeedUpdate = false;

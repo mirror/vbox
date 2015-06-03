@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 {
     bool fDaemonise = true, fRespawn = true;
     int rc;
-    const char *pcszFileName, *pcszStage;
+    const char *pcszFileName;
 
     /* Initialise our runtime before all else. */
     rc = RTR3InitExe(argc, &argv, 0);

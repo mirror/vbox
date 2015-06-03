@@ -228,7 +228,7 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     unsigned char *c, *p, *pm, *ps, *m;
     size_t sizeRequest, sizeRgba, sizeMask, srcPitch, dstPitch;
     CARD32 fc, bc, *cp;
-    int rc, scrnIndex = infoPtr->pScrn->scrnIndex;
+    int scrnIndex = infoPtr->pScrn->scrnIndex;
     struct vboxCursorImage *pImage;
 
     pVBox = infoPtr->pScrn->driverPrivate;
@@ -359,7 +359,6 @@ static void
 vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
 {
     VBOXPtr pVBox;
-    VMMDevReqMousePointer *reqp;
     CursorBitsPtr bitsp;
     unsigned short w, h;
     unsigned short cx, cy;
@@ -370,7 +369,6 @@ vbox_load_cursor_argb(ScrnInfoPtr pScrn, CursorPtr pCurs)
     int scrnIndex;
     uint32_t fFlags =   VBOX_MOUSE_POINTER_VISIBLE | VBOX_MOUSE_POINTER_SHAPE
                       | VBOX_MOUSE_POINTER_ALPHA;
-    int rc;
 
     pVBox = pScrn->driverPrivate;
     bitsp = pCurs->bits;
