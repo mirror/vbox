@@ -1247,7 +1247,7 @@
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished">&amp;Подключить сетевой кабель</translation>
+        <translation>&amp;Подключить сетевой кабель</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
@@ -1434,35 +1434,39 @@
     <name>UIAddDiskEncryptionPasswordDialog</name>
     <message>
         <source>%1 - Disk Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - Шифрование дисков</translation>
     </message>
     <message numerus="yes">
         <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Данная виртуальная машина защищена паролем. Пожалуйста введите пароль в таблице ниже.</numerusform>
+            <numerusform>Данная виртуальная машина защищена паролями. Пожалуйста введите пароли в таблице ниже.</numerusform>
+            <numerusform>Данная виртуальная машина защищена паролями. Пожалуйста введите пароли в таблице ниже.</numerusform>
         </translation>
     </message>
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>Статус</translation>
     </message>
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>ИД</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="unfinished"></translation>
+        <translation>Пароль</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;Используется следующим жёстким диском:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Используется следующими жёсткими дисками:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Используется следующими жёсткими дисками:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
 </context>
@@ -1596,19 +1600,19 @@
     </message>
     <message>
         <source>Storage Controller (IDE)</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер (IDE)</translation>
     </message>
     <message>
         <source>Storage Controller (SATA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер (SATA)</translation>
     </message>
     <message>
         <source>Storage Controller (SCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер (SCSI)</translation>
     </message>
     <message>
         <source>Storage Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер (SAS)</translation>
     </message>
 </context>
 <context>
@@ -2305,7 +2309,7 @@
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Получение данных ...</translation>
     </message>
 </context>
 <context>
@@ -3014,7 +3018,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Groups</source>
         <comment>details (general)</comment>
-        <translation>Состоит в группах</translation>
+        <translation>Группы</translation>
     </message>
     <message>
         <source>%1 MB</source>
@@ -3079,7 +3083,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Controller</source>
         <comment>details (audio)</comment>
-        <translation>Аудио-контроллер</translation>
+        <translation>Аудиоконтроллер</translation>
     </message>
     <message>
         <source>Disabled</source>
@@ -3164,7 +3168,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Operating System</source>
         <comment>details (general)</comment>
-        <translation>Операционная система</translation>
+        <translation>ОС</translation>
     </message>
     <message>
         <source>Information Inaccessible</source>
@@ -3204,12 +3208,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details (display/vrde)</comment>
-        <translation>Порт сервера удалённого дисплея</translation>
+        <translation>Порт сервера удалённого доступа</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details (display/vrde)</comment>
-        <translation>Сервер удалённого дисплея</translation>
+        <translation>Сервер удалённого доступа</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -3219,7 +3223,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host Driver</source>
         <comment>details (audio)</comment>
-        <translation>Аудиодрайвер</translation>
+        <translation>Аудио драйвер</translation>
     </message>
     <message>
         <source>Bridged Adapter, %1</source>
@@ -3293,97 +3297,97 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Minimal Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Минимальная паравиртуализация</translation>
     </message>
     <message>
         <source>Hyper-V Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Паравиртуализация Hyper-V</translation>
     </message>
     <message>
         <source>KVM Paravirtualization</source>
         <comment>details (system)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Паравиртуализация KVM</translation>
     </message>
     <message>
         <source>[Optical Drive]</source>
         <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
+        <translation>[Оптический привод]</translation>
     </message>
     <message>
         <source>USB Controller</source>
         <comment>details (usb)</comment>
-        <translation type="unfinished">USB-контроллер</translation>
+        <translation>USB-контроллер</translation>
     </message>
     <message>
         <source>Mini-toolbar Position</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мини-тулбар</translation>
     </message>
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Сверху</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Снизу</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Мини-тулбар</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/mini-toolbar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключен</translation>
     </message>
     <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Коэффициент масштабирования</translation>
     </message>
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Прямой вывод HiDPI контента</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Включен</translation>
     </message>
     <message>
         <source>Menu-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Строка меню</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/menu-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Status-bar</source>
         <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Строка состояния</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Включена</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (user interface/status-bar)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключена</translation>
     </message>
 </context>
 <context>
@@ -5281,7 +5285,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>Когда стоит галочка, к виртуальной машине подключается виртуальная звуковая PCI-карта, которая использует указанный аудиодрайвер для связи со звуковой картой основного компьютера.</translation>
+        <translation type="unfinished">Когда стоит галочка, к виртуальной машине подключается виртуальная звуковая PCI-карта, которая использует указанный аудио драйвер для связи со звуковой картой основного компьютера.</translation>
     </message>
     <message>
         <source>Enable &amp;Audio</source>
@@ -5289,7 +5293,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Audio &amp;Driver:</source>
-        <translation>А&amp;удиодрайвер:</translation>
+        <translation type="unfinished">А&amp;удио драйвер:</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
@@ -5297,7 +5301,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
-        <translation>Ау&amp;дио-контроллер:</translation>
+        <translation type="unfinished">Ау&amp;диоконтроллер:</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
@@ -13664,7 +13668,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Пустой аудиодрайвер</translation>
+        <translation type="unfinished">Пустой аудио драйвер</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -13674,12 +13678,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Аудиодрайвер OSS</translation>
+        <translation type="unfinished">Аудио драйвер OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation>Аудиодрайвер ALSA</translation>
+        <translation type="unfinished">Аудио драйвер ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
@@ -13867,7 +13871,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Аудиодрайвер</translation>
+        <translation type="unfinished">Аудио драйвер</translation>
     </message>
     <message>
         <source>Controller</source>
