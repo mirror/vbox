@@ -712,7 +712,7 @@
     statically.<itemizedlist>
         <listitem>
           <para>In the VirtualBox graphical user interface, you can configure
-          all these items in the global settings via "File" -&gt; "Settings"
+          all these items in the global settings via "File" -&gt; "Preferences"
           -&gt; "Network", which lists all host-only networks which are
           presently in use. Click on the network name and then on the "Edit"
           button to the right, and you can modify the adapter and DHCP
