@@ -3248,7 +3248,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Универсальный драйвер, &apos;%1&apos; { %2 }</translation>
+        <translation>Универсальный драйвер, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -3327,12 +3327,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Top</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation>Сверху</translation>
+        <translation>В верхней части экрана</translation>
     </message>
     <message>
         <source>Bottom</source>
         <comment>details (user interface/mini-toolbar position)</comment>
-        <translation>Снизу</translation>
+        <translation>В нижней части экрана</translation>
     </message>
     <message>
         <source>Mini-toolbar</source>
@@ -3352,7 +3352,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Unscaled HiDPI Video Output</source>
         <comment>details (display)</comment>
-        <translation>Прямой вывод HiDPI контента</translation>
+        <translation>Прямой вывод HiDPI-контента</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -3711,7 +3711,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
-        <translation>Определяет путь к библиотеке, обеспечивающей аутентификацию клиентов удаленного дисплея (VRDP).</translation>
+        <translation>Определяет путь к библиотеке, обеспечивающей аутентификацию клиентов удалённого дисплея (VRDP).</translation>
     </message>
     <message>
         <source>Default &amp;Hard Disk Folder:</source>
@@ -5076,7 +5076,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отображает активность сетевых адаптеров:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность сетевых адаптеров:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
@@ -5101,7 +5101,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the attached USB devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отображает активность подсоединенных USB устройств:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность подсоединенных USB устройств:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -5116,7 +5116,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the machine&apos;s shared folders:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>Shared folders tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отображает активность общих папок машины:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность общих папок машины:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No shared folders&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -5143,7 +5143,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Показывает, захвачен ли указатель мыши основного ПК в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель не захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграция мыши (ИМ) включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель не захвачен&lt;/nobr&gt;&lt;br&gt;Обратите внимание, что для интеграции мыши требуется установка Дополнений гостевой ОС.</translation>
+        <translation>Отражает, захвачен ли указатель мыши хоста в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель не захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;интеграция мыши (ИМ) включена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель захвачен&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;ИМ выключена, указатель не захвачен&lt;/nobr&gt;&lt;br&gt;Обратите внимание, что для интеграции мыши требуется установка Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
@@ -5164,7 +5164,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
-        <translation>&lt;nobr&gt;Показывает активность захвата видео:&lt;/nobr&gt;&lt;br&gt;%1</translation>
+        <translation>&lt;nobr&gt;Отражает активность функции захвата видео:&lt;/nobr&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -5181,26 +5181,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность дисплея:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the optical drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность приводов оптических дисков:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy drives:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>FD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность приводов гибких дисков:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Отражает активность жёстких дисков:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Отражает, захвачена ли клавиатура хоста в гостевой ОС:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;клавиатура не захвачена&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;клавиатура захвачена&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5285,7 +5285,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation type="unfinished">Если галочка стоит, к виртуальной машине подключается виртуальная звуковая PCI-карта, которая использует указанный аудио драйвер для связи со звуковой картой основного компьютера.</translation>
+        <translation>Если галочка стоит, к виртуальной машине будет подключена виртуальная звуковая PCI-карта, использующая указанный аудио драйвер для связи со звуковой картой хоста.</translation>
     </message>
     <message>
         <source>Enable &amp;Audio</source>
@@ -5293,7 +5293,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Audio &amp;Driver:</source>
-        <translation type="unfinished">А&amp;удио драйвер:</translation>
+        <translation>А&amp;удио драйвер:</translation>
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
@@ -5301,15 +5301,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
-        <translation type="unfinished">Ау&amp;диоконтроллер:</translation>
+        <translation>Ау&amp;диоконтроллер:</translation>
     </message>
     <message>
         <source>Selects the type of the virtual sound card. Depending on this value, VirtualBox will provide different audio hardware to the virtual machine.</source>
-        <translation type="unfinished">Позволяет выбрать тип виртуальной звуковой карты. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим звуковым устройством.</translation>
+        <translation>Позволяет выбрать тип виртуальной звуковой карты. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим звуковым устройством.</translation>
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished">Позволяет выбрать драйвер хоста, используемый для вывода звука. Пункт &lt;b&gt;Пустой аудиодрайвер&lt;/b&gt; позволяет гостевой ОС обнаружить звуковую карту, однако любой доступ к ней будет проигнорирован.</translation>
+        <translation>Позволяет выбрать драйвер хоста, используемый для вывода звука. Пункт &lt;b&gt;Пустой аудио драйвер&lt;/b&gt; позволяет гостевой ОС обнаружить звуковую карту, однако любой доступ к ней будет проигнорирован.</translation>
     </message>
 </context>
 <context>
@@ -5328,11 +5328,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation>Видео &amp;память:</translation>
+        <translation>&amp;Видеопамять:</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation>Регулирует количество видеопамяти, доступной для виртуальной машины.</translation>
+        <translation>Задаёт количество видеопамяти, доступной виртуальной машине.</translation>
     </message>
     <message>
         <source>MB</source>
@@ -5344,23 +5344,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Если галочка стоит, виртуальная машина получит доступ к возможностям 3D-графики, имеющимся на основном ПК.</translation>
+        <translation>Если галочка стоит, виртуальная машина получит доступ к возможностям ускорения 3D-графики, имеющимся на хосте.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation>В&amp;ключить 3D-ускорение</translation>
+        <translation>Включить &amp;3D-ускорение</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation>&amp;Удаленный дисплей</translation>
+        <translation>&amp;Удаленный доступ</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Если галочка стоит, то виртуальная машина будет работать как сервер удаленного рабочего стола (RDP), позволяя удаленным клиентам соединяться и использовать ВМ (когда она работает) с помощью стандартного RDP-клиента.</translation>
+        <translation>Если галочка стоит, виртуальная машина будет работать как сервер удалённого доступа (RDP), позволяя удаленным клиентам соединяться и использовать ВМ (когда она работает) с помощью стандартного RDP-клиента.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation>В&amp;ключить сервер</translation>
+        <translation>&amp;Включить сервер удалённого доступа</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
@@ -5392,7 +5392,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
-        <translation type="unfinished">Если галочка стоит, виртуальной машине будет предоставлен доступ к средствам ускорения видео, имеющимся на основном ПК.</translation>
+        <translation>Если галочка стоит, виртуальная машина получит доступ к возможностям ускорения видео, имеющимся на хосте.</translation>
     </message>
     <message>
         <source>Enable &amp;2D Video Acceleration</source>
@@ -5408,7 +5408,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the amount of virtual monitors provided to the virtual machine.</source>
-        <translation>Задаёт количество виртуальных мониторов, подключенных к данной виртуальной машине.</translation>
+        <translation>Задаёт количество виртуальных мониторов, подключенных к виртуальной машине.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&lt;/qt&gt;</source>
@@ -5420,7 +5420,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Allow Multiple Connections</source>
-        <translation>&amp;Разрешать несколько подключений</translation>
+        <translation>М&amp;ногопользовательский удалённый доступ</translation>
     </message>
     <message>
         <source>You have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5444,7 +5444,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
-        <translation type="unfinished">Если галочка стоит, VirtualBox будет записывать сессию виртуальной машины в видео файл.</translation>
+        <translation>Если галочка стоит, VirtualBox будет записывать сессию виртуальной машины в видео файл.</translation>
     </message>
     <message>
         <source>&amp;Enable Video Capture</source>
@@ -5500,7 +5500,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
-        <translation>Виртуальная машина настроена на использование средств аппаратного ускорения. Однако эти средства в данный момент недоступны, поэтому машина не может быть запущена.</translation>
+        <translation>Виртуальная машина настроена на использование средств аппаратного ускорения, однако эти средства в данный момент недоступны, и машина не сможет быть запущена.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to fullscreen or seamless mode.</source>
@@ -5520,11 +5520,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The VRDE server port value is not currently specified.</source>
-        <translation>Не задан порт сервера удаленного рабочего стола.</translation>
+        <translation>Не задан порт сервера удалённого доступа.</translation>
     </message>
     <message>
         <source>The VRDE authentication timeout value is not currently specified.</source>
-        <translation>Не задано максимальное время ожидания авторизации подключения к серверу удаленного рабочего стола.</translation>
+        <translation>Не задано максимальное время ожидания авторизации подключения к серверу удалённого доступа.</translation>
     </message>
     <message>
         <source>User Defined</source>
@@ -5587,27 +5587,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Около %1МБ за 5 минут видео&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная машина настроена на работу в качестве сервера удалённого доступа, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox, в противном случае сервер удалённого доступа при запуске машины будет недоступен.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная машина настроена на использование аппаратного ускорения, а операционной системой является Windows Vista или более новая версия. Для достижения наилучшей производительности следует выделить под видеопамять машины как минимум &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&amp;Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Экран</translation>
     </message>
     <message>
         <source>Scale Factor:</source>
-        <translation type="unfinished"></translation>
+        <translation>Коэффициент масштабирования:</translation>
     </message>
     <message>
         <source>Controls the guest screen scale factor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт коэффициент масштабирования экрана гостевой ОС.</translation>
     </message>
     <message>
         <source>100%</source>
@@ -5619,83 +5619,83 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>When checked, guest screen contents will not be scaled up to compensate for high host screen resolutions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, содержимое экрана гостя быдет выводиться в неизменном виде без масштабирования под высокое разрешение экрана хоста.</translation>
     </message>
     <message>
         <source>Use &amp;Unscaled HiDPI Output</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Прямой вывод HiDPI-контента</translation>
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ускорение:</translation>
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation type="unfinished"></translation>
+        <translation>Поддержка HiDPI:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет номер порта сервера удалённого доступа. Вы можете указать &lt;tt&gt;0&lt;/tt&gt; (ноль) для сброса номера порта к значению по умолчанию.</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished">Позволяет выбрать способ авторизации VRDP-сервера.</translation>
+        <translation>Позволяет выбрать способ авторизации сервера удалённого доступа.</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет максимальное время ожидания авторизации сервера удалённого доступа в миллисекундах.</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, к серверу удалённого доступа будут разрешены несколько одновременных подключений.</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя файла хранения записанного видео контента.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished">Позволяет выбрать размер кадра (разрешение) записанного видео контента.</translation>
+        <translation>Позволяет выбрать размер кадра (разрешение) записанного видео контента.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет &lt;b&gt;горизонтальное&lt;/b&gt; разрешение (длину кадра) записанного видео контента.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет &lt;b&gt;вертикальное&lt;/b&gt; разрешение (ширину кадра) записанного видео контента.</translation>
     </message>
     <message>
         <source>Controls the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт максимальное число &lt;b&gt;кадров в секунду&lt;/b&gt;. Лишние кадры будут пропущены. Уменьшение значения данного параметра приведёт к увеличению числа пропущенных кадров и уменьшению размера видео файла.</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт &lt;b&gt;качество&lt;/b&gt; видео. Увеличение данного параметра в общем случае приведёт к улучшению качества видео и увеличению размера видео файла.</translation>
     </message>
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет битрейт видео в &lt;b&gt;килобитах в секунду&lt;/b&gt;. Увеличение данного параметра в общем случае приведёт к улучшению качества видео и увеличению размера видео файла.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Под видеопамять виртуальной машины выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для переключения машины в режим полного экрана или интеграции дисплея.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 МБ</translation>
+        <translation>%1 МБ</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation></translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, будет производиться захват видео для экрана №%1.</translation>
     </message>
 </context>
 <context>
@@ -5822,7 +5822,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">Позволяет выбрать режим работы буфера обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
+        <translation>Позволяет выбрать режим работы буфера обмена между гостевой и основной ОС. Использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
@@ -5842,7 +5842,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
-        <translation>Показывает описание виртуальной машины. Поле описания удобно использовать для занесения заметок о настройках установленной гостевой ОС.</translation>
+        <translation>Определяет описание виртуальной машины. Поле описания удобно использовать для занесения заметок о настройках установленной гостевой ОС.</translation>
     </message>
     <message>
         <source>&amp;Other</source>
@@ -5934,11 +5934,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation>&amp;Drag&apos;n&apos;Drop:</translation>
+        <translation>&amp;Функция &amp;Drag&apos;n&apos;Drop:</translation>
     </message>
     <message>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="unfinished">Позволяет выбрать режим работы Drag&apos;n&apos;Drop-функции обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
+        <translation>Позволяет выбрать режим работы Drag&apos;n&apos;Drop-функции обмена между гостевой и основной ОС. Использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
@@ -5950,71 +5950,71 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enc&amp;ryption</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Шифрование</translation>
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, виртуальная машина будет зашифрована.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить шифрование</translation>
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
-        <translation type="unfinished"></translation>
+        <translation>А&amp;лгоритм шифирования:</translation>
     </message>
     <message>
         <source>E&amp;nter New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Вв&amp;едите новый пароль:</translation>
     </message>
     <message>
         <source>Holds the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет пароль, который будет назначен зашифрованным дискам виртуальной машины.</translation>
     </message>
     <message>
         <source>C&amp;onfirm New Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;одтвердите новый пароль:</translation>
     </message>
     <message>
         <source>Confirms the password to be assigned to the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подтверждает пароль, который будет назначен зашифрованным дискам виртуальной машины.</translation>
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы включили шифрование данной виртуальной машины, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Алгоритм шифрования не выбран.</translation>
     </message>
     <message>
         <source>Encryption password empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароль шифрования не задан.</translation>
     </message>
     <message>
         <source>Encryption passwords do not match.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пароли шифрования не совпадают.</translation>
     </message>
     <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished"></translation>
+        <translation>Не менять</translation>
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished">Позволяет выбрать алгоритм, который будет использоваться для шифрования дисков виртуальной машины.</translation>
+        <translation>Позволяет выбрать алгоритм, который будет использоваться для шифрования дисков виртуальной машины.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет путь к папке сохранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жестком диске.</translation>
     </message>
 </context>
 <context>
     <name>UIMachineSettingsInterface</name>
     <message>
         <source>Allows to modify VM menu-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет настроить содержимое строки меню.</translation>
     </message>
     <message>
         <source>100%</source>
@@ -6026,7 +6026,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished">Мини тулбар:</translation>
+        <translation>Мини-тулбар:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
@@ -6042,23 +6042,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">&amp;Расположить сверху экрана</translation>
+        <translation>&amp;В верхней части экрана</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет настроить содержимое строки состояния.</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, в полноэкранных режимах машины будет использоваться мини-тулбар.</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Использовать в полноэкранных режимах</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, мини-тулбар будет расположен в верхней части экрана, в отличие от своей позиции по умолчанию - в нижней части экрана.</translation>
     </message>
 </context>
 <context>
@@ -6073,7 +6073,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, plugs this virtual network adapter into the virtual machine.</source>
-        <translation type="unfinished">Если галочка стоит, то этот виртуальный сетевой адаптер будет подключен к виртуальной машине.</translation>
+        <translation>Если галочка стоит, этот виртуальный сетевой адаптер будет подключен к виртуальной машине.</translation>
     </message>
     <message>
         <source>&amp;Enable Network Adapter</source>
@@ -6085,7 +6085,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation type="unfinished">Позволяет выбрать тип виртуального сетевого адаптера. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим сетевым устройством.</translation>
+        <translation>Позволяет выбрать тип виртуального сетевого адаптера. В зависимости от выбранного значения, VirtualBox обеспечит виртуальную машину соответствующим сетевым устройством.</translation>
     </message>
     <message>
         <source>&amp;Attached to:</source>
@@ -6257,7 +6257,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Cable Connected</source>
-        <translation>&amp;Кабель подключен</translation>
+        <translation>&amp;Подключить кабель</translation>
     </message>
     <message>
         <source>Opens a window to manage port forwarding rules.</source>
@@ -6273,7 +6273,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the promiscuous mode policy of the network adapter when attached to an internal network, host only network or a bridge.</source>
-        <translation type="unfinished">Позволяет выбрать политику &quot;неразборчивого&quot; режима данного виртуального сетевого адаптера, если он подключен к внутренней сети, виртуальному сетевому адаптеру хоста или сетевому мосту.</translation>
+        <translation>Позволяет выбрать политику &quot;неразборчивого&quot; режима данного виртуального сетевого адаптера, если он подключен к внутренней сети, виртуальному сетевому адаптеру хоста или сетевому мосту.</translation>
     </message>
     <message>
         <source>Generic Properties:</source>
@@ -6289,19 +6289,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
-        <translation type="unfinished">Позволяет выбрать сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера.</translation>
+        <translation>Позволяет выбрать сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера.</translation>
     </message>
     <message>
         <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation>Задаёт имя внутренней сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создать новую внутреннюю сеть, выбрав имя, которое не используется иными виртуальными сетевыми адаптерами данной и других машин.</translation>
+        <translation>Определяет имя внутренней сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создать новую внутреннюю сеть, выбрав имя, которое не используется иными виртуальными сетевыми адаптерами данной и других машин.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished">Позволяет выбрать виртуальный сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера. Вы можете добавлять и удалять виртуальные сетевые адаптеры хоста на странице глобальных сетевых настроек VirtualBox.</translation>
+        <translation>Позволяет выбрать виртуальный сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера. Вы можете добавлять и удалять виртуальные сетевые адаптеры хоста на странице глобальных сетевых настроек VirtualBox.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
-        <translation type="unfinished">Позволяет выбрать имя универсального сетевого драйвера, который будет использоваться для данного виртуального сетевого адаптера.</translation>
+        <translation>Позволяет выбрать имя универсального сетевого драйвера, который будет использоваться для данного виртуального сетевого адаптера.</translation>
     </message>
     <message>
         <source>the MAC address must be 12 hexadecimal digits long.</source>
@@ -6341,27 +6341,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
-        <translation>Задаёт имя NAT сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять такие сети на странице глобальных сетевых настроек VirtualBox.</translation>
+        <translation>Определяет имя NAT сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять такие сети на странице глобальных сетевых настроек VirtualBox.</translation>
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished">Позволяет выбрать способ, которым этот виртуальный сетевой адаптер подсоединяется к настоящей сети основной ОС.</translation>
+        <translation>Позволяет выбрать способ, которым этот виртуальный сетевой адаптер подсоединяется к реальной сети хоста.</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает дополнительные опции сетевого адаптера.</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет параметры драйвера сетевого подключения. Параметры должны быть заданы в форме &lt;b&gt;имя=значение&lt;/b&gt; и зависят от самого драйвера. Используйте &lt;b&gt;shift-enter&lt;/b&gt; для перехода на новую строку.</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, к этому виртуальному сетевому адаптеру будет подключен кабель.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог настройки правил проброса портов.</translation>
     </message>
 </context>
 <context>
@@ -6475,7 +6475,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given parallel port of the virtual machine.</source>
-        <translation type="unfinished">Если галочка стоит, активизируется указанный параллельный порт виртуальной машины.</translation>
+        <translation>Если галочка стоит, в виртуальной машине будет активирован  этот параллельный порт.</translation>
     </message>
     <message>
         <source>&amp;Enable Parallel Port</source>
@@ -6487,7 +6487,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation>Задает номер параллельного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
+        <translation>Определяет номер параллельного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -6511,35 +6511,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the host parallel device name.</source>
-        <translation>Показывает имя устройства параллельного порта основного ПК.</translation>
+        <translation>Определяет имя устройства параллельного порта хоста.</translation>
     </message>
     <message>
         <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Показывает номер прерывания (IRQ) для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
+        <translation>Определяет номер прерывания (IRQ) для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Показывает базовый адрес ввода-вывода для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation>Определяет адрес порта ввода/вывода для этого параллельного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Не задано IRQ.</translation>
+        <translation>Не задано прерывание.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Не задан I/O порт.</translation>
+        <translation>Не задан порт ввода/вывода.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Как минимум два порта имеют идентичные настройки.</translation>
+        <translation>Как минимум два порта имеют идентичные настройки.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Не задан путь к порту.</translation>
+        <translation>Не задан путь к порту.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Как минимум два порта имеют идентичные пути.</translation>
+        <translation>Как минимум два порта имеют идентичные пути.</translation>
     </message>
 </context>
 <context>
@@ -6652,7 +6652,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all shared folders accessible to this machine. Use &apos;net use x: \\vboxsvr\share&apos; to access a shared folder named &lt;i&gt;share&lt;/i&gt; from a DOS-like OS, or &apos;mount -t vboxsf share mount_point&apos; to access it from a Linux OS. This feature requires Guest Additions.</source>
-        <translation>Перечисляет все общие папки, доступные этой машине. Используйте команду &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt; для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС или &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; для доступа из Линукс-подобной ОС. Требует установки Дополнений гостевой ОС.</translation>
+        <translation>Содержит список всех общих папок, доступных этой машине. Используйте команду &lt;tt&gt;net use x: \\vboxsvr\share&lt;/tt&gt; для доступа к общей папке с именем &lt;i&gt;share&lt;/i&gt; в DOS-подобной ОС или &lt;tt&gt;mount -t vboxsf share mount_point&lt;/tt&gt; для доступа из Линукс-подобной ОС. Требует установки Дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>Name</source>
@@ -6684,7 +6684,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Folders List</source>
-        <translation>&amp;Список общих папок</translation>
+        <translation>&amp;Общие папки</translation>
     </message>
     <message>
         <source>Auto-mount</source>
@@ -6696,27 +6696,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить общую папку</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменить общую папку</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить общую папку</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новую общую папку.</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменяет выбранную общую папку.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранную общую папку.</translation>
     </message>
 </context>
 <context>
@@ -6739,11 +6739,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
-        <translation>Показывает имя общей папки (под этим именем папка будет видна в гостевой ОС).</translation>
+        <translation>Определяет имя общей папки (под этим именем папка будет видна в гостевой ОС).</translation>
     </message>
     <message>
         <source>When checked, the guest OS will not be able to write to the specified shared folder.</source>
-        <translation type="unfinished">Если галочка стоит, гостевая ОС будет лишена права записи в указанную общую папку.</translation>
+        <translation>Если галочка стоит, гостевая ОС будет лишена права записи в эту общую папку.</translation>
     </message>
     <message>
         <source>&amp;Read-only</source>
@@ -6755,7 +6755,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest OS will try to automatically mount the shared folder on startup.</source>
-        <translation type="unfinished">Если галочка стоит, гостевая ОС будет пытаться автоматически подключать указанную общую папку в процессе загрузки.</translation>
+        <translation>Если галочка стоит, гостевая ОС будет пытаться автоматически подключать эту общую папку в процессе загрузки.</translation>
     </message>
     <message>
         <source>&amp;Auto-mount</source>
@@ -6767,7 +6767,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, эта общая папка будет постоянной для данной машины.</translation>
     </message>
 </context>
 <context>
@@ -6779,7 +6779,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the given serial port of the virtual machine.</source>
-        <translation type="unfinished">Если галочка стоит, активизируется указанный последовательный порт виртуальной машины.</translation>
+        <translation>Если галочка стоит, в виртуальной машине будет активирован  этот последовательный порт.</translation>
     </message>
     <message>
         <source>&amp;Enable Serial Port</source>
@@ -6791,7 +6791,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
-        <translation type="unfinished">Позволяет выбрать номер последовательного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
+        <translation>Позволяет выбрать номер последовательного порта. Вы можете выбрать один из стандартных номеров портов или выбрать &lt;b&gt;Пользовательский&lt;/b&gt; и указать параметры порта вручную.</translation>
     </message>
     <message>
         <source>&amp;IRQ:</source>
@@ -6839,51 +6839,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Показывает номер прерывания (IRQ) для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
+        <translation>Определяет номер прерывания (IRQ) для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значения больше &lt;tt&gt;15&lt;/tt&gt; могут использоваться только в том случае, если для этой машины включен &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
-        <translation>Показывает базовый адрес ввода-вывода для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
+        <translation>Определяет адрес порта ввода/вывода для этого последовательного порта. Допустимые значения -- целые числа в диапазоне от &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
         <source>&amp;Connect to existing pipe/socket</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подключиться к существующему каналу/сокету</translation>
     </message>
     <message>
         <source>&amp;Path/Address:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Путь/адрес:</translation>
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;В режиме &lt;b&gt;Хост-канал&lt;/b&gt;: Определяет путь к каналу последовательного порта на хосте. Пример: &quot;\\.\pipe\myvbox&quot; или &quot;/tmp/myvbox&quot;, для Windows и UNIX-подобных систем соответственно.&lt;/p&gt;&lt;p&gt;В режиме &lt;b&gt;Хост-устройство&lt;/b&gt;: Определяет имя последовательного устройства. Пример: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;В режиме &lt;b&gt;Перенаправлен в файл&lt;/b&gt;: Определяет путь к файлу в системе хоста, в который будет сбрасываться вывод с последовательного порта.&lt;/p&gt;&lt;p&gt;В режиме &lt;b&gt;TCP&lt;/b&gt;: Определяет TCP &quot;порт&quot; в случае режима сервера, или &quot;имя_хоста:порт&quot; в случае режима клиента.</translation>
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished">Позволяет выбрать режим работы последовательного порта. Если выбрать &lt;b&gt;Отключен&lt;/b&gt;, то гостевая ОС обнаружит последовательный порт, но не сможет с ним работать.</translation>
+        <translation>Позволяет выбрать режим работы последовательного порта. Если выбрать &lt;b&gt;Отключен&lt;/b&gt;, то гостевая ОС обнаружит последовательный порт, но не сможет с ним работать.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, виртуальная машина предположит наличие канала или сокета, указанного в поле &lt;b&gt;Путь/адрес&lt;/b&gt;, и попытается его использовать. В противном случае, канал или сокет будет создан машиной в момент старта.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Не задано IRQ.</translation>
+        <translation>Не задано прерывание.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Не задан I/O порт.</translation>
+        <translation>Не задан порт ввода/вывода.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Как минимум два порта имеют идентичные настройки.</translation>
+        <translation>Как минимум два порта имеют идентичные настройки.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Не задан путь к порту.</translation>
+        <translation>Не задан путь к порту.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Как минимум два порта имеют идентичные пути.</translation>
+        <translation>Как минимум два порта имеют идентичные пути.</translation>
     </message>
 </context>
 <context>
@@ -7145,7 +7145,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished">Позволяет выбрать тип контроллера носителей информации, выбранного в данный момент.</translation>
+        <translation>Позволяет выбрать тип контроллера носителей информации, выбранного в данный момент.</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>
@@ -7153,7 +7153,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation type="unfinished">Позволяет выбрать слот контроллера носителей информации, используемый данным виртуальным устройством.</translation>
+        <translation>Позволяет выбрать слот контроллера носителей информации, используемый данным виртуальным устройством.</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
@@ -7173,7 +7173,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, allows the guest to send ATAPI commands directly to the host-drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation type="unfinished">Если галочка стоит, гостевой ОС разрешается посылать ATAPI-команды напрямую в физический привод, что делает возможным использовать подключенные к основному ПК устройства для записи CD/DVD внутри ВМ. Имейте в виду, что запись аудио-CD внутри ВМ пока еще не поддерживается.</translation>
+        <translation>Если галочка стоит, гостевой ОС разрешается посылать ATAPI-команды напрямую в физический привод, что делает возможным использовать подключенные к хосту устройства для записи CD/DVD внутри ВМ. Имейте в виду, что запись аудио-CD внутри ВМ пока еще не поддерживается.</translation>
     </message>
     <message>
         <source>&amp;Passthrough</source>
@@ -7209,7 +7209,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Use Host I/O Cache</source>
-        <translation>Кеширование операций ввода/вывода</translation>
+        <translation>Кеширование ввода/вывода</translation>
     </message>
     <message>
         <source>Add SAS Controller</source>
@@ -7343,7 +7343,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
-        <translation type="unfinished">Позволяет выбрать количество портов контроллера носителей информации типа SATA, выбранного в данный момент в дереве носителей информации. Это значение не может быть меньше, чем максимальный номер использованного порта + 1.</translation>
+        <translation>Позволяет выбрать количество портов контроллера носителей информации типа SATA, выбранного в данный момент в дереве носителей информации. Это значение не может быть меньше, чем максимальный номер использованного порта + 1.</translation>
     </message>
     <message>
         <source>Controller: %1</source>
@@ -7363,7 +7363,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
-        <translation>В данный момент больше контроллеров носителей информации, чем поддерживается чипсетом %1. Пожалуйста, измените тип чипсета на странице &apos;Система&apos; или уменьшите количество следующих контроллеров на странице &apos;Носители&apos;: %2.</translation>
+        <translation>В данный момент больше контроллеров носителей информации, чем поддерживается чипсетом %1. Пожалуйста, измените тип чипсета на странице &apos;Система&apos; или уменьшите количество следующих контроллеров на странице &apos;Носители&apos;: %2</translation>
     </message>
     <message>
         <source>Add USB Controller</source>
@@ -7371,7 +7371,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;С горячей заменой</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk file...</source>
@@ -7379,108 +7379,108 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Optical Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить привод оптических дисков</translation>
     </message>
     <message>
         <source>Add Floppy Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить привод гибких дисков</translation>
     </message>
     <message>
         <source>Optical &amp;Drive:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Оптический привод:</translation>
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать файл образа оптического диска или привод хоста для использования в виртуальном приводе гостевой ВМ. Виртуальная машина получит доступ к информации, содержащейся в образе или на носителе привода хоста, как если бы эта информация находилась на оптическом диске внутри виртуальной машины.</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Шифровано ключём с ИД:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержит список всех контроллеров носителей информации, подключенных к данной виртуальной машине, а так же образы виртуальных дисков и приводы хоста, подключенные к этим контроллерам.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя контроллера носителей информации, выбранного в данный момент.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, будут использованы функции кеширования операций ввода/вывода данного хоста.</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, VirtualBox будет подавлять демонтирование образа в случаях извлечения его со стороны гостевой ОС.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, гостевая ОС будет считать данное устройство твердотельным накопителем (SSD).</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, гостевая ОС будет считать, что данное устройство поддерживает горячую замену (hot-plug).</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ оптического диска...</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">Образ</translation>
+        <translation>Образ</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Раскрывает/Скрывает&amp;nbsp;элемент.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Добавляет&amp;nbsp;жёсткий&amp;nbsp;диск.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Добавляет&amp;nbsp;привод&amp;nbsp;оптических&amp;nbsp;дисков.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Добавляет&amp;nbsp;привод&amp;nbsp;гибких&amp;nbsp;дисков.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый контроллер.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранный контроллер.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новое устройство.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранное устройство.</translation>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать новый жёсткий диск...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ жёсткого диска...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ оптического диска...</translation>
     </message>
     <message>
         <source>Remove Disk From Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Изъять диск из привода</translation>
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ гибкого диска...</translation>
     </message>
 </context>
 <context>
@@ -7533,7 +7533,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation>Регулирует количество памяти, доступной для виртуальной машины. Если установить слишком большое значение, то машина может не запуститься.</translation>
+        <translation>Задаёт количество памяти, доступной виртуальной машине. Если установить слишком большое значение, машина может не запуститься.</translation>
     </message>
     <message>
         <source>MB</source>
@@ -7577,7 +7577,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Если галочка стоит, то виртуальная машина будет поддерживать операции ввода/вывода контроллера прерываний (I/O APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте это свойство после установки Windows в качестве гостевой ОС!</translation>
+        <translation>Если галочка стоит, виртуальная машина будет поддерживать операции ввода/вывода контроллера прерываний (I/O APIC), что может слегка снизить производительность ВМ. &lt;b&gt;Примечание:&lt;/b&gt; не выключайте эту функцию после установки Windows в качестве гостевой ОС!</translation>
     </message>
     <message>
         <source>Enable &amp;I/O APIC</source>
@@ -7597,7 +7597,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">Если галочка стоит, виртуальной машине будет предоставлен доступ к функции Physical Address Extension (PAE, расширение физического адреса) центрального процессора основного ПК.</translation>
+        <translation>Если галочка стоит, виртуальной машине будет предоставлен доступ к функции Physical Address Extension (PAE, расширение физического адреса) центрального процессора хоста.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
@@ -7613,7 +7613,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Если галочка стоит, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора основного ПК, такие как Intel VT-x или AMD-V.</translation>
+        <translation>Если галочка стоит, виртуальная машина будет пытаться задействовать расширенные функции аппаратной виртуализации процессора хоста, такие как Intel VT-x или AMD-V.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -7621,7 +7621,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Если галочка стоит, виртуальная машина будет пытаться использовать расширение Nested Paging для функций аппаратной виртуализации Intel VT-x and AMD-V.</translation>
+        <translation>Если галочка стоит, виртуальная машина будет пытаться использовать расширение Nested Paging для функций аппаратной виртуализации Intel VT-x and AMD-V.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -7634,7 +7634,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
-        <translation type="unfinished">Если галочка стоит, гостевая ОС будет поддерживать Extended Firmware Interface (EFI), что необходимо для загрузки некоторых гостевых ОС. Гостевые системы, которые не поддерживают EFI, не будут иметь возможности загрузиться в случае выбора данной опции.</translation>
+        <translation>Если галочка стоит, гостевая ОС будет поддерживать Extended Firmware Interface (EFI), что необходимо для загрузки некоторых гостевых ОС. Гостевые системы, которые не поддерживают EFI, не будут иметь возможности загрузиться в случае выбора данной опции.</translation>
     </message>
     <message>
         <source>Enable &amp;EFI (special OSes only)</source>
@@ -7650,7 +7650,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</source>
-        <translation>Контролирует количество процессоров виртуальной машины. Вам необходима поддержка аппаратной виртуализации для задействования более одного процессора в виртуальной машине.</translation>
+        <translation>Задаёт количество процессоров виртуальной машины. Вам необходима поддержка аппаратной виртуализации для задействования более одного процессора в виртуальной машине.</translation>
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
@@ -7666,7 +7666,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation type="unfinished">Позволяет выбрать набор микросхем (чипсет), используемый материнской платой данной виртуальной машины. Учтите, что чипсет ICH9 считается экспериментальным и не рекомендуется для использования за исключением тех гостевых систем, которые в нём непосредственно нуждаются (например Mac OS X).</translation>
+        <translation>Позволяет выбрать набор микросхем (чипсет), используемый материнской платой данной виртуальной машины. Учтите, что чипсет ICH9 считается экспериментальным и не рекомендуется для использования за исключением тех гостевых систем, которые в нём непосредственно нуждаются (например Mac OS X).</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -7752,53 +7752,53 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Paravirtualization Interface:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Интерфейс паравиртуализации:</translation>
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation type="unfinished">Позволяет выбрать провайдера паравиртуализации, используемого данной виртуальной машиной.</translation>
+        <translation>Позволяет выбрать провайдера интерфейса паравиртуализации, используемого данной виртуальной машиной.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование чипсета ICH9, для работы которого требуется функция IO-APIC, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование одного из USB устройств в качетве манипулятора курсора. Данная опция не сможет функционировать без эмуляции USB, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование более одного виртуального процессора, что в свою очередь требует активации функции IO-APIC, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование более одного виртуального процессора, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если галочка стоит, часы Вашего хоста отобразят время по шкале всемирного координированного времени (UTC), иначе будет отображено локальное время хоста. Unix-подобные системы обычно придерживаются системы UTC.</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 МБ</translation>
+        <translation>%1 МБ</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ЦП</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 ЦП</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation></translation>
     </message>
 </context>
 <context>
@@ -7858,7 +7858,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation type="unfinished">Если галочка стоит, активизируется виртуальный USB-контроллер этой машины.</translation>
+        <translation>Если галочка стоит, виртуальный USB-контроллер машины будет активирован.</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
@@ -7878,7 +7878,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Показывает список всех USB-фильтров этой машины. Галочка слева указывает, включен данный фильтр или нет. Используйте контекстное меню или кнопки справа для добавления или удаления фильтров.</translation>
+        <translation>Содержит список всех USB-фильтров этой машины. Галочка слева указывает, включен данный фильтр или нет. Используйте контекстное меню или кнопки справа для добавления или удаления фильтров.</translation>
     </message>
     <message>
         <source>[filter]</source>
@@ -7938,79 +7938,79 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер USB &amp;1.1 (OHCI)</translation>
     </message>
     <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер USB &amp;2.0 (EHCI)</translation>
     </message>
     <message>
         <source>USB &amp;3.0 (xHCI) Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер USB &amp;3.0 (xHCI)</translation>
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на эмуляцию USB 2.0/3.0, для чего требуюется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox или отключите USB 2.0/3.0 для возможности запуска машины.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, виртуальный USB OHCI контроллер машины будет активирован. Контроллер USB OHCI предоставляет поддержку USB 1.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, виртуальный USB EHCI контроллер машины будет активирован. Контроллер USB EHCI предоставляет поддержку USB 2.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если выбран данный пункт, виртуальный USB xHCI контроллер машины будет активирован. Контроллер USB xHCI предоставляет поддержку USB 3.0.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить пустой фильтр</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить фильтр из устройства</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменить фильтр</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить фильтр</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Переместить вверх</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Переместить вниз</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля первоначально пустые. Имейте ввиду, что пустой фильтр будет соответствовать любому подсоединенному USB-устройству.</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новый USB-фильтр, в котором все поля заполнены значениями одного из USB-устройств, подключенных к основному ПК.</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Изменяет выбранный USB-фильтр.</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранный USB-фильтр.</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещает выбранный USB-фильтр вверх.</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Перемещает выбранный USB-фильтр вниз.</translation>
     </message>
 </context>
 <context>
@@ -8018,7 +8018,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Any</source>
         <comment>remote</comment>
-        <translation>Оба</translation>
+        <translation>Любой</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -8036,7 +8036,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the filter name.</source>
-        <translation>Показывает название фильтра.</translation>
+        <translation>Определяет название фильтра.</translation>
     </message>
     <message>
         <source>&amp;Vendor ID:</source>
@@ -8096,7 +8096,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>R&amp;emote:</source>
-        <translation>Уд&amp;аленное:</translation>
+        <translation>Уд&amp;аленный:</translation>
     </message>
     <message>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
@@ -8116,35 +8116,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по ID поставщика. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатеричная цифра. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по ID продукта. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;XXXX&lt;/tt&gt;, где &lt;tt&gt;X&lt;/tt&gt; - шестнадцатеричная цифра. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по номеру ревизии. Формат строки &lt;i&gt;точного соответствия&lt;/i&gt; - &lt;tt&gt;IIFF&lt;/tt&gt;, где &lt;tt&gt;I&lt;/tt&gt; - десятичная цифра целой части, а &lt;tt&gt;F&lt;/tt&gt; - десятичная цифра дробной части. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по производителю в виде строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по названию продукта в виде строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по серийному номеру в виде строки с &lt;i&gt;точным соответствием&lt;/i&gt;. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет фильтр по физическому порту USB в виде строки &lt;i&gt;точного соответствия&lt;/i&gt;. Пустая строка соответствует любому значению.</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, применяется ли этот фильтр к USB-устройствам, подсоединенным локально к основному ПК (&lt;i&gt;Нет&lt;/i&gt;), к компьютеру VRDP-клиента (&lt;i&gt;Да&lt;/i&gt;), или к обоим (&lt;i&gt;Оба&lt;/i&gt;).</translation>
     </message>
 </context>
 <context>
@@ -8663,7 +8663,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру основного ПК, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру хоста, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
@@ -11386,7 +11386,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске основного ПК.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохранённого состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
+        <translation type="unfinished">&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске хоста.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохранённого состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -16392,7 +16392,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>Нет поддерживаемых устройств, подключенных к основному ПК</translation>
+        <translation type="unfinished">Нет поддерживаемых устройств, подключенных к хосту</translation>
     </message>
 </context>
 <context>
