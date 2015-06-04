@@ -2650,7 +2650,7 @@ fi
 # some things are not available in for OSE
 if [ $OSE -ge 1 ]; then
   cnf_append "VBOX_OSE" "1"
-  cnf_append "VBOX_WITH_TESTSUITE" ""
+  cnf_append "VBOX_WITH_VALIDATIONKIT" ""
   cnf_append "VBOX_WITH_WIN32_ADDITIONS" ""
 
   if [ "$OS" = "linux" ]; then
