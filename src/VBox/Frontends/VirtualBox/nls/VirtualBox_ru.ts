@@ -11224,7 +11224,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>User Interface</source>
-        <translation>Интерфейс пользовтеля</translation>
+        <translation>Интерфейс пользователя</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -15239,7 +15239,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation>Интерфейс пользовтеля</translation>
+        <translation>Интерфейс пользователя</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
