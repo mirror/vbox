@@ -609,9 +609,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBOX_SLIRP_SOURCES +=  	Network/slirp/resolv_conf_parser.c
  endif
 
- ifdef VBOX_WITH_SLIRP_BSD_SBUF
-  VBOX_SLIRP_SOURCES += Network/slirp/bsd/kern/subr_sbuf.c
- endif
  VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
  VBOX_SLIRP_BSD_SOURCES += \
  	Network/slirp/bsd/kern/kern_mbuf.c \
@@ -638,7 +635,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_SOURCES += $(VBOX_SLIRP_SOURCES)
  define def_vbox_slirp_cflags
    $(file)_DEFS += \
-       $(if $(VBOX_WITH_SLIRP_BSD_SBUF),VBOX_WITH_SLIRP_BSD_SBUF,) \
        $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
        $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
        $(if $(VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER),VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER,)	\
