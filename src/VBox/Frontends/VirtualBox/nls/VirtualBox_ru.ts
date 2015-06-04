@@ -3834,7 +3834,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation>VirtualBox &amp;менеджер</translation>
+        <translation>VirtualBox &amp;Менеджер</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
@@ -4142,7 +4142,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation>Роутинг IPv6 по-умолчанию</translation>
+        <translation>Роутинг IPv6 по умолчанию</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
@@ -4492,7 +4492,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation>&amp;Объявить маршрутом IPv6 по-умолчанию</translation>
+        <translation>&amp;Объявить маршрутом IPv6 по умолчанию</translation>
     </message>
     <message>
         <source>Determines whether this network should be advertised as the default IPv6 route.</source>
@@ -4520,7 +4520,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation>Если галочка стоит, данная сеть будет являться маршрутом IPv6 по-умолчанию.</translation>
+        <translation>Если галочка стоит, данная сеть будет являться маршрутом IPv6 по умолчанию.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
@@ -4906,7 +4906,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset shortcut to default</source>
-        <translation>Сбросить сочетание клавиш на значение по-умолчанию</translation>
+        <translation>Сбросить сочетание клавиш на значение по умолчанию</translation>
     </message>
     <message>
         <source>Unset shortcut</source>
@@ -5591,7 +5591,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation>Виртуальная машина настроена на работу в качестве сервера удалённого доступа, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox, в противном случае сервер удалённого доступа при запуске машины будет недоступен.</translation>
+        <translation>Эта виртуальная машина настроена на работу в качестве сервера удалённого доступа, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox, в противном случае сервер удалённого доступа при запуске машины будет недоступен.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5938,7 +5938,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Позволяет выбрать режим работы Drag&apos;n&apos;Drop-функции обмена между гостевой и основной ОС. Использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
+        <translation>Позволяет выбрать режим работы функции Drag&apos;n&apos;Drop между гостевой и основной ОС. Использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
@@ -5954,7 +5954,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables encryption for this virtual machine.</source>
-        <translation>Если галочка стоит, виртуальная машина будет зашифрована.</translation>
+        <translation>Если галочка стоит, эта виртуальная машина будет зашифрована.</translation>
     </message>
     <message>
         <source>En&amp;able Encryption</source>
@@ -5982,7 +5982,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are trying to encrypt this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site.</source>
-        <translation>Вы включили шифрование данной виртуальной машины, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox.</translation>
+        <translation>Вы включили шифрование этой виртуальной машины, для чего требуется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox.</translation>
     </message>
     <message>
         <source>Encryption cipher type not specified.</source>
@@ -6007,7 +6007,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation>Определяет путь к папке сохранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жестком диске.</translation>
+        <translation>Определяет путь к папке хранения снимков этой виртуальной машины. Имейте ввиду, что снимки могут занимать достаточно много места на жёстком диске.</translation>
     </message>
 </context>
 <context>
@@ -6293,7 +6293,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
-        <translation>Определяет имя внутренней сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создать новую внутреннюю сеть, выбрав имя, которое не используется иными виртуальными сетевыми адаптерами данной и других машин.</translation>
+        <translation>Определяет имя внутренней сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создать новую внутреннюю сеть, выбрав имя, которое не используется иными виртуальными сетевыми адаптерами этой и других машин.</translation>
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
@@ -7125,7 +7125,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>Дерево носителей информации может содержать несколько контроллеров различных типов. Данная машина не имеет подключенных контроллеров.</translation>
+        <translation>Дерево носителей информации может содержать несколько контроллеров различных типов. Эта машина не имеет подключенных контроллеров.</translation>
     </message>
     <message>
         <source>Attributes</source>
@@ -7265,7 +7265,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual floppy disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation>Выбрать файл образа гибкого диска или привод хоста для использования в виртуальном приводе гостевой ВМ. Виртуальная машина получит доступ к информации, содержащейся в образе или на носителе привода хоста, как если бы эта информация находилась на гибком диске внутри виртуальной машины.</translation>
+        <translation>Выбрать файл образа гибкого диска или привод хоста для использования в виртуальном приводе гостевой ВМ. Виртуальная машина получит доступ к информации, содержащейся в образе или на диске привода хоста, как если бы эта информация находилась на гибком диске внутри виртуальной машины.</translation>
     </message>
     <message>
         <source>Set up the virtual floppy drive</source>
@@ -7359,7 +7359,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; использует жесткий диск, который уже подключен к &lt;i&gt;%2&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; использует жёсткий диск, который уже подключен к &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
@@ -7391,15 +7391,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation>Выбрать файл образа оптического диска или привод хоста для использования в виртуальном приводе гостевой ВМ. Виртуальная машина получит доступ к информации, содержащейся в образе или на носителе привода хоста, как если бы эта информация находилась на оптическом диске внутри виртуальной машины.</translation>
+        <translation>Выбрать файл образа оптического диска или привод хоста для использования в виртуальном приводе гостевой ВМ. Виртуальная машина получит доступ к информации, содержащейся в образе или на диске привода хоста, как если бы эта информация находилась на оптическом диске внутри виртуальной машины.</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation>Шифровано ключём с ИД:</translation>
+        <translation>Шифрован ключём с ИД:</translation>
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>Содержит список всех контроллеров носителей информации, подключенных к данной виртуальной машине, а так же образы виртуальных дисков и приводы хоста, подключенные к этим контроллерам.</translation>
+        <translation>Содержит список всех контроллеров носителей информации, подключенных к этой виртуальной машине, а так же образы виртуальных дисков и приводы хоста, подключенные к этим контроллерам.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
@@ -7423,7 +7423,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation>Выбрать образ оптического диска...</translation>
+        <translation>Выбрать образ диска...</translation>
     </message>
     <message>
         <source>Image</source>
@@ -7666,7 +7666,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the chipset to be emulated in this virtual machine. Note that the ICH9 chipset emulation is experimental and not recommended except for guest systems (such as Mac OS X) which require it.</source>
-        <translation>Позволяет выбрать набор микросхем (чипсет), используемый материнской платой данной виртуальной машины. Учтите, что чипсет ICH9 считается экспериментальным и не рекомендуется для использования за исключением тех гостевых систем, которые в нём непосредственно нуждаются (например Mac OS X).</translation>
+        <translation>Позволяет выбрать набор микросхем (чипсет), используемый материнской платой этой виртуальной машины. Учтите, что чипсет ICH9 считается экспериментальным и не рекомендуется для использования за исключением тех гостевых систем, которые в нём непосредственно нуждаются (например Mac OS X).</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -7756,7 +7756,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the paravirtualization guest interface provider to be used by this virtual machine.</source>
-        <translation>Позволяет выбрать провайдера интерфейса паравиртуализации, используемого данной виртуальной машиной.</translation>
+        <translation>Позволяет выбрать провайдера интерфейса паравиртуализации, используемого этой виртуальной машиной.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9 you have enabled for this VM. It will be done automatically if you confirm your changes.</source>
@@ -7858,7 +7858,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Если галочка стоит, виртуальный USB-контроллер машины будет активирован.</translation>
+        <translation>Если галочка стоит, виртуальный USB-контроллер этой машины будет активирован.</translation>
     </message>
     <message>
         <source>Enable &amp;USB Controller</source>
@@ -7950,19 +7950,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation>Данная машина настроена на эмуляцию USB 2.0/3.0, для чего требуюется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox или отключите USB 2.0/3.0 для возможности запуска машины.</translation>
+        <translation>Эта машина настроена на эмуляцию USB 2.0/3.0, для чего требуюется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox или отключите USB 2.0/3.0 для возможности запуска машины.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation>Если выбран данный пункт, виртуальный USB OHCI контроллер машины будет активирован. Контроллер USB OHCI предоставляет поддержку USB 1.0.</translation>
+        <translation>Если выбран данный пункт, виртуальный USB OHCI контроллер этой машины будет активирован. Контроллер USB OHCI предоставляет поддержку USB 1.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Если выбран данный пункт, виртуальный USB EHCI контроллер машины будет активирован. Контроллер USB EHCI предоставляет поддержку USB 2.0.</translation>
+        <translation>Если выбран данный пункт, виртуальный USB EHCI контроллер этой машины будет активирован. Контроллер USB EHCI предоставляет поддержку USB 2.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation>Если выбран данный пункт, виртуальный USB xHCI контроллер машины будет активирован. Контроллер USB xHCI предоставляет поддержку USB 3.0.</translation>
+        <translation>Если выбран данный пункт, виртуальный USB xHCI контроллер этой машины будет активирован. Контроллер USB xHCI предоставляет поддержку USB 3.0.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
@@ -8158,7 +8158,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineWindowNormal</name>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
-        <translation>Показывает назначенную хост-клавишу.&lt;br&gt;Эта клавиша, если ее нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Ее можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
+        <translation>Показывает назначенную хост-клавишу.&lt;br&gt;Эта клавиша, если её нажимать отдельно, переключает состояние захвата клавиатуры и мыши. Её можно также использовать в сочетании с другими клавишами для быстрого выполнения действий из главного меню.</translation>
     </message>
 </context>
 <context>
@@ -8185,49 +8185,49 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removing medium...</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаление образа...</translation>
     </message>
     <message>
         <source>&amp;Hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Жёсткие диски</translation>
     </message>
 </context>
 <context>
     <name>UIMediumTypeChangeDialog</name>
     <message>
         <source>Modify medium attributes</source>
-        <translation>Изменить атрибуты носителя</translation>
+        <translation>Изменить атрибуты носителя информации</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь изменить атрибуты виртуального носителя, расположенного по адресу &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, выберите один из следующих типов носителя и нажмите &lt;b&gt;%2&lt;/b&gt; чтобы продолжить или &lt;b&gt;%3&lt;/b&gt; в противном случае.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь изменить атрибуты носителя информации, расположенного по адресу &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, выберите один из следующих типов носителя информации и нажмите &lt;b&gt;%2&lt;/b&gt; чтобы продолжить или &lt;b&gt;%3&lt;/b&gt; в противном случае.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose mode:</source>
-        <translation>Выберите тип носителя:</translation>
+        <translation>Выберите тип носителя информации:</translation>
     </message>
 </context>
 <context>
     <name>UIMenuBarEditorWidget</name>
     <message>
         <source>Virtual Screen Resize</source>
-        <translation type="unfinished"></translation>
+        <translation>Разрешение виртуального экрана</translation>
     </message>
     <message>
         <source>Virtual Screen Mapping</source>
-        <translation type="unfinished"></translation>
+        <translation>Расположение виртуального экрана</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Закрыть</translation>
+        <translation>Закрыть</translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished">Переключить</translation>
+        <translation>Активировать</translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать строку меню</translation>
     </message>
 </context>
 <context>
@@ -8324,7 +8324,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Не удалось сбросить сохранённое состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось сбросить сохранённое состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to discard the snapshot &lt;b&gt;%1&lt;/b&gt; of the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -8392,7 +8392,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуальная машина находится в состоянии &lt;b&gt;Приостановлена&lt;/b&gt; и поэтому не принимает события от клавиатуры или мыши. Если Вы хотите продолжить работу в ВМ, Вам необходимо возобновить ее выполнение, выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуальная машина находится в состоянии &lt;b&gt;Приостановлена&lt;/b&gt; и потому не принимает события от клавиатуры или мыши. Если Вы хотите продолжить работу в ВМ, Вам необходимо возобновить её выполнение, выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -8663,15 +8663,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру хоста, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы &lt;b&gt;щелкнули кнопкой мыши&lt;/b&gt; внутри экрана виртуальной машины или нажали &lt;b&gt;хост-клавишу&lt;/b&gt;. Это приведет к тому, что виртуальная машина &lt;b&gt;захватит&lt;/b&gt; указатель мыши (только в случае, если интеграция указателя мыши не поддерживается гостевой ОС) и клавиатуру хоста, что сделает их недоступными для других приложений, работающих на компьютере.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает ее недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;У Вас включена настройка &lt;b&gt;Автозахват клавиатуры&lt;/b&gt;. Это приведет к тому, что виртуальная машина будет автоматически &lt;b&gt;захватывать&lt;/b&gt; клавиатуру каждый раз при переключении в окно ВМ, что сделает её недоступной для других приложений, работающих на компьютере: когда клавиатура захвачена, все нажатия клавиш (включая системные, такие как Alt-Tab) будут направлены в виртуальную машину.&lt;/p&gt;&lt;p&gt;Вы можете нажать &lt;b&gt;хост-клавишу&lt;/b&gt; в любое время, чтобы &lt;b&gt;освободить&lt;/b&gt; клавиатуру и мышь (если они захвачены) и вернуть их к нормальной работе. Текущая хост-клавиша отображается в строке состояния внизу окна виртуальной машины, рядом со значком &amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;. Этот значок, а также значок с изображением мыши, расположенный рядом, показывают текущее состояние захвата клавиатуры и мыши.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виртуальная машина сообщает, что гостевая ОС поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt;. Это означает, что не требуется &lt;i&gt;захватывать&lt;/i&gt; указатель мыши для того, чтобы использовать ее в гостевой ОС -- все действия с мышью, когда ее указатель находится в пределах экрана виртуальной машины, напрямую передаются в гостевую ОС. Если мышь в настоящий момент захвачена, она будет автоматически освобождена.&lt;/p&gt;&lt;p&gt;Значок мыши в строке состояния будет выглядеть так: &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; -- это говорит о том, что интеграция мыши поддерживается гостевой ОС и в настоящий момент включена.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;: Некоторые приложения могут вести себя неправильно в режиме интеграции указателя мыши. Вы всегда можете отключить этот режим для текущей сессии (и включить его снова), выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виртуальная машина сообщает, что гостевая ОС поддерживает &lt;b&gt;интеграцию указателя мыши&lt;/b&gt;. Это означает, что не требуется &lt;i&gt;захватывать&lt;/i&gt; указатель мыши для того, чтобы использовать её в гостевой ОС -- все действия с мышью, когда её указатель находится в пределах экрана виртуальной машины, напрямую передаются в гостевую ОС. Если мышь в настоящий момент захвачена, она будет автоматически освобождена.&lt;/p&gt;&lt;p&gt;Значок мыши в строке состояния будет выглядеть так: &amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp; -- это говорит о том, что интеграция мыши поддерживается гостевой ОС и в настоящий момент включена.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;: Некоторые приложения могут вести себя неправильно в режиме интеграции указателя мыши. Вы всегда можете отключить этот режим для текущей сессии (и включить его снова), выбрав соответствующее действие из меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -8765,7 +8765,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файл жёсткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жёсткий диск, который использует этот файл, потому что он, возможно, уже используется другим жёстким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
@@ -8783,7 +8783,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось удалить файл жёсткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -8791,7 +8791,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>Не удалось создать файл жёсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -8819,7 +8819,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Не удалось проверить доступность носителя &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation>Не удалось проверить доступность образа виртуального диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -9326,7 +9326,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to use it later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Имейте в виду, что файл с данными этого носителя не будет удален и в дальнейшем может быть снова использован.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Имейте в виду, что файл с данными этого носителя информации не будет удален и в дальнейшем может быть снова использован.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
@@ -9338,11 +9338,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Seamless&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in seamless mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;интеграции дисплея&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в режиме интеграции дисплея основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;интеграции дисплея&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в этом режиме основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;масштабирования&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в режиме масштабирования основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;масштабирования&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в этом режиме основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Switch</source>
@@ -9451,7 +9451,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Не удалось клонировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось клонировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -9467,7 +9467,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось сменить тип носителя с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось сменить тип носителя информации с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -9581,11 +9581,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы уверены, что хотите сбросить сохранённое состояние следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите сбросить сохранённое состояние следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Эта операция равносильна перезапуску или выключению питания машины без надлежащей остановки средствами гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы действительно хотите выполнить перезапуск следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Во время перезапуска произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы действительно хотите выполнить перезапуск следующих виртуальных машин?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Во время перезапуска произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -9593,7 +9593,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to power off the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Вы действительно хотите выключить следующие виртуальные машины?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;При выключении произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы действительно хотите выключить следующие виртуальные машины?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;При выключении произойдет утеря несохранённых данных всех приложений, работающих внутри виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
@@ -9701,7 +9701,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального жёсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального жёсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка известных носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
@@ -9709,11 +9709,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального оптического диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального оптического диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка известных носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального гибкого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите убрать образ виртуального гибкого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; из списка известных носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -9871,135 +9871,135 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие правила проброса портов неверны. Значения хостовых и гостевых портов не могут совпадать.</translation>
     </message>
     <message>
         <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
-        <translation type="unfinished"></translation>
+        <translation>Текущие правила проброса портов неверны. Некоторые из правил относятся к одним и тем же портам хоста, имея конфликтные IP адреса.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to create the VirtualBoxClient COM object.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось создать COM-объект VirtualBoxClient.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to set the global VirtualBox extra data for key &lt;i&gt;%1&lt;/i&gt; to value &lt;i&gt;{%2}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось задать глобальной внутренней переменной VirtualBox с ключём &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%2}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось задать внутренней переменной машины &lt;i&gt;%2&lt;/i&gt; с ключём &lt;i&gt;%1&lt;/i&gt; значение &lt;i&gt;{%3}&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Failed to save the settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось сохранить настройки.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new optical drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual optical disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы собираетесь добавить новый привод оптических дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ оптического диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the optical drive?&lt;/p&gt;&lt;p&gt;You will not be able to insert any optical disks or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать оптические диски хоста или их образы к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подсоединить привод оптических дисков &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; к слоту  &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подсоединить привод гибких дисков &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; к слоту  &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отсоединить привод оптических дисков &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отсоединить привод гибких дисков &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; от слота &lt;i&gt;%2&lt;/i&gt; машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось подключить установочный пакет &lt;b&gt;Образа дополнений гостевой ОС&lt;/b&gt; к виртуальной машине &lt;b&gt;%1&lt;/b&gt;, поскольку данная машина не имеет привода оптических дисков. Пожалуйста добавьте привод, используя настройки носителей информации виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;Образ дополнений гостевой ОС&lt;/b&gt; был успешно загружен с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; и сохранён локально по адресу &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Хотите ли подключить его к виртуальному приводу оптических дисков?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Bad password or authentication failure.</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный пароль или ошибка аутентификации.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Во время работы виртуальной машины произошла критическая ошибка. Выполнение виртуальной машины остановлено.&lt;/p&gt;&lt;p&gt;Вы можете обратиться за помощью к разделу Community на веб-сайте &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt;, либо к Вашему контракту на поддержку и сопровождение продукта. Пожалуйста, предоставьте содержимое журнала &lt;tt&gt;VBox.log&lt;/tt&gt; и изображение &lt;tt&gt;VBox.png&lt;/tt&gt;, которые находятся в папке &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, а также подробное описание того, что Вы делали, когда возникла эта проблема. Получить доступ к вышеуказанным файлам можно также через пункт &lt;b&gt;Показать журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt;, если Вы хотите выключить виртуальную машину, либо нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, если Вы хотите оставить ее в текущем состоянии для отладки. Обратите внимание, что отладка требует наличия специальных инструментов и навыков, поэтому рекомендуется просто выбрать &lt;b&gt;ОК&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Во время работы виртуальной машины произошла критическая ошибка. Выполнение виртуальной машины должно быть остановлено.&lt;/p&gt;&lt;p&gt;Вы можете обратиться за помощью к разделу Community на веб-сайте &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt;, либо к Вашему контракту на поддержку и сопровождение продукта. Пожалуйста, предоставьте содержимое журнала &lt;tt&gt;VBox.log&lt;/tt&gt; , который находятся в папке журналов виртуальной машины, а также подробное описание того, что Вы делали, когда возникла эта проблема. Получить доступ к вышеуказанным файлам можно также через пункт &lt;b&gt;Показать журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt;, для выключения виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Выпущена новая версия программы VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; доступна на сайте &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Вы можете скачать эту версию, используя следующую прямую ссылку: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Операция drag and drop с хостовой в гостевую ОС завершилась неудачей.</translation>
     </message>
     <message>
         <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удаётся отменить операцию drag and drop с хостовой в гостевую ОС.</translation>
     </message>
     <message>
         <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Операция drag and drop с гостевой в хостовую ОС завершилась неудачей.</translation>
     </message>
     <message>
         <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось поключить сетевой кабель к адаптеру виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отключить сетевой кабель от адаптера виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Один или несколько носителей информации сейчас недоступны. В результате, Вы не сможете запускать виртуальные машины, использующие эти носители, до тех пор, пока к ним не появится доступ.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Проверить&lt;/b&gt;, чтобы открыть окно Менеджера виртуальных носителей и увидеть, какие именно носители недоступны, или нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы пропустить это сообщение.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;При удалении снимка информация о состоянии машины, хранящаяся в данном снимке, будет уничтожена, а данные, хранящиеся в файлах, созданных VirtualBox при создании снимка, будут объединены в один файл. Данный процесс может занять некоторое время, а информация хранящаяся в снимке не может быть в последствии восстановлена.&lt;/p&gt;&lt;/p&gt;Вы уверены, что хотите удалить выбранный снимок &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Для удаление снимка %1 временно понадобится некоторое количество свободного дискового пространства. В худшем случае размер образа %2 увеличится на %3, однако в данной системе доступно лишь %4.&lt;/p&gt;&lt;p&gt;В случае нехватки свободного места в процессе операции объединения образов, может произойти критическая ошибка, что приведёт к повреждению образа и конфигурации виртуальной машины, иными словами - к потере данной машины и её данных.&lt;/p&gt;&lt;p&gt;Однако, Вы все же можете попытаться удалить данный снимок на свой страх и риск.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите освободить носитель информации &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Это приведет к его отсоединению от следующих виртуальных машин: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить файл виртуального жёсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жёсткий диск будет убран из списка используемых жёстких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жёсткий диск в список при необходимости.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось открыть образ виртуального диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось закрыть образ виртуального диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы собираетесь создать новую виртуальную машину без жёсткого диска. У Вас не будет возможности установить операционную систему до тех пор, пока Вы не добавите как минимум один жёсткий диск. Однако, Вы сможете запустить машину и загрузить операционную систему с оптического диска.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Сейчас окно виртуальной машины будет переключено в режим &lt;b&gt;полного экрана&lt;/b&gt;. Вы можете вернуться в оконный режим в любое время, нажав &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Обратите внимание, что в данный момент в качестве &lt;i&gt;хост-клавиши&lt;/i&gt; используется &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Имейте в виду, что в этом режиме основное меню окна скрыто. Вы можете получить к нему доступ, нажав &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Не удалось переключить дисплей гостевой ОС в режим полного экрана из-за недостаточного количества виртуальной видеопамяти.&lt;/p&gt;&lt;p&gt;Необходимо задать как минимум &lt;b&gt;%1&lt;/b&gt; видеопамяти в диалоге свойств виртуальной машины.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Игнорировать&lt;/b&gt;, чтобы переключиться в режим полного экрана в любом случае, или нажмите &lt;b&gt;Отмена&lt;/b&gt; для отмены операции.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10093,7 +10093,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the operating system family that you plan to install into this virtual machine.</source>
-        <translation type="unfinished">Позволяет выбрать класс операционных систем, одну из которых вы желаете установить на эту виртуальную машину.</translation>
+        <translation>Позволяет выбрать класс операционных систем, одну из которых вы желаете установить на эту виртуальную машину.</translation>
     </message>
     <message>
         <source>&amp;Version:</source>
@@ -10101,7 +10101,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
-        <translation type="unfinished">Позволяет выбрать версию операционной системы, которую вы желаете установить на эту виртуальную машину (эта операционная система называется &quot;гостевая ОС&quot;).</translation>
+        <translation>Позволяет выбрать версию операционной системы, которую вы желаете установить на эту виртуальную машину (эта операционная система называется &quot;гостевая ОС&quot;).</translation>
     </message>
 </context>
 <context>
@@ -10891,55 +10891,55 @@ p, li { white-space: pre-wrap; }
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="unfinished">Протокол</translation>
+        <translation>Протокол</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="unfinished">IP хоста</translation>
+        <translation>Адрес хоста</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="unfinished">Порт хоста</translation>
+        <translation>Порт хоста</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="unfinished">IP гостя</translation>
+        <translation>Адрес гостя</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="unfinished">Порт гостя</translation>
+        <translation>Порт гостя</translation>
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Содержит список правил проброса портов.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить новое правило</translation>
     </message>
     <message>
         <source>Copy Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Копировать выбранное правило</translation>
     </message>
     <message>
         <source>Remove Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранное правило</translation>
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавляет новое правило проброса портов.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Копирует выбранное правило проброса портов.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Удаляет выбранное правило проброса портов.</translation>
     </message>
 </context>
 <context>
@@ -11056,7 +11056,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Добро пожаловать в мир VirtualBox!&lt;/h3&gt;&lt;p&gt;Левая часть этого окна предназначена для отображения списка Ваших  виртуальных машин. Этот список сейчас пуст, потому что Вы не создали ни одной виртуальной машины.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Чтобы создать новую машину, нажмите кнопку &lt;b&gt;Создать&lt;/b&gt; на основной панели инструментов, расположенной вверху окна.&lt;/p&gt;&lt;p&gt;Hажмите клавишу &lt;b&gt;%1&lt;/b&gt; для получения оперативной помощи или посетите сайт &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, чтобы узнать свежие новости и получить актуальную информацию.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11145,7 +11145,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройки</translation>
     </message>
 </context>
 <context>
@@ -11224,37 +11224,37 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>User Interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Интерфейс пользовтеля</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Настройки</translation>
     </message>
 </context>
 <context>
     <name>UISettingsSerializerProgress</name>
     <message>
         <source>Loading Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка настроек...</translation>
     </message>
     <message>
         <source>Saving Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранение настроек...</translation>
     </message>
 </context>
 <context>
     <name>UIStatusBarEditorWidget</name>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Закрыть</translation>
+        <translation>Закрыть</translation>
     </message>
     <message>
         <source>Enable Status Bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать строку состояния</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Щёлкните мышкой&lt;/b&gt;, чтобы показать/скрыть индикатор.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Перетащите мышкой&lt;/b&gt;, чтобы изменить его позицию.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -11386,7 +11386,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жестком диске хоста.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохранённого состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Сохраняет текущее состояние виртуальной машины на жёстком диске хоста.&lt;/p&gt;&lt;p&gt;При следующем запуске машина будет восстановлена из этого сохранённого состояния и продолжит выполнение с того места, на котором она была сохранена, позволяя быстро продолжить прерванную работу.&lt;/p&gt;&lt;p&gt;Имейте ввиду, что операция сохранения состояния машины может занять продолжительное время, в зависимости от типа гостевой ОС и размера оперативной памяти, заданного для этой машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -11414,7 +11414,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Если галочка стоит, то состояние машины будет восстановлено из состояния, сохранённого в текущем снимке, сразу после ее выключения. Это может быть полезным, если Вы уверены, что хотите удалить результаты последнего сеанса работы с виртуальной машиной и вернуться к текущему снимку.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если галочка стоит, сразу после выключения машины будет восстановлено её состояние, сохранённое в текущем снимке. Это может быть полезным, если Вы уверены, что хотите удалить результаты последнего сеанса работы с виртуальной машиной и вернуться к текущему снимку.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Restore current snapshot &apos;%1&apos;</source>
@@ -11422,11 +11422,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Continue running in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Продолжить работу в фоновом режиме</translation>
     </message>
     <message>
         <source>&lt;p&gt;Close the virtual machine windows but keep the virtual machine running.&lt;/p&gt;&lt;p&gt;You can use the VirtualBox Manager to return to running the virtual machine in a window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Закрыть графический интерфейс виртуальной машины, но продолжать её работу в фоновом режиме.&lt;/p&gt;&lt;p&gt;Для возврата к графическому интерфейсу этой машины Вы можете использовать VirtualBox Менеджер.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11550,7 +11550,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation>Статистика носителей</translation>
+        <translation>Статистика носителей информации</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
@@ -11558,7 +11558,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Network Statistics</source>
-        <translation>Сетевая статистика</translation>
+        <translation>Статистика сетевых адаптеров</translation>
     </message>
     <message>
         <source>Not Available</source>
@@ -11583,11 +11583,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VM Uptime</source>
-        <translation type="unfinished"></translation>
+        <translation>Время работы</translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Функция Drag and Drop</translation>
     </message>
 </context>
 <context>
@@ -11749,19 +11749,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Expert Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Экспертный режим</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Expert Mode&lt;/b&gt;&lt;/nobr&gt;, a one-page dialog for experienced users.</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключиться в &lt;nobr&gt;&lt;b&gt;Экспертный режим&lt;/b&gt;&lt;/nobr&gt;, одностраничный диалог для опытных пользователей.</translation>
     </message>
     <message>
         <source>&amp;Guided Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подробный режим</translation>
     </message>
     <message>
         <source>Switch to &lt;nobr&gt;&lt;b&gt;Guided Mode&lt;/b&gt;&lt;/nobr&gt;, a step-by-step dialog with detailed explanations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Переключиться в &lt;nobr&gt;&lt;b&gt;Подробный режим&lt;/b&gt;&lt;/nobr&gt;, пошаговый диалог с детальными пояснениями.</translation>
     </message>
 </context>
 <context>
@@ -11861,75 +11861,75 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Копировать виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard disk file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Пожалуйста, выберите виртуальный жёсткий диск, который Вы желаете скопировать, если он ещё не выбран. Вы можете выбрать один из выпадающего списка или использовать кнопку с иконкой папки справа от него.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать файл виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите тип</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, укажите тип файла, определяющий формат, который Вы хотите использовать при создании нового жёсткого диска. Если у Вас нет необходимости использовать диск с другими продуктами программной виртуализации, Вы можете оставить данный параметр без изменений.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите формат хранения</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста уточните, должен ли новый виртуальный жёсткий диск подстраивать свой размер под размер своего содержимого или быть точно заданного размера.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;динамического&lt;/b&gt; жёсткого диска будет занимать необходимое место на Вашем физическом носителе информации лишь по мере заполнения, однако не сможет уменьшиться в размере если место, занятое его содержимым, освободится.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;фиксированного&lt;/b&gt; жёсткого диска может потребовать больше времени при создании на некоторых файловых системах, однако, обычно, быстрее в использовании.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы можете также &lt;b&gt;разделить&lt;/b&gt; жёсткий диск на несколько файлов размером до 2х ГБ. Это может пригодиться если Вы планируете хранить виртуальную машину на съёмных USB носителях или старых файловых системах, некоторые из которых не поддерживают файлы больших размеров.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите местоположение нового виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите имя нового диска</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста укажите имя нового виртуального жёсткого диска в поле снизу или используйте кнопку с иконкой папки справа от него.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать местоположение нового виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите &amp;диск</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите имя &amp;нового диска</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите &amp;тип</translation>
     </message>
 </context>
 <context>
@@ -11940,15 +11940,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone Virtual Machine</source>
-        <translation type="unfinished">Клонировать виртуальную машину</translation>
+        <translation>Клонировать виртуальную машину</translation>
     </message>
     <message>
         <source>Clone</source>
-        <translation type="unfinished">Клонировать</translation>
+        <translation>Клонировать</translation>
     </message>
     <message>
         <source>%1 Clone</source>
-        <translation>Копия %1</translation>
+        <translation>Клон %1</translation>
     </message>
     <message>
         <source>New machine name</source>
@@ -11956,7 +11956,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Please choose a name for the new virtual machine. The new machine will be a clone of the machine &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите имя новой виртуально машины. Эта машина будет клоном машины &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Пожалуйста укажите имя новой виртуальной машины. Эта машина будет клоном машины &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
@@ -11968,7 +11968,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Clone type</source>
-        <translation type="unfinished">Укажите тип клонирования</translation>
+        <translation>Укажите тип клонирования</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard drive files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard drive files will be tied to the virtual hard drive files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
@@ -11976,35 +11976,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If you create a &lt;b&gt;Linked clone&lt;/b&gt; then a new snapshot will be created in the original virtual machine as part of the cloning process.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, в клонируемой машине будет создан новый снимок, являющийся частью процедуры клонирования.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, в клонируемой машине также будет создан новый снимок, являющийся частью процедуры клонирования.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Full clone</source>
-        <translation type="unfinished">&amp;Полное клонирование</translation>
+        <translation>&amp;Полное клонирование</translation>
     </message>
     <message>
         <source>&amp;Linked clone</source>
-        <translation type="unfinished">&amp;Связное клонирование</translation>
+        <translation>&amp;Связное клонирование</translation>
     </message>
     <message>
         <source>Snapshots</source>
-        <translation type="unfinished">Укажите цель клонирования</translation>
+        <translation>Укажите цель клонирования</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose which parts of the snapshot tree should be cloned with the machine.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите, какие части виртуальной машины должны быть клонированы.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Пожалуйста укажите, какие части виртуальной машины должны быть клонированы.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current machine state&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have no snapshots.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Состояние машины&lt;/b&gt;, новая машина будет отражать текущее состояние копируемой машины, без снимков.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Состояние машины&lt;/b&gt;, новая машина будет отражать текущее состояние клонируемой машины, без снимков.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Current snapshot tree branch&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the tree branch starting at the current state in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Текущая ветка древа снимков&lt;/b&gt;, новая машина будет отражать текущее состояние копируемой машины, и будет иметь копии всех снимков ветки древа снимков копируемой машины вплоть до текущего состояния.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Текущая ветка древа снимков&lt;/b&gt;, новая машина будет отражать текущее состояние клонируемой машины, и будет иметь копии всех снимков ветки древа снимков клонируемой машины вплоть до текущего состояния.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you choose &lt;b&gt;Everything&lt;/b&gt;, the new machine will reflect the current state of the original machine and will have matching snapshots for all snapshots in the original machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Всё&lt;/b&gt;, новая машина будет отражать текущее состояние копируемой машины, и будет иметь копии всех снимков древа снимков копируемой машины.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Если Вы выберите &lt;b&gt;Всё&lt;/b&gt;, новая машина будет отражать текущее состояние клонируемой машины, и будет иметь копии всех снимков древа снимков клонируемой машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Current &amp;machine state</source>
@@ -12024,15 +12024,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Full Clone</source>
-        <translation type="unfinished">&amp;Полное клонирование</translation>
+        <translation>&amp;Полное клонирование</translation>
     </message>
     <message>
         <source>&amp;Linked Clone</source>
-        <translation type="unfinished">&amp;Связное клонирование</translation>
+        <translation>&amp;Связное клонирование</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Пожалуйста укажите какое клонирование Вы желаете выполнить.&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Полное клонирование&lt;/b&gt;, будет создана полная копия копируемой виртуальной машины (включая все файлы виртуальных жёстких дисков).&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, будет создана новая машина, использующая файлы виртуальных жёстких дисков клонируемой машины и Вы не сможете перенести новую машину на другой компьютер без переноса клонируемой.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Пожалуйста укажите какое клонирование Вы желаете выполнить.&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Полное клонирование&lt;/b&gt;, будет создана полная копия клонируемой виртуальной машины (включая все файлы виртуальных жёстких дисков).&lt;/p&gt;&lt;p&gt;Если Вы выберите &lt;b&gt;Связное клонирование&lt;/b&gt;, будет создана новая машина, использующая файлы виртуальных жёстких дисков клонируемой машины и Вы не сможете перенести новую машину на другой компьютер без переноса клонируемой.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12390,51 +12390,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите тип</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста, укажите тип файла, определяющий формат, который Вы хотите использовать при создании нового жёсткого диска. Если у Вас нет необходимости использовать диск с другими продуктами программной виртуализации, Вы можете оставить данный параметр без изменений.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите формат хранения</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста уточните, должен ли новый виртуальный жёсткий диск подстраивать свой размер под размер своего содержимого или быть точно заданного размера.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;динамического&lt;/b&gt; жёсткого диска будет занимать необходимое место на Вашем физическом носителе информации лишь по мере заполнения, однако не сможет уменьшиться в размере если место, занятое его содержимым, освободится.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Файл &lt;b&gt;фиксированного&lt;/b&gt; жёсткого диска может потребовать больше времени при создании на некоторых файловых системах, однако, обычно, быстрее в использовании.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вы можете также &lt;b&gt;разделить&lt;/b&gt; жёсткий диск на несколько файлов размером до 2х ГБ. Это может пригодиться если Вы планируете хранить виртуальную машину на съёмных USB носителях или старых файловых системах, некоторые из которых не поддерживают файлы больших размеров.</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Пожалуйста укажите имя нового виртуального жёсткого диска в поле снизу или используйте кнопку с иконкой папки справа от него.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать местоположение нового виртуального жёсткого диска...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите размер виртуального жёсткого диска в мегабайтах. Эта величина ограничивает размер файловых данных, которые виртуальная машина сможет хранить на этом диске.</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите &amp;тип</translation>
     </message>
 </context>
 <context>
@@ -12513,27 +12513,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Жесткий диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard disk is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;При желании к новой виртуальной машине можно подключить виртуальный жёсткий диск. Вы можете создать новый или выбрать из уже имеющихся.&lt;/p&gt;&lt;p&gt;Если Вам необходима более сложная конфигурация Вы можете пропустить этот шаг и внести изменения в настройки машины после её создания.&lt;/p&gt;&lt;p&gt;Рекомендуемый объём нового виртуального жёсткого диска равен &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Do not add a virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Не подключать виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard disk now</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Создать новый виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Использовать существующий виртуальный жёсткий диск</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Выбрать образ виртуального жёсткого диска...</translation>
     </message>
 </context>
 <context>
@@ -13251,19 +13251,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог выбора папки.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Открывает диалог выбора файла.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет название папки.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет название файла.</translation>
     </message>
 </context>
 <context>
@@ -13608,7 +13608,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Floppy</source>
         <comment>DeviceType</comment>
-        <translation>Дискета</translation>
+        <translation>Гибкий диск</translation>
     </message>
     <message>
         <source>CD/DVD</source>
@@ -13618,7 +13618,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Hard Disk</source>
         <comment>DeviceType</comment>
-        <translation>Жесткий диск</translation>
+        <translation>Жёсткий диск</translation>
     </message>
     <message>
         <source>Network</source>
@@ -13668,7 +13668,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished">Пустой аудио драйвер</translation>
+        <translation>Пустой аудио драйвер</translation>
     </message>
     <message>
         <source>Windows Multimedia</source>
@@ -13678,12 +13678,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished">Аудио драйвер OSS</translation>
+        <translation>Аудио драйвер OSS</translation>
     </message>
     <message>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished">Аудио драйвер ALSA</translation>
+        <translation>Аудио драйвер ALSA</translation>
     </message>
     <message>
         <source>Windows DirectSound</source>
@@ -13871,7 +13871,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation type="unfinished">Аудио драйвер</translation>
+        <translation>Аудио драйвер</translation>
     </message>
     <message>
         <source>Controller</source>
@@ -14404,21 +14404,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
-        <translation>Не удалось проверить доступность устройства.</translation>
+        <translation>Не удалось проверить доступность носителей информации.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;b&gt;Устройство не выбрано&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Носитель информации не выбран&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can also change this while the machine is running.</source>
-        <translation>Вы можете выбрать это устройство позже или во время работы машины.</translation>
+        <translation>Вы можете изменить содержимое этого устройства позже или во время работы машины.</translation>
     </message>
     <message>
         <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;b&gt;Нет доступных устройств&lt;/b&gt;</translation>
+        <translation>&lt;b&gt;Нет доступных носителей информации&lt;/b&gt;</translation>
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
@@ -14427,7 +14427,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished">Подключение данного жёсткого диска будет осуществлено косвенно, используя новый разностный диск.</translation>
+        <translation>Подключение данного жёсткого диска будет осуществлено косвенно, используя новый разностный жёсткий диск.</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
@@ -14437,7 +14437,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="unfinished">Этот базовый жёсткий диск косвенно подсоединен с помощью следующего разностного диска:</translation>
+        <translation>Этот базовый жёсткий диск косвенно подсоединен с помощью следующего разностного жёсткого диска:</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -14764,7 +14764,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Disabled</source>
         <comment>DragAndDropType</comment>
-        <translation>Выключен</translation>
+        <translation>Выключена</translation>
     </message>
     <message>
         <source>Host To Guest</source>
@@ -15114,7 +15114,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
-        <translation>Вы можете добавлять и удалять устройства, используя настройки машин.</translation>
+        <translation>Вы можете добавлять и удалять доступные носители информации, используя настройки машины.</translation>
     </message>
     <message>
         <source>USB</source>
@@ -15129,143 +15129,143 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>off</source>
         <comment>guest monitor status</comment>
-        <translation type="unfinished"></translation>
+        <translation>(выключен)</translation>
     </message>
     <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Интерфейс паравиртуализации</translation>
     </message>
     <message>
         <source>None</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished">По умолчанию</translation>
+        <translation>По умолчанию</translation>
     </message>
     <message>
         <source>Legacy</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Совместимый</translation>
     </message>
     <message>
         <source>Minimal</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation>Минимальный</translation>
     </message>
     <message>
         <source>Hyper-V</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>New dynamically allocated storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>Новый динамически расширяющийся образ</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активно</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активно</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Активно</translation>
     </message>
     <message>
         <source>Inactive</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Неактивно</translation>
     </message>
     <message>
         <source>Taking Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Создание снимка</translation>
     </message>
     <message>
         <source>Taking Online Snapshot</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Создание рабочего снимка</translation>
     </message>
     <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Оптический диск</translation>
     </message>
     <message>
         <source>TCP</source>
         <comment>PortMode</comment>
-        <translation type="unfinished">TCP</translation>
+        <translation></translation>
     </message>
     <message>
         <source>OHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>EHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>xHCI</source>
         <comment>USBControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Интерфейс пользовтеля</translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished"></translation>
+        <translation>(Оптический привод)</translation>
     </message>
     <message>
         <source>Encrypted</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Шифрован</translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Выберите файл виртуального жёсткого диска</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Все файлы виртуальных жёстких дисков (%1)</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Некоторые устройства данной цепочки жёстких дисков недоступны. Используйте менеджер виртуальных носителей для проверки.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Укажите местоположение нового виртуального жёсткого диска</translation>
     </message>
 </context>
 <context>
@@ -15399,15 +15399,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Remove the selected disk image file</source>
-        <translation>Удалить выбранный носитель</translation>
+        <translation>Удалить выбранный носитель информации</translation>
     </message>
     <message>
         <source>Release the selected disk image file by detaching it from the machines</source>
-        <translation>Освободить выбранный носитель, отсоединив его от машин</translation>
+        <translation>Освободить выбранный носитель информации, отсоединив его от машин</translation>
     </message>
     <message>
         <source>Refresh the list of disk image files</source>
-        <translation>Обновить список носителей</translation>
+        <translation>Обновить список носителей информации</translation>
     </message>
     <message>
         <source>Location</source>
@@ -15559,11 +15559,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Copy an existing disk image file</source>
-        <translation>Копировать существующий виртуальный носитель</translation>
+        <translation>Копировать существующий носитель информации</translation>
     </message>
     <message>
         <source>Modify the attributes of the selected disk image file</source>
-        <translation>Изменить атрибуты выбранного виртуального носителя</translation>
+        <translation>Изменить атрибуты выбранного носителя информации</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
@@ -15575,15 +15575,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>UUID:</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;Не&amp;nbsp;шифрован&lt;/i&gt;</translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
+        <translation>Шифрован ключём с ИД:</translation>
     </message>
 </context>
 <context>
@@ -16175,11 +16175,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current state differs from the state stored in the current snapshot</source>
-        <translation type="unfinished">Текущее состояние отличается от состояния, сохранённого в текущем снимке</translation>
+        <translation>Текущее состояние отличается от состояния, сохранённого в текущем снимке</translation>
     </message>
     <message>
         <source>The current state is identical to the state stored in the current snapshot</source>
-        <translation type="unfinished">Текущее состояние идентично состоянию, сохранённому в текущем снимке</translation>
+        <translation>Текущее состояние идентично состоянию, сохранённому в текущем снимке</translation>
     </message>
     <message>
         <source> (current, </source>
@@ -16297,7 +16297,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Clone...</source>
-        <translation type="unfinished">&amp;Клонировать...</translation>
+        <translation>&amp;Клонировать...</translation>
     </message>
     <message>
         <source>Clone the selected virtual machine</source>
@@ -16305,19 +16305,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Восстановить выбранный снимок виртуальной машины</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Удалить выбранный снимок виртуальной машины</translation>
     </message>
     <message>
         <source>Display a window with selected snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать подробности о выбранном снимке</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished">Клонировать выбранную виртуальную машину</translation>
+        <translation>Клонировать выбранную виртуальную машину</translation>
     </message>
 </context>
 <context>
@@ -16355,7 +16355,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Снимок %1</translation>
+        <translation>Снимок %1</translation>
     </message>
 </context>
 <context>
@@ -16392,7 +16392,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation type="unfinished">Нет поддерживаемых устройств, подключенных к хосту</translation>
+        <translation>Нет поддерживаемых устройств, подключенных к хосту</translation>
     </message>
 </context>
 <context>
