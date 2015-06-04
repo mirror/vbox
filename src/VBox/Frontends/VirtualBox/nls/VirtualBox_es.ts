@@ -1233,11 +1233,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Take a guest display screenshot</source>
+        <source>Take guest display screenshot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure video capture</source>
+        <source>Display virtual machine settings window to configure video capture</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1249,23 +1249,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the window to configure menu-bar</source>
+        <source>Display window to configure menu-bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable menu-bar visibility</source>
+        <source>Enable menu-bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the window to configure status-bar</source>
+        <source>Display window to configure status-bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable status-bar visibility</source>
+        <source>Enable status-bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the global preferences window to configure keyboard shortcuts</source>
+        <source>Display global preferences window to configure keyboard shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1282,7 +1282,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure hard disks</source>
+        <source>Display virtual machine settings window to configure hard disks</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1290,11 +1290,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure network adapters</source>
+        <source>Display virtual machine settings window to configure network adapters</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure USB devices</source>
+        <source>Display virtual machine settings window to configure USB devices</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1302,7 +1302,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure shared folders</source>
+        <source>Display virtual machine settings window to configure shared folders</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1369,7 +1369,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ungroup the items of selected virtual machine group</source>
+        <source>Ungroup items of selected virtual machine group</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1377,7 +1377,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort the items of selected virtual machine group alphabetically</source>
+        <source>Sort items of selected virtual machine group alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1405,11 +1405,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Start selected virtual machines with the option of continuing them in the background</source>
+        <source>Start selected virtual machines with option of continuing in background</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Suspend the execution of selected virtual machines</source>
+        <source>Suspend execution of selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1421,11 +1421,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Discard the saved state of selected virtual machines</source>
+        <source>Discard saved state of selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show the log files of selected virtual machines</source>
+        <source>Show log files of selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1433,7 +1433,7 @@
         <translation type="unfinished">A&amp;ctualizar</translation>
     </message>
     <message>
-        <source>Refresh the accessibility state of selected virtual machines</source>
+        <source>Refresh accessibility state of selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1477,15 +1477,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Sort the group of first selected virtual machine alphabetically</source>
+        <source>Sort group of first selected virtual machine alphabetically</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Save the state of selected virtual machines</source>
+        <source>Save state of selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Send the ACPI Shutdown signal to selected virtual machines</source>
+        <source>Send ACPI Shutdown signal to selected virtual machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4596,7 +4596,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, the DHCP Server will be enabled for this network on machine startup.</source>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7527,7 +7527,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Remove Disk From Virtual Drive</source>
+        <source>Remove Disk from Virtual Drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

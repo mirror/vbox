@@ -326,7 +326,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Ungroup"));
-        setStatusTip(QApplication::translate("UIActionPool", "Ungroup the items of selected virtual machine group"));
+        setStatusTip(QApplication::translate("UIActionPool", "Ungroup items of selected virtual machine group"));
     }
 };
 
@@ -349,7 +349,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Sort"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the items of selected virtual machine group alphabetically"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort items of selected virtual machine group alphabetically"));
     }
 };
 
@@ -659,7 +659,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Detachable Start"));
-        setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines with the option of continuing them in the background"));
+        setStatusTip(QApplication::translate("UIActionPool", "Start selected virtual machines with option of continuing in background"));
     }
 };
 
@@ -687,7 +687,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Pause"));
-        setStatusTip(QApplication::translate("UIActionPool", "Suspend the execution of selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Suspend execution of selected virtual machines"));
     }
 };
 
@@ -746,7 +746,7 @@ protected:
     {
         setIconText(QApplication::translate("UIActionPool", "Discard"));
         setName(QApplication::translate("UIActionPool", "D&iscard Saved State..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Discard the saved state of selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Discard saved state of selected virtual machines"));
         setToolTip(text().remove('&').remove('.') +
                    (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
     }
@@ -781,7 +781,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Show &Log..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show the log files of selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show log files of selected virtual machines"));
     }
 };
 
@@ -806,7 +806,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Re&fresh"));
-        setStatusTip(QApplication::translate("UIActionPool", "Refresh the accessibility state of selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Refresh accessibility state of selected virtual machines"));
     }
 };
 
@@ -888,7 +888,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Sort"));
-        setStatusTip(QApplication::translate("UIActionPool", "Sort the group of first selected virtual machine alphabetically"));
+        setStatusTip(QApplication::translate("UIActionPool", "Sort group of first selected virtual machine alphabetically"));
     }
 };
 
@@ -934,7 +934,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Save State"));
-        setStatusTip(QApplication::translate("UIActionPool", "Save the state of selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Save state of selected virtual machines"));
     }
 };
 
@@ -962,7 +962,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "ACPI Sh&utdown"));
-        setStatusTip(QApplication::translate("UIActionPool", "Send the ACPI Shutdown signal to selected virtual machines"));
+        setStatusTip(QApplication::translate("UIActionPool", "Send ACPI Shutdown signal to selected virtual machines"));
     }
 };
 

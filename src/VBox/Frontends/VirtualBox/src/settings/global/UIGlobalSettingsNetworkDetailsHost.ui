@@ -185,7 +185,7 @@
           <string>&amp;Enable Server</string>
          </property>
          <property name="toolTip">
-          <string>When checked, the DHCP Server will be enabled for this network on machine startup.</string>
+          <string>When checked, the DHCP Server will be enabled for this network on machine start-up.</string>
          </property>
         </widget>
        </item>

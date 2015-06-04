@@ -980,11 +980,11 @@
         <translation>Passt die Größe das Gastbildschirms automatisch an, wenn sich die Fenstergröße ändert</translation>
     </message>
     <message>
-        <source>Take a guest display screenshot</source>
+        <source>Take guest display screenshot</source>
         <translation>Erzeugt ein Foto des Gastbildschirms</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure video capture</source>
+        <source>Display virtual machine settings window to configure video capture</source>
         <translation>Zeigt die Einstellungen der virtuellen Maschine zum Konfigurieren der Videoaufzeichnung</translation>
     </message>
     <message>
@@ -996,23 +996,23 @@
         <translation>Erlaubt ankommende Verbindungen über das RDP-Protokoll für diese virtuelle Maschine</translation>
     </message>
     <message>
-        <source>Display the window to configure menu-bar</source>
+        <source>Display window to configure menu-bar</source>
         <translation>Erlaubt das Konfigurieren der Menüleiste</translation>
     </message>
     <message>
-        <source>Enable menu-bar visibility</source>
+        <source>Enable menu-bar</source>
         <translation>Menüleiste anzeigen</translation>
     </message>
     <message>
-        <source>Display the window to configure status-bar</source>
+        <source>Display window to configure status-bar</source>
         <translation>Erlaubt das Konfigurieren der Statusleiste</translation>
     </message>
     <message>
-        <source>Enable status-bar visibility</source>
+        <source>Enable status-bar</source>
         <translation>Statusleiste anzeigen</translation>
     </message>
     <message>
-        <source>Display the global preferences window to configure keyboard shortcuts</source>
+        <source>Display global preferences window to configure keyboard shortcuts</source>
         <translation>Zeigt das Fenster zum Konfigurieren der Tastenkombinationen</translation>
     </message>
     <message>
@@ -1029,7 +1029,7 @@
         <translation>&amp;Einstellungen für Festplatten...</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure hard disks</source>
+        <source>Display virtual machine settings window to configure hard disks</source>
         <translation>Zeigt die Einstellungen der virtuellen Maschine zum Konfigurieren der virtuellen Festplatten</translation>
     </message>
     <message>
@@ -1037,11 +1037,11 @@
         <translation>&amp;Netzwerk</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure network adapters</source>
+        <source>Display virtual machine settings window to configure network adapters</source>
         <translation>Zeigt die Einstellungen der virtuellen Maschine zum Konfigurieren der Netzwerkadapter</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure USB devices</source>
+        <source>Display virtual machine settings window to configure USB devices</source>
         <translation>Zeigt die Einstellungen der virtuellen Maschine zum Konfigurieren der USB-Geräte</translation>
     </message>
     <message>
@@ -1049,7 +1049,7 @@
         <translation>&amp;Drag und Drop</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure shared folders</source>
+        <source>Display virtual machine settings window to configure shared folders</source>
         <translation>Zeigt die Einstellungen der virtuellen Maschine zum Konfigurieren der Gemeinsamen Ordner</translation>
     </message>
     <message>
@@ -1116,7 +1116,7 @@
         <translation>Gruppierung &amp;aufheben</translation>
     </message>
     <message>
-        <source>Ungroup the items of selected virtual machine group</source>
+        <source>Ungroup items of selected virtual machine group</source>
         <translation>Gruppierung der ausgewählten Gruppe aufheben</translation>
     </message>
     <message>
@@ -1124,7 +1124,7 @@
         <translation>&amp;Sortieren</translation>
     </message>
     <message>
-        <source>Sort the items of selected virtual machine group alphabetically</source>
+        <source>Sort items of selected virtual machine group alphabetically</source>
         <translation>Sortiert die Einträge der ausgewählten Gruppe alphabetisch</translation>
     </message>
     <message>
@@ -1152,11 +1152,11 @@
         <translation>Startet die ausgewählten virtuellen Maschinen im Hintergrund</translation>
     </message>
     <message>
-        <source>Start selected virtual machines with the option of continuing them in the background</source>
+        <source>Start selected virtual machines with option of continuing in background</source>
         <translation>Startet die ausgewählten virtuellen Maschinen mit der Möglichkeit, diese im Hintergrund laufen zu lassen</translation>
     </message>
     <message>
-        <source>Suspend the execution of selected virtual machines</source>
+        <source>Suspend execution of selected virtual machines</source>
         <translation>Suspendiert die Ausführung der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
@@ -1168,11 +1168,11 @@
         <translation>&amp;Verwerfen...</translation>
     </message>
     <message>
-        <source>Discard the saved state of selected virtual machines</source>
+        <source>Discard saved state of selected virtual machines</source>
         <translation>Verwirft den gesicherten Zustand der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
-        <source>Show the log files of selected virtual machines</source>
+        <source>Show log files of selected virtual machines</source>
         <translation>Zeigt die Log-Dateien der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
@@ -1180,7 +1180,7 @@
         <translation>&amp;Aktualisieren</translation>
     </message>
     <message>
-        <source>Refresh the accessibility state of selected virtual machines</source>
+        <source>Refresh accessibility state of selected virtual machines</source>
         <translation>Aktualisiert den Zustand der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
@@ -1224,15 +1224,15 @@
         <translation>Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop</translation>
     </message>
     <message>
-        <source>Sort the group of first selected virtual machine alphabetically</source>
+        <source>Sort group of first selected virtual machine alphabetically</source>
         <translation>Sortiert die Gruppe der ersten ausgewählten Maschine alphabetisch</translation>
     </message>
     <message>
-        <source>Save the state of selected virtual machines</source>
+        <source>Save state of selected virtual machines</source>
         <translation>Sichert den Zustand der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
-        <source>Send the ACPI Shutdown signal to selected virtual machines</source>
+        <source>Send ACPI Shutdown signal to selected virtual machines</source>
         <translation>Sendet das ACPI-Signal zum Ausschalten der ausgewählten virtuellen Maschinen</translation>
     </message>
     <message>
@@ -2649,7 +2649,7 @@
         <translation>Erlaubt die manuelle Konfiguration dieses Host-only Netzwerkadapters.</translation>
     </message>
     <message>
-        <source>When checked, the DHCP Server will be enabled for this network on machine startup.</source>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
         <translation>Startet den DHCP-Server beim Start der Maschine.</translation>
     </message>
 </context>
@@ -4712,7 +4712,7 @@
         <translation>Datei für optisches Medium auswählen...</translation>
     </message>
     <message>
-        <source>Remove Disk From Virtual Drive</source>
+        <source>Remove Disk from Virtual Drive</source>
         <translation>Entfernt das virtuelle Medium aus dem Laufwerk</translation>
     </message>
     <message>

@@ -1150,11 +1150,11 @@
         <translation>Автоматически подгонять размер экрана гостевой ОС при изменении размеров окна</translation>
     </message>
     <message>
-        <source>Take a guest display screenshot</source>
+        <source>Take guest display screenshot</source>
         <translation>Сделать снимок экрана гостевой ОС</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure video capture</source>
+        <source>Display virtual machine settings window to configure video capture</source>
         <translation>Открыть диалог настроек виртуальной машины на странице настроек захвата видео</translation>
     </message>
     <message>
@@ -1166,23 +1166,23 @@
         <translation>Разрешить удалённый доступ (RDP) к этой машине</translation>
     </message>
     <message>
-        <source>Display the window to configure menu-bar</source>
+        <source>Display window to configure menu-bar</source>
         <translation>Открыть окно настроек строки меню</translation>
     </message>
     <message>
-        <source>Enable menu-bar visibility</source>
+        <source>Enable menu-bar</source>
         <translation>Показывать строку меню</translation>
     </message>
     <message>
-        <source>Display the window to configure status-bar</source>
+        <source>Display window to configure status-bar</source>
         <translation>Открыть окно настроек строки состояния</translation>
     </message>
     <message>
-        <source>Enable status-bar visibility</source>
+        <source>Enable status-bar</source>
         <translation>Показывать строку состояния</translation>
     </message>
     <message>
-        <source>Display the global preferences window to configure keyboard shortcuts</source>
+        <source>Display global preferences window to configure keyboard shortcuts</source>
         <translation>Открыть диалог глобальных настроек на странице настроек клавиатуры</translation>
     </message>
     <message>
@@ -1199,7 +1199,7 @@
         <translation>&amp;Настроить жёсткие диски...</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure hard disks</source>
+        <source>Display virtual machine settings window to configure hard disks</source>
         <translation>Открыть диалог настроек виртуальной машины на странице настроек жёстких дисков</translation>
     </message>
     <message>
@@ -1207,11 +1207,11 @@
         <translation>&amp;Сеть</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure network adapters</source>
+        <source>Display virtual machine settings window to configure network adapters</source>
         <translation>Открыть диалог настроек виртуальной машины на странице настроек сети</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure USB devices</source>
+        <source>Display virtual machine settings window to configure USB devices</source>
         <translation>Открыть диалог настроек виртуальной машины на странице настроек USB</translation>
     </message>
     <message>
@@ -1219,7 +1219,7 @@
         <translation>&amp;Функция Drag and Drop</translation>
     </message>
     <message>
-        <source>Display the virtual machine settings window to configure shared folders</source>
+        <source>Display virtual machine settings window to configure shared folders</source>
         <translation>Открыть диалог настроек виртуальной машины на странице настроек общих папок</translation>
     </message>
     <message>
@@ -1286,7 +1286,7 @@
         <translation>Раз&amp;группировать</translation>
     </message>
     <message>
-        <source>Ungroup the items of selected virtual machine group</source>
+        <source>Ungroup items of selected virtual machine group</source>
         <translation>Разгруппировать выбранную группу виртуальных машин</translation>
     </message>
     <message>
@@ -1294,7 +1294,7 @@
         <translation>Сор&amp;тировать</translation>
     </message>
     <message>
-        <source>Sort the items of selected virtual machine group alphabetically</source>
+        <source>Sort items of selected virtual machine group alphabetically</source>
         <translation>Сортировать элементы выбранной группы виртуальных машин по алфавиту</translation>
     </message>
     <message>
@@ -1322,11 +1322,11 @@
         <translation>Запустить выбранные виртуальные машины в фоновом режиме</translation>
     </message>
     <message>
-        <source>Start selected virtual machines with the option of continuing them in the background</source>
+        <source>Start selected virtual machines with option of continuing in background</source>
         <translation>Запустить выбранные виртуальные машины в фоновом режиме с графическим интерфейсом</translation>
     </message>
     <message>
-        <source>Suspend the execution of selected virtual machines</source>
+        <source>Suspend execution of selected virtual machines</source>
         <translation>Приостановить выбранные виртуальные машины</translation>
     </message>
     <message>
@@ -1338,11 +1338,11 @@
         <translation>С&amp;бросить сохранённое состояние...</translation>
     </message>
     <message>
-        <source>Discard the saved state of selected virtual machines</source>
+        <source>Discard saved state of selected virtual machines</source>
         <translation>Сбросить сохранённые состояния выбранных виртуальных машин</translation>
     </message>
     <message>
-        <source>Show the log files of selected virtual machines</source>
+        <source>Show log files of selected virtual machines</source>
         <translation>Показать файлы журналов выбранных виртуальных машин</translation>
     </message>
     <message>
@@ -1350,7 +1350,7 @@
         <translation>Обно&amp;вить</translation>
     </message>
     <message>
-        <source>Refresh the accessibility state of selected virtual machines</source>
+        <source>Refresh accessibility state of selected virtual machines</source>
         <translation>Перепроверить доступность выбранных виртуальных машин</translation>
     </message>
     <message>
@@ -1394,15 +1394,15 @@
         <translation>Создать ярлыки выбранных виртуальных машин на Вашем рабочем столе</translation>
     </message>
     <message>
-        <source>Sort the group of first selected virtual machine alphabetically</source>
+        <source>Sort group of first selected virtual machine alphabetically</source>
         <translation>Сортировать группу первой из выбранных виртуальных машин по алфавиту</translation>
     </message>
     <message>
-        <source>Save the state of selected virtual machines</source>
+        <source>Save state of selected virtual machines</source>
         <translation>Сохранить состояния выбранных виртуальных машин</translation>
     </message>
     <message>
-        <source>Send the ACPI Shutdown signal to selected virtual machines</source>
+        <source>Send ACPI Shutdown signal to selected virtual machines</source>
         <translation>Послать выбранным виртуальным машинам сигналы завершения работы</translation>
     </message>
     <message>
@@ -4436,7 +4436,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если галочка стоит, виртуальный адаптер сети хоста можно будет настроить вручную.</translation>
     </message>
     <message>
-        <source>When checked, the DHCP Server will be enabled for this network on machine startup.</source>
+        <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
         <translation>Если галочка стоит, для виртуальной сети хоста при старте машины запускается свой DHCP сервер.</translation>
     </message>
 </context>
@@ -7475,7 +7475,7 @@ p, li { white-space: pre-wrap; }
         <translation>Выбрать образ оптического диска...</translation>
     </message>
     <message>
-        <source>Remove Disk From Virtual Drive</source>
+        <source>Remove Disk from Virtual Drive</source>
         <translation>Изъять диск из привода</translation>
     </message>
     <message>
