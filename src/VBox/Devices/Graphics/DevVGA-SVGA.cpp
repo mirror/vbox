@@ -2393,7 +2393,7 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
          * Quit if pending external command or changes in the thread state.
          */
         bool fDone = false;
-        while (   !(fDone = pFIFO[SVGA_FIFO_NEXT_CMD] == offCurrentCmd)
+        while (   !(fDone = (pFIFO[SVGA_FIFO_NEXT_CMD] == offCurrentCmd))
                && pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
             uint32_t cbPayload = 0;
