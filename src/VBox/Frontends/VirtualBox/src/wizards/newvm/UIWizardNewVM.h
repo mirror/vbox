@@ -77,6 +77,7 @@ private:
     int m_iSCSICount;
     int m_iFloppyCount;
     int m_iSASCount;
+    int m_iUSBCount;
 };
 
 #endif // __UIWizardNewVM_h__

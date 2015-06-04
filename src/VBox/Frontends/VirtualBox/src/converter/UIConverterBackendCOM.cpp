@@ -473,6 +473,7 @@ template<> QString toString(const KStorageBus &bus)
         case KStorageBus_SCSI:   return QApplication::translate("VBoxGlobal", "SCSI", "StorageBus");
         case KStorageBus_Floppy: return QApplication::translate("VBoxGlobal", "Floppy", "StorageBus");
         case KStorageBus_SAS:    return QApplication::translate("VBoxGlobal", "SAS", "StorageBus");
+        case KStorageBus_USB:    return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"); // TODO: change to proper context later
         default: AssertMsgFailed(("No text for %d", bus)); break;
     }
     return QString();
