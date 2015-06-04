@@ -1072,6 +1072,8 @@ static void setVirtualSizeRandR12(ScrnInfoPtr pScrn, bool fScreenInitTime)
             TRACE_LOG("cx=%u, cy=%u\n", cx, cy);
             xf86ScrnToScreen(pScrn)->width = cx;
             xf86ScrnToScreen(pScrn)->height = cy;
+            xf86ScrnToScreen(pScrn)->mmWidth = cx * 254 / 960;
+            xf86ScrnToScreen(pScrn)->height = cy * 254 / 960;
             adjustScreenPixmap(pScrn, cx, cy);
             vbvxSetSolarisMouseRange(cx, cy);
         }
