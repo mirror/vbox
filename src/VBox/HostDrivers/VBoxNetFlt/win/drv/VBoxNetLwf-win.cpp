@@ -87,7 +87,7 @@ typedef struct VBOXNETFLTWIN
 #include "VBoxNetFltInternal.h"
 
 #include "VBoxNetLwf-win.h"
-#include "VBoxNetCmn-win.h"
+#include "VBox/VBoxNetCmn-win.h"
 
 /* Forward declarations */
 FILTER_ATTACH vboxNetLwfWinAttach;
