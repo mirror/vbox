@@ -6255,11 +6255,14 @@ static HRESULT APIENTRY vboxWddmDispCreateDevice (IN HANDLE hAdapter, IN D3DDDIA
 
     if (SUCCEEDED(hr))
     {
-        if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+        /* Get system D3D DLL handle and prevent its unloading until entire process termination (GET_MODULE_HANDLE_EX_FLAG_PIN).
+         * This is important because even after guest App issued CloseAdatper() call, we still use pointers provided by DLL. */
+        if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
                                 (LPCWSTR)pDevice->RtCallbacks.pfnAllocateCb,
                                 &pDevice->hHgsmiTransportModule))
         {
             Assert(pDevice->hHgsmiTransportModule);
+            vboxVDbgPrintR((__FUNCTION__": system D3D DLL referenced with GET_MODULE_HANDLE_EX_FLAG_PIN flag\n"));
         }
         else
         {
