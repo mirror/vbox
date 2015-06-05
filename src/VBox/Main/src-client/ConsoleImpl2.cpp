@@ -1026,10 +1026,11 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 #endif
 
-        /* Not necessary, but to make sure these two settings end up in the release log. */
         BOOL fPageFusion = FALSE;
         hrc = pMachine->COMGETTER(PageFusionEnabled)(&fPageFusion);                         H();
-        InsertConfigInteger(pRoot, "PageFusion",           fPageFusion); /* boolean */
+        InsertConfigInteger(pRoot, "PageFusionAllowed",    fPageFusion); /* boolean */
+
+        /* Not necessary, but makes sure this setting ends up in the release log. */
         ULONG ulBalloonSize = 0;
         hrc = pMachine->COMGETTER(MemoryBalloonSize)(&ulBalloonSize);                       H();
         InsertConfigInteger(pRoot, "MemBalloonSize",       ulBalloonSize);
