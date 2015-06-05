@@ -75,6 +75,8 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
      * Sanity check.
      */
     AssertReturn(cRegions <= VMMDEVSHAREDREGIONDESC_MAX, VERR_INVALID_PARAMETER);
+    if (!pVM->pgm.s.fPageFusionAllowed)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Allocate and initialize a GMM request.
@@ -147,8 +149,10 @@ VMMR3DECL(int) PGMR3SharedModuleRegister(PVM pVM, VBOXOSFAMILY enmGuestOS, char 
 VMMR3DECL(int) PGMR3SharedModuleUnregister(PVM pVM, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
 {
     Log(("PGMR3SharedModuleUnregister name=%s version=%s base=%RGv size=%x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
-    AssertMsgReturn(cbModule > 0 && cbModule < _1G, ("%u\n", cbModule), VERR_OUT_OF_RANGE);
 
+    AssertMsgReturn(cbModule > 0 && cbModule < _1G, ("%u\n", cbModule), VERR_OUT_OF_RANGE);
+    if (!pVM->pgm.s.fPageFusionAllowed)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Forward the request to GMM (ring-0).
@@ -259,6 +263,9 @@ static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM, VMCPUID idCpu)
  */
 VMMR3DECL(int) PGMR3SharedModuleCheckAll(PVM pVM)
 {
+    if (!pVM->pgm.s.fPageFusionAllowed)
+        return VERR_NOT_SUPPORTED;
+
     /* Queue the actual registration as we are under the IOM lock right now. Perform this operation on the way out. */
     return VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3CheckSharedModulesHelper, 2, pVM, VMMGetCpuId(pVM));
 }
