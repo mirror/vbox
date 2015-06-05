@@ -288,7 +288,7 @@
           </listitem>
 
           <listitem>
-            <para>Create a virtual hard disk for the VM (in this case, 10GB in
+            <para>Create a virtual hard disk for the VM (in this case, 10 GB in
             size):<screen>VBoxManage createhd --filename "WinXP.vdi" --size 10000</screen></para>
           </listitem>
 

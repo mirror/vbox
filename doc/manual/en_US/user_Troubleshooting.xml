@@ -891,7 +891,7 @@
         </listitem>
 
         <listitem>
-          <para>Browse into installation CD for example E:\i386 (or AMD64 for 64bit version)</para>
+          <para>Browse into the installation CD for example E:\i386 (or amd64 for the 64-bit version)</para>
         </listitem>
 
         <listitem>
@@ -939,7 +939,7 @@
         </listitem>
 
         <listitem>
-          <para>After entering into the one of the numeric folders, browse into Windows\System32 (or C:\Windows\SysWOW64 for 64 bit version) directory locate d3d8.dll and d3d9.dll and extract</para>
+          <para>After entering into the one of the numeric folders, browse into Windows\System32 (or C:\Windows\SysWOW64 for the 64-bit version) directory locate d3d8.dll and d3d9.dll and extract</para>
         </listitem>
 
         <listitem>
@@ -1468,7 +1468,7 @@ none     /proc/bus/usb     usbfs      devgid=85,devmode=664    0    0</screen>Re
       <title>Linux kernel vmalloc pool exhausted</title>
 
       <para>When running a large number of VMs with a lot of RAM on a Linux
-      system (say 20 VMs with 1GB of RAM each), additional VMs might fail to
+      system (say 20 VMs with 1 GB of RAM each), additional VMs might fail to
       start with a kernel error saying that the vmalloc pool is exhausted and
       should be extended. The error message also tells you to specify
       <computeroutput>vmalloc=256MB</computeroutput> in your kernel parameter

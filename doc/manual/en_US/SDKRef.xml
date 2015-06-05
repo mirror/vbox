@@ -2540,8 +2540,8 @@ es.unregisterListener(listener); </screen></para>
       guest and the host. The guest always acts as an initiator of requests. A
       request is constructed in the guest physical memory, which must be
       locked by the guest. The physical address is passed to the VMM device
-      using a 32 bit <computeroutput>out edx, eax</computeroutput>
-      instruction. The physical memory must be allocated below 4GB by 64 bit
+      using a 32-bit <computeroutput>out edx, eax</computeroutput>
+      instruction. The physical memory must be allocated below 4GB by 64-bit
       guests.</para>
 
       <para>The host parses the request header and data and queues the request
@@ -2631,7 +2631,7 @@ es.unregisterListener(listener); </screen></para>
           </table> <note>
             <itemizedlist>
               <listitem>
-                <para>All fields are 32 bit.</para>
+                <para>All fields are 32-bit.</para>
               </listitem>
 
               <listitem>
@@ -2674,7 +2674,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMCall32
                   (<computeroutput>62</computeroutput>)</entry>
 
-                  <entry>Call a HGCM function using the 32 bit
+                  <entry>Call a HGCM function using the 32-bit
                   interface.</entry>
                 </row>
 
@@ -2682,7 +2682,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>VMMDevReq_HGCMCall64
                   (<computeroutput>63</computeroutput>)</entry>
 
-                  <entry>Call a HGCM function using the 64 bit
+                  <entry>Call a HGCM function using the 64-bit
                   interface.</entry>
                 </row>
 
@@ -2769,7 +2769,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>clientId</entry>
 
                   <entry>The client identifier assigned to the connecting
-                  client by the HGCM subsystem (32 bit).</entry>
+                  client by the HGCM subsystem (32-bit).</entry>
                 </row>
               </tbody>
             </tgroup>
@@ -2857,7 +2857,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>clientId</entry>
 
                   <entry>The client identifier previously returned by the
-                  connect request (32 bit).</entry>
+                  connect request (32-bit).</entry>
                 </row>
               </tbody>
             </tgroup>
@@ -2867,8 +2867,8 @@ es.unregisterListener(listener); </screen></para>
       <sect2>
         <title>Call32 and Call64</title>
 
-        <para>Calls the HGCM service entry point (VMMDevHGCMCall) using 32 bit
-        or 64 bit addresses: <table>
+        <para>Calls the HGCM service entry point (VMMDevHGCMCall) using 32-bit
+        or 64-bit addresses: <table>
             <title>Call request</title>
 
             <tgroup cols="2">
@@ -2893,7 +2893,7 @@ es.unregisterListener(listener); </screen></para>
                   <entry>clientId</entry>
 
                   <entry>The client identifier previously returned by the
-                  connect request (32 bit).</entry>
+                  connect request (32-bit).</entry>
                 </row>
 
                 <row>
@@ -2906,7 +2906,7 @@ es.unregisterListener(listener); </screen></para>
                 <row>
                   <entry>cParms</entry>
 
-                  <entry>The number of following parameters (32 bit). This
+                  <entry>The number of following parameters (32-bit). This
                   value is 0 if the function requires no parameters.</entry>
                 </row>
 
@@ -2921,9 +2921,9 @@ es.unregisterListener(listener); </screen></para>
             </tgroup>
           </table></para>
 
-        <para>The 32 bit parameter description (HGCMFunctionParameter32)
-        consists of 32 bit type field and 8 bytes of an opaque value, so 12
-        bytes in total. The 64 bit variant (HGCMFunctionParameter64) consists
+        <para>The 32-bit parameter description (HGCMFunctionParameter32)
+        consists of 32-bit type field and 8 bytes of an opaque value, so 12
+        bytes in total. The 64-bit variant (HGCMFunctionParameter64) consists
         of the type and 12 bytes of a value, so 16 bytes in total.</para>
 
         <para><table>
@@ -2941,26 +2941,26 @@ es.unregisterListener(listener); </screen></para>
                 <row>
                   <entry>VMMDevHGCMParmType_32bit (1)</entry>
 
-                  <entry>A 32 bit value.</entry>
+                  <entry>A 32-bit value.</entry>
                 </row>
 
                 <row>
                   <entry>VMMDevHGCMParmType_64bit (2)</entry>
 
-                  <entry>A 64 bit value.</entry>
+                  <entry>A 64-bit value.</entry>
                 </row>
 
                 <row>
                   <entry>VMMDevHGCMParmType_PhysAddr (3)</entry>
 
-                  <entry>A 32 bit size followed by a 32 bit or 64 bit guest
+                  <entry>A 32-bit size followed by a 32-bit or 64-bit guest
                   physical address.</entry>
                 </row>
 
                 <row>
                   <entry>VMMDevHGCMParmType_LinAddr (4)</entry>
 
-                  <entry>A 32 bit size followed by a 32 bit or 64 bit guest
+                  <entry>A 32-bit size followed by a 32-bit or 64-bit guest
                   linear address. The buffer is used both for guest to host
                   and for host to guest data.</entry>
                 </row>
@@ -3862,7 +3862,7 @@ AuthResult AUTHCALL AuthEntry(
           <computeroutput>IConsole</computeroutput> to
           <computeroutput>IMachine</computeroutput>. This straightens out the
           logical placement of methods and was necessary to resolve a
-          long-standing issue, preventing 32 bit API clients from invoking
+          long-standing issue, preventing 32-bit API clients from invoking
           those operations in the case where no VM is running.
           <itemizedlist>
             <listitem><xref linkend="IMachine__saveState"
