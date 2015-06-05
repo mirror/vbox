@@ -444,10 +444,6 @@ private:
         if (!fAdaptersPresent)
             hide();
 
-        /* Update icon for the 'Null' state: */
-        if (fAdaptersPresent && fCablesDisconnected)
-            setStateIcon(KDeviceActivity_Null, UIIconPool::iconSet(":/nw_disconnected_16px.png"));
-
         /* Update tool-tip: */
         setToolTip(strToolTip.arg(strFullData));
         /* Update indicator state: */
