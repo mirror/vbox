@@ -4900,14 +4900,11 @@ IEM_STATIC void iemRegAddToRipAndClearRF(PIEMCPU pIemCpu, uint8_t cbInstr)
 
     pCtx->eflags.Bits.u1RF = 0;
 
+    /* NB: Must be kept in sync with HM (xxxAdvanceGuestRip). */
     switch (pIemCpu->enmCpuMode)
     {
+        /** @todo investigate if EIP or RIP is really incremented. */
         case IEMMODE_16BIT:
-            Assert(pCtx->rip <= UINT16_MAX);
-            pCtx->eip += cbInstr;
-            pCtx->eip &= UINT32_C(0xffff);
-            break;
-
         case IEMMODE_32BIT:
             pCtx->eip += cbInstr;
             Assert(pCtx->rip <= UINT32_MAX);
