@@ -1591,9 +1591,7 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryListIntersectAll(PVBOXVR_COMPOSITOR pComp
         bool fTmpChanged = false;
         int tmpRc = VBoxVrCompositorEntryListIntersect(pCompositor, pEntry, pList2, &fTmpChanged);
         if (RT_SUCCESS(tmpRc))
-        {
-            fChanged |= fChanged;
-        }
+            fChanged |= fTmpChanged;
         else
         {
             WARN(("VBoxVrCompositorEntryRegionsIntersect failed, rc %d", tmpRc));
@@ -1621,9 +1619,7 @@ VBOXVREGDECL(int) VBoxVrCompositorEntryRegionsIntersectAll(PVBOXVR_COMPOSITOR pC
         bool fTmpChanged = false;
         int tmpRc = VBoxVrCompositorEntryRegionsIntersect(pCompositor, pEntry, cRegions, paRegions, &fTmpChanged);
         if (RT_SUCCESS(tmpRc))
-        {
-            fChanged |= fChanged;
-        }
+            fChanged |= fTmpChanged;
         else
         {
             WARN(("VBoxVrCompositorEntryRegionsIntersect failed, rc %d", tmpRc));
