@@ -1487,23 +1487,29 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             }
 
             struct kev_in_data *iev = (struct kev_in_data *)msg->event_data;
+            struct net_event_data *link = &iev->link_data;
             PCRTNETADDRU pAddr = (PCRTNETADDRU)&iev->ia_addr;
             switch (msg->event_code)
             {
                 case KEV_INET_NEW_ADDR:
-                    Log(("KEV_INET_NEW_ADDR %RTnaipv4\n", pAddr->IPv4));
+                    Log(("KEV_INET_NEW_ADDR %.*s%d: %RTnaipv4\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
+
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                         /* :fAdded */ true, kIntNetAddrType_IPv4, pAddr);
                     break;
 
                 case KEV_INET_ADDR_DELETED:
-                    Log(("KEV_INET_ADDR_DELETED %RTnaipv4\n", pAddr->IPv4));
+                    Log(("KEV_INET_ADDR_DELETED %.*s%d: %RTnaipv4\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
+
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                         /* :fAdded */ false, kIntNetAddrType_IPv4, pAddr);
                     break;
 
                 default:
-                    Log(("KEV INET event %u addr %RTnaipv4\n", msg->event_code, pAddr->IPv4));
+                    Log(("KEV INET event %u %.*s%d: addr %RTnaipv4\n",
+                         msg->event_code, IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
                     break;
             }
         }
@@ -1518,20 +1524,24 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             }
 
             struct kev_in6_data *iev6 = (struct kev_in6_data *)msg->event_data;
+            struct net_event_data *link = &iev6->link_data;
             PCRTNETADDRU pAddr = (PCRTNETADDRU)&iev6->ia_addr.sin6_addr;
             switch (msg->event_code)
             {
                 case KEV_INET6_NEW_USER_ADDR:
-                    Log(("KEV_INET6_NEW_USER_ADDR: %RTnaipv6\n", pAddr));
+                    Log(("KEV_INET6_NEW_USER_ADDR %.*s%d: %RTnaipv6\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr));
                     goto kev_inet6_new;
 
                 case KEV_INET6_NEW_LL_ADDR:
-                    Log(("KEV_INET6_NEW_LL_ADDR: %RTnaipv6\n", pAddr));
+                    Log(("KEV_INET6_NEW_LL_ADDR %.*s%d: %RTnaipv6\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr));
                     /* XXX: uwe: TODO: only interface we are attached to */
                     goto kev_inet6_new;
 
                 case KEV_INET6_NEW_RTADV_ADDR:
-                    Log(("KEV_INET6_NEW_RTADV_ADDR: %RTnaipv6\n", pAddr));
+                    Log(("KEV_INET6_NEW_RTADV_ADDR %.*s%d: %RTnaipv6\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr));
                     goto kev_inet6_new;
 
                 kev_inet6_new:
@@ -1540,13 +1550,16 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
                     break;
 
                 case KEV_INET6_ADDR_DELETED:
-                    Log(("KEV_INET6_ADDR_DELETED: %RTnaipv6\n", pAddr));
+                    Log(("KEV_INET6_ADDR_DELETED %.*s%d: %RTnaipv6\n",
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr));
+
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                         /* :fAdded */ false, kIntNetAddrType_IPv6, pAddr);
                     break;
 
                 default:
-                    Log(("KEV INET6 event %u addr %RTnaipv6\n", msg->event_code, pAddr));
+                    Log(("KEV INET6 event %u %.*s%d: addr %RTnaipv6\n",
+                         msg->event_code, IFNAMSIZ, link->if_name, link->if_unit, pAddr));
                     break;
             }
         }
