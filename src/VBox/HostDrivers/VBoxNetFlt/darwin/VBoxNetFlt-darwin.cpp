@@ -1531,6 +1531,11 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
                 case KEV_INET6_NEW_USER_ADDR:
                     Log(("KEV_INET6_NEW_USER_ADDR %.*s%d: %RTnaipv6\n",
                          IFNAMSIZ, link->if_name, link->if_unit, pAddr));
+                    /*
+                     * XXX: TODO: link-local addresses are first
+                     * reported as KEV_INET6_NEW_LL_ADDR, but then are
+                     * also reported here too, after DAD, I guess.
+                     */
                     goto kev_inet6_new;
 
                 case KEV_INET6_NEW_LL_ADDR:
