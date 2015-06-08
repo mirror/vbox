@@ -427,7 +427,7 @@ static DECLCALLBACK(void) vboxVDbgLockUnlockSurfTexContentsDumperCb(PVBOXVDBG_DU
     const VBOXWDDMDISP_ALLOCATION *pAlloc = pInfo->pAlloc;
     const RECT *pRect = pInfo->pRect;
     UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-    uint32_t width, height, pitch;
+    uint32_t width, height, pitch = 0;
     void *pvData;
     if (pAlloc->LockInfo.fFlags.AreaValid)
     {

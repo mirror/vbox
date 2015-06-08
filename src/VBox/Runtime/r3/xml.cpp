@@ -153,6 +153,7 @@ EIPRTFailure::EIPRTFailure(int aRC, const char *pcszContext, ...)
     va_list args;
     va_start(args, pcszContext);
     RTStrAPrintfV(&pszContext2, pcszContext, args);
+    va_end(args);
     char *newMsg;
     RTStrAPrintf(&newMsg, "%s: %d(%s)", pszContext2, aRC, RTErrGetShort(aRC));
     setWhat(newMsg);

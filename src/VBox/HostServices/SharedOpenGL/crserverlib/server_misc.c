@@ -708,8 +708,9 @@ DECLEXPORT(void) crDbgPrint(const char *format, ... )
     va_list args;
     static char txt[8092];
 
-    va_start( args, format );
-    vsprintf( txt, format, args );
+    va_start(args, format);
+    vsprintf(txt, format, args);
+    va_end(args);
 
     OutputDebugString(txt);
 }
