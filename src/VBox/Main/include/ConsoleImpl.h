@@ -974,11 +974,6 @@ private:
 
     ComPtr<IEventListener> mVmListener;
 
-#ifdef RT_OS_WINDOWS
-    /** Use NDIS6 network drivers. */
-    bool mfNDIS6;
-#endif /* RT_OS_WINDOWS */
-
     friend struct VMTask;
 };
 

@@ -380,10 +380,6 @@ Console::Console()
     , mVMStateChangeCallbackDisabled(false)
     , mfUseHostClipboard(true)
     , mMachineState(MachineState_PoweredOff)
-#ifdef RT_OS_WINDOWS
-    , mfNDIS6(true)
-#endif /* RT_OS_WINDOWS */
-
 {
 }
 
