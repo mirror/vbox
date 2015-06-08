@@ -2469,8 +2469,8 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     NSRect backingBounds = [self safeConvertRectToBacking:&regularBounds];
     glViewport(0, 0, backingBounds.size.width, backingBounds.size.height);
 
-    crDebug("HiDPI: vboxPresentToViewCS: up-scaling is %s (backingStretchFactor=%d).",
-        render_spu.fUnscaledHiDPI ? "OFF" : "ON", (int)backingStretchFactor);
+    //crDebug("HiDPI: vboxPresentToViewCS: up-scaling is %s (backingStretchFactor=%d).",
+    //    render_spu.fUnscaledHiDPI ? "OFF" : "ON", (int)backingStretchFactor);
 #  endif
 
     glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0);
