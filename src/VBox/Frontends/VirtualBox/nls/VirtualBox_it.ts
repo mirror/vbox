@@ -718,7 +718,7 @@
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">A&amp;ggiorna</translation>
+        <translation>A&amp;ggiorna</translation>
     </message>
     <message>
         <source>Refresh the accessibility state of the selected virtual machine</source>
@@ -1322,308 +1322,308 @@
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimizza la finestra attiva</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra del gestore delle operazioni di rete</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra una finestra con le informazioni sul prodotto</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="unfinished">&amp;Preferenze...</translation>
+        <translation>&amp;Preferenze...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la finestra delle impostazioni globali</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle informazioni di sessione della macchina virtuale</translation>
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Salva stato</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva lo stato della macchina virtuale</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Invia il segnale Shutdown ACPI alla macchina virtuale</translation>
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Minimizza la finestra</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Ridimensiona automaticamente lo schermo del guest quando la finestra viene ridimensionata</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Acquisisce una scherma dello schermo del guest</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale per configurare l&apos;acquisizione video</translation>
     </message>
     <message>
         <source>Enable guest display video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita l&apos;acquisizione video dello schermo del guest</translation>
     </message>
     <message>
         <source>Allow remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Consenti le connessioni di desktop remoto (RDP) a questa macchina</translation>
     </message>
     <message>
         <source>Display window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra per configurare la barra dei menu</translation>
     </message>
     <message>
         <source>Enable menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita la barra dei menu</translation>
     </message>
     <message>
         <source>Display window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra per configurare la barra di stato</translation>
     </message>
     <message>
         <source>Enable status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Abilita la barra di stato</translation>
     </message>
     <message>
         <source>Display global preferences window to configure keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni globali per configurare le scorciatoie da tastiera</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="unfinished">&amp;Inserisci %1</translation>
+        <translation>&amp;Inserisci %1</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished">&amp;Hard disk</translation>
+        <translation>Disc&amp;hi fissi</translation>
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni dei disc&amp;hi fissi...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale per configurare i dischi fissi</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Rete</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale per configurare le schede di rete</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale per configurare i dispositivi USB</translation>
     </message>
     <message>
         <source>&amp;Drag and Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Trascinamento e rilascio</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure shared folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza la finestra delle impostazioni della macchina virtuale per configurare le cartelle condivise</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Inserisci il file del disco delle Guest Additions nel lettore virtuale</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Abilita</translation>
+        <translation>Abilita</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Ridimensiona a %1x%2</translation>
+        <translation>Ridimensiona a %1x%2</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished">Anteprima monitor %1</translation>
+        <translation>Anteprima monitor %1</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Connetti scheda di rete</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Connetti scheda di rete &amp;%1</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished">Nessun dispositivo USB connesso</translation>
+        <translation>Nessun dispositivo USB connesso</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>Nessun dispositivo supportato è connesso al PC host</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished">Nessuna webcam connessa</translation>
+        <translation>Nessuna webcam connessa</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished">Nessuna webcam supportata è connessa al PC host</translation>
+        <translation>Nessuna webcam supportata è connessa al PC host</translation>
     </message>
     <message>
         <source>Create new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea una nuova macchina virtuale</translation>
     </message>
     <message>
         <source>Add existing virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi una macchina virtuale esistente</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Rinomina il gruppo di macchine virtuali selezionato</translation>
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>Separa gr&amp;uppo</translation>
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Separa gli elementi del gruppo di macchine virtuali selezionato</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ordina</translation>
     </message>
     <message>
         <source>Sort items of selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordina alfabeticamente il gruppo di macchine virtuali selezionato</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi un nuovo gruppo basato sulle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Clona la macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Remove selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi la macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia le macchina virtuali selezionate</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Passa alla finestre delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia le macchine virtuali selezionate sullo sfondo</translation>
     </message>
     <message>
         <source>Start selected virtual machines with option of continuing in background</source>
-        <translation type="unfinished"></translation>
+        <translation>Avvia le macchine virtuali selezionate con la possibilità di proseguire l&apos;esecuzione sullo sfondo</translation>
     </message>
     <message>
         <source>Suspend execution of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Sospendi l&apos;esecuzione delle macchine virtuali</translation>
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Reset delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="unfinished"></translation>
+        <translation>S&amp;carta lo stato salvato...</translation>
     </message>
     <message>
         <source>Discard saved state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Scarta lo stato salvato delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i file di log delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Refresh accessibility state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiorna lo stato di accessibilità delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;ostra in Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i file di definizione delle macchine di VirtualBox in Finder</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;ostra in Explorer</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i file di definizione delle macchine di VirtualBox in Explorer</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>M&amp;ostra nel gestore file</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra i file di definizione delle macchine di VirtualBox nel gestore file</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Cr&amp;ea alias sul desktop</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea alias per i file di definizione delle macchine di VirtualBox sul desktop</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Cr&amp;ea scorciatoia sul desktop</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea le scorciatoie ai file di definizione delle macchine di VirtualBox sul desktop</translation>
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Ordina alfabeticamente il gruppo della prima macchina virtuale selezionata</translation>
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Salva lo stato delle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Invia il segnale Shutdown ACPI alle macchine virtuali selezionate</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Spegni le macchine virtuali selezionate</translation>
     </message>
 </context>
 <context>
@@ -1668,24 +1668,24 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation type="unfinished">Stato</translation>
+        <translation>Stato</translation>
     </message>
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="unfinished">ID</translation>
+        <translation>ID</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="unfinished">Password</translation>
+        <translation>Password</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;Utilizzato dal seguente disco fisso:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Utilizzato dai seguenti %n dischi fissi:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
 </context>
@@ -1809,19 +1809,19 @@
     </message>
     <message>
         <source>Storage Controller (IDE)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controller di archiviazione (IDE)</translation>
     </message>
     <message>
         <source>Storage Controller (SATA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controller di archiviazione (SATA)</translation>
     </message>
     <message>
         <source>Storage Controller (SCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controller di archiviazione (SCSI)</translation>
     </message>
     <message>
         <source>Storage Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controller di archiviazione (SAS)</translation>
     </message>
 </context>
 <context>
@@ -2525,7 +2525,7 @@
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished">Recupero dei dati in corso...</translation>
+        <translation>Recupero dei dati in corso...</translation>
     </message>
 </context>
 <context>
@@ -3598,7 +3598,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Driver generico, &apos;%1&apos; { %2 }</translation>
+        <translation>Driver generico, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -4164,15 +4164,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica la larghezza massima che vogliamo utilizzare per il guest.</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica l&apos;altezza massima che vogliamo utilizzare per il guest.</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, le finestre delle macchine saranno alzate quando il puntatore del mouse le sorvola.</translation>
     </message>
 </context>
 <context>
@@ -4223,19 +4223,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi pacchetto</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi pacchetto</translation>
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo pacchetto.</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il pacchetto selezionato.</translation>
     </message>
 </context>
 <context>
@@ -4322,11 +4322,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Screensaver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvaschermo host:</translation>
     </message>
     <message>
         <source>&amp;Disable When Running Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Disabilita durante l&apos;esecuzione delle macchine virtuali</translation>
     </message>
 </context>
 <context>
@@ -4389,11 +4389,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca tutte le scorciatoie disponibili che possono essere configurate.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra un sequenza per filtrare l&apos;elenco delle scorciatoie.</translation>
     </message>
 </context>
 <context>
@@ -4734,51 +4734,51 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi rete con NAT</translation>
     </message>
     <message>
         <source>Remove NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi rete con NAT</translation>
     </message>
     <message>
         <source>Edit NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica rete con NAT</translation>
     </message>
     <message>
         <source>Adds new NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge una nuova rete con NAT.</translation>
     </message>
     <message>
         <source>Removes selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove la rete con NAT.</translation>
     </message>
     <message>
         <source>Edits selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica la rete con NAT.</translation>
     </message>
     <message>
         <source>Add Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi rete solo host</translation>
     </message>
     <message>
         <source>Remove Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi rete solo host</translation>
     </message>
     <message>
         <source>Edit Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica rete solo host</translation>
     </message>
     <message>
         <source>Adds new host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge una nuova rete solo host.</translation>
     </message>
     <message>
         <source>Removes selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove la rete solo host selezionata.</translation>
     </message>
     <message>
         <source>Edits selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica la rete solo host selezionata.</translation>
     </message>
 </context>
 <context>
@@ -4972,11 +4972,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, manual configuration will be used for this network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, la configurazione manuale sarà utilizzata per questa scheda di rete.</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, il server DHCP sarà abilitato per questa rete all&apos;avvio della macchina.</translation>
     </message>
 </context>
 <context>
@@ -5047,23 +5047,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this network will be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, questa scheda sarà visualizzata.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, questa rete supporterà il DHCP.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, questa rete supporterà l&apos;IPv6.</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, questa rete sarà pubblicata come la rotta predefinita IPv6.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza una finestra per configurare le regole di inoltro delle porte.</translation>
     </message>
 </context>
 <context>
@@ -5141,11 +5141,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;host del proxy.</translation>
     </message>
     <message>
         <source>Holds the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la porta del proxy.</translation>
     </message>
 </context>
 <context>
@@ -5200,7 +5200,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica quanto spesso sarà eseguito il controllo della presenza di nuove versioni. Se si desidera disabilitare completamente questo controllo, è sufficiente deselezionare la precedente casella.</translation>
     </message>
 </context>
 <context>
@@ -5751,11 +5751,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indica l&apos;attività dei dischi fissi:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Indica se la tastiera dell&apos;host è stata catturata dal sistema operativo del guest:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;tastiera non catturata&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;tastiera catturata&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5868,7 +5868,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il driver di uscita audio. Il &lt;b&gt;Driver audio Null&lt;/b&gt; fa in modo che il guest veda una scheda audio, ogni accesso a essa sarà comunque ignorato.</translation>
     </message>
 </context>
 <context>
@@ -6182,67 +6182,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation type="unfinished"></translation>
+        <translation>Supporto HiDPI:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il numero di porta del server VRDP. Puoi specificare &lt;tt&gt;0&lt;/tt&gt; (zero), per selezionare la porta 3389, la porta standard per RDP.</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il metodo di autenticazione VRDP.</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il timeout per l&apos;autenticazione del guest, in millisecondi.</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, sono consentite connessioni simultanee multiple alla MV.</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il nome del file che VirtualBox utilizza per salvare il contenuto registrato.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la risoluzione (dimensione dei fotogrammi) del video registrato.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la risoluzione &lt;b&gt;orizzontale&lt;/b&gt; (larghezza dei fotogrammi) del video registrato.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra la risoluzione &lt;b&gt;verticale&lt;/b&gt; (altezza dei fotogrammi) del video registrato.</translation>
     </message>
     <message>
         <source>Controls the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica il numero massimo di &lt;b&gt;fotogrammi al secondo&lt;/b&gt;. I fotogrammi aggiuntivi saranno ignorati. La riduzione di questo valore aumenterà il numero di fotogrammi ignorati e riduce le dimensioni del file.</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Specifica la &lt;b&gt;qualità&lt;/b&gt;. L&apos;incremento di questo valore migliorerà la resa del video al costo di maggiori dimensioni del file.</translation>
     </message>
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il bitrate in &lt;b&gt;kilobit al secondo&lt;/b&gt;. L&apos;incremento di questo valore migliorerà la resa del video al costo di maggiori dimensioni del file.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla macchina virtuale è attualmente assegnata meno di &lt;b&gt;%1&lt;/b&gt; di memoria video che è la quantità minima richiesta per passare in modalità a schermo intero o trasparente.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, abilita la registrazione video per lo schermo %1.</translation>
     </message>
 </context>
 <context>
@@ -6578,11 +6578,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il cifrario che deve essere utilizzato per cifrare i dischi delle macchine virtuali.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il percorso dove saranno archiviate le istantanee di questa macchina virtuale. Nota che le istantanee possono occupare molto spazio.</translation>
     </message>
 </context>
 <context>
@@ -6649,15 +6649,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, mostra la barra degli strumenti piccola nelle modalità a schermo intero e trasparente.</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra a scher&amp;mo intero/trasparente</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, mostra la barra degli strumenti piccola nella parte superiore dello schermo, invece che nella posizione predefinita, nella parte bassa dello schermo.</translation>
     </message>
 </context>
 <context>
@@ -6944,23 +6944,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona il modo in cui questa scheda di rete virtuale è collegata alla rete reale del sistema host.</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra le opzioni aggiuntive della scheda di rete.</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra le impostazioni di configurazione del driver del collegamento di rete. Le impostazioni dovrebbero essere nella forma &lt;b&gt;nome=valore&lt;/b&gt; e dipenderanno dal driver. Utilizza &lt;b&gt;maiusc-invio&lt;/b&gt; per aggiungere una nuova voce.</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, collega la scheda di rete virtuale.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza una finestra per configurare le regole di inoltro delle porte.</translation>
     </message>
 </context>
 <context>
@@ -7122,23 +7122,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Nessun IRQ specifcato.</translation>
+        <translation>Nessun IRQ è attualmente specificato.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Nessuna porta di I/O specificata.</translation>
+        <translation>Nessuna porta di I/O è attualmente specificata.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Due o più porte hanno le stesse impostazioni.</translation>
+        <translation>Due o più porte hanno le stesse impostazioni.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Nessun percorso della porta è attualmente specificato.</translation>
+        <translation>Nessun percorso della porta è attualmente specificato.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Esistono attualmente percorsi delle porte duplicati.</translation>
+        <translation>Esistono attualmente percorsi duplicati delle porte.</translation>
     </message>
 </context>
 <context>
@@ -7295,27 +7295,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi cartella condivisa</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica cartella condivisa</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi cartella condivisa</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge una nuova cartella condivisa.</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica la cartella condivisa selezionata.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove la cartella condivisa selezionata.</translation>
     </message>
 </context>
 <context>
@@ -7374,7 +7374,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, questa cartella condivisa sarà permanente.</translation>
     </message>
 </context>
 <context>
@@ -7470,31 +7470,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la modalità di lavoro di questa porta seriale. Se  selezioni &lt;b&gt;Disconnessa&lt;/b&gt;, il sistema Guest rileverà la porta seriale, ma non sarà in grado di utilizzarla.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, la macchina virtuale assumerà che la pipe o il socket specificato nel campo &lt;b&gt;Percorso/Indirizzo&lt;/b&gt; esista e proverà a utilizzarla.Altrimenti, la pipe o il socket saranno creati dalla macchina virtuale al suo avvio.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Nessun IRQ specifcato.</translation>
+        <translation>Nessun IRQ attualmente specificato.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Nessuna porta di I/O specificata.</translation>
+        <translation>Nessuna porta di I/O attualmente specificata.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Due o più porte hanno le stesse impostazioni.</translation>
+        <translation>Due o più porte hanno le stesse impostazioni.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Nessun percorso della porta è attualmente specificato.</translation>
+        <translation>Nessun percorso della porta è attualmente specificato.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Esistono attualmente percorsi delle porte duplicati.</translation>
+        <translation>Esistono attualmente percorsi duplicati delle porte.</translation>
     </message>
 </context>
 <context>
@@ -8026,88 +8026,88 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elenca tutti i controller di archiviazione per questa macchina, le immagini virtuali e i lettori dell&apos;host collegati.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il nome del controller di archiviazione attualmente selezionato nell&apos;albero di archiviazione.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, consente l&apos;utilizzo delle capacità di gestione della cache I/O dell&apos;host.</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, impedisce la rimozione del disco virtuale quando il sistema guest lo espelle.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, il sistema guest vedrà il disco virtuale come un dispositivo a stato solido.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, il sistema guest vedrà il disco virtuale come un dispositivo collegabile a caldo.</translation>
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli il file dell&apos;immagine del disco virtuale...</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">Immagine</translation>
+        <translation>Immagine</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Espande/Contrae&amp;nbsp;elemento.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Aggiunge&amp;nbsp;disco&amp;nbsp;fisso.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Aggiunge&amp;nbsp;lettore&amp;nbsp;ottico.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Aggiunge&amp;nbsp;lettore&amp;nbsp;floppy.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunger un nuovo controller di archiviazione.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il controller di archiviazione selezionato.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo collegamento di archiviazione.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il collegamento di archiviazione selezionato.</translation>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea un nuovo disco fisso...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un disco fisso virtuale...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file di disco ottico virtuale...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuovi disco dal lettore virtuale</translation>
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file di disco floppy virtuale...</translation>
     </message>
 </context>
 <context>
@@ -8403,29 +8403,29 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, il dispositivo RTC riporterà l&apos;ora in UTC, altrimenti in ora locale (host). I sistemi UNIX di solito si aspettano che l&apos;orologio hardware sia impostato in UTC.</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -8589,63 +8589,63 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, abilita il controller USB OHCI virtuale di questa macchina. Il controller USB OHCI fornisce il supporto a USB 1.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, abilita il controller USB EHCI virtuale di questa macchina. Il controller USB EHCI fornisce il supporto a USB 2.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se marcata, abilita il controller USB xHCI virtuale di questa macchina. Il controller USB xHCI fornisce il supporto a USB 3.0.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished">Aggiungi un filtro vuoto</translation>
+        <translation>Aggiungi filtro vuoto</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished">Aggiungi filtro da dispositivo</translation>
+        <translation>Aggiungi filtro da dispositivo</translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica filtro</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished">Rimuovi filtro</translation>
+        <translation>Rimuovi filtro</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished">Sposta in alto</translation>
+        <translation>Sposta filtro in alto</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished">Sposta in basso</translation>
+        <translation>Sposta filtro in basso</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati inizialmente a stringhe vuote. Nota che un filtro del genere corrisponderà a qualsiasi dispositivo USB collegato.</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge un nuovo filtro USB con tutti i campi impostati ai valori del dispositivo USB selezionato, collegato al PC host.</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modifica il filtro USB selezionato.</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove il filtro USB selezionato.</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il filtro USB selezionato verso l&apos;alto.</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sposta il filtro USB selezionato verso il basso.</translation>
     </message>
 </context>
 <context>
@@ -8751,35 +8751,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro ID del venditore. Il formato della stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove &lt;tt&gt;X&lt;/tt&gt; è una cifra esadecimale. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro ID del prodotto. Il formato della stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt; è &lt;tt&gt;XXXX&lt;/tt&gt; dove &lt;tt&gt;X&lt;/tt&gt; è una cifra esadecimale. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro del numero di revisione. Il formato della stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt; è &lt;tt&gt;IIFF&lt;/tt&gt; dove &lt;tt&gt;I&lt;/tt&gt; è una cifra decimale della parte intera e &lt;tt&gt;F&lt;/tt&gt; è una cifra decimale della parte frazionaria. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro del produttore come una stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro del nome del prodotto come una stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro del numero seriale come una stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce il filtro della porta USB dell&apos;host come una stringa di &lt;i&gt;corrispondenza esatta&lt;/i&gt;. Una stringa vuota corrisponderà a qualsiasi valore.</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Definisce se questo filtro si applica ai dispositivi USB collegati localmente al computer host (&lt;i&gt;No&lt;/i&gt;), a un computer client VRDP (&lt;i&gt;Sì&lt;/i&gt;), o entrambi (&lt;i&gt;Qualsiasi&lt;/i&gt;).</translation>
     </message>
 </context>
 <context>
@@ -8824,7 +8824,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Disc&amp;hi fissi</translation>
     </message>
 </context>
 <context>
@@ -10810,43 +10810,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Uno o più file di immagini di dischi non sono al momento accessibili. Ciò significa che non sarai in grado di operare con le macchine virtuali che utilizzano questi supporti fino a quando non ritorneranno accessibili.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Controlla&lt;/b&gt; per aprire la finestra del gestore supporti virtuali e vedere quali supporti non sono accessibili, o premi &lt;b&gt;Ignora&lt;/b&gt; per ignorare questo messaggio.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eliminando un&apos;istantanea, le informazioni di stato in essa memorizzate andranno perse, e i dati su disco sparsi sui diversi file immagine creati da VirtualBox insieme all&apos;istantanea saranno riuniti in un singolo file. Tale processo può risultare lungo, e le informazioni nell&apos;istantanea non possono essere ripristinate.&lt;/p&gt;&lt;/p&gt;Sei sicuro di voler eliminare l&apos;istantanea selezionata &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;L&apos;eliminazione dell&apos;istantanea %1 richiederà temporaneamente altro spazio su disco. Nel peggiore dei casi la dimensione dell&apos;immagine %2 crescerà di %3, ma sul filesystem ci sono solo %4 liberi.&lt;/p&gt;&lt;p&gt;Finire lo spazio durante l&apos;operazione di fusione potrebbe produrre un danneggiamento dell&apos;immagine e della configurazione della MV, ad es. la perdita della MV e dei relativi dati.&lt;/p&gt;&lt;p&gt;Puoi continuare con l&apos;eliminazione dell&apos;istantanea a tuo rischio.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sei sicuro di voler rilasciare il file di immagine del disco &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Sarà sganciato dalle seguenti macchine virtuali: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vuoi eliminare l&apos;unità di archiviazione del disco fisso virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Elimina&lt;/b&gt;, l&apos;unità di archiviazione specificata sarà eliminata in modo definitivo. Questa operazione &lt;b&gt;non può essere annullata&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Se selezioni &lt;b&gt;Mantieni&lt;/b&gt;, il disco fisso sarà rimosso solo dall&apos;elenco dei dischi fissi conosciuti, ma l&apos;unità di archiviazione sarà preservata consentendoti di aggiungere successivamente il disco all&apos;elenco.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apertura del file del file di immagine del disco &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chiusura del file del file di immagine del disco &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; non riuscita.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stai creando una nuova macchina virtuale senza un disco fisso. Non potrai installare un sistema operativo sulla macchina fino a quando non ne aggiungerai uno. Nel frattempo, potrai avviare una macchina utilizzando un disco ottico virtuale o dalla rete.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La finestra della macchina virtuale passerà ora alla modalità a &lt;b&gt;schermo intero&lt;/b&gt;. Puoi tornare alla modalità a finestra in qualunque momento premendo &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota che il tasto &lt;i&gt;Host&lt;/i&gt; è attualmente definito come &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nota inoltre che la barra principale dei menu è nascosta nella modalità a schermo intero. Puoi accedervi premendo &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile abilitare la modalità a schermo intero a causa della mancanza di memoria video nel sistema guest.&lt;/p&gt;&lt;p&gt;È necessario configurare la macchina virtuale assegnandole almeno &lt;b&gt;%1&lt;/b&gt; di memoria video.&lt;/p&gt;&lt;p&gt;Premi &lt;b&gt;Ignora&lt;/b&gt; per passare comunque alla modalità a  schermo intero oppure premi &lt;b&gt;Annulla&lt;/b&gt; per annullare l&apos;operazione.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12000,55 +12000,55 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Nome</translation>
+        <translation>Nome</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="unfinished">Protocollo</translation>
+        <translation>Protocollo</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="unfinished">IP dell&apos;host</translation>
+        <translation>IP dell&apos;host</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="unfinished">Porta dell&apos;host</translation>
+        <translation>Porta dell&apos;host</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="unfinished">IP del Guest</translation>
+        <translation>IP del guest</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="unfinished">Porta del Guest</translation>
+        <translation>Porta del guest</translation>
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Contiene un elenco delle regole di inoltro delle porte.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi nuova regola</translation>
     </message>
     <message>
         <source>Copy Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Copia regola selezionata</translation>
     </message>
     <message>
         <source>Remove Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina regola selezionata</translation>
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggiunge una nuova regola di inoltro delle porte.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Copia la regola di inoltro delle porte selezionata.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rimuove la regola di inoltro delle porte selezionata.</translation>
     </message>
 </context>
 <context>
@@ -12370,7 +12370,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;Fai &lt;b&gt;clic&lt;/b&gt; per commutare la presenza dell&apos;indicatore.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Trascina e rilascia&lt;/b&gt; per cambiare la posizione dell&apos;indicatore.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Fai &lt;b&gt;clic&lt;/b&gt; per commutare la presenza dell&apos;indicatore.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Trascina e rilascia&lt;/b&gt; per cambiare la posizione dell&apos;indicatore.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -12920,7 +12920,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation>Dimensione &amp;fissa</translation>
+        <translation>Dimensione speci&amp;ficata</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
@@ -12961,75 +12961,75 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Copia disco fisso virtuale</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco fisso da copiare</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard disk file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Seleziona il file di disco virtuale che desideri copiare se non è ancora selezionato. Puoi sceglierne uno dall&apos;elenco o utilizzare l&apos;icona della cartella accanto all&apos;elenco per selezionarlo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file di disco fisso virtuale da copiare...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di file del disco fisso</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli il tipo del file che desideri utilizzare per il nuovo disco fisso virtuale. Se non hai bisogno di utilizzarlo con altri programmi di virtualizzazione, puoi lasciare inalterata questa opzione.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Archiviazione su disco fisso fisico</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli se il nuovo disco fisso virtuale deve crescere in base all&apos;utilizzo (allocato dinamicamente) o se deve essere creato alla dimensione massima (dimensione specificata).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Un disco fisso virtuale &lt;b&gt;allocato dinamicamente&lt;/b&gt; utilizzerà solo lo spazio del disco fisico che si riempe (fino alla massima &lt;b&gt;dimensione specificata&lt;/b&gt;), ma non si ridurrà automaticamente se lo spazio viene liberato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Un file di disco fisso a &lt;b&gt;dimensione specificata&lt;/b&gt; richiede normalmente più tempo per la creazione su alcuni sistemi, ma è spesso più veloce nell&apos;utilizzo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Puoi scegliere anche di &lt;b&gt;dividere&lt;/b&gt; il file del disco fisso in diversi file, ognuno della dimensione massima di due gygabyte. È utile principalmente se desideri archiviare la macchina virtuale su dispositivi USB o sistemi datati, alcuni dei quali non sono in grado di gestire file molto grandi.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli una posizione per il nuovo file di disco fisso virtuale</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuovo disco fisso da creare</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Digita il nome del nuovo disco fisso virtuale nella casella seguente o fai clic sull&apos;icona della cartella per selezionare una cartella di destinazione diversa.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli una posizione per il nuovo file di disco fisso virtuale...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco fisso da &amp;copiare</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nuovo disco fisso da creare</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipo di file del disco fisso</translation>
     </message>
 </context>
 <context>
@@ -13132,7 +13132,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scegli il tipo di clone che desideri creare.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Clone completo&lt;/b&gt;, sarà creata una copia esatta (inclusi tutti i file dei dischi virtuali) della macchina di origine.&lt;/p&gt;&lt;p&gt;Se scegli &lt;b&gt;Clone collegato&lt;/b&gt;, sarà creata una nuova macchina, ma i file dei dischi virtuali saranno collegati ai dischi virtuali della macchina di origine e non potrai spostare la nuova macchina virtuale su un altro computer senza spostare anche quella originale.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -13450,7 +13450,7 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>&amp;Fixed size</source>
-        <translation>Dimensione &amp;fissa</translation>
+        <translation>Dimensione speci&amp;ficata</translation>
     </message>
     <message>
         <source>&amp;Split into files of less than 2GB</source>
@@ -13490,51 +13490,51 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Crea disco fisso virtuale</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Tipo di file del disco fisso</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli il tipo del file che desideri utilizzare per il nuovo disco fisso virtuale. Se non hai bisogno di utilizzarlo con altri programmi di virtualizzazione, puoi lasciare inalterata questa opzione.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Archiviazione su disco fisso fisico</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli se il nuovo disco fisso virtuale deve crescere in base all&apos;utilizzo (allocato dinamicamente) o se deve essere creato alla dimensione massima (dimensione specificata).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Un file di disco fisso &lt;b&gt;allocato dinamicamente&lt;/b&gt; utilizzerà solo lo spazio del disco fisico che si riempe (fino alla massima &lt;b&gt;dimensione specificata&lt;/b&gt;), ma non si ridurrà automaticamente se lo spazio viene liberato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Un file di disco fisso a &lt;b&gt;dimensione specificata&lt;/b&gt; richiede normalmente più tempo per la creazione su alcuni sistemi, ma è spesso più veloce nell&apos;utilizzo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Puoi scegliere anche di &lt;b&gt;dividere&lt;/b&gt; il file del disco fisso in diversi file, ognuno della dimensione massima di due gygabyte. È utile principalmente se desideri archiviare la macchina virtuale su dispositivi USB o sistemi datati, alcuni dei quali non sono in grado di gestire file molto grandi.</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Digita il nome del nuovo disco fisso virtuale nella casella seguente o fai clic sull&apos;icona della cartella per selezionare una cartella di destinazione diversa.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli una posizione per il nuovo file di disco fisso virtuale...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la dimensione del disco fisso virtuale in megabyte. Questa dimensione è il limite sul totale dei dati che una macchina virtuale sarà in grado di archiviare su disco.</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tipo di file del disco fisso</translation>
     </message>
 </context>
 <context>
@@ -13625,27 +13625,27 @@ questo passo e collegare hard disk più tardi tramite Impostazioni della MV.&lt;
     </message>
     <message>
         <source>Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Disco fisso</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard disk is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Se lo desideri, puoi aggiungere un disco fisso virtuale alla nuova macchina. Puoi creare un nuovo file di disco fisso, selezionarne uno dall&apos;elenco o da un&apos;altra posizione utilizzando l&apos;icona della cartella.&lt;/p&gt;&lt;p&gt;Se hai bisogno di una configurazione di archiviazione più complessa, puoi saltare questo passaggio e modificare le impostazioni della macchina dopo averla creata.&lt;/p&gt;&lt;p&gt;La dimensione consigliata del disco fisso è &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Do not add a virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Non aggiungere un &amp;disco fisso virtuale</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard disk now</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Crea subito un nuovo disco fisso virtuale</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Usa un file di disco fisso virtuale esistente</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file di disco fisso virtuale...</translation>
     </message>
 </context>
 <context>
@@ -14890,19 +14890,19 @@ Versione %1</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre una finestra per selezionare una cartella diversa.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apre una finestra per selezionare un file differente.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il percorso della cartella.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra il percorso del file.</translation>
     </message>
 </context>
 <context>
@@ -15836,7 +15836,7 @@ Versione %1</translation>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation type="unfinished">Il collegamento di questo disco fisso sarà eseguito indirettamente utilizzando un nuovo disco differenziale.</translation>
+        <translation>Il collegamento di questo disco fisso sarà eseguito indirettamente utilizzando un nuovo disco fisso differenziale.</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
@@ -15846,7 +15846,7 @@ Versione %1</translation>
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="unfinished">Questo disco fisso di base è collegato indirettamente utilizzando il seguente disco differenziale:</translation>
+        <translation>Questo disco fisso di base è collegato indirettamente utilizzando il seguente disco fisso differenziale:</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -16532,7 +16532,7 @@ Versione %1</translation>
     <message>
         <source>Fixed size storage</source>
         <comment>MediumVariant</comment>
-        <translation>Archiviazione a dimensione fissa</translation>
+        <translation>Archiviazione a dimensione specificata</translation>
     </message>
     <message>
         <source>Dynamically allocated storage split into files of less than 2GB</source>
@@ -16547,7 +16547,7 @@ Versione %1</translation>
     <message>
         <source>Fixed size storage split into files of less than 2GB</source>
         <comment>MediumVariant</comment>
-        <translation>Archiviazione a dimensione fissa divisa in file di dimensione inferiore a 2GB</translation>
+        <translation>Archiviazione a dimensione specificata divisa in file di dimensione inferiore a 2GB</translation>
     </message>
     <message>
         <source>Dynamically allocated compressed storage</source>
@@ -16562,12 +16562,12 @@ Versione %1</translation>
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation>Archiviazione ESX a dimensione fissa</translation>
+        <translation>Archiviazione ESX a dimensione specificata</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation>Archiviazione su disco raw a dimensione fissa</translation>
+        <translation>Archiviazione su disco raw a dimensione specificata</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -16975,20 +16975,20 @@ Versione %1</translation>
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli un file di disco fisso virtuale</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutti i file di disco fisso virtuale (%1)</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Alcuni dei file nella catena di dischi fissi non sono accessibili. Utilizza il Gestore supporti virtuali in modalità per ispezionarli.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Scegli una posizione per il nuovo file di disco fisso virtuale</translation>
     </message>
 </context>
 <context>
@@ -18982,19 +18982,19 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ripristina l&apos;istantanea selezionata della macchina virtuale</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Elimina l&apos;istantanea selezionata della macchina virtuale</translation>
     </message>
     <message>
         <source>Display a window with selected snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>Visualizza una finestra con i dettagli dell&apos;istantanea selezionata</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Clona la macchina virtuale selezionata</translation>
     </message>
 </context>
 <context>
@@ -19055,7 +19055,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Istantanea %1</translation>
+        <translation>Istantanea %1</translation>
     </message>
 </context>
 <context>
