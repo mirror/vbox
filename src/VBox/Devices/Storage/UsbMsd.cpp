@@ -2272,7 +2272,8 @@ const PDMUSBREG g_UsbMsd =
     /* pszDescription */
     "USB Mass Storage Device, one LUN.",
     /* fFlags */
-    PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_SUPERSPEED_CAPABLE | PDM_USBREG_EMULATED_DEVICE,
+      PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_SUPERSPEED_CAPABLE
+    | PDM_USBREG_SAVED_STATE_SUPPORTED,
     /* cMaxInstances */
     ~0U,
     /* cbInstance */

@@ -882,13 +882,13 @@ typedef struct VUSBIDEVICE
     DECLR3CALLBACKMEMBER(VUSBDEVICESTATE, pfnGetState,(PVUSBIDEVICE pInterface));
 
     /**
-     * Returns whether the device is completely emulated.
+     * Returns whether the device implements the saved state handlers
+     * and doesn't need to get detached.
      *
-     * @returns true if the device is fully emulated and doesn't pass through
-     *          a host device, false otherwise.
+     * @returns true if the device supports saving the state, false otherwise.
      * @param   pInterface      Pointer to the device interface structure.
      */
-    DECLR3CALLBACKMEMBER(bool, pfnIsEmulated,(PVUSBIDEVICE pInterface));
+    DECLR3CALLBACKMEMBER(bool, pfnIsSavedStateSupported,(PVUSBIDEVICE pInterface));
 
     /**
      * Get the speed the device is operating at.
@@ -968,15 +968,11 @@ DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 }
 
 /**
- * Returns whether the device is completely emulated.
- *
- * @returns true if the device is fully emulated and doesn't pass through
- *          a host device, false otherwise.
- * @param   pInterface      Pointer to the device interface structure.
+ * @copydoc VUSBIDEVICE::pfnIsSaveStateSupported
  */
-DECLINLINE(bool) VUSBIDevIsEmulated(PVUSBIDEVICE pInterface)
+DECLINLINE(bool) VUSBIDevIsSavedStateSupported(PVUSBIDEVICE pInterface)
 {
-    return pInterface->pfnIsEmulated(pInterface);
+    return pInterface->pfnIsSavedStateSupported(pInterface);
 }
 #endif /* IN_RING3 */
 

@@ -1553,17 +1553,17 @@ DECLCALLBACK(VUSBDEVICESTATE) vusbIDeviceGetState(PVUSBIDEVICE pInterface)
 
 
 /**
- * @interface_method_impl{VUSBIDEVICE,pfnIsEmulated}
+ * @interface_method_impl{VUSBIDEVICE,pfnIsSavedStateSupported}
  */
-DECLCALLBACK(bool) vusbIDeviceIsEmulated(PVUSBIDEVICE pInterface)
+DECLCALLBACK(bool) vusbIDeviceIsSavedStateSupported(PVUSBIDEVICE pInterface)
 {
     PVUSBDEV pDev = (PVUSBDEV)pInterface;
-    bool fEmulated = !!(pDev->pUsbIns->pReg->fFlags & PDM_USBREG_EMULATED_DEVICE);
+    bool fSavedStateSupported = RT_BOOL(pDev->pUsbIns->pReg->fFlags & PDM_USBREG_SAVED_STATE_SUPPORTED);
 
     LogFlowFunc(("pInterface=%p\n", pInterface));
 
-    LogFlowFunc(("returns %RTbool\n", fEmulated));
-    return fEmulated;
+    LogFlowFunc(("returns %RTbool\n", fSavedStateSupported));
+    return fSavedStateSupported;
 }
 
 
@@ -1714,13 +1714,13 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns, const char *pszCaptureFilenam
     Assert(!pDev->IDevice.pfnPowerOn);
     Assert(!pDev->IDevice.pfnPowerOff);
     Assert(!pDev->IDevice.pfnGetState);
-    Assert(!pDev->IDevice.pfnIsEmulated);
+    Assert(!pDev->IDevice.pfnIsSavedStateSupported);
 
     pDev->IDevice.pfnReset = vusbIDeviceReset;
     pDev->IDevice.pfnPowerOn = vusbIDevicePowerOn;
     pDev->IDevice.pfnPowerOff = vusbIDevicePowerOff;
     pDev->IDevice.pfnGetState = vusbIDeviceGetState;
-    pDev->IDevice.pfnIsEmulated = vusbIDeviceIsEmulated;
+    pDev->IDevice.pfnIsSavedStateSupported = vusbIDeviceIsSavedStateSupported;
     pDev->IDevice.pfnGetSpeed = vusbIDeviceGetSpeed;
     pDev->pUsbIns = pUsbIns;
     pDev->pNext = NULL;
