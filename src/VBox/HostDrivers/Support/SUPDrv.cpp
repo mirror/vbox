@@ -3809,11 +3809,11 @@ SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
     else
     {
         /*
-         * MSR is not yet locked; we can change it ourselves here.
-         * Once the lock bit is set, this MSR can no longer be modified.
+         * MSR is not yet locked; we can change it ourselves here. Once the lock bit is set,
+         * this MSR can no longer be modified.
          *
-         * Set both the VMXON and SMX_VMXON bits (if supported) as we can't
-         * determine SMX mode accurately. See @bugref{6873}.
+         * Set both the VMXON and SMX_VMXON bits (if supported) as we can't determine SMX mode
+         * accurately. See @bugref{6873}.
          *
          * The reason we are being paranoid here and (re)checking is that we don't assume all callers
          * of this function to check it like SUPR0QueryVTCaps() currently does. If we get something
