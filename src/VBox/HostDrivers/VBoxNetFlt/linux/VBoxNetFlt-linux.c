@@ -89,6 +89,14 @@ typedef struct VBOXNETFLTNOTIFIER *PVBOXNETFLTNOTIFIER;
 # define VBOX_NETDEV_NAME(dev)              ((dev)->reg_state != NETREG_REGISTERED ? "(unregistered net_device)" : (dev)->name)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+# define VBOX_IPV4_IS_LOOPBACK(addr)        ipv4_is_loopback(addr)
+# define VBOX_IPV4_IS_LINKLOCAL_169(addr)   ipv4_is_linklocal_169(addr)
+#else
+# define VBOX_IPV4_IS_LOOPBACK(addr)        ((addr & htonl(IN_CLASSA_NET)) == htonl(0x7f000000))
+# define VBOX_IPV4_IS_LINKLOCAL_169(addr)   ((addr & htonl(IN_CLASSB_NET)) == htonl(0xa9fe0000))
+#endif
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
 # define VBOX_SKB_RESET_NETWORK_HDR(skb)    skb_reset_network_header(skb)
 # define VBOX_SKB_RESET_MAC_HDR(skb)        skb_reset_mac_header(skb)
@@ -1896,8 +1904,12 @@ static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsign
     if (in_dev != NULL)
     {
         for_ifa(in_dev) {
-            if (IN_LOOPBACK(ntohl(ifa->ifa_address)))
+            if (VBOX_IPV4_IS_LOOPBACK(ifa->ifa_address))
                 return NOTIFY_OK;
+
+            if (   dev != pThis->u.s.pDev
+                && VBOX_IPV4_IS_LINKLOCAL_169(ifa->ifa_address))
+                continue;
 
             Log(("%s: %s: IPv4 addr %RTnaipv4 mask %RTnaipv4\n",
                  __FUNCTION__, VBOX_NETDEV_NAME(dev),
@@ -1944,18 +1956,29 @@ static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsign
 static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 {
     PVBOXNETFLTINS     pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv4);
-    struct net_device *pDev;
+    struct net_device *pDev, *pEventDev;
     struct in_ifaddr  *ifa   = (struct in_ifaddr *)ptr;
+    bool               fMyDev;
     int                rc    = NOTIFY_OK;
 
     pDev = vboxNetFltLinuxRetainNetDev(pThis);
-    Log(("VBoxNetFlt: %s: IPv4 event %s(0x%lx): addr %RTnaipv4 mask %RTnaipv4\n",
+    pEventDev = ifa->ifa_dev->dev;
+    fMyDev = (pDev == pEventDev);
+    Log(("VBoxNetFlt: %s: IPv4 event %s(0x%lx) %s: addr %RTnaipv4 mask %RTnaipv4\n",
          pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
+         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<???>",
          ifa->ifa_address, ifa->ifa_mask));
 
     if (pDev != NULL)
         vboxNetFltLinuxReleaseNetDev(pThis, pDev);
+
+    if (VBOX_IPV4_IS_LOOPBACK(ifa->ifa_address))
+        return NOTIFY_OK;
+
+    if (   !fMyDev
+        && VBOX_IPV4_IS_LINKLOCAL_169(ifa->ifa_address))
+        return NOTIFY_OK;
 
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
     {
@@ -1978,18 +2001,26 @@ static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsi
 static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsigned long ulEventType, void *ptr)
 {
     PVBOXNETFLTINS       pThis = RT_FROM_MEMBER(self, VBOXNETFLTINS, u.s.NotifierIPv6);
-    struct net_device   *pDev;
+    struct net_device   *pDev, *pEventDev;
     struct inet6_ifaddr *ifa   = (struct inet6_ifaddr *)ptr;
+    bool                 fMyDev;
     int                  rc    = NOTIFY_OK;
 
     pDev = vboxNetFltLinuxRetainNetDev(pThis);
-    Log(("VBoxNetFlt: %s: IPv6 event %s(0x%lx): %RTnaipv6\n",
+    pEventDev = ifa->idev->dev;
+    fMyDev = (pDev == pEventDev);
+    Log(("VBoxNetFlt: %s: IPv6 event %s(0x%lx) %s: %RTnaipv6\n",
          pDev ? VBOX_NETDEV_NAME(pDev) : "<???>",
          vboxNetFltLinuxGetNetDevEventName(ulEventType), ulEventType,
+         pEventDev ? VBOX_NETDEV_NAME(pEventDev) : "<???>",
          &ifa->addr));
 
     if (pDev != NULL)
         vboxNetFltLinuxReleaseNetDev(pThis, pDev);
+
+    if (   !fMyDev
+        && ipv6_addr_src_scope(&ifa->addr) <= IPV6_ADDR_SCOPE_LINKLOCAL)
+        return NOTIFY_OK;
 
     if (pThis->pSwitchPort->pfnNotifyHostAddress)
     {
