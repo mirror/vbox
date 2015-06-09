@@ -258,8 +258,8 @@ protected:
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     /**
-     * Returns @true if drag and drop for this machine is active 
-     * (that is, host->guest, guest->host or bidirectional), @false if not. 
+     * Returns @true if drag and drop for this machine is active
+     * (that is, host->guest, guest->host or bidirectional), @false if not.
      */
     bool dragAndDropIsActive(void) const;
 

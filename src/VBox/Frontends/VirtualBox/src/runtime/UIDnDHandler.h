@@ -44,9 +44,9 @@ public:
     virtual ~UIDnDHandler(void);
 
     /**
-     * Current operation mode. 
-     * Note: The operation mode is independent of the machine's overall 
-     *       drag and drop mode. 
+     * Current operation mode.
+     * Note: The operation mode is independent of the machine's overall
+     *       drag and drop mode.
      */
     typedef enum DNDMODE
     {
