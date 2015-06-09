@@ -660,6 +660,9 @@ int fssRdOnlyCreateInterfaceForTarFile(const char *pszFilename, PFSSRDONLYINTERF
             PFSSRDONLYINTERFACEIO pThis = (PFSSRDONLYINTERFACEIO)RTMemAllocZ(sizeof(*pThis));
             if (pThis)
             {
+                RTVfsIoStrmRelease(hVfsIos);
+                RTVfsFileRelease(hVfsFile);
+
                 pThis->CoreIo.pfnOpen                = fssRdOnly_Open;
                 pThis->CoreIo.pfnClose               = fssRdOnly_Close;
                 pThis->CoreIo.pfnDelete              = notImpl_Delete;
@@ -681,7 +684,6 @@ int fssRdOnlyCreateInterfaceForTarFile(const char *pszFilename, PFSSRDONLYINTERF
                 *ppTarIo = pThis;
                 return VINF_SUCCESS;
             }
-
             RTVfsFsStrmRelease(hVfsFss);
         }
         RTVfsIoStrmRelease(hVfsIos);
