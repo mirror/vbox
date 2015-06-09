@@ -1439,7 +1439,7 @@ const PDMDEVREG g_DeviceHPET =
     /* szName */
     "hpet",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

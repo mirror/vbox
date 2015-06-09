@@ -5927,7 +5927,7 @@ const PDMDEVREG g_DeviceOHCI =
     /* szName */
     "usb-ohci",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

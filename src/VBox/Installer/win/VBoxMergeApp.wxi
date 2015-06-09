@@ -241,12 +241,12 @@
         <File Id="file_VBoxRes.dll" Name="VBoxRes.dll"
               Source="$(env.PATH_OUT)\bin\VBoxRes.dll" />
 
-        <File Id="file_VMMGC.gc" Name="VMMGC.gc"
-              Source="$(env.PATH_OUT)\bin\VMMGC.gc" />
-        <File Id="file_VBoxDDGC.gc" Name="VBoxDDGC.gc"
-              Source="$(env.PATH_OUT)\bin\VBoxDDGC.gc" />
-        <File Id="file_VBoxDD2GC.gc" Name="VBoxDD2GC.gc"
-              Source="$(env.PATH_OUT)\bin\VBoxDD2GC.gc" />
+        <File Id="file_VMMRC.rc" Name="VMMRC.rc"
+              Source="$(env.PATH_OUT)\bin\VMMRC.rc" />
+        <File Id="file_VBoxDDRC.rc" Name="VBoxDDRC.rc"
+              Source="$(env.PATH_OUT)\bin\VBoxDDRC.rc" />
+        <File Id="file_VBoxDD2RC.rc" Name="VBoxDD2RC.rc"
+              Source="$(env.PATH_OUT)\bin\VBoxDD2RC.rc" />
 
         <File Id="file_VMMR0.r0" Name="VMMR0.r0"
               Source="$(env.PATH_OUT)\bin\VMMR0.r0" />

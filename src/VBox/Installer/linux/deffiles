@@ -62,12 +62,15 @@ DEFAULT_FILE_NAMES=" \
     VBoxVRDP \
     VBoxHeadless \
     VBoxHeadless.so \
-    VBoxDD2GC.gc \
+    VBoxDD2RC.rc \
     VBoxDD2R0.r0 \
-    VBoxDDGC.gc \
+    VBoxDD2GC.gc \
+    VBoxDDRC.rc \
     VBoxDDR0.r0 \
-    VMMGC.gc \
+    VBoxDDGC.gc \
+    VMMRC.rc \
     VMMR0.r0 \
+    VMMGC.gc \
     vboxefi.fv \
     vboxefi64.fv \
     vboxwebsrv \

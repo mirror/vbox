@@ -341,7 +341,7 @@ const PDMDEVREG g_DeviceLPC =
     /* szName */
     "lpc",
     /* szRCMod */
-    "VBoxDD2GC.gc",
+    "VBoxDD2RC.rc",
     /* szR0Mod */
     "VBoxDD2R0.r0",
     /* pszDescription */

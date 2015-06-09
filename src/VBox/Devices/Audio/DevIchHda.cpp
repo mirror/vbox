@@ -3897,7 +3897,7 @@ const PDMDEVREG g_DeviceICH6_HDA =
     /* szName */
     "hda",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

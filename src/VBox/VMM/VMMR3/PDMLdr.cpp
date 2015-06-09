@@ -896,9 +896,11 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
- * @param   pszModule       Module name. If NULL the main R0 module (VMMGC.gc) is assumes.
- * @param   pszSymbol       Symbol name. If it's value is less than 64k it's treated like a
- *                          ordinal value rather than a string pointer.
+ * @param   pszModule       Module name.  If NULL the main R0 module (VMMRC.rc)
+ *                          is assumes.
+ * @param   pszSymbol       Symbol name.  If it's value is less than 64k it's
+ *                          treated like a ordinal value rather than a string
+ *                          pointer.
  * @param   pRCPtrValue     Where to store the symbol value.
  */
 VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
@@ -1592,7 +1594,7 @@ VMMR3_INT_DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size
     PPDMMOD pModule = NULL;
     if (!fNullRun)
         pModule = pdmR3LdrFindModule(pVM->pUVM,
-                                     pszModule ? pszModule : fRing0 ? "VMMR0.r0" : "VMMGC.gc",
+                                     pszModule ? pszModule : fRing0 ? "VMMR0.r0" : "VMMRC.rc",
                                      fRing0 ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
                                      true /*fLazy*/, pszSearchPath);
     if (pModule || fNullRun)

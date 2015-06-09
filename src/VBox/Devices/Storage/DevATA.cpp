@@ -7603,7 +7603,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     /* szName */
     "piix3ide",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

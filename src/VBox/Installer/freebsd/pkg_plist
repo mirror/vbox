@@ -55,11 +55,11 @@ bin/VBoxHeadless
 bin/VBoxSDL
 bin/vboxwebsrv
 @mode 644
-lib/virtualbox/VBoxDDGC.gc
-lib/virtualbox/VBoxDD2GC.gc
+lib/virtualbox/VBoxDDRC.rc
+lib/virtualbox/VBoxDD2RC.rc
 lib/virtualbox/VBoxDDR0.r0
 lib/virtualbox/VBoxDD2R0.r0
-lib/virtualbox/VMMGC.gc
+lib/virtualbox/VMMRC.rc
 lib/virtualbox/VMMR0.r0
 lib/virtualbox/License-7.html
 lib/virtualbox/vboxdrv.tar.gz

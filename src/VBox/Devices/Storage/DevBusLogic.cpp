@@ -4098,7 +4098,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* szName */
     "buslogic",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

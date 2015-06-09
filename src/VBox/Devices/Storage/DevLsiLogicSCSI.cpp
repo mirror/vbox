@@ -5604,7 +5604,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* szName */
     "lsilogicscsi",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
@@ -5660,7 +5660,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* szName */
     "lsilogicsas",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

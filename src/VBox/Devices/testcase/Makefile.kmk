@@ -98,7 +98,7 @@ endif
 # Run rule for tstDeviceStructSize.
 #
 
-# 1. Dump selected structure in the VMMGC.gc debug info.
+# 1. Dump selected structure in the VMMRC.rc debug info.
 # 2. Generate a testcase from the dump
 ## future
 

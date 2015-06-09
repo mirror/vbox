@@ -46,7 +46,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  DLLS      += VBoxDDU VBoxDD VBoxDD2
  SYSMODS   += VBoxDDR0 VBoxDD2R0
  ifdef VBOX_WITH_RAW_MODE
-  SYSMODS   += VBoxDDGC VBoxDD2GC
+  SYSMODS   += VBoxDDRC VBoxDD2RC
  endif
 
 
@@ -837,15 +837,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifdef VBOX_WITH_RAW_MODE
   #
-  # VBoxDDGC (sysmod)
+  # VBoxDDRC (sysmod)
   #
-  VBoxDDGC_TEMPLATE       = VBoxRc
+  VBoxDDRC_TEMPLATE       = VBoxRc
   ifeq ($(KBUILD_TARGET_ARCH),x86)
-   VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
+   VBoxDDRC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
   endif
-  VBoxDDGC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
-  VBoxDDGC_INCS           = build
-  VBoxDDGC_SOURCES        = \
+  VBoxDDRC_DEFS           = $(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,)
+  VBoxDDRC_INCS           = build
+  VBoxDDRC_SOURCES        = \
  	Audio/DevIchHda.cpp \
   	Bus/DevPCI.cpp \
  	Bus/DevPciIch9.cpp \
@@ -868,100 +868,100 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VMMDev/VMMDevTesting.cpp
 
   ifdef VBOX_WITH_E1000
-   VBoxDDGC_DEFS        += VBOX_WITH_E1000
-   VBoxDDGC_SOURCES     += \
+   VBoxDDRC_DEFS        += VBOX_WITH_E1000
+   VBoxDDRC_SOURCES     += \
   	Network/DevE1000.cpp \
   	Network/DevE1000Phy.cpp
   endif
 
   ifdef VBOX_WITH_VIRTIO
-   VBoxDDGC_DEFS        += VBOX_WITH_VIRTIO
-   VBoxDDGC_SOURCES     += \
+   VBoxDDRC_DEFS        += VBOX_WITH_VIRTIO
+   VBoxDDRC_SOURCES     += \
   	VirtIO/Virtio.cpp \
   	Network/DevVirtioNet.cpp
   endif
 
   ifdef VBOX_WITH_HGSMI
-   VBoxDDGC_DEFS        += VBOX_WITH_HGSMI
+   VBoxDDRC_DEFS        += VBOX_WITH_HGSMI
   endif
   ifdef VBOX_WITH_WDDM
-   VBoxDDGC_DEFS        += VBOX_WITH_WDDM
+   VBoxDDRC_DEFS        += VBOX_WITH_WDDM
   endif
   ifdef VBOX_WITH_VDMA
-   VBoxDDGC_DEFS        += VBOX_WITH_VDMA
+   VBoxDDRC_DEFS        += VBOX_WITH_VDMA
   endif
   ifdef VBOX_WITH_CRHGSMI
-   VBoxDDGC_DEFS        += VBOX_WITH_CRHGSMI
+   VBoxDDRC_DEFS        += VBOX_WITH_CRHGSMI
   endif
   ifdef VBOXWDDM_WITH_VBVA
-   VBoxDDGC_DEFS        += VBOXWDDM_WITH_VBVA
+   VBoxDDRC_DEFS        += VBOXWDDM_WITH_VBVA
   endif
   ifdef VBOX_WITH_VMSVGA
-   VBoxDDGC_DEFS         += VBOX_WITH_VMSVGA
-   VBoxDDGC_SOURCES      += \
+   VBoxDDRC_DEFS         += VBOX_WITH_VMSVGA
+   VBoxDDRC_SOURCES      += \
  	Graphics/DevVGA-SVGA.cpp
   endif
   ifdef VBOX_WITH_VMSVGA3D
-   VBoxDDGC_DEFS         += VBOX_WITH_VMSVGA3D
+   VBoxDDRC_DEFS         += VBOX_WITH_VMSVGA3D
   endif
   ifdef VBOX_VDMA_WITH_WATCHDOG
-   VBoxDDGC_DEFS        += VBOX_VDMA_WITH_WATCHDOG
+   VBoxDDRC_DEFS        += VBOX_VDMA_WITH_WATCHDOG
   endif
 
   ifdef VBOX_WITH_VUSB
-   VBoxDDGC_DEFS        += VBOX_WITH_VUSB
-   VBoxDDGC_SOURCES     += \
+   VBoxDDRC_DEFS        += VBOX_WITH_VUSB
+   VBoxDDRC_SOURCES     += \
  	USB/DevOHCI.cpp
   endif
 
   ifdef VBOX_WITH_USB
-   VBoxDDGC_DEFS        += VBOX_WITH_USB
+   VBoxDDRC_DEFS        += VBOX_WITH_USB
    if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-    VBoxDDGC_DEFS       += VBOX_WITH_EHCI_IMPL
-    VBoxDDGC_SOURCES    += \
+    VBoxDDRC_DEFS       += VBOX_WITH_EHCI_IMPL
+    VBoxDDRC_SOURCES    += \
   	USB/DevEHCI.cpp
    endif
    if defined(VBOX_WITH_XHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-    VBoxDDGC_DEFS       += VBOX_WITH_XHCI_IMPL
-    VBoxDDGC_SOURCES    += \
+    VBoxDDRC_DEFS       += VBOX_WITH_XHCI_IMPL
+    VBoxDDRC_SOURCES    += \
   	USB/DevXHCI.cpp
    endif
   endif
 
   ifdef VBOX_WITH_VIDEOHWACCEL
-   VBoxDDGC_DEFS        += VBOX_WITH_VIDEOHWACCEL
+   VBoxDDRC_DEFS        += VBOX_WITH_VIDEOHWACCEL
   endif
 
   ifdef VBOX_WITH_AHCI
-  VBoxDDGC_DEFS         += VBOX_WITH_AHCI IN_AHCI_GC
-  VBoxDDGC_SOURCES      += \
+  VBoxDDRC_DEFS         += VBOX_WITH_AHCI IN_AHCI_GC
+  VBoxDDRC_SOURCES      += \
   	Storage/DevAHCI.cpp
   endif
 
   ifdef VBOX_WITH_BUSLOGIC
-  VBoxDDGC_DEFS         += VBOX_WITH_BUSLOGIC
-  VBoxDDGC_SOURCES      += \
+  VBoxDDRC_DEFS         += VBOX_WITH_BUSLOGIC
+  VBoxDDRC_SOURCES      += \
   	Storage/DevBusLogic.cpp
   endif
 
   ifdef VBOX_WITH_LSILOGIC
-  VBoxDDGC_DEFS         += VBOX_WITH_LSILOGIC
-  VBoxDDGC_SOURCES      += \
+  VBoxDDRC_DEFS         += VBOX_WITH_LSILOGIC
+  VBoxDDRC_SOURCES      += \
   	Storage/DevLsiLogicSCSI.cpp
   endif
 
   ifdef VBOX_WITH_NEW_PS2M
-  VBoxDDGC_DEFS         += VBOX_WITH_NEW_PS2M
+  VBoxDDRC_DEFS         += VBOX_WITH_NEW_PS2M
   endif
 
   if1of ($(VBOX_LDR_FMT32), pe lx)
-  VBoxDDGC_LIBS           = \
+  VBoxDDRC_LIBS           = \
   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
   	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
  endif # VBOX_WITH_RAW_MODE
 
- $(call VBOX_SET_VER_INFO_RC,VBoxDDGC,VirtualBox VMM Devices and Drivers$(COMMA) raw-mode) # last!
+ $(call VBOX_SET_VER_INFO_RC,VBoxDDRC,VirtualBox VMM Devices and Drivers$(COMMA) raw-mode) # last!
 
 
  #
@@ -1145,19 +1145,19 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifdef VBOX_WITH_RAW_MODE
   #
-  # VBoxDD2GC (LGPL sysmod)
+  # VBoxDD2RC (LGPL sysmod)
   #
-  VBoxDD2GC_TEMPLATE       = VBoxRc
-  VBoxDD2GC_INCS           = build
-  VBoxDD2GC_SOURCES        = \
+  VBoxDD2RC_TEMPLATE       = VBoxRc
+  VBoxDD2RC_INCS           = build
+  VBoxDD2RC_SOURCES        = \
   	PC/DevAPIC.cpp \
   	PC/DevIoApic.cpp
   if1of ($(VBOX_LDR_FMT32), pe lx)
-   VBoxDD2GC_LIBS          = \
+   VBoxDD2RC_LIBS          = \
    	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
    	$(PATH_STAGE_LIB)/VMMRCImp$(VBOX_SUFF_LIB)
   endif
-  $(call VBOX_SET_VER_INFO_RC,VBoxDD2GC,VirtualBox VMM Devices and Drivers 2$(COMMA) raw-mode)
+  $(call VBOX_SET_VER_INFO_RC,VBoxDD2RC,VirtualBox VMM Devices and Drivers 2$(COMMA) raw-mode)
  endif
 
 

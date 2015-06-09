@@ -1811,7 +1811,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* szName */
     "pckbd",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

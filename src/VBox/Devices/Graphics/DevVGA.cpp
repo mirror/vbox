@@ -6961,7 +6961,7 @@ const PDMDEVREG g_DeviceVga =
     /* szName */
     "vga",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

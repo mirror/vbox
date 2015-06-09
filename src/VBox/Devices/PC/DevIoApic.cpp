@@ -865,7 +865,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* szName */
     "ioapic",
     /* szRCMod */
-    "VBoxDD2GC.gc",
+    "VBoxDD2RC.rc",
     /* szR0Mod */
     "VBoxDD2R0.r0",
     /* pszDescription */

@@ -1253,7 +1253,7 @@ const PDMDEVREG g_DeviceMC146818 =
     /* szName */
     "mc146818",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

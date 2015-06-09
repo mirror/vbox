@@ -184,9 +184,9 @@ VBOX_LNX_STRIP_OBJ = \
 
 ifdef VBOX_WITH_RAW_MODE
  VBOX_LNX_STRIP_OBJ += \
-	VBoxDD2GC.gc \
-	VBoxDDGC.gc \
-	VMMGC.gc
+	VBoxDD2RC.rc \
+	VBoxDDRC.rc \
+	VMMRC.rc
 endif
 
 # Do not strip anything of these files

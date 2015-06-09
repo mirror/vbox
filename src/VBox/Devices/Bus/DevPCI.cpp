@@ -2253,7 +2253,7 @@ const PDMDEVREG g_DevicePCI =
     /* szName */
     "pci",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */
@@ -2613,7 +2613,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* szName */
     "pcibridge",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

@@ -1300,7 +1300,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* szName */
     "i8254",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

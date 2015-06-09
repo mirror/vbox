@@ -1860,7 +1860,7 @@ const PDMDRVREG g_DrvIntNet =
     /* szName */
     "IntNet",
     /* szRCMod */
-    "VBoxDDGC.rc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

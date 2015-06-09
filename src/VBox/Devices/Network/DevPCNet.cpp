@@ -5187,7 +5187,7 @@ const PDMDEVREG g_DevicePCNet =
     "pcnet",
     /* szRCMod */
 #ifdef PCNET_GC_ENABLED
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     "VBoxDDR0.r0",
 #else
     "",

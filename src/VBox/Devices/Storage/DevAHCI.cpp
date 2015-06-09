@@ -8660,7 +8660,7 @@ const PDMDEVREG g_DeviceAHCI =
     /* szName */
     "ahci",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

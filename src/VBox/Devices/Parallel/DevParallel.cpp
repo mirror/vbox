@@ -799,7 +799,7 @@ const PDMDEVREG g_DeviceParallelPort =
     /* szName */
     "parallel",
     /* szRCMod */
-    "VBoxDDGC.gc",
+    "VBoxDDRC.rc",
     /* szR0Mod */
     "VBoxDDR0.r0",
     /* pszDescription */

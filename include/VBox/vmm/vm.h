@@ -282,9 +282,9 @@ typedef struct VMCPU
 /** @} */
 
 
-/** The name of the Guest Context VMM Core module. */
-#define VMMRC_MAIN_MODULE_NAME          "VMMGC.gc"
-/** The name of the Ring 0 Context VMM Core module. */
+/** The name of the raw-mode context VMM Core module. */
+#define VMMRC_MAIN_MODULE_NAME          "VMMRC.rc"
+/** The name of the ring-0 context VMM Core module. */
 #define VMMR0_MAIN_MODULE_NAME          "VMMR0.r0"
 
 /**
@@ -1181,8 +1181,8 @@ typedef struct VM
 RT_C_DECLS_BEGIN
 
 /** The VM structure.
- * This is imported from the VMMGCBuiltin module, i.e. it's a one
- * of those magic globals which we should avoid using.
+ * This is imported from the VMMRCBuiltin module, i.e. it's a one of those magic
+ * globals which we should avoid using.
  */
 extern DECLIMPORT(VM)   g_VM;
 

@@ -1665,7 +1665,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.dylib
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dylib
- LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
+ LIB_VMMRC       = $(PATH_STAGE_BIN)/VMMRC.rc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dylib
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dylib
@@ -1677,7 +1677,7 @@ if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.so
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.so
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.so
- LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
+ LIB_VMMRC       = $(PATH_STAGE_BIN)/VMMRC.rc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.so
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.so
  VBOX_LIB_XPCOM_X86   = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.so
@@ -1689,7 +1689,7 @@ ifeq ($(KBUILD_TARGET),os2)
  VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.dll
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dll
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dll
- LIB_VMMGC       = $(PATH_STAGE_LIB)/VMMRCImp.lib
+ LIB_VMMRC       = $(PATH_STAGE_LIB)/VMMRCImp.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXCOM.dll
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dll
@@ -1702,7 +1702,7 @@ ifeq ($(KBUILD_TARGET),win)
  VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_LIB)/VBoxRT-x86.lib
  LIB_KPROFILE    = $(PATH_STAGE_LIB)/kPrf2.lib
  LIB_VMM         = $(PATH_STAGE_LIB)/VBoxVMM.lib
- LIB_VMMGC       = $(PATH_OBJ)/VMMRC/VMMGC.lib
+ LIB_VMMRC       = $(PATH_OBJ)/VMMRC/VMMRC.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.lib
  VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.lib
@@ -3364,7 +3364,7 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRc_ASFLAGS             = $(VBOX_ASFLAGS32)
  TEMPLATE_VBoxRc_DEFS                = IN_RC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
  TEMPLATE_VBoxRc_INCS                = $(PATH_ROOT)/include/iprt/nocrt
- TEMPLATE_VBoxRc_SYSSUFF             = .gc
+ TEMPLATE_VBoxRc_SYSSUFF             = .rc
  TEMPLATE_VBoxRc_BLD_TRG_ARCH        = x86
  TEMPLATE_VBoxRc_MODE                = a+r,u+w
 
