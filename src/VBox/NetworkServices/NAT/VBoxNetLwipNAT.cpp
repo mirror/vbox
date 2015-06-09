@@ -787,7 +787,7 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules)
 }
 
 
-/** 
+/**
  * Main thread. Starts also the LWIP thread.
  */
 int VBoxNetLwipNAT::init()

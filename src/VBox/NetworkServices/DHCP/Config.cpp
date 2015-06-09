@@ -1053,7 +1053,7 @@ static int parseDhcpOptionText(const char *pszText,
 static int fillDhcpOption(RawOption &opt, const std::string &OptText, int OptEncoding)
 {
     int rc;
- 
+
     if (OptEncoding == DhcpOptEncoding_Hex)
     {
         if (OptText.empty())
