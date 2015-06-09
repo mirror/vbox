@@ -100,7 +100,7 @@ RTDECL(RTCPUID) RTMpGetCoreCount(void)
 {
     /*
      * Resolve the API dynamically (one try) as it requires XP w/ sp3 or later.
-     */    
+     */
     typedef BOOL (WINAPI *PFNGETLOGICALPROCINFO)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
     static PFNGETLOGICALPROCINFO s_pfnGetLogicalProcInfo = (PFNGETLOGICALPROCINFO)~(uintptr_t)0;
     if (s_pfnGetLogicalProcInfo == (PFNGETLOGICALPROCINFO)~(uintptr_t)0)
