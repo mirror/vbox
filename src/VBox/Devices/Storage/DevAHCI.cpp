@@ -8612,7 +8612,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         {
             pAhciPort->pDrvBase = NULL;
             rc = VINF_SUCCESS;
-            LogRel(("%s: no driver attached\n", szName));
+            LogRel(("AHCI: %s: No driver attached\n", szName));
         }
         else
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
