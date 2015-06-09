@@ -79,7 +79,7 @@ struct SVGA3dCapsRecord
 {
     /* Skipped if DRM_VMW_PARAM_MAX_MOB_MEMORY is read. */
     struct SVGA3dCapsRecordHeader header;
-    uint32_t data[1];    
+    uint32_t data[1];
 };
 
 struct drm_vmw_getparam_arg
@@ -340,7 +340,7 @@ static int QueryParam(int fd, uint32_t uParam, const char *pszParam)
         }
     }
     else
-        printf("%32s: failed: rc=%d errno=%d (%s)\n", pszParam, rc, errno, strerror(errno));    
+        printf("%32s: failed: rc=%d errno=%d (%s)\n", pszParam, rc, errno, strerror(errno));
     return rc;
 }
 
@@ -595,7 +595,7 @@ int main(int argc, char **argv)
     const char *pszDev = "/dev/dri/card0";
     if (argc == 2)
         pszDev = argv[1];
-    
+
     int fd = open(pszDev, O_RDWR);
     if (fd != -1)
     {
@@ -606,7 +606,7 @@ int main(int argc, char **argv)
          * Parameters.
          */
         rcExit = Dump3DParameters(fd, rcExit);
-    
+
         /*
          * 3D capabilities.
          */
@@ -624,6 +624,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "error opening '%s': %d\n", pszDev, errno);
         rcExit = 1;
     }
-    
+
     return rcExit;
 }

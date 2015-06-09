@@ -3571,7 +3571,7 @@ DECLCALLBACK(int) vmsvgaR3IORegionMap(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS 
             if (RT_SUCCESS(rc))
             {
                 rc = PGMHandlerPhysicalRegister(PDMDevHlpGetVM(pDevIns), GCPhysAddress, GCPhysAddress + (VMSVGA_FIFO_SIZE - 1),
-                                                pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR, 
+                                                pThis->svga.hFifoAccessHandlerType, pThis, NIL_RTR0PTR, NIL_RTRCPTR,
                                                 "VMSVGA FIFO");
                 AssertRC(rc);
             }

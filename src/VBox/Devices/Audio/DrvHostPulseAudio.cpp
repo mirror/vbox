@@ -1155,7 +1155,7 @@ static DECLCALLBACK(int) drvHostPulseAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNOD
 
     PDRVHOSTPULSEAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPULSEAUDIO);
     LogRel(("Audio: Initializing PulseAudio driver\n"));
-    
+
     CFGMR3QueryStringAlloc(pCfg, "StreamName", &pThis->pszStreamName);
 
     pThis->pDrvIns                   = pDrvIns;

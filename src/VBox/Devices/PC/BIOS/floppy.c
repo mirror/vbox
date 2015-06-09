@@ -1115,8 +1115,8 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         drive = GET_ELDL();
 
         // Format type (AL)
-        // 00 - NOT USED    
-        // 01 - DISKETTE 360K IN 360K DRIVE    
+        // 00 - NOT USED
+        // 01 - DISKETTE 360K IN 360K DRIVE
         // 02 - DISKETTE 360K IN 1.2M DRIVE
         // 03 - DISKETTE 1.2M IN 1.2M DRIVE
         // 04 - DISKETTE 720K IN 720K DRIVE
@@ -1130,7 +1130,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             SET_CF();
             return;
         }
-    
+
         // see if drive exists
         if (floppy_drive_exists(drive) == 0) {
             SET_AH(0x80); // not responding/time out
@@ -1215,7 +1215,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             if (floppy_media_sense(drive) == 0) {
                 SET_AH(0x0C); // drive/media type unknown
                 set_diskette_ret_status(0x0C);
-                SET_CF(); 
+                SET_CF();
                 return;
             }
         }
@@ -1226,7 +1226,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             drive_type >>= 4;
         else
             drive_type &= 0x0f;
-     
+
         // Get current drive state. Set 'base_address' to media status offset address
         base_address = (drive) ? 0x0091 : 0x0090;
         media_state = read_byte(0x0040, base_address);
@@ -1241,7 +1241,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
 
             break;
         case 2: // 1.2MB, 5.25"
-            if (track == 39 && num_sectors == 9) {          // 360K disk in 1.2M drive 
+            if (track == 39 && num_sectors == 9) {          // 360K disk in 1.2M drive
                 media_state |= 0x70; // 0111 0000 (media type established, double stepping, 300 kbps)
             } else if (track == 79 && num_sectors == 15) {  // 1.2M disk in 1.2M drive
                 media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
@@ -1251,7 +1251,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             if (track == 79 && num_sectors == 9)
                 media_state |= 0x90; // 1001 0000 (media type established, 250 kbps)
 
-			break;
+                        break;
         case 4: // 1.44MB, 3.5"
             if (track == 79) {
                 if (num_sectors == 9) {          // 720K disk in 1.44M drive
@@ -1259,7 +1259,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                 } else if (num_sectors == 18) {  // 1.44M disk in 1.44M drive
                     media_state |= 0x10; // 0001 0000 (media type established, 500 kbps)
                 }
-            } 
+            }
             break;
         case 5: // 2.88MB, 3.5"
             if (track == 79) {
@@ -1282,14 +1282,14 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
             // for current drive type - or drive type is unknown!
             SET_AH(0x0C);
             set_diskette_ret_status(0x0C);
-            SET_CF(); 
+            SET_CF();
             return;
         }
 
         // Update media status
         write_byte(0x0040, base_address, media_state);
 
-        // set es & di to point to 11 byte diskette param table in ROM 
+        // set es & di to point to 11 byte diskette param table in ROM
         ES = 0xF000;    // @todo: any way to make this relocatable?
         DI = get_floppy_dpt(drive_type);
 

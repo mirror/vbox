@@ -109,7 +109,7 @@ static void vbvaDataCleanup(VBVADATA *pVBVAData)
     {
         RT_ZERO(pVBVAData->guest.pVBVA->hostFlags);
     }
-    
+
     RTMemFree(pVBVAData->partialRecord.pu8);
 
     RT_ZERO(*pVBVAData);
