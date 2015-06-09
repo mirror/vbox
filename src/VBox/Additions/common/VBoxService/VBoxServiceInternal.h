@@ -211,7 +211,7 @@ extern int                      VBoxServiceWinGetComponentVersions(uint32_t uiCl
 extern uint32_t                 VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOXSERVICE_PAGE_SHARING)
-extern RTEXITCODE               VBoxServicePageSharingInitFork(void);
+extern RTEXITCODE               VBoxServicePageSharingWorkerChild(void);
 #endif
 extern int                      VBoxServiceVMInfoSignal(void);
 

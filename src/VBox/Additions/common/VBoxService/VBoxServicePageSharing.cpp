@@ -333,7 +333,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
  * with other VMs.
  *
  */
-void VBoxServicePageSharingInspectGuest()
+static void VBoxServicePageSharingInspectGuest(void)
 {
     HANDLE hSnapshot;
     PAVLPVNODECORE pNewTree = NULL;
@@ -513,14 +513,14 @@ static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE 
 
 
 #elif TARGET_NT4
-void VBoxServicePageSharingInspectGuest()
+static void VBoxServicePageSharingInspectGuest(void)
 {
     /* not implemented */
 }
 #else
-void VBoxServicePageSharingInspectGuest()
+static void VBoxServicePageSharingInspectGuest(void)
 {
-    /* @todo other platforms */
+    /** @todo other platforms */
 }
 #endif
 
@@ -620,7 +620,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
 #ifdef RT_OS_WINDOWS
 
 /**
- * This gets control when VBoxService is launched with -pagefusionfork by
+ * This gets control when VBoxService is launched with "pagefusion" by
  * VBoxServicePageSharingWorkerProcess().
  *
  * @returns RTEXITCODE_SUCCESS.
@@ -628,7 +628,7 @@ DECLCALLBACK(int) VBoxServicePageSharingWorker(bool volatile *pfShutdown)
  * @remarks It won't normally return since the parent drops the shutdown hint
  *          via RTProcTerminate().
  */
-RTEXITCODE VBoxServicePageSharingInitFork(void)
+RTEXITCODE VBoxServicePageSharingWorkerChild(void)
 {
     VBoxServiceVerbose(3, "VBoxServicePageSharingInitFork\n");
 

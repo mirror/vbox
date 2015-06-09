@@ -856,7 +856,7 @@ int main(int argc, char **argv)
      */
     if (   argc == 2
         && !RTStrICmp(argv[1], "pagefusion"))
-        return VBoxServicePageSharingInitFork();
+        return VBoxServicePageSharingWorkerChild();
 #endif
 
 #ifdef VBOX_WITH_GUEST_CONTROL
