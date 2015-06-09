@@ -1914,7 +1914,7 @@ static int vboxNetFltLinuxEnumeratorCallback(struct notifier_block *self, unsign
             Log(("%s: %s: IPv4 addr %RTnaipv4 mask %RTnaipv4\n",
                  __FUNCTION__, VBOX_NETDEV_NAME(dev),
                  ifa->ifa_address, ifa->ifa_mask));
-            
+
             pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                 /* :fAdded */ true, kIntNetAddrType_IPv4, &ifa->ifa_address);
         } endfor_ifa(in_dev);
@@ -1989,7 +1989,7 @@ static int vboxNetFltLinuxNotifierIPv4Callback(struct notifier_block *self, unsi
             fAdded = false;
         else
             return NOTIFY_OK;
-            
+
         pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded,
                                                  kIntNetAddrType_IPv4, &ifa->ifa_local);
     }
@@ -2031,7 +2031,7 @@ static int vboxNetFltLinuxNotifierIPv6Callback(struct notifier_block *self, unsi
             fAdded = false;
         else
             return NOTIFY_OK;
-            
+
         pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded,
                                                  kIntNetAddrType_IPv6, &ifa->addr);
     }

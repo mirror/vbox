@@ -190,7 +190,7 @@ NTSTATUS VBoxUsbMonQueryBusRelations(PDEVICE_OBJECT pDevObj, PFILE_OBJECT pFileO
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     pIrp->IoStatus.Status = STATUS_NOT_SUPPORTED;
-	
+
     pSl = IoGetNextIrpStackLocation(pIrp);
     pSl->MajorFunction = IRP_MJ_PNP;
     pSl->MinorFunction = IRP_MN_QUERY_DEVICE_RELATIONS;
@@ -1157,7 +1157,7 @@ typedef struct VBOXUSBMONHOOKDRIVERWALKER
 static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG uErrId, USHORT cbDumpData, PVOID pDumpData)
 {
     PIO_ERROR_LOG_PACKET pErrEntry;
-    
+
 
     /* Truncate dumps that do not fit into IO_ERROR_LOG_PACKET. */
     if (FIELD_OFFSET(IO_ERROR_LOG_PACKET, DumpData) + cbDumpData > ERROR_LOG_MAXIMUM_SIZE)

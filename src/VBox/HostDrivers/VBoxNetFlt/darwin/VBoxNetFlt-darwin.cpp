@@ -1360,7 +1360,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     {
         LogRel(("FIONBIO ok, but socket is blocking?!\n"));
         sock_close(pThis->u.s.pSysSock);
-        return rc;        
+        return rc;
     }
 
     struct kev_request req;
