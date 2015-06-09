@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#define SCM_WITHOUT_LIBSVN
+#define SCM_WITH_DYNAMIC_LIB_SVN
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -24,19 +24,103 @@
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
 #include <iprt/env.h>
-#include <iprt/file.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
+#include <iprt/handle.h>
 #include <iprt/initterm.h>
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/pipe.h>
+#include <iprt/poll.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
 #include "scm.h"
+
+#if defined(SCM_WITH_DYNAMIC_LIB_SVN) && defined(SCM_WITH_SVN_HEADERS)
+# include <svn_client.h>
+#endif
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+# if defined(RT_OS_WINDOWS) && defined(RT_ARCH_X86)
+#  define APR_CALL                       __stdcall
+#  define SVN_CALL                       /* __stdcall ?? */
+# else
+#  define APR_CALL
+#  define SVN_CALL
+# endif
+#endif
+#if defined(SCM_WITH_DYNAMIC_LIB_SVN) && !defined(SCM_WITH_SVN_HEADERS)
+# define SVN_ERR_MISC_CATEGORY_START    200000
+# define SVN_ERR_UNVERSIONED_RESOURCE   (SVN_ERR_MISC_CATEGORY_START + 5)
+#endif
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+#if defined(SCM_WITH_DYNAMIC_LIB_SVN) && !defined(SCM_WITH_SVN_HEADERS)
+typedef int                         apr_status_t;
+typedef int64_t                     apr_time_t;
+typedef struct apr_pool_t           apr_pool_t;
+typedef struct apr_hash_t           apr_hash_t;
+typedef struct apr_hash_index_t     apr_hash_index_t;
+typedef struct apr_array_header_t   apr_array_header_t;
+
+
+typedef struct svn_error_t
+{
+    apr_status_t                    apr_err;
+    const char                     *_dbgr_message;
+    struct svn_error_t             *_dbgr_child;
+    apr_pool_t                     *_dbgr_pool;
+    const char                     *_dbgr_file;
+    long                            _dbgr_line;
+} svn_error_t;
+typedef int                         svn_boolean_t;
+typedef long int                    svn_revnum_t;
+typedef struct svn_client_ctx_t     svn_client_ctx_t;
+typedef enum svn_opt_revision_kind
+{
+    svn_opt_revision_unspecified = 0,
+    svn_opt_revision_number,
+    svn_opt_revision_date,
+    svn_opt_revision_committed,
+    svn_opt_revision_previous,
+    svn_opt_revision_base,
+    svn_opt_revision_working,
+    svn_opt_revision_head
+} svn_opt_revision_kind;
+typedef union svn_opt_revision_value_t
+{
+    svn_revnum_t                    number;
+    apr_time_t                      date;
+} svn_opt_revision_value_t;
+typedef struct svn_opt_revision_t
+{
+  svn_opt_revision_kind             kind;
+  svn_opt_revision_value_t          value;
+} svn_opt_revision_t;
+typedef enum svn_depth_t
+{
+    svn_depth_unknown = -2,
+    svn_depth_exclude,
+    svn_depth_empty,
+    svn_depth_files,
+    svn_depth_immediates,
+    svn_depth_infinity
+} svn_depth_t;
+
+#endif /* SCM_WITH_DYNAMIC_LIB_SVN && !SCM_WITH_SVN_HEADERS */
 
 
 /*******************************************************************************
@@ -48,11 +132,35 @@ static enum
     kScmSvnVersion_Ancient = 1,
     kScmSvnVersion_1_6,
     kScmSvnVersion_1_7,
+    kScmSvnVersion_1_8,
     kScmSvnVersion_End
 }           g_enmSvnVersion = kScmSvnVersion_Ancient;
 
 
-#ifdef SCM_WITHOUT_LIBSVN
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+/** Set if all the function pointers are valid. */
+static bool                             g_fSvnFunctionPointersValid;
+/** @name SVN and APR imports.
+ * @{ */
+static apr_status_t          (APR_CALL *g_pfnAprInitialize)(void);
+static apr_hash_index_t *    (APR_CALL *g_pfnAprHashFirst)(apr_pool_t *pPool, apr_hash_t *pHashTab);
+static apr_hash_index_t *    (APR_CALL *g_pfnAprHashNext)(apr_hash_index_t *pCurIdx);
+static void *                (APR_CALL *g_pfnAprHashThisVal)(apr_hash_index_t *pHashIdx);
+static apr_pool_t *          (SVN_CALL *g_pfnSvnPoolCreateEx)(apr_pool_t *pParent, void *pvAllocator);
+static void                  (APR_CALL *g_pfnAprPoolClear)(apr_pool_t *pPool);
+static void                  (APR_CALL *g_pfnAprPoolDestroy)(apr_pool_t *pPool);
+
+static svn_error_t *         (SVN_CALL *g_pfnSvnClientCreateContext)(svn_client_ctx_t **ppCtx, apr_pool_t *pPool);
+static svn_error_t *         (SVN_CALL *g_pfnSvnClientPropGet4)(apr_hash_t **ppHashProps, const char *pszPropName,
+                                                                const char *pszTarget, const svn_opt_revision_t *pPeggedRev,
+                                                                const svn_opt_revision_t *pRevision, svn_revnum_t *pActualRev,
+                                                                svn_depth_t enmDepth, const apr_array_header_t *pChangeList,
+                                                                svn_client_ctx_t *pCtx, apr_pool_t *pResultPool,
+                                                                apr_pool_t *pScratchPool);
+/**@} */
+#endif
+
+
 
 /**
  * Callback that is call for each path to search.
@@ -77,9 +185,6 @@ static DECLCALLBACK(int) scmSvnFindSvnBinaryCallback(char const *pchPath, size_t
     return VERR_TRY_AGAIN;
 }
 
-#include <iprt/handle.h>
-#include <iprt/pipe.h>
-#include <iprt/poll.h>
 
 /**
  * Reads from a pipe.
@@ -547,6 +652,133 @@ static int scmSvnRun(PSCMRWSTATE pState, const char **papszArgs, bool fNormalFai
 }
 
 
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+/**
+ * Attempts to resolve the necessary subversion and apache portable runtime APIs
+ * we require dynamically.
+ *
+ * Will set all global function pointers and g_fSvnFunctionPointersValid to true
+ * on success.
+ */
+static void scmSvnTryResolveFunctions(void)
+{
+    char szPath[RTPATH_MAX];
+    int rc = RTStrCopy(szPath, sizeof(szPath), g_szSvnPath);
+    if (RT_SUCCESS(rc))
+    {
+        RTPathStripFilename(szPath);
+        char *pszEndPath = strchr(szPath, '\0');
+# ifdef RT_OS_WINDOWS
+        RTPathChangeToDosSlashes(szPath, false);
+# endif
+
+        /*
+         * Try various prefixes/suffxies/locations.
+         */
+        static struct
+        {
+            const char *pszPrefix;
+            const char *pszSuffix;
+        } const s_aVariations[] =
+        {
+# ifdef RT_OS_WINDOWS
+            { "SlikSvn-lib", "-1.dll" },    /* SlikSVN */
+            { "lib", "-1.dll" },            /* Win32Svn,CollabNet,++ */
+# elif defined(RT_OS_DARWIN)
+            { "../lib/lib", "-1.dylib" },
+# else
+            { "../lib/lib", ".so" },
+            { "../lib/lib", "-1.so" },
+# endif
+        };
+        for (unsigned iVar = 0; RT_ELEMENTS(s_aVariations); iVar++)
+        {
+            /*
+             * Try load the svn_client library ...
+             */
+            struct
+            {
+                const char *pszBaseName;
+                RTLDRMOD    hMod;
+            } aLibraries[] =
+            {
+                { "svn_client", NIL_RTLDRMOD },
+                { "svn_subr",   NIL_RTLDRMOD },
+                { "apr",        NIL_RTLDRMOD },
+            };
+            rc = VINF_SUCCESS;
+            unsigned iLib;
+            for (iLib = 0; iLib < RT_ELEMENTS(aLibraries) && RT_SUCCESS(rc); iLib++)
+            {
+                *pszEndPath = '\0';
+                rc = RTPathAppend(szPath, sizeof(szPath), s_aVariations[iVar].pszPrefix);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrCat(szPath, sizeof(szPath), aLibraries[iLib].pszBaseName);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrCat(szPath, sizeof(szPath), s_aVariations[iVar].pszSuffix);
+                if (RT_SUCCESS(rc))
+                {
+# ifdef RT_OS_WINDOWS
+                    RTPathChangeToDosSlashes(pszEndPath, false);
+# endif
+                    rc = RTLdrLoadEx(szPath, &aLibraries[iLib].hMod, RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
+                }
+            }
+            if (iLib == RT_ELEMENTS(aLibraries) && RT_SUCCESS(rc))
+            {
+                static const struct
+                {
+                    unsigned    iLib;
+                    const char *pszSymbol;
+                    PFNRT      *ppfn;
+                } s_aSymbols[] =
+                {
+                    { 2, "apr_initialize",              (PFNRT *)&g_pfnAprInitialize },
+                    { 2, "apr_hash_first",              (PFNRT *)&g_pfnAprHashFirst },
+                    { 2, "apr_hash_next",               (PFNRT *)&g_pfnAprHashNext },
+                    { 2, "apr_hash_this_val",           (PFNRT *)&g_pfnAprHashThisVal },
+                    { 1, "svn_pool_create_ex",          (PFNRT *)&g_pfnSvnPoolCreateEx },
+                    { 2, "apr_pool_clear",              (PFNRT *)&g_pfnAprPoolClear },
+                    { 2, "apr_pool_destroy",            (PFNRT *)&g_pfnAprPoolDestroy },
+                    { 0, "svn_client_create_context",   (PFNRT *)&g_pfnSvnClientCreateContext },
+                    { 0, "svn_client_propget4",         (PFNRT *)&g_pfnSvnClientPropGet4 },
+                };
+                for (unsigned i = 0; i < RT_ELEMENTS(s_aSymbols); i++)
+                {
+                    rc = RTLdrGetSymbol(aLibraries[s_aSymbols[i].iLib].hMod, s_aSymbols[i].pszSymbol,
+                                        (void **)(uintptr_t)s_aSymbols[i].ppfn);
+                    if (RT_FAILURE(rc))
+                    {
+                        ScmVerbose(NULL, 0, "Failed to resolve '%s' in '%s'",
+                                   s_aSymbols[i].pszSymbol, aLibraries[s_aSymbols[i].iLib].pszBaseName);
+                        break;
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    apr_status_t rc = g_pfnAprInitialize();
+                    if (rc == 0)
+                    {
+                        ScmVerbose(NULL, 1, "Found subversion APIs.\n");
+                        g_fSvnFunctionPointersValid = true;
+                    }
+                    else
+                    {
+                        ScmVerbose(NULL, 0, "apr_initialize failed: %#x (%d)\n", rc, rc);
+                        AssertMsgFailed(("%#x (%d)\n", rc, rc));
+                    }
+                    return;
+                }
+            }
+
+            while (iLib-- > 0)
+                RTLdrClose(aLibraries[iLib].hMod);
+        }
+    }
+}
+#endif /* SCM_WITH_DYNAMIC_LIB_SVN */
+
+
 /**
  * Finds the svn binary, updating g_szSvnPath and g_enmSvnVersion.
  */
@@ -587,7 +819,9 @@ static void scmSvnFindSvnBinary(PSCMRWSTATE pState)
     if (RT_SUCCESS(rc))
     {
         char *pszStripped = RTStrStrip(pszVersion);
-        if (RTStrVersionCompare(pszVersion, "1.7") >= 0)
+        if (RTStrVersionCompare(pszVersion, "1.8") >= 0)
+            g_enmSvnVersion = kScmSvnVersion_1_8;
+        else if (RTStrVersionCompare(pszVersion, "1.7") >= 0)
             g_enmSvnVersion = kScmSvnVersion_1_7;
         else if (RTStrVersionCompare(pszVersion, "1.6") >= 0)
             g_enmSvnVersion = kScmSvnVersion_1_6;
@@ -597,6 +831,16 @@ static void scmSvnFindSvnBinary(PSCMRWSTATE pState)
     }
     else
         g_enmSvnVersion = kScmSvnVersion_Ancient;
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+    /*
+     * If we got version 1.8 or later, try see if we can locate a few of the
+     * simpler SVN APIs.
+     */
+    g_fSvnFunctionPointersValid = false;
+    if (g_enmSvnVersion >= kScmSvnVersion_1_8)
+        scmSvnTryResolveFunctions();
+#endif
 }
 
 
@@ -657,7 +901,71 @@ static bool scmSvnReadNumber(const char *pch, size_t cch, size_t *pu)
     return true;
 }
 
-#endif /* SCM_WITHOUT_LIBSVN */
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+
+/**
+ * Wrapper around RTPathAbs.
+ * @returns Same as RTPathAbs.
+ * @param   pszPath             The relative path.
+ * @param   pszAbsPath          Where to return the absolute path.
+ * @param   cbAbsPath           Size of the @a pszAbsPath buffer.
+ */
+static int scmSvnAbsPath(const char *pszPath, char *pszAbsPath, size_t cbAbsPath)
+{
+    int rc = RTPathAbs(pszPath, pszAbsPath, cbAbsPath);
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    if (RT_SUCCESS(rc))
+        RTPathChangeToUnixSlashes(pszAbsPath, true /*fForce*/);
+# endif
+    return rc;
+}
+
+
+/**
+ * Checks if @a pszPath exists in the current WC.
+ *
+ * @returns true, false or -1. In the latter case, please use the fallback.
+ * @param   pszPath         Path to the object that should be investigated.
+ */
+static int scmSvnIsObjectInWorkingCopy(const char *pszPath)
+{
+    int rc = -1;
+
+    /* svn_client_propget4 and later requires absolute target path. */
+    char szAbsPath[RTPATH_MAX];
+    int  rc2 = scmSvnAbsPath(pszPath, szAbsPath, sizeof(szAbsPath));
+    if (RT_SUCCESS(rc2))
+    {
+        /* Create calling context. */
+        apr_pool_t *pPool = g_pfnSvnPoolCreateEx(NULL, NULL);
+        if (pPool)
+        {
+            svn_client_ctx_t *pCtx = NULL;
+            svn_error_t *pErr = g_pfnSvnClientCreateContext(&pCtx, pPool);
+            if (!pErr)
+            {
+                /* Make the call. */
+                apr_hash_t         *pHash = NULL;
+                svn_opt_revision_t  Rev;
+                RT_ZERO(Rev);
+                Rev.kind          = svn_opt_revision_base;
+                Rev.value.number  = -1L;
+                pErr = g_pfnSvnClientPropGet4(&pHash, "svn:no-such-property", szAbsPath, &Rev, &Rev,
+                                              NULL /*pActualRev*/, svn_depth_empty, NULL /*pChangeList*/, pCtx, pPool, pPool);
+                if (!pErr)
+                    rc = true;
+                else if (pErr->apr_err == SVN_ERR_UNVERSIONED_RESOURCE)
+                    rc = false;
+            }
+            g_pfnAprPoolDestroy(pPool);
+        }
+    }
+    return rc;
+}
+
+#endif /* SCM_WITH_DYNAMIC_LIB_SVN */
+
 
 /**
  * Checks if the file we're operating on is part of a SVN working copy.
@@ -667,8 +975,18 @@ static bool scmSvnReadNumber(const char *pch, size_t cch, size_t *pu)
  */
 bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
 {
-#ifdef SCM_WITHOUT_LIBSVN
     scmSvnFindSvnBinary(pState);
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+    if (g_fSvnFunctionPointersValid)
+    {
+        int rc = scmSvnIsObjectInWorkingCopy(pState->pszFilename);
+        if (rc == (int)true || rc == (int)false)
+            return rc == (int)true;
+    }
+
+    /* Fallback: */
+#endif
     if (g_enmSvnVersion < kScmSvnVersion_1_7)
     {
         /*
@@ -690,12 +1008,9 @@ bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
             return true;
         }
     }
-
-#else
-    NOREF(pState);
-#endif
     return false;
 }
+
 
 /**
  * Checks if the specified directory is part of a SVN working copy.
@@ -705,8 +1020,18 @@ bool ScmSvnIsInWorkingCopy(PSCMRWSTATE pState)
  */
 bool ScmSvnIsDirInWorkingCopy(const char *pszDir)
 {
-#ifdef SCM_WITHOUT_LIBSVN
     scmSvnFindSvnBinary(NULL);
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+    if (g_fSvnFunctionPointersValid)
+    {
+        int rc = scmSvnIsObjectInWorkingCopy(pszDir);
+        if (rc == (int)true || rc == (int)false)
+            return rc == (int)true;
+    }
+
+    /* Fallback: */
+#endif
     if (g_enmSvnVersion < kScmSvnVersion_1_7)
     {
         /*
@@ -728,12 +1053,68 @@ bool ScmSvnIsDirInWorkingCopy(const char *pszDir)
             return true;
         }
     }
-
-#else
-    NOREF(pState);
-#endif
     return false;
 }
+
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+/**
+ * Checks if @a pszPath exists in the current WC.
+ *
+ * @returns IPRT status code - VERR_NOT_SUPPORT if fallback should be attempted.
+ * @param   pszPath         Path to the object that should be investigated.
+ * @param   pszProperty     The property name.
+ * @param   ppszValue       Where to return the property value. Optional.
+ */
+static int scmSvnQueryPropertyUsingApi(const char *pszPath, const char *pszProperty, char **ppszValue)
+{
+    int rc = VERR_NOT_SUPPORTED;
+
+    /* svn_client_propget4 and later requires absolute target path. */
+    char szAbsPath[RTPATH_MAX];
+    int  rc2 = scmSvnAbsPath(pszPath, szAbsPath, sizeof(szAbsPath));
+    if (RT_SUCCESS(rc2))
+    {
+        /* Create calling context. */
+        apr_pool_t *pPool = g_pfnSvnPoolCreateEx(NULL, NULL);
+        if (pPool)
+        {
+            svn_client_ctx_t *pCtx = NULL;
+            svn_error_t *pErr = g_pfnSvnClientCreateContext(&pCtx, pPool);
+            if (!pErr)
+            {
+                /* Make the call. */
+                apr_hash_t         *pHash = NULL;
+                svn_opt_revision_t  Rev;
+                RT_ZERO(Rev);
+                Rev.kind          = svn_opt_revision_base;
+                Rev.value.number  = -1L;
+                pErr = g_pfnSvnClientPropGet4(&pHash, pszProperty, szAbsPath, &Rev, &Rev,
+                                              NULL /*pActualRev*/, svn_depth_empty, NULL /*pChangeList*/, pCtx, pPool, pPool);
+                if (!pErr)
+                {
+                    /* Get the first value, if any. */
+                    rc = VERR_NOT_FOUND;
+                    apr_hash_index_t *pHashIdx = g_pfnAprHashFirst(pPool, pHash);
+                    if (pHashIdx)
+                    {
+                        const char **ppszFirst = (const char **)g_pfnAprHashThisVal(pHashIdx);
+                        if (ppszFirst && *ppszFirst)
+                            rc = RTStrDupEx(ppszValue, *ppszFirst);
+                    }
+                }
+                else if (pErr->apr_err == SVN_ERR_UNVERSIONED_RESOURCE)
+                    rc = VERR_INVALID_STATE;
+                else
+                    rc = VERR_GENERAL_FAILURE;
+            }
+            g_pfnAprPoolDestroy(pPool);
+        }
+    }
+    return rc;
+}
+#endif /* SCM_WITH_DYNAMIC_LIB_SVN */
+
 
 /**
  * Queries the value of an SVN property.
@@ -750,6 +1131,8 @@ bool ScmSvnIsDirInWorkingCopy(const char *pszDir)
  */
 int ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue)
 {
+    int rc;
+
     /*
      * Look it up in the scheduled changes.
      */
@@ -765,9 +1148,18 @@ int ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValu
             return VINF_SUCCESS;
         }
 
-#ifdef SCM_WITHOUT_LIBSVN
-    int rc;
     scmSvnFindSvnBinary(pState);
+
+#ifdef SCM_WITH_DYNAMIC_LIB_SVN
+    if (g_fSvnFunctionPointersValid)
+    {
+        rc = scmSvnQueryPropertyUsingApi(pState->pszFilename, pszName, ppszValue);
+        if (rc != VERR_NOT_SUPPORTED)
+            return rc;
+        /* Fallback: */
+    }
+#endif
+
     if (g_enmSvnVersion < kScmSvnVersion_1_7)
     {
         /*
@@ -914,11 +1306,6 @@ int ScmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValu
         }
     }
     return rc;
-
-#else
-    NOREF(pState);
-#endif
-    return VERR_NOT_FOUND;
 }
 
 
@@ -1030,8 +1417,16 @@ int ScmSvnDisplayChanges(PSCMRWSTATE pState)
  */
 int ScmSvnApplyChanges(PSCMRWSTATE pState)
 {
-#ifdef SCM_WITHOUT_LIBSVN
     scmSvnFindSvnBinary(pState);
+
+#ifdef SCM_WITH_LATER
+    if (0)
+    {
+        return ...;
+    }
+
+    /* Fallback: */
+#endif
 
     /*
      * Iterate thru the changes and apply them by starting the svn client.
@@ -1054,8 +1449,5 @@ int ScmSvnApplyChanges(PSCMRWSTATE pState)
     }
 
     return VINF_SUCCESS;
-#else
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
