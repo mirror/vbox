@@ -77,7 +77,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 /** Drag in necessary library bits.
  * The runtime lives here (in VMMR0.r0) and VBoxDD*R0.r0 links against us. */
-PFNRT g_VMMGCDeps[] =
+PFNRT g_VMMR0Deps[] =
 {
     (PFNRT)RTCrc32,
     (PFNRT)RTOnce,

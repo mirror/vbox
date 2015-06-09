@@ -534,9 +534,9 @@ VMMR0_INT_DECL(bool) VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
 /** @defgroup grp_vmm_rc    The VMM Raw-Mode Context API
  * @{
  */
-VMMRCDECL(int)      VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
-VMMRCDECL(void)     VMMGCGuestToHost(PVM pVM, int rc);
-VMMRCDECL(void)     VMMGCLogFlushIfFull(PVM pVM);
+VMMRCDECL(int)      VMMRCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...);
+VMMRCDECL(void)     VMMRCGuestToHost(PVM pVM, int rc);
+VMMRCDECL(void)     VMMRCLogFlushIfFull(PVM pVM);
 /** @} */
 #endif /* IN_RC */
 

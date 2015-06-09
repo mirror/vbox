@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VMMGC Runtime Dependencies.
+ * VMMRC Runtime Dependencies.
  */
 
 /*
@@ -25,7 +25,7 @@ extern uint64_t __umoddi3(uint64_t, uint64_t);
 RT_C_DECLS_END
 #endif // RT_OS_SOLARIS || RT_OS_FREEBSD
 
-PFNRT g_VMMGCDeps[] =
+PFNRT g_VMMRCDeps[] =
 {
     (PFNRT)memset,
     (PFNRT)memcpy,

@@ -57,10 +57,10 @@ DECLASM(bool)   vmmRCSafeMsrWrite(uint32_t uMsr, uint64_t u64Value);
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
- * @param   uOperation  Which operation to execute (VMMGCOPERATION).
+ * @param   uOperation  Which operation to execute (VMMRCOPERATION).
  * @param   uArg        Argument to that operation.
  */
-VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
+VMMRCDECL(int) VMMRCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
 {
     /* todo */
     switch (uOperation)
@@ -68,7 +68,7 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
         /*
          * Init RC modules.
          */
-        case VMMGC_DO_VMMGC_INIT:
+        case VMMRC_DO_VMMRC_INIT:
         {
             /*
              * Validate the svn revision (uArg) and build type (ellipsis).
@@ -91,7 +91,7 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
             va_end(va);
 
             int rc = RTRCInit(u64TS);
-            Log(("VMMGCEntry: VMMGC_DO_VMMGC_INIT - uArg=%u (svn revision) u64TS=%RX64; rc=%Rrc\n", uArg, u64TS, rc));
+            Log(("VMMRCEntry: VMMRC_DO_VMMRC_INIT - uArg=%u (svn revision) u64TS=%RX64; rc=%Rrc\n", uArg, u64TS, rc));
             AssertRCReturn(rc, rc);
 
             rc = PGMRegisterStringFormatTypes();
@@ -106,7 +106,7 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
          * Testcase which is used to test interrupt forwarding.
          * It spins for a while with interrupts enabled.
          */
-        case VMMGC_DO_TESTCASE_HYPER_INTERRUPT:
+        case VMMRC_DO_TESTCASE_HYPER_INTERRUPT:
         {
             uint32_t volatile i = 0;
             ASMIntEnable();
@@ -120,20 +120,20 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
          * Testcase which simply returns, this is used for
          * profiling of the switcher.
          */
-        case VMMGC_DO_TESTCASE_NOP:
+        case VMMRC_DO_TESTCASE_NOP:
             return 0;
 
         /*
          * Testcase executes a privileged instruction to force a world switch. (in both SVM & VMX)
          */
-        case VMMGC_DO_TESTCASE_HM_NOP:
+        case VMMRC_DO_TESTCASE_HM_NOP:
             ASMRdMsr_Low(MSR_IA32_SYSENTER_CS);
             return 0;
 
         /*
          * Delay for ~100us.
          */
-        case VMMGC_DO_TESTCASE_INTERRUPT_MASKING:
+        case VMMRC_DO_TESTCASE_INTERRUPT_MASKING:
         {
             uint64_t u64MaxTicks = (SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage) != ~(uint64_t)0
                                     ? SUPGetCpuHzFromGip(g_pSUPGlobalInfoPage)
@@ -161,8 +161,8 @@ VMMRCDECL(int) VMMGCEntry(PVM pVM, unsigned uOperation, unsigned uArg, ...)
          * Trap testcases and unknown operations.
          */
         default:
-            if (    uOperation >= VMMGC_DO_TESTCASE_TRAP_FIRST
-                &&  uOperation < VMMGC_DO_TESTCASE_TRAP_LAST)
+            if (    uOperation >= VMMRC_DO_TESTCASE_TRAP_FIRST
+                &&  uOperation < VMMRC_DO_TESTCASE_TRAP_LAST)
                 return vmmGCTest(pVM, uOperation, uArg);
             return VERR_INVALID_PARAMETER;
     }
@@ -191,7 +191,7 @@ VMMRCDECL(int) vmmGCLoggerFlush(PRTLOGGERRC pLogger)
  *
  * @param   pVM             Pointer to the VM.
  */
-VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
+VMMRCDECL(void) VMMRCLogFlushIfFull(PVM pVM)
 {
     if (    pVM->vmm.s.pRCLoggerRC
         &&  pVM->vmm.s.pRCLoggerRC->offScratch >= (sizeof(pVM->vmm.s.pRCLoggerRC->achScratch)*3/4))
@@ -209,7 +209,7 @@ VMMRCDECL(void) VMMGCLogFlushIfFull(PVM pVM)
  * @param   pVM         Pointer to the VM.
  * @param   rc          The status code.
  */
-VMMRCDECL(void) VMMGCGuestToHost(PVM pVM, int rc)
+VMMRCDECL(void) VMMRCGuestToHost(PVM pVM, int rc)
 {
     pVM->vmm.s.pfnRCToHost(rc);
 }
@@ -272,23 +272,23 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
     int rc = VERR_NOT_IMPLEMENTED;
     switch (uOperation)
     {
-        //case VMMGC_DO_TESTCASE_TRAP_0:
-        //case VMMGC_DO_TESTCASE_TRAP_1:
-        //case VMMGC_DO_TESTCASE_TRAP_2:
+        //case VMMRC_DO_TESTCASE_TRAP_0:
+        //case VMMRC_DO_TESTCASE_TRAP_1:
+        //case VMMRC_DO_TESTCASE_TRAP_2:
 
-        case VMMGC_DO_TESTCASE_TRAP_3:
+        case VMMRC_DO_TESTCASE_TRAP_3:
         {
             if (uArg <= 1)
                 rc = vmmGCTestTrap3();
             break;
         }
 
-        //case VMMGC_DO_TESTCASE_TRAP_4:
-        //case VMMGC_DO_TESTCASE_TRAP_5:
-        //case VMMGC_DO_TESTCASE_TRAP_6:
-        //case VMMGC_DO_TESTCASE_TRAP_7:
+        //case VMMRC_DO_TESTCASE_TRAP_4:
+        //case VMMRC_DO_TESTCASE_TRAP_5:
+        //case VMMRC_DO_TESTCASE_TRAP_6:
+        //case VMMRC_DO_TESTCASE_TRAP_7:
 
-        case VMMGC_DO_TESTCASE_TRAP_8:
+        case VMMRC_DO_TESTCASE_TRAP_8:
         {
 #ifndef DEBUG_bird /** @todo dynamic check that this won't triple fault... */
             if (uArg & 1)
@@ -299,19 +299,19 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
             break;
         }
 
-        //VMMGC_DO_TESTCASE_TRAP_9,
-        //VMMGC_DO_TESTCASE_TRAP_0A,
-        //VMMGC_DO_TESTCASE_TRAP_0B,
-        //VMMGC_DO_TESTCASE_TRAP_0C,
+        //VMMRC_DO_TESTCASE_TRAP_9,
+        //VMMRC_DO_TESTCASE_TRAP_0A,
+        //VMMRC_DO_TESTCASE_TRAP_0B,
+        //VMMRC_DO_TESTCASE_TRAP_0C,
 
-        case VMMGC_DO_TESTCASE_TRAP_0D:
+        case VMMRC_DO_TESTCASE_TRAP_0D:
         {
             if (uArg <= 1)
                 rc = vmmGCTestTrap0d();
             break;
         }
 
-        case VMMGC_DO_TESTCASE_TRAP_0E:
+        case VMMRC_DO_TESTCASE_TRAP_0E:
         {
             if (uArg <= 1)
                 rc = vmmGCTestTrap0e();

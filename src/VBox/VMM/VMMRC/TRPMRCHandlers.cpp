@@ -120,7 +120,7 @@ typedef struct TRPMGCHYPER
 *   Global Variables                                                           *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
-/** Defined in VMMGC0.asm or VMMGC99.asm.
+/** Defined in VMMRC0.asm or VMMRC99.asm.
  * @{ */
 extern const TRPMGCHYPER g_aTrap0bHandlers[1];
 extern const TRPMGCHYPER g_aTrap0bHandlersEnd[1];

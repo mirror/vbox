@@ -464,59 +464,59 @@ typedef VMMCPU *PVMMCPU;
 
 
 /**
- * The VMMGCEntry() codes.
+ * The VMMRCEntry() codes.
  */
-typedef enum VMMGCOPERATION
+typedef enum VMMRCOPERATION
 {
     /** Do GC module init. */
-    VMMGC_DO_VMMGC_INIT = 1,
+    VMMRC_DO_VMMRC_INIT = 1,
 
     /** The first Trap testcase. */
-    VMMGC_DO_TESTCASE_TRAP_FIRST = 0x0dead000,
+    VMMRC_DO_TESTCASE_TRAP_FIRST = 0x0dead000,
     /** Trap 0 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0 = VMMGC_DO_TESTCASE_TRAP_FIRST,
+    VMMRC_DO_TESTCASE_TRAP_0 = VMMRC_DO_TESTCASE_TRAP_FIRST,
     /** Trap 1 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_1,
+    VMMRC_DO_TESTCASE_TRAP_1,
     /** Trap 2 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_2,
+    VMMRC_DO_TESTCASE_TRAP_2,
     /** Trap 3 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_3,
+    VMMRC_DO_TESTCASE_TRAP_3,
     /** Trap 4 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_4,
+    VMMRC_DO_TESTCASE_TRAP_4,
     /** Trap 5 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_5,
+    VMMRC_DO_TESTCASE_TRAP_5,
     /** Trap 6 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_6,
+    VMMRC_DO_TESTCASE_TRAP_6,
     /** Trap 7 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_7,
+    VMMRC_DO_TESTCASE_TRAP_7,
     /** Trap 8 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_8,
+    VMMRC_DO_TESTCASE_TRAP_8,
     /** Trap 9 testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_9,
+    VMMRC_DO_TESTCASE_TRAP_9,
     /** Trap 0a testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0A,
+    VMMRC_DO_TESTCASE_TRAP_0A,
     /** Trap 0b testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0B,
+    VMMRC_DO_TESTCASE_TRAP_0B,
     /** Trap 0c testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0C,
+    VMMRC_DO_TESTCASE_TRAP_0C,
     /** Trap 0d testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0D,
+    VMMRC_DO_TESTCASE_TRAP_0D,
     /** Trap 0e testcases, uArg selects the variation. */
-    VMMGC_DO_TESTCASE_TRAP_0E,
+    VMMRC_DO_TESTCASE_TRAP_0E,
     /** The last trap testcase (exclusive). */
-    VMMGC_DO_TESTCASE_TRAP_LAST,
+    VMMRC_DO_TESTCASE_TRAP_LAST,
     /** Testcase for checking interrupt forwarding. */
-    VMMGC_DO_TESTCASE_HYPER_INTERRUPT,
+    VMMRC_DO_TESTCASE_HYPER_INTERRUPT,
     /** Switching testing and profiling stub. */
-    VMMGC_DO_TESTCASE_NOP,
+    VMMRC_DO_TESTCASE_NOP,
     /** Testcase for checking interrupt masking.. */
-    VMMGC_DO_TESTCASE_INTERRUPT_MASKING,
+    VMMRC_DO_TESTCASE_INTERRUPT_MASKING,
     /** Switching testing and profiling stub. */
-    VMMGC_DO_TESTCASE_HM_NOP,
+    VMMRC_DO_TESTCASE_HM_NOP,
 
     /** The usual 32-bit hack. */
-    VMMGC_DO_32_BIT_HACK = 0x7fffffff
-} VMMGCOPERATION;
+    VMMRC_DO_32_BIT_HACK = 0x7fffffff
+} VMMRCOPERATION;
 
 
 
@@ -550,11 +550,11 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);
 #ifdef IN_RING0
 /**
  * World switcher assembly routine.
- * It will call VMMGCEntry().
+ * It will call VMMRCEntry().
  *
- * @returns return code from VMMGCEntry().
+ * @returns return code from VMMRCEntry().
  * @param   pVM     Pointer to the VM.
- * @param   uArg    See VMMGCEntry().
+ * @param   uArg    See VMMRCEntry().
  * @internal
  */
 DECLASM(int)    vmmR0WorldSwitch(PVM pVM, unsigned uArg);

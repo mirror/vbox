@@ -1,10 +1,10 @@
 ; $Id$
 ;; @file
-; VMMGC - Raw-mode Context Assembly Macros.
+; VMMRC - Raw-mode Context Assembly Macros.
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2015 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -15,8 +15,8 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-%ifndef __VMMGC_mac__
-%define __VMMGC_mac__
+%ifndef __VMMRC_mac__
+%define __VMMRC_mac__
 
 %include "VBox/asmdefs.mac"
 

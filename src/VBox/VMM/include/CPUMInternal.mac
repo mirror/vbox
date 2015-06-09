@@ -62,8 +62,6 @@ endstruc
 %define CPUM_HANDLER_TYPEMASK           0ffh
 %define CPUM_HANDLER_CTXCORE_IN_EBP     RT_BIT(31)
 
-%define VMMGCRET_USED_FPU               040000000h
-
 
 ;; if anyone figures how to do %if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) in
 ; nasm please tell / fix this hack.
