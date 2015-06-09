@@ -2443,7 +2443,7 @@ void Appliance::i_importOneDiskImage(const ovf::DiskImage &di,
 
             if ((pszSuff = RTPathSuffix(strTargetPath->c_str()))!=NULL)
             {
-                /* 
+                /*
                  * Figure out which format the user like to have. Default is VMDK
                  * or it can be VDI if according command-line option is set
                  */

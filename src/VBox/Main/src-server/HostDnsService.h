@@ -185,7 +185,7 @@ class HostDnsServiceSolaris : public HostDnsServiceResolvConf
     HostDnsServiceSolaris(){}
     ~HostDnsServiceSolaris(){}
     virtual HRESULT init(VirtualBox *virtualbox) {
-	return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
     }
 };
 
@@ -196,7 +196,7 @@ class HostDnsServiceLinux : public HostDnsServiceResolvConf
     HostDnsServiceLinux():HostDnsServiceResolvConf(true){}
     virtual ~HostDnsServiceLinux();
     virtual HRESULT init(VirtualBox *virtualbox) {
-	return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
     }
 
   protected:
@@ -211,7 +211,7 @@ class HostDnsServiceFreebsd: public HostDnsServiceResolvConf
     HostDnsServiceFreebsd(){}
     ~HostDnsServiceFreebsd(){}
     virtual HRESULT init(VirtualBox *virtualbox) {
-	return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
+        return HostDnsServiceResolvConf::init(virtualbox, "/etc/resolv.conf");
     }
 };
 
@@ -223,7 +223,7 @@ class HostDnsServiceOs2 : public HostDnsServiceResolvConf
     ~HostDnsServiceOs2(){}
     /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
     virtual HRESULT init(VirtualBox *virtualbox) {
-	return HostDnsServiceResolvConf::init(virtualbox, "\\MPTN\\ETC\\RESOLV2");
+        return HostDnsServiceResolvConf::init(virtualbox, "\\MPTN\\ETC\\RESOLV2");
     }
 };
 

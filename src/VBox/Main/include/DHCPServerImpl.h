@@ -92,9 +92,9 @@ public:
 
 private:
     HRESULT encodeOption(com::Utf8Str &aEncoded,
-			 uint32_t aOptCode, const DhcpOptValue &aOptValue);
+                         uint32_t aOptCode, const DhcpOptValue &aOptValue);
     int addOption(DhcpOptionMap &aMap,
-		  DhcpOpt_T aOption, const com::Utf8Str &aValue);
+                  DhcpOpt_T aOption, const com::Utf8Str &aValue);
 
     // wrapped IDHCPServer properties
     HRESULT getEventSource(ComPtr<IEventSource> &aEventSource);

@@ -845,7 +845,7 @@ void Console::i_reportDriverVersions()
                         break;
                     }
                 }
-                        
+
                 if (GetFileVersionInfo(pszDrv, NULL, cbVerInfo, pVerInfo))
                 {
                     UINT   cbSize = 0;

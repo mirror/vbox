@@ -51,7 +51,7 @@ bool HostDnsInformation::equals(const HostDnsInformation &info, uint32_t fLaxCom
     {
         std::set<std::string> l(servers.begin(), servers.end());
         std::set<std::string> r(info.servers.begin(), info.servers.end());
-        
+
         fSameServers = (l == r);
     }
 
