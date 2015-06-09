@@ -851,17 +851,22 @@ private:
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
 
+        /* Paravirtualization feature: */
+        const QString strParavirt = gpConverter->toString(machine.GetEffectiveParavirtProvider());
+
         /* Prepare tool-tip: */
         QString tip(QApplication::translate("UIIndicatorsPool",
                                             "Additional feature status:"
                                             "<br><nobr><b>%1:</b>&nbsp;%2</nobr>"
                                             "<br><nobr><b>%3:</b>&nbsp;%4</nobr>"
                                             "<br><nobr><b>%5:</b>&nbsp;%6</nobr>"
-                                            "<br><nobr><b>%7:</b>&nbsp;%8%</nobr>",
+                                            "<br><nobr><b>%7:</b>&nbsp;%8</nobr>"
+                                            "<br><nobr><b>%9:</b>&nbsp;%10%</nobr>",
                                             "Virtualization Stuff LED")
                     .arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"), virtualization)
                     .arg(VBoxGlobal::tr("Nested Paging"), nestedPaging)
                     .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)
+                    .arg(VBoxGlobal::tr("Paravirtualization Interface", "details report"), strParavirt)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
         /* CPU count: */
