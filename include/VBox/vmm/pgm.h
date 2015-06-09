@@ -439,7 +439,7 @@ VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRelease(PVM pVM, PGMPHYSHANDLERTYPE hT
 VMMDECL(uint32_t)   PGMHandlerPhysicalTypeRetain(PVM pVM, PGMPHYSHANDLERTYPE hType);
 
 VMMDECL(int)        PGMHandlerPhysicalRegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, PGMPHYSHANDLERTYPE hType,
-                                               RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, 
+                                               RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
                                                R3PTRTYPE(const char *) pszDesc);
 VMMDECL(int)        PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast);
 VMMDECL(int)        PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys);
