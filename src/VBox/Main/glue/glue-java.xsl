@@ -3169,6 +3169,13 @@ public class VirtualBoxManager
     {
     }
 
+    public String getClientAPIVersion()
+    {
+        return "]]></xsl:text>
+    <xsl:value-of select="substring($G_vboxApiSuffix, 2)" />
+    <xsl:text><![CDATA[";
+    }
+
     public IVirtualBox getVBox()
     {
         return this.vbox;
@@ -3833,6 +3840,13 @@ public class VirtualBoxManager
     public void disconnect()
     {
         throw new VBoxException("Disconnect doesn't make sense for local bindings");
+    }
+
+    public String getClientAPIVersion()
+    {
+        return "]]></xsl:text>
+    <xsl:value-of select="substring($G_vboxApiSuffix, 2)" />
+    <xsl:text><![CDATA[";
     }
 
     public IVirtualBox getVBox()
@@ -4616,6 +4630,13 @@ public class VirtualBoxManager
                 this.port = null;
             }
         }
+    }
+
+    public String getClientAPIVersion()
+    {
+        return "]]></xsl:text>
+    <xsl:value-of select="substring($G_vboxApiSuffix, 2)" />
+    <xsl:text><![CDATA[";
     }
 
     public IVirtualBox getVBox()
