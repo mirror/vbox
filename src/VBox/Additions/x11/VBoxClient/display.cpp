@@ -221,7 +221,7 @@ static void updateMouseCapabilities(struct DISPLAYSTATE *pState)
     int rc;
 
     rc = VbglR3GetMouseStatus(&fFeatures, NULL, NULL);
-    
+
     if (rc != VINF_SUCCESS)
         VBClFatalError(("Failed to get mouse status, rc=%Rrc\n", rc));
     XChangeProperty(pState->pDisplay, DefaultRootWindow(pState->pDisplay),

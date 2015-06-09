@@ -603,7 +603,7 @@ RTDECL(int)  VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 }
 
 
-/** 
+/**
  * Report the guest cursor position.  The host may wish to use this information
  * to re-position its own cursor (though this is currently unlikely).  The
  * current host cursor position is returned.

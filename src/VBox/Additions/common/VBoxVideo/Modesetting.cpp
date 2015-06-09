@@ -283,7 +283,7 @@ RTDECL(void) VBoxHGSMIProcessDisplayInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 /** Report the rectangle relative to which absolute pointer events should be
  *  expressed.  This information remains valid until the next VBVA resize event
  *  for any screen, at which time it is reset to the bounding rectangle of all
- *  virtual screens. 
+ *  virtual screens.
  * @param  pCtx      The context containing the heap to use.
  * @param  cOriginX  Upper left X co-ordinate relative to the first screen.
  * @param  cOriginY  Upper left Y co-ordinate relative to the first screen.

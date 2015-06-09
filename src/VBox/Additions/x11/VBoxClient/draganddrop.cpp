@@ -947,7 +947,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
             /* Anything else. */
             else
             {
-                LogFlowThisFunc(("Refusing unknown command of wnd=%#x ('%s')\n", e.xselectionrequest.requestor, 
+                LogFlowThisFunc(("Refusing unknown command of wnd=%#x ('%s')\n", e.xselectionrequest.requestor,
                                  propName.value ? (const char *)propName.value : "<No name>"));
 
                 /* We don't understand this request message and therefore answer with an
