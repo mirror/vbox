@@ -261,7 +261,7 @@ typedef struct HGSMIBUFFERCONTEXT
 } HGSMIBUFFERCONTEXT;
 
 /** Verify that the given offBuffer points to a valid buffer, which is within the area.
- * 
+ *
  * @returns VBox status and the buffer information in pBufferContext.
  * @param pArea          Area which supposed to contain the buffer.
  * @param offBuffer      The buffer location in the area.
