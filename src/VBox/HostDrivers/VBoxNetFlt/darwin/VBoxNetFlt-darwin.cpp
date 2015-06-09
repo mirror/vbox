@@ -86,6 +86,11 @@ RT_C_DECLS_END
 #define VBOXNETFLT_DARWIN_TEST_SEG_SIZE 14
 #endif
 
+/* XXX: hidden undef #ifdef __APPLE__ */
+#define VBOX_IN_LOOPBACK(addr)  (((addr) & IN_CLASSA_NET) == 0x7f000000)
+#define VBOX_IN_LINKLOCAL(addr) (((addr) & IN_CLASSB_NET) == 0xa9fe0000)
+
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -1399,7 +1404,10 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
             struct sockaddr_in *sin = (struct sockaddr_in *)&ss;
             u_int32_t u32Addr = ntohl(sin->sin_addr.s_addr);
 
-            if ((u32Addr >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
+            if (VBOX_IN_LOOPBACK(u32Addr))
+                continue;
+
+            if (ifaddr_ifnet(ifa) != pIfNet && VBOX_IN_LINKLOCAL(u32Addr))
                 continue;
 
             Log(("> inet %RTnaipv4\n", sin->sin_addr.s_addr));
@@ -1414,7 +1422,7 @@ int  vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
                 continue;
 
             /* link-local from other interfaces are out of scope */
-            if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr) && ifaddr_ifnet(ifa) != pIfNet)
+            if (ifaddr_ifnet(ifa) != pIfNet && IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr))
                 continue;
 
             Log(("> inet6 %RTnaipv6\n", &sin6->sin6_addr));
@@ -1448,6 +1456,11 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
              pSysSock, pThis->u.s.pSysSock));
         return;
     }
+
+    struct net_event_data my_link;
+    ifnet_t pIfNet = pThis->u.s.pIfNet; /* XXX: retain? */
+    ifnet_family_t if_family = ifnet_family(pIfNet);
+    u_int32_t if_unit = ifnet_unit(pIfNet);
 
     for (;;) {
         mbuf_t m;
@@ -1489,11 +1502,26 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             struct kev_in_data *iev = (struct kev_in_data *)msg->event_data;
             struct net_event_data *link = &iev->link_data;
             PCRTNETADDRU pAddr = (PCRTNETADDRU)&iev->ia_addr;
+            u_int32_t u32Addr = ntohl(pAddr->IPv4.u);
+
+            if (VBOX_IN_LOOPBACK(u32Addr))
+            {
+                mbuf_freem(m);
+                continue;
+            }
+
+            if (   (link->if_family != if_family || link->if_unit != if_unit)
+                && VBOX_IN_LINKLOCAL(u32Addr))
+            {
+                mbuf_freem(m);
+                continue;
+            }
+
             switch (msg->event_code)
             {
                 case KEV_INET_NEW_ADDR:
                     Log(("KEV_INET_NEW_ADDR %.*s%d: %RTnaipv4\n",
-                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
 
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                         /* :fAdded */ true, kIntNetAddrType_IPv4, pAddr);
@@ -1501,7 +1529,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
 
                 case KEV_INET_ADDR_DELETED:
                     Log(("KEV_INET_ADDR_DELETED %.*s%d: %RTnaipv4\n",
-                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
+                         IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
 
                     pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort,
                         /* :fAdded */ false, kIntNetAddrType_IPv4, pAddr);
@@ -1509,7 +1537,7 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
 
                 default:
                     Log(("KEV INET event %u %.*s%d: addr %RTnaipv4\n",
-                         msg->event_code, IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4));
+                         msg->event_code, IFNAMSIZ, link->if_name, link->if_unit, pAddr->IPv4.u));
                     break;
             }
         }
@@ -1526,22 +1554,32 @@ static void vboxNetFltDarwinSysSockUpcall(socket_t pSysSock, void *pvData, int f
             struct kev_in6_data *iev6 = (struct kev_in6_data *)msg->event_data;
             struct net_event_data *link = &iev6->link_data;
             PCRTNETADDRU pAddr = (PCRTNETADDRU)&iev6->ia_addr.sin6_addr;
+
+            if (IN6_IS_ADDR_LOOPBACK(&iev6->ia_addr.sin6_addr))
+            {
+                mbuf_freem(m);
+                continue;
+            }
+
+            if (   (link->if_family != if_family || link->if_unit != if_unit)
+                && IN6_IS_ADDR_LINKLOCAL(&iev6->ia_addr.sin6_addr))
+            {
+                mbuf_freem(m);
+                continue;
+            }
+
+
+
             switch (msg->event_code)
             {
                 case KEV_INET6_NEW_USER_ADDR:
                     Log(("KEV_INET6_NEW_USER_ADDR %.*s%d: %RTnaipv6\n",
                          IFNAMSIZ, link->if_name, link->if_unit, pAddr));
-                    /*
-                     * XXX: TODO: link-local addresses are first
-                     * reported as KEV_INET6_NEW_LL_ADDR, but then are
-                     * also reported here too, after DAD, I guess.
-                     */
                     goto kev_inet6_new;
 
                 case KEV_INET6_NEW_LL_ADDR:
                     Log(("KEV_INET6_NEW_LL_ADDR %.*s%d: %RTnaipv6\n",
                          IFNAMSIZ, link->if_name, link->if_unit, pAddr));
-                    /* XXX: uwe: TODO: only interface we are attached to */
                     goto kev_inet6_new;
 
                 case KEV_INET6_NEW_RTADV_ADDR:
