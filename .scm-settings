@@ -45,6 +45,8 @@
 --filter-out-dirs  "*/tools/."
 --filter-out-dirs  "*/webtools/."
 --filter-out-dirs  "*/kBuild/."
+--filter-out-dirs  "*/_kBuild/."
+--filter-out-dirs  "*/kBuild_/."
 --filter-out-dirs  "*/debian/."
 --filter-out-dirs  "*/SlickEdit/."
 --filter-out-dirs  "*/src/libs/*/."

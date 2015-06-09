@@ -676,6 +676,8 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
  */
 static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
 {
+    ScmVerbose(NULL, 3, "Loading settings file '%s'...\n", pszFilename);
+
     SCMSTREAM Stream;
     int rc = ScmStreamInitForReading(&Stream, pszFilename);
     if (RT_FAILURE(rc))
