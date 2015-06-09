@@ -44,7 +44,6 @@
 #include "AudioMixBuffer.h"
 
 #include "VBoxDD.h"
-#include "vl_vbox.h"
 
 #include <iprt/alloc.h>
 #include <iprt/uuid.h> /* For PDMIBASE_2_PDMDRV. */
