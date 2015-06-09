@@ -278,14 +278,18 @@ RTDECL(int) RTLdrLoadEx(const char *pszFilename, PRTLDRMOD phLdrMod, uint32_t fF
  * @{ */
 /** Symbols defined in this library are not made available to resolve
  * references in subsequently loaded libraries (default). */
-#define RTLDRLOAD_FLAGS_LOCAL       UINT32_C(0)
+#define RTLDRLOAD_FLAGS_LOCAL                   UINT32_C(0)
 /** Symbols defined in this library will be made available for symbol
  * resolution of subsequently loaded libraries. */
-#define RTLDRLOAD_FLAGS_GLOBAL      RT_BIT_32(0)
+#define RTLDRLOAD_FLAGS_GLOBAL                  RT_BIT_32(0)
 /** Do not unload the library upon RTLdrClose. (For system libs.) */
-#define RTLDRLOAD_FLAGS_NO_UNLOAD   RT_BIT_32(1)
+#define RTLDRLOAD_FLAGS_NO_UNLOAD               RT_BIT_32(1)
+/** Windows/NT: Search the DLL load directory for imported DLLs - W7,
+ *  Vista, and W2K8 requires KB2533623 to be installed to support this; not
+ *  supported on XP, W2K3 or earlier.  Ignored on other platforms. */
+#define RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR  RT_BIT_32(2)
 /** The mask of valid flag bits. */
-#define RTLDRLOAD_FLAGS_VALID_MASK  UINT32_C(0x00000003)
+#define RTLDRLOAD_FLAGS_VALID_MASK              UINT32_C(0x00000007)
 /** @} */
 
 /**
