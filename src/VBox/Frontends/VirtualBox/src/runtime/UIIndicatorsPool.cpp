@@ -851,6 +851,9 @@ private:
         /* CPU Execution Cap feature: */
         QString strCPUExecCap = QString::number(machine.GetCPUExecutionCap());
 
+        /* Paravirtualization feature: */
+        const QString strParavirt = gpConverter->toString(machine.GetEffectiveParavirtProvider());
+
         /* Prepare tool-tip: */
         QString tip(QApplication::translate("UIIndicatorsPool",
                                             "Additional feature status:"
@@ -863,6 +866,12 @@ private:
                     .arg(VBoxGlobal::tr("Nested Paging"), nestedPaging)
                     .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
+
+        // TODO: We had to use that large NLS above for now.
+        //       Later it should be reworked to be well-maintainable..
+        /* Separately add information about paravirtualization interface feature: */
+        tip += QApplication::translate("UIIndicatorsPool", "<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
+                                      .arg(VBoxGlobal::tr("Paravirtualization Interface", "details report"), strParavirt);
 
         /* CPU count: */
         int cpuCount = machine.GetCPUCount();
