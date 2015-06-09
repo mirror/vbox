@@ -8498,19 +8498,19 @@ int Console::i_changeDnDMode(DnDMode_T aDnDMode)
     {
         default:
         case DnDMode_Disabled:
-            LogRel(("Changed drag and drop mode to: Off\n"));
+            LogRel(("Drag and drop mode: Off\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_OFF;
             break;
         case DnDMode_GuestToHost:
-            LogRel(("Changed drag and drop mode to: Guest to Host\n"));
+            LogRel(("Drag and drop mode: Guest to Host\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_GUEST_TO_HOST;
             break;
         case DnDMode_HostToGuest:
-            LogRel(("Changed drag and drop mode to: Host to Guest\n"));
+            LogRel(("Drag and drop mode: Host to Guest\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_HOST_TO_GUEST;
             break;
         case DnDMode_Bidirectional:
-            LogRel(("Changed drag and drop mode to: Bidirectional\n"));
+            LogRel(("Drag and drop mode: Bidirectional\n"));
             parm.u.uint32 = VBOX_DRAG_AND_DROP_MODE_BIDIRECTIONAL;
             break;
     }
