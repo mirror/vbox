@@ -620,4 +620,3 @@ VMMR3DECL(void *) DBGFR3OSQueryInterface(PUVM pUVM, DBGFOSINTERFACE enmIf)
     return pvIf;
 }
 
-
