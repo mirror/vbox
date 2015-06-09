@@ -75,7 +75,7 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/virtualbox
 install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 mv VBoxEFI32.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
 mv VBoxEFI64.fd $RPM_BUILD_ROOT/usr/lib/virtualbox || true
-mv *.gc $RPM_BUILD_ROOT/usr/lib/virtualbox
+mv *.rc $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv *.r0 $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv *.rel $RPM_BUILD_ROOT/usr/lib/virtualbox || true
 mv VBoxNetDHCP $RPM_BUILD_ROOT/usr/lib/virtualbox
