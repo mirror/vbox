@@ -160,6 +160,10 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1): $1 | $$$$(dir $$$$@)
 endef
 
 
+## List of refentry files (manpages).
+VBOX_MANUAL_XML_REFENTRY_FILES = \
+	man_VBoxManage_extpack.xml
+
 
 #
 # Targets
@@ -167,7 +171,7 @@ endef
 
 BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
 
-ifdef VBOX_WITH_DOCS
+if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
   ## @todo make this an install target, drop the BLDDIRS.
   OTHERS += \
@@ -237,9 +241,6 @@ ifdef VBOX_WITH_DOCS
 
  VBOX_MANUAL_XML_FILES_INCL_CHANGELOG = $(VBOX_MANUAL_XML_FILES) \
  	user_ChangeLog.xml
-
- VBOX_MANUAL_XML_REFENTRY_FILES = \
- 	man_VBoxManage_extpack.xml
 
  VBOX_SDKREF_XML_FILES = \
  	SDKRef.xml
@@ -316,7 +317,7 @@ ifdef VBOX_WITH_DOCS
 	$(VBOX_MANUAL_APIREF_TMP) \
  	$(PATH_STAGE_BIN)/sdk/docs/SDKRef.pdf
 
-endif # VBOX_WITH_DOCS
+endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
 
 
@@ -381,6 +382,9 @@ $(VBOX_XML_CATALOG_DOCBOOK): $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(QUIET)$(APPEND) $@.tmp '</catalog>'
 	$(QUIET)$(MV) -f $@.tmp $@
 endif
+
+
+if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
 
 ##########################################################################################
@@ -829,6 +833,7 @@ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
+
 ##########################################################################################
 #
 #  ChangeLog.html
@@ -858,6 +863,10 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
 cl-html: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
+
+
+
+endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
 
 
 #
