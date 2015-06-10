@@ -3657,10 +3657,6 @@
         <translation>Markiert diese virtuelle Platte als hot-pluggable.</translation>
     </message>
     <message>
-        <source>Choose a virtual disk image file...</source>
-        <translation>Abbild auswählen...</translation>
-    </message>
-    <message>
         <source>Image</source>
         <comment>storage image</comment>
         <translation>Datei</translation>
@@ -3720,7 +3716,7 @@
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>Abbild auswählen...</translation>
     </message>
 </context>
 <context>
