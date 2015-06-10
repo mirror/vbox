@@ -6604,7 +6604,7 @@
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation>Sanal bir disk kalıbı dosyası seçin...</translation>
+        <translation type="obsolete">Sanal bir disk kalıbı dosyası seçin...</translation>
     </message>
     <message>
         <source>Image</source>
@@ -6662,6 +6662,11 @@
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
         <translation>Sanal Disket Dosyası Seçin...</translation>
+    </message>
+    <message>
+        <source>Choose disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

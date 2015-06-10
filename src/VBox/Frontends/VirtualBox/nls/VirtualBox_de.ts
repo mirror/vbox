@@ -3717,6 +3717,11 @@
         <source>Choose Virtual Floppy Disk File...</source>
         <translation>Datei für virtuelle Diskette auswählen...</translation>
     </message>
+    <message>
+        <source>Choose disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>

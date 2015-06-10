@@ -6322,7 +6322,7 @@
     <message>
         <source>Choose a virtual disk image file...</source>
         <translatorcomment>todo</translatorcomment>
-        <translation>选择一个虚拟光盘...</translation>
+        <translation type="obsolete">选择一个虚拟光盘...</translation>
     </message>
     <message>
         <source>Image</source>
@@ -6381,6 +6381,11 @@
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
         <translation>选择一个虚拟软盘...</translation>
+    </message>
+    <message>
+        <source>Choose disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

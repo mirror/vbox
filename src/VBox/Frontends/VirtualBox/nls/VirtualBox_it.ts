@@ -8050,7 +8050,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation>Scegli il file dell&apos;immagine del disco virtuale...</translation>
+        <translation type="obsolete">Scegli il file dell&apos;immagine del disco virtuale...</translation>
     </message>
     <message>
         <source>Image</source>
@@ -8108,6 +8108,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
         <translation>Scegli un file di disco floppy virtuale...</translation>
+    </message>
+    <message>
+        <source>Choose disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
