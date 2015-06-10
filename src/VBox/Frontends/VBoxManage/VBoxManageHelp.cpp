@@ -281,6 +281,17 @@ static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCo
 
 
 /**
+ * Prints the brief usage information for the current (sub)command.
+ *
+ * @param   pStrm               The output stream.
+ */
+void printUsage(PRTSTREAM pStrm)
+{
+    printBriefCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, pStrm);
+}
+
+
+/**
  * Prints full help for a command or subcommand.
  *
  * @param   enmCommand          The command.
@@ -304,6 +315,17 @@ static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand
         }
     }
     Assert(cFound > 0);
+}
+
+
+/**
+ * Prints the full help for the current (sub)command.
+ *
+ * @param   pStrm               The output stream.
+ */
+void printHelp(PRTSTREAM pStrm)
+{
+    printFullCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, pStrm);
 }
 
 
@@ -345,6 +367,36 @@ RTEXITCODE errorUnknownSubcommand(const char *pszSubcommand)
 
     return errorSyntax("Unknown subcommand: %s", pszSubcommand);
 }
+
+
+/**
+ * Display too many parameters error message and current command usage.
+ *
+ * May show full command help instead if the subcommand is a common help option.
+ *
+ * @returns RTEXITCODE_SYNTAX, or RTEXITCODE_SUCCESS if common help option.
+ * @param   papszArgs           The first unwanted parameter.  Terminated by
+ *                              NULL entry.
+ */
+RTEXITCODE errorTooManyParameters(char **papszArgs)
+{
+    Assert(g_enmCurCommand != HELP_CMD_VBOXMANAGE_INVALID);
+    Assert(g_fCurSubcommandScope != UINT64_MAX);
+
+    /* check if help was requested. */
+    if (papszArgs)
+        for (uint32_t i = 0; papszArgs[i]; i++)
+            if (   strcmp(papszArgs[i], "--help") == 0
+                || strcmp(papszArgs[i], "-h") == 0
+                || strcmp(papszArgs[i], "-?") == 0)
+            {
+                printFullCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, g_pStdOut);
+                return RTEXITCODE_SUCCESS;
+            }
+
+    return errorSyntax("Too many parameters");
+}
+
 
 /**
  * Display current (sub)command usage and the custom error message.
