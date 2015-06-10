@@ -1831,6 +1831,7 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
 
     /* Get recent-medium list: */
     QStringList recentMediumList;
+    QStringList recentMediumListUsed;
     switch (mediumType)
     {
         case UIMediumType_HardDisk: recentMediumList = gEDataManager->recentListOfHardDrives(); break;
@@ -1841,6 +1842,11 @@ void VBoxGlobal::prepareStorageMenu(QMenu &menu,
     /* Prepare choose-recent-medium actions: */
     foreach (const QString &strRecentMediumLocationBase, recentMediumList)
     {
+        /* Confirm medium uniqueness: */
+        if (recentMediumListUsed.contains(strRecentMediumLocationBase))
+            continue;
+        /* Mark medium as known: */
+        recentMediumListUsed << strRecentMediumLocationBase;
         /* Convert separators to native: */
         const QString strRecentMediumLocation = QDir::toNativeSeparators(strRecentMediumLocationBase);
         /* Confirm medium presence: */
