@@ -107,7 +107,7 @@
         <command>VBoxManage extpack cleanup</command>
       </cmdsynopsis>
       <para>
-        Used to remove temporariy files and directories that may have been left behind
+        Used to remove temporary files and directories that may have been left behind
         if a previous install or uninstall command failed.
       </para>
     </refsect2>
