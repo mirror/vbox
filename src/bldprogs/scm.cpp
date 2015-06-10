@@ -215,6 +215,16 @@ static PFNSCMREWRITER const g_aRewritersFor_RC[] =
     rewrite_SvnKeywords
 };
 
+static PFNSCMREWRITER const g_aRewritersFor_DEF[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords
+};
+
 static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
 {
     rewrite_ForceLF,
@@ -225,6 +235,13 @@ static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
 static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
 {
     rewrite_ForceCRLF,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks
+};
+
+static PFNSCMREWRITER const g_aRewritersFor_SedScripts[] =
+{
+    rewrite_ForceLF,
     rewrite_ExpandTabs,
     rewrite_StripTrailingBlanks
 };
@@ -243,11 +260,13 @@ static SCMCFGENTRY const g_aConfigs[] =
 {
     { RT_ELEMENTS(g_aRewritersFor_Makefile_kup), &g_aRewritersFor_Makefile_kup[0], "Makefile.kup" },
     { RT_ELEMENTS(g_aRewritersFor_Makefile_kmk), &g_aRewritersFor_Makefile_kmk[0], "Makefile.kmk|Config.kmk" },
-    { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc" },
+    { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc|*.m|*.mm" },
     { RT_ELEMENTS(g_aRewritersFor_H_and_HPP),    &g_aRewritersFor_H_and_HPP[0],    "*.h|*.hpp" },
     { RT_ELEMENTS(g_aRewritersFor_RC),           &g_aRewritersFor_RC[0],           "*.rc" },
+    { RT_ELEMENTS(g_aRewritersFor_DEF),          &g_aRewritersFor_DEF[0],          "*.def" },
     { RT_ELEMENTS(g_aRewritersFor_ShellScripts), &g_aRewritersFor_ShellScripts[0], "*.sh|configure" },
     { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm|*.vbs|*.ps1" },
+    { RT_ELEMENTS(g_aRewritersFor_SedScripts),   &g_aRewritersFor_SedScripts[0],   "*.sed" },
     { RT_ELEMENTS(g_aRewritersFor_Python),       &g_aRewritersFor_Python[0],       "*.py" },
 };
 
