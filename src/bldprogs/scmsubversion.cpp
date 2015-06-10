@@ -1100,7 +1100,12 @@ static int scmSvnQueryPropertyUsingApi(const char *pszPath, const char *pszPrope
                     {
                         const char **ppszFirst = (const char **)g_pfnAprHashThisVal(pHashIdx);
                         if (ppszFirst && *ppszFirst)
-                            rc = RTStrDupEx(ppszValue, *ppszFirst);
+                        {
+                            if (ppszValue)
+                                rc = RTStrDupEx(ppszValue, *ppszFirst);
+                            else
+                                rc = VINF_SUCCESS;
+                        }
                     }
                 }
                 else if (pErr->apr_err == SVN_ERR_UNVERSIONED_RESOURCE)
