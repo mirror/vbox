@@ -58,7 +58,7 @@
 <xsl:template name="fileheader">
   <xsl:param name="name" />
   <xsl:text>/*
- * Copyright (C) 2010-2014 Oracle Corporation
+ * Copyright (C) 2010-2015 Oracle Corporation
  *
  * This file is part of the VirtualBox SDK, as available from
  * http://www.virtualbox.org.  This library is free software; you can
