@@ -31,6 +31,10 @@
 #include <iprt/stream.h>
 #include <iprt/getopt.h>
 
+#ifndef VBOX_ONLY_DOCS
+# include "VBoxManageBuiltInHelp.h"
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -182,6 +186,14 @@ RTEXITCODE errorArgument(const char *pszFormat, ...);
 void printUsageInternal(USAGECATEGORY fCategory, PRTSTREAM pStrm);
 
 #ifndef VBOX_ONLY_DOCS
+void        setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand);
+void        setCurrentSubcommand(uint64_t fCurSubcommandScope);
+
+RTEXITCODE  errorNoSubcommand(void);
+RTEXITCODE  errorUnknownSubcommand(const char *pszSubCmd);
+RTEXITCODE  errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion);
+RTEXITCODE  errorSyntax(const char *pszFormat, ...);
+
 HRESULT showProgress(ComPtr<IProgress> progress);
 #endif
 

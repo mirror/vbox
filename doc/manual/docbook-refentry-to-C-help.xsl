@@ -61,6 +61,9 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
       <xsl:if test="not(@id) or substring-before(@id, '-') != 'synopsis'">
         <xsl:message terminate="yes">The refsynopsisdiv/cmdsynopsis elements must have an id starting with 'synopsis-'.</xsl:message>
       </xsl:if>
+      <xsl:if test="not(starts-with(substring-after(@id, '-'), $sBaseId))">
+        <xsl:message terminate="yes">The refsynopsisdiv/cmdsynopsis elements @id is expected to include the refentry @id.</xsl:message>
+      </xsl:if>
       <xsl:if test="not(../../refsect1/refsect2[@id=./@id])">
         <xsl:message terminate="yes">No refsect2 with id="<xsl:value-of select="@id"/>" found.</xsl:message>
       </xsl:if>
@@ -81,7 +84,7 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
 {</xsl:text>
     <!-- We start by combining the refentry title and the refpurpose into a short description. -->
     <xsl:text>
-    {   </xsl:text><xsl:call-template name="calc-scope"/><xsl:text>,
+    {   </xsl:text><xsl:call-template name="calc-scope-for-refentry"/><xsl:text>,
         "</xsl:text>
         <xsl:apply-templates select="./refentryinfo/title/node()"/>
         <xsl:text> -- </xsl:text>
@@ -121,19 +124,20 @@ static const REFENTRYSTR </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:t
     <xsl:text>
 static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text> =
 {
-    /* .idinternal = */   HELP_CMD_</xsl:text>
+    /* .idInternal = */   HELP_CMD_</xsl:text>
     <xsl:call-template name="str:to-upper">
       <xsl:with-param name="text" select="translate(substring-after(@id, '-'), '-', '_')"/>
     </xsl:call-template>
     <xsl:text>,
-    /* .Synopsis   = */   { </xsl:text>
-    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis, RT_ELEMENTS(</xsl:text>
-    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis) },
-    /* .Help       = */   { </xsl:text>
-    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help, RT_ELEMENTS(</xsl:text>
-    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help) },
+    /* .Synopsis   = */   { RT_ELEMENTS(</xsl:text>
+    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis), 0, </xsl:text>
+    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_synopsis },
+    /* .Help       = */   { RT_ELEMENTS(</xsl:text>
+    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help), 0, </xsl:text>
+    <xsl:value-of select="$sDataBaseSym"/><xsl:text>_full_help },
     /* pszBrief    = */   "</xsl:text>
     <xsl:apply-templates select="./refnamediv/refpurpose/node()"/>
+    <!-- TODO: Add the command name too. -->
     <xsl:text>"
 };
 </xsl:text>
@@ -208,11 +212,12 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
     <!-- title / command synopsis - sets the scope. -->
     <xsl:text>
-    {   </xsl:text><xsl:call-template name="calc-scope-refsect2"/><xsl:text>,
+    {   </xsl:text><xsl:call-template name="calc-scope-refsect2"/><xsl:text>, "" },
+    {   REFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
     <xsl:choose>
       <xsl:when test="name(./*[1]) = 'cmdsynopsis'">
-        <xsl:text>  </xsl:text>
+        <!--xsl:text>* </xsl:text-->
         <xsl:apply-templates select="./cmdsynopsis/node()|./cmdsynopsis/@*"/>
       </xsl:when>
       <xsl:when test="name(./*[1]) = 'title'">
@@ -228,7 +233,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
     <!-- Format the text in the section -->
     <xsl:apply-templates select="./*[position() > 1]"/>
 
-    <!-- Add a blank line, unless we're the last element in this refsect1. -->
+    <!-- Add two blank lines, unless we're the last element in this refsect1. -->
     <xsl:if test="position() != last()">
       <xsl:text>
     {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
@@ -254,6 +259,10 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   <xsl:template match="variablelist">
     <xsl:if test="*[not(self::varlistentry)]|text()">
       <xsl:message terminate="yes">Only varlistentry elements are supported in variablelist</xsl:message>
+    </xsl:if>
+    <xsl:if test="position() != 1">
+      <xsl:text>
+    {   REFENTRYSTR_SCOPE_SAME, "" },</xsl:text>
     </xsl:if>
     <xsl:for-each select="./varlistentry">
       <xsl:if test="count(*) != 2 or not(term) or not(listitem)">
@@ -411,7 +420,14 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   </xsl:template>
 
 
-<!-- TODO: scoping must be reworked! -->
+  <!--
+    Element specific scoping.
+    -->
+
+  <xsl:template name="calc-scope-for-refentry">
+    <xsl:call-template name="calc-scope-const-from-id"/>
+  </xsl:template>
+
   <!-- Figures out the scope of a refsect1 element. -->
   <xsl:template name="calc-scope-refsect1">
     <xsl:choose>
@@ -419,7 +435,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
         <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:call-template name="calc-scope"/>
+        <xsl:call-template name="calc-scope-from-remark-or-id"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -427,11 +443,11 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   <!-- Figures out the scope of a refsect2 element. -->
   <xsl:template name="calc-scope-refsect2">
     <xsl:choose>
-      <xsl:when test="0">
-        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+      <xsl:when test="@id or remark[@role='help-scope']">
+        <xsl:call-template name="calc-scope-from-remark-or-id"/>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:call-template name="calc-scope"/>
+        <xsl:text>REFENTRYSTR_SCOPE_SAME</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -440,7 +456,9 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   <xsl:template name="calc-scope-cmdsynopsis">
     <xsl:choose>
       <xsl:when test="ancestor::refsynopsisdiv">
-        <xsl:call-template name="calc-scope"/>
+        <xsl:call-template name="calc-scope-from-remark-or-id">
+          <xsl:with-param name="sId" select="substring-after(@id, '-')"/>
+        </xsl:call-template>
       </xsl:when>
       <xsl:otherwise>
         <xsl:text>REFENTRYSTR_SCOPE_SAME</xsl:text>
@@ -448,66 +466,74 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     </xsl:choose>
   </xsl:template>
 
-  <!-- Figures out the scope of an element. -->
-  <xsl:template name="calc-scope">
-    <xsl:param name="a_Element" select="."/>
-    <xsl:param name="a_cRecursions" select="'1'"/>
-    <xsl:variable name="ScopeRemark" select="$a_Element/remark[@role='help-scope']"/>
 
+  <!--
+    Scoping worker functions.
+    -->
+
+  <!-- Calculates the current scope from the scope remark or @id.  -->
+  <xsl:template name="calc-scope-from-remark-or-id">
+    <xsl:param name="sId" select="@id"/>
     <xsl:choose>
-      <!-- Check for an explicit scope remark: <remark role='scope' condition='uninstall'/> -->
-      <xsl:when test="$ScopeRemark">
-        <xsl:if test="not($ScopeRemark/@condition)">
-          <xsl:message terminate="yes">remark[role=scope] element must have a condition attribute.</xsl:message>
-        </xsl:if>
-
-        <xsl:call-template name="calc-scope-const">
-          <xsl:with-param name="sId" select="concat(concat(ancestor::refentry[1]/@id, '-'), $ScopeRemark/@condition)"/>
-        </xsl:call-template>
+      <xsl:when test="remark[@role='help-scope']">
+        <xsl:call-template name="calc-scope-consts-from-remark"/>
       </xsl:when>
-
-      <!-- Try derive it from the @id tag, if any. -->
-      <xsl:when test="substring(@id, 1, 3) = 'vbox'">
-        <xsl:call-template name="calc-scope-const">
-          <xsl:with-param name="sId" select="$a_Element/@id"/>
+      <xsl:when test="$sId != ''">
+        <xsl:call-template name="calc-scope-const-from-id">
+          <xsl:with-param name="sId" select="$sId"/>
         </xsl:call-template>
-      </xsl:when>
-      <xsl:when test="@id">
-        <xsl:call-template name="calc-scope-const">
-          <xsl:with-param name="sId" select="substring-after($a_Element/@id, '-')"/>
-        </xsl:call-template>
-      </xsl:when>
-
-      <!-- Recursively try the parent element. -->
-      <xsl:when test="($a_cRecursions) > 10">
-        <xsl:message terminal="yes">calc-scope recursion too deep.</xsl:message>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:call-template name="calc-scope">
-          <xsl:with-param name="a_Element" select="$a_Element/.."/>
-          <xsl:with-param name="a_cRecursions" select="$a_cRecursions + 1"/>
-        </xsl:call-template>
+        <xsl:message terminate="yes">expected remark child or id attribute.</xsl:message>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
-  <!-- Calculates a scope constant from a ID like value. -->
-  <xsl:template name="calc-scope-const">
+  <!-- Turns a @id into a scope constant.
+    Some woodoo taking place here here that chops the everything up to and
+    including the first refentry/@id word from all IDs before turning them into
+    constants (word delimiter '-'). -->
+  <xsl:template name="calc-scope-const-from-id">
     <xsl:param name="sId" select="@id"/>
-    <xsl:if test="$sId = ''"><xsl:message terminate="yes">refentry: command Missing </xsl:message></xsl:if>
-    <xsl:variable name="sTmp1" select="translate($sId, '-', '_')"/>
-    <xsl:variable name="sTmp2">
-      <xsl:call-template name="str:to-upper">
-        <xsl:with-param name="text" select="$sTmp1"/>
-      </xsl:call-template>
-    </xsl:variable>
+    <xsl:variable name="sPrefix" select="concat(substring-before(ancestor::refentry/@id, '-'), '-')"/>
+    <xsl:if test="not(contains($sId, sPrefix))">
+      <xsl:message terminate="yes">Expected sId (<xsl:value-of select="$sId"/>) to contain <xsl:value-of select="$sPrefix"/></xsl:message>
+    </xsl:if>
     <xsl:text>HELP_SCOPE_</xsl:text>
-    <xsl:value-of select="$sTmp2"/>
+    <xsl:call-template name="str:to-upper">
+      <xsl:with-param name="text" select="translate(substring-after($sId, $sPrefix), '-', '_')"/>
+    </xsl:call-template>
   </xsl:template>
 
-  <!-- Calculates and emits indentation. -->
+  <!-- Turns a remark into one or more scope constant. -->
+  <xsl:template name="calc-scope-consts-from-remark">
+    <xsl:param name="sCondition" select="remark/@condition"/>
+    <xsl:variable name="sNormalized" select="normalize-space(translate($sCondition, ',;:', '   '))"/>
+    <xsl:if test="$sNormalized = ''">
+      <xsl:message terminate="yes">Empty @condition for help-scope remark.</xsl:message>
+    </xsl:if>
+    <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
+    <xsl:call-template name="calc-scope-const-from-remark-worker">
+      <xsl:with-param name="sList" select="substring-after($sNormalized, ' ')"/>
+    </xsl:call-template>
+  </xsl:template>
+
+  <xsl:template name="calc-scope-const-from-remark-worker">
+    <xsl:param name="sList"/>
+    <xsl:if test="$List != ''">
+      <xsl:text> | HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
+      <xsl:call-template name="calc-scope-const-from-remark-worker">
+        <xsl:with-param name="sList" select="substring-after($sList, ' ')"/>
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+
+
+  <!--
+    Calculates and emits indentation.
+    -->
   <xsl:template name="emit-indentation">
-    <xsl:if test="ancestor::refsect1">
+    <xsl:if test="ancestor::refsect1|ancestor::refsynopsisdiv">
       <xsl:text>  </xsl:text>
     </xsl:if>
     <xsl:if test="ancestor::refsect2">
@@ -526,7 +552,9 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     </xsl:if>
   </xsl:template>
 
-  <!-- Captializes the given text. -->
+  <!--
+    Captializes the given text.
+    -->
   <xsl:template name="capitalize">
     <xsl:param name="text"/>
     <xsl:call-template name="str:to-upper">

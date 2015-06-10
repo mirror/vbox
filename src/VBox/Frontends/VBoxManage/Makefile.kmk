@@ -33,62 +33,66 @@ VBoxManageHelp_SOURCES    = \
 
 ifndef VBOX_ONLY_DOCS
  PROGRAMS += VBoxManage
-endif
-VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
-VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
-VBoxManage_SOURCES    = \
-	VBoxManage.cpp \
-	VBoxInternalManage.cpp \
-	VBoxManageAppliance.cpp \
-	VBoxManageBandwidthControl.cpp \
-	VBoxManageControlVM.cpp \
-	VBoxManageDebugVM.cpp \
-	VBoxManageDHCPServer.cpp \
-	VBoxManageDisk.cpp \
-	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrl.cpp) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrlListener.cpp) \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
-	VBoxManageHelp.cpp \
-	VBoxManageHostonly.cpp \
-	VBoxManageInfo.cpp \
-	VBoxManageList.cpp \
-	VBoxManageMetrics.cpp \
-	VBoxManageMisc.cpp \
-	VBoxManageModifyVM.cpp \
-	VBoxManageSnapshot.cpp \
-	VBoxManageStorageController.cpp \
-	VBoxManageUSB.cpp \
-	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
-	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,)
-VBoxManage_SOURCES.win = \
-	VBoxManage.rc
-VBoxManage_LIBS      += $(LIB_DDU)
+ VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
+ VBoxManage_INCS          = $(PATH_TARGET)/manual
+ VBoxManage_INTERMEDIATES = $(PATH_TARGET)/manual/VBoxManageBuiltInHelp.h
+ VBoxManage_SOURCES    = \
+ 	VBoxManage.cpp \
+ 	VBoxInternalManage.cpp \
+ 	VBoxManageAppliance.cpp \
+ 	VBoxManageBandwidthControl.cpp \
+ 	VBoxManageControlVM.cpp \
+ 	VBoxManageDebugVM.cpp \
+ 	VBoxManageDHCPServer.cpp \
+ 	VBoxManageDisk.cpp \
+ 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrl.cpp) \
+ 	$(if $(VBOX_WITH_GUEST_CONTROL),VBoxManageGuestCtrlListener.cpp) \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
+ 	VBoxManageHelp.cpp \
+	$(PATH_TARGET)/manual/VBoxManageBuiltInHelp.cpp \
+ 	VBoxManageHostonly.cpp \
+ 	VBoxManageInfo.cpp \
+ 	VBoxManageList.cpp \
+ 	VBoxManageMetrics.cpp \
+ 	VBoxManageMisc.cpp \
+ 	VBoxManageModifyVM.cpp \
+ 	VBoxManageSnapshot.cpp \
+ 	VBoxManageStorageController.cpp \
+ 	VBoxManageUSB.cpp \
+ 	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
+ 	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,)
+ VBoxManage_SOURCES.win = \
+ 	VBoxManage.rc
+ VBoxManage_LIBS      += $(LIB_DDU)
 
-VBoxManage_DEFS      += \
-	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
-	$(if $(VBOX_WITH_ALSA), VBOX_WITH_ALSA) \
-	$(if $(VBOX_WITH_COPYTOGUEST),VBOX_WITH_COPYTOGUEST) \
-	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
-	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL) \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS) \
-	$(if $(VBOX_WITH_HEADLESS), VBOX_WITH_HEADLESS) \
-	$(if $(VBOX_WITH_HGCM), VBOX_WITH_HGCM) \
-	$(if $(VBOX_WITH_HOSTNETIF_API), VBOX_WITH_HOSTNETIF_API) \
-	$(if $(VBOX_WITH_NETFLT), VBOX_WITH_NETFLT) \
-	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
-	$(if $(VBOX_WITH_SCSI), VBOX_WITH_SCSI) \
-	$(if $(VBOX_WITH_SOLARIS_OSS), VBOX_WITH_SOLARIS_OSS) \
-	$(if $(VBOX_WITH_VBOXSDL), VBOX_WITH_VBOXSDL) \
-	$(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL) \
-	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
-	$(if $(VBOX_WITH_USB_CARDREADER),VBOX_WITH_USB_CARDREADER) \
-	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH) \
-	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX) \
-	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE) \
-	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA)
+ VBoxManage_DEFS      += \
+ 	$(if $(VBOX_WITH_AHCI), VBOX_WITH_AHCI) \
+ 	$(if $(VBOX_WITH_ALSA), VBOX_WITH_ALSA) \
+ 	$(if $(VBOX_WITH_COPYTOGUEST),VBOX_WITH_COPYTOGUEST) \
+ 	$(if $(VBOX_WITH_E1000),VBOX_WITH_E1000) \
+ 	$(if $(VBOX_WITH_GUEST_CONTROL),VBOX_WITH_GUEST_CONTROL) \
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS) \
+ 	$(if $(VBOX_WITH_HEADLESS), VBOX_WITH_HEADLESS) \
+ 	$(if $(VBOX_WITH_HGCM), VBOX_WITH_HGCM) \
+ 	$(if $(VBOX_WITH_HOSTNETIF_API), VBOX_WITH_HOSTNETIF_API) \
+ 	$(if $(VBOX_WITH_NETFLT), VBOX_WITH_NETFLT) \
+ 	$(if $(VBOX_WITH_PULSE),VBOX_WITH_PULSE) \
+ 	$(if $(VBOX_WITH_SCSI), VBOX_WITH_SCSI) \
+ 	$(if $(VBOX_WITH_SOLARIS_OSS), VBOX_WITH_SOLARIS_OSS) \
+ 	$(if $(VBOX_WITH_VBOXSDL), VBOX_WITH_VBOXSDL) \
+ 	$(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL) \
+ 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
+ 	$(if $(VBOX_WITH_USB_CARDREADER),VBOX_WITH_USB_CARDREADER) \
+ 	$(if $(VBOX_WITH_PCI_PASSTHROUGH),VBOX_WITH_PCI_PASSTHROUGH) \
+ 	$(if $(VBOX_WITH_VPX),VBOX_WITH_VPX) \
+ 	$(if $(VBOX_WITH_NAT_SERVICE),VBOX_WITH_NAT_SERVICE) \
+ 	$(if $(VBOX_WITH_VMSVGA),VBOX_WITH_VMSVGA)
 
-# VBoxNetPortForwardString.h
-VBoxManageNATNetwork.cpp_INCS += ../../NetworkServices/NetLib/
+ # VBoxNetPortForwardString.h
+ VBoxManageNATNetwork.cpp_INCS += ../../NetworkServices/NetLib/
+
+endif # VBOX_ONLY_DOCS
 
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see

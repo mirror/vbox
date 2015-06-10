@@ -1098,8 +1098,9 @@ RTEXITCODE handleSharedFolder(HandlerArg *a)
 
 RTEXITCODE handleExtPack(HandlerArg *a)
 {
+    setCurrentCommand(HELP_CMD_EXTPACK);
     if (a->argc < 1)
-        return errorSyntax(USAGE_EXTPACK, "Incorrect number of parameters");
+        return errorNoSubcommand();
 
     ComObjPtr<IExtPackManager> ptrExtPackMgr;
     CHECK_ERROR2I_RET(a->virtualBox, COMGETTER(ExtensionPackManager)(ptrExtPackMgr.asOutParam()), RTEXITCODE_FAILURE);
@@ -1111,6 +1112,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
     if (!strcmp(a->argv[0], "install"))
     {
+        setCurrentSubcommand(HELP_SCOPE_EXTPACK_INSTALL);
         const char *pszName  = NULL;
         bool        fReplace = false;
 
@@ -1130,16 +1132,16 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
                 case VINF_GETOPT_NOT_OPTION:
                     if (pszName)
-                        return errorSyntax(USAGE_EXTPACK, "Too many extension pack names given to \"extpack uninstall\"");
+                        return errorSyntax("Too many extension pack names given to \"extpack uninstall\"");
                     pszName = ValueUnion.psz;
                     break;
 
                 default:
-                    return errorGetOpt(USAGE_EXTPACK, ch, &ValueUnion);
+                    return errorGetOpt(ch, &ValueUnion);
             }
         }
         if (!pszName)
-            return errorSyntax(USAGE_EXTPACK, "No extension pack name was given to \"extpack install\"");
+            return errorSyntax("No extension pack name was given to \"extpack install\"");
 
         char szPath[RTPATH_MAX];
         int vrc = RTPathAbs(pszName, szPath, sizeof(szPath));
@@ -1160,6 +1162,7 @@ RTEXITCODE handleExtPack(HandlerArg *a)
     }
     else if (!strcmp(a->argv[0], "uninstall"))
     {
+        setCurrentSubcommand(HELP_SCOPE_EXTPACK_UNINSTALL);
         const char *pszName = NULL;
         bool        fForced = false;
 
@@ -1179,16 +1182,16 @@ RTEXITCODE handleExtPack(HandlerArg *a)
 
                 case VINF_GETOPT_NOT_OPTION:
                     if (pszName)
-                        return errorSyntax(USAGE_EXTPACK, "Too many extension pack names given to \"extpack uninstall\"");
+                        return errorSyntax("Too many extension pack names given to \"extpack uninstall\"");
                     pszName = ValueUnion.psz;
                     break;
 
                 default:
-                    return errorGetOpt(USAGE_EXTPACK, ch, &ValueUnion);
+                    return errorGetOpt(ch, &ValueUnion);
             }
         }
         if (!pszName)
-            return errorSyntax(USAGE_EXTPACK, "No extension pack name was given to \"extpack uninstall\"");
+            return errorSyntax("No extension pack name was given to \"extpack uninstall\"");
 
         Bstr bstrName(pszName);
         ComPtr<IProgress> ptrProgress;
@@ -1200,14 +1203,14 @@ RTEXITCODE handleExtPack(HandlerArg *a)
     }
     else if (!strcmp(a->argv[0], "cleanup"))
     {
+        setCurrentSubcommand(HELP_SCOPE_EXTPACK_CLEANUP);
         if (a->argc > 1)
-            return errorSyntax(USAGE_EXTPACK, "Too many parameters given to \"extpack cleanup\"");
-
+            return errorSyntax("Too many parameters given to \"extpack cleanup\"");
         CHECK_ERROR2I_RET(ptrExtPackMgr, Cleanup(), RTEXITCODE_FAILURE);
         RTPrintf("Successfully performed extension pack cleanup\n");
     }
     else
-        return errorSyntax(USAGE_EXTPACK, "Unknown command \"%s\"", a->argv[0]);
+        return errorUnknownSubcommand(a->argv[0]);
 
     return RTEXITCODE_SUCCESS;
 }

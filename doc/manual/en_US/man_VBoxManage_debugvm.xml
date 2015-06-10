@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    manpage, user manual, usage: VBoxManage debugvm
+
+    Copyright (C) 2006-2015 Oracle Corporation
+
+    This file is part of VirtualBox Open Source Edition (OSE), as
+    available from http://www.virtualbox.org. This file is free software;
+    you can redistribute it and/or modify it under the terms of the GNU
+    General Public License (GPL) as published by the Free Software
+    Foundation, in version 2 as it comes in the "COPYING" file of the
+    VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+    hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ -->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<refentry id="vboxmanage-debugvm" lang="en">
+
+  <refentryinfo>
+    <pubdate>$Date$</pubdate>
+    <title>VBoxManage debugvm</title>
+  </refentryinfo>
+
+  <refmeta>
+    <manvolnum>1</manvolnum>
+  </refmeta>
+
+  <refnamediv>
+    <refname>VBoxManage-debugvm</refname>
+    <refpurpose>extension package management</refpurpose>
+    <refclass>Oracle VM VirtualBox</refclass>
+  </refnamediv>
+
+  <refsynopsisdiv>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
+      <command>VBoxManage debugvm install</command>
+      <arg>--replace</arg>
+      <arg choice="req"><replaceable>tarball</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-uninstall">
+      <command>VBoxManage debugvm uninstall</command>
+      <arg>--force</arg>
+      <arg choice="req"><replaceable>name</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-cleanup">
+      <command>VBoxManage debugvm cleanup</command>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1>
+    <title>Description</title>
+
+    <refsect2 id="vboxmanage-debugvm-install">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm install</command>
+        <arg>--replace</arg>
+        <arg choice="req"><replaceable>tarball</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Installs a new extension pack on the system.  This command will fail if an older
+        version of the same extension pack is already installed.  The
+        <option>--replace</option> option can be used to uninstall any
+        old package before the new one is installed.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--replace</option></term><listitem><para>Uninstall existing extension pack version.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><replaceable>tarball</replaceable></term>
+          <listitem>
+            <para>The file containing the extension pack to be installed.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-uninstall">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm uninstall</command>
+        <arg>--force</arg>
+        <arg choice="req"><replaceable>name</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Uninstalls an extension pack from the system.  The subcommand will also succeed
+        in the case where the specified extension pack is not present on the system.
+        You can use <computeroutput>VBoxManage list debugvms</computeroutput> to show
+        the names of the extension packs which are currently installed.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--force</option></term>
+          <listitem>
+            <para>Overrides most refusals to uninstall an extension pack</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><replaceable>name</replaceable></term>
+          <listitem>
+            <para>The name of the extension pack to be uninstalled.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-cleanup">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm cleanup</command>
+      </cmdsynopsis>
+      <para>
+        Used to remove temporariy files and directories that may have been left behind
+        if a previous install or uninstall command failed.
+      </para>
+    </refsect2>
+
+  </refsect1>
+
+</refentry>
+
