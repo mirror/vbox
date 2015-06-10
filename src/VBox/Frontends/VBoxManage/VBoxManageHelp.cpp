@@ -238,7 +238,7 @@ static uint32_t printStringTable(PRTSTREAM pStrm, PCREFENTRYSTRTAB pStrTab, uint
         fPrevScope = fCurScope;
     }
 
-    if (cLinesWritten)
+    if (pcLinesWritten)
         *pcLinesWritten += cLinesWritten;
     return cPendingBlankLines;
 }
