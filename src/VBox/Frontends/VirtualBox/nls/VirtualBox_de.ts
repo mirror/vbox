@@ -3658,7 +3658,7 @@
     </message>
     <message>
         <source>Choose a virtual disk image file...</source>
-        <translation>Abbild eines optischen Mediums auswählen...</translation>
+        <translation>Abbild auswählen...</translation>
     </message>
     <message>
         <source>Image</source>
