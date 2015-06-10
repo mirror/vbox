@@ -35,8 +35,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** @def USE_NSOPENGLVIEW
- * Define this to experiment with using NSOpenGLView instead 
- * of NSView.  There are transparency issues with the former, 
+ * Define this to experiment with using NSOpenGLView instead
+ * of NSView.  There are transparency issues with the former,
  * so for the time being we're using the latter.  */
 #if 0
 #define USE_NSOPENGLVIEW
@@ -53,7 +53,7 @@
 {
 @public
     /* in */
-    NativeNSViewRef             pParentView; 
+    NativeNSViewRef             pParentView;
     uint32_t                    cx;
     uint32_t                    cy;
     NativeNSOpenGLContextRef    pSharedCtx;
@@ -69,7 +69,7 @@
 /**
  * The overlay view.
  */
-@interface VMSVGA3DOverlayView 
+@interface VMSVGA3DOverlayView
 #ifdef USE_NSOPENGLVIEW
     : NSOpenGLView
 #else
@@ -89,7 +89,7 @@
     /* Position/Size tracking */
     NSPoint          m_Pos;
     NSSize           m_Size;
-    
+
     /** This is necessary for clipping on the root window */
     NSRect           m_RootRect;
 }
@@ -109,7 +109,7 @@
 - (void)prepareOpenGL;
 
 #endif
-/* Overridden: */    
+/* Overridden: */
 - (void)viewDidMoveToWindow;
 - (void)viewDidMoveToSuperview;
 - (void)resizeWithOldSuperviewSize:(NSSize)oldBoundsSize;
@@ -166,8 +166,8 @@
         if (pView)
         {
             /*
-             * If we have no shared GL context, we use the one that NSOpenGLView create. Otherwise, 
-             * we replace it.  (If we don't call openGLContext, it won't yet have been instantiated, 
+             * If we have no shared GL context, we use the one that NSOpenGLView create. Otherwise,
+             * we replace it.  (If we don't call openGLContext, it won't yet have been instantiated,
              * so there is no unecessary contexts created here when pSharedCtx != NULL.)
              */
             NSOpenGLContext *pCtx;
@@ -189,7 +189,7 @@
             }
             if (pCtx)
             {
-                /* 
+                /*
                  * Attach the view to the parent.
                  */
                 [pParams->pParentView addSubview:pView];
@@ -239,7 +239,7 @@
     m_Pos            = NSZeroPoint;
     m_Size           = frame.size;
     m_RootRect       = NSMakeRect(0, 0, m_Size.width, m_Size.height);
-    
+
 #ifdef USE_NSOPENGLVIEW
     self = [super initWithFrame:frame pixelFormat:pFmt];
 #else
@@ -323,7 +323,7 @@
     LogFlow(("OvlWin(%p) vboxReshape:\n", (void *)self));
 
     /*
-     * Not doing any complicate stuff here yet, hoping that we'll get correctly 
+     * Not doing any complicate stuff here yet, hoping that we'll get correctly
      * resized when the parent view changes...
      */
 
@@ -339,10 +339,10 @@
 }
 
 
-/** 
- * Changes to the OpenGL context associated with the view. 
- * @returns Previous OpenGL context. 
- */ 
+/**
+ * Changes to the OpenGL context associated with the view.
+ * @returns Previous OpenGL context.
+ */
 - (NSOpenGLContext *)makeCurrentGLContext
 {
     NSOpenGLContext *pSavedCtx = [NSOpenGLContext currentContext];
@@ -358,9 +358,9 @@
 
 
 /**
- * Restores the previous OpenGL context after 
- * makeCurrentGLContext. 
- *  
+ * Restores the previous OpenGL context after
+ * makeCurrentGLContext.
+ *
  * @param pSavedCtx     The makeCurrentGLContext return value.
  */
 - (void)restoreSavedGLContext:(NSOpenGLContext *)pSavedCtx
@@ -414,7 +414,7 @@
 }
 #endif /* USE_NSOPENGLVIEW */
 
-/* 
+/*
  * Overridden NSOpenGLView / NSView methods:
  */
 
@@ -434,7 +434,7 @@
 
 -(void)resizeWithOldSuperviewSize:(NSSize)oldBoundsSize
 {
-    LogFlow(("OvlView(%p) resizeWithOldSuperviewSize: %d,%d -> %d,%d\n", (void *)self, 
+    LogFlow(("OvlView(%p) resizeWithOldSuperviewSize: %d,%d -> %d,%d\n", (void *)self,
              (int)oldBoundsSize.width, (int)oldBoundsSize.height, (int)[self bounds].size.width, (int)[self bounds].size.height));
     [super resizeWithOldSuperviewSize:oldBoundsSize];
     [self vboxReshape];
@@ -473,7 +473,7 @@ VMSVGA3DCOCOA_DECL(bool) vmsvga3dCocoaCreateViewAndContext(NativeNSViewRef *ppVi
                                                            NativeNSViewRef pParentView, uint32_t cx, uint32_t cy,
                                                            NativeNSOpenGLContextRef pSharedCtx, bool fOtherProfile)
 {
-    LogFlow(("vmsvga3dCocoaCreateViewAndContext: pParentView=%d size=%d,%d pSharedCtx=%p fOtherProfile=%RTbool\n", 
+    LogFlow(("vmsvga3dCocoaCreateViewAndContext: pParentView=%d size=%d,%d pSharedCtx=%p fOtherProfile=%RTbool\n",
              (void *)pParentView, cx, cy, (void *)pSharedCtx, fOtherProfile));
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
     vmsvga3dCocoaServiceRunLoop();
@@ -570,7 +570,7 @@ void vmsvga3dCocoaViewMakeCurrentContext(NativeNSViewRef pView, NativeNSOpenGLCo
         [pCtx makeCurrentContext];
     }
     else
-    	[NSOpenGLContext clearCurrentContext];
+        [NSOpenGLContext clearCurrentContext];
 
     [pPool release];
     LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
@@ -598,7 +598,7 @@ void vmsvga3dCocoaSwapBuffers(NativeNSViewRef pView, NativeNSOpenGLContextRef pC
     [pCtx flushBuffer];
     //[pView setNeedsDisplay:YES];
     vmsvga3dCocoaServiceRunLoop();
-    
+
     [pPool release];
     LogFlow(("vmsvga3dCocoaSwapBuffers: returns\n"));
 }

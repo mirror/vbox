@@ -16,7 +16,7 @@
 ;
 
 LIBRARY VBoxSVGA3D
-EXPORTS 
+EXPORTS
     ShaderInitLib
     ShaderDestroyLib
     ShaderContextCreate

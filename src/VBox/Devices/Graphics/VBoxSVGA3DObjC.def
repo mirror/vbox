@@ -16,12 +16,12 @@
 ;
 
 LIBRARY VBoxSVGA3DObjC
-EXPORTS 
+EXPORTS
     vmsvga3dCocoaServiceRunLoop
     vmsvga3dCocoaCreateViewAndContext
-    vmsvga3dCocoaDestroyViewAndContext             
-    vmsvga3dCocoaViewSetPosition            
-    vmsvga3dCocoaViewSetSize                
-    vmsvga3dCocoaViewMakeCurrentContext     
-    vmsvga3dCocoaSwapBuffers                
+    vmsvga3dCocoaDestroyViewAndContext
+    vmsvga3dCocoaViewSetPosition
+    vmsvga3dCocoaViewSetSize
+    vmsvga3dCocoaViewMakeCurrentContext
+    vmsvga3dCocoaSwapBuffers
 
