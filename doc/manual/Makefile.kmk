@@ -143,11 +143,11 @@ VBOX_DOC_XIDL_SRC_TMP  = $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.xidl.tmp
 ##
 # Non-pattern-rule approach to editing XSLT files.
 # $(evalcall2 def_vbox_replace_paths_in_xslt)
-# @param    1   The XSLT source file.
+# @param    1   The XSLT source file (relative to Makefile dir).
 # @param    2   Optional output subdirectory.
 define def_vbox_replace_paths_in_xslt
 OTHER_CLEAN += $$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1)
-$$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1): $1 | $$$$(dir $$$$@)
+$$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1): $$(VBOX_PATH_MANUAL_SRC)/$1 | $$$$(dir $$$$@)
 	$$(call MSG_GENERATE,,$$@,$$<)
 	$$(QUIET)$$(SED) \
 		-e 's|@VBOX_PATH_DOCBOOK@|$$(VBOX_PATH_DOCBOOK)|g' \
