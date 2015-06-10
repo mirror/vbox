@@ -756,15 +756,15 @@ static void scmSvnTryResolveFunctions(void)
                 }
                 if (RT_SUCCESS(rc))
                 {
-                    apr_status_t rc = g_pfnAprInitialize();
-                    if (rc == 0)
+                    apr_status_t rcApr = g_pfnAprInitialize();
+                    if (rcApr == 0)
                     {
                         ScmVerbose(NULL, 1, "Found subversion APIs.\n");
                         g_fSvnFunctionPointersValid = true;
                     }
                     else
                     {
-                        ScmVerbose(NULL, 0, "apr_initialize failed: %#x (%d)\n", rc, rc);
+                        ScmVerbose(NULL, 0, "apr_initialize failed: %#x (%d)\n", rcApr, rcApr);
                         AssertMsgFailed(("%#x (%d)\n", rc, rc));
                     }
                     return;
