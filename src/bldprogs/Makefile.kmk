@@ -33,8 +33,8 @@ VBoxCmp_TEMPLATE = VBoxBldProg
 VBoxCmp_SOURCES = VBoxCmp.cpp
 
 ifndef VBOX_ONLY_BUILD
- BLDPROGS += scm
- scm_TEMPLATE = VBoxAdvBldProg
+ PROGRAMS += scm
+ scm_TEMPLATE = VBoxR3Tool
  scm_SOURCES = \
  	scm.cpp \
  	scmdiff.cpp \
