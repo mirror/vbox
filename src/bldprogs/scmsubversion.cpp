@@ -696,24 +696,17 @@ static void scmSvnTryResolveFunctions(void)
             /*
              * Try load the svn_client library ...
              */
-            struct
-            {
-                const char *pszBaseName;
-                RTLDRMOD    hMod;
-            } aLibraries[] =
-            {
-                { "svn_client", NIL_RTLDRMOD },
-                { "svn_subr",   NIL_RTLDRMOD },
-                { "apr",        NIL_RTLDRMOD },
-            };
+            static const char * const s_apszLibraries[]   = { "svn_client", "svn_subr",   "apr" };
+            RTLDRMOD ahMods[RT_ELEMENTS(s_apszLibraries)] = { NIL_RTLDRMOD, NIL_RTLDRMOD, NIL_RTLDRMOD };
+
             rc = VINF_SUCCESS;
             unsigned iLib;
-            for (iLib = 0; iLib < RT_ELEMENTS(aLibraries) && RT_SUCCESS(rc); iLib++)
+            for (iLib = 0; iLib < RT_ELEMENTS(s_apszLibraries) && RT_SUCCESS(rc); iLib++)
             {
                 *pszEndPath = '\0';
                 rc = RTPathAppend(szPath, sizeof(szPath), s_aVariations[iVar].pszPrefix);
                 if (RT_SUCCESS(rc))
-                    rc = RTStrCat(szPath, sizeof(szPath), aLibraries[iLib].pszBaseName);
+                    rc = RTStrCat(szPath, sizeof(szPath), s_apszLibraries[iLib]);
                 if (RT_SUCCESS(rc))
                     rc = RTStrCat(szPath, sizeof(szPath), s_aVariations[iVar].pszSuffix);
                 if (RT_SUCCESS(rc))
@@ -721,10 +714,10 @@ static void scmSvnTryResolveFunctions(void)
 # ifdef RT_OS_WINDOWS
                     RTPathChangeToDosSlashes(pszEndPath, false);
 # endif
-                    rc = RTLdrLoadEx(szPath, &aLibraries[iLib].hMod, RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
+                    rc = RTLdrLoadEx(szPath, &ahMods[iLib], RTLDRLOAD_FLAGS_NT_SEARCH_DLL_LOAD_DIR , NULL);
                 }
             }
-            if (iLib == RT_ELEMENTS(aLibraries) && RT_SUCCESS(rc))
+            if (iLib == RT_ELEMENTS(s_apszLibraries) && RT_SUCCESS(rc))
             {
                 static const struct
                 {
@@ -745,12 +738,12 @@ static void scmSvnTryResolveFunctions(void)
                 };
                 for (unsigned i = 0; i < RT_ELEMENTS(s_aSymbols); i++)
                 {
-                    rc = RTLdrGetSymbol(aLibraries[s_aSymbols[i].iLib].hMod, s_aSymbols[i].pszSymbol,
+                    rc = RTLdrGetSymbol(ahMods[s_aSymbols[i].iLib], s_aSymbols[i].pszSymbol,
                                         (void **)(uintptr_t)s_aSymbols[i].ppfn);
                     if (RT_FAILURE(rc))
                     {
                         ScmVerbose(NULL, 0, "Failed to resolve '%s' in '%s'",
-                                   s_aSymbols[i].pszSymbol, aLibraries[s_aSymbols[i].iLib].pszBaseName);
+                                   s_aSymbols[i].pszSymbol, s_apszLibraries[s_aSymbols[i].iLib]);
                         break;
                     }
                 }
@@ -772,7 +765,7 @@ static void scmSvnTryResolveFunctions(void)
             }
 
             while (iLib-- > 0)
-                RTLdrClose(aLibraries[iLib].hMod);
+                RTLdrClose(ahMods[iLib]);
         }
     }
 }
