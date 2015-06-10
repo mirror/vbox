@@ -12,7 +12,7 @@ EXPORTS
     FS_NAME
     FS_MPSAFEFLAGS2
     FS32_ATTRIBUTE
-    
+
     ; 16-bit entry points.
     FS_ALLOCATEPAGESPACE
     FS_ATTACH

@@ -16,7 +16,7 @@ void *VBoxSDLGetDarwinWindowId(void)
         pMainWnd = [pApp mainWindow];
         if (!pMainWnd)
             pMainWnd = pApp->_mainWindow; /* UGLY!! but mApp->_AppFlags._active = 0, so mainWindow() fails. */
-        pView = [pMainWnd contentView]; 
+        pView = [pMainWnd contentView];
     }
     [pPool release];
     return pView;

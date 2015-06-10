@@ -42,9 +42,9 @@
 {
     UICocoaButton *mRealTarget;
 }
-/* The next method used to be called initWithObject, but Xcode 4.1 preview 5 
+/* The next method used to be called initWithObject, but Xcode 4.1 preview 5
    cannot cope with that for some reason.  Hope this doesn't break anything... */
--(id)initWithObjectAndLionTrouble:(UICocoaButton*)object; 
+-(id)initWithObjectAndLionTrouble:(UICocoaButton*)object;
 -(IBAction)clicked:(id)sender;
 @end
 
@@ -214,8 +214,8 @@
 //    NSLog(NSStringFromSelector(commandSelector));
     /* Don't execute the selector for Enter & Escape. */
     if (   commandSelector == @selector(insertNewline:)
-	    || commandSelector == @selector(cancelOperation:))
-		return YES;
+            || commandSelector == @selector(cancelOperation:))
+                return YES;
     return NO;
 }
 @end
