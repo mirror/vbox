@@ -113,7 +113,6 @@ static struct
         uint8_t                     cPreemptTimerShift;
 
         /** Host CR4 value (set by ring-0 VMX init) */
-        /** @todo This isn't used for anything relevant. Remove later? */
         uint64_t                    u64HostCr4;
 
         /** Host EFER value (set by ring-0 VMX init) */
