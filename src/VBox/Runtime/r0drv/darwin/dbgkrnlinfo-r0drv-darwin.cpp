@@ -453,7 +453,7 @@ static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
         KNOWN_ENTRY(ostype),
         KNOWN_ENTRY(panic),
         KNOWN_ENTRY(strprefix),
-        KNOWN_ENTRY(sysctlbyname),
+        //KNOWN_ENTRY(sysctlbyname), - we get kernel_sysctlbyname from the kernel.
         KNOWN_ENTRY(vsscanf),
         KNOWN_ENTRY(page_mask),
 
