@@ -362,7 +362,8 @@ static int vboxdrvDarwinResolveSymbols(void)
     if (RT_SUCCESS(rc))
     {
         /*
-         * The VMX stuff - required (for raw-mode).
+         * The VMX stuff - required with raw-mode (in theory for 64-bit on
+         * 32-bit too, but we never did that on darwin).
          */
         int rc1 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vmx_resume", (void **)&g_pfnVmxResume);
         int rc2 = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "vmx_suspend", (void **)&g_pfnVmxSuspend);
@@ -378,7 +379,9 @@ static int vboxdrvDarwinResolveSymbols(void)
             g_pfnVmxResume  = NULL;
             g_pfnVmxSuspend = NULL;
             g_pVmxUseCount  = NULL;
+#ifdef VBOX_WITH_RAW_MODE
             rc = VERR_SYMBOL_NOT_FOUND;
+#endif
         }
 
         if (RT_SUCCESS(rc))
@@ -906,9 +909,12 @@ int VBOXCALL supdrvOSEnableVTx(bool fEnable)
 #ifdef VBOX_WITH_HOST_VMX
     int rc;
     if (   version_major >= 10 /* 10 = 10.6.x = Snow Leopard */
+# ifdef VBOX_WITH_RAW_MODE
         && g_pfnVmxSuspend
         && g_pfnVmxResume
-        && g_pVmxUseCount)
+        && g_pVmxUseCount
+# endif
+       )
     {
         if (fEnable)
         {

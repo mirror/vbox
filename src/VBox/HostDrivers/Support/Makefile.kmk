@@ -556,6 +556,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBoxDrv_DEFS            += VBOX_PERMIT_MORE VBOX_PERMIT_EVEN_MORE
  #VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
  VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX
+ ifdef VBOX_WITH_RAW_MODE
+  VBoxDrv_DEFS.darwin    += VBOX_WITH_RAW_MODE
+ endif
  VBoxDrv_DEFS.linux      := \
 	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
  ifdef VBOX_LINUX_VERSION_2_4
