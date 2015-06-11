@@ -111,6 +111,7 @@
 
 \usepackage{nameref}
 \usepackage{graphicx}
+\usepackage{hyperref}
 \usepackage{fancybox}
 \usepackage{fancyvrb}
 \usepackage{alltt}
@@ -276,7 +277,41 @@
     </xsl:choose>
   </xsl:template>
 
+  <!--
+    Inserts \hypertarget{@id} that can be referenced via the /A "nameddest=@id"
+    command line or #nameddest=@id URL parameter.
+
+    TODO: The placement of the target could be improved on. The raisebox
+          stuff is a crude hack to make it a little more acceptable.  -->
+  <xsl:template name="title-wrapper">
+    <xsl:param name="texcmd" select="concat('\',name(..))"/>
+    <xsl:param name="refid" select="../@id"/>
+
+    <xsl:call-template name="xsltprocNewlineOutputHack"/>
+    <xsl:choose>
+      <xsl:when test="$refid">
+        <xsl:text>&#x0a;</xsl:text>
+        <xsl:value-of select="$texcmd"/>
+        <xsl:text>[</xsl:text> <!-- for toc -->
+        <xsl:apply-templates />
+        <xsl:text>]</xsl:text>
+        <xsl:text>{</xsl:text> <!-- for doc -->
+        <xsl:text>\raisebox{\ht\strutbox}{\hypertarget{</xsl:text>
+        <xsl:value-of select="$refid"/>
+        <xsl:text>}{}}</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>&#x0a;</xsl:text><xsl:value-of select="$texcmd"/><xsl:text>{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
   <xsl:template match="title">
+    <xsl:variable name="refid" select="../@id" />
     <xsl:choose>
       <xsl:when test="name(..)='bookinfo'">
         <xsl:text>\newcommand\docbooktitle{</xsl:text>
@@ -284,67 +319,55 @@
         <xsl:text>}</xsl:text>
       </xsl:when>
       <xsl:when test="name(..)='chapter'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\chapter{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper"/>
       </xsl:when>
       <xsl:when test="name(..)='sect1'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\section{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\section</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect2'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\subsection{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\subsection</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect3'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\subsubsection{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\subsubsection</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect4'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\paragraph{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\paragraph</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='sect5'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\subparagraph{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\subparagraph</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='refsect1'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\paragraph{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text> <!-- addmargin is ended by refsect1 template way further down. -->
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\paragraph</xsl:with-param>
+        </xsl:call-template>
+        <xsl:text>&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text> <!-- addmargin is ended by refsect1 template way further down. -->
       </xsl:when>
       <xsl:when test="name(..)='refsect2'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\subparagraph{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\subparagraph</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='appendix'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\chapter{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\chapter</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='glossdiv'">
-        <xsl:call-template name="xsltprocNewlineOutputHack"/>
-        <xsl:text>&#x0a;\section*{</xsl:text>
-        <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:call-template name="title-wrapper">
+          <xsl:with-param name="texcmd">\section*</xsl:with-param>
+        </xsl:call-template>
       </xsl:when>
     </xsl:choose>
-    <xsl:variable name="refid" select="../@id" />
     <xsl:if test="$refid">
       <xsl:value-of select="concat('&#x0a;\label{', $refid, '}')" />
     </xsl:if>
