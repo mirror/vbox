@@ -217,37 +217,39 @@ static void VBoxServiceVMStatsReport(void)
     if (    !rc
         &&  cbReturned == cbStruct)
     {
-        if (gCtx.au64LastCpuLoad_Kernel == 0)
+        for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
         {
-            /* first time */
-            gCtx.au64LastCpuLoad_Idle[0]    = pProcInfo->IdleTime.QuadPart;
-            gCtx.au64LastCpuLoad_Kernel[0]  = pProcInfo->KernelTime.QuadPart;
-            gCtx.au64LastCpuLoad_User[0]    = pProcInfo->UserTime.QuadPart;
+            if (gCtx.au64LastCpuLoad_Kernel[i] == 0)
+            {
+                /* first time */
+                gCtx.au64LastCpuLoad_Idle[i]    = pProcInfo[i].IdleTime.QuadPart;
+                gCtx.au64LastCpuLoad_Kernel[i]  = pProcInfo[i].KernelTime.QuadPart;
+                gCtx.au64LastCpuLoad_User[i]    = pProcInfo[i].UserTime.QuadPart;
 
-            Sleep(250);
+                Sleep(250);
 
-            rc = gCtx.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
-            Assert(!rc);
+                rc = gCtx.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
+                Assert(!rc);
+            }
+
+            uint64_t deltaIdle    = (pProcInfo[i].IdleTime.QuadPart   - gCtx.au64LastCpuLoad_Idle[i]);
+            uint64_t deltaKernel  = (pProcInfo[i].KernelTime.QuadPart - gCtx.au64LastCpuLoad_Kernel[i]);
+            uint64_t deltaUser    = (pProcInfo[i].UserTime.QuadPart   - gCtx.au64LastCpuLoad_User[i]);
+            deltaKernel          -= deltaIdle;  /* idle time is added to kernel time */
+            uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
+            if (ullTotalTime == 0) /* Prevent division through zero. */
+                ullTotalTime = 1;
+
+            req.guestStats.u32CpuLoad_Idle      = (uint32_t)(deltaIdle  * 100 / ullTotalTime);
+            req.guestStats.u32CpuLoad_Kernel    = (uint32_t)(deltaKernel* 100 / ullTotalTime);
+            req.guestStats.u32CpuLoad_User      = (uint32_t)(deltaUser  * 100 / ullTotalTime);
+
+            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
+
+            gCtx.au64LastCpuLoad_Idle[i]   = pProcInfo[i].IdleTime.QuadPart;
+            gCtx.au64LastCpuLoad_Kernel[i] = pProcInfo[i].KernelTime.QuadPart;
+            gCtx.au64LastCpuLoad_User[i]   = pProcInfo[i].UserTime.QuadPart;
         }
-
-        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart   - gCtx.au64LastCpuLoad_Idle[0]);
-        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.au64LastCpuLoad_Kernel[0]);
-        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart   - gCtx.au64LastCpuLoad_User[0]);
-        deltaKernel          -= deltaIdle;  /* idle time is added to kernel time */
-        uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
-        if (ullTotalTime == 0) /* Prevent division through zero. */
-            ullTotalTime = 1;
-
-        req.guestStats.u32CpuLoad_Idle      = (uint32_t)(deltaIdle  * 100 / ullTotalTime);
-        req.guestStats.u32CpuLoad_Kernel    = (uint32_t)(deltaKernel* 100 / ullTotalTime);
-        req.guestStats.u32CpuLoad_User      = (uint32_t)(deltaUser  * 100 / ullTotalTime);
-
-        req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
-
-        gCtx.au64LastCpuLoad_Idle[0]   = pProcInfo->IdleTime.QuadPart;
-        gCtx.au64LastCpuLoad_Kernel[0] = pProcInfo->KernelTime.QuadPart;
-        gCtx.au64LastCpuLoad_User[0]   = pProcInfo->UserTime.QuadPart;
-        /** @todo SMP: report details for each CPU?  */
     }
 
     for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
