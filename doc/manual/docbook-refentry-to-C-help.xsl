@@ -285,6 +285,56 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
 
   <!--
+    Screen
+    -->
+  <xsl:template match="screen">
+    <xsl:if test="ancestor::para">
+      <xsl:text>" },</xsl:text>
+    </xsl:if>
+
+    <xsl:text>
+    {   REFENTRYSTR_SCOPE_SAME,
+        "</xsl:text>
+
+    <xsl:for-each select="node()">
+      <xsl:choose>
+        <xsl:when test="name() = ''">
+          <xsl:call-template name="screen_text_line">
+            <xsl:with-param name="sText" select="."/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:if test="*">
+            <xsl:message terminate="yes">Support for elements under screen has not been implemented: <xsl:value-of select="name()"/></xsl:message>
+          </xsl:if>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+
+    <xsl:if test="not(ancestor::para)">
+      <xsl:text>" },</xsl:text>
+    </xsl:if>
+  </xsl:template>
+
+  <xsl:template name="screen_text_line">
+    <xsl:param name="sText"/>
+    <xsl:call-template name="escape_fixed_text">
+      <xsl:with-param name="sText" select="substring-before($sText,'&#x0a;')"/>
+    </xsl:call-template>
+
+    <xsl:if test="substring-after($sText,'&#x0a;')">
+      <xsl:text>" },
+    {   REFENTRYSTR_SCOPE_SAME,
+        "</xsl:text>
+      <xsl:call-template name="screen_text_line">
+        <xsl:with-param name="sText" select="substring-after($sText,'&#x0a;')"/>
+      </xsl:call-template>
+    </xsl:if>
+  </xsl:template>
+
+
+
+  <!--
     Text escaping for C.
     -->
   <xsl:template match="text()" name="escape_text">
@@ -315,12 +365,13 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
   <!-- Elements producing non-breaking strings (single line). -->
   <xsl:template match="command/text()|option/text()|computeroutput/text()" name="escape_fixed_text">
+    <xsl:param name="sText" select="."/>
     <xsl:choose>
 
-      <xsl:when test="contains(., '\') or contains(., '&quot;')">
+      <xsl:when test="contains($sText, '\') or contains($sText, '&quot;')">
         <xsl:variable name="sTmp1">
           <xsl:call-template name="str:subst">
-            <xsl:with-param name="text" select="."/>
+            <xsl:with-param name="text" select="$sText"/>
             <xsl:with-param name="replace" select="'\'"/>
             <xsl:with-param name="with" select="'\\'"/>
             <xsl:with-param name="disable-output-escaping" select="yes"/>
@@ -342,9 +393,9 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
         </xsl:call-template>
       </xsl:when>
 
-      <xsl:when test="contains(., ' ')">
+      <xsl:when test="contains($sText, ' ')">
         <xsl:call-template name="str:subst">
-          <xsl:with-param name="text" select="."/>
+          <xsl:with-param name="text" select="$sText"/>
           <xsl:with-param name="replace" select="' '"/>
           <xsl:with-param name="with" select="'\b'"/>
           <xsl:with-param name="disable-output-escaping" select="yes"/>
@@ -352,7 +403,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
       </xsl:when>
 
       <xsl:otherwise>
-        <xsl:value-of select="."/>
+        <xsl:value-of select="$sText"/>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -434,8 +485,11 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
       <xsl:when test="title[text() = 'Description']">
         <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:when>
-      <xsl:otherwise>
+      <xsl:when test="@id or remark[@role='help-scope']">
         <xsl:call-template name="calc-scope-from-remark-or-id"/>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
