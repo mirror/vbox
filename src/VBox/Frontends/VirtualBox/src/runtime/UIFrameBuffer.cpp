@@ -1169,10 +1169,8 @@ void UIFrameBufferPrivate::handleSetVisibleRegion(const QRegion &region)
 
 void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
 {
-    LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d\n", iWidth, iHeight));
-
     /* Make sure machine-view is assigned: */
-    AssertPtrReturnVoid(m_pMachineView);
+    AssertReturnVoidStmt(m_pMachineView, LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d\n", iWidth, iHeight)));
 
     /* Invalidate visible-region (if necessary): */
     if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless &&
@@ -1187,8 +1185,8 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap invalid: */
     if (m_sourceBitmap.isNull())
     {
-        LogRel(("GUI: UIFrameBufferPrivate::performResize: "
-                "Using fallback buffer since no source-bitmap is provided\n"));
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, "
+                "Using fallback buffer since no source bitmap is provided\n", iWidth, iHeight));
 
         /* Remember new size came from hint: */
         m_iWidth = iWidth;
@@ -1201,8 +1199,8 @@ void UIFrameBufferPrivate::performResize(int iWidth, int iHeight)
     /* If source-bitmap valid: */
     else
     {
-        LogRel(("GUI: UIFrameBufferPrivate::performResize: "
-                "Directly using source-bitmap content\n"));
+        LogRel(("GUI: UIFrameBufferPrivate::performResize: Size=%dx%d, "
+                "Directly using source bitmap content\n", iWidth, iHeight));
 
         /* Acquire source-bitmap attributes: */
         BYTE *pAddress = NULL;
