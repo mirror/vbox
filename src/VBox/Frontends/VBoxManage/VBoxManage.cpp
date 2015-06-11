@@ -59,6 +59,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+#ifndef VBOX_ONLY_DOCS
 /**
  * VBoxManage command descriptor.
  */
@@ -77,6 +78,7 @@ typedef struct VBMGCMD
 } VBMGCMD;
 /** Pointer to a const VBoxManage command descriptor. */
 typedef VBMGCMD const *PCVBMGCMD;
+#endif
 
 
 /*******************************************************************************
