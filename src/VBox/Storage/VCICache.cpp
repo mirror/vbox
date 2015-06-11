@@ -671,7 +671,7 @@ static int vciBlkMapLoad(PVCICACHE pStorage, uint64_t offBlkMap, uint32_t cBlkMa
             else
                 rc = VERR_VD_GEN_INVALID_HEADER;
         }
-        else if (RT_SUCCESS(rc))
+        else
             rc = VERR_VD_GEN_INVALID_HEADER;
     }
     else
