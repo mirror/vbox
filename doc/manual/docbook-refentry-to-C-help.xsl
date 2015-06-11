@@ -562,11 +562,11 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   <!-- Turns a remark into one or more scope constant. -->
   <xsl:template name="calc-scope-consts-from-remark">
     <xsl:param name="sCondition" select="remark/@condition"/>
-    <xsl:variable name="sNormalized" select="normalize-space(translate($sCondition, ',;:', '   '))"/>
-    <xsl:if test="$sNormalized = ''">
+    <xsl:variable name="sNormalized" select="concat(normalize-space(translate($sCondition, ',;:|', '    ')), ' ')"/>
+    <xsl:if test="$sNormalized = ' ' or $sNormalized = ''">
       <xsl:message terminate="yes">Empty @condition for help-scope remark.</xsl:message>
     </xsl:if>
-    <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
+    <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sNormalized, ' ')"/>
     <xsl:call-template name="calc-scope-const-from-remark-worker">
       <xsl:with-param name="sList" select="substring-after($sNormalized, ' ')"/>
     </xsl:call-template>
@@ -574,7 +574,7 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
 
   <xsl:template name="calc-scope-const-from-remark-worker">
     <xsl:param name="sList"/>
-    <xsl:if test="$List != ''">
+    <xsl:if test="$sList != ''">
       <xsl:text> | HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
       <xsl:call-template name="calc-scope-const-from-remark-worker">
         <xsl:with-param name="sList" select="substring-after($sList, ' ')"/>

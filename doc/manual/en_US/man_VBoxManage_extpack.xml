@@ -114,9 +114,11 @@
 
   </refsect1>
 
-  <refsect1> <!-- no id attr here => global scope. -->
+  <refsect1>
     <title>Examples</title>
-    <para>How to list extension packs:
+    <remark role="help-scope" condition="EXTPACK_UNINSTALL,EXTPACK"/>
+    <para>
+          How to list extension packs:
 <screen>$ VBoxManage list extpacks
 Extension Packs: 1
 Pack no. 0:   Oracle VM VirtualBox Extension Pack
