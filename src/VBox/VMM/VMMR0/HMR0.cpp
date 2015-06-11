@@ -731,15 +731,11 @@ VMMR0_INT_DECL(int) HMR0Term(void)
     }
     else
     {
-        Assert(!g_HvmR0.vmx.fUsingSUPR0EnableVTx);
-        if (!g_HvmR0.vmx.fUsingSUPR0EnableVTx)
-        {
-            /* Doesn't really matter if this fails. */
-            rc = RTMpNotificationDeregister(hmR0MpEventCallback, NULL);  AssertRC(rc);
-            rc = RTPowerNotificationDeregister(hmR0PowerCallback, NULL); AssertRC(rc);
-        }
-        else
-            rc = VINF_SUCCESS;
+        Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
+
+        /* Doesn't really matter if this fails. */
+        rc = RTMpNotificationDeregister(hmR0MpEventCallback, NULL);  AssertRC(rc);
+        rc = RTPowerNotificationDeregister(hmR0PowerCallback, NULL); AssertRC(rc);
 
         /*
          * Disable VT-x/AMD-V on all CPUs if we enabled it before.
@@ -1066,6 +1062,7 @@ static DECLCALLBACK(void) hmR0DisableCpuOnSpecificCallback(RTCPUID idCpu, void *
 static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
 {
     NOREF(pvData);
+    Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
 
     /*
      * We only care about uninitializing a CPU that is going offline. When a
@@ -1290,6 +1287,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     int rc;
     if (!g_HvmR0.fGlobalInit)
     {
+        Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
         rc = hmR0EnableCpu(pVM, idCpu);
         if (RT_FAILURE(rc))
         {
@@ -1304,6 +1302,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     /* Disable VT-x or AMD-V if local init was done before. */
     if (!g_HvmR0.fGlobalInit)
     {
+        Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
         int rc2 = hmR0DisableCpu(idCpu);
         AssertRC(rc2);
     }
