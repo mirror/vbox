@@ -69,6 +69,7 @@ private:
     HRESULT getSerialPortCount(ULONG *aSerialPortCount);
     HRESULT getParallelPortCount(ULONG *aParallelPortCount);
     HRESULT getMaxBootPosition(ULONG *aMaxBootPosition);
+    HRESULT getRawModeSupported(BOOL *aRawModeSupported);
     HRESULT getExclusiveHwVirt(BOOL *aExclusiveHwVirt);
     HRESULT setExclusiveHwVirt(BOOL aExclusiveHwVirt);
     HRESULT getDefaultMachineFolder(com::Utf8Str &aDefaultMachineFolder);

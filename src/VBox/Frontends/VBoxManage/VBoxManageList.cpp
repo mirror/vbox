@@ -660,8 +660,10 @@ static HRESULT listSystemProperties(const ComPtr<IVirtualBox> &pVirtualBox)
 #endif
     systemProperties->COMGETTER(DefaultMachineFolder)(str.asOutParam());
     RTPrintf("Default machine folder:          %ls\n", str.raw());
+    systemProperties->COMGETTER(RawModeSupported)(&fValue);
+    RTPrintf("Raw-mode Supported:              %s\n", fValue ? "yes" : "no");
     systemProperties->COMGETTER(ExclusiveHwVirt)(&fValue);
-    RTPrintf("Exclusive HW virtualization use: %ls\n", fValue ? L"on" : L"off");
+    RTPrintf("Exclusive HW virtualization use: %s\n", fValue ? "on" : "off");
     systemProperties->COMGETTER(DefaultHardDiskFormat)(str.asOutParam());
     RTPrintf("Default hard disk format:        %ls\n", str.raw());
     systemProperties->COMGETTER(VRDEAuthLibrary)(str.asOutParam());

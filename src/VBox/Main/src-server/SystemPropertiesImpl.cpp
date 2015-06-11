@@ -276,6 +276,17 @@ HRESULT SystemProperties::getMaxBootPosition(ULONG *aMaxBootPosition)
 }
 
 
+HRESULT SystemProperties::getRawModeSupported(BOOL *aRawModeSupported)
+{
+#ifdef VBOX_WITH_RAW_MODE
+    *aRawModeSupported = TRUE;
+#else
+    *aRawModeSupported = FALSE;
+#endif
+    return S_OK;
+}
+
+
 HRESULT SystemProperties::getExclusiveHwVirt(BOOL *aExclusiveHwVirt)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);

@@ -8979,7 +8979,7 @@ and "VAR" for unsetting. -->
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="2dc77d62-27e7-4e6e-87eb-b41ae0d555da"
+    uuid="538a7f0b-4ef1-e6e3-4114-23a9ea81a05c"
     wsmap="managed"
     >
     <desc>
@@ -9047,12 +9047,24 @@ and "VAR" for unsetting. -->
       </desc>
     </attribute>
 
+    <attribute name="rawModeSupported" type="boolean" readonly="yes">
+      <desc>
+        Indicates whether VirtualBox was built with raw-mode support.
+
+        When this reads as False, the <link to="HWVirtExPropertyType::Enabled"/>
+        setting will be ignored and assumed to be True.
+      </desc>
+    </attribute>
+
     <attribute name="exclusiveHwVirt" type="boolean">
       <desc>
         Exclusive use of hardware virtualization by VirtualBox. When enabled,
         VirtualBox assumes it can obtain full and exclusive access to the VT-x
         or AMD-V feature of the host. To share hardware virtualization with
         other hypervisors, this property must be disabled.
+
+        <note>This is ignored on OS X, the kernel mediates hardware
+          access there.</note>
       </desc>
     </attribute>
 
