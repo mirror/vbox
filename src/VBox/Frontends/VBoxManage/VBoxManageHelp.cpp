@@ -170,6 +170,7 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
                     psz     += cchSubWord + 1;
                     cchWord -= cchSubWord + 1;
                     pszNbsp = (const char *)memchr(psz, REFENTRY_NBSP, cchWord);
+                    fPendingSpace = true;
                 }
 
                 if (fPendingSpace)
