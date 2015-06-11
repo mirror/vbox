@@ -84,7 +84,7 @@ fingerprint(struct libalias *la, struct ip *pIp, struct alias_data *ah)
         return -1;
 
     Log(("NAT:%s: ah(dport: %hd, sport: %hd) oaddr:%RTnaipv4 aaddr:%RTnaipv4\n",
-        __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
+        RT_GCC_EXTENSION __FUNCTION__, ntohs(*ah->dport), ntohs(*ah->sport),
         ah->oaddr, ah->aaddr));
 
     if (   (ntohs(*ah->dport) == DNS_CONTROL_PORT_NUMBER

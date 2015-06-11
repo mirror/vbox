@@ -149,11 +149,12 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias.c,v 1.58.2.1.4.1 2009/04/15 0
 # include "alias_local.h"
 # include "alias_mod.h"
 
-#define return(x)                                                           \
-do {                                                                        \
-    Log2(("NAT:ALIAS: %s:%d return(%s:%d)\n", __FUNCTION__, __LINE__, #x,(x)));    \
-    return x;                                                               \
-}while(0)
+#define return(x)                                             \
+do {                                                          \
+    Log2(("NAT:ALIAS: %s:%d return(%s:%d)\n",                 \
+          RT_GCC_EXTENSION __FUNCTION__, __LINE__, #x,(x)));  \
+    return x;                                                 \
+} while(0)
 #endif /* VBOX */
 static __inline int
 twowords(void *p)

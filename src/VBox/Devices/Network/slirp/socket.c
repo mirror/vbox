@@ -253,7 +253,7 @@ soread(PNATState pData, struct socket *so)
     QSOCKET_UNLOCK(tcb);
 
     LogFlow(("soread: so = %R[natsock]\n", so));
-    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
+    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
 
     /*
      * No need to check if there's enough room to read.
@@ -320,8 +320,8 @@ soread(PNATState pData, struct socket *so)
 #else
     nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
-    Log2(("%s: read(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
-    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
+    Log2(("%s: read(1) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
+    Log2(("%s: so = %R[natsock] so->so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
     if (nn <= 0)
     {
         /*
@@ -335,7 +335,7 @@ soread(PNATState pData, struct socket *so)
         unsigned long pending = 0;
         status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
-            Log(("NAT:%s: error in WSAIoctl: %d\n", __PRETTY_FUNCTION__, errno));
+            Log(("NAT:%s: error in WSAIoctl: %d\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, errno));
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
@@ -357,7 +357,7 @@ soread(PNATState pData, struct socket *so)
                                                  || sototcpcb(so)->t_template.ti_dst.s_addr == INADDR_ANY)));
             /* nn == 0 means peer has performed an orderly shutdown */
             Log2(("%s: disconnected, nn = %d, errno = %d (%s)\n",
-                  __PRETTY_FUNCTION__, nn, errno, strerror(errno)));
+                  RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn, errno, strerror(errno)));
             sofcantrcvmore(so);
             if (!fUninitiolizedTemplate)
                 tcp_sockclosed(pData, sototcpcb(so));
@@ -406,17 +406,17 @@ soread(PNATState pData, struct socket *so)
         );
     }
 
-    Log2(("%s: read(2) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
+    Log2(("%s: read(2) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
 #endif
 
     /* Update fields */
     sb->sb_cc += nn;
     sb->sb_wptr += nn;
-    Log2(("%s: update so_snd (readed nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, nn, sb));
+    Log2(("%s: update so_snd (readed nn = %d) %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn, sb));
     if (sb->sb_wptr >= (sb->sb_data + sb->sb_datalen))
     {
         sb->sb_wptr -= sb->sb_datalen;
-        Log2(("%s: alter sb_wptr  so_snd = %R[sbuf]\n", __PRETTY_FUNCTION__, sb));
+        Log2(("%s: alter sb_wptr  so_snd = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, sb));
     }
     STAM_PROFILE_STOP(&pData->StatIOread, a);
     SOCKET_UNLOCK(so);
@@ -542,7 +542,7 @@ sowrite(PNATState pData, struct socket *so)
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest);
     STAM_COUNTER_RESET(&pData->StatIOWrite_rest_bytes);
     LogFlowFunc(("so = %R[natsock]\n", so));
-    Log2(("%s: so = %R[natsock] so->so_rcv = %R[sbuf]\n", __PRETTY_FUNCTION__, so, sb));
+    Log2(("%s: so = %R[natsock] so->so_rcv = %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, so, sb));
     QSOCKET_LOCK(tcb);
     SOCKET_LOCK(so);
     QSOCKET_UNLOCK(tcb);
@@ -611,7 +611,7 @@ sowrite(PNATState pData, struct socket *so)
 #else
     nn = send(so->s, iov[0].iov_base, iov[0].iov_len, 0);
 #endif
-    Log2(("%s: wrote(1) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
+    Log2(("%s: wrote(1) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
     /* This should never happen, but people tell me it does *shrug* */
     if (   nn < 0
         && soIgnorableErrorCode(errno))
@@ -624,7 +624,7 @@ sowrite(PNATState pData, struct socket *so)
     if (nn < 0 || (nn == 0 && iov[0].iov_len > 0))
     {
         Log2(("%s: disconnected, so->so_state = %x, errno = %d\n",
-              __PRETTY_FUNCTION__, so->so_state, errno));
+              RT_GCC_EXTENSION __PRETTY_FUNCTION__, so->so_state, errno));
         sofcantsendmore(so);
         tcp_sockclosed(pData, sototcpcb(so));
         SOCKET_UNLOCK(so);
@@ -647,17 +647,17 @@ sowrite(PNATState pData, struct socket *so)
             }
         });
     }
-    Log2(("%s: wrote(2) nn = %d bytes\n", __PRETTY_FUNCTION__, nn));
+    Log2(("%s: wrote(2) nn = %d bytes\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn));
 #endif
 
     /* Update sbuf */
     sb->sb_cc -= nn;
     sb->sb_rptr += nn;
-    Log2(("%s: update so_rcv (written nn = %d) %R[sbuf]\n", __PRETTY_FUNCTION__, nn, sb));
+    Log2(("%s: update so_rcv (written nn = %d) %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, nn, sb));
     if (sb->sb_rptr >= (sb->sb_data + sb->sb_datalen))
     {
         sb->sb_rptr -= sb->sb_datalen;
-        Log2(("%s: alter sb_rptr of so_rcv %R[sbuf]\n", __PRETTY_FUNCTION__, sb));
+        Log2(("%s: alter sb_rptr of so_rcv %R[sbuf]\n", RT_GCC_EXTENSION __PRETTY_FUNCTION__, sb));
     }
 
     /*

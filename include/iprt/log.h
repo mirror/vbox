@@ -801,7 +801,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
 #ifdef LOG_USE_C99
-# define Log6Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+# define Log6Func(a)  _LogIt(RTLOGGRPFLAGS_LEVEL_6, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define Log6Func(a)  do { Log6((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); Log6(a); } while (0)
 #endif
@@ -900,7 +900,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #ifdef LOG_USE_C99
 # define LogFlowFunc(a) \
-    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+    _LogIt(RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", RT_GCC_EXTENSION __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
 #else
 # define LogFlowFunc(a) \
     do { LogFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogFlow(a); } while (0)

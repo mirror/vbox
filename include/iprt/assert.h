@@ -502,7 +502,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertPanic(); \
         } \
     } while (0)
@@ -524,7 +524,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertPanic(); \
             stmt; \
         } \
@@ -556,7 +556,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertPanic(); \
             return (rc); \
         } \
@@ -621,7 +621,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertPanic(); \
             return; \
         } \
@@ -738,7 +738,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertMsg2Weak a; \
             RTAssertPanic(); \
         } \
@@ -797,7 +797,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertMsg2Weak a; \
             RTAssertPanic(); \
             return (rc); \
@@ -866,7 +866,7 @@ RT_C_DECLS_END
         { /* likely */ } \
         else \
         { \
-            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
             RTAssertMsg2Weak a; \
             RTAssertPanic(); \
             return; \
@@ -983,7 +983,7 @@ RT_C_DECLS_END
 #ifdef RT_STRICT
 # define AssertFailed()  \
     do { \
-        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertPanic(); \
     } while (0)
 #else
@@ -1120,7 +1120,7 @@ RT_C_DECLS_END
 #ifdef RT_STRICT
 # define AssertMsgFailed(a)  \
     do { \
-        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertMsg1Weak((const char *)0, __LINE__, __FILE__, RT_GCC_EXTENSION __PRETTY_FUNCTION__); \
         RTAssertMsg2Weak a; \
         RTAssertPanic(); \
     } while (0)
