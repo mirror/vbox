@@ -353,7 +353,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
 
 
 /**
- * Resolves kernel symbols we want (but may do without).
+ * Resolves kernel symbols we need and some we just would like to have.
  */
 static int vboxdrvDarwinResolveSymbols(void)
 {
