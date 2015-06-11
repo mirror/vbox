@@ -670,6 +670,11 @@ class TestVmSet(object):
         if 'hwvirt-np' in self.asVirtModes and not oTestDrv.hasHostNestedPaging():
             reporter.log('Nested paging not supported by the host, skipping it.');
             self.asVirtModes.remove('hwvirt-np');
+
+        if 'raw' in self.asVirtModes and not oTestDrv.hasRawModeSupport():
+            reporter.log('Raw-mode virtualization is not available in this build (or perhaps for this host), skipping it.');
+            self.asVirtModes.remove('raw');
+
         return True;
 
     def actionExecute(self, oTestDrv, fnCallback): # pylint: disable=R0914

@@ -2689,6 +2689,40 @@ class TestDriver(base.TestDriver):                                              
         sCpuDesc = self._getHostCpuDesc(fQuiet);
         return sCpuDesc.startswith("VIA") or sCpuDesc == 'CentaurHauls';
 
+    def hasRawModeSupport(self, fQuiet = False):
+        """
+        Checks if raw-mode is supported by VirtualBox that the testbox is
+        configured for it.
+
+        Returns True / False.
+        Raises no exceptions.
+
+        Note! Differs from the rest in that we don't require the
+              TESTBOX_WITH_RAW_MODE value to match the API.  It is
+              sometimes helpful to disable raw-mode on individual
+              test boxes. (This probably goes for
+        """
+        # The environment variable can be used to disable raw-mode.
+        fEnv = os.environ.get('TESTBOX_WITH_RAW_MODE', None);
+        if fEnv is not None:
+            fEnv = fEnv.lower() not in [ 'false', 'f', 'not', 'no', 'n', '0', ];
+            if fEnv is False:
+                return False;
+
+        # Starting with 5.0 GA / RC2 the API can tell us whether VBox was built
+        # with raw-mode support or not.
+        self.importVBoxApi();
+        if self.fpApiVer >= 5.0:
+            try:
+                fVBox = self.oVBox.systemProperties.rawModeSupported;
+            except:
+                if not fQuiet:
+                    reporter.logXcpt();
+                fVBox = True;
+            if fVBox is False:
+                return False;
+
+        return True;
 
     #
     # Testdriver execution methods.

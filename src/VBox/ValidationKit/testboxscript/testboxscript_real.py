@@ -170,6 +170,7 @@ class TestBoxScript(object):
             constants.tbreq.SIGNON_PARAM_HAS_NESTED_PAGING:{ self.VALUE: self._hasHostNestedPaging(),  self.FN: None },
             constants.tbreq.SIGNON_PARAM_HAS_64_BIT_GUEST: { self.VALUE: self._can64BitGuest(),        self.FN: None },
             constants.tbreq.SIGNON_PARAM_HAS_IOMMU:        { self.VALUE: self._hasHostIoMmu(),         self.FN: None },
+            #constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE:    { self.VALUE: self._withRawModeSupport(),   self.FN: None },
             constants.tbreq.SIGNON_PARAM_SCRIPT_REV:       { self.VALUE: self._getScriptRev(),         self.FN: None },
             constants.tbreq.SIGNON_PARAM_REPORT:           { self.VALUE: self._getHostReport(),        self.FN: None },
             constants.tbreq.SIGNON_PARAM_PYTHON_VERSION:   { self.VALUE: self._getPythonHexVersion(),  self.FN: None },
@@ -220,6 +221,8 @@ class TestBoxScript(object):
         os.environ['TESTBOX_CPU_COUNT']         = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_CPU_COUNT);
         os.environ['TESTBOX_MEM_SIZE']          = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_MEM_SIZE);
         os.environ['TESTBOX_SCRATCH_SIZE']      = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE);
+        #TODO: os.environ['TESTBOX_WITH_RAW_MODE']     = self.getSignOnParam(constants.tbreq.SIGNON_PARAM_WITH_RAW_MODE);
+        os.environ['TESTBOX_WITH_RAW_MODE']     = self._withRawModeSupport();
         os.environ['TESTBOX_MANAGER_URL']       = self._oOptions.sTestManagerUrl;
         os.environ['TESTBOX_UUID']              = self._sTestBoxUuid;
         os.environ['TESTBOX_REPORTER']          = 'remote';
@@ -530,6 +533,14 @@ class TestBoxScript(object):
             ## @todo Any way to figure this one out on any host OS?
             self._oOptions.fHasIoMmu = False;
         return self._oOptions.fHasIoMmu;
+
+    def _withRawModeSupport(self):
+        """
+        Check if the testbox is configured with raw-mode support or not.
+        """
+        if self._oOptions.fWithRawMode is None:
+            self._oOptions.fWithRawMode = True;
+        return self._oOptions.fWithRawMode;
 
     def _getHostReport(self):
         """
@@ -933,6 +944,12 @@ class TestBoxScript(object):
         parser.add_option("--no-io-mmu",
                           dest="fHasIoMmu", action="store_false", default=None,
                           help="No I/O MMU available");
+        parser.add_option("--raw-mode",
+                          dest="fWithRawMode", action="store_true", default=None,
+                          help="Use raw-mode on this host.");
+        parser.add_option("--no-raw-mode",
+                          dest="fWithRawMode", action="store_false", default=None,
+                          help="Disables raw-mode tests on this host.");
         parser.add_option("--pidfile",
                           dest="sPidFile", default=None,
                           help="For the parent script, ignored.");
