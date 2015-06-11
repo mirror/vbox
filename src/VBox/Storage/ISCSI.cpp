@@ -4744,7 +4744,6 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
         pReq->cI2TSegs      = 0;
         pReq->cbT2IData     = cbToRead;
         pReq->paT2ISegs     = &pReq->aSegs[pReq->cI2TSegs];
-        pReq->cT2ISegs      = pReq->cT2ISegs;
         pReq->cbSense       = sizeof(pReq->abSense);
         pReq->cT2ISegs      = cT2ISegs;
         pReq->pIoCtx        = pIoCtx;
