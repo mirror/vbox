@@ -48,11 +48,11 @@
 #ifndef __VBOX_DRV_H__
 #define __VBOX_DRV_H__
 
+#include "the-linux-kernel.h"
+
 #include <VBox/VBoxVideoGuest.h>
 
 #include <iprt/log.h>
-
-#include "the-linux-kernel.h"
 
 #include <drm/drmP.h>
 #include <drm/drm_fb_helper.h>

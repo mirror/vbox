@@ -26,7 +26,7 @@
 #include <iprt/log.h>
 
 #ifndef VBOX_GUESTR3XF86MOD
-# include <string.h>
+# include <iprt/string.h>
 #endif
 
 /**
