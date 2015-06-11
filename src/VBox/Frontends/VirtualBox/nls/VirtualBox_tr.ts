@@ -607,7 +607,7 @@
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
-        <translation>Cihazı iç&amp;e aktar...</translation>
+        <translation>Cihazı İç&amp;e Aktar...</translation>
     </message>
     <message>
         <source>Import an appliance into VirtualBox</source>
@@ -615,7 +615,7 @@
     </message>
     <message>
         <source>&amp;Export Appliance...</source>
-        <translation>Cihazı &amp;dışa aktar...</translation>
+        <translation>Cihazı &amp;Dışa Aktar...</translation>
     </message>
     <message>
         <source>Export one or more VirtualBox virtual machines as an appliance</source>
@@ -736,7 +736,7 @@
     </message>
     <message>
         <source>Show &amp;Log...</source>
-        <translation>Gün&amp;lüğü göster...</translation>
+        <translation>Gün&amp;lüğü Göster...</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Web Site...</source>
@@ -752,7 +752,7 @@
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
-        <translation>Grubu yeniden &amp;adlandır...</translation>
+        <translation>Grubu Yeniden &amp;Adlandır...</translation>
     </message>
     <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
@@ -832,7 +832,7 @@
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation>Makine &amp;ekle...</translation>
+        <translation>Makine &amp;Ekle...</translation>
     </message>
     <message>
         <source>&amp;Ungroup...</source>
@@ -1299,7 +1299,7 @@
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation>Gru&amp;plamayı kaldır</translation>
+        <translation>Gru&amp;plamayı Kaldır</translation>
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
@@ -3128,7 +3128,7 @@
     </message>
     <message>
         <source>&amp;Raise Window Under Mouse</source>
-        <translation>Fare Altındaki Pencereyi Öne &amp;Getir</translation>
+        <translation>Fare Altındaki Pencereyi öne &amp;getir</translation>
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
@@ -5416,7 +5416,7 @@
     </message>
     <message>
         <source>Show at &amp;Top of Screen</source>
-        <translation>Ekranın En Üstünde &amp;Göster</translation>
+        <translation>Ekranın En Üstünde &amp;göster</translation>
     </message>
     <message>
         <source>Allows to modify VM status-bar contents.</source>
@@ -5428,7 +5428,7 @@
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation>&amp;Tam Ekran/Özgün Kipinde Göster</translation>
+        <translation>&amp;Tam Ekran/Özgün Kipinde göster</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
@@ -6666,7 +6666,7 @@
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disk kalıbı seçin...</translation>
     </message>
 </context>
 <context>
