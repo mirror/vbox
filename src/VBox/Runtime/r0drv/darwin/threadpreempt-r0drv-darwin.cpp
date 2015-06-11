@@ -109,7 +109,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     uint32_t volatile *pfAstPending = g_pfnR0DarwinAstPending(); AssertPtr(pfAstPending);
     uint32_t  const    fAstPending = *pfAstPending;
 
-    AssertMsg(!(fAstPending & UINT32_C(0xffff8000)), ("%#x\n", fAstPending));
+    AssertMsg(!(fAstPending & UINT32_C(0xfffe0000)), ("%#x\n", fAstPending));
     return (fAstPending & (AST_PREEMPT | AST_QUANTUM | AST_URGENT)) != 0;
 }
 
