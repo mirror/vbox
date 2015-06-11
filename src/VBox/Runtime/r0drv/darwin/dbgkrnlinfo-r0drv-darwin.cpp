@@ -1031,6 +1031,8 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     pThis->hFile = NIL_RTFILE;
 
     int rc = RTFileOpen(&pThis->hFile, "/mach_kernel", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (rc == VERR_FILE_NOT_FOUND)
+        rc = RTFileOpen(&pThis->hFile, "/System/Library/Kernels/kernel", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
         rc = rtR0DbgKrnlDarwinLoadFileHeaders(pThis);
     if (RT_SUCCESS(rc))
