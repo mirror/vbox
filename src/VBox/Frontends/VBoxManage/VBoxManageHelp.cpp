@@ -122,13 +122,13 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
             do
             {
                 RTStrmWrite(pStrm, psz, pszNbsp - psz);
-                RTStrmWrite(pStrm, " ", 1);
+                RTStrmPutCh(pStrm, ' ');
                 psz = pszNbsp + 1;
                 pszNbsp = strchr(psz, REFENTRY_NBSP);
             } while (pszNbsp);
             RTStrmWrite(pStrm, psz, strlen(psz));
         }
-        RTStrmWrite(pStrm, "\n", 1);
+        RTStrmPutCh(pStrm, '\n');
         cLinesWritten = 1;
     }
     /*
@@ -149,12 +149,13 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
         do
         {
             RTStrmWrite(pStrm, pszIndent, cchIndent);
-            size_t offLine = cchIndent;
+            size_t offLine       = cchIndent;
+            bool   fPendingSpace = false;
             do
             {
                 const char *pszSpace = strchr(psz, ' ');
-                size_t      cchWord  = pszSpace ? pszSpace + 1 - psz : strlen(psz);
-                if (   offLine + cchWord > cchMaxWidth
+                size_t      cchWord  = pszSpace ? pszSpace - psz : strlen(psz);
+                if (   offLine + cchWord + fPendingSpace > cchMaxWidth
                     && offLine != cchIndent)
                     break;
 
@@ -162,20 +163,23 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
                 while (pszNbsp)
                 {
                     size_t cchSubWord = pszNbsp - psz;
+                    if (fPendingSpace)
+                        RTStrmPutCh(pStrm, ' ');
                     RTStrmWrite(pStrm, psz, cchSubWord);
-                    RTStrmWrite(pStrm, " ", 1);
+                    offLine += cchSubWord + fPendingSpace;
                     psz     += cchSubWord + 1;
-                    offLine += cchSubWord + 1;
                     cchWord -= cchSubWord + 1;
                     pszNbsp = (const char *)memchr(psz, REFENTRY_NBSP, cchWord);
                 }
 
+                if (fPendingSpace)
+                    RTStrmPutCh(pStrm, ' ');
                 RTStrmWrite(pStrm, psz, cchWord);
-                psz     += cchWord;
-                offLine += cchWord;
-
+                offLine += cchWord + fPendingSpace;
+                psz      = pszSpace ? pszSpace + 1 : strchr(psz, '\0');
+                fPendingSpace = true;
             } while (offLine < cchMaxWidth && *psz != '\0');
-            RTStrmWrite(pStrm, "\n", 1);
+            RTStrmPutCh(pStrm, '\n');
             cLinesWritten++;
         } while (*psz != '\0');
     }
@@ -227,7 +231,7 @@ static uint32_t printStringTable(PRTSTREAM pStrm, PCREFENTRYSTRTAB pStrTab, uint
                 while (cPendingBlankLines > 0)
                 {
                     cPendingBlankLines--;
-                    RTStrmWrite(pStrm, "\n", 3);
+                    RTStrmPutCh(pStrm, '\n');
                     cLinesWritten++;
                 }
                 cLinesWritten += printString(pStrm, psz, cchWidth);
@@ -416,12 +420,12 @@ RTEXITCODE errorSyntax(const char *pszFormat, ...)
     RTMsgErrorV(pszFormat, va);
     va_end(va);
 
-    RTStrmWrite(g_pStdErr, "\n", 1);
+    RTStrmPutCh(g_pStdErr, '\n');
     if (   printBriefCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, g_pStdErr)
         >= ERROR_REPEAT_AFTER_USAGE_LENGTH)
     {
         /* Usage was very long, repeat the error message. */
-        RTStrmWrite(g_pStdErr, "\n", 1);
+        RTStrmPutCh(g_pStdErr, '\n');
         va_start(va, pszFormat);
         RTMsgErrorV(pszFormat, va);
         va_end(va);
@@ -497,7 +501,7 @@ RTEXITCODE errorGetOpt(int rcGetOpt, union RTGETOPTUNION const *pValueUnion)
         >= ERROR_REPEAT_AFTER_USAGE_LENGTH)
     {
         /* Usage was very long, repeat the error message. */
-        RTStrmWrite(g_pStdErr, "\n", 1);
+        RTStrmPutCh(g_pStdErr, '\n');
         errorGetOptWorker(rcGetOpt, pValueUnion);
     }
     return RTEXITCODE_SYNTAX;
