@@ -434,8 +434,8 @@ typedef struct ATACONTROLLER
     uint8_t             Alignment3[1]; /**< Explicit padding of the 1 byte gap. */
     /** Magic delay before triggering interrupts in DMA mode. */
     uint32_t            DelayIRQMillies;
-    /** The mutex protecting the request queue. */
-    RTSEMMUTEX          AsyncIORequestMutex;
+    /** The lock protecting the request queue. */
+    PDMCRITSECT         AsyncIORequestLock;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
 #if 0 /*HC_ARCH_BITS == 32*/
@@ -703,29 +703,30 @@ static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0,
 
 static void ataAsyncIOClearRequests(PATACONTROLLER pCtl)
 {
-    int rc;
-
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
+
     pCtl->AsyncIOReqHead = 0;
     pCtl->AsyncIOReqTail = 0;
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
 
 static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
 {
-    int rc;
-
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
+
     Assert((pCtl->AsyncIOReqHead + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests) != pCtl->AsyncIOReqTail);
     memcpy(&pCtl->aAsyncIORequests[pCtl->AsyncIOReqHead], pReq, sizeof(*pReq));
     pCtl->AsyncIOReqHead++;
     pCtl->AsyncIOReqHead %= RT_ELEMENTS(pCtl->aAsyncIORequests);
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
+
     rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
     if (RT_FAILURE(rc))
     {
@@ -737,16 +738,17 @@ static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
 
 static const ATARequest *ataAsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
 {
-    int rc;
     const ATARequest *pReq;
 
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
+
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail)
         pReq = &pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail];
     else
         pReq = NULL;
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
     return pReq;
 }
@@ -762,16 +764,16 @@ static const ATARequest *ataAsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
  */
 static void ataAsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType)
 {
-    int rc;
-
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
+
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail && pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail].ReqType == ReqType)
     {
         pCtl->AsyncIOReqTail++;
         pCtl->AsyncIOReqTail %= RT_ELEMENTS(pCtl->aAsyncIORequests);
     }
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
@@ -785,13 +787,11 @@ static void ataAsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType)
  */
 static void ataAsyncIODumpRequests(PATACONTROLLER pCtl)
 {
-    int rc;
-    uint8_t curr;
-
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
+
     LogRel(("PIIX3 ATA: Ctl#%d: request queue dump (topmost is current):\n", ATACONTROLLER_IDX(pCtl)));
-    curr = pCtl->AsyncIOReqTail;
+    uint8_t curr = pCtl->AsyncIOReqTail;
     do
     {
         if (curr == pCtl->AsyncIOReqHead)
@@ -821,7 +821,8 @@ static void ataAsyncIODumpRequests(PATACONTROLLER pCtl)
         }
         curr = (curr + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests);
     } while (curr != pCtl->AsyncIOReqTail);
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
@@ -835,17 +836,16 @@ static void ataAsyncIODumpRequests(PATACONTROLLER pCtl)
  */
 static bool ataAsyncIOIsIdle(PATACONTROLLER pCtl, bool fStrict)
 {
-    int rc;
-    bool fIdle;
-
-    rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
     AssertRC(rc);
-    fIdle = pCtl->fRedoIdle;
+
+    bool fIdle = pCtl->fRedoIdle;
     if (!fIdle)
         fIdle = (pCtl->AsyncIOReqHead == pCtl->AsyncIOReqTail);
     if (fStrict)
         fIdle &= (pCtl->uAsyncIOState == ATA_AIO_NEW);
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex);
+
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
     return fIdle;
 }
@@ -5036,10 +5036,11 @@ static void ataDMATransfer(PATACONTROLLER pCtl)
 static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
 {
     /*
-     * Take the mutex here and recheck the idle indicator to avoid
+     * Take the lock here and recheck the idle indicator to avoid
      * unnecessary work and racing ataR3WaitForAsyncIOIsIdle.
      */
-    int rc = RTSemMutexRequest(pCtl->AsyncIORequestMutex, RT_INDEFINITE_WAIT); AssertRC(rc);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    AssertRC(rc);
 
     if (    pCtl->fSignalIdle
         &&  ataAsyncIOIsIdle(pCtl, false /*fStrict*/))
@@ -5048,7 +5049,8 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
         RTThreadUserSignal(pCtl->AsyncIOThread); /* for ataR3Construct/ataR3ResetCommon. */
     }
 
-    rc = RTSemMutexRelease(pCtl->AsyncIORequestMutex); AssertRC(rc);
+    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    AssertRC(rc);
 }
 
 /** Async I/O thread for an interface. Once upon a time this was readable
@@ -5537,7 +5539,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
         PDMDevHlpAsyncNotificationCompleted(pCtl->pDevInsR3);
 
     /* Cleanup the state.  */
-    /* Do not destroy request mutex yet, still needed for proper shutdown. */
+    /* Do not destroy request lock yet, still needed for proper shutdown. */
     pCtl->fShutdown = false;
 
     Log2(("%s: Ctl#%d: return %Rrc\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), rc));
@@ -6415,9 +6417,10 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
             if (!fRc)
             {
                 /* Make it signal PDM & itself when its done */
-                RTSemMutexRequest(pThis->aCts[i].AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+                PDMCritSectEnter(&pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
                 ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
-                RTSemMutexRelease(pThis->aCts[i].AsyncIORequestMutex);
+                PDMCritSectLeave(&pThis->aCts[i].AsyncIORequestLock);
+
                 fRc = ataAsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/);
                 if (!fRc)
                 {
@@ -6913,14 +6916,14 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
         {
             if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
             {
-                int rc = RTSemMutexRequest(pThis->aCts[i].AsyncIORequestMutex, RT_INDEFINITE_WAIT);
+                int rc = PDMCritSectEnter(&pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
                 AssertRC(rc);
 
                 ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
                 rc = RTThreadUserReset(pThis->aCts[i].AsyncIOThread);
                 AssertRC(rc);
 
-                rc = RTSemMutexRelease(pThis->aCts[i].AsyncIORequestMutex);
+                rc = PDMCritSectLeave(&pThis->aCts[i].AsyncIORequestLock);
                 AssertRC(rc);
 
                 if (!ataAsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/))
@@ -7028,11 +7031,8 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        if (pThis->aCts[i].AsyncIORequestMutex != NIL_RTSEMMUTEX)
-        {
-            RTSemMutexDestroy(pThis->aCts[i].AsyncIORequestMutex);
-            pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
-        }
+        if (PDMCritSectIsInitialized(&pThis->aCts[i].AsyncIORequestLock))
+            PDMR3CritSectDelete(&pThis->aCts[i].AsyncIORequestLock);
         if (pThis->aCts[i].AsyncIOSem != NIL_RTSEMEVENT)
         {
             RTSemEventDestroy(pThis->aCts[i].AsyncIOSem);
@@ -7122,7 +7122,6 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     {
         pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
         pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
-        pThis->aCts[i].AsyncIORequestMutex = NIL_RTSEMMUTEX;
         pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
     }
 
@@ -7375,10 +7374,13 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                    "Profiling of locks.",               "/Devices/IDE%d/ATA%d/Async/LockWait", iInstance, i);
 #endif /* VBOX_WITH_STATISTICS */
 
-        /* Initialize per-controller critical section */
-        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->aCts[i].lock, RT_SRC_POS, "ATA#%u", i);
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot initialize critical section"));
+        /* Initialize per-controller critical section. */
+        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->aCts[i].lock,               RT_SRC_POS, "ATA#%u-Ctl", i);
+        AssertLogRelRCReturn(rc, rc);
+
+        /* Initialize per-controller async I/O request critical section. */
+        rc = PDMDevHlpCritSectInit(pDevIns, &pThis->aCts[i].AsyncIORequestLock, RT_SRC_POS, "ATA#%u-Req", i);
+        AssertLogRelRCReturn(rc, rc);
     }
 
     /*
@@ -7412,14 +7414,14 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         AssertLogRelRCReturn(rc, rc);
         rc = RTSemEventCreate(&pCtl->SuspendIOSem);
         AssertLogRelRCReturn(rc, rc);
-        rc = RTSemMutexCreate(&pCtl->AsyncIORequestMutex);
-        AssertLogRelRCReturn(rc, rc);
+
         ataAsyncIOClearRequests(pCtl);
         rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024 /*cbStack*/,
                              RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
         AssertLogRelRCReturn(rc, rc);
-        Assert(pCtl->AsyncIOThread != NIL_RTTHREAD && pCtl->AsyncIOSem != NIL_RTSEMEVENT && pCtl->SuspendIOSem != NIL_RTSEMEVENT && pCtl->AsyncIORequestMutex != NIL_RTSEMMUTEX);
-        Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p mutex %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->AsyncIOSem, pCtl->SuspendIOSem, pCtl->AsyncIORequestMutex));
+        Assert(  pCtl->AsyncIOThread != NIL_RTTHREAD    && pCtl->AsyncIOSem != NIL_RTSEMEVENT
+               && pCtl->SuspendIOSem != NIL_RTSEMEVENT  && PDMCritSectIsInitialized(&pCtl->AsyncIORequestLock));
+        Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->AsyncIOSem, pCtl->SuspendIOSem));
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pCtl->aIfs); j++)
         {
