@@ -1850,7 +1850,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="025c4331-4096-1640-b261-649ffc36adee"
+    uuid="0169423f-46b4-cde9-91af-1e9d5b6cd945"
     wsmap="managed"
     reservedMethods="8" reservedAttributes="6"
     >
@@ -1915,6 +1915,14 @@
         guarantee does not apply to development builds, and also there is no
         guarantee that this version is identical to the first two integer
         numbers of the package version.
+      </desc>
+    </attribute>
+
+    <attribute name="APIRevision" type="long long" readonly="yes">
+      <desc>
+        To be defined exactly, but we need something that the Validation Kit
+        can use to figure which methods and attributes can safely be used on a
+        continuously changing trunk (and occational branch).
       </desc>
     </attribute>
 

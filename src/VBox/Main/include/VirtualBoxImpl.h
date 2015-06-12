@@ -254,6 +254,7 @@ private:
     HRESULT getRevision(ULONG *aRevision);
     HRESULT getPackageType(com::Utf8Str &aPackageType);
     HRESULT getAPIVersion(com::Utf8Str &aAPIVersion);
+    HRESULT getAPIRevision(LONG64 *aAPIRevision);
     HRESULT getHomeFolder(com::Utf8Str &aHomeFolder);
     HRESULT getSettingsFilePath(com::Utf8Str &aSettingsFilePath);
     HRESULT getHost(ComPtr<IHost> &aHost);
