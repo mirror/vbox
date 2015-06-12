@@ -2678,7 +2678,7 @@ RTDECL(PRTLOGGER) RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup)
             pLogger = NULL;
         else
         {
-            uint16_t const fFlags = RT_LO_U16(fFlagsAndGroup);
+            uint32_t const fFlags = RT_LO_U16(fFlagsAndGroup);
             uint16_t const iGroup = RT_HI_U16(fFlagsAndGroup);
             if (   iGroup != UINT16_MAX
                  && (   (pLogger->afGroups[iGroup < pLogger->cGroups ? iGroup : 0] & (fFlags | RTLOGGRPFLAGS_ENABLED))
