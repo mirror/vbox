@@ -1850,8 +1850,9 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="3afa096e-2cad-4cb0-aba2-47fe3fc62bd8"
+    uuid="025c4331-4096-1640-b261-649ffc36adee"
     wsmap="managed"
+    reservedMethods="8" reservedAttributes="6"
     >
     <desc>
       The IVirtualBox interface represents the main interface exposed by the
@@ -2967,8 +2968,9 @@
 
   <interface
     name="IAppliance" extends="$unknown"
-    uuid="a529d52c-cf23-4936-9150-e8a6ce77fdad"
+    uuid="8398f026-4add-4474-5bc3-2f9f2140b23e"
     wsmap="managed"
+    reservedMethods="8" reservedAttributes="4"
     >
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
@@ -3907,8 +3909,9 @@
 
   <interface
     name="IBIOSSettings" extends="$unknown"
-    uuid="38b54279-dc35-4f5e-a431-835b867c6b5e"
+    uuid="c5b5afe3-4a6f-05eb-c9b6-4dbf98538b67"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="4"
     >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
@@ -4164,10 +4167,11 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="6bf820b3-a08f-49a7-ac08-b88efbd3a313"
+    uuid="5c3e5503-40c1-f2bb-a949-26b413aa541a"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
+    reservedMethods="8" reservedAttributes="8"
     >
     <desc>
       The IMachine interface represents a virtual machine, or guest, created
@@ -7575,8 +7579,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IEmulatedUSB" extends="$unknown"
-    uuid="38cc4dfd-8bb2-4d40-aebe-699eead8c2dd"
+    uuid="6e253ee8-477a-2497-6759-88b8292a5af0"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="2"
     >
     <desc>
       Manages emulated USB devices.
@@ -7615,8 +7620,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IVRDEServerInfo" extends="$unknown"
-    uuid="714434a1-58c3-4aab-9049-7652c5df113b"
+    uuid="f4ccd4c8-406c-4ba1-4bcf-19a68a12b723"
     wsmap="struct"
+    reservedMethods="1" reservedAttributes="4"
     >
     <desc>
       Contains information about the remote desktop (VRDE) server capabilities and status.
@@ -7723,8 +7729,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="650b5f05-8258-4ee9-b518-89c515ca5dd9"
+    uuid="872da645-4a9b-1727-bee2-5585105b9eed"
     wsmap="managed"
+    reservedMethods="8" reservedAttributes="4"
     >
     <desc>
       The IConsole interface represents an interface to control virtual
@@ -8378,8 +8385,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IHostNetworkInterface" extends="$unknown"
-    uuid="f6e556f9-d598-409b-898c-8ba99d9b05ae"
+    uuid="455f8c45-44a0-a470-ba20-27890b96dba9"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="2"
     >
     <desc>
       Represents one of host's network interfaces. IP V6 address and network
@@ -8505,8 +8513,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="93269330-48ca-4096-b4a2-1189df336267"
+    uuid="afca788c-4477-787d-60b2-3fa70e56fbbc"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="6"
     >
     <desc>
       The IHost interface represents the physical machine that this VirtualBox
@@ -8979,8 +8988,9 @@ and "VAR" for unsetting. -->
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="538a7f0b-4ef1-e6e3-4114-23a9ea81a05c"
+    uuid="0eb668d2-495e-5a36-8890-29999b5f030c"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="8"
     >
     <desc>
       The ISystemProperties interface represents global properties of the given
@@ -9455,8 +9465,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="ced74f7e-4c08-4d19-883a-017496ada2e1"
+    uuid="03f64ba0-4915-e398-caa4-70a05bd341b4"
     wsmap="struct"
+    reservedAttributes="4"
     >
     <desc>
     </desc>
@@ -9682,8 +9693,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IAdditionsFacility" extends="$unknown"
-    uuid="54992946-6af1-4e49-98ec-58b558b7291e"
+    uuid="f2f7fae4-4a06-81fc-a916-78b2da1fa0e5"
     wsmap="struct"
+    reservedAttributes="1"
     >
     <desc>
       Structure representing a Guest Additions facility.
@@ -10672,8 +10684,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IDnDBase" extends="$unknown"
-    uuid="a9630a67-7238-4b0e-9a58-364b1dd3d032"
+    uuid="4132147b-42f8-cd96-7570-6a8800e3342c"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>Base abstract interface for drag'n drop.</desc>
 
@@ -10720,8 +10733,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IDnDSource" extends="IDnDBase"
-    uuid="b69c400d-be63-4255-898a-e706d66b1637"
+    uuid="d23a9ca3-42da-c94b-8aec-21968e08355d"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>Abstract interface for handling drag'n drop sources.</desc>
 
@@ -10800,8 +10814,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IDnDTarget" extends="IDnDBase"
-    uuid="25ac16fa-316d-4934-9a7f-fe02f6739bef"
+    uuid="ff5befc3-4ba3-7903-2aa4-43988ba11554"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>Abstract interface for handling drag'n drop targets.</desc>
 
@@ -10970,8 +10985,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="3cbf62cf-c9cd-48c6-9623-d1dbe54ca557"
+    uuid="486fd828-4c6b-239b-a846-c4bb69e41038"
     wsmap="managed"
+    reservedMethods="8" reservedAttributes="4"
     >
     <desc>
       A guest session represents one impersonated user account in the guest, so
@@ -12170,8 +12186,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IProcess" extends="$unknown"
-    uuid="064cf1ca-4c0f-50b5-8f8e-e8b4bfa76c33"
+    uuid="2e20707d-4325-9a83-83cf-3faf5b97457c"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="2"
     >
     <desc>
       Abstract parent interface for processes handled by VirtualBox.
@@ -12371,8 +12388,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IDirectory" extends="$unknown"
-    uuid="1b70dd03-26d7-483a-8877-89bbb0f87b70"
+    uuid="f73650f4-4506-50ca-045a-23a0e32ea508"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="2"
     >
     <desc>
       Abstract parent interface for directories handled by VirtualBox.
@@ -12426,8 +12444,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="540804bf-4ca6-dd43-800c-bfb9765f96fe"
+    uuid="14c66b23-404c-f24a-3cc1-ee9501d44f2a"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="2"
     >
     <desc>
       Abstract parent interface for files handled by VirtualBox.
@@ -12691,8 +12710,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IFsObjInfo" extends="$unknown"
-    uuid="37b30bc6-4506-58e4-bc43-fbbca92b4548"
+    uuid="d344626e-4b0a-10bc-9c2b-68973052de16"
     wsmap="managed"
+    reservedAttributes="2"
     >
     <desc>
       Abstract parent interface for VirtualBox file system object information.
@@ -12813,8 +12833,9 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="97927199-7e1f-4094-97ab-92333e727843"
+    uuid="13a11514-402e-022e-6180-c3944de3f9c8"
     wsmap="managed"
+    reservedMethods="8" reservedAttributes="8"
     >
     <desc>
       The IGuest interface represents information about the operating system
@@ -13140,8 +13161,9 @@ useful to the API client. -->
 
   <interface
     name="IProgress" extends="$unknown"
-    uuid="c20238e4-3221-4d3f-8891-81ce92d9f913"
+    uuid="77faf1c0-489d-b123-274c-5a95e77ab286"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
         The IProgress interface is used to track and control
@@ -13387,8 +13409,9 @@ useful to the API client. -->
 
   <interface
     name="ISnapshot" extends="$unknown"
-    uuid="0472823b-c6e7-472a-8e9f-d732e86b8463"
+    uuid="5732f030-4194-ec8b-c761-e1a99327e9f0"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The ISnapshot interface represents a snapshot of the virtual
@@ -13719,8 +13742,9 @@ useful to the API client. -->
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="4b252567-5d4e-4db8-b3c8-569ec1c9236c"
+    uuid="ec769654-4b4a-1dd4-9cf9-3295e8b3f2a3"
     wsmap="struct"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IMediumAttachment interface links storage media to virtual machines.
@@ -13961,8 +13985,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="9680d99b-3550-4e14-8fc4-82ad1426cbde"
+    uuid="4afe423b-43e0-e9d0-82e8-ceb307940dda"
     wsmap="managed"
+    reservedMethods="4" reservedAttributes="4"
     >
     <desc>
       The IMedium interface represents virtual storage for a machine's
@@ -15392,8 +15417,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMediumFormat" extends="$unknown"
-    uuid="6238e1cf-a17d-4ec1-8172-418bfb22b93a"
+    uuid="10f337fb-422e-e57e-661b-0998ac309175"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
         The IMediumFormat interface represents a medium format.
@@ -15565,8 +15591,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IKeyboard" extends="$unknown"
-    uuid="585cc5e8-349c-41c6-899d-d9a38e3f4126"
+    uuid="da91d4c9-4c02-fdb1-c5ac-d89e22e81302"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IKeyboard interface represents the virtual machine's keyboard. Used
@@ -15685,8 +15712,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMousePointerShape" extends="$unknown"
-    uuid="4609f3e1-839a-4edd-b57f-cc4584b39173"
+    uuid="e04e5545-4a0f-f9d2-5bef-f9b25b6557ed"
     wsmap="managed"
+    reservedAttributes="1"
     >
     <desc>
       The guest mouse pointer description.
@@ -15758,8 +15786,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMouse" extends="$unknown"
-    uuid="4c3fa51c-7b9a-4ecf-97f0-d75a945bd26c"
+    uuid="ee35adb0-4748-3e12-e7fd-5aad957bba0f"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IMouse interface represents the virtual machine's mouse. Used in
@@ -16072,7 +16101,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebuffer" extends="$unknown"
-    uuid="dd07f843-be2e-4cae-83fe-8bf5d33c80e9"
+    uuid="8b82295f-415f-1aa1-17fd-9fbbac8edf44"
     wsmap="managed"
     >
     <attribute name="width" type="unsigned long" readonly="yes">
@@ -16310,8 +16339,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IFramebufferOverlay" extends="IFramebuffer"
-    uuid="0bcc1c7e-e415-47d2-bfdb-e4c705fb0f47"
+    uuid="724802c7-4a2a-3296-501f-0f871ce6fdb5"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The IFramebufferOverlay interface represents an alpha blended overlay
@@ -16377,9 +16407,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="94a7faa2-7792-42a3-8535-00770eca1f53"
+    uuid="7303a66d-433b-25a4-f9a8-fcadf87e0c2a"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IEventListener"
+    reservedMethods="4" reservedAttributes="1"
     >
     <desc>
       The IDisplay interface represents the virtual machine's display.
@@ -16781,8 +16812,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INetworkAdapter" extends="$unknown"
-    uuid="efa0f965-63c7-4c60-afdf-b1cc9943b9c0"
+    uuid="e925c2aa-4fe4-aaf6-91c5-e9b8ea4151ee"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="2"
     >
     <desc>
         Represents a virtual network adapter that is attached to a virtual machine.
@@ -17018,8 +17050,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISerialPort" extends="$unknown"
-    uuid="937f6970-5103-4745-b78e-d28dcf1479a8"
+    uuid="cb0a4a29-43a3-9040-0c25-34845db7b042"
     wsmap="managed"
+    reservedAttributes="1"
     >
 
     <desc>
@@ -17168,8 +17201,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="ae7afb78-4265-8c03-ccb9-33a7970057e3"
+    uuid="9c0f5269-47ae-ee34-c2fe-53a16e388925"
     wsmap="managed"
+    reservedMethods="16" reservedAttributes="8"
     >
     <method name="dumpGuestCore">
       <desc>
@@ -17804,8 +17838,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBController" extends="$unknown"
-    uuid="2598fa52-3044-4ff5-8a61-2b09088a9e3c"
+    uuid="0c293c51-4810-e174-4f78-199376c63bbe"
     wsmap="managed"
+    reservedAttributes="1"
     >
 
     <attribute name="name" type="wstring">
@@ -17984,8 +18019,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBDeviceFilter" extends="$unknown"
-    uuid="d6831fb4-1a94-4c2c-96ef-8d0d6192066d"
+    uuid="45587218-4289-ef4e-8e6a-e5b07816b631"
     wsmap="managed"
+    reservedAttributes="4"
     >
     <desc>
       The IUSBDeviceFilter interface represents an USB device filter used
@@ -18370,8 +18406,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IAudioAdapter" extends="$unknown"
-    uuid="280cc7f7-eddc-48b6-9bbb-5b1e8d761c0e"
+    uuid="40ab4d08-4f91-b43b-f2de-0cb5b239b2da"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
         The IAudioAdapter interface represents the virtual audio adapter of
@@ -18470,8 +18507,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVRDEServer" extends="$unknown"
-    uuid="d38de40a-c2c1-4e95-b5a4-167b05f5694c"
+    uuid="6e758489-453a-6f98-9cb9-2da2cb8eabb5"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
 
     <attribute name="enabled" type="boolean">
@@ -18563,8 +18601,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="ISharedFolder" extends="$unknown"
-    uuid="8388da11-b559-4574-a5b7-2bd7acd5cef8"
+    uuid="54310a5c-46b8-2d30-6afe-a48efe731429"
     wsmap="struct"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       The ISharedFolder interface represents a folder in the host computer's
@@ -19525,8 +19564,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="802bb9c0-fe71-43ab-b55a-322fdf77358f"
+    uuid="49b19d41-4a75-7bd5-c124-259acba3c41d"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
         Represents a storage controller that is attached to a virtual machine
@@ -20184,8 +20224,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="INATEngine" extends="$unknown"
-    uuid="26451b99-3b2d-4dcb-8e4b-d63654218175"
+    uuid="c1cdb6bf-44cb-e334-66fa-469a17fd09df"
     wsmap="managed"
+    reservedMethods="2" reservedAttributes="2"
     >
     <desc>Interface for managing a NAT engine which is used with a virtual machine. This
       allows for changing NAT behavior such as port-forwarding rules. This interface is
@@ -20300,8 +20341,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackPlugIn" extends="$unknown"
-    uuid="58000040-e718-4746-bbce-4b86d96da461"
+    uuid="c8e667b2-4234-1f9c-6508-afa9cea4efa1"
     wsmap="suppress"
+    reservedAttributes="1"
     >
     <desc>
       Interface for keeping information about a plug-in that ships with an
@@ -20325,8 +20367,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackBase" extends="$unknown"
-    uuid="f79b75d8-2890-4f34-ffff-ffffa144e82c"
+    uuid="4bd17415-4438-8657-e78e-80a40713a23c"
     wsmap="suppress"
+    reservedMethods="1" reservedAttributes="2"
     >
     <desc>
       Interface for querying information about an extension pack as well as
@@ -20450,8 +20493,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackFile" extends="IExtPackBase"
-    uuid="b6b49f55-efcc-4f08-b486-56e8d8afb10b"
+    uuid="4c7f4bf6-4671-2f75-0fbb-a99f6218cdfc"
     wsmap="suppress"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       Extension pack file (aka tarball, .vbox-extpack) representation returned
@@ -20489,8 +20533,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackManager" extends="$unknown"
-    uuid="3295e6ce-b051-47b2-9514-2c588bfe7554"
+    uuid="edba9d10-45d8-b440-1712-46ac0c9bc4c5"
     wsmap="suppress"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       Interface for managing VirtualBox Extension Packs.
@@ -20656,8 +20701,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <interface
     name="IBandwidthControl" extends="$unknown"
-    uuid="e2eb3930-d2f4-4f87-be17-0707e30f019f"
+    uuid="6458e7b2-4e84-faf0-625e-2093ed2b17e4"
     wsmap="managed"
+    reservedMethods="1" reservedAttributes="1"
     >
     <desc>
       Controls the bandwidth groups of one machine used to cap I/O done by a VM.
