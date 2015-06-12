@@ -368,7 +368,7 @@ endif
 ## @name VMM related settings.
 ## @{
 # Enable the tradition raw-mode virtualization.
-ifn1of ($(KBUILD_TARGET), darwin)
+if !$(intersects $(KBUILD_TARGET), darwin) || defined(VBOX_ONLY_EXTPACKS)
  VBOX_WITH_RAW_MODE = 1
 endif
 # Enable the ring-1 compression option (mainly for QNX).
