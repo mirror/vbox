@@ -1134,6 +1134,9 @@ NTSTATUS DxgkDdiStartDevice(
                                        VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
                 if (VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
                 {
+                    PVBOXMP_COMMON pCommon = VBoxCommonFromDeviceExt(pDevExt);
+                    pCommon->u32MouseCursorFlags = VBoxHGSMIGetMouseCursorFlags(&pCommon->guestCtx);
+
                     vboxWddmSetupDisplays(pDevExt);
                     if (!VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
                         VBoxFreeDisplaysHGSMI(VBoxCommonFromDeviceExt(pDevExt));
@@ -4192,6 +4195,17 @@ static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* p
     return TRUE;
 }
 
+static void vboxWddmHostPointerEnable(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
+{
+    VIDEO_POINTER_ATTRIBUTES PointerAttributes;
+    RT_ZERO(PointerAttributes);
+    if (fEnable)
+    {
+        PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
+    }
+    VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &PointerAttributes, sizeof(PointerAttributes));
+}
+
 NTSTATUS
 APIENTRY
 DxgkDdiSetPointerPosition(
@@ -4237,20 +4251,15 @@ DxgkDdiSetPointerPosition(
         if (fScreenChanged)
         {
             BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE);
-            Assert(bResult);
+            if (!bResult)
+            {
+                vboxWddmHostPointerEnable(pDevExt, FALSE);
+            }
         }
         else
         {
             // tell the host to use the guest's pointer
-            VIDEO_POINTER_ATTRIBUTES PointerAttributes;
-
-            /* Visible and No Shape means Show the pointer.
-             * It is enough to init only this field.
-             */
-            PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
-
-            BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &PointerAttributes, sizeof (PointerAttributes));
-            Assert(bResult);
+            vboxWddmHostPointerEnable(pDevExt, pSetPointerPosition->Flags.Visible);
         }
     }
 
@@ -4285,8 +4294,8 @@ DxgkDdiSetPointerShape(
                 Status = STATUS_SUCCESS;
             else
             {
-                AssertBreakpoint();
-                LOGREL(("vboxUpdatePointerShape failed"));
+                // tell the host to use the guest's pointer
+                vboxWddmHostPointerEnable(pDevExt, FALSE);
             }
         }
     }

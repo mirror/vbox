@@ -491,10 +491,11 @@ static int testQueryConf(PHGSMIGUESTCOMMANDCONTEXT pCtx)
  * @param  pCtx      the context containing the heap used
  * @param  u32Index  the index of the parameter to query,
  *                   @see VBVACONF32::u32Index
+ * @param  u32DefValue defaut value
  * @param  pulValue  where to store the value of the parameter on success
  */
-RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
-                               uint32_t u32Index, uint32_t *pulValue)
+RTDECL(int) VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                  uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue)
 {
     int rc = VINF_SUCCESS;
     VBVACONF32 *p;
@@ -511,7 +512,7 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     {
         /* Prepare data to be sent to the host. */
         p->u32Index = u32Index;
-        p->u32Value = UINT32_MAX;
+        p->u32Value = u32DefValue;
         rc = VBoxHGSMIBufferSubmit(pCtx, p);
         if (RT_SUCCESS(rc))
         {
@@ -527,6 +528,11 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     return rc;
 }
 
+RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                               uint32_t u32Index, uint32_t *pulValue)
+{
+    return VBoxQueryConfHGSMIDef(pCtx, u32Index, UINT32_MAX, pulValue);
+}
 
 /**
  * Pass the host a new mouse pointer shape via an HGSMI command.

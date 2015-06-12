@@ -372,9 +372,26 @@ RTDECL(int) VBoxHGSMIGetModeHints(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 RTDECL(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx)
 {
     uint32_t u32Flags = 0;
-    int rc = VBoxQueryConfHGSMI(pCtx, VBOX_VBVA_CONF32_SCREEN_FLAGS, &u32Flags);
+    int rc = VBoxQueryConfHGSMIDef(pCtx, VBOX_VBVA_CONF32_SCREEN_FLAGS, 0, &u32Flags);
     LogFunc(("u32Flags = 0x%x rc %Rrc\n", u32Flags, rc));
     if (RT_FAILURE(rc))
         u32Flags = 0;
     return (uint16_t)u32Flags;
+}
+
+
+/**
+ * Query the mouse cursor flags VBVA_MOUSE_CURSOR_*.
+ *
+ * @returns The mask of VBVA_MOUSE_CURSOR_* flags or 0 if host does not support the request.
+ * @param  pCtx  the context containing the heap to use
+ */
+RTDECL(uint32_t) VBoxHGSMIGetMouseCursorFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx)
+{
+    uint32_t u32Flags = 0;
+    int rc = VBoxQueryConfHGSMIDef(pCtx, VBOX_VBVA_CONF32_MOUSE_CURSOR, 0, &u32Flags);
+    LogFunc(("u32Flags = 0x%x rc %Rrc\n", u32Flags, rc));
+    if (RT_FAILURE(rc))
+        u32Flags = 0;
+    return u32Flags;
 }

@@ -248,6 +248,8 @@ RTDECL(int)      VBoxHGSMISendHostCtxInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                           uint32_t cbHostArea);
 RTDECL(int)      VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                     uint32_t u32Index, uint32_t *pulValue);
+RTDECL(int)      VBoxQueryConfHGSMIDef(PHGSMIGUESTCOMMANDCONTEXT pCtx,
+                                       uint32_t u32Index, uint32_t u32DefValue, uint32_t *pulValue);
 RTDECL(int)      VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                              uint32_t fFlags,
                                              uint32_t cHotX,
@@ -289,6 +291,7 @@ RTDECL(uint32_t) VBoxHGSMIGetMonitorCount(PHGSMIGUESTCOMMANDCONTEXT pCtx);
 RTDECL(uint32_t) VBoxVideoGetVRAMSize(void);
 RTDECL(bool)     VBoxVideoAnyWidthAllowed(void);
 RTDECL(uint16_t) VBoxHGSMIGetScreenFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx);
+RTDECL(uint32_t) VBoxHGSMIGetMouseCursorFlags(PHGSMIGUESTCOMMANDCONTEXT pCtx);
 
 struct VBVAINFOVIEW;
 /**

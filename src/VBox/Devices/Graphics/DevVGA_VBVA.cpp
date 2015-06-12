@@ -2114,6 +2114,14 @@ static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 *pConf32)
     {
         pConf32->u32Value = VBVA_MAX_RECORD_SIZE;
     }
+    else if (u32Index == VBOX_VBVA_CONF32_MOUSE_CURSOR)
+    {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        pConf32->u32Value = 0;
+#else
+        pConf32->u32Value = VBVA_MOUSE_CURSOR_NO_XOR;
+#endif
+    }
     else
     {
         Log(("Unsupported VBVA_QUERY_CONF32 index %d!!!\n",
