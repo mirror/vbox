@@ -2894,10 +2894,11 @@ static int vmdkFreeExtentData(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     if (pExtent->pFile != NULL)
     {
         /* Do not delete raw extents, these have full and base names equal. */
-        rc =vmdkFileClose(pImage, &pExtent->pFile,
-                             fDelete
-                          && pExtent->pszFullname
-                          && strcmp(pExtent->pszFullname, pExtent->pszBasename));
+        rc = vmdkFileClose(pImage, &pExtent->pFile,
+                              fDelete
+                           && pExtent->pszFullname
+                           && pExtent->pszBasename
+                           && strcmp(pExtent->pszFullname, pExtent->pszBasename));
     }
     if (pExtent->pszBasename)
     {
@@ -6302,19 +6303,21 @@ static int vmdkSetComment(void *pBackendData, const char *pszComment)
 
     AssertPtr(pImage);
 
-    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
-    {
-        rc = VERR_VD_IMAGE_READ_ONLY;
-        goto out;
-    }
-    if (pImage->uOpenFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
-    {
-        rc = VERR_NOT_SUPPORTED;
-        goto out;
-    }
-
     if (pImage)
+    {
+        if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+        {
+            rc = VERR_VD_IMAGE_READ_ONLY;
+            goto out;
+        }
+        if (pImage->uOpenFlags & VD_VMDK_IMAGE_FLAGS_STREAM_OPTIMIZED)
+        {
+            rc = VERR_NOT_SUPPORTED;
+            goto out;
+        }
+
         rc = vmdkSetImageComment(pImage, pszComment);
+    }
     else
         rc = VERR_VD_NOT_OPENED;
 
