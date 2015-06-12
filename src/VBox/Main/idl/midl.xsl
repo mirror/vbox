@@ -5,7 +5,7 @@
  *  A template to generate a MS IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-    Copyright (C) 2006-2014 Oracle Corporation
+    Copyright (C) 2006-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -200,7 +200,8 @@
     oleautomation
 ]
 <xsl:text>interface </xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:variable name="name" select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text> : </xsl:text>
   <xsl:choose>
     <xsl:when test="@extends='$unknown'">IDispatch</xsl:when>
@@ -214,13 +215,34 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
   <xsl:text>{&#x0A;</xsl:text>
   <!-- attributes (properties) -->
   <xsl:apply-templates select="attribute"/>
+  <xsl:variable name="reservedAttributes" select="@reservedAttributes"/>
+  <xsl:if test="$reservedAttributes > 0">
+    <!-- tricky way to do a "for" loop without recursion -->
+    <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
+      <xsl:text>    [propget] HRESULT InternalAndReservedAttribute</xsl:text>
+      <xsl:value-of select="concat(position(), $name)"/>
+      <xsl:text> ([out, retval] ULONG *aReserved);&#x0A;&#x0A;</xsl:text>
+      <xsl:text>    [propput] HRESULT InternalAndReservedAttribute</xsl:text>
+      <xsl:value-of select="concat(position(), $name)"/>
+      <xsl:text> ([in] ULONG aReserved);&#x0A;&#x0A;</xsl:text>
+    </xsl:for-each>
+  </xsl:if>
   <!-- methods -->
   <xsl:apply-templates select="method"/>
+  <xsl:variable name="reservedMethods" select="@reservedMethods"/>
+  <xsl:if test="$reservedMethods > 0">
+    <!-- tricky way to do a "for" loop without recursion -->
+    <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
+      <xsl:text>    HRESULT InternalAndReservedMethod</xsl:text>
+      <xsl:value-of select="concat(position(), $name)"/>
+      <xsl:text>();&#x0A;&#x0A;</xsl:text>
+    </xsl:for-each>
+  </xsl:if>
   <!-- 'if' enclosed elements, unsorted -->
   <xsl:apply-templates select="if"/>
   <!-- -->
   <xsl:text>}; /* interface </xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text> */&#x0A;&#x0A;</xsl:text>
   <!-- Interface implementation forwarder macro -->
   <xsl:text>/* Interface implementation forwarder macro */&#x0A;</xsl:text>
@@ -230,7 +252,7 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
   <xsl:apply-templates select="if" mode="forwarder"/>
   <!-- 2) COM_FORWARD_Interface_TO(smth) -->
   <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO(smth) </xsl:text>
   <xsl:apply-templates select="attribute" mode="forwarder">
     <xsl:with-param name="nameOnly" select="'yes'"/>
@@ -244,15 +266,15 @@ warning MIDL2460 : dual interface should be derived from IDispatch : IVirtualBox
   <xsl:text>")&#x0A;</xsl:text>
   <!-- 3) COM_FORWARD_Interface_TO_OBJ(obj) -->
   <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO ((obj)->)")&#x0A;</xsl:text>
   <!-- 4) COM_FORWARD_Interface_TO_BASE(base) -->
   <xsl:text>cpp_quote("#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO (base::)")&#x0A;</xsl:text>
   <!-- end -->
   <xsl:text>&#x0A;</xsl:text>

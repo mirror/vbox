@@ -1512,6 +1512,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="dtracetopclass"/>
     <xsl:param name="pmode"/>
 
+    <xsl:variable name="name" select="@name"/>
     <!-- first recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
@@ -1528,14 +1529,14 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:when test="$pmode='code'">
             <xsl:text>//
 </xsl:text>
-            <xsl:value-of select="concat('// ', @name, ' properties')"/>
+            <xsl:value-of select="concat('// ', $name, ' properties')"/>
             <xsl:text>
 //
 
 </xsl:text>
         </xsl:when>
         <xsl:when test="$pmode != 'dtrace-probes'">
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', @name, ' properties', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $name, ' properties', $G_sNewLine)"/>
         </xsl:when>
     </xsl:choose>
     <xsl:choose>
@@ -1543,6 +1544,18 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:apply-templates select="./attribute | ./if" mode="public">
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
+            <xsl:variable name="reservedAttributes" select="@reservedAttributes"/>
+            <xsl:if test="$reservedAttributes > 0">
+                <!-- tricky way to do a "for" loop without recursion -->
+                <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
+                    <xsl:text>    STDMETHOD(COMGETTER(InternalAndReservedAttribute</xsl:text>
+                    <xsl:value-of select="concat(position(), $name)"/>
+                    <xsl:text>))(ULONG *aReserved);&#x0A;</xsl:text>
+                    <xsl:text>    STDMETHOD(COMSETTER(InternalAndReservedAttribute</xsl:text>
+                    <xsl:value-of select="concat(position(), $name)"/>
+                    <xsl:text>))(ULONG aReserved);&#x0A;</xsl:text>
+                </xsl:for-each>
+            </xsl:if>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
             <xsl:apply-templates select="./attribute | ./if" mode="wrapped">
@@ -1555,6 +1568,26 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'attribute'"/>
             </xsl:apply-templates>
+            <xsl:variable name="reservedAttributes" select="@reservedAttributes"/>
+            <xsl:if test="$reservedAttributes > 0">
+                <!-- tricky way to do a "for" loop without recursion -->
+                <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
+                    <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMGETTER(InternalAndReservedAttribute', position(), $name, ')(ULONG *aReserved)&#x0A;')"/>
+                    <xsl:text>{
+    NOREF(aReserved);
+    return E_NOTIMPL;
+}
+
+</xsl:text>
+                    <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::COMSETTER(InternalAndReservedAttribute', position(), $name, ')(ULONG aReserved)&#x0A;')"/>
+                    <xsl:text>{
+    NOREF(aReserved);
+    return E_NOTIMPL;
+}
+
+</xsl:text>
+                </xsl:for-each>
+            </xsl:if>
         </xsl:when>
         <xsl:when test="$pmode = 'dtrace-probes'">
             <xsl:apply-templates select="./attribute | ./if" mode="dtrace-probes">
@@ -2116,6 +2149,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     <xsl:param name="pmode"/>
     <xsl:param name="dtracetopclass"/>
 
+    <xsl:variable name="name" select="@name"/>
     <!-- first recurse to emit all base interfaces -->
     <xsl:variable name="extends" select="@extends"/>
     <xsl:if test="$extends and not($extends='$unknown') and not($extends='$errorinfo')">
@@ -2132,7 +2166,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         <xsl:when test="$pmode='code'">
             <xsl:text>//
 </xsl:text>
-            <xsl:value-of select="concat('// ', @name, ' methods')"/>
+            <xsl:value-of select="concat('// ', $name, ' methods')"/>
             <xsl:text>
 //
 
@@ -2140,7 +2174,7 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
         </xsl:when>
         <xsl:when test="$pmode='dtrace-probes'"/>
         <xsl:otherwise>
-            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', @name, ' methods', $G_sNewLine)"/>
+            <xsl:value-of select="concat($G_sNewLine, '    // ', $pmode, ' ', $name, ' methods', $G_sNewLine)"/>
         </xsl:otherwise>
     </xsl:choose>
     <xsl:choose>
@@ -2148,6 +2182,15 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
             <xsl:apply-templates select="./method | ./if" mode="public">
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
+            <xsl:variable name="reservedMethods" select="@reservedMethods"/>
+            <xsl:if test="$reservedMethods > 0">
+                <!-- tricky way to do a "for" loop without recursion -->
+                <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
+                    <xsl:text>    STDMETHOD(InternalAndReservedMethod</xsl:text>
+                    <xsl:value-of select="concat(position(), $name)"/>
+                    <xsl:text>)();&#x0A;</xsl:text>
+                </xsl:for-each>
+            </xsl:if>
         </xsl:when>
         <xsl:when test="$pmode='wrapped'">
             <xsl:apply-templates select="./method | ./if" mode="wrapped">
@@ -2160,6 +2203,18 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
                 <xsl:with-param name="dtracetopclass" select="$dtracetopclass"/>
                 <xsl:with-param name="emitmode" select="'method'"/>
             </xsl:apply-templates>
+            <xsl:variable name="reservedMethods" select="@reservedMethods"/>
+            <xsl:if test="$reservedMethods > 0">
+                <!-- tricky way to do a "for" loop without recursion -->
+                <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
+                    <xsl:value-of select="concat('STDMETHODIMP ', $topclass, 'Wrap::InternalAndReservedMethod', position(), $name, '()&#x0A;')"/>
+                    <xsl:text>{
+    return E_NOTIMPL;
+}
+
+</xsl:text>
+                </xsl:for-each>
+            </xsl:if>
         </xsl:when>
         <xsl:when test="$pmode='dtrace-probes'">
             <xsl:apply-templates select="./method | ./if" mode="dtrace-probes">

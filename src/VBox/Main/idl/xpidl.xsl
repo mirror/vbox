@@ -5,7 +5,7 @@
  *  A template to generate a XPCOM IDL compatible interface definition file
  *  from the generic interface definition expressed in XML.
 
-    Copyright (C) 2006-2014 Oracle Corporation
+    Copyright (C) 2006-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -190,7 +190,8 @@
     scriptable
 ]
 <xsl:text>interface </xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:variable name="name" select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text> : </xsl:text>
   <xsl:choose>
       <xsl:when test="@extends='$unknown'">nsISupports</xsl:when>
@@ -201,13 +202,31 @@
   <xsl:text>{&#x0A;</xsl:text>
   <!-- attributes (properties) -->
   <xsl:apply-templates select="attribute"/>
+  <xsl:variable name="reservedAttributes" select="@reservedAttributes"/>
+  <xsl:if test="$reservedAttributes > 0">
+    <!-- tricky way to do a "for" loop without recursion -->
+    <xsl:for-each select="(//*)[position() &lt;= $reservedAttributes]">
+      <xsl:text>    attribute unsigned long InternalAndReservedAttribute</xsl:text>
+      <xsl:value-of select="concat(position(), $name)"/>
+      <xsl:text>;&#x0A;&#x0A;</xsl:text>
+    </xsl:for-each>
+  </xsl:if>
   <!-- methods -->
   <xsl:apply-templates select="method"/>
+  <xsl:variable name="reservedMethods" select="@reservedMethods"/>
+  <xsl:if test="$reservedMethods > 0">
+    <!-- tricky way to do a "for" loop without recursion -->
+    <xsl:for-each select="(//*)[position() &lt;= $reservedMethods]">
+      <xsl:text>    void InternalAndReservedMethod</xsl:text>
+      <xsl:value-of select="concat(position(), $name)"/>
+      <xsl:text>();&#x0A;&#x0A;</xsl:text>
+    </xsl:for-each>
+  </xsl:if>
   <!-- 'if' enclosed elements, unsorted -->
   <xsl:apply-templates select="if"/>
   <!-- -->
   <xsl:text>}; /* interface </xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text> */&#x0A;&#x0A;</xsl:text>
   <!-- Interface implementation forwarder macro -->
   <xsl:text>/* Interface implementation forwarder macro */&#x0A;</xsl:text>
@@ -218,28 +237,28 @@
   <xsl:apply-templates select="if" mode="forwarder"/>
   <!-- 2) COM_FORWARD_Interface_TO(smth) -->
   <xsl:text>#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO(smth) NS_FORWARD_</xsl:text>
   <xsl:call-template name="string-to-upper">
-    <xsl:with-param name="str" select="@name"/>
+    <xsl:with-param name="str" select="$name"/>
   </xsl:call-template>
   <xsl:text> (smth)&#x0A;</xsl:text>
   <!-- 3) COM_FORWARD_Interface_TO_OBJ(obj) -->
   <xsl:text>#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO_OBJ(obj) COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO ((obj)->)&#x0A;</xsl:text>
   <!-- 4) COM_FORWARD_Interface_TO_BASE(base) -->
   <xsl:text>#define COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO_BASE(base) COM_FORWARD_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>_TO (base::)&#x0A;&#x0A;</xsl:text>
   <!-- -->
   <xsl:text>// for compatibility with Win32&#x0A;</xsl:text>
   <xsl:text>VBOX_EXTERN_C const nsID IID_</xsl:text>
-  <xsl:value-of select="@name"/>
+  <xsl:value-of select="$name"/>
   <xsl:text>;&#x0A;</xsl:text>
   <xsl:text>%}&#x0A;&#x0A;</xsl:text>
   <!-- end -->
