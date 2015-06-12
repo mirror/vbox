@@ -217,7 +217,7 @@ static void VBoxServiceVMStatsReport(void)
     if (    !rc
         &&  cbReturned == cbStruct)
     {
-        for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
+        for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors && i < VMM_MAX_CPU_COUNT; i++)
         {
             if (gCtx.au64LastCpuLoad_Kernel[i] == 0)
             {
@@ -251,19 +251,22 @@ static void VBoxServiceVMStatsReport(void)
             gCtx.au64LastCpuLoad_User[i]   = pProcInfo[i].UserTime.QuadPart;
         }
     }
+    RTMemFree(pProcInfo);
 
     for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
     {
-        req.guestStats.u32CpuId = i;
-
-        rc = VbglR3StatReport(&req);
-        if (RT_SUCCESS(rc))
-            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", i);
+        if (i < VMM_MAX_CPU_COUNT)
+        {
+            req.guestStats.u32CpuId = i;
+            rc = VbglR3StatReport(&req);
+            if (RT_SUCCESS(rc))
+                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", i);
+            else
+                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
+        }
         else
-            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", u32CpuId);
     }
-
-    RTMemFree(pProcInfo);
 
 #elif defined(RT_OS_LINUX)
     VMMDevReportGuestStats req;
@@ -531,38 +534,43 @@ static void VBoxServiceVMStatsReport(void)
                 if (rc == -1)
                     break;
 
-                uint64_t u64Idle   = StatCPU.cpu_sysinfo.cpu[CPU_IDLE];
-                uint64_t u64User   = StatCPU.cpu_sysinfo.cpu[CPU_USER];
-                uint64_t u64System = StatCPU.cpu_sysinfo.cpu[CPU_KERNEL];
-
-                uint64_t u64DeltaIdle   = u64Idle   - gCtx.au64LastCpuLoad_Idle[cCPUs];
-                uint64_t u64DeltaSystem = u64System - gCtx.au64LastCpuLoad_Kernel[cCPUs];
-                uint64_t u64DeltaUser   = u64User   - gCtx.au64LastCpuLoad_User[cCPUs];
-
-                uint64_t u64DeltaAll    = u64DeltaIdle + u64DeltaSystem + u64DeltaUser;
-                if (u64DeltaAll == 0) /* Prevent division through zero. */
-                    u64DeltaAll = 1;
-
-                gCtx.au64LastCpuLoad_Idle[cCPUs]   = u64Idle;
-                gCtx.au64LastCpuLoad_Kernel[cCPUs] = u64System;
-                gCtx.au64LastCpuLoad_User[cCPUs]   = u64User;
-
-                req.guestStats.u32CpuId = cCPUs;
-                req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
-                req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
-                req.guestStats.u32CpuLoad_User   = (uint32_t)(u64DeltaUser   * 100 / u64DeltaAll);
-
-                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
-                                           |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
-                                           |  VBOX_GUEST_STAT_CPU_LOAD_USER;
-                fCpuInfoAvail = true;
-
-                rc = VbglR3StatReport(&req);
-                if (RT_SUCCESS(rc))
-                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", cCPUs);
+                if (cCPUs >= VMM_MAX_CPU_COUNT)
+                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", cCPUs);
                 else
-                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
-                cCPUs++;
+                {
+                    uint64_t u64Idle   = StatCPU.cpu_sysinfo.cpu[CPU_IDLE];
+                    uint64_t u64User   = StatCPU.cpu_sysinfo.cpu[CPU_USER];
+                    uint64_t u64System = StatCPU.cpu_sysinfo.cpu[CPU_KERNEL];
+
+                    uint64_t u64DeltaIdle   = u64Idle   - gCtx.au64LastCpuLoad_Idle[cCPUs];
+                    uint64_t u64DeltaSystem = u64System - gCtx.au64LastCpuLoad_Kernel[cCPUs];
+                    uint64_t u64DeltaUser   = u64User   - gCtx.au64LastCpuLoad_User[cCPUs];
+
+                    uint64_t u64DeltaAll    = u64DeltaIdle + u64DeltaSystem + u64DeltaUser;
+                    if (u64DeltaAll == 0) /* Prevent division through zero. */
+                        u64DeltaAll = 1;
+
+                    gCtx.au64LastCpuLoad_Idle[cCPUs]   = u64Idle;
+                    gCtx.au64LastCpuLoad_Kernel[cCPUs] = u64System;
+                    gCtx.au64LastCpuLoad_User[cCPUs]   = u64User;
+
+                    req.guestStats.u32CpuId = cCPUs;
+                    req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
+                    req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
+                    req.guestStats.u32CpuLoad_User   = (uint32_t)(u64DeltaUser   * 100 / u64DeltaAll);
+
+                    req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE
+                                               |  VBOX_GUEST_STAT_CPU_LOAD_KERNEL
+                                               |  VBOX_GUEST_STAT_CPU_LOAD_USER;
+                    fCpuInfoAvail = true;
+
+                    rc = VbglR3StatReport(&req);
+                    if (RT_SUCCESS(rc))
+                        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", cCPUs);
+                    else
+                        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
+                    cCPUs++;
+                }
             }
         }
 
