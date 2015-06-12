@@ -368,7 +368,9 @@ endif
 ## @name VMM related settings.
 ## @{
 # Enable the tradition raw-mode virtualization.
-VBOX_WITH_RAW_MODE = 1
+ifn1of ($(KBUILD_TARGET), darwin)
+ VBOX_WITH_RAW_MODE = 1
+endif
 # Enable the ring-1 compression option (mainly for QNX).
 VBOX_WITH_RAW_RING1 = 1
 # Enable safe STR (store task register) emulation for raw-mode.
