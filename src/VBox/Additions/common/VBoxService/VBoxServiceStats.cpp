@@ -265,7 +265,7 @@ static void VBoxServiceVMStatsReport(void)
                 VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
         }
         else
-            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", u32CpuId);
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", i);
     }
 
 #elif defined(RT_OS_LINUX)
