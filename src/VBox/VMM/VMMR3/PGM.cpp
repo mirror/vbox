@@ -672,8 +672,10 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
 static DECLCALLBACK(void) pgmR3InfoMode(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) pgmR3InfoCr3(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(int)  pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, void *pvUser);
+#ifdef VBOX_WITH_RAW_MODE
 static DECLCALLBACK(int)  pgmR3RelocateVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode, void *pvUser);
+#endif /* VBOX_WITH_RAW_MODE */
 #ifdef VBOX_STRICT
 static FNVMATSTATE        pgmR3ResetNoMorePhysWritesFlag;
 #endif
@@ -2438,6 +2440,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
             pCurPhysType->pfnPfHandlerRC += offDelta;
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->VirtHandlers,      true, pgmR3RelocateVirtHandler,      &Args);
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3RelocateHyperVirtHandler, &Args);
 
@@ -2449,6 +2452,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         if (pCurVirtType->pfnPfHandlerRC != NIL_RTRCPTR)
             pCurVirtType->pfnPfHandlerRC += offDelta;
     }
+#endif
 
     /*
      * The page pool.
@@ -2482,6 +2486,7 @@ static DECLCALLBACK(int) pgmR3RelocatePhysHandler(PAVLROGCPHYSNODECORE pNode, vo
     return 0;
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Callback function for relocating a virtual access handler.
@@ -2522,6 +2527,7 @@ static DECLCALLBACK(int) pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNode
     return 0;
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Resets a virtual CPU when unplugged.
@@ -4043,8 +4049,12 @@ typedef struct PGMCHECKINTARGS
 {
     bool                    fLeftToRight;    /**< true: left-to-right; false: right-to-left. */
     PPGMPHYSHANDLER         pPrevPhys;
+#ifdef VBOX_WITH_RAW_MODE
     PPGMVIRTHANDLER         pPrevVirt;
     PPGMPHYS2VIRTHANDLER    pPrevPhys2Virt;
+#else
+    void                   *pvFiller1, *pvFiller2;
+#endif
     PVM                     pVM;
 } PGMCHECKINTARGS, *PPGMCHECKINTARGS;
 
@@ -4074,6 +4084,7 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysHandlerNode(PAVLROGCPHYSNODECORE
     return 0;
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Validate a node in the virtual handler tree.
@@ -4169,6 +4180,7 @@ static DECLCALLBACK(int) pgmR3CheckIntegrityPhysToVirtHandlerNode(PAVLROGCPHYSNO
     return 0;
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Perform an integrity check on the PGM component.
@@ -4191,6 +4203,7 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       true,  pgmR3CheckIntegrityPhysHandlerNode, &Args);
     Args = s_RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers,       false, pgmR3CheckIntegrityPhysHandlerNode, &Args);
+#ifdef VBOX_WITH_RAW_MODE
     Args = s_LeftToRight;
     cErrors += RTAvlroGCPtrDoWithAll( &pVM->pgm.s.pTreesR3->VirtHandlers,       true,  pgmR3CheckIntegrityVirtHandlerNode, &Args);
     Args = s_RightToLeft;
@@ -4203,6 +4216,7 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, true,  pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
     Args = s_RightToLeft;
     cErrors += RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysToVirtHandlers, false, pgmR3CheckIntegrityPhysToVirtHandlerNode, &Args);
+#endif /* VBOX_WITH_RAW_MODE */
 
     return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
 }

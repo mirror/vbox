@@ -449,9 +449,10 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
 }
 
 
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
+#if (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+     || PGM_GST_TYPE == PGM_TYPE_PAE \
+     || PGM_GST_TYPE == PGM_TYPE_AMD64) \
+ && defined(VBOX_WITH_RAW_MODE)
 /**
  * Updates one virtual handler range.
  *
@@ -607,7 +608,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
 
     return 0;
 }
-#endif /* 32BIT, PAE and AMD64 */
+#endif /* 32BIT, PAE and AMD64 + VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -621,9 +622,10 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
  */
 PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
 {
-#if PGM_GST_TYPE == PGM_TYPE_32BIT \
- || PGM_GST_TYPE == PGM_TYPE_PAE \
- || PGM_GST_TYPE == PGM_TYPE_AMD64
+#if (   PGM_GST_TYPE == PGM_TYPE_32BIT \
+     || PGM_GST_TYPE == PGM_TYPE_PAE \
+     || PGM_GST_TYPE == PGM_TYPE_AMD64) \
+ && defined(VBOX_WITH_RAW_MODE)
 
     /** @todo
      * In theory this is not sufficient: the guest can change a single page in a range with invlpg

@@ -664,6 +664,8 @@ typedef PGMPHYSHANDLER *PPGMPHYSHANDLER;
 #define PGMPHYSHANDLER_GET_TYPE(a_pVM, a_pPhysHandler) PGMPHYSHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pPhysHandler)->hType)
 
 
+#ifdef VBOX_WITH_RAW_MODE
+
 /**
  * Cache node for the physical addresses covered by a virtual handler.
  */
@@ -684,13 +686,13 @@ typedef PGMPHYS2VIRTHANDLER *PPGMPHYS2VIRTHANDLER;
 
 /** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
  * node is in the tree. */
-#define PGMPHYS2VIRTHANDLER_IN_TREE     RT_BIT(0)
+# define PGMPHYS2VIRTHANDLER_IN_TREE     RT_BIT(0)
 /** The bit in PGMPHYS2VIRTHANDLER::offNextAlias used to indicate that the
  * node is in the head of an alias chain.
  * The PGMPHYS2VIRTHANDLER_IN_TREE is always set if this bit is set. */
-#define PGMPHYS2VIRTHANDLER_IS_HEAD     RT_BIT(1)
+# define PGMPHYS2VIRTHANDLER_IS_HEAD     RT_BIT(1)
 /** The mask to apply to PGMPHYS2VIRTHANDLER::offNextAlias to get the offset. */
-#define PGMPHYS2VIRTHANDLER_OFF_MASK    (~(int32_t)3)
+# define PGMPHYS2VIRTHANDLER_OFF_MASK    (~(int32_t)3)
 
 
 /**
@@ -725,9 +727,9 @@ typedef struct PGMVIRTANDLERTYPEINT
 /** Pointer to a virtual access handler type registration. */
 typedef PGMVIRTHANDLERTYPEINT *PPGMVIRTHANDLERTYPEINT;
 /** Magic value for the virtual handler callbacks (Sir Arthur Charles Clarke). */
-#define PGMVIRTHANDLERTYPEINT_MAGIC        UINT32_C(0x19171216)
+# define PGMVIRTHANDLERTYPEINT_MAGIC       UINT32_C(0x19171216)
 /** Magic value for the virtual handler callbacks. */
-#define PGMVIRTHANDLERTYPEINT_MAGIC_DEAD   UINT32_C(0x20080319)
+# define PGMVIRTHANDLERTYPEINT_MAGIC_DEAD  UINT32_C(0x20080319)
 
 /**
  * Converts a handle to a pointer.
@@ -735,7 +737,7 @@ typedef PGMVIRTHANDLERTYPEINT *PPGMVIRTHANDLERTYPEINT;
  * @param   a_pVM           Pointer to the cross context VM structure.
  * @param   a_hType         Vitual access handler type handle.
  */
-#define PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMVIRTHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
+# define PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, a_hType) ((PPGMVIRTHANDLERTYPEINT)MMHyperHeapOffsetToPtr(a_pVM, a_hType))
 
 
 /**
@@ -760,10 +762,10 @@ typedef struct PGMVIRTHANDLER
     R3PTRTYPE(void *)                   pvUserR3;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     /** Profiling of this handler. */
     STAMPROFILE                         Stat;
-#endif
+# endif
     /** Array of cached physical addresses for the monitored ranged. */
     PGMPHYS2VIRTHANDLER                 aPhysToVirt[HC_ARCH_BITS == 32 ? 1 : 2];
 } PGMVIRTHANDLER;
@@ -777,7 +779,9 @@ typedef PGMVIRTHANDLER *PPGMVIRTHANDLER;
  * @param   a_pVirtHandler  Pointer to the virtual handler structure
  *                          (PGMVIRTHANDLER).
  */
-#define PGMVIRTANDLER_GET_TYPE(a_pVM, a_pVirtHandler) PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pVirtHandler)->hType)
+# define PGMVIRTANDLER_GET_TYPE(a_pVM, a_pVirtHandler) PGMVIRTHANDLERTYPEINT_FROM_HANDLE(a_pVM, (a_pVirtHandler)->hType)
+
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /** @name Page type predicates.
@@ -2709,8 +2713,12 @@ DECLINLINE(void *) pgmPoolMapPageStrict(PPGMPOOLPAGE a_pPage, const char *pszCal
  */
 typedef struct PGMTREES
 {
+    /** List of physical access handler types (offset pointers) of type
+     * PGMPHYSHANDLERTYPEINT.  This is needed for relocations. */
+    RTLISTOFF32ANCHOR               HeadPhysHandlerTypes;
     /** Physical access handlers (AVL range+offsetptr tree). */
     AVLROGCPHYSTREE                 PhysHandlers;
+#ifdef VBOX_WITH_RAW_MODE
     /** Virtual access handlers (AVL range + GC ptr tree). */
     AVLROGCPTRTREE                  VirtHandlers;
     /** Virtual access handlers (Phys range AVL range + offsetptr tree).
@@ -2718,12 +2726,10 @@ typedef struct PGMTREES
     AVLROGCPHYSTREE                 PhysToVirtHandlers;
     /** Virtual access handlers for the hypervisor (AVL range + GC ptr tree). */
     AVLROGCPTRTREE                  HyperVirtHandlers;
-    /** List of physical access handler types (offset pointers) of type
-     * PGMPHYSHANDLERTYPEINT.  This is needed for relocations. */
-    RTLISTOFF32ANCHOR               HeadPhysHandlerTypes;
     /** List of virtual access handler types (offset pointers) of type
      * PGMVIRTHANDLERTYPEINT.  This is needed for relocations. */
     RTLISTOFF32ANCHOR               HeadVirtHandlerTypes;
+#endif
 } PGMTREES;
 /** Pointer to PGM trees. */
 typedef PGMTREES *PPGMTREES;
@@ -4127,13 +4133,15 @@ DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
 bool            pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys);
 void            pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhysPage, bool fDoAccounting);
+#ifdef VBOX_WITH_RAW_MODE
 PPGMVIRTHANDLER pgmHandlerVirtualFindByPhysAddr(PVM pVM, RTGCPHYS GCPhys, unsigned *piPage);
 DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvUser);
-#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+# if defined(VBOX_STRICT) || defined(LOG_ENABLED)
 void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
-#else
-# define pgmHandlerVirtualDumpPhysPages(a) do { } while (0)
-#endif
+# else
+#  define pgmHandlerVirtualDumpPhysPages(a) do { } while (0)
+# endif
+#endif /* VBOX_WITH_RAW_MODE */
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 

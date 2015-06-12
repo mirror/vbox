@@ -60,7 +60,9 @@
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneClear(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode, void *pvUser);
+#ifdef VBOX_WITH_RAW_MODE
 static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, void *pvUser);
+#endif
 
 
 
@@ -303,6 +305,7 @@ static DECLCALLBACK(int) pgmR3HandlerPhysicalOneSet(PAVLROGCPHYSNODECORE pNode, 
     }
 }
 
+#ifdef VBOX_WITH_RAW_MODE
 
 /**
  * Register a virtual page access handler type, extended version.
@@ -672,6 +675,8 @@ VMMR3_INT_DECL(int) PGMHandlerVirtualDeregister(PVM pVM, PVMCPU pVCpu, RTGCPTR G
     return VINF_SUCCESS;
 }
 
+#endif /* VBOX_WITH_RAW_MODE */
+
 
 /**
  * Arguments for pgmR3InfoHandlersPhysicalOne and pgmR3InfoHandlersVirtualOne.
@@ -727,6 +732,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
         RTAvlroGCPhysDoWithAll(&pVM->pgm.s.pTreesR3->PhysHandlers, true, pgmR3InfoHandlersPhysicalOne, &Args);
     }
 
+#ifdef VBOX_WITH_RAW_MODE
     if (fVirtual)
     {
         pHlp->pfnPrintf(pHlp,
@@ -750,6 +756,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
             - (int)sizeof(RTRCPTR) * 2 - 1, "HandlerGC");
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.pTreesR3->HyperVirtHandlers, true, pgmR3InfoHandlersVirtualOne, &Args);
     }
+#endif
 }
 
 
@@ -788,6 +795,7 @@ static DECLCALLBACK(int) pgmR3InfoHandlersPhysicalOne(PAVLROGCPHYSNODECORE pNode
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
 /**
  * Displays one virtual handler range.
  *
@@ -811,12 +819,13 @@ static DECLCALLBACK(int) pgmR3InfoHandlersVirtualOne(PAVLROGCPTRNODECORE pNode, 
     }
     pHlp->pfnPrintf(pHlp, "%RGv - %RGv  %RHv  %RRv  %s  %s\n",
         pCur->Core.Key, pCur->Core.KeyLast, pCurType->pfnHandlerR3, pCurType->pfnPfHandlerRC, pszType, pCur->pszDesc);
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     if (pArgs->fStats)
         pHlp->pfnPrintf(pHlp, "   cPeriods: %9RU64  cTicks: %11RU64  Min: %11RU64  Avg: %11RU64 Max: %11RU64\n",
                         pCur->Stat.cPeriods, pCur->Stat.cTicks, pCur->Stat.cTicksMin,
                         pCur->Stat.cPeriods ? pCur->Stat.cTicks / pCur->Stat.cPeriods : 0, pCur->Stat.cTicksMax);
-#endif
+# endif
     return 0;
 }
+#endif /* VBOX_WITH_RAW_MODE */
 

@@ -1365,6 +1365,8 @@ bool pgmHandlerPhysicalIsAll(PVM pVM, RTGCPHYS GCPhys)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
+
 /**
  * Internal worker for releasing a virtual handler type registration reference.
  *
@@ -1610,7 +1612,7 @@ DECLCALLBACK(int) pgmHandlerVirtualResetOne(PAVLROGCPTRNODECORE pNode, void *pvU
     return 0;
 }
 
-#if defined(VBOX_STRICT) || defined(LOG_ENABLED)
+# if defined(VBOX_STRICT) || defined(LOG_ENABLED)
 
 /**
  * Worker for pgmHandlerVirtualDumpPhysPages.
@@ -1642,7 +1644,8 @@ void pgmHandlerVirtualDumpPhysPages(PVM pVM)
                            pgmHandlerVirtualDumpPhysPagesCallback, 0);
 }
 
-#endif /* VBOX_STRICT || LOG_ENABLED */
+# endif /* VBOX_STRICT || LOG_ENABLED */
+#endif /* VBOX_WITH_RAW_MODE */
 #ifdef VBOX_STRICT
 
 /**
@@ -1663,8 +1666,9 @@ typedef struct PGMAHAFIS
     PVM         pVM;
 } PGMAHAFIS, *PPGMAHAFIS;
 
+# ifdef VBOX_WITH_RAW_MODE
 
-#if 0 /* unused */
+#  if 0 /* unused */
 /**
  * Verify virtual handler by matching physical address.
  *
@@ -1693,7 +1697,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOneByPhysAddr(PAVLROGCPTRNODECOR
     }
     return 0;
 }
-#endif /* unused */
+#  endif /* unused */
 
 
 /**
@@ -1803,6 +1807,7 @@ static DECLCALLBACK(int) pgmHandlerVirtualVerifyOne(PAVLROGCPTRNODECORE pNode, v
     return 0;
 }
 
+# endif /* VBOX_WITH_RAW_MODE */
 
 /**
  * Asserts that the handlers+guest-page-tables == ramrange-flags and
@@ -1879,8 +1884,8 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                             State.cErrors++;
                         }
 
-#ifdef VBOX_WITH_REM
-# ifdef IN_RING3
+# ifdef VBOX_WITH_REM
+#  ifdef IN_RING3
                         /* validate that REM is handling it. */
                         if (    !REMR3IsPageAccessHandled(pVM, State.GCPhys)
                                 /* ignore shadowed ROM for the time being. */
@@ -1890,8 +1895,8 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                                              State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), pPhysType->pszDesc));
                             State.cErrors++;
                         }
+#  endif
 # endif
-#endif
                     }
                     else
                     {
@@ -1906,9 +1911,10 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                 if (PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
                 {
                     State.uVirtState = PGM_PAGE_GET_HNDL_VIRT_STATE(pPage);
-#if 1
+
                     /* locate all the matching physical ranges. */
                     State.uVirtStateFound = PGM_PAGE_HNDL_VIRT_STATE_NONE;
+# ifdef VBOX_WITH_RAW_MODE
                     RTGCPHYS GCPhysKey = State.GCPhys;
                     for (;;)
                     {
@@ -1937,10 +1943,7 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                         if ((GCPhysKey & X86_PTE_PAE_PG_MASK) != State.GCPhys)
                             break;
                     }
-#else
-                    /* very slow */
-                    RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOneByPhysAddr, &State);
-#endif
+# endif /* VBOX_WITH_RAW_MODE */
                     if (State.uVirtState != State.uVirtStateFound)
                     {
                         AssertMsgFailed(("ram range vs virt handler flags mismatch. GCPhys=%RGp uVirtState=%#x uVirtStateFound=%#x\n",
@@ -1952,11 +1955,13 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
         } /* foreach page in ram range. */
     } /* foreach ram range. */
 
+# ifdef VBOX_WITH_RAW_MODE
     /*
      * Check that the physical addresses of the virtual handlers matches up
      * and that they are otherwise sane.
      */
     RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualVerifyOne, &State);
+# endif
 
     /*
      * Do the reverse check for physical handlers.
