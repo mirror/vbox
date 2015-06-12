@@ -1934,15 +1934,20 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 if (fEnableUsb)
                 {
-                    /* Make sure the OHCI controller is enabled. */
+                    /* Make sure either the OHCI or xHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
+                    ULONG cXhciCtrls = 0;
                     rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
-                    if (   SUCCEEDED(rc)
-                        && !cOhciCtrls)
-                    {
-                        ComPtr<IUSBController> UsbCtl;
-                        CHECK_ERROR(sessionMachine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
-                                                              UsbCtl.asOutParam()));
+                    if (SUCCEEDED(rc)) {
+                        rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                        if (   SUCCEEDED(rc)
+                            && cOhciCtrls + cXhciCtrls == 0)
+                        {
+                            /* If there's nothing, enable OHCI (always available). */
+                            ComPtr<IUSBController> UsbCtl;
+                            CHECK_ERROR(sessionMachine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
+                                                                  UsbCtl.asOutParam()));
+                        }
                     }
                 }
                 break;
@@ -1968,15 +1973,20 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 if (fEnableUsb)
                 {
-                    /* Make sure the OHCI controller is enabled. */
+                    /* Make sure either the OHCI or xHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
+                    ULONG cXhciCtrls = 0;
                     rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
-                    if (   SUCCEEDED(rc)
-                        && !cOhciCtrls)
-                    {
-                        ComPtr<IUSBController> UsbCtl;
-                        CHECK_ERROR(sessionMachine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
-                                                              UsbCtl.asOutParam()));
+                    if (SUCCEEDED(rc)) {
+                        rc = sessionMachine->GetUSBControllerCountByType(USBControllerType_XHCI, &cXhciCtrls);
+                        if (   SUCCEEDED(rc)
+                            && cOhciCtrls + cXhciCtrls == 0)
+                        {
+                            /* If there's nothing, enable OHCI (always available). */
+                            ComPtr<IUSBController> UsbCtl;
+                            CHECK_ERROR(sessionMachine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
+                                                                  UsbCtl.asOutParam()));
+                        }
                     }
                 }
                 break;
