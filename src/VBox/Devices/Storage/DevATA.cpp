@@ -703,7 +703,7 @@ static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0,
 
 static void ataAsyncIOClearRequests(PATACONTROLLER pCtl)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     pCtl->AsyncIOReqHead = 0;
@@ -716,7 +716,7 @@ static void ataAsyncIOClearRequests(PATACONTROLLER pCtl)
 
 static void ataAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     Assert((pCtl->AsyncIOReqHead + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests) != pCtl->AsyncIOReqTail);
@@ -740,7 +740,7 @@ static const ATARequest *ataAsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
 {
     const ATARequest *pReq;
 
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail)
@@ -764,7 +764,7 @@ static const ATARequest *ataAsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
  */
 static void ataAsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail && pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail].ReqType == ReqType)
@@ -787,7 +787,7 @@ static void ataAsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType)
  */
 static void ataAsyncIODumpRequests(PATACONTROLLER pCtl)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     LogRel(("PIIX3 ATA: Ctl#%d: request queue dump (topmost is current):\n", ATACONTROLLER_IDX(pCtl)));
@@ -836,7 +836,7 @@ static void ataAsyncIODumpRequests(PATACONTROLLER pCtl)
  */
 static bool ataAsyncIOIsIdle(PATACONTROLLER pCtl, bool fStrict)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     bool fIdle = pCtl->fRedoIdle;
@@ -4558,26 +4558,27 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
 #ifndef IN_RING3
     if ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_RESET)
-        return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for GC. */
+        return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for RC+R0. */
 #endif /* !IN_RING3 */
 
     Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
     /* RESET is common for both drives attached to a controller. */
-    if (!(pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET) &&
-            (val & ATA_DEVCTL_RESET))
+    if (   !(pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET)
+        && (val & ATA_DEVCTL_RESET))
     {
 #ifdef IN_RING3
         /* Software RESET low to high */
-        int32_t uCmdWait0 = -1, uCmdWait1 = -1;
+        int32_t uCmdWait0 = -1;
+        int32_t uCmdWait1 = -1;
         uint64_t uNow = RTTimeNanoTS();
         if (pCtl->aIfs[0].u64CmdTS)
             uCmdWait0 = (uNow - pCtl->aIfs[0].u64CmdTS) / 1000;
         if (pCtl->aIfs[1].u64CmdTS)
             uCmdWait1 = (uNow - pCtl->aIfs[1].u64CmdTS) / 1000;
         LogRel(("PIIX3 ATA: Ctl#%d: RESET, DevSel=%d AIOIf=%d CmdIf0=%#04x (%d usec ago) CmdIf1=%#04x (%d usec ago)\n",
-                    ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
-                    pCtl->aIfs[0].uATARegCommand, uCmdWait0,
-                    pCtl->aIfs[1].uATARegCommand, uCmdWait1));
+                ATACONTROLLER_IDX(pCtl), pCtl->iSelectedIf, pCtl->iAIOIf,
+                pCtl->aIfs[0].uATARegCommand, uCmdWait0,
+                pCtl->aIfs[1].uATARegCommand, uCmdWait1));
         pCtl->fReset = true;
         /* Everything must be done after the reset flag is set, otherwise
          * there are unavoidable races with the currently executing request
@@ -4609,8 +4610,8 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         AssertMsgFailed(("RESET handling is too complicated for GC\n"));
 #endif /* IN_RING3 */
     }
-    else if ((pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET) &&
-               !(val & ATA_DEVCTL_RESET))
+    else if (   (pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET)
+             && !(val & ATA_DEVCTL_RESET))
     {
 #ifdef IN_RING3
         /* Software RESET high to low */
@@ -4629,8 +4630,8 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 
     /* Change of interrupt disable flag. Update interrupt line if interrupt
      * is pending on the current interface. */
-    if ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_DISABLE_IRQ
-        &&  pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+    if (   ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_DISABLE_IRQ)
+        && pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
     {
         if (!(val & ATA_DEVCTL_DISABLE_IRQ))
         {
@@ -4788,12 +4789,12 @@ static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, con
         }
         else
             return VINF_IOM_R3_IOPORT_WRITE;
-#else /* IN_RING3 */
+#else  /* IN_RING3 */
         memcpy(p, pbBuf, cbSize);
         s->iIOBufferPIODataStart += cbSize;
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
             ataPIOTransferFinish(pCtl, s);
-#endif /* !IN_RING3 */
+#endif /* IN_RING3 */
     }
     else
         Log2(("%s: DUMMY data\n", __FUNCTION__));
@@ -4811,7 +4812,7 @@ static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint
         Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
         p = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
 #ifndef IN_RING3
-        /* All but the last transfer unit is simple enough for GC, but
+        /* All but the last transfer unit is simple enough for RC, but
          * sending a request to the async IO thread is too complicated. */
         if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
         {
@@ -4820,12 +4821,12 @@ static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint
         }
         else
             return VINF_IOM_R3_IOPORT_READ;
-#else /* IN_RING3 */
+#else  /* IN_RING3 */
         memcpy(pbBuf, p, cbSize);
         s->iIOBufferPIODataStart += cbSize;
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
             ataPIOTransferFinish(pCtl, s);
-#endif /* !IN_RING3 */
+#endif /* IN_RING3 */
     }
     else
     {
@@ -5039,7 +5040,7 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
      * Take the lock here and recheck the idle indicator to avoid
      * unnecessary work and racing ataR3WaitForAsyncIOIsIdle.
      */
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VERR_IGNORED);
+    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (    pCtl->fSignalIdle
@@ -5053,11 +5054,15 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
     AssertRC(rc);
 }
 
-/** Async I/O thread for an interface. Once upon a time this was readable
- * code with several loops and a different semaphore for each purpose. But
- * then came the "how can one save the state in the middle of a PIO transfer"
- * question. The solution was to use an ASM, which is what's there now. */
-static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
+/**
+ * Async I/O thread for an interface.
+ *
+ * Once upon a time this was readable code with several loops and a different
+ * semaphore for each purpose. But then came the "how can one save the state in
+ * the middle of a PIO transfer" question.  The solution was to use an ASM,
+ * which is what's there now.
+ */
+static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     const ATARequest *pReq;
     uint64_t        u64TS = 0; /* shut up gcc */
@@ -5139,7 +5144,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
             u64TS = RTTimeNanoTS();
 #if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
             STAM_PROFILE_ADV_START(&pCtl->StatAsyncTime, a);
-#endif /* DEBUG || VBOX_WITH_STATISTICS */
+#endif
         }
 
         switch (ReqType)
@@ -5477,9 +5482,9 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 
         if (pCtl->uAsyncIOState == ATA_AIO_NEW && !pCtl->fChainedTransfer)
         {
-#if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
+# if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
             STAM_PROFILE_ADV_STOP(&pCtl->StatAsyncTime, a);
-#endif /* DEBUG || VBOX_WITH_STATISTICS */
+# endif
 
             u64TS = RTTimeNanoTS() - u64TS;
             uWait = u64TS / 1000;
@@ -5519,7 +5524,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
                 }
             }
 
-#if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
+# if defined(DEBUG) || defined(VBOX_WITH_STATISTICS)
             if (uWait < pCtl->StatAsyncMinWait || !pCtl->StatAsyncMinWait)
                 pCtl->StatAsyncMinWait = uWait;
             if (uWait > pCtl->StatAsyncMaxWait)
@@ -5527,7 +5532,7 @@ static DECLCALLBACK(int) ataAsyncIOLoop(RTTHREAD ThreadSelf, void *pvUser)
 
             STAM_COUNTER_ADD(&pCtl->StatAsyncTimeUS, uWait);
             STAM_COUNTER_INC(&pCtl->StatAsyncOps);
-#endif /* DEBUG || VBOX_WITH_STATISTICS */
+# endif /* DEBUG || VBOX_WITH_STATISTICS */
         }
 
         PDMCritSectLeave(&pCtl->lock);
@@ -7416,7 +7421,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         AssertLogRelRCReturn(rc, rc);
 
         ataAsyncIOClearRequests(pCtl);
-        rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataAsyncIOLoop, (void *)pCtl, 128*1024 /*cbStack*/,
+        rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataR3AsyncIOThread, (void *)pCtl, 128*1024 /*cbStack*/,
                              RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
         AssertLogRelRCReturn(rc, rc);
         Assert(  pCtl->AsyncIOThread != NIL_RTTHREAD    && pCtl->AsyncIOSem != NIL_RTSEMEVENT
