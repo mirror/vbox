@@ -241,6 +241,9 @@ typedef struct USBMSD
      * the MSD is entering the idle state. */
     volatile bool       fSignalIdle;
 
+    /** Indicates that this device is a CD-ROM. */
+    bool                fIsCdrom;
+
     /**
      * LUN\#0 data.
      */
@@ -535,6 +538,24 @@ static const VUSBDESCDEVICE g_UsbMsdDeviceDesc20 =
     /* .bNumConfigurations = */     1
 };
 
+static const VUSBDESCDEVICE g_UsbCdDeviceDesc20 =
+{
+    /* .bLength = */                sizeof(g_UsbCdDeviceDesc20),
+    /* .bDescriptorType = */        VUSB_DT_DEVICE,
+    /* .bcdUsb = */                 0x200, /* USB 2.0 */
+    /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
+    /* .bDeviceSubClass = */        0 /* Subclass specified in the interface desc. */,
+    /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
+    /* .bMaxPacketSize0 = */        64,
+    /* .idVendor = */               VBOX_USB_VENDOR,
+    /* .idProduct = */              USBMSD_PID_CD,
+    /* .bcdDevice = */              0x0100, /* 1.0 */
+    /* .iManufacturer = */          USBMSD_STR_ID_MANUFACTURER,
+    /* .iProduct = */               USBMSD_STR_ID_PRODUCT_CDROM,
+    /* .iSerialNumber = */          0,
+    /* .bNumConfigurations = */     1
+};
+
 static const VUSBDESCDEVICE g_UsbMsdDeviceDesc30 =
 {
     /* .bLength = */                sizeof(g_UsbMsdDeviceDesc30),
@@ -549,6 +570,24 @@ static const VUSBDESCDEVICE g_UsbMsdDeviceDesc30 =
     /* .bcdDevice = */              0x0110, /* 1.10 */
     /* .iManufacturer = */          USBMSD_STR_ID_MANUFACTURER,
     /* .iProduct = */               USBMSD_STR_ID_PRODUCT_HD,
+    /* .iSerialNumber = */          0,
+    /* .bNumConfigurations = */     1
+};
+
+static const VUSBDESCDEVICE g_UsbCdDeviceDesc30 =
+{
+    /* .bLength = */                sizeof(g_UsbCdDeviceDesc30),
+    /* .bDescriptorType = */        VUSB_DT_DEVICE,
+    /* .bcdUsb = */                 0x300, /* USB 2.0 */
+    /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
+    /* .bDeviceSubClass = */        0 /* Subclass specified in the interface desc. */,
+    /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
+    /* .bMaxPacketSize0 = */        9 /* 512, the only option for USB3. */,
+    /* .idVendor = */               VBOX_USB_VENDOR,
+    /* .idProduct = */              USBMSD_PID_CD,
+    /* .bcdDevice = */              0x0110, /* 1.10 */
+    /* .iManufacturer = */          USBMSD_STR_ID_MANUFACTURER,
+    /* .iProduct = */               USBMSD_STR_ID_PRODUCT_CDROM,
     /* .iSerialNumber = */          0,
     /* .bNumConfigurations = */     1
 };
@@ -599,6 +638,16 @@ static const PDMUSBDESCCACHE g_UsbMsdDescCacheFS =
     /* .fUseCachedStringsDescriptors = */ true
 };
 
+static const PDMUSBDESCCACHE g_UsbCdDescCacheFS =
+{
+    /* .pDevice = */                &g_UsbCdDeviceDesc20,
+    /* .paConfigs = */              &g_UsbMsdConfigDescFS,
+    /* .paLanguages = */            g_aUsbMsdLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
+
 static const PDMUSBDESCCACHE g_UsbMsdDescCacheHS =
 {
     /* .pDevice = */                &g_UsbMsdDeviceDesc20,
@@ -609,9 +658,29 @@ static const PDMUSBDESCCACHE g_UsbMsdDescCacheHS =
     /* .fUseCachedStringsDescriptors = */ true
 };
 
+static const PDMUSBDESCCACHE g_UsbCdDescCacheHS =
+{
+    /* .pDevice = */                &g_UsbCdDeviceDesc20,
+    /* .paConfigs = */              &g_UsbMsdConfigDescHS,
+    /* .paLanguages = */            g_aUsbMsdLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
+
 static const PDMUSBDESCCACHE g_UsbMsdDescCacheSS =
 {
     /* .pDevice = */                &g_UsbMsdDeviceDesc30,
+    /* .paConfigs = */              &g_UsbMsdConfigDescSS,
+    /* .paLanguages = */            g_aUsbMsdLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
+
+static const PDMUSBDESCCACHE g_UsbCdDescCacheSS =
+{
+    /* .pDevice = */                &g_UsbCdDeviceDesc30,
     /* .paConfigs = */              &g_UsbMsdConfigDescSS,
     /* .paLanguages = */            g_aUsbMsdLanguages,
     /* .cLanguages = */             RT_ELEMENTS(g_aUsbMsdLanguages),
@@ -2020,11 +2089,11 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbMsdUsbGetDescriptorCache(PPDMUSBINS pU
     PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
     LogFlow(("usbMsdUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
     if (pThis->pUsbIns->enmSpeed == VUSB_SPEED_SUPER)
-        return &g_UsbMsdDescCacheSS;
+        return pThis->fIsCdrom ? &g_UsbCdDescCacheSS : &g_UsbMsdDescCacheSS;
     else if (pThis->pUsbIns->enmSpeed == VUSB_SPEED_HIGH)
-        return &g_UsbMsdDescCacheHS;
+        return pThis->fIsCdrom ? &g_UsbCdDescCacheHS : &g_UsbMsdDescCacheHS;
     else
-        return &g_UsbMsdDescCacheFS;
+        return pThis->fIsCdrom ? &g_UsbCdDescCacheFS : &g_UsbMsdDescCacheFS;
 }
 
 
@@ -2244,6 +2313,11 @@ static DECLCALLBACK(int) usbMsdConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     if (!pThis->Lun0.pIScsiConnector)
         return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS,
                                    N_("MSD failed to query the PDMISCSICONNECTOR from the driver below it"));
+
+    /*
+     * Find out what kind of device we are.
+     */
+    pThis->fIsCdrom = false;    //@todo: Find out somehow
 
     /*
      * Register the saved state data unit.
