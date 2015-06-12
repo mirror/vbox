@@ -328,10 +328,8 @@ typedef struct VUSBROOTHUB
     VUSBHUB                 Hub;
     /** Address hash table. */
     PVUSBDEV                apAddrHash[VUSB_ADDR_HASHSZ];
-
-#if HC_ARCH_BITS == 32
-    uint32_t                Alignment0;
-#endif
+    /** The default address. */
+    PVUSBDEV                pDefaultAddress;
 
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
@@ -341,16 +339,15 @@ typedef struct VUSBROOTHUB
     VUSBIROOTHUBCONNECTOR   IRhConnector;
 
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment1;
+    uint32_t                Alignment0;
 #endif
-
     /** Critical section protecting the device list. */
     RTCRITSECT              CritSectDevices;
     /** Chain of devices attached to this hub. */
     PVUSBDEV                pDevices;
 
 #if HC_ARCH_BITS == 32
-    uint32_t                Alignment2;
+    uint32_t                Alignment1;
 #endif
 
     /** Availability Bitmap. */
