@@ -174,8 +174,10 @@ VMMR0_INT_DECL(int)             HMR0Term(void);
 VMMR0_INT_DECL(int)             HMR0InitVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0TermVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0EnableAllCpus(PVM pVM);
+# ifdef VBOX_WITH_RAW_MODE
 VMMR0_INT_DECL(int)             HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled);
 VMMR0_INT_DECL(void)            HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
+# endif
 
 VMMR0_INT_DECL(void)            HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext,
                                                            unsigned uPort, unsigned uAndVal, unsigned cbSize);

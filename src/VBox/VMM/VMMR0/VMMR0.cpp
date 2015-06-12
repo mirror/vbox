@@ -874,14 +874,15 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
          */
         case VMMR0_DO_RAW_RUN:
         {
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+#ifdef VBOX_WITH_RAW_MODE
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             /* Some safety precautions first. */
             if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
             {
                 pVCpu->vmm.s.iLastGZRc = VERR_PGM_NO_CR3_SHADOW_ROOT;
                 break;
             }
-#endif
+# endif
 
             /*
              * Disable preemption.
@@ -901,9 +902,9 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 /*
                  * Commit the CPU identifiers and update the periodict preemption timer if it's active.
                  */
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+# ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
                 CPUMR0SetLApic(pVCpu, iHostCpuSet);
-#endif
+# endif
                 pVCpu->iHostCpuSet = iHostCpuSet;
                 ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
@@ -953,10 +954,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
                     /* Fire dtrace probe and collect statistics. */
                     VBOXVMM_R0_VMM_RETURN_TO_RING3_RC(pVCpu, CPUMQueryGuestCtxPtr(pVCpu), rc);
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRunRC);
                     vmmR0RecordRC(pVM, pVCpu, rc);
-#endif
+# endif
                 }
                 else
                     pVCpu->vmm.s.iLastGZRc = rc;
@@ -988,6 +989,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 else
                     pVCpu->vmm.s.iLastGZRc = VERR_INVALID_CPU_INDEX;
             }
+
+#else  /* !VBOX_WITH_RAW_MODE */
+            pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_NOT_SUPPORTED;
+#endif
             break;
         }
 
@@ -1341,6 +1346,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
          */
         case VMMR0_DO_CALL_HYPERVISOR:
         {
+#ifdef VBOX_WITH_RAW_MODE
             /*
              * Validate input / context.
              */
@@ -1349,10 +1355,10 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             if (RT_UNLIKELY(pVM->cCpus != 1))
                 return VERR_INVALID_PARAMETER;
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
-#ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+# ifndef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
             if (RT_UNLIKELY(!PGMGetHyperCR3(pVCpu)))
                 return VERR_PGM_NO_CR3_SHADOW_ROOT;
-#endif
+# endif
 
             /*
              * Disable interrupts.
@@ -1383,9 +1389,9 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             /*
              * Commit the CPU identifiers.
              */
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+# ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
             CPUMR0SetLApic(pVCpu, iHostCpuSet);
-#endif
+# endif
             pVCpu->iHostCpuSet = iHostCpuSet;
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
 
@@ -1418,6 +1424,10 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
             ASMSetFlags(fFlags);
             return rc;
+
+#else  /* !VBOX_WITH_RAW_MODE */
+            return VERR_RAW_MODE_NOT_SUPPORTED;
+#endif
         }
 
         /*

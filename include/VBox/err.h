@@ -88,6 +88,8 @@
 #define VERR_NOT_SUP_IN_RAW_MODE            (-1021)
 /** Invalid CPU index. */
 #define VERR_INVALID_CPU_INDEX              (-1022)
+/** This VirtualBox build does not support raw-mode. */
+#define VERR_RAW_MODE_NOT_SUPPORTED         (-1023)
 /** @} */
 
 
