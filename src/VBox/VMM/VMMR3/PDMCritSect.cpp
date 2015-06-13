@@ -182,7 +182,7 @@ static int pdmR3CritSectInitOne(PVM pVM, PPDMCRITSECTINT pCritSect, void *pvKey,
                 pCritSect->pvKey                     = pvKey;
                 pCritSect->fAutomaticDefaultCritsect = false;
                 pCritSect->fUsedByTimerOrSimilar     = false;
-                pCritSect->EventToSignal             = NIL_RTSEMEVENT;
+                pCritSect->hEventToSignal            = NIL_SUPSEMEVENT;
                 pCritSect->pszName                   = pszName;
 
                 STAMR3RegisterF(pVM, &pCritSect->StatContentionRZLock,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,          NULL, "/PDM/CritSects/%s/ContentionRZLock", pCritSect->pszName);
@@ -880,34 +880,6 @@ VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
 #endif
     AssertLogRelRC(rc);
     return true;
-}
-
-
-/**
- * Schedule a event semaphore for signalling upon critsect exit.
- *
- * @returns VINF_SUCCESS on success.
- * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
- * @returns VERR_NOT_OWNER if we're not the critsect owner.
- * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
- *
- * @param   pCritSect       The critical section.
- * @param   EventToSignal   The semaphore that should be signalled.
- */
-VMMR3DECL(int) PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal)
-{
-    AssertPtr(pCritSect);
-    Assert(!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP));
-    Assert(EventToSignal != NIL_RTSEMEVENT);
-    if (RT_UNLIKELY(!RTCritSectIsOwner(&pCritSect->s.Core)))
-        return VERR_NOT_OWNER;
-    if (RT_LIKELY(   pCritSect->s.EventToSignal == NIL_RTSEMEVENT
-                  || pCritSect->s.EventToSignal == EventToSignal))
-    {
-        pCritSect->s.EventToSignal = EventToSignal;
-        return VINF_SUCCESS;
-    }
-    return VERR_TOO_MANY_SEMAPHORES;
 }
 
 

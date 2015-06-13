@@ -210,7 +210,7 @@ RTDECL(int) RTCritSectTryEnter(PRTCRITSECT pCritSect);
  */
 RTDECL(int) RTCritSectTryEnterDebug(PRTCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 
-#ifdef IN_RING3 /* Crazy APIs: ring-3 only. */
+# ifdef IN_RING3 /* Crazy APIs: ring-3 only. */
 
 /**
  * Enter multiple critical sections.
@@ -251,7 +251,7 @@ RTDECL(int) RTCritSectEnterMultiple(size_t cCritSects, PRTCRITSECT *papCritSects
  */
 RTDECL(int) RTCritSectEnterMultipleDebug(size_t cCritSects, PRTCRITSECT *papCritSects, RTUINTPTR uId, RT_SRC_POS_DECL);
 
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
 
 /**
  * Leave a critical section.

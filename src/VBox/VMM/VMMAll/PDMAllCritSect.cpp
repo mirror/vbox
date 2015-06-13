@@ -584,9 +584,9 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
          * Leave for real.
          */
         /* update members. */
+        SUPSEMEVENT hEventToSignal  = pCritSect->s.hEventToSignal;
+        pCritSect->s.hEventToSignal = NIL_SUPSEMEVENT;
 # ifdef IN_RING3
-        RTSEMEVENT hEventToSignal    = pCritSect->s.EventToSignal;
-        pCritSect->s.EventToSignal   = NIL_RTSEMEVENT;
 #  if defined(PDMCRITSECT_STRICT)
         if (pCritSect->s.Core.pValidatorRec->hThread != NIL_RTTHREAD)
             RTLockValidatorRecExclReleaseOwnerUnchecked(pCritSect->s.Core.pValidatorRec);
@@ -610,15 +610,13 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
             AssertRC(rc);
         }
 
-# ifdef IN_RING3
         /* Signal exit event. */
-        if (hEventToSignal != NIL_RTSEMEVENT)
+        if (hEventToSignal != NIL_SUPSEMEVENT)
         {
-            Log8(("Signalling %#x\n", hEventToSignal));
-            int rc = RTSemEventSignal(hEventToSignal);
+            Log8(("Signalling %#p\n", hEventToSignal));
+            int rc = SUPSemEventSignal(pCritSect->s.CTX_SUFF(pVM)->pSession, hEventToSignal);
             AssertRC(rc);
         }
-# endif
 
 # if defined(DEBUG_bird) && defined(IN_RING0)
         VMMTrashVolatileXMMRegs();
@@ -670,6 +668,39 @@ VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 
     return VINF_SUCCESS;
 }
+
+
+#if defined(IN_RING0) || defined(IN_RING3)
+/**
+ * Schedule a event semaphore for signalling upon critsect exit.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_TOO_MANY_SEMAPHORES if an event was already scheduled.
+ * @returns VERR_NOT_OWNER if we're not the critsect owner (ring-3 only).
+ * @returns VERR_SEM_DESTROYED if RTCritSectDelete was called while waiting.
+ *
+ * @param   pCritSect       The critical section.
+ * @param   hEventToSignal  The support driver event semaphore that should be
+ *                          signalled.
+ */
+VMMDECL(int) PDMHCCritSectScheduleExitEvent(PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal)
+{
+    AssertPtr(pCritSect);
+    Assert(!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP));
+    Assert(hEventToSignal != NIL_SUPSEMEVENT);
+# ifdef IN_RING3
+    if (RT_UNLIKELY(!RTCritSectIsOwner(&pCritSect->s.Core)))
+        return VERR_NOT_OWNER;
+# endif
+    if (RT_LIKELY(   pCritSect->s.hEventToSignal == NIL_RTSEMEVENT
+                  || pCritSect->s.hEventToSignal == hEventToSignal))
+    {
+        pCritSect->s.hEventToSignal = hEventToSignal;
+        return VINF_SUCCESS;
+    }
+    return VERR_TOO_MANY_SEMAPHORES;
+}
+#endif /* IN_RING0 || IN_RING3 */
 
 
 /**

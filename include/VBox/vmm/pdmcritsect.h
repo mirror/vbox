@@ -62,8 +62,10 @@ VMMR3DECL(int)      PDMR3CritSectInit(PVM pVM, PPDMCRITSECT pCritSect, RT_SRC_PO
 VMMR3DECL(int)      PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3);
 VMMR3DECL(bool)     PDMR3CritSectYield(PPDMCRITSECT pCritSect);
 VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect);
-VMMR3DECL(int)      PDMR3CritSectScheduleExitEvent(PPDMCRITSECT pCritSect, RTSEMEVENT EventToSignal);
 VMMR3DECL(int)      PDMR3CritSectDelete(PPDMCRITSECT pCritSect);
+#if defined(IN_RING0) || defined(IN_RING3)
+VMMDECL(int)        PDMHCCritSectScheduleExitEvent(PPDMCRITSECT pCritSect, SUPSEMEVENT hEventToSignal);
+#endif
 
 VMMDECL(int)        PDMCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy);
 VMMDECL(int)        PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL);

@@ -15,6 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -34,6 +35,7 @@
 #define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE      16
 #define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS    17
 /** @} */
+
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -55,12 +57,14 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
 
+#include <VBox/sup.h>
 #include <VBox/scsi.h>
 
 #include "PIIX3ATABmDma.h"
 #include "ide.h"
 #include "ATAPIPassthrough.h"
 #include "VBoxDD.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -422,7 +426,9 @@ typedef struct ATACONTROLLER
     /** The async I/O thread handle. NIL_RTTHREAD if no thread. */
     RTTHREAD            AsyncIOThread;
     /** The event semaphore the thread is waiting on for requests. */
-    RTSEMEVENT          AsyncIOSem;
+    SUPSEMEVENT         hAsyncIOSem;
+    /** The support driver session handle. */
+    PSUPDRVSESSION      pSupDrvSession;
     /** The request queue for the AIO thread. One element is always unused. */
     ATARequest          aAsyncIORequests[4];
     /** The position at which to insert a new request for the AIO thread. */
@@ -438,7 +444,7 @@ typedef struct ATACONTROLLER
     PDMCRITSECT         AsyncIORequestLock;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
-#if HC_ARCH_BITS == 32
+#if 0 /*HC_ARCH_BITS == 32*/
     uint32_t            Alignment0;
 #endif
 
@@ -727,10 +733,10 @@ static void ataR3AsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
 
-    rc = PDMR3CritSectScheduleExitEvent(&pCtl->lock, pCtl->AsyncIOSem);
+    rc = PDMHCCritSectScheduleExitEvent(&pCtl->lock, pCtl->hAsyncIOSem);
     if (RT_FAILURE(rc))
     {
-        rc = RTSemEventSignal(pCtl->AsyncIOSem);
+        rc = SUPSemEventSignal(pCtl->pSupDrvSession, pCtl->hAsyncIOSem);
         AssertRC(rc);
     }
 }
@@ -5095,7 +5101,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
         {
             if (pCtl->fSignalIdle)
                 ataR3AsyncSignalIdle(pCtl);
-            rc = RTSemEventWait(pCtl->AsyncIOSem, RT_INDEFINITE_WAIT);
+            rc = SUPSemEventWaitNoResume(pCtl->pSupDrvSession, pCtl->hAsyncIOSem, RT_INDEFINITE_WAIT);
             /* Continue if we got a signal by RTThreadPoke().
              * We will get notified if there is a request to process.
              */
@@ -7019,7 +7025,7 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
         if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
         {
             ASMAtomicWriteU32(&pThis->aCts[i].fShutdown, true);
-            rc = RTSemEventSignal(pThis->aCts[i].AsyncIOSem);
+            rc = SUPSemEventSignal(pThis->aCts[i].pSupDrvSession, pThis->aCts[i].hAsyncIOSem);
             AssertRC(rc);
             rc = RTSemEventSignal(pThis->aCts[i].SuspendIOSem);
             AssertRC(rc);
@@ -7050,10 +7056,10 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
     {
         if (PDMCritSectIsInitialized(&pThis->aCts[i].AsyncIORequestLock))
             PDMR3CritSectDelete(&pThis->aCts[i].AsyncIORequestLock);
-        if (pThis->aCts[i].AsyncIOSem != NIL_RTSEMEVENT)
+        if (pThis->aCts[i].hAsyncIOSem != NIL_SUPSEMEVENT)
         {
-            RTSemEventDestroy(pThis->aCts[i].AsyncIOSem);
-            pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
+            SUPSemEventClose(pThis->aCts[i].pSupDrvSession, pThis->aCts[i].hAsyncIOSem);
+            pThis->aCts[i].hAsyncIOSem = NIL_SUPSEMEVENT;
         }
         if (pThis->aCts[i].SuspendIOSem != NIL_RTSEMEVENT)
         {
@@ -7137,7 +7143,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        pThis->aCts[i].AsyncIOSem = NIL_RTSEMEVENT;
+        pThis->aCts[i].hAsyncIOSem = NIL_SUPSEMEVENT;
         pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
         pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
     }
@@ -7427,7 +7433,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          * Start the worker thread.
          */
         pCtl->uAsyncIOState = ATA_AIO_NEW;
-        rc = RTSemEventCreate(&pCtl->AsyncIOSem);
+        pCtl->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
+        rc = SUPSemEventCreate(pCtl->pSupDrvSession, &pCtl->hAsyncIOSem);
         AssertLogRelRCReturn(rc, rc);
         rc = RTSemEventCreate(&pCtl->SuspendIOSem);
         AssertLogRelRCReturn(rc, rc);
@@ -7436,9 +7443,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataR3AsyncIOThread, (void *)pCtl, 128*1024 /*cbStack*/,
                              RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
         AssertLogRelRCReturn(rc, rc);
-        Assert(  pCtl->AsyncIOThread != NIL_RTTHREAD    && pCtl->AsyncIOSem != NIL_RTSEMEVENT
+        Assert(  pCtl->AsyncIOThread != NIL_RTTHREAD    && pCtl->hAsyncIOSem != NIL_SUPSEMEVENT
                && pCtl->SuspendIOSem != NIL_RTSEMEVENT  && PDMCritSectIsInitialized(&pCtl->AsyncIORequestLock));
-        Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->AsyncIOSem, pCtl->SuspendIOSem));
+        Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->hAsyncIOSem, pCtl->SuspendIOSem));
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pCtl->aIfs); j++)
         {
