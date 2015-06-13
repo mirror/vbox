@@ -23,6 +23,7 @@ EXPORTS
     PDMCritSectEnterDebug
     PDMCritSectIsOwner
     PDMCritSectLeave
+    PDMHCCritSectScheduleExitEvent
     PDMCritSectTryEnter
     PDMCritSectTryEnterDebug
     PDMQueueAlloc

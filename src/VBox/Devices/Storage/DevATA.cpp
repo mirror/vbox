@@ -574,8 +574,9 @@ DECLINLINE(void) ataUnsetStatus(ATADevState *s, uint8_t stat)
     }
 }
 
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(IN_RING0)
 
+# ifdef IN_RING3
 typedef void (*PBeginTransferFunc)(ATADevState *);
 typedef bool (*PSourceSinkFunc)(ATADevState *);
 
@@ -608,6 +609,7 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *);
 static bool atapiR3RequestSenseSS(ATADevState *);
 static bool atapiR3PassthroughSS(ATADevState *);
 static bool atapiR3ReadDVDStructureSS(ATADevState *);
+# endif /* IN_RING3 */
 
 /**
  * Begin of transfer function indexes for g_apfnBeginTransFuncs.
@@ -622,6 +624,7 @@ typedef enum ATAFNBT
     ATAFN_BT_MAX
 } ATAFNBT;
 
+# ifdef IN_RING3
 /**
  * Array of end transfer functions, the index is ATAFNET.
  * Make sure ATAFNET and this array match!
@@ -634,6 +637,7 @@ static const PBeginTransferFunc g_apfnBeginTransFuncs[ATAFN_BT_MAX] =
     atapiR3CmdBT,
     atapiR3PassthroughCmdBT,
 };
+# endif /* IN_RING3 */
 
 /**
  * Source/sink function indexes for g_apfnSourceSinkFuncs.
@@ -668,6 +672,7 @@ typedef enum ATAFNSS
     ATAFN_SS_MAX
 } ATAFNSS;
 
+# ifdef IN_RING3
 /**
  * Array of source/sink functions, the index is ATAFNSS.
  * Make sure ATAFNSS and this array match!
@@ -700,6 +705,7 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     atapiR3PassthroughSS,
     atapiR3ReadDVDStructureSS
 };
+# endif /* IN_RING3 */
 
 
 static const ATARequest g_ataDMARequest    = { ATA_AIO_DMA,            { { 0, 0, 0, 0, 0 } } };
@@ -707,6 +713,7 @@ static const ATARequest g_ataPIORequest    = { ATA_AIO_PIO,            { { 0, 0,
 static const ATARequest g_ataResetARequest = { ATA_AIO_RESET_ASSERTED, { { 0, 0, 0, 0, 0 } } };
 static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0, 0, 0, 0 } } };
 
+# ifdef IN_RING3
 static void ataR3AsyncIOClearRequests(PATACONTROLLER pCtl)
 {
     int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
@@ -718,9 +725,9 @@ static void ataR3AsyncIOClearRequests(PATACONTROLLER pCtl)
     rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
+# endif /* IN_RING3 */
 
-
-static void ataR3AsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
+static void ataHCAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
 {
     int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
@@ -741,6 +748,7 @@ static void ataR3AsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     }
 }
 
+# ifdef IN_RING3
 
 static const ATARequest *ataR3AsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
 {
@@ -908,7 +916,7 @@ static void ataR3StartTransfer(ATADevState *s, uint32_t cbTotalTransfer, uint8_t
      * Kick the worker thread into action.
      */
     Log2(("%s: Ctl#%d: message to async I/O thread, new request\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-    ataR3AsyncIOPutRequest(pCtl, &Req);
+    ataHCAsyncIOPutRequest(pCtl, &Req);
 }
 
 
@@ -937,11 +945,11 @@ static void ataR3AbortCurrentCommand(ATADevState *s, bool fResetDrive)
     Req.u.a.fResetDrive = fResetDrive;
     ataSetStatus(s, ATA_STAT_BUSY);
     Log2(("%s: Ctl#%d: message to async I/O thread, abort command on LUN#%d\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), s->iLUN));
-    ataR3AsyncIOPutRequest(pCtl, &Req);
+    ataHCAsyncIOPutRequest(pCtl, &Req);
 }
+# endif /* IN_RING3 */
 
-
-static void ataR3SetIRQ(ATADevState *s)
+static void ataHCSetIRQ(ATADevState *s)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
@@ -967,7 +975,7 @@ static void ataR3SetIRQ(ATADevState *s)
     s->fIrqPending = true;
 }
 
-#endif /* IN_RING3 */
+#endif /* IN_RING0 || IN_RING3 */
 
 static void ataUnsetIRQ(ATADevState *s)
 {
@@ -989,9 +997,9 @@ static void ataUnsetIRQ(ATADevState *s)
     s->fIrqPending = false;
 }
 
-#ifdef IN_RING3
+#if defined(IN_RING0) || defined(IN_RING3)
 
-static void ataR3PIOTransferStart(ATADevState *s, uint32_t start, uint32_t size)
+static void ataHCPIOTransferStart(ATADevState *s, uint32_t start, uint32_t size)
 {
     Log2(("%s: LUN#%d start %d size %d\n", __FUNCTION__, s->iLUN, start, size));
     s->iIOBufferPIODataStart = start;
@@ -1001,14 +1009,14 @@ static void ataR3PIOTransferStart(ATADevState *s, uint32_t start, uint32_t size)
 }
 
 
-static void ataR3PIOTransferStop(ATADevState *s)
+static void ataHCPIOTransferStop(ATADevState *s)
 {
     Log2(("%s: LUN#%d\n", __FUNCTION__, s->iLUN));
     if (s->fATAPITransfer)
     {
         s->uATARegNSector = (s->uATARegNSector & ~7) | ATAPI_INT_REASON_IO | ATAPI_INT_REASON_CD;
         Log2(("%s: interrupt reason %#04x\n", __FUNCTION__, s->uATARegNSector));
-        ataR3SetIRQ(s);
+        ataHCSetIRQ(s);
         s->fATAPITransfer = false;
     }
     s->cbTotalTransfer = 0;
@@ -1020,7 +1028,7 @@ static void ataR3PIOTransferStop(ATADevState *s)
 }
 
 
-static void ataR3PIOTransferLimitATAPI(ATADevState *s)
+static void ataHCPIOTransferLimitATAPI(ATADevState *s)
 {
     uint32_t cbLimit, cbTransfer;
 
@@ -1044,6 +1052,7 @@ static void ataR3PIOTransferLimitATAPI(ATADevState *s)
     s->cbElementaryTransfer = cbTransfer;
 }
 
+# ifdef IN_RING3
 
 static uint32_t ataR3GetNSectors(ATADevState *s)
 {
@@ -4007,7 +4016,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
                     ataR3SetSignature(s);
                 ataR3CmdError(s, ABRT_ERR);
                 ataUnsetStatus(s, ATA_STAT_READY);
-                ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             }
             break;
         case ATA_RECALIBRATE:
@@ -4016,7 +4025,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             /* fall through */
         case ATA_INITIALIZE_DEVICE_PARAMETERS:
             ataR3CmdOK(s, ATA_STAT_SEEK);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_SET_MULTIPLE_MODE:
             if (    s->uATARegNSector != 0
@@ -4031,7 +4040,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
                 s->cMultSectors = s->uATARegNSector;
                 ataR3CmdOK(s, 0);
             }
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_READ_VERIFY_SECTORS_EXT:
             s->fLBA48 = true;
@@ -4039,7 +4048,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
         case ATA_READ_VERIFY_SECTORS_WITHOUT_RETRIES:
             /* do sector number check ? */
             ataR3CmdOK(s, ATA_STAT_SEEK);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_READ_SECTORS_EXT:
             s->fLBA48 = true;
@@ -4099,21 +4108,21 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             s->fLBA48 = true;
             ataR3SetSector(s, s->cTotalSectors - 1);
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_SEEK: /* Used by the SCO OpenServer. Command is marked as obsolete */
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_READ_NATIVE_MAX_ADDRESS:
             ataR3SetSector(s, RT_MIN(s->cTotalSectors, 1 << 28) - 1);
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_CHECK_POWER_MODE:
             s->uATARegNSector = 0xff; /* drive active or idle */
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_SET_FEATURES:
             Log2(("%s: feature=%#x\n", __FUNCTION__, s->uATARegFeature));
@@ -4124,27 +4133,27 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
                 case 0x02: /* write cache enable */
                     Log2(("%s: write cache enable\n", __FUNCTION__));
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 case 0xaa: /* read look-ahead enable */
                     Log2(("%s: read look-ahead enable\n", __FUNCTION__));
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 case 0x55: /* read look-ahead disable */
                     Log2(("%s: read look-ahead disable\n", __FUNCTION__));
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 case 0xcc: /* reverting to power-on defaults enable */
                     Log2(("%s: revert to power-on defaults enable\n", __FUNCTION__));
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 case 0x66: /* reverting to power-on defaults disable */
                     Log2(("%s: revert to power-on defaults disable\n", __FUNCTION__));
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 case 0x82: /* write cache disable */
                     Log2(("%s: write cache disable\n", __FUNCTION__));
@@ -4169,7 +4178,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
                             goto abort_cmd;
                     }
                     ataR3CmdOK(s, ATA_STAT_SEEK);
-                    ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                    ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
                     break;
                 }
                 default:
@@ -4191,7 +4200,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_STANDBY_IMMEDIATE:
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
         case ATA_IDLE_IMMEDIATE:
             LogRel(("PIIX3 ATA: LUN#%d: aborting current command\n", s->iLUN));
@@ -4199,7 +4208,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             break;
         case ATA_SLEEP:
             ataR3CmdOK(s, 0);
-            ataR3SetIRQ(s);
+            ataHCSetIRQ(s);
             break;
             /* ATAPI commands */
         case ATA_IDENTIFY_PACKET_DEVICE:
@@ -4208,7 +4217,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             else
             {
                 ataR3CmdError(s, ABRT_ERR);
-                ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+                ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             }
             break;
         case ATA_EXECUTE_DEVICE_DIAGNOSTIC:
@@ -4242,12 +4251,13 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
             ataR3CmdError(s, ABRT_ERR);
             if (s->fATAPI)
                 ataUnsetStatus(s, ATA_STAT_READY);
-            ataR3SetIRQ(s); /* Shortcut, do not use AIO thread. */
+            ataHCSetIRQ(s); /* Shortcut, do not use AIO thread. */
             break;
     }
 }
 
-#endif /* IN_RING3 */
+# endif /* IN_RING3 */
+#endif /* IN_RING0 || IN_RING3 */
 
 /*
  * Note: There are four distinct cases of port I/O handling depending on
@@ -4388,7 +4398,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
     {
         if (pCtl->iSelectedIf)  /* Device 1 selected, Device 0 responding for it. */
         {
-            if (!pCtl->aIfs[0].pDrvBlock)   /* @todo: this case should never get here! */
+            if (!pCtl->aIfs[0].pDrvBlock)   /** @todo this case should never get here! */
             {
                 Log2(("%s: addr=%#x: no device on channel\n", __FUNCTION__, addr));
                 return VERR_IOM_IOPORT_UNUSED;
@@ -4518,8 +4528,8 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 
                 val = s->uATARegStatus;
 #else /* !IN_RING3 */
-                /* Cannot yield CPU in guest context. And switching to host
-                 * context for each and every busy status is too costly,
+                /* Cannot yield CPU in raw-mode and ring-0 context.  And switching
+                 * to host context for each and every busy status is too costly,
                  * especially on SMP systems where we don't gain much by
                  * yielding the CPU to someone else. */
                 if (++cBusy >= 20)
@@ -4609,7 +4619,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         pCtl->u64ResetTime = RTTimeMilliTS();
 
         /* Issue the reset request now. */
-        ataR3AsyncIOPutRequest(pCtl, &g_ataResetARequest);
+        ataHCAsyncIOPutRequest(pCtl, &g_ataResetARequest);
 #else /* !IN_RING3 */
         AssertMsgFailed(("RESET handling is too complicated for GC\n"));
 #endif /* IN_RING3 */
@@ -4626,7 +4636,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             val &= ~ATA_DEVCTL_HOB;
             Log2(("%s: ignored setting HOB\n", __FUNCTION__));
         }
-        ataR3AsyncIOPutRequest(pCtl, &g_ataResetCRequest);
+        ataHCAsyncIOPutRequest(pCtl, &g_ataResetCRequest);
 #else /* !IN_RING3 */
         AssertMsgFailed(("RESET handling is too complicated for GC\n"));
 #endif /* IN_RING3 */
@@ -4668,9 +4678,9 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     return VINF_SUCCESS;
 }
 
-#ifdef IN_RING3
+#if defined(IN_RING0) || defined(IN_RING3)
 
-static void ataR3PIOTransfer(PATACONTROLLER pCtl)
+static void ataHCPIOTransfer(PATACONTROLLER pCtl)
 {
     ATADevState *s;
 
@@ -4679,6 +4689,7 @@ static void ataR3PIOTransfer(PATACONTROLLER pCtl)
 
     if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
     {
+# ifdef IN_RING3
         LogRel(("PIIX3 ATA: LUN#%d: %s data in the middle of a PIO transfer - VERY SLOW\n", s->iLUN, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "loading" : "storing"));
         /* Any guest OS that triggers this case has a pathetic ATA driver.
          * In a real system it would block the CPU via IORDY, here we do it
@@ -4698,11 +4709,14 @@ static void ataR3PIOTransfer(PATACONTROLLER pCtl)
             s->iIOBufferCur = 0;
             s->iIOBufferEnd = s->cbElementaryTransfer;
         }
+# else
+        AssertReleaseFailed();
+# endif
     }
     if (s->cbTotalTransfer)
     {
         if (s->fATAPITransfer)
-            ataR3PIOTransferLimitATAPI(s);
+            ataHCPIOTransferLimitATAPI(s);
 
         if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE && s->cbElementaryTransfer > s->cbTotalTransfer)
             s->cbElementaryTransfer = s->cbTotalTransfer;
@@ -4711,7 +4725,7 @@ static void ataR3PIOTransfer(PATACONTROLLER pCtl)
              __FUNCTION__, s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE ? "T2I" : "I2T",
              s->cbTotalTransfer, s->cbElementaryTransfer,
              s->iIOBufferCur, s->iIOBufferEnd));
-        ataR3PIOTransferStart(s, s->iIOBufferCur, s->cbElementaryTransfer);
+        ataHCPIOTransferStart(s, s->iIOBufferCur, s->cbElementaryTransfer);
         s->cbTotalTransfer -= s->cbElementaryTransfer;
         s->iIOBufferCur += s->cbElementaryTransfer;
 
@@ -4719,11 +4733,11 @@ static void ataR3PIOTransfer(PATACONTROLLER pCtl)
             s->cbElementaryTransfer = s->cbTotalTransfer;
     }
     else
-        ataR3PIOTransferStop(s);
+        ataHCPIOTransferStop(s);
 }
 
 
-DECLINLINE(void) ataR3PIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
+DECLINLINE(void) ataHCPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
 {
     /* Do not interfere with RESET processing if the PIO transfer finishes
      * while the RESET line is asserted. */
@@ -4744,7 +4758,7 @@ DECLINLINE(void) ataR3PIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         ataSetStatus(s, ATA_STAT_BUSY);
 
         Log2(("%s: Ctl#%d: message to async I/O thread, continuing PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-        ataR3AsyncIOPutRequest(pCtl, &g_ataPIORequest);
+        ataHCAsyncIOPutRequest(pCtl, &g_ataPIORequest);
     }
     else
     {
@@ -4759,46 +4773,136 @@ DECLINLINE(void) ataR3PIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
         {
             /* There is more to transfer, happens usually for large ATAPI
              * reads - the protocol limits the chunk size to 65534 bytes. */
-            ataR3PIOTransfer(pCtl);
-            ataR3SetIRQ(s);
+            ataHCPIOTransfer(pCtl);
+            ataHCSetIRQ(s);
         }
         else
         {
             Log2(("%s: Ctl#%d: skipping message to async I/O thread, ending PIO transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
             /* Finish PIO transfer. */
-            ataR3PIOTransfer(pCtl);
+            ataHCPIOTransfer(pCtl);
             Assert(!pCtl->fRedo);
         }
     }
 }
 
-#endif /* IN_RING3 */
+#endif /* IN_RING0 || IN_RING3 */
+
+/**
+ * Fallback for ataCopyPioData124 that handles unaligned and out of bounds cases.
+ *
+ * @param   pIf         The device interface to work with.
+ * @param   pbDst       The destination buffer.
+ * @param   pbSrc       The source buffer.
+ * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
+ */
+DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t cbCopy)
+{
+    uint32_t const offStart = pIf->iIOBufferPIODataStart;
+    uint32_t const offNext  = offStart + cbCopy;
+
+    if (offStart + cbCopy > pIf->cbIOBuffer)
+    {
+        Log(("%s: cbCopy=%#x offStart=%#x cbIOBuffer=%#x offNext=%#x (iIOBufferPIODataEnd=%#x)\n",
+             __FUNCTION__, cbCopy, offStart, pIf->cbIOBuffer, offNext, pIf->iIOBufferPIODataEnd));
+        if (offStart < pIf->cbIOBuffer)
+            cbCopy = pIf->cbIOBuffer - offStart;
+        else
+            cbCopy = 0;
+    }
+
+    switch (cbCopy)
+    {
+        case 4: pbDst[3] = pbSrc[3]; /* fall thru */
+        case 3: pbDst[2] = pbSrc[2]; /* fall thru */
+        case 2: pbDst[1] = pbSrc[1]; /* fall thru */
+        case 1: pbDst[0] = pbSrc[0]; /* fall thru */
+        case 0: break;
+        default: AssertFailed(); /* impossible */
+    }
+
+    pIf->iIOBufferPIODataStart = offNext;
+
+}
+
+
+/**
+ * Work for ataDataWrite & ataDataRead that copies data without using memcpy.
+ *
+ * This also updates pIf->iIOBufferPIODataStart.
+ *
+ * The two buffers are either stack (32-bit aligned) or somewhere within
+ * pIf->pbIOBuffer.
+ *
+ * @param   pIf         The device interface to work with.
+ * @param   pbDst       The destination buffer.
+ * @param   pbSrc       The source buffer.
+ * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
+ */
+DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t cbCopy)
+{
+    /*
+     * Quick bounds checking can be done by checking that the pbIOBuffer offset
+     * (iIOBufferPIODataStart) is aligned at the transfer size (which is ASSUMED
+     * to be 1, 2 or 4).  However, since we're paranoid and don't currently
+     * trust iIOBufferPIODataEnd to be within bounds, we current check against the
+     * IO buffer size too.
+     */
+    Assert(cbCopy == 1 || cbCopy == 2 || cbCopy == 4);
+    uint32_t const offStart = pIf->iIOBufferPIODataStart;
+    if (RT_LIKELY(   !(offStart & (cbCopy - 1))
+                  && offStart + cbCopy <= pIf->cbIOBuffer))
+    {
+        switch (cbCopy)
+        {
+            case 4: *(uint32_t *)pbDst = *(uint32_t const *)pbSrc; break;
+            case 2: *(uint16_t *)pbDst = *(uint16_t const *)pbSrc; break;
+            case 1: *pbDst = *pbSrc; break;
+        }
+        pIf->iIOBufferPIODataStart = offStart + cbCopy;
+    }
+    else
+        ataCopyPioData124Slow(pIf, pbDst, pbSrc, cbCopy);
+}
 
 static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, const uint8_t *pbBuf)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-    uint8_t *p;
 
     if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
     {
         Assert(s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE);
-        p = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
-#ifndef IN_RING3
-        /* All but the last transfer unit is simple enough for GC, but
-         * sending a request to the async IO thread is too complicated. */
+        uint8_t *pbDst = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+
+#ifdef IN_RC
+        /* Raw-mode: The ataHCPIOTransfer following the last transfer unit
+           requires I/O thread signalling, we must go to ring-3 for that. */
         if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-        {
-            memcpy(p, pbBuf, cbSize);
-            s->iIOBufferPIODataStart += cbSize;
-        }
+            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
         else
             return VINF_IOM_R3_IOPORT_WRITE;
-#else  /* IN_RING3 */
-        memcpy(p, pbBuf, cbSize);
-        s->iIOBufferPIODataStart += cbSize;
+
+#elif defined(IN_RING0)
+        /* Ring-0: We can do I/O thread signalling here, however for paranoid reasons
+           triggered by a special case in ataHCPIOTransferFinish, we take extra care here. */
+        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
+            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
+        else if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE) /* paranoia */
+        {
+            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
+            ataHCPIOTransferFinish(pCtl, s);
+        }
+        else
+        {
+            Log(("%s: Unexpected\n",__FUNCTION__));
+            return VINF_IOM_R3_IOPORT_WRITE;
+        }
+
+#else  /* IN_RING 3*/
+        ataCopyPioData124(s, pbDst, pbBuf, cbSize);
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataR3PIOTransferFinish(pCtl, s);
-#endif /* IN_RING3 */
+            ataHCPIOTransferFinish(pCtl, s);
+#endif /* IN_RING 3*/
     }
     else
         Log2(("%s: DUMMY data\n", __FUNCTION__));
@@ -4809,27 +4913,44 @@ static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, con
 static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint8_t *pbBuf)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-    uint8_t *p;
 
     if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
     {
         Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
-        p = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
-#ifndef IN_RING3
+        uint8_t const *pbSrc = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+
+#ifdef IN_RC
         /* All but the last transfer unit is simple enough for RC, but
          * sending a request to the async IO thread is too complicated. */
         if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-        {
-            memcpy(pbBuf, p, cbSize);
-            s->iIOBufferPIODataStart += cbSize;
-        }
+            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
         else
             return VINF_IOM_R3_IOPORT_READ;
+
+#elif defined(IN_RING0)
+        /* Ring-0: We can do I/O thread signalling here.  However there is one
+           case in ataHCPIOTransfer that does a LogRel and would (but not from
+           here) call directly into the driver code.  We detect that odd case
+           here cand return to ring-3 to handle it. */
+        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
+            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
+        else if (   s->cbTotalTransfer == 0
+                 || s->iSourceSink != ATAFN_SS_NULL
+                 || s->iIOBufferCur <= s->iIOBufferEnd)
+        {
+            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
+            ataHCPIOTransferFinish(pCtl, s);
+        }
+        else
+        {
+            Log(("%s: Unexpected\n",__FUNCTION__));
+            return VINF_IOM_R3_IOPORT_READ;
+        }
+
 #else  /* IN_RING3 */
-        memcpy(pbBuf, p, cbSize);
-        s->iIOBufferPIODataStart += cbSize;
+        ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataR3PIOTransferFinish(pCtl, s);
+            ataHCPIOTransferFinish(pCtl, s);
 #endif /* IN_RING3 */
     }
     else
@@ -5215,7 +5336,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                              * everything from scratch by resending the current
                              * request. Occurs very rarely, not worth optimizing. */
                             LogRel(("%s: Ctl#%d: redo entire operation\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-                            ataR3AsyncIOPutRequest(pCtl, pReq);
+                            ataHCAsyncIOPutRequest(pCtl, pReq);
                             break;
                         }
                     }
@@ -5243,7 +5364,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                         if (pCtl->BmDma.u8Cmd & BM_CMD_START)
                         {
                             Log2(("%s: Ctl#%d: message to async I/O thread, continuing DMA transfer immediately\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-                            ataR3AsyncIOPutRequest(pCtl, &g_ataDMARequest);
+                            ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
                         }
                     }
                     else
@@ -5251,7 +5372,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                         Assert(s->uTxDir == PDMBLOCKTXDIR_NONE); /* Any transfer which has an initial transfer size of 0 must be marked as such. */
                         /* Finish DMA transfer. */
                         ataR3DMATransferStop(s);
-                        ataR3SetIRQ(s);
+                        ataHCSetIRQ(s);
                         pCtl->uAsyncIOState = ATA_AIO_NEW;
                     }
                 }
@@ -5259,10 +5380,10 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     if (s->cbTotalTransfer)
                     {
-                        ataR3PIOTransfer(pCtl);
+                        ataHCPIOTransfer(pCtl);
                         Assert(!pCtl->fRedo);
                         if (s->fATAPITransfer || s->uTxDir != PDMBLOCKTXDIR_TO_DEVICE)
-                            ataR3SetIRQ(s);
+                            ataHCSetIRQ(s);
 
                         if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
                         {
@@ -5287,10 +5408,10 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                     {
                         Assert(s->uTxDir == PDMBLOCKTXDIR_NONE); /* Any transfer which has an initial transfer size of 0 must be marked as such. */
                         /* Finish PIO transfer. */
-                        ataR3PIOTransfer(pCtl);
+                        ataHCPIOTransfer(pCtl);
                         Assert(!pCtl->fRedo);
                         if (!s->fATAPITransfer)
-                            ataR3SetIRQ(s);
+                            ataHCSetIRQ(s);
                         pCtl->uAsyncIOState = ATA_AIO_NEW;
                     }
                 }
@@ -5319,7 +5440,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                 if (RT_UNLIKELY(pCtl->fRedo && !pCtl->fReset))
                 {
                     LogRel(("PIIX3 ATA: Ctl#%d: redo DMA operation\n", ATACONTROLLER_IDX(pCtl)));
-                    ataR3AsyncIOPutRequest(pCtl, &g_ataDMARequest);
+                    ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
                     break;
                 }
 
@@ -5347,7 +5468,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                     Log2(("%s: Ctl#%d: interrupt reason %#04x\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl), s->uATARegNSector));
                     s->fATAPITransfer = false;
                 }
-                ataR3SetIRQ(s);
+                ataHCSetIRQ(s);
                 pCtl->uAsyncIOState = ATA_AIO_NEW;
                 break;
             }
@@ -5364,7 +5485,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                     if (RT_UNLIKELY(fRedo && !pCtl->fReset))
                     {
                         LogRel(("PIIX3 ATA: Ctl#%d: redo PIO operation\n", ATACONTROLLER_IDX(pCtl)));
-                        ataR3AsyncIOPutRequest(pCtl, &g_ataPIORequest);
+                        ataHCAsyncIOPutRequest(pCtl, &g_ataPIORequest);
                         break;
                     }
                     s->iIOBufferCur = 0;
@@ -5387,8 +5508,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
 
                 if (s->cbTotalTransfer)
                 {
-                    ataR3PIOTransfer(pCtl);
-                    ataR3SetIRQ(s);
+                    ataHCPIOTransfer(pCtl);
+                    ataHCSetIRQ(s);
 
                     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE || s->iSourceSink != ATAFN_SS_NULL)
                     {
@@ -5412,12 +5533,12 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                 else
                 {
                     /* Finish PIO transfer. */
-                    ataR3PIOTransfer(pCtl);
+                    ataHCPIOTransfer(pCtl);
                     if (    !pCtl->fChainedTransfer
                         &&  !s->fATAPITransfer
                         &&  s->uTxDir != PDMBLOCKTXDIR_FROM_DEVICE)
                     {
-                            ataR3SetIRQ(s);
+                            ataHCSetIRQ(s);
                     }
                     pCtl->uAsyncIOState = ATA_AIO_NEW;
                 }
@@ -5425,8 +5546,8 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
 
             case ATA_AIO_RESET_ASSERTED:
                 pCtl->uAsyncIOState = ATA_AIO_RESET_CLEARED;
-                ataR3PIOTransferStop(&pCtl->aIfs[0]);
-                ataR3PIOTransferStop(&pCtl->aIfs[1]);
+                ataHCPIOTransferStop(&pCtl->aIfs[0]);
+                ataHCPIOTransferStop(&pCtl->aIfs[1]);
                 /* Do not change the DMA registers, they are not affected by the
                  * ATA controller reset logic. It should be sufficient to issue a
                  * new command, which is now possible as the state is cleared. */
@@ -5470,10 +5591,10 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     /* Stop any pending DMA transfer. */
                     s->fDMA = false;
-                    ataR3PIOTransferStop(s);
+                    ataHCPIOTransferStop(s);
                     ataUnsetStatus(s, ATA_STAT_BUSY | ATA_STAT_DRQ | ATA_STAT_SEEK | ATA_STAT_ERR);
                     ataSetStatus(s, ATA_STAT_READY);
-                    ataR3SetIRQ(s);
+                    ataHCSetIRQ(s);
                 }
                 break;
 
@@ -5599,7 +5720,7 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         if (pCtl->aIfs[pCtl->iAIOIf].uATARegStatus & ATA_STAT_DRQ)
         {
             Log2(("%s: Ctl#%d: message to async I/O thread, continuing DMA transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
-            ataR3AsyncIOPutRequest(pCtl, &g_ataDMARequest);
+            ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
         }
 #else /* !IN_RING3 */
         AssertMsgFailed(("DMA START handling is too complicated for GC\n"));
@@ -5941,6 +6062,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         }
         PDMCritSectLeave(&pCtl->lock);
     }
+
     return rc;
 }
 
@@ -6006,7 +6128,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         *pcTransfer = cTransfer - cTransAvailable;
 # ifdef IN_RING3
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataR3PIOTransferFinish(pCtl, s);
+            ataHCPIOTransferFinish(pCtl, s);
 # endif /* IN_RING3 */
     }
     PDMCritSectLeave(&pCtl->lock);
@@ -6075,7 +6197,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         *pcTransfer = cTransfer - cTransAvailable;
 # ifdef IN_RING3
         if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataR3PIOTransferFinish(pCtl, s);
+            ataHCPIOTransferFinish(pCtl, s);
 # endif /* IN_RING3 */
     }
     PDMCritSectLeave(&pCtl->lock);
@@ -6910,8 +7032,8 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
         pThis->aCts[i].fRedoIdle = false;
         ataR3AsyncIOClearRequests(&pThis->aCts[i]);
         Log2(("%s: Ctl#%d: message to async I/O thread, reset controller\n", __FUNCTION__, i));
-        ataR3AsyncIOPutRequest(&pThis->aCts[i], &g_ataResetARequest);
-        ataR3AsyncIOPutRequest(&pThis->aCts[i], &g_ataResetCRequest);
+        ataHCAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetARequest);
+        ataHCAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetCRequest);
 
         PDMCritSectLeave(&pThis->aCts[i].lock);
     }
@@ -7304,14 +7426,18 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
         rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTHCPTR)(uintptr_t)i,
-                                     ataIOPortWrite1, ataIOPortRead1, ataIOPortWriteStr1, ataIOPortReadStr1, "ATA I/O Base 1");
+                                     ataIOPortWrite1, ataIOPortRead1,
+                                     ataIOPortWriteStr1, ataIOPortReadStr1,
+                                     "ATA I/O Base 1");
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers"));
 
         if (fGCEnabled)
         {
             rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
-                                           "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
+                                           "ataIOPortWrite1", "ataIOPortRead1",
+                                           "ataIOPortWriteStr1", "ataIOPortReadStr1",
+                                           "ATA I/O Base 1");
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers (GC)"));
         }
