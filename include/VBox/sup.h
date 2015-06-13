@@ -771,13 +771,6 @@ typedef SUPR0SERVICEREQHDR *PSUPR0SERVICEREQHDR;
 #define SUPR0SERVICEREQHDR_MAGIC    UINT32_C(0x19640416)
 
 
-/** Event semaphore handle. Ring-0 / ring-3. */
-typedef R0PTRTYPE(struct SUPSEMEVENTHANDLE *) SUPSEMEVENT;
-/** Pointer to an event semaphore handle. */
-typedef SUPSEMEVENT *PSUPSEMEVENT;
-/** Nil event semaphore handle. */
-#define NIL_SUPSEMEVENT         ((SUPSEMEVENT)0)
-
 /**
  * Creates a single release event semaphore.
  *
@@ -861,13 +854,6 @@ SUPDECL(int) SUPSemEventWaitNsRelIntr(PSUPDRVSESSION pSession, SUPSEMEVENT hEven
  */
 SUPDECL(uint32_t) SUPSemEventGetResolution(PSUPDRVSESSION pSession);
 
-
-/** Multiple release event semaphore handle. Ring-0 / ring-3. */
-typedef R0PTRTYPE(struct SUPSEMEVENTMULTIHANDLE *)  SUPSEMEVENTMULTI;
-/** Pointer to an multiple release event semaphore handle. */
-typedef SUPSEMEVENTMULTI                           *PSUPSEMEVENTMULTI;
-/** Nil multiple release event semaphore handle. */
-#define NIL_SUPSEMEVENTMULTI                        ((SUPSEMEVENTMULTI)0)
 
 /**
  * Creates a multiple release event semaphore.

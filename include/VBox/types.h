@@ -57,7 +57,22 @@
 /** Pointer to per support driver session data.
  * (The data is a R0 entity and private to the the R0 SUP part. All
  * other should consider this a sort of handle.) */
-typedef R0PTRTYPE(struct SUPDRVSESSION *) PSUPDRVSESSION;
+typedef R0PTRTYPE(struct SUPDRVSESSION *)           PSUPDRVSESSION;
+
+/** Event semaphore handle. Ring-0 / ring-3. */
+typedef R0PTRTYPE(struct SUPSEMEVENTHANDLE *)       SUPSEMEVENT;
+/** Pointer to an event semaphore handle. */
+typedef SUPSEMEVENT                                *PSUPSEMEVENT;
+/** Nil event semaphore handle. */
+#define NIL_SUPSEMEVENT                             ((SUPSEMEVENT)0)
+
+/** Multiple release event semaphore handle. Ring-0 / ring-3. */
+typedef R0PTRTYPE(struct SUPSEMEVENTMULTIHANDLE *)  SUPSEMEVENTMULTI;
+/** Pointer to an multiple release event semaphore handle. */
+typedef SUPSEMEVENTMULTI                           *PSUPSEMEVENTMULTI;
+/** Nil multiple release event semaphore handle. */
+#define NIL_SUPSEMEVENTMULTI                        ((SUPSEMEVENTMULTI)0)
+
 
 /** Pointer to a VM. */
 typedef struct VM                  *PVM;
