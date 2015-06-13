@@ -975,7 +975,7 @@ int main()
     GEN_CHECK_OFF(PCIATAState, IBase);
     GEN_CHECK_OFF(PCIATAState, ILeds);
     GEN_CHECK_OFF(PCIATAState, pLedsConnector);
-    GEN_CHECK_OFF(PCIATAState, fGCEnabled);
+    GEN_CHECK_OFF(PCIATAState, fRCEnabled);
     GEN_CHECK_OFF(PCIATAState, fR0Enabled);
 
 #ifdef VBOX_WITH_USB
