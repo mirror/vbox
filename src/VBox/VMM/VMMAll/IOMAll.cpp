@@ -67,7 +67,7 @@ VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
  * @retval  VINF_SUCCESS                Success.
  * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
- * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
@@ -226,15 +226,17 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
- * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_SUCCESS                Success or no string I/O callback in
+ *                                      this context.
  * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
- * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/GC only)
+ * @retval  VINF_IOM_R3_IOPORT_READ     Defer the read to ring-3. (R0/RC only)
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to read.
- * @param   pGCPtrDst   Pointer to the destination buffer (GC, incremented appropriately).
+ * @param   pGCPtrDst   Pointer to the destination buffer (RC, incremented
+ *                      appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
@@ -291,7 +293,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         {
             STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
             IOM_UNLOCK_SHARED(pVM);
-            return VINF_IOM_R3_IOPORT_READ;
+            return VINF_SUCCESS;
         }
 #endif
         void           *pvUser    = pRange->pvUser;
@@ -371,7 +373,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
  * @retval  VINF_SUCCESS                Success.
  * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
- * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
@@ -505,15 +507,17 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
  *
  * @returns Strict VBox status code. Informational status codes other than the one documented
  *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
- * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_SUCCESS                Success or no string I/O callback in
+ *                                      this context.
  * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
  *                                      status code must be passed on to EM.
- * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/GC only)
+ * @retval  VINF_IOM_R3_IOPORT_WRITE    Defer the write to ring-3. (R0/RC only)
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to write.
- * @param   pGCPtrSrc   Pointer to the source buffer (GC, incremented appropriately).
+ * @param   pGCPtrSrc   Pointer to the source buffer (RC, incremented
+ *                      appropriately).
  * @param   pcTransfers Pointer to the number of transfer units to write, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
@@ -570,7 +574,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         {
             STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
             IOM_UNLOCK_SHARED(pVM);
-            return VINF_IOM_R3_IOPORT_WRITE;
+            return VINF_SUCCESS;
         }
 #endif
         void           *pvUser    = pRange->pvUser;
