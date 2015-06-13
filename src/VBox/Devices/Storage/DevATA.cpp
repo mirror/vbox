@@ -5896,7 +5896,7 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     }
     else
     {
-#ifdef IN_RING3
+#ifndef IN_RC
         /* Check whether the guest OS wants to change DMA direction in
          * mid-flight. Not allowed, according to the PIIX3 specs. */
         Assert(!(pCtl->BmDma.u8Status & BM_STATUS_DMAING) || !((val ^ pCtl->BmDma.u8Cmd) & 0x04));
@@ -5923,7 +5923,7 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
         }
 #else /* !IN_RING3 */
-        AssertMsgFailed(("DMA START handling is too complicated for GC\n"));
+        AssertMsgFailed(("DMA START handling is too complicated for RC\n"));
 #endif /* IN_RING3 */
     }
 }
@@ -6020,13 +6020,13 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     switch (VAL(Port, cb))
     {
         case VAL(0, 1):
-#ifndef IN_RING3
+#ifdef IN_RC
             if (u32 & BM_CMD_START)
             {
                 rc = VINF_IOM_R3_IOPORT_WRITE;
                 break;
             }
-#endif /* !IN_RING3 */
+#endif
             ataBMDMACmdWriteB(pCtl, Port, u32);
             break;
         case VAL(2, 1): ataBMDMAStatusWriteB(pCtl, Port, u32); break;
