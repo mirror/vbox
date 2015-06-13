@@ -4868,102 +4868,299 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
         ataCopyPioData124Slow(pIf, pbDst, pbSrc, cbCopy);
 }
 
-static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, const uint8_t *pbBuf)
-{
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
-    if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
+/**
+ * Port I/O Handler for primary port range OUT operations.
+ * @see FNIOMIOPORTOUT for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+
+    Assert(i < 2);
+    Assert(Port == pCtl->IOPortBase1);
+    Assert(cb == 2 || cb == 4); /* Writes to the data port may be 16-bit or 32-bit. */
+
+    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    if (rc == VINF_SUCCESS)
     {
-        Assert(s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE);
-        uint8_t *pbDst = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+
+        if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
+        {
+            Assert(s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE);
+            uint8_t       *pbDst = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+            uint8_t const *pbSrc = (uint8_t const *)&u32;
 
 #ifdef IN_RC
-        /* Raw-mode: The ataHCPIOTransfer following the last transfer unit
-           requires I/O thread signalling, we must go to ring-3 for that. */
-        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
-        else
-            return VINF_IOM_R3_IOPORT_WRITE;
+            /* Raw-mode: The ataHCPIOTransfer following the last transfer unit
+               requires I/O thread signalling, we must go to ring-3 for that. */
+            if (s->iIOBufferPIODataStart + cb < s->iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, cb);
+            else
+                return VINF_IOM_R3_IOPORT_WRITE;
 
 #elif defined(IN_RING0)
-        /* Ring-0: We can do I/O thread signalling here, however for paranoid reasons
-           triggered by a special case in ataHCPIOTransferFinish, we take extra care here. */
-        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
-        else if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE) /* paranoia */
-        {
-            ataCopyPioData124(s, pbDst, pbBuf, cbSize);
-            ataHCPIOTransferFinish(pCtl, s);
-        }
-        else
-        {
-            Log(("%s: Unexpected\n",__FUNCTION__));
-            return VINF_IOM_R3_IOPORT_WRITE;
-        }
+            /* Ring-0: We can do I/O thread signalling here, however for paranoid reasons
+               triggered by a special case in ataHCPIOTransferFinish, we take extra care here. */
+            if (s->iIOBufferPIODataStart + cb < s->iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, cb);
+            else if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE) /* paranoia */
+            {
+                ataCopyPioData124(s, pbDst, pbSrc, cb);
+                ataHCPIOTransferFinish(pCtl, s);
+            }
+            else
+            {
+                Log(("%s: Unexpected\n",__FUNCTION__));
+                return VINF_IOM_R3_IOPORT_WRITE;
+            }
 
 #else  /* IN_RING 3*/
-        ataCopyPioData124(s, pbDst, pbBuf, cbSize);
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
+            ataCopyPioData124(s, pbDst, pbSrc, cb);
+            if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                ataHCPIOTransferFinish(pCtl, s);
 #endif /* IN_RING 3*/
+        }
+        else
+            Log2(("%s: DUMMY data\n", __FUNCTION__));
+
+        Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cb, &u32));
+        PDMCritSectLeave(&pCtl->lock);
     }
     else
-        Log2(("%s: DUMMY data\n", __FUNCTION__));
-    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
-    return VINF_SUCCESS;
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
+    return rc;
 }
 
-static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint8_t *pbBuf)
-{
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
-    if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
+/**
+ * Port I/O Handler for primary port range IN operations.
+ * @see FNIOMIOPORTIN for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+
+    Assert(i < 2);
+    Assert(Port == pCtl->IOPortBase1);
+
+    /* Reads from the data register may be 16-bit or 32-bit. Byte accesses are
+       upgraded to word. */
+    Assert(cb == 1 || cb == 2 || cb == 4);
+    uint32_t cbActual = cb != 1 ? cb : 2;
+    *pu32 = 0;
+
+    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    if (rc == VINF_SUCCESS)
     {
-        Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
-        uint8_t const *pbSrc = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+
+        if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
+        {
+            Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
+            uint8_t const *pbSrc = s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart;
+            uint8_t       *pbDst = (uint8_t *)pu32;
 
 #ifdef IN_RC
-        /* All but the last transfer unit is simple enough for RC, but
-         * sending a request to the async IO thread is too complicated. */
-        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
-        else
-            return VINF_IOM_R3_IOPORT_READ;
+            /* All but the last transfer unit is simple enough for RC, but
+             * sending a request to the async IO thread is too complicated. */
+            if (s->iIOBufferPIODataStart + cbActual < s->iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+            else
+                return VINF_IOM_R3_IOPORT_READ;
 
 #elif defined(IN_RING0)
-        /* Ring-0: We can do I/O thread signalling here.  However there is one
-           case in ataHCPIOTransfer that does a LogRel and would (but not from
-           here) call directly into the driver code.  We detect that odd case
-           here cand return to ring-3 to handle it. */
-        if (s->iIOBufferPIODataStart + cbSize < s->iIOBufferPIODataEnd)
-            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
-        else if (   s->cbTotalTransfer == 0
-                 || s->iSourceSink != ATAFN_SS_NULL
-                 || s->iIOBufferCur <= s->iIOBufferEnd)
-        {
-            ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
-            ataHCPIOTransferFinish(pCtl, s);
+            /* Ring-0: We can do I/O thread signalling here.  However there is one
+               case in ataHCPIOTransfer that does a LogRel and would (but not from
+               here) call directly into the driver code.  We detect that odd case
+               here cand return to ring-3 to handle it. */
+            if (s->iIOBufferPIODataStart + cbActual < s->iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+            else if (   s->cbTotalTransfer == 0
+                     || s->iSourceSink != ATAFN_SS_NULL
+                     || s->iIOBufferCur <= s->iIOBufferEnd)
+            {
+                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+                ataHCPIOTransferFinish(pCtl, s);
+            }
+            else
+            {
+                Log(("%s: Unexpected\n",__FUNCTION__));
+                return VINF_IOM_R3_IOPORT_READ;
+            }
+
+#else  /* IN_RING3 */
+            ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+            if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                ataHCPIOTransferFinish(pCtl, s);
+#endif /* IN_RING3 */
+
+            /* Just to be on the safe side (caller takes care of this, really). */
+            if (cb == 1)
+                *pu32 &= 0xff;
         }
         else
         {
-            Log(("%s: Unexpected\n",__FUNCTION__));
-            return VINF_IOM_R3_IOPORT_READ;
+            Log2(("%s: DUMMY data\n", __FUNCTION__));
+            memset(pu32, 0xff, cb);
         }
+        Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cb, pu32));
 
-#else  /* IN_RING3 */
-        ataCopyPioData124(s, pbBuf, pbSrc, cbSize);
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
-#endif /* IN_RING3 */
+        PDMCritSectLeave(&pCtl->lock);
     }
     else
-    {
-        Log2(("%s: DUMMY data\n", __FUNCTION__));
-        memset(pbBuf, '\xff', cbSize);
-    }
-    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, addr, cbSize, pbBuf));
-    return VINF_SUCCESS;
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
+
+    return rc;
 }
+
+#ifndef IN_RING0 /** @todo do this in ring-0 as well - after IEM specific interface rewrite! */
+
+/**
+ * Port I/O Handler for primary port range IN string operations.
+ * @see FNIOMIOPORTINSTRING for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst,
+                                         PRTGCUINTREG pcTransfer, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+    int            rc = VINF_SUCCESS;
+
+    Assert(i < 2);
+    Assert(Port == pCtl->IOPortBase1);
+
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    if (rc == VINF_SUCCESS)
+    {
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+        uint32_t    cTransAvailable;
+        uint32_t    cTransfer = *pcTransfer;
+        uint32_t    cbTransfer;
+        RTGCPTR     GCDst = *pGCPtrDst;
+        Assert(cb == 2 || cb == 4);
+
+        cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
+# ifndef IN_RING3
+        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
+        if (!cTransAvailable)
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            return VINF_IOM_R3_IOPORT_READ;
+        }
+        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
+        cTransAvailable--;
+# endif /* !IN_RING3 */
+        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
+         * They are not performance-critical and generally shouldn't occur at all. */
+        if (cTransAvailable > cTransfer)
+            cTransAvailable = cTransfer;
+        cbTransfer = cTransAvailable * cb;
+
+        rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVMCPU(pDevIns), GCDst, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
+# ifndef IN_RING3
+        /* Paranoia. */
+        if (RT_FAILURE(rc))
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            AssertFailed();
+            return VINF_IOM_R3_IOPORT_READ;
+        }
+# else
+        Assert(rc == VINF_SUCCESS);
+# endif
+
+        if (cbTransfer)
+            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
+        s->iIOBufferPIODataStart += cbTransfer;
+        *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
+        *pcTransfer = cTransfer - cTransAvailable;
+# ifdef IN_RING3
+        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+            ataHCPIOTransferFinish(pCtl, s);
+# endif /* IN_RING3 */
+        PDMCritSectLeave(&pCtl->lock);
+    }
+    return rc;
+}
+
+
+/**
+ * Port I/O Handler for primary port range OUT string operations.
+ * @see FNIOMIOPORTOUTSTRING for details.
+ */
+PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc,
+                                          PRTGCUINTREG pcTransfer, unsigned cb)
+{
+    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[i];
+    int            rc;
+
+    Assert(i < 2);
+    Assert(Port == pCtl->IOPortBase1);
+
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    if (rc == VINF_SUCCESS)
+    {
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+        uint32_t cTransfer = *pcTransfer;
+        uint32_t cbTransfer;
+        RTGCPTR GCSrc = *pGCPtrSrc;
+        Assert(cb == 2 || cb == 4);
+
+        uint32_t cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
+# ifndef IN_RING3
+        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
+        if (!cTransAvailable)
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            return VINF_IOM_R3_IOPORT_WRITE;
+        }
+        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
+        cTransAvailable--;
+# endif /* !IN_RING3 */
+        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
+         * They are not performance-critical and generally shouldn't occur at all. */
+        if (cTransAvailable > cTransfer)
+            cTransAvailable = cTransfer;
+        cbTransfer = cTransAvailable * cb;
+
+        rc = PGMPhysSimpleReadGCPtr(PDMDevHlpGetVMCPU(pDevIns), s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
+# ifndef IN_RING3
+        /* Paranoia. */
+        if (RT_FAILURE(rc))
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            AssertFailed();
+            return VINF_IOM_R3_IOPORT_WRITE;
+        }
+# else
+        Assert(rc == VINF_SUCCESS);
+# endif
+
+        if (cbTransfer)
+            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
+        s->iIOBufferPIODataStart += cbTransfer;
+        *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
+        *pcTransfer = cTransfer - cTransAvailable;
+# ifdef IN_RING3
+        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+            ataHCPIOTransferFinish(pCtl, s);
+# endif /* IN_RING3 */
+        PDMCritSectLeave(&pCtl->lock);
+    }
+    return rc;
+}
+
+#endif /* !IN_RING0 */
+
 
 #ifdef IN_RING3
 
@@ -5983,201 +6180,6 @@ static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIBLOCKPORT pInterface, con
 
 /* -=-=-=-=-=- Wrappers  -=-=-=-=-=- */
 
-/**
- * Port I/O Handler for primary port range OUT operations.
- * @see FNIOMIOPORTOUT for details.
- */
-PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
-{
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-
-    Assert(i < 2);
-    Assert(Port == pCtl->IOPortBase1);
-
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
-    if (rc == VINF_SUCCESS)
-    {
-        /* Writes to the data port may be 16-bit or 32-bit. */
-        Assert(cb == 2 || cb == 4);
-        rc = ataDataWrite(pCtl, Port, cb, (const uint8_t *)&u32);
-
-        PDMCritSectLeave(&pCtl->lock);
-    }
-    return rc;
-}
-
-
-/**
- * Port I/O Handler for primary port range IN operations.
- * @see FNIOMIOPORTIN for details.
- */
-PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
-{
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-
-    Assert(i < 2);
-    Assert(Port == pCtl->IOPortBase1);
-
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
-    if (rc == VINF_SUCCESS)
-    {
-        /* Reads from the data register may be 16-bit or 32-bit. */
-        Assert(cb == 1 || cb == 2 || cb == 4);
-        rc = ataDataRead(pCtl, Port, cb == 1 ? 2 : cb, (uint8_t *)pu32);
-        if (cb <= 2)
-            *pu32 &= 0xffff >> (16 - cb * 8);
-
-        PDMCritSectLeave(&pCtl->lock);
-    }
-
-    return rc;
-}
-
-#ifndef IN_RING0 /** @todo do this in ring-0 as well - after IEM specific interface rewrite! */
-
-/**
- * Port I/O Handler for primary port range IN string operations.
- * @see FNIOMIOPORTINSTRING for details.
- */
-PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst,
-                                         PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-    int            rc = VINF_SUCCESS;
-
-    Assert(i < 2);
-    Assert(Port == pCtl->IOPortBase1);
-
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
-    if (rc == VINF_SUCCESS)
-    {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-        uint32_t    cTransAvailable;
-        uint32_t    cTransfer = *pcTransfer;
-        uint32_t    cbTransfer;
-        RTGCPTR     GCDst = *pGCPtrDst;
-        Assert(cb == 2 || cb == 4);
-
-        cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
-# ifndef IN_RING3
-        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
-        if (!cTransAvailable)
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_R3_IOPORT_READ;
-        }
-        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
-        cTransAvailable--;
-# endif /* !IN_RING3 */
-        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
-         * They are not performance-critical and generally shouldn't occur at all. */
-        if (cTransAvailable > cTransfer)
-            cTransAvailable = cTransfer;
-        cbTransfer = cTransAvailable * cb;
-
-        rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVMCPU(pDevIns), GCDst, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
-# ifndef IN_RING3
-        /* Paranoia. */
-        if (RT_FAILURE(rc))
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            AssertFailed();
-            return VINF_IOM_R3_IOPORT_READ;
-        }
-# else
-        Assert(rc == VINF_SUCCESS);
-# endif
-
-        if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
-        s->iIOBufferPIODataStart += cbTransfer;
-        *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
-        *pcTransfer = cTransfer - cTransAvailable;
-# ifdef IN_RING3
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
-# endif /* IN_RING3 */
-        PDMCritSectLeave(&pCtl->lock);
-    }
-    return rc;
-}
-
-
-/**
- * Port I/O Handler for primary port range OUT string operations.
- * @see FNIOMIOPORTOUTSTRING for details.
- */
-PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc,
-                                          PRTGCUINTREG pcTransfer, unsigned cb)
-{
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-    int            rc;
-
-    Assert(i < 2);
-    Assert(Port == pCtl->IOPortBase1);
-
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
-    if (rc == VINF_SUCCESS)
-    {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-        uint32_t cTransfer = *pcTransfer;
-        uint32_t cbTransfer;
-        RTGCPTR GCSrc = *pGCPtrSrc;
-        Assert(cb == 2 || cb == 4);
-
-        uint32_t cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
-# ifndef IN_RING3
-        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
-        if (!cTransAvailable)
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_R3_IOPORT_WRITE;
-        }
-        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
-        cTransAvailable--;
-# endif /* !IN_RING3 */
-        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
-         * They are not performance-critical and generally shouldn't occur at all. */
-        if (cTransAvailable > cTransfer)
-            cTransAvailable = cTransfer;
-        cbTransfer = cTransAvailable * cb;
-
-        rc = PGMPhysSimpleReadGCPtr(PDMDevHlpGetVMCPU(pDevIns), s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
-# ifndef IN_RING3
-        /* Paranoia. */
-        if (RT_FAILURE(rc))
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            AssertFailed();
-            return VINF_IOM_R3_IOPORT_WRITE;
-        }
-# else
-        Assert(rc == VINF_SUCCESS);
-# endif
-
-        if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
-        s->iIOBufferPIODataStart += cbTransfer;
-        *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
-        *pcTransfer = cTransfer - cTransAvailable;
-# ifdef IN_RING3
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
-# endif /* IN_RING3 */
-        PDMCritSectLeave(&pCtl->lock);
-    }
-    return rc;
-}
-
-#endif /* !IN_RING0 */
 
 /**
  * Port I/O Handler for primary port range OUT operations.
