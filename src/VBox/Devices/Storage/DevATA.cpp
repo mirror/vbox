@@ -4900,7 +4900,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             if (s->iIOBufferPIODataStart + cb < s->iIOBufferPIODataEnd)
                 ataCopyPioData124(s, pbDst, pbSrc, cb);
             else
-                return VINF_IOM_R3_IOPORT_WRITE;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
 
 #elif defined(IN_RING0)
             /* Ring-0: We can do I/O thread signalling here, however for paranoid reasons
@@ -4915,7 +4915,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             else
             {
                 Log(("%s: Unexpected\n",__FUNCTION__));
-                return VINF_IOM_R3_IOPORT_WRITE;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
             }
 
 #else  /* IN_RING 3*/
@@ -4927,7 +4927,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         else
             Log2(("%s: DUMMY data\n", __FUNCTION__));
 
-        Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cb, &u32));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, &u32, rc));
         PDMCritSectLeave(&pCtl->lock);
     }
     else
@@ -4972,7 +4972,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             if (s->iIOBufferPIODataStart + cbActual < s->iIOBufferPIODataEnd)
                 ataCopyPioData124(s, pbDst, pbSrc, cbActual);
             else
-                return VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
 
 #elif defined(IN_RING0)
             /* Ring-0: We can do I/O thread signalling here.  However there is one
@@ -4991,7 +4991,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             else
             {
                 Log(("%s: Unexpected\n",__FUNCTION__));
-                return VINF_IOM_R3_IOPORT_READ;
+                rc = VINF_IOM_R3_IOPORT_READ;
             }
 
 #else  /* IN_RING3 */
@@ -5009,7 +5009,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             Log2(("%s: DUMMY data\n", __FUNCTION__));
             memset(pu32, 0xff, cb);
         }
-        Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cb, pu32));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, pu32, rc));
 
         PDMCritSectLeave(&pCtl->lock);
     }
