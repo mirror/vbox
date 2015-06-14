@@ -2367,7 +2367,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                 cTransfers    -= cActual;
                 pRegFrame->rdi = ((pRegFrame->rdi + cbActual) & fAddrMask)
                                | (pRegFrame->rdi & ~fAddrMask);
-                GCPtrDst       = (GCPtrDst + cbActual) & fAddrMask;
+                GCPtrDst      += cbActual;
 
                 if (   cThisTime
                     || !cTransfers
@@ -2527,7 +2527,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
                 cTransfers    -= cActual;
                 pRegFrame->rsi = ((pRegFrame->rsi + cbActual) & fAddrMask)
                                | (pRegFrame->rsi & ~fAddrMask);
-                GCPtrSrc       = (GCPtrSrc + cbActual) & fAddrMask;
+                GCPtrSrc      += cbActual;
 
                 if (   cThisTime
                     || !cTransfers
