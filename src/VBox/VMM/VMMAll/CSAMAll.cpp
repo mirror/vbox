@@ -69,15 +69,13 @@
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
  * @param   enmOrigin       Who is making this write.
- * @param   pvUser          User argument.
+ * @param   pvUser          The CSAMPAGEREC in ring-3, NIL in RC.
  */
 PGM_ALL_CB2_DECL(VBOXSTRICTRC)
 csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
                          PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
-    RTGCPTR const GCPtrMonitored = (uintptr_t)pvUser | (GCPtr & PAGE_OFFSET_MASK);
     Log(("csamCodePageWriteHandler: write to %RGv LB %zu\n", GCPtr, cbBuf));
-
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Assert(VMCPU_IS_EMT(pVCpu));
 
@@ -95,7 +93,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     /*
      * Ring-3: Do proper handling.
      */
-    int rc = PATMR3PatchWrite(pVM, GCPtrMonitored, (uint32_t)cbBuf);
+    int rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
     AssertRC(rc);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 
@@ -127,7 +125,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
         return VINF_PGM_HANDLER_DO_DEFAULT;
     }
 
-    Log(("csamRCCodePageWriteHandler: code page write at %RGv original address %RGv (cpl=%d)\n", GCPtr, GCPtrMonitored, cpl));
+    Log(("csamRCCodePageWriteHandler: code page write at %RGv (cpl=%d)\n", GCPtr, cpl));
 
     /*
      * If user code is modifying one of our monitored pages, then we can safely
@@ -135,8 +133,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
      */
     if (cpl != 3)
     {
-        VBOXSTRICTRC rcStrict = PATMRCHandleWriteToPatchPage(pVM, NULL /* pRegFrame = no interpret */,
-                                                             (RTRCPTR)GCPtrMonitored, cbBuf);
+        VBOXSTRICTRC rcStrict = PATMRCHandleWriteToPatchPage(pVM, NULL /* pRegFrame = no interpret */, (RTRCPTR)GCPtr, cbBuf);
         if (   rcStrict == VINF_PGM_HANDLER_DO_DEFAULT
             || rcStrict == VINF_SUCCESS)
             return rcStrict;
@@ -154,7 +151,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
      * take down both alternatives.
      */
     VMCPU_FF_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
-    pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages]  = (RTRCPTR)GCPtrMonitored;
+    pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages]  = (RTRCPTR)GCPtr;
     pVM->csam.s.pvDirtyFaultPage[pVM->csam.s.cDirtyPages] = (RTRCPTR)GCPtr;
     if (++pVM->csam.s.cDirtyPages == CSAM_MAX_DIRTY_PAGES)
         return VINF_CSAM_PENDING_ACTION;
@@ -162,7 +159,7 @@ csamCodePageWriteHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void
     /*
      * Continue with the write. The VM_FF_CSAM_FLUSH_DIRTY_PAGE handler will reset it to readonly again.
      */
-    Log(("csamRCCodePageWriteHandler: enabled r/w for page %RGv (%RGv)\n", GCPtr, GCPtrMonitored));
+    Log(("csamRCCodePageWriteHandler: enabled r/w for page %RGv (%RGv)\n", GCPtr, GCPtr));
     STAM_COUNTER_INC(&pVM->csam.s.StatCodePageModified);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 #endif
