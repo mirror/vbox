@@ -44,14 +44,18 @@
  * @remarks The @a pvUser argument is the base address of the page being
  *          monitored.
  */
-PGM_ALL_CB2_DECL(VBOXSTRICTRC) patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
-                                                   PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
+PGM_ALL_CB2_DECL(VBOXSTRICTRC)
+patmVirtPageHandler(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                    PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     NOREF(pvPtr); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmOrigin); NOREF(pvUser);
-    Assert(pvUser); Assert(!((uintptr_t)pvUser & PAGE_OFFSET_MASK));
 
-    pVM->patm.s.pvFaultMonitor = (RTRCPTR)((uintptr_t)pvUser + (GCPtr & PAGE_OFFSET_MASK));
+    Assert(pvUser);
+    Assert(!((uintptr_t)pvUser & PAGE_OFFSET_MASK));
+    Assert(((uintptr_t)pvUser + (GCPtr & PAGE_OFFSET_MASK)) == GCPtr);
+
+    pVM->patm.s.pvFaultMonitor = (RTRCPTR)GCPtr;
 #ifdef IN_RING3
     PATMR3HandleMonitoredPage(pVM);
     return VINF_PGM_HANDLER_DO_DEFAULT;
