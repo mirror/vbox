@@ -2360,31 +2360,6 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
                 AssertRC(VBOXSTRICTRC_VAL(rcStrict));
                 Assert(cThisTime <= cMaxThisTime); /* cThisTime is now how many transfers we have left. */
 
-                /* If not supported do IOMIOPortRead. */
-/** @todo this code should move to IOMIOPortReadString! */
-                if (   cThisTime > 0
-                    && rcStrict == VINF_SUCCESS)
-                {
-                    pvDst = (uint8_t *)pvDst + (cMaxThisTime - cThisTime) * cbTransfer;
-                    do
-                    {
-                        uint32_t u32Value = 0;
-                        rcStrict = IOMIOPortRead(pVM, pVCpu, uPort, &u32Value, cbTransfer);
-                        if (IOM_SUCCESS(rcStrict))
-                        {
-                            switch (cbTransfer)
-                            {
-                                case 4: *(uint32_t *)pvDst =           u32Value; pvDst = (uint8_t *)pvDst + 4; break;
-                                case 2: *(uint16_t *)pvDst = (uint16_t)u32Value; pvDst = (uint8_t *)pvDst + 2; break;
-                                case 1: *(uint8_t  *)pvDst = (uint8_t )u32Value; pvDst = (uint8_t *)pvDst + 1; break;
-                                default: AssertFailedReturn(VERR_IOM_IOPORT_IPE_3);
-                            }
-                            cThisTime--;
-                        }
-                    } while (   cThisTime > 0
-                             && rcStrict == VINF_SUCCESS);
-                }
-
                 PGMPhysReleasePageMappingLock(pVM, &Lock);
 
                 uint32_t const cActual  = cMaxThisTime - cThisTime;
@@ -2544,29 +2519,6 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
                 rcStrict = IOMIOPortWriteString(pVM, pVCpu, uPort, pvSrc, &cThisTime, cbTransfer);
                 AssertRC(VBOXSTRICTRC_VAL(rcStrict));
                 Assert(cThisTime <= cMaxThisTime); /* cThisTime is now how many transfers we have left. */
-
-                /* If not supported do IOMIOPortWrite. */
-/** @todo this code should move to IOMIOPortReadString! */
-                if (   cThisTime > 0
-                    && rcStrict == VINF_SUCCESS)
-                {
-                    pvSrc = (uint8_t const *)pvSrc + (cMaxThisTime - cThisTime) * cbTransfer;
-                    do
-                    {
-                        uint32_t u32Value;
-                        switch (cbTransfer)
-                        {
-                            case 4: u32Value = *(uint32_t *)pvSrc; pvSrc = (uint8_t const *)pvSrc + 4; break;
-                            case 2: u32Value = *(uint16_t *)pvSrc; pvSrc = (uint8_t const *)pvSrc + 2; break;
-                            case 1: u32Value = *(uint8_t *)pvSrc;  pvSrc = (uint8_t const *)pvSrc + 1; break;
-                            default: AssertFailedReturn(VERR_IOM_IOPORT_IPE_3);
-                        }
-                        rcStrict = IOMIOPortWrite(pVM, pVCpu, uPort, u32Value, cbTransfer);
-                        if (IOM_SUCCESS(rcStrict))
-                            cThisTime--;
-                    } while (   cThisTime > 0
-                             && rcStrict == VINF_SUCCESS);
-                }
 
                 PGMPhysReleasePageMappingLock(pVM, &Lock);
 
