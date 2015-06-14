@@ -110,7 +110,12 @@ typedef struct VBOXSCSI
 
     /** Pointer to the buffer holding the data. */
     R3PTRTYPE(uint8_t *) pbBuf;
-    /** Size of the buffer in bytes. */
+    /** Size of the buffer in bytes.
+     *
+     * @todo r=bird: Misleading docs and member name.  This is actually not the
+     *               buffer size, it's the number of bytes left to read/write in the
+     *               buffer.  It is decremented when the guest (BIOS) accesses
+     *               the buffer data. */
     uint32_t             cbBuf;
     /** Current position in the buffer (offBuf if you like). */
     uint32_t             iBuf;
@@ -137,9 +142,9 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
 int vboxscsiRequestFinished(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, int rcCompletion);
 void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest);
 int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
-                        RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
+                        uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb);
 int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
-                       RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
+                       uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb);
 RT_C_DECLS_END
 #endif /* IN_RING3 */
 

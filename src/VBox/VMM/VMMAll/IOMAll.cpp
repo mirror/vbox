@@ -235,13 +235,12 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint32
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
  * @param   Port        The port to read.
- * @param   pGCPtrDst   Pointer to the destination buffer (RC, incremented
- *                      appropriately).
+ * @param   pvDst       Pointer to the destination buffer.
  * @param   pcTransfers Pointer to the number of transfer units to read, on return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
-                                          PRTGCPTR pGCPtrDst, PRTGCUINTREG pcTransfers, unsigned cb)
+VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT uPort,
+                                          void *pvDst, uint32_t *pcTransfers, unsigned cb)
 {
     /* Take the IOM lock before performing any device I/O. */
     int rc2 = IOM_LOCK_SHARED(pVM);
@@ -251,20 +250,20 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
 #endif
     AssertRC(rc2);
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
-    IEMNotifyIOPortReadString(pVM, Port, *pGCPtrDst, *pcTransfers, cb);
+    IEMNotifyIOPortReadString(pVM, uPort, pvDst, *pcTransfers, cb);
 #endif
 
 #ifdef LOG_ENABLED
-    const RTGCUINTREG cTransfers = *pcTransfers;
+    const uint32_t cTransfers = *pcTransfers;
 #endif
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Get the statistics record.
      */
     PIOMIOPORTSTATS pStats = pVCpu->iom.s.CTX_SUFF(pStatsLastRead);
-    if (!pStats || pStats->Core.Key != Port)
+    if (!pStats || pStats->Core.Key != uPort)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, uPort);
         if (pStats)
             pVCpu->iom.s.CTX_SUFF(pStatsLastRead) = pStats;
     }
@@ -275,9 +274,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
      */
     CTX_SUFF(PIOMIOPORTRANGE) pRange = pVCpu->iom.s.CTX_SUFF(pRangeLastRead);
     if (    !pRange
-        ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
+        ||   (unsigned)uPort - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(pVM, Port);
+        pRange = iomIOPortGetRange(pVM, uPort);
         if (pRange)
             pVCpu->iom.s.CTX_SUFF(pRangeLastRead) = pRange;
     }
@@ -313,12 +312,12 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         if (pStats)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
-            rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+            rcStrict = pfnInStrCallback(pDevIns, pvUser, uPort, (uint8_t *)pvDst, pcTransfers, cb);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
         }
         else
 #endif
-            rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+            rcStrict = pfnInStrCallback(pDevIns, pvUser, uPort, (uint8_t *)pvDst, pcTransfers, cb);
         PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
@@ -329,8 +328,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
             STAM_COUNTER_INC(&pStats->InRZToR3);
 # endif
 #endif
-        Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
-              Port, pGCPtrDst, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
+        Log3(("IOMIOPortReadStr: uPort=%RTiop pvDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
+              uPort, pvDst, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
@@ -338,7 +337,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, uPort);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -358,8 +357,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 #endif
 
-    Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
-          Port, pGCPtrDst, pcTransfers, cTransfers, *pcTransfers, cb));
+    Log3(("IOMIOPortReadStr: uPort=%RTiop pvDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
+          uPort, pvDst, pcTransfers, cTransfers, *pcTransfers, cb));
     IOM_UNLOCK_SHARED(pVM);
     return VINF_SUCCESS;
 }
@@ -515,15 +514,17 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, PVMCPU pVCpu, RTIOPORT Port, uint3
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
- * @param   Port        The port to write.
- * @param   pGCPtrSrc   Pointer to the source buffer (RC, incremented
- *                      appropriately).
- * @param   pcTransfers Pointer to the number of transfer units to write, on return remaining transfer units.
+ * @param   uPort       The port to write to.
+ * @param   pvSrc       The guest page to read from.
+ * @param   pcTransfers Pointer to the number of transfer units to write, on
+ *                      return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  */
-VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
-                                           PRTGCPTR pGCPtrSrc, PRTGCUINTREG pcTransfers, unsigned cb)
+VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT uPort, void const *pvSrc,
+                                           uint32_t *pcTransfers, unsigned cb)
 {
+    Assert(cb == 1 || cb == 2 || cb == 4);
+
     /* Take the IOM lock before performing any device I/O. */
     int rc2 = IOM_LOCK_SHARED(pVM);
 #ifndef IN_RING3
@@ -532,20 +533,20 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
 #endif
     AssertRC(rc2);
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
-    IEMNotifyIOPortWriteString(pVM, Port, *pGCPtrSrc, *pcTransfers, cb);
+    IEMNotifyIOPortWriteString(pVM, uPort, pvSrc, *pcTransfers, cb);
 #endif
 
 #ifdef LOG_ENABLED
-    const RTGCUINTREG cTransfers = *pcTransfers;
+    const uint32_t cTransfers = *pcTransfers;
 #endif
 #ifdef VBOX_WITH_STATISTICS
     /*
      * Get the statistics record.
      */
     PIOMIOPORTSTATS     pStats = pVCpu->iom.s.CTX_SUFF(pStatsLastWrite);
-    if (!pStats || pStats->Core.Key != Port)
+    if (!pStats || pStats->Core.Key != uPort)
     {
-        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, Port);
+        pStats = (PIOMIOPORTSTATS)RTAvloIOPortGet(&pVM->iom.s.CTX_SUFF(pTrees)->IOPortStatTree, uPort);
         if (pStats)
             pVCpu->iom.s.CTX_SUFF(pStatsLastWrite) = pStats;
     }
@@ -556,9 +557,9 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
      */
     CTX_SUFF(PIOMIOPORTRANGE) pRange = pVCpu->iom.s.CTX_SUFF(pRangeLastWrite);
     if (    !pRange
-        ||   (unsigned)Port - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
+        ||   (unsigned)uPort - (unsigned)pRange->Port >= (unsigned)pRange->cPorts)
     {
-        pRange = iomIOPortGetRange(pVM, Port);
+        pRange = iomIOPortGetRange(pVM, uPort);
         if (pRange)
             pVCpu->iom.s.CTX_SUFF(pRangeLastWrite) = pRange;
     }
@@ -594,12 +595,12 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         if (pStats)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
-            rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+            rcStrict = pfnOutStrCallback(pDevIns, pvUser, uPort, (uint8_t const *)pvSrc, pcTransfers, cb);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
         }
         else
 #endif
-            rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+            rcStrict = pfnOutStrCallback(pDevIns, pvUser, uPort, (uint8_t const *)pvSrc, pcTransfers, cb);
         PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
 #ifdef VBOX_WITH_STATISTICS
@@ -610,8 +611,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
             STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
 #endif
-        Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rcStrict=%Rrc\n",
-              Port, pGCPtrSrc, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
+        Log3(("IOMIOPortWriteStr: uPort=%RTiop pvSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rcStrict=%Rrc\n",
+              uPort, pvSrc, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
@@ -619,7 +620,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
     /*
      * Handler in ring-3?
      */
-    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, Port);
+    PIOMIOPORTRANGER3 pRangeR3 = iomIOPortGetRangeR3(pVM, uPort);
     if (pRangeR3)
     {
 # ifdef VBOX_WITH_STATISTICS
@@ -639,8 +640,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, PVMCPU pVCpu, RTIOPORT Port,
         STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 #endif
 
-    Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
-          Port, pGCPtrSrc, pcTransfers, cTransfers, *pcTransfers, cb));
+    Log3(("IOMIOPortWriteStr: uPort=%RTiop pvSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=VINF_SUCCESS\n",
+          uPort, pvSrc, pcTransfers, cTransfers, *pcTransfers, cb));
     IOM_UNLOCK_SHARED(pVM);
     return VINF_SUCCESS;
 }

@@ -2338,15 +2338,79 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (cTransfers > 1)
     {
-        /* If the device supports string transfers, ask it to do as
-         * much as it wants. The rest is done with single-word transfers. */
-        const RTGCUINTREG cTransfersOrg = cTransfers;
-        rcStrict = IOMIOPortReadString(pVM, pVCpu, uPort, &GCPtrDst, &cTransfers, cbTransfer);
-        AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->rdi  = ((pRegFrame->rdi + (cTransfersOrg - cTransfers) * cbTransfer) & fAddrMask)
-                        | (pRegFrame->rdi & ~fAddrMask);
+        /*
+         * Work the string page by page, letting the device handle as much
+         * as it likes via the string I/O interface.
+         */
+        for (;;)
+        {
+            PGMPAGEMAPLOCK Lock;
+            void          *pvDst;
+            rc2 = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrDst, &pvDst, &Lock);
+            if (RT_SUCCESS(rc2))
+            {
+                uint32_t cMaxThisTime = (PAGE_SIZE - (GCPtrDst & PAGE_OFFSET_MASK)) / cbTransfer;
+                if (cMaxThisTime > cTransfers)
+                    cMaxThisTime      = cTransfers;
+                if (!cMaxThisTime)
+                    break;
+                uint32_t cThisTime    = cMaxThisTime;
+
+                rcStrict = IOMIOPortReadString(pVM, pVCpu, uPort, pvDst, &cThisTime, cbTransfer);
+                AssertRC(VBOXSTRICTRC_VAL(rcStrict));
+                Assert(cThisTime <= cMaxThisTime); /* cThisTime is now how many transfers we have left. */
+
+                /* If not supported do IOMIOPortRead. */
+/** @todo this code should move to IOMIOPortReadString! */
+                if (   cThisTime > 0
+                    && rcStrict == VINF_SUCCESS)
+                {
+                    pvDst = (uint8_t *)pvDst + (cMaxThisTime - cThisTime) * cbTransfer;
+                    do
+                    {
+                        uint32_t u32Value = 0;
+                        rcStrict = IOMIOPortRead(pVM, pVCpu, uPort, &u32Value, cbTransfer);
+                        if (IOM_SUCCESS(rcStrict))
+                        {
+                            switch (cbTransfer)
+                            {
+                                case 4: *(uint32_t *)pvDst =           u32Value; pvDst = (uint8_t *)pvDst + 4; break;
+                                case 2: *(uint16_t *)pvDst = (uint16_t)u32Value; pvDst = (uint8_t *)pvDst + 2; break;
+                                case 1: *(uint8_t  *)pvDst = (uint8_t )u32Value; pvDst = (uint8_t *)pvDst + 1; break;
+                                default: AssertFailedReturn(VERR_IOM_IOPORT_IPE_3);
+                            }
+                            cThisTime--;
+                        }
+                    } while (   cThisTime > 0
+                             && rcStrict == VINF_SUCCESS);
+                }
+
+                PGMPhysReleasePageMappingLock(pVM, &Lock);
+
+                uint32_t const cActual  = cMaxThisTime - cThisTime;
+                uint32_t const cbActual = cActual * cbTransfer;
+                cTransfers    -= cActual;
+                pRegFrame->rdi = ((pRegFrame->rdi + cbActual) & fAddrMask)
+                               | (pRegFrame->rdi & ~fAddrMask);
+                GCPtrDst       = (GCPtrDst + cbActual) & fAddrMask;
+
+                if (   cThisTime
+                    || !cTransfers
+                    || rcStrict != VINF_SUCCESS
+                    || (GCPtrDst & PAGE_OFFSET_MASK))
+                    break;
+            }
+            else
+            {
+                Log(("IOMInterpretOUTSEx: PGMPhysGCPtr2CCPtr %#RGv -> %Rrc\n", GCPtrDst, rc2));
+                break;
+            }
+        }
     }
 
+    /*
+     * Single transfer / unmapped memory fallback.
+     */
 #ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
@@ -2394,12 +2458,15 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
  * @retval  VINF_EM_RESCHEDULE_REM      The exception was dispatched and cannot be executed in raw-mode. (TRPMRaiseXcptErr)
  *
  * @param   pVM             The virtual machine.
- * @param   pVCpu       Pointer to the virtual CPU structure of the caller.
+ * @param   pVCpu           Pointer to the virtual CPU structure of the caller.
  * @param   pRegFrame       Pointer to CPUMCTXCORE guest registers structure.
  * @param   uPort           IO Port
  * @param   uPrefix         IO instruction prefix
  * @param   enmAddrMode     The address mode.
  * @param   cbTransfer      Size of transfer unit
+ *
+ * @remarks This API will probably be relaced by IEM before long, so no use in
+ *          optimizing+fixing stuff too much here.
  */
 VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix,
                                          DISCPUMODE enmAddrMode, uint32_t cbTransfer)
@@ -2457,16 +2524,76 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRe
     if (cTransfers > 1)
     {
         /*
-         * If the device supports string transfers, ask it to do as
-         * much as it wants. The rest is done with single-word transfers.
+         * Work the string page by page, letting the device handle as much
+         * as it likes via the string I/O interface.
          */
-        const RTGCUINTREG cTransfersOrg = cTransfers;
-        rcStrict = IOMIOPortWriteString(pVM, pVCpu, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
-        AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
-        pRegFrame->rsi  = ((pRegFrame->rsi + (cTransfersOrg - cTransfers) * cbTransfer) & fAddrMask)
-                        | (pRegFrame->rsi & ~fAddrMask);
+        for (;;)
+        {
+            PGMPAGEMAPLOCK Lock;
+            void const    *pvSrc;
+            rc2 = PGMPhysGCPtr2CCPtrReadOnly(pVCpu, GCPtrSrc, &pvSrc, &Lock);
+            if (RT_SUCCESS(rc2))
+            {
+                uint32_t cMaxThisTime = (PAGE_SIZE - (GCPtrSrc & PAGE_OFFSET_MASK)) / cbTransfer;
+                if (cMaxThisTime > cTransfers)
+                    cMaxThisTime      = cTransfers;
+                if (!cMaxThisTime)
+                    break;
+                uint32_t cThisTime    = cMaxThisTime;
+
+                rcStrict = IOMIOPortWriteString(pVM, pVCpu, uPort, pvSrc, &cThisTime, cbTransfer);
+                AssertRC(VBOXSTRICTRC_VAL(rcStrict));
+                Assert(cThisTime <= cMaxThisTime); /* cThisTime is now how many transfers we have left. */
+
+                /* If not supported do IOMIOPortWrite. */
+/** @todo this code should move to IOMIOPortReadString! */
+                if (   cThisTime > 0
+                    && rcStrict == VINF_SUCCESS)
+                {
+                    pvSrc = (uint8_t const *)pvSrc + (cMaxThisTime - cThisTime) * cbTransfer;
+                    do
+                    {
+                        uint32_t u32Value;
+                        switch (cbTransfer)
+                        {
+                            case 4: u32Value = *(uint32_t *)pvSrc; pvSrc = (uint8_t const *)pvSrc + 4; break;
+                            case 2: u32Value = *(uint16_t *)pvSrc; pvSrc = (uint8_t const *)pvSrc + 2; break;
+                            case 1: u32Value = *(uint8_t *)pvSrc;  pvSrc = (uint8_t const *)pvSrc + 1; break;
+                            default: AssertFailedReturn(VERR_IOM_IOPORT_IPE_3);
+                        }
+                        rcStrict = IOMIOPortWrite(pVM, pVCpu, uPort, u32Value, cbTransfer);
+                        if (IOM_SUCCESS(rcStrict))
+                            cThisTime--;
+                    } while (   cThisTime > 0
+                             && rcStrict == VINF_SUCCESS);
+                }
+
+                PGMPhysReleasePageMappingLock(pVM, &Lock);
+
+                uint32_t const cActual  = cMaxThisTime - cThisTime;
+                uint32_t const cbActual = cActual * cbTransfer;
+                cTransfers    -= cActual;
+                pRegFrame->rsi = ((pRegFrame->rsi + cbActual) & fAddrMask)
+                               | (pRegFrame->rsi & ~fAddrMask);
+                GCPtrSrc       = (GCPtrSrc + cbActual) & fAddrMask;
+
+                if (   cThisTime
+                    || !cTransfers
+                    || rcStrict != VINF_SUCCESS
+                    || (GCPtrSrc & PAGE_OFFSET_MASK))
+                    break;
+            }
+            else
+            {
+                Log(("IOMInterpretOUTSEx: PGMPhysGCPtr2CCPtrReadOnly %#RGv -> %Rrc\n", GCPtrSrc, rc2));
+                break;
+            }
+        }
     }
 
+    /*
+     * Single transfer / unmapped memory fallback.
+     */
 #ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif

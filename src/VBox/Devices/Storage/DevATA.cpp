@@ -527,8 +527,10 @@ RT_C_DECLS_BEGIN
 
 PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst, PRTGCUINTREG pcTransfer, unsigned cb);
+PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
+                                          uint32_t *pcTransfers, unsigned cb);
+PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst,
+                                         uint32_t *pcTransfers, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -5019,73 +5021,90 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     return rc;
 }
 
-#ifndef IN_RING0 /** @todo do this in ring-0 as well - after IEM specific interface rewrite! */
 
 /**
  * Port I/O Handler for primary port range IN string operations.
  * @see FNIOMIOPORTINSTRING for details.
  */
-PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst,
-                                         PRTGCUINTREG pcTransfer, unsigned cb)
+PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst,
+                                         uint32_t *pcTransfers, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-    int            rc = VINF_SUCCESS;
+    PATACONTROLLER pCtl  = &pThis->aCts[i];
 
     Assert(i < 2);
     Assert(Port == pCtl->IOPortBase1);
+    Assert(*pcTransfers > 0);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
-    if (rc == VINF_SUCCESS)
+    int rc;
+    if (cb == 2 || cb == 4)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-        uint32_t    cTransAvailable;
-        uint32_t    cTransfer = *pcTransfer;
-        uint32_t    cbTransfer;
-        RTGCPTR     GCDst = *pGCPtrDst;
-        Assert(cb == 2 || cb == 4);
-
-        cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
-# ifndef IN_RING3
-        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
-        if (!cTransAvailable)
+        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+        if (rc == VINF_SUCCESS)
         {
-            PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_R3_IOPORT_READ;
-        }
-        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
-        cTransAvailable--;
-# endif /* !IN_RING3 */
-        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
-         * They are not performance-critical and generally shouldn't occur at all. */
-        if (cTransAvailable > cTransfer)
-            cTransAvailable = cTransfer;
-        cbTransfer = cTransAvailable * cb;
+            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
-        rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVMCPU(pDevIns), GCDst, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, cbTransfer);
-# ifndef IN_RING3
-        /* Paranoia. */
-        if (RT_FAILURE(rc))
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            AssertFailed();
-            return VINF_IOM_R3_IOPORT_READ;
-        }
-# else
-        Assert(rc == VINF_SUCCESS);
-# endif
+            uint32_t const offStart = s->iIOBufferPIODataStart;
+            if (offStart < s->iIOBufferPIODataEnd)
+            {
+                /*
+                 * Figure how much we can copy.  Usually it's the same as the request.
+                 * The last transfer unit cannot be handled in RC, as it involves
+                 * thread communication.  In R0 we let the non-string callback handle it,
+                 * and ditto for overflows/dummy data.
+                 */
+                uint32_t cAvailable = (s->iIOBufferPIODataEnd - offStart) / cb;
+#ifndef IN_RING3
+                if (cAvailable > 0)
+                    cAvailable--;
+#endif
+                uint32_t const cRequested = *pcTransfers;
+                if (cAvailable > cRequested)
+                    cAvailable = cRequested;
+                uint32_t const cbTransfer = cAvailable * cb;
+                if (   offStart + cbTransfer <= s->cbIOBuffer
+                    && cbTransfer > 0)
+                {
+                    /*
+                     * Do the transfer.
+                     */
+                    uint8_t const *pbSrc = s->CTX_SUFF(pbIOBuffer) + offStart;
+                    memcpy(pbDst, pbSrc, cbTransfer);
+                    Log3(("%s: addr=%#x cb=%#x cbTransfer=%#x val=%.*Rhxd\n",
+                          __FUNCTION__, Port, cb, cbTransfer, cbTransfer, pbSrc));
+                    s->iIOBufferPIODataStart = offStart + cbTransfer;
 
-        if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
-        s->iIOBufferPIODataStart += cbTransfer;
-        *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
-        *pcTransfer = cTransfer - cTransAvailable;
-# ifdef IN_RING3
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
-# endif /* IN_RING3 */
-        PDMCritSectLeave(&pCtl->lock);
+#ifdef IN_RING3
+                    if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                        ataHCPIOTransferFinish(pCtl, s);
+#endif
+                    *pcTransfers = cRequested - cAvailable;
+                }
+                else
+                    Log2(("%s: DUMMY/Overflow!\n", __FUNCTION__));
+            }
+            else
+            {
+                /*
+                 * Dummy read (shouldn't happen) return 0xff like the non-string handler.
+                 */
+                Log2(("%s: DUMMY data (%#x bytes)\n", __FUNCTION__, *pcTransfers * cb));
+                memset(pbDst, 0xff, *pcTransfers * cb);
+                *pcTransfers = 0;
+            }
+
+            PDMCritSectLeave(&pCtl->lock);
+        }
+    }
+    /*
+     * Let the non-string I/O callback handle 1 byte reads.
+     */
+    else
+    {
+        Log2(("%s: 1 byte read (%#x transfers)\n", *pcTransfers));
+        AssertFailed();
+        rc = VINF_SUCCESS;
     }
     return rc;
 }
@@ -5095,71 +5114,84 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  * Port I/O Handler for primary port range OUT string operations.
  * @see FNIOMIOPORTOUTSTRING for details.
  */
-PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrSrc,
-                                          PRTGCUINTREG pcTransfer, unsigned cb)
+PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
+                                          uint32_t *pcTransfers, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
+    uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
-    int            rc;
+    PATACONTROLLER pCtl  = &pThis->aCts[i];
 
     Assert(i < 2);
     Assert(Port == pCtl->IOPortBase1);
+    Assert(*pcTransfers > 0);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
-    if (rc == VINF_SUCCESS)
+    int rc;
+    if (cb == 2 || cb == 4)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
-        uint32_t cTransfer = *pcTransfer;
-        uint32_t cbTransfer;
-        RTGCPTR GCSrc = *pGCPtrSrc;
-        Assert(cb == 2 || cb == 4);
-
-        uint32_t cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
-# ifndef IN_RING3
-        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
-        if (!cTransAvailable)
+        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+        if (rc == VINF_SUCCESS)
         {
-            PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_R3_IOPORT_WRITE;
-        }
-        /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
-        cTransAvailable--;
-# endif /* !IN_RING3 */
-        /* Do not handle the dummy transfer stuff here, leave it to the single-word transfers.
-         * They are not performance-critical and generally shouldn't occur at all. */
-        if (cTransAvailable > cTransfer)
-            cTransAvailable = cTransfer;
-        cbTransfer = cTransAvailable * cb;
+            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
-        rc = PGMPhysSimpleReadGCPtr(PDMDevHlpGetVMCPU(pDevIns), s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart, GCSrc, cbTransfer);
-# ifndef IN_RING3
-        /* Paranoia. */
-        if (RT_FAILURE(rc))
-        {
-            PDMCritSectLeave(&pCtl->lock);
-            AssertFailed();
-            return VINF_IOM_R3_IOPORT_WRITE;
-        }
-# else
-        Assert(rc == VINF_SUCCESS);
-# endif
+            uint32_t const offStart = s->iIOBufferPIODataStart;
+            if (offStart < s->iIOBufferPIODataEnd)
+            {
+                /*
+                 * Figure how much we can copy.  Usually it's the same as the request.
+                 * The last transfer unit cannot be handled in RC, as it involves
+                 * thread communication.  In R0 we let the non-string callback handle it,
+                 * and ditto for overflows/dummy data.
+                 */
+                uint32_t cAvailable = (s->iIOBufferPIODataEnd - offStart) / cb;
+#ifndef IN_RING3
+                if (cAvailable)
+                    cAvailable--;
+#endif
+                uint32_t const cRequested = *pcTransfers;
+                if (cAvailable > cRequested)
+                    cAvailable = cRequested;
+                uint32_t const cbTransfer = cAvailable * cb;
+                if (   offStart + cbTransfer <= s->cbIOBuffer
+                    && cbTransfer)
+                {
+                    /*
+                     * Do the transfer.
+                     */
+                    void *pvDst = s->CTX_SUFF(pbIOBuffer) + offStart;
+                    memcpy(pvDst, pbSrc, cbTransfer);
+                    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, pvDst));
+                    s->iIOBufferPIODataStart = offStart + cbTransfer;
 
-        if (cbTransfer)
-            Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, s->CTX_SUFF(pbIOBuffer) + s->iIOBufferPIODataStart));
-        s->iIOBufferPIODataStart += cbTransfer;
-        *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);
-        *pcTransfer = cTransfer - cTransAvailable;
-# ifdef IN_RING3
-        if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
-            ataHCPIOTransferFinish(pCtl, s);
-# endif /* IN_RING3 */
-        PDMCritSectLeave(&pCtl->lock);
+#ifdef IN_RING3
+                    if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                        ataHCPIOTransferFinish(pCtl, s);
+#endif
+                    *pcTransfers = cRequested - cAvailable;
+                }
+                else
+                    Log2(("%s: DUMMY/Overflow!\n", __FUNCTION__));
+            }
+            else
+            {
+                Log2(("%s: DUMMY data (%#x bytes)\n", __FUNCTION__, *pcTransfers * cb));
+                *pcTransfers = 0;
+            }
+
+            PDMCritSectLeave(&pCtl->lock);
+        }
     }
+    /*
+     * Let the non-string I/O callback handle 1 byte reads.
+     */
+    else
+    {
+        Log2(("%s: 1 byte write (%#x transfers)\n", *pcTransfers));
+        AssertFailed();
+        rc = VINF_SUCCESS;
+    }
+
     return rc;
 }
-
-#endif /* !IN_RING0 */
 
 
 #ifdef IN_RING3
@@ -7490,7 +7522,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
         if (fR0Enabled)
         {
-#if 1
+#if 0
             rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
                                            "ataIOPortWrite1Data", "ataIOPortRead1Data", NULL, NULL, "ATA I/O Base 1 - Data");
 #else

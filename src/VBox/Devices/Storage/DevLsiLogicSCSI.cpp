@@ -3851,7 +3851,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUs
  * Port I/O Handler for primary port range OUT string operations.}
  */
 static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                     PRTGCPTR pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
+                                                     uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
@@ -3859,7 +3859,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
     uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                       ? Port - LSILOGIC_BIOS_IO_PORT
                       : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, iRegister, pGCPtrSrc, pcTransfer, cb);
+    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, iRegister, pbSrc, pcTransfers, cb);
     if (rc == VERR_MORE_DATA)
     {
         rc = lsilogicR3PrepareBiosScsiRequest(pThis);
@@ -3875,18 +3875,16 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
  * @callback_method_impl{FNIOMIOPORTINSTRING,
  * Port I/O Handler for primary port range IN string operations.}
  */
-static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, RTGCPTR *pGCPtrDst,
-                                                  PRTGCUINTREG pcTransfer, unsigned cb)
+static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
+                                                    uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-
-    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
-                 pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                       ? Port - LSILOGIC_BIOS_IO_PORT
                       : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister, pGCPtrDst, pcTransfer, cb);
+    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister, pbDst, pcTransfers, cb);
 }
 
 /**
