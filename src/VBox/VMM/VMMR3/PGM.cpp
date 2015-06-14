@@ -2690,7 +2690,7 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PUVM pUVM, VMSTATE enmS
 /**
  * Private API to reset fNoMorePhysWrites.
  */
-VMMR3DECL(void) PGMR3ResetNoMorePhysWritesFlag(PVM pVM)
+VMMR3_INT_DECL(void) PGMR3ResetNoMorePhysWritesFlag(PVM pVM)
 {
     pVM->pgm.s.fNoMorePhysWrites = false;
 }
