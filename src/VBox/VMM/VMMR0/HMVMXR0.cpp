@@ -7316,8 +7316,8 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
 
     /* If we're emulating an instruction, we shouldn't have any TRPM traps pending
        and if we're injecting an event we should have a TRPM trap pending. */
-    Assert(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu));
-    Assert(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu));
+    AssertMsg(rcExit != VINF_EM_RAW_INJECT_TRPM_EVENT || TRPMHasTrap(pVCpu), ("%Rrc\n", rcExit));
+    AssertMsg(rcExit != VINF_EM_RAW_EMULATE_INSTR || !TRPMHasTrap(pVCpu), ("%Rrc\n", rcExit));
 
     /* Save guest state and restore host state bits. */
     int rc = hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
