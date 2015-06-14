@@ -1140,6 +1140,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 || (   uAddrReg < pCtx->es.u32Limit
                     && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pCtx->es.u32Limit)
                )
+            && !IEM_VERIFICATION_ENABLED(pIemCpu)
            )
         {
             RTGCPHYS GCPhysMem;
@@ -1148,47 +1149,35 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                 return rcStrict;
 
             /*
-             * If we can map the page without trouble, we would've liked to use
-             * an string I/O method to do the work, but the current IOM
-             * interface doesn't match our current approach. So, do a regular
-             * loop instead.
+             * If we can map the page without trouble, use the IOM
+             * string I/O interface to do the work.
              */
-            /** @todo Change the I/O manager interface to make use of
-             *        mapped buffers instead of leaving those bits to the
-             *        device implementation! */
             PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE *puMem;
             rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
-                uint32_t off = 0;
-                while (off < cLeftPage)
+                uint32_t cTransfers = cLeftPage;
+                rcStrict = IOMIOPortReadString(pVM, pVCpu, u16Port, puMem, &cTransfers, OP_SIZE / 8);
+
+                uint32_t cActualTransfers = cLeftPage - cTransfers;
+                Assert(cActualTransfers <= cLeftPage);
+                pCtx->ADDR_rDI = uAddrReg    += cbIncr * cActualTransfers;
+                pCtx->ADDR_rCX = uCounterReg -= cActualTransfers;
+                puMem += cActualTransfers;
+
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
+
+                if (rcStrict != VINF_SUCCESS)
                 {
-                    uint32_t u32Value;
-                    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                        rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
-                    else
-                        rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
                     if (IOM_SUCCESS(rcStrict))
                     {
-                        puMem[off]     = (OP_TYPE)u32Value;
-                        pCtx->ADDR_rDI = uAddrReg += cbIncr;
-                        pCtx->ADDR_rCX = --uCounterReg;
+                        rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                        if (uCounterReg == 0)
+                            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                     }
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        if (IOM_SUCCESS(rcStrict))
-                        {
-                            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-                            if (uCounterReg == 0)
-                                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
-                        }
-                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
-                        return rcStrict;
-                    }
-                    off++;
+                    return rcStrict;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -1351,6 +1340,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 || (   uAddrReg < pHid->u32Limit
                     && uAddrReg + (cLeftPage * (OP_SIZE / 8)) <= pHid->u32Limit)
                )
+            && !IEM_VERIFICATION_ENABLED(pIemCpu)
            )
         {
             RTGCPHYS GCPhysMem;
@@ -1359,46 +1349,35 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 return rcStrict;
 
             /*
-             * If we can map the page without trouble, we would've liked to use
-             * an string I/O method to do the work, but the current IOM
-             * interface doesn't match our current approach. So, do a regular
-             * loop instead.
+             * If we can map the page without trouble, we use the IOM
+             * string I/O interface to do the job.
              */
-            /** @todo Change the I/O manager interface to make use of
-             *        mapped buffers instead of leaving those bits to the
-             *        device implementation? */
             PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE const *puMem;
             rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem, &PgLockMem);
             if (rcStrict == VINF_SUCCESS)
             {
-                uint32_t off = 0;
-                while (off < cLeftPage)
+                uint32_t cTransfers = cLeftPage;
+                rcStrict = IOMIOPortWriteString(pVM, pVCpu, u16Port, puMem, &cTransfers, OP_SIZE / 8);
+
+                uint32_t cActualTransfers = cLeftPage - cTransfers;
+                Assert(cActualTransfers <= cLeftPage);
+                pCtx->ADDR_rSI = uAddrReg    += cbIncr * cActualTransfers;
+                pCtx->ADDR_rCX = uCounterReg -= cActualTransfers;
+                puMem += cActualTransfers;
+
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
+
+                if (rcStrict != VINF_SUCCESS)
                 {
-                    uint32_t u32Value = *puMem++;
-                    if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                        rcStrict = IOMIOPortWrite(pVM, pVCpu, u16Port, u32Value, OP_SIZE / 8);
-                    else
-                        rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
                     if (IOM_SUCCESS(rcStrict))
                     {
-                        pCtx->ADDR_rSI = uAddrReg += cbIncr;
-                        pCtx->ADDR_rCX = --uCounterReg;
+                        rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+                        if (uCounterReg == 0)
+                            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                     }
-                    if (rcStrict != VINF_SUCCESS)
-                    {
-                        if (IOM_SUCCESS(rcStrict))
-                        {
-                            rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-                            if (uCounterReg == 0)
-                                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
-                        }
-                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
-                        return rcStrict;
-                    }
-                    off++;
+                    return rcStrict;
                 }
-                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
