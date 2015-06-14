@@ -367,7 +367,6 @@ typedef enum PGMMODE
       || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
 
-
 VMMDECL(bool)           PGMIsLockOwner(PVM pVM);
 
 VMMDECL(int)            PGMRegisterStringFormatTypes(void);
@@ -465,6 +464,51 @@ VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRelease(PVM pVM, PGMVIRTHANDLERTYPE 
 VMM_INT_DECL(uint32_t) PGMHandlerVirtualTypeRetain(PVM pVM, PGMVIRTHANDLERTYPE hType);
 VMM_INT_DECL(bool)     PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr);
 #endif
+
+
+/**
+ * Page type.
+ *
+ * @remarks This enum has to fit in a 3-bit field (see PGMPAGE::u3Type).
+ * @remarks This is used in the saved state, so changes to it requires bumping
+ *          the saved state version.
+ * @todo    So, convert to \#defines!
+ */
+typedef enum PGMPAGETYPE
+{
+    /** The usual invalid zero entry. */
+    PGMPAGETYPE_INVALID = 0,
+    /** RAM page. (RWX) */
+    PGMPAGETYPE_RAM,
+    /** MMIO2 page. (RWX) */
+    PGMPAGETYPE_MMIO2,
+    /** MMIO2 page aliased over an MMIO page. (RWX)
+     * See PGMHandlerPhysicalPageAlias(). */
+    PGMPAGETYPE_MMIO2_ALIAS_MMIO,
+    /** Special page aliased over an MMIO page. (RWX)
+     * See PGMHandlerPhysicalPageAliasHC(), but this is generally only used for
+     * VT-x's APIC access page at the moment.  Treated as MMIO by everyone except
+     * the shadow paging code. */
+    PGMPAGETYPE_SPECIAL_ALIAS_MMIO,
+    /** Shadowed ROM. (RWX) */
+    PGMPAGETYPE_ROM_SHADOW,
+    /** ROM page. (R-X) */
+    PGMPAGETYPE_ROM,
+    /** MMIO page. (---) */
+    PGMPAGETYPE_MMIO,
+    /** End of valid entries. */
+    PGMPAGETYPE_END
+} PGMPAGETYPE;
+AssertCompile(PGMPAGETYPE_END == 8);
+
+VMM_INT_DECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys);
+
+VMM_INT_DECL(int)   PGMPhysGCPhys2HCPhys(PVM pVM, RTGCPHYS GCPhys, PRTHCPHYS pHCPhys);
+VMM_INT_DECL(int)   PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys);
+VMM_INT_DECL(int)   PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
+VMM_INT_DECL(int)   PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock);
+VMM_INT_DECL(int)   PGMPhysGCPtr2CCPtr(PVMCPU pVCpu, RTGCPTR GCPtr, void **ppv, PPGMPAGEMAPLOCK pLock);
+VMM_INT_DECL(int)   PGMPhysGCPtr2CCPtrReadOnly(PVMCPU pVCpu, RTGCPTR GCPtr, void const **ppv, PPGMPAGEMAPLOCK pLock);
 
 VMMDECL(bool)       PGMPhysIsA20Enabled(PVMCPU pVCpu);
 VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
@@ -633,6 +677,7 @@ VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3DECL(void)     PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3DECL(void)     PGMR3ResetCpu(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(void)    PGMR3Reset(PVM pVM);
+VMMR3_INT_DECL(void)    PGMR3ResetNoMorePhysWritesFlag(PVM pVM);
 VMMR3_INT_DECL(void)    PGMR3MemSetup(PVM pVM, bool fReset);
 VMMR3DECL(int)      PGMR3Term(PVM pVM);
 VMMR3DECL(int)      PGMR3LockCall(PVM pVM);
