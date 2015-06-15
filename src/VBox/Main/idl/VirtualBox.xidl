@@ -1922,7 +1922,7 @@
       <desc>
         To be defined exactly, but we need something that the Validation Kit
         can use to figure which methods and attributes can safely be used on a
-        continuously changing trunk (and occational branch).
+        continuously changing trunk (and occasional branch).
       </desc>
     </attribute>
 
