@@ -75,8 +75,16 @@
 <!-- Remove refmeta. -->
 <xsl:template match="refmeta"/>
 
-<!-- Remove all remarks (for now). -->
+<!--
+ remark extensions:
+ -->
+<!-- Default: remove all remarks. -->
 <xsl:template match="remark"/>
+
+<!-- help-manual - stuff that should only be included in the manual. -->
+<xsl:template match="remark[@role = 'help-manual']">
+  <xsl:apply-templates/>
+</xsl:template>
 
 
 <!--
