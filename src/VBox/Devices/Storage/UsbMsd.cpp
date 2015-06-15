@@ -2170,6 +2170,20 @@ static DECLCALLBACK(int) usbMsdDriverAttach(PPDMUSBINS pUsbIns, unsigned iLUN, u
         pThis->Lun0.pIBase = NULL;
         pThis->Lun0.pIScsiConnector = NULL;
     }
+
+    /*
+     * Find out what kind of device we are.
+     */
+    PDMSCSILUNTYPE enmLunType;
+    pThis->fIsCdrom = false;
+    rc = pThis->Lun0.pIScsiConnector->pfnQueryLUNType(pThis->Lun0.pIScsiConnector, 0 /*iLun*/, &enmLunType);
+    if (RT_SUCCESS(rc))
+    {
+        /* Anything else will be reported as a hard disk. */
+        if (enmLunType == PDMSCSILUNTYPE_MMC)
+            pThis->fIsCdrom = true;
+    }
+
     return rc;
 }
 
@@ -2317,7 +2331,15 @@ static DECLCALLBACK(int) usbMsdConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Find out what kind of device we are.
      */
-    pThis->fIsCdrom = false;    //@todo: Find out somehow
+    PDMSCSILUNTYPE enmLunType;
+    pThis->fIsCdrom = false;
+    rc = pThis->Lun0.pIScsiConnector->pfnQueryLUNType(pThis->Lun0.pIScsiConnector, 0 /*iLun*/, &enmLunType);
+    if (RT_SUCCESS(rc))
+    {
+        /* Anything else will be reported as a hard disk. */
+        if (enmLunType == PDMSCSILUNTYPE_MMC)
+            pThis->fIsCdrom = true;
+    }
 
     /*
      * Register the saved state data unit.

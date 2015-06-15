@@ -647,6 +647,28 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
     return rc;
 }
 
+/** @copydoc PDMISCSICONNECTOR::pfnQueryLUNType. */
+static DECLCALLBACK(int) drvscsiQueryLUNType(PPDMISCSICONNECTOR pInterface, uint32_t iLun, PPDMSCSILUNTYPE pLunType)
+{
+    int rc;
+    PDRVSCSI pThis = PDMISCSICONNECTOR_2_DRVSCSI(pInterface);
+    VSCSILUNTYPE enmLunType;
+
+    rc = VSCSIDeviceLunQueryType(pThis->hVScsiDevice, iLun, &enmLunType);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    switch (enmLunType)
+    {
+    case VSCSILUNTYPE_SBC:  *pLunType = PDMSCSILUNTYPE_SBC; break;
+    case VSCSILUNTYPE_MMC:  *pLunType = PDMSCSILUNTYPE_MMC; break;
+    case VSCSILUNTYPE_SSC:  *pLunType = PDMSCSILUNTYPE_SSC; break;
+    default:                *pLunType = PDMSCSILUNTYPE_INVALID;
+    }
+
+    return rc;
+}
+
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
@@ -891,6 +913,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
      */
     pThis->pDrvIns                              = pDrvIns;
     pThis->ISCSIConnector.pfnSCSIRequestSend    = drvscsiRequestSend;
+    pThis->ISCSIConnector.pfnQueryLUNType       = drvscsiQueryLUNType;
 
     pDrvIns->IBase.pfnQueryInterface            = drvscsiQueryInterface;
 

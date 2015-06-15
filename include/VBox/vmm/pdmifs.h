@@ -3148,6 +3148,18 @@ typedef struct PDMISCSIPORT
 /** PDMISCSIPORT interface ID. */
 #define PDMISCSIPORT_IID                        "05d9fc3b-e38c-4b30-8344-a323feebcfe5"
 
+/**
+ * LUN type.
+ */
+typedef enum PDMSCSILUNTYPE
+{
+    PDMSCSILUNTYPE_INVALID = 0,
+    PDMSCSILUNTYPE_SBC,         /** Hard disk (SBC) */
+    PDMSCSILUNTYPE_MMC,         /** CD/DVD drive (MMC) */
+    PDMSCSILUNTYPE_SSC,         /** Tape drive (SSC) */
+    PDMSCSILUNTYPE_32BIT_HACK = 0x7fffffff
+} PDMSCSILUNTYPE, *PPDMSCSILUNTYPE;
+
 
 /** Pointer to a SCSI connector interface. */
 typedef struct PDMISCSICONNECTOR *PPDMISCSICONNECTOR;
@@ -3166,6 +3178,16 @@ typedef struct PDMISCSICONNECTOR
      * @param   pSCSIRequest    Pointer to the SCSI request to execute.
      */
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
+
+    /**
+     * Queries the type of the attached LUN.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to this interface.
+     * @param   iLUN            The logical unit number.
+     * @param   pSCSIRequest    Pointer to the LUN to be returned.
+     */
+     DECLR3CALLBACKMEMBER(int, pfnQueryLUNType, (PPDMISCSICONNECTOR pInterface, uint32_t iLun, PPDMSCSILUNTYPE pLUNType));
 
 } PDMISCSICONNECTOR;
 /** PDMISCSICONNECTOR interface ID. */
