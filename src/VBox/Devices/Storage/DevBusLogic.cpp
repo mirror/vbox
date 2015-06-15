@@ -3218,19 +3218,8 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32   (pSSM, pBusLogic->uMailboxIncomingPositionCurrent);
     SSMR3PutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
     SSMR3PutBool  (pSSM, pBusLogic->fExtendedLunCCBFormat);
-    /* Now the data for the BIOS interface. */
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.regIdentify);
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.uTargetDevice);
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.uTxDir);
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.cbCDB);
-    SSMR3PutMem   (pSSM, pBusLogic->VBoxSCSI.abCDB, sizeof(pBusLogic->VBoxSCSI.abCDB));
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.iCDB);
-    SSMR3PutU32   (pSSM, pBusLogic->VBoxSCSI.cbBuf);
-    SSMR3PutU32   (pSSM, pBusLogic->VBoxSCSI.iBuf);
-    SSMR3PutBool  (pSSM, pBusLogic->VBoxSCSI.fBusy);
-    SSMR3PutU8    (pSSM, pBusLogic->VBoxSCSI.enmState);
-    if (pBusLogic->VBoxSCSI.cbBuf)
-        SSMR3PutMem(pSSM, pBusLogic->VBoxSCSI.pbBuf, pBusLogic->VBoxSCSI.cbBuf);
+
+    vboxscsiR3SaveExec(&pBusLogic->VBoxSCSI, pSSM);
 
     /*
      * Save the physical addresses of the command control blocks of still pending tasks.
@@ -3331,27 +3320,13 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxIncomingPositionCurrent);
     SSMR3GetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
     SSMR3GetBool  (pSSM, &pBusLogic->fExtendedLunCCBFormat);
-    /* Now the data for the BIOS interface. */
-    SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.regIdentify);
-    SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.uTargetDevice);
-    SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.uTxDir);
-    SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.cbCDB);
-    SSMR3GetMem (pSSM, pBusLogic->VBoxSCSI.abCDB, sizeof(pBusLogic->VBoxSCSI.abCDB));
-    SSMR3GetU8  (pSSM, &pBusLogic->VBoxSCSI.iCDB);
-    SSMR3GetU32 (pSSM, &pBusLogic->VBoxSCSI.cbBuf);
-    SSMR3GetU32 (pSSM, &pBusLogic->VBoxSCSI.iBuf);
-    SSMR3GetBool(pSSM, (bool *)&pBusLogic->VBoxSCSI.fBusy);
-    SSMR3GetU8  (pSSM, (uint8_t *)&pBusLogic->VBoxSCSI.enmState);
-    if (pBusLogic->VBoxSCSI.cbBuf)
+
+    rc = vboxscsiR3LoadExec(&pBusLogic->VBoxSCSI, pSSM);
+    if (RT_FAILURE(rc))
     {
-        pBusLogic->VBoxSCSI.pbBuf = (uint8_t *)RTMemAllocZ(pBusLogic->VBoxSCSI.cbBuf);
-        if (!pBusLogic->VBoxSCSI.pbBuf)
-        {
-            LogRel(("BusLogic: Out of memory during restore.\n"));
-            return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
-                                    N_("BusLogic: Out of memory during restore\n"));
-        }
-        SSMR3GetMem(pSSM, pBusLogic->VBoxSCSI.pbBuf, pBusLogic->VBoxSCSI.cbBuf);
+        LogRel(("BusLogic: Failed to restore BIOS state: %Rrc.\n", rc));
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("BusLogic: Failed to restore BIOS state\n"));
     }
 
     if (pBusLogic->VBoxSCSI.fBusy)

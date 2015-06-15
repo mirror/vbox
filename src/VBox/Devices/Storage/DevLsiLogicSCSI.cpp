@@ -4489,20 +4489,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     else
         AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
 
-    /* Now the data for the BIOS interface. */
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.regIdentify);
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.uTargetDevice);
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.uTxDir);
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.cbCDB);
-    SSMR3PutMem   (pSSM, pThis->VBoxSCSI.abCDB, sizeof(pThis->VBoxSCSI.abCDB));
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.iCDB);
-    SSMR3PutU32   (pSSM, pThis->VBoxSCSI.cbBuf);
-    SSMR3PutU32   (pSSM, pThis->VBoxSCSI.iBuf);
-    SSMR3PutBool  (pSSM, pThis->VBoxSCSI.fBusy);
-    SSMR3PutU8    (pSSM, pThis->VBoxSCSI.enmState);
-    if (pThis->VBoxSCSI.cbBuf)
-        SSMR3PutMem(pSSM, pThis->VBoxSCSI.pbBuf, pThis->VBoxSCSI.cbBuf);
-
+    vboxscsiR3SaveExec(&pThis->VBoxSCSI, pSSM);
     return SSMR3PutU32(pSSM, ~0);
 }
 
@@ -4832,27 +4819,12 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
     }
 
-    /* Now the data for the BIOS interface. */
-    SSMR3GetU8  (pSSM, &pThis->VBoxSCSI.regIdentify);
-    SSMR3GetU8  (pSSM, &pThis->VBoxSCSI.uTargetDevice);
-    SSMR3GetU8  (pSSM, &pThis->VBoxSCSI.uTxDir);
-    SSMR3GetU8  (pSSM, &pThis->VBoxSCSI.cbCDB);
-    SSMR3GetMem (pSSM, pThis->VBoxSCSI.abCDB, sizeof(pThis->VBoxSCSI.abCDB));
-    SSMR3GetU8  (pSSM, &pThis->VBoxSCSI.iCDB);
-    SSMR3GetU32 (pSSM, &pThis->VBoxSCSI.cbBuf);
-    SSMR3GetU32 (pSSM, &pThis->VBoxSCSI.iBuf);
-    SSMR3GetBool(pSSM, (bool *)&pThis->VBoxSCSI.fBusy);
-    SSMR3GetU8  (pSSM, (uint8_t *)&pThis->VBoxSCSI.enmState);
-    if (pThis->VBoxSCSI.cbBuf)
+    rc = vboxscsiR3LoadExec(&pThis->VBoxSCSI, pSSM);
+    if (RT_FAILURE(rc))
     {
-        pThis->VBoxSCSI.pbBuf = (uint8_t *)RTMemAllocZ(pThis->VBoxSCSI.cbBuf);
-        if (!pThis->VBoxSCSI.pbBuf)
-        {
-            LogRel(("LsiLogic: Out of memory during restore.\n"));
-            return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
-                                    N_("LsiLogic: Out of memory during restore\n"));
-        }
-        SSMR3GetMem(pSSM, pThis->VBoxSCSI.pbBuf, pThis->VBoxSCSI.cbBuf);
+        LogRel(("LsiLogic: Failed to restore BIOS state: %Rrc.\n", rc));
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("LsiLogic: Failed to restore BIOS state\n"));
     }
 
     uint32_t u32;
