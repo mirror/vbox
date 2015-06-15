@@ -355,7 +355,7 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
     AssertMsgReturn(iRegister == 1, ("Hey! Only register 1 can be read from with string!\n"), VINF_SUCCESS);
 
     /* Accesses without a valid buffer will be ignored. */
-    AssertReturn(!pVBoxSCSI->pbBuf, VINF_SUCCESS);
+    AssertReturn(pVBoxSCSI->pbBuf, VINF_SUCCESS);
 
     /* Check state. */
     AssertReturn(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, VINF_SUCCESS);
@@ -408,7 +408,7 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     AssertMsgReturn(iRegister == 1, ("Hey! Only register 1 can be written to with string!\n"), VINF_SUCCESS);
 
     /* Accesses without a valid buffer will be ignored. */
-    AssertReturn(!pVBoxSCSI->pbBuf, VINF_SUCCESS);
+    AssertReturn(pVBoxSCSI->pbBuf, VINF_SUCCESS);
 
     /* State machine assumptions. */
     AssertReturn(pVBoxSCSI->enmState == VBOXSCSISTATE_COMMAND_READY, VINF_SUCCESS);
