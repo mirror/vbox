@@ -238,7 +238,9 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
         ComPtr<IBandwidthGroup> bwGroup;
         CHECK_ERROR2I_RET(bwCtrl, GetBandwidthGroup(name.raw(), bwGroup.asOutParam()), RTEXITCODE_FAILURE);
         if (SUCCEEDED(rc))
+        {
             CHECK_ERROR2I_RET(bwGroup, COMSETTER(MaxBytesPerSec)((LONG64)cMaxBytesPerSec), RTEXITCODE_FAILURE);
+        }
     }
 
     return RTEXITCODE_SUCCESS;
