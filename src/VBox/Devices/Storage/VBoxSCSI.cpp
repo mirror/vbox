@@ -500,13 +500,6 @@ DECLHIDDEN(int) vboxscsiR3SaveExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
     SSMR3PutBool  (pSSM, pVBoxSCSI->fBusy);
     SSMR3PutU8    (pSSM, pVBoxSCSI->enmState);
 
-    /*
-     * Old saved states only save the size of the buffer left to read/write.
-     * To avoid changing the saved state version we can just calculate the original
-     * buffer size from the offset and remaining size.
-     */
-    pVBoxSCSI->cbBuf = pVBoxSCSI->cbBufLeft + pVBoxSCSI->iBuf;
-
     if (pVBoxSCSI->cbBuf)
         SSMR3PutMem(pSSM, pVBoxSCSI->pbBuf, pVBoxSCSI->cbBuf);
 
