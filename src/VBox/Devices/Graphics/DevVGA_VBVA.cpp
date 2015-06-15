@@ -527,7 +527,7 @@ static int vbvaFlush(PVGASTATE pVGAState, VBVACONTEXT *pCtx)
     if (RT_FAILURE(rc))
     {
         /* Turn off VBVA processing. */
-        LogRel(("VBVA: disabling\n", rc));
+        LogRel(("VBVA: Disabling\n", rc));
         for (uScreenId = 0; uScreenId < pCtx->cViews; uScreenId++)
         {
             VBVADATA *pVBVAData = &pCtx->aViews[uScreenId].vbva;
