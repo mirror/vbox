@@ -148,12 +148,6 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
      */
     VBoxSetupDisplaysHGSMI(&pExt->u.primary.commonInfo, phVRAM, ulApertureSize, cbVRAM, 0);
 
-    PVBOXMP_COMMON pCommon = &pExt->u.primary.commonInfo;
-    if (pCommon->bHGSMI)
-    {
-        pCommon->u32MouseCursorFlags = VBoxHGSMIGetMouseCursorFlags(&pCommon->guestCtx);
-    }
-
     /* Check if the chip restricts horizontal resolution or not.
      * Must be done after VBoxSetupDisplaysHGSMI, because it initializes the common structure.
      */

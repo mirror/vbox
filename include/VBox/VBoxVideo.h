@@ -932,10 +932,6 @@ typedef struct VBVAHOSTCMD
 #define VBOX_VBVA_CONF32_SCREEN_FLAGS 5
 /** Returns the max size of VBVA record. */
 #define VBOX_VBVA_CONF32_MAX_RECORD_SIZE 6
-/** The host mouse cursor capabilities: VBVA_MOUSE_CURSOR_*. */
-#define VBOX_VBVA_CONF32_MOUSE_CURSOR 7
-
-#define VBVA_MOUSE_CURSOR_NO_XOR 0x00000001
 
 typedef struct VBVACONF32
 {

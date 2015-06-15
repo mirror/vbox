@@ -839,12 +839,12 @@ static void dumpctx(const VBVACONTEXT *pCtx)
               pView->screen.u16Flags));
 
         Log(("                  VBVA o 0x%x p %p\n",
-              pView->u32VBVAOffset,
+              pView->vbva.u32VBVAOffset,
               pView->vbva.guest.pVBVA));
 
         Log(("                  PR cb 0x%x p %p\n",
-              pView->partialRecord.cb,
-              pView->partialRecord.pu8));
+              pView->vbva.partialRecord.cb,
+              pView->vbva.partialRecord.pu8));
     }
 
     dumpMouseShapeInfo(&pCtx->mouseShapeInfo);
@@ -2113,14 +2113,6 @@ static int vbvaHandleQueryConf32(PVGASTATE pVGAState, VBVACONF32 *pConf32)
     else if (u32Index == VBOX_VBVA_CONF32_MAX_RECORD_SIZE)
     {
         pConf32->u32Value = VBVA_MAX_RECORD_SIZE;
-    }
-    else if (u32Index == VBOX_VBVA_CONF32_MOUSE_CURSOR)
-    {
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        pConf32->u32Value = 0;
-#else
-        pConf32->u32Value = VBVA_MOUSE_CURSOR_NO_XOR;
-#endif
     }
     else
     {

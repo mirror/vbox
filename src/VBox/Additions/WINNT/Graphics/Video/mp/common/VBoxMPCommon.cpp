@@ -18,7 +18,6 @@
 
 #include "VBoxMPCommon.h"
 #include <VBox/Hardware/VBoxVideoVBE.h>
-#include <iprt/asm.h>
 
 int VBoxMPCmnMapAdapterMemory(PVBOXMP_COMMON pCommon, void **ppv, uint32_t ulOffset, uint32_t ulSize)
 {
@@ -107,52 +106,6 @@ bool VBoxMPCmnSyncToVideoIRQ(PVBOXMP_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync, vo
 #endif
 }
 
-static bool vboxMPCmnIsXorPointer(uint32_t fFlags,
-                                  uint32_t cWidth,
-                                  uint32_t cHeight,
-                                  const uint8_t *pu8Pixels,
-                                  uint32_t cbLength)
-{
-    if (   (fFlags & VBOX_MOUSE_POINTER_SHAPE) == 0
-        || (fFlags & VBOX_MOUSE_POINTER_ALPHA) != 0)
-    
-    {
-        return false;
-    }
-
-    if (cWidth > 8192 || cHeight > 8192)
-    {
-        /* Not supported cursor size. */
-        return false;
-    }
-
-    /* Pointer data consists of AND mask and XOR_MASK */
-    const uint32_t cbAndLine = (cWidth + 7) / 8;
-    const uint32_t cbAndMask = ((cbAndLine * cHeight + 3) & ~3);
-    const uint32_t cbXorMask = cWidth * 4 * cHeight;
-
-    if (cbAndMask + cbXorMask > cbLength)
-    {
-        return false;
-    }
-
-    /* If AND mask contains only 1, then it is a XOR only cursor. */
-    bool fXorOnly = true;
-    const uint8_t *pu8AndLine = &pu8Pixels[0];
-    uint32_t i;
-    for (i = 0; i < cHeight; ++i)
-    {
-        if (ASMBitFirstClear(pu8AndLine, cWidth) != -1)
-        {
-            fXorOnly = false;
-            break;
-        }
-        pu8AndLine += cbAndLine;
-    }
-
-    return fXorOnly;
-}
-
 bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUTES pAttrs, uint32_t cbLength)
 {
     const uint32_t fFlags = pAttrs->Enable & 0x0000FFFF;
@@ -161,16 +114,6 @@ bool VBoxMPCmnUpdatePointerShape(PVBOXMP_COMMON pCommon, PVIDEO_POINTER_ATTRIBUT
     const uint32_t cWidth = pAttrs->Width;
     const uint32_t cHeight = pAttrs->Height;
     uint8_t *pPixels = &pAttrs->Pixels[0];
-
-    if (pCommon->u32MouseCursorFlags & VBVA_MOUSE_CURSOR_NO_XOR)
-    {
-        if (vboxMPCmnIsXorPointer(fFlags,
-                                  cWidth, cHeight, pPixels,
-                                  cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES)))
-        {
-            return false;
-        }
-    }
 
     int rc = VBoxHGSMIUpdatePointerShape(&pCommon->guestCtx,
                                          fFlags, cHotX, cHotY,
