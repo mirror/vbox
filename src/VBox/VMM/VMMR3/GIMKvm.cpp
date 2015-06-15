@@ -350,7 +350,8 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
         SSMR3GetU64(pSSM, &pKvmCpu->uVirtNanoTS);
         SSMR3GetGCPhys(pSSM, &pKvmCpu->GCPhysSystemTime);
         SSMR3GetU32(pSSM, &pKvmCpu->u32SystemTimeVersion);
-        SSMR3GetU8(pSSM, &fSystemTimeFlags);
+        rc = SSMR3GetU8(pSSM, &fSystemTimeFlags);
+        AssertRCReturn(rc, rc);
 
         /* Enable the system-time struct. if necessary. */
         if (MSR_GIM_KVM_SYSTEM_TIME_IS_ENABLED(pKvmCpu->u64SystemTimeMsr))
@@ -389,6 +390,16 @@ VMMR3_INT_DECL(int) gimR3KvmLoad(PVM pVM, PSSMHANDLE pSSM, uint32_t uSSMVersion)
  */
 VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU pKvmCpu, uint8_t fFlags)
 {
+    /*
+     * Validate the mapping address first.
+     */
+    if (!PGMPhysIsGCPhysNormal(pVM, pKvmCpu->GCPhysSystemTime))
+    {
+        LogRel(("GIM: KVM: VCPU%3d: Invalid physical addr requested for mapping system-time struct. GCPhysSystemTime=%#RGp\n",
+                pKvmCpu->GCPhysSystemTime));
+        return VERR_GIM_OPERATION_FAILED;
+    }
+
     GIMKVMSYSTEMTIME SystemTime;
     RT_ZERO(SystemTime);
     SystemTime.u32Version  = pKvmCpu->u32SystemTimeVersion;
@@ -422,7 +433,6 @@ VMMR3_INT_DECL(int) gimR3KvmEnableSystemTime(PVM pVM, PVMCPU pVCpu, PGIMKVMCPU p
     SystemTime.u32TscScale = ASMDivU64ByU32RetU32(RT_NS_1SEC_64 << 32, uTscFreqLo);
 
     Assert(!(SystemTime.u32Version & UINT32_C(1)));
-    Assert(PGMPhysIsGCPhysNormal(pVM, pKvmCpu->GCPhysSystemTime));
     int rc = PGMPhysSimpleWriteGCPhys(pVM, pKvmCpu->GCPhysSystemTime, &SystemTime, sizeof(GIMKVMSYSTEMTIME));
     if (RT_SUCCESS(rc))
     {
