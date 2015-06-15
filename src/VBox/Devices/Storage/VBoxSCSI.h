@@ -120,9 +120,6 @@ typedef struct VBOXSCSI
     uint32_t             iBuf;
     /** The result code of last operation. */
     int32_t              rcCompletion;
-#if HC_ARCH_BITS == 64
-    uint32_t             Alignment1;
-#endif
     /** Flag whether a request is pending. */
     volatile bool        fBusy;
     /** The state we are in when fetching a command from the BIOS. */
