@@ -41,13 +41,18 @@
 </xsl:template>
 
 <!--
-  Translate the refsynopsisdiv into a refsect1. There is special handling
-  of this in the HTML CSS and in the latex conversion XSLT.
-  -->
+  Combine all cmdsynopsis lines into a bunch of commands.
+ -->
 <xsl:template match="refsynopsisdiv">
-  <refsect1>
-     <xsl:apply-templates select="node()|@*"/>
-  </refsect1>
+  <xsl:if test="not(cmdsynopsis)">
+    <xsl:message terminate="yes">What? No cmdsynopsis in the refsynopsisdiv?</xsl:message>
+  </xsl:if>
+  <xsl:element name="cmdsynopsis">
+    <xsl:attribute name="id"><xsl:value-of select="/refentry/@id"/><xsl:text>-overview</xsl:text></xsl:attribute>
+    <xsl:for-each select="cmdsynopsis">
+      <xsl:copy-of select="node()"/>
+    </xsl:for-each>
+  </xsl:element>
 </xsl:template>
 
 <!-- Remove all remarks (for now). -->

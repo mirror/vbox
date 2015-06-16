@@ -292,9 +292,11 @@
       <xsl:when test="$refid">
         <xsl:text>&#x0a;</xsl:text>
         <xsl:value-of select="$texcmd"/>
-        <xsl:text>[</xsl:text> <!-- for toc -->
-        <xsl:apply-templates />
-        <xsl:text>]</xsl:text>
+        <xsl:if test="not(contains($texcmd, '*'))">
+          <xsl:text>[</xsl:text> <!-- for toc -->
+          <xsl:apply-templates />
+          <xsl:text>]</xsl:text>
+        </xsl:if>
         <xsl:text>{</xsl:text> <!-- for doc -->
         <xsl:text>\raisebox{\ht\strutbox}{\hypertarget{</xsl:text>
         <xsl:value-of select="$refid"/>
@@ -348,13 +350,12 @@
       </xsl:when>
       <xsl:when test="name(..)='refsect1'">
         <xsl:call-template name="title-wrapper">
-          <xsl:with-param name="texcmd">\paragraph</xsl:with-param>
+          <xsl:with-param name="texcmd">\subsection*</xsl:with-param>
         </xsl:call-template>
-        <xsl:text>&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text> <!-- addmargin is ended by refsect1 template way further down. -->
       </xsl:when>
       <xsl:when test="name(..)='refsect2'">
         <xsl:call-template name="title-wrapper">
-          <xsl:with-param name="texcmd">\subparagraph</xsl:with-param>
+          <xsl:with-param name="texcmd">\subsubsection*</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
       <xsl:when test="name(..)='appendix'">
@@ -643,30 +644,23 @@
     <xsl:if test="name(*[1]) != 'cmdsynopsis'"><xsl:message terminate="yes">Expected refsynopsisdiv to start with cmdsynopsis</xsl:message></xsl:if>
     <xsl:if test="title"><xsl:message terminate="yes">No title element supported in refsynopsisdiv</xsl:message></xsl:if>
     <xsl:call-template name="xsltprocNewlineOutputHack"/>
-    <xsl:text>&#x0a;\paragraph{Synopsis} \hfill \\&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+    <xsl:text>&#x0a;\subsection*{Synopsis}</xsl:text>
+    <xsl:if test="name(*[1]) != 'cmdsynopsis'"> <!-- just in case -->
+      <xsl:text>\hfill \\&#x0a;</xsl:text>
+    </xsl:if>
+    <xsl:text>&#x0a;</xsl:text>
     <xsl:apply-templates />
-    <xsl:text>\end{addmargin}&#x0a;</xsl:text>
   </xsl:template>
 
   <!--
     The refsect1 is used for 'Description' and such. Do same as with refsynopsisdiv
     and turn it into a named & indented paragraph.
-
-    Note! If the section has a title, the title template way up above will begin
-          the addmargin stuff.  We'll just end it here.
-          If there is no title, we ASSUME (HACK ALERT) that this is part of the
-          VBoxManage Command Overview section in the manual.
     -->
   <xsl:template match="refsect1">
-    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
-      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect1.</xsl:message>
-    </xsl:if>
-    <xsl:if test="not(title)">
-      <xsl:call-template name="xsltprocNewlineOutputHack"/>
-      <xsl:text>&#x0a;\begin{addmargin}{1em}&#x0a;</xsl:text>
+    <xsl:if test="name(*[1]) != 'title' or count(title) != 1">
+      <xsl:message terminate="yes">Expected exactly one title as the first refsect1 element (remarks goes after title!).</xsl:message>
     </xsl:if>
     <xsl:apply-templates/>
-    <xsl:text>&#x0a;\end{addmargin}&#x0a;</xsl:text>
   </xsl:template>
 
   <!--
@@ -676,12 +670,8 @@
     here (HACK ALERT) for the non-title case to feign a paragraph.
     -->
   <xsl:template match="refsect2">
-    <xsl:if test="(name(*[1]) != 'title' and name(*[1]) != 'cmdsynopsis') or not(title) = not(cmdsynopsis)">
-      <xsl:message terminate="yes">Expected title or cmdsynopsis element as the first child of refsect2.</xsl:message>
-    </xsl:if>
-    <xsl:if test="not(title)">
-      <xsl:call-template name="xsltprocNewlineOutputHack"/>
-      <xsl:text>\vspace{1.2em}&#x0a;</xsl:text>
+    <xsl:if test="name(*[1]) != 'title' or count(title) != 1">
+      <xsl:message terminate="yes">Expected exactly one title as the first refsect2 element (remarks goes after title!).</xsl:message>
     </xsl:if>
     <xsl:apply-templates/>
     <xsl:text>&#x0a;</xsl:text>
@@ -690,44 +680,86 @@
 
   <!--
     Command Synopsis elements.
+
+    We treat each command element inside a cmdsynopsis as the start of
+    a new paragraph.  The DocBook HTML converter does so too, but the
+    manpage one doesn't.
+
+    sbr and linebreaks made by latex should be indented from the base
+    command level. This is done by the \hangindent3em\hangafter1 bits.
+
+    We exploit the default paragraph indentation to get each command
+    indented from the left margin.  This, unfortunately, doesn't work
+    if we're the first paragraph in a (sub*)section.  \noindent cannot
+    counter this due to when latex enforces first paragraph stuff. Since
+    it's tedious to figure out when we're in the first paragraph and when
+    not, we just do \noindent\hspace{1em} everywhere.
     -->
   <xsl:template match="sbr">
+    <xsl:if test="not(ancestor::cmdsynopsis)">
+      <xsl:message terminate="yes">sbr only supported inside cmdsynopsis (because of hangindent)</xsl:message>
+    </xsl:if>
     <xsl:text>\linebreak</xsl:text>
   </xsl:template>
+
   <xsl:template match="refentry|refnamediv|refentryinfo|refmeta|refsect3|refsect4|refsect5|synopfragment|synopfragmentref|cmdsynopsis/info">
     <xsl:message terminate="yes"><xsl:value-of select="name()"/> is not supported</xsl:message>
   </xsl:template>
 
   <xsl:template match="cmdsynopsis">
-    <xsl:text>&#x0a;\noindent\texttt{</xsl:text>
+    <xsl:if test="preceding-sibling::cmdsynopsis">
+      <xsl:text>\par%cmdsynopsis</xsl:text>
+    </xsl:if>
+    <xsl:text>&#x0a;</xsl:text>
+    <xsl:if test="parent::remark[@role='VBoxManage-overview']">
+      <!-- Overview fontsize trick -->
+      <xsl:text>{\footnotesize</xsl:text>
+    </xsl:if>
+    <xsl:text>\noindent\hspace{1em}</xsl:text>
+    <xsl:text>\hangindent3em\hangafter1\texttt{</xsl:text>
     <xsl:apply-templates />
-    <xsl:text>}\linebreak</xsl:text>
+    <xsl:text>}</xsl:text>
+    <xsl:if test="following-sibling::*">
+    </xsl:if>
+
+    <!-- For refsect2 subcommand descriptions. -->
+    <xsl:if test="not(following-sibling::cmdsynopsis) and position() != last()">
+      <xsl:text>\linebreak</xsl:text>
+    </xsl:if>
+    <!-- Special overview trick for the current VBoxManage command overview. -->
+    <xsl:if test="parent::remark[@role='VBoxManage-overview']">
+      <xsl:text>}\vspace{1em}</xsl:text>
+    </xsl:if>
   </xsl:template>
 
-  <xsl:template match="replaceable">
+  <xsl:template match="command">
     <xsl:choose>
-      <xsl:when test="not(ancestor::cmdsynopsis)">
-        <xsl:text>\texttt{\textit{</xsl:text>
+      <xsl:when test="ancestor::cmdsynopsis">
+        <!-- Trigger a line break if this isn't the first command in a the synopsis -->
+        <xsl:if test="preceding-sibling::command">
+          <xsl:text>}\par%command&#x0a;</xsl:text>
+          <xsl:text>\noindent\hspace{1em}</xsl:text>
+          <xsl:text>\hangindent3em\hangafter1\texttt{</xsl:text>
+        </xsl:if>
         <xsl:apply-templates />
-        <xsl:text>}}</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>\textit{</xsl:text>
+        <xsl:text>\texttt{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 
-  <xsl:template match="command|option">
+  <xsl:template match="option">
     <xsl:choose>
-      <xsl:when test="not(ancestor::cmdsynopsis)">
+      <xsl:when test="ancestor::cmdsynopsis">
+        <xsl:apply-templates />
+      </xsl:when>
+      <xsl:otherwise>
         <xsl:text>\texttt{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}</xsl:text>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:apply-templates />
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -759,6 +791,21 @@
     <xsl:choose>
       <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
       <xsl:when test="@choice = 'req'">                                 <xsl:text>}</xsl:text></xsl:when>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="replaceable">
+    <xsl:choose>
+      <xsl:when test="not(ancestor::cmdsynopsis)">
+        <xsl:text>\texttt{\textit{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}}</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>\textit{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}</xsl:text>
+      </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
 

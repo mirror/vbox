@@ -157,7 +157,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
     in doubt, check the output of <computeroutput>VBoxManage</computeroutput>
     for the commands available on your particular host.</para>
 
-    <screen>$VBOX_MANAGE_OUTPUT</screen>
+    <screen>@VBOX_MANAGE_OUTPUT@</screen> <!-- the whole line is replaced later -->
     <xi:include href="../user_VBoxManage_CommandsOverview.xml" xpointer="element(/1)"
       xmlns:xi="http://www.w3.org/2001/XInclude" />
 
@@ -4253,116 +4253,6 @@ Value: 2006.01.01</screen>
       </itemizedlist></para>
   </sect1>
 
-  <sect1 id="vboxmanage-debugvm">
-    <title>VBoxManage debugvm</title>
-
-    <para>The "debugvm" commands are for experts who want to tinker with the
-    exact details of virtual machine execution. Like the VM debugger described
-    in <xref linkend="ts_debugger" />, these commands are only useful if you are
-    very familiar with the details of the PC architecture and how to debug
-    software.</para>
-
-    <para>The subcommands of "debugvm" all operate on a running virtual
-    machine. The following are available:<itemizedlist>
-        <listitem>
-          <para>With <computeroutput>dumpguestcore --filename
-          &lt;name&gt;</computeroutput>, you can create a system dump of the
-          running VM, which will be written into the given file. This file
-          will have the standard ELF core format (with custom sections); see
-          <xref linkend="ts_guest-core-format" />.</para>
-
-          <para>This corresponds to the
-          <computeroutput>writecore</computeroutput> command in the debugger.
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>info</computeroutput> command is used to
-          display info items relating to the VMM, device emulations and
-          associated drivers.  This command takes one or two arguments: the
-          name of the info item, optionally followed by a string containing
-          arguments specific to the info item.
-          The <computeroutput>help</computeroutput> info item provides a
-          listning of the available items and hints about any optional
-          arguments.</para>
-
-          <para>This corresponds to the <computeroutput>info</computeroutput>
-          command in the debugger.</para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>injectnmi</computeroutput> command causes
-          a non-maskable interrupt (NMI) in the guest, which might be useful
-          for certain debugging scenarios. What happens exactly is dependent
-          on the guest operating system, but an NMI can crash the whole guest
-          operating system. Do not use unless you know what you're
-          doing.</para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>osdetect</computeroutput> command makes the
-          VMM's debugger facility (re-)detection the guest operation
-          system.</para>
-
-          <para>This corresponds to the <computeroutput>detect</computeroutput>
-          command in the debugger.</para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>osinfo</computeroutput> command is used to
-          display info about the operating system (OS) detected by the VMM's
-          debugger facility.</para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>getregisters</computeroutput> command is
-          used to display CPU and device registers.  The command takes a list
-          of registers, each having one of the following forms:
-          <itemizedlist>
-            <listitem><para><computeroutput>register-set.register-name.sub-field</computeroutput></para></listitem>
-            <listitem><para><computeroutput>register-set.register-name</computeroutput></para></listitem>
-            <listitem><para><computeroutput>cpu-register-name.sub-field</computeroutput></para></listitem>
-            <listitem><para><computeroutput>cpu-register-name</computeroutput></para></listitem>
-            <listitem><para><computeroutput>all</computeroutput></para></listitem>
-          </itemizedlist>
-          The <computeroutput>all</computeroutput> form will cause all
-          registers to be shown (no sub-fields).  The registers names are
-          case-insensitive.  When requesting a CPU register the register set
-          can be omitted, it will be selected using the value of the
-          <computeroutput>--cpu</computeroutput> option (defaulting to 0).
-          </para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>setregisters</computeroutput> command is
-          used to change CPU and device registers.  The command takes a list
-          of register assignments, each having one of the following forms:
-          <itemizedlist>
-            <listitem><para><computeroutput>register-set.register-name.sub-field=value</computeroutput></para></listitem>
-            <listitem><para><computeroutput>register-set.register-name=value</computeroutput></para></listitem>
-            <listitem><para><computeroutput>cpu-register-name.sub-field=value</computeroutput></para></listitem>
-            <listitem><para><computeroutput>cpu-register-name=value</computeroutput></para></listitem>
-          </itemizedlist>
-          The value format should be in the same style as what
-          <computeroutput>getregisters</computeroutput> displays, with the
-          exception that both octal and decimal can be used instead of
-          hexadecimal.  The register naming and the default CPU register set
-          are handled the same way as with the
-          <computeroutput>getregisters</computeroutput> command.</para>
-        </listitem>
-
-        <listitem>
-          <para>The <computeroutput>statistics</computeroutput> command can be
-          used to display VMM statistics on the command line. The
-          <computeroutput>--reset</computeroutput> option will reset
-          statistics. The affected statistics can be filtered with the
-          <computeroutput>--pattern</computeroutput> option, which accepts
-          DOS/NT-style wildcards (<computeroutput>?</computeroutput> and
-          <computeroutput>*</computeroutput>).</para>
-        </listitem>
-      </itemizedlist></para>
-  </sect1>
-
   <sect1 id="metrics">
     <title>VBoxManage metrics</title>
 
@@ -4630,6 +4520,9 @@ Value: 2006.01.01</screen>
     <computeroutput>VBoxManage dhcpserver modify</computeroutput> for a given
     network or host-only interface name.</para>
   </sect1>
+
+  <xi:include href="man_VBoxManage_debugvm.xml" xpointer="element(/1)"
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <xi:include href="man_VBoxManage_extpack.xml" xpointer="element(/1)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />

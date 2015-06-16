@@ -88,6 +88,19 @@
   <xsl:apply-templates/>
 </xsl:template>
 
+<!-- help-copy-synopsis - used in refsect2 to copy synopsis from the refsynopsisdiv. -->
+<xsl:template match="remark[@role = 'help-copy-synopsis']">
+  <xsl:if test="not(parent::refsect2)">
+    <xsl:message terminate="yes">The help-copy-synopsis remark is only applicable in refsect2.</xsl:message>
+  </xsl:if>
+  <xsl:variable name="sSrcId" select="concat('synopsis-',../@id)"/>
+  <xsl:if test="not(/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId])">
+    <xsl:message terminate="yes">Could not find any cmdsynopsis with id=<xsl:value-of select="$sSrcId"/> in refsynopsisdiv.</xsl:message>
+  </xsl:if>
+  <xsl:element name="cmdsynopsis">
+    <xsl:copy-of select="/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId]/node()"/>
+  </xsl:element>
+</xsl:template>
 
 <!--
  Captializes the given text.

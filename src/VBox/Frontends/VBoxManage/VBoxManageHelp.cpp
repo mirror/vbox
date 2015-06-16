@@ -398,6 +398,8 @@ RTEXITCODE errorTooManyParameters(char **papszArgs)
                 printFullCommandOrSubcommandHelp(g_enmCurCommand, g_fCurSubcommandScope, g_pStdOut);
                 return RTEXITCODE_SUCCESS;
             }
+            else if (!strcmp(papszArgs[i], "--"))
+                break;
 
     return errorSyntax("Too many parameters");
 }
@@ -1325,7 +1327,7 @@ void printUsage(USAGECATEGORY fCategory, uint32_t fSubCategory, PRTSTREAM pStrm)
                      "                            [--dhcp |\n"
                      "                            --ip<ipv4> [--netmask<ipv4> (def: 255.255.255.0)] |\n"
                      "                            --ipv6<ipv6> [--netmasklengthv6<length> (def: 64)]]\n"
-# if !defined(RT_OS_SOLARIS)
+# if !defined(RT_OS_SOLARIS) || defined(VBOX_ONLY_DOCS)
                      "                            create |\n"
                      "                            remove <name>\n"
 # endif

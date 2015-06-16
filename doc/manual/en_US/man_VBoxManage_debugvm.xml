@@ -140,12 +140,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-dumpvmcore">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">dumpvmcore</arg>
-        <arg>--filename <replaceable>name</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm dumpvmcore</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Creates a system dump file of the specified VM.  This file will have
         the standard ELF core format (with custom sections)<remark role="help-manual">; see
@@ -163,13 +159,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-info">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">info</arg>
-        <arg choice="req"><replaceable>item</replaceable></arg>
-        <arg rep="repeat"><replaceable>args</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm info</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Displays info items relating to the VMM, device emulations and
         associated drivers.
@@ -198,11 +189,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-injectnmi">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">injectnmi</arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm injectnmi</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Causes a non-maskable interrupt (NMI) to be injected into the guest. This
         might be useful for certain debugging scenarios. What happens exactly is
@@ -212,50 +200,32 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-log">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">log</arg>
-        <group><arg>--release</arg><arg>--debug</arg></group>
-        <arg rep="repeat"><replaceable>group-settings</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm log</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         TODO
       </para>
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-logdest">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">logdest</arg>
-        <group><arg>--release</arg><arg>--debug</arg></group>
-        <arg rep="repeat"><replaceable>destinations</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm logdest</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         TODO
       </para>
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-logflags">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">logflags</arg>
-        <group><arg>--release</arg><arg>--debug</arg></group>
-        <arg rep="repeat"><replaceable>flags</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm logflags</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         TODO
       </para>
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osdetect">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">osdetect</arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm osdetect</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Make the VMM's debugger facility (re)-detect the guest operating system (OS).
         This will first load all debugger plug-ins.
@@ -266,11 +236,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osinfo">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">osinfo</arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm osinfo</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Displays information about the guest operating system (OS) previously
         detected by the VMM's debugger facility.
@@ -278,12 +245,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osdmesg">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">osdmesg</arg>
-        <arg>--lines <replaceable>lines</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm osdmesg</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Displays the guest OS kernel log, if detected and supported.
       </para>
@@ -297,13 +260,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-getregisters">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">getregisters</arg>
-        <arg>--cpu <replaceable>id</replaceable></arg>
-        <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm getregisters</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Retrieves register values for guest CPUs and emulated devices.
       </para>
@@ -332,13 +290,8 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-setregisters">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">setregisters</arg>
-        <arg>--cpu <replaceable>id</replaceable></arg>
-        <arg rep="repeat"><replaceable>reg-set.reg-name=value</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm setregisters</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Changes register values for guest CPUs and emulated devices.
       </para>
@@ -367,27 +320,16 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-show">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">show</arg>
-        <group><arg>--human-readable</arg><arg>--sh-export</arg><arg>--sh-eval</arg><arg>--cmd-set</arg></group>
-        <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm show</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         TODO
       </para>
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-statistics">
-      <cmdsynopsis>
-        <command>VBoxManage debugvm</command>
-        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">statistics</arg>
-        <arg>--reset</arg>
-        <arg>--descriptions</arg>
-        <arg>--pattern <replaceable>pattern</replaceable></arg>
-      </cmdsynopsis>
+      <title>VBoxManage debugvm statistics</title>
+      <remark role="help-copy-synopsis"/>
       <para>
         Displays or resets VMM statistics.
       </para>

@@ -39,10 +39,24 @@
     -->
   <xsl:template match="refentry">
     <!-- Assert refetry expectations. -->
-    <xsl:if test="not(./refsynopsisdiv)">     <xsl:message terminate="yes">refentry must have a refsynopsisdiv</xsl:message></xsl:if>
-    <xsl:if test="not(./refentryinfo/title)"> <xsl:message terminate="yes">refentry must have a refentryinfo with title</xsl:message></xsl:if>
-    <xsl:if test="not(./refsect1/title)">     <xsl:message terminate="yes">refentry must have a refsect1 with title</xsl:message></xsl:if>
-    <xsl:if test="not(@id) or @id = ''">      <xsl:message terminate="yes">refentry must have an id attribute</xsl:message></xsl:if>
+    <xsl:if test="not(./refsynopsisdiv)">
+        <xsl:message terminate="yes">refentry must have a refsynopsisdiv</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(./refentryinfo/title)">
+      <xsl:message terminate="yes">refentry must have a refentryinfo with title</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(./refmeta/refentrytitle)">
+      <xsl:message terminate="yes">refentry must have a refentryinfo with title</xsl:message>
+    </xsl:if>
+    <xsl:if test="./refmeta/refentrytitle != ./refnamediv/refname">
+      <xsl:message terminate="yes">The refmeta/refentrytitle and the refnamediv/refname must be identical</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(./refsect1/title)">
+      <xsl:message terminate="yes">refentry must have a refsect1 with title</xsl:message>
+    </xsl:if>
+    <xsl:if test="not(@id) or @id = ''">
+      <xsl:message terminate="yes">refentry must have an id attribute</xsl:message>
+    </xsl:if>
 
     <!-- variables -->
     <xsl:variable name="sBaseId" select="@id"/>
@@ -207,31 +221,31 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   <xsl:template match="refsect2">
     <!-- assertions -->
     <xsl:if test="text()"><xsl:message terminate="yes">refsect2 shouldn't contain text</xsl:message></xsl:if>
-    <xsl:if test="count(./cmdsynopsis) > 1"><xsl:message terminate="yes">Only a single cmdsynopsis is currently supported in a refsect2.</xsl:message></xsl:if>
-    <xsl:if test="count(./title) > 1"><xsl:message terminate="yes">Only a single title in refsect2</xsl:message></xsl:if>
+    <xsl:if test="count(./title) != 1"><xsl:message terminate="yes">refsect2 requires a title (<xsl:value-of select="ancestor-or-self::*[@id][1]/@id"/>)</xsl:message></xsl:if>
 
     <!-- title / command synopsis - sets the scope. -->
     <xsl:text>
     {   </xsl:text><xsl:call-template name="calc-scope-refsect2"/><xsl:text>, "" },
     {   REFENTRYSTR_SCOPE_SAME,
         "</xsl:text><xsl:call-template name="emit-indentation"/>
-    <xsl:choose>
-      <xsl:when test="name(./*[1]) = 'cmdsynopsis'">
-        <!--xsl:text>* </xsl:text-->
-        <xsl:apply-templates select="./cmdsynopsis/node()|./cmdsynopsis/@*"/>
-      </xsl:when>
-      <xsl:when test="name(./*[1]) = 'title'">
-        <xsl:apply-templates select="./title/text()"/>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:message terminate="yes">Expected either a title or cmdsynopsis as the first element in a refsect2.
-            (Put scoping remarks after.)</xsl:message>
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:apply-templates select="./title/text()"/>
     <xsl:text>" },</xsl:text>
 
     <!-- Format the text in the section -->
-    <xsl:apply-templates select="./*[position() > 1]"/>
+    <xsl:for-each select="./*[name() != 'title']">
+      <xsl:choose>
+        <xsl:when test="self::remark[@scope = 'help-copy-synopsis']">
+          <xsl:variable name="sSrcId" select="concat('synopsis-', @condition)"/>
+          <xsl:if test="not(/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId])">
+            <xsl:message terminate="yes">Could not find any cmdsynopsis with id=<xsl:value-of select="$sSrcId"/> in refsynopsisdiv.</xsl:message>
+          </xsl:if>
+          <xsl:apply-templates select="/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId]"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="."/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
 
     <!-- Add two blank lines, unless we're the last element in this refsect1. -->
     <xsl:if test="position() != last()">
@@ -432,10 +446,31 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   </xsl:template>
 
   <!--
+    Fail on misplaced scoping remarks.
+    -->
+  <xsl:template match="remark[@role = 'help-copy-synopsis']">
+    <xsl:choose>
+      <xsl:when test="parent::refsect2"/>
+      <xsl:otherwise>
+        <xsl:message terminate="yes">Misplaced remark/@role=help-copy-synopsis element.
+Only supported on: refsect2</xsl:message>
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <!--
     Warn about unhandled elements
     -->
   <xsl:template match="*">
-    <xsl:message terminate="no">Warning: Unhandled element: <xsl:value-of select="name(.)"/></xsl:message>
+    <xsl:message terminate="no">Warning: Unhandled element: <!-- no newline -->
+      <xsl:for-each select="ancestor-or-self::*">
+        <xsl:text>/</xsl:text>
+        <xsl:value-of select="name(.)"/>
+        <xsl:if test="@id">
+          <xsl:value-of select="concat('[id=', @id ,']')"/>
+        </xsl:if>
+      </xsl:for-each>
+    </xsl:message>
   </xsl:template>
 
 

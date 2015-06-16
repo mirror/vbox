@@ -105,12 +105,12 @@ static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger
                 break;
 
             default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+                return errorGetOpt(rc, &ValueUnion);
         }
     }
 
     if (!cRegisters)
-        return errorSyntax(USAGE_DEBUGVM, "The getregisters sub-command takes at least one register name");
+        return errorSyntax("The getregisters sub-command takes at least one register name");
     return RTEXITCODE_SUCCESS;
 }
 
@@ -118,16 +118,46 @@ static RTEXITCODE handleDebugVM_GetRegisters(HandlerArg *pArgs, IMachineDebugger
  * Handles the info sub-command.
  *
  * @returns Suitable exit code.
- * @param   a                   The handler arguments.
+ * @param   pArgs               The handler arguments.
  * @param   pDebugger           Pointer to the debugger interface.
  */
-static RTEXITCODE handleDebugVM_Info(HandlerArg *a, IMachineDebugger *pDebugger)
+static RTEXITCODE handleDebugVM_Info(HandlerArg *pArgs, IMachineDebugger *pDebugger)
 {
-    if (a->argc < 3 || a->argc > 4)
-        return errorSyntax(USAGE_DEBUGVM, "The inject sub-command takes at one or two arguments");
+    /*
+     * Parse arguments.
+     */
+    const char    *pszInfo = NULL;
+    const char    *pszArgs = NULL;
+    RTGETOPTSTATE  GetState;
+    RTGETOPTUNION  ValueUnion;
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, NULL, 0, 2, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
 
-    com::Bstr bstrName(a->argv[2]);
-    com::Bstr bstrArgs(a->argv[3]);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case VINF_GETOPT_NOT_OPTION:
+                if (!pszInfo)
+                    pszInfo = ValueUnion.psz;
+                else if (!pszArgs)
+                    pszArgs = ValueUnion.psz;
+                else
+                    return errorTooManyParameters(&pArgs->argv[GetState.iNext - 1]);
+                break;
+            default:
+                return errorGetOpt(rc, &ValueUnion);
+        }
+    }
+
+    if (!pszInfo)
+        return errorSyntax("Must specify info item to display");
+
+    /*
+     * Do the work.
+     */
+    com::Bstr bstrName(pszInfo);
+    com::Bstr bstrArgs(pszArgs);
     com::Bstr bstrInfo;
     CHECK_ERROR2I_RET(pDebugger, Info(bstrName.raw(), bstrArgs.raw(), bstrInfo.asOutParam()), RTEXITCODE_FAILURE);
     RTPrintf("%ls", bstrInfo.raw());
@@ -144,7 +174,7 @@ static RTEXITCODE handleDebugVM_Info(HandlerArg *a, IMachineDebugger *pDebugger)
 static RTEXITCODE handleDebugVM_InjectNMI(HandlerArg *a, IMachineDebugger *pDebugger)
 {
     if (a->argc != 2)
-        return errorSyntax(USAGE_DEBUGVM, "The inject sub-command does not take any arguments");
+        return errorTooManyParameters(&a->argv[1]);
     CHECK_ERROR2I_RET(pDebugger, InjectNMI(), RTEXITCODE_FAILURE);
     return RTEXITCODE_SUCCESS;
 }
@@ -262,21 +292,21 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
         {
             case 'c':
                 if (pszCompression)
-                    return errorSyntax(USAGE_DEBUGVM, "The --compression option has already been given");
+                    return errorSyntax("The --compression option has already been given");
                 pszCompression = ValueUnion.psz;
                 break;
             case 'f':
                 if (pszFilename)
-                    return errorSyntax(USAGE_DEBUGVM, "The --filename option has already been given");
+                    return errorSyntax("The --filename option has already been given");
                 pszFilename = ValueUnion.psz;
                 break;
             default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+                return errorGetOpt(rc, &ValueUnion);
         }
     }
 
     if (!pszFilename)
-        return errorSyntax(USAGE_DEBUGVM, "The --filename option is required");
+        return errorSyntax("The --filename option is required");
 
     /*
      * Make the filename absolute before handing it on to the API.
@@ -302,7 +332,7 @@ static RTEXITCODE handleDebugVM_DumpVMCore(HandlerArg *pArgs, IMachineDebugger *
 static RTEXITCODE handleDebugVM_OSDetect(HandlerArg *a, IMachineDebugger *pDebugger)
 {
     if (a->argc != 2)
-        return errorSyntax(USAGE_DEBUGVM, "The osdetect sub-command does not take any arguments");
+        return errorTooManyParameters(&a->argv[1]);
 
     com::Bstr bstrIgnore;
     com::Bstr bstrAll("all");
@@ -324,7 +354,7 @@ static RTEXITCODE handleDebugVM_OSDetect(HandlerArg *a, IMachineDebugger *pDebug
 static RTEXITCODE handleDebugVM_OSInfo(HandlerArg *a, IMachineDebugger *pDebugger)
 {
     if (a->argc != 2)
-        return errorSyntax(USAGE_DEBUGVM, "The osinfo sub-command does not take any arguments");
+        return errorTooManyParameters(&a->argv[1]);
 
     com::Bstr bstrName;
     CHECK_ERROR2I_RET(pDebugger, COMGETTER(OSName)(bstrName.asOutParam()), RTEXITCODE_FAILURE);
@@ -360,7 +390,7 @@ static RTEXITCODE handleDebugVM_OSDmesg(HandlerArg *pArgs, IMachineDebugger *pDe
         switch (rc)
         {
             case 'n': uMaxMessages = ValueUnion.u32; break;
-            default: return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+            default: return errorGetOpt(rc, &ValueUnion);
         }
 
     /*
@@ -409,7 +439,7 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
             {
                 const char *pszEqual = strchr(ValueUnion.psz, '=');
                 if (!pszEqual)
-                    return errorSyntax(USAGE_DEBUGVM, "setregisters expects input on the form 'register=value' got '%s'", ValueUnion.psz);
+                    return errorSyntax("setregisters expects input on the form 'register=value' got '%s'", ValueUnion.psz);
                 try
                 {
                     com::Bstr bstrName(ValueUnion.psz, pszEqual - ValueUnion.psz);
@@ -427,12 +457,12 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
             }
 
             default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+                return errorGetOpt(rc, &ValueUnion);
         }
     }
 
     if (!aBstrNames.size())
-        return errorSyntax(USAGE_DEBUGVM, "The setregisters sub-command takes at least one register name");
+        return errorSyntax("The setregisters sub-command takes at least one register name");
 
     /*
      * If it is only one register, use the single register method just so
@@ -589,14 +619,14 @@ static RTEXITCODE handleDebugVM_Show(HandlerArg *pArgs, IMachineDebugger *pDebug
                 else if (!strcmp(ValueUnion.psz, "logrel-settings"))
                     rcExit = handleDebugVM_Show_LogRelSettings(pDebugger, fFlags);
                 else
-                    rcExit = errorSyntax(USAGE_DEBUGVM, "The show sub-command has no idea what '%s' might be", ValueUnion.psz);
+                    rcExit = errorSyntax("The show sub-command has no idea what '%s' might be", ValueUnion.psz);
                 if (rcExit != RTEXITCODE_SUCCESS)
                     return rcExit;
                 break;
             }
 
             default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+                return errorGetOpt(rc, &ValueUnion);
         }
     }
     return RTEXITCODE_SUCCESS;
@@ -639,7 +669,7 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
 
             case 'p':
                 if (pszPattern)
-                    return errorSyntax(USAGE_DEBUGVM, "Multiple --pattern options are not permitted");
+                    return errorSyntax("Multiple --pattern options are not permitted");
                 pszPattern = ValueUnion.psz;
                 break;
 
@@ -648,12 +678,12 @@ static RTEXITCODE handleDebugVM_Statistics(HandlerArg *pArgs, IMachineDebugger *
                 break;
 
             default:
-                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+                return errorGetOpt(rc, &ValueUnion);
         }
     }
 
     if (fReset && fWithDescriptions)
-        return errorSyntax(USAGE_DEBUGVM, "The --reset and --descriptions options does not mix");
+        return errorSyntax("The --reset and --descriptions options does not mix");
 
     /*
      * Execute the order.
@@ -684,7 +714,7 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
      * The first argument is the VM name or UUID.  Open a session to it.
      */
     if (pArgs->argc < 2)
-        return errorSyntax(USAGE_DEBUGVM, "Too few parameters");
+        return errorNoSubcommand();
     ComPtr<IMachine> ptrMachine;
     CHECK_ERROR2I_RET(pArgs->virtualBox, FindMachine(com::Bstr(pArgs->argv[0]).raw(), ptrMachine.asOutParam()), RTEXITCODE_FAILURE);
     CHECK_ERROR2I_RET(ptrMachine, LockMachine(pArgs->session, LockType_Shared), RTEXITCODE_FAILURE);
@@ -707,34 +737,73 @@ RTEXITCODE handleDebugVM(HandlerArg *pArgs)
                  * String switch on the sub-command.
                  */
                 const char *pszSubCmd = pArgs->argv[1];
-                if (!strcmp(pszSubCmd, "dumpguestcore"))
+                if (!strcmp(pszSubCmd, "dumpvmcore"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_DUMPVMCORE);
                     rcExit = handleDebugVM_DumpVMCore(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "getregisters"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_GETREGISTERS);
                     rcExit = handleDebugVM_GetRegisters(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "info"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_INFO);
                     rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "injectnmi"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_INJECTNMI);
                     rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "log"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_LOG);
                     rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                }
                 else if (!strcmp(pszSubCmd, "logdest"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_LOGDEST);
                     rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                }
                 else if (!strcmp(pszSubCmd, "logflags"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_LOGFLAGS);
                     rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+                }
                 else if (!strcmp(pszSubCmd, "osdetect"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_OSDETECT);
                     rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "osinfo"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_OSINFO);
                     rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "osdmesg"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_OSDMESG);
                     rcExit = handleDebugVM_OSDmesg(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "setregisters"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_SETREGISTERS);
                     rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "show"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_SHOW);
                     rcExit = handleDebugVM_Show(pArgs, ptrDebugger);
+                }
                 else if (!strcmp(pszSubCmd, "statistics"))
+                {
+                    setCurrentSubcommand(HELP_SCOPE_DEBUGVM_STATISTICS);
                     rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
+                }
                 else
-                    errorSyntax(USAGE_DEBUGVM, "Invalid parameter '%s'", pArgs->argv[1]);
+                    errorUnknownSubcommand(pszSubCmd);
             }
         }
         else
