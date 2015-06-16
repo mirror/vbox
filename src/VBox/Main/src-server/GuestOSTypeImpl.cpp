@@ -37,6 +37,7 @@ GuestOSType::GuestOSType()
     , mHDStorageBusType(StorageBus_IDE)
     , mChipsetType(ChipsetType_PIIX3)
     , mAudioControllerType(AudioControllerType_AC97)
+    , mAudioCodecType(AudioCodecType_STAC9700)
 {
 }
 
@@ -125,6 +126,7 @@ HRESULT GuestOSType::init(const Global::OSType &ostype)/*const char *aFamilyId, 
     unconst(mHDStorageBusType)          = ostype.hdStorageBusType;
     unconst(mChipsetType)               = ostype.chipsetType;
     unconst(mAudioControllerType)       = ostype.audioControllerType;
+    unconst(mAudioCodecType)            = ostype.audioCodecType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -365,6 +367,14 @@ HRESULT GuestOSType::getRecommendedChipset(ChipsetType_T *aChipsetType)
 HRESULT GuestOSType::getRecommendedAudioController(AudioControllerType_T *aAudioController)
 {
     *aAudioController = mAudioControllerType;
+
+    return S_OK;
+}
+
+
+HRESULT GuestOSType::getRecommendedAudioCodec(AudioCodecType_T *aAudioCodec)
+{
+    *aAudioCodec = mAudioCodecType;
 
     return S_OK;
 }

@@ -74,6 +74,7 @@ private:
     HRESULT getRecommendedRTCUseUTC(BOOL *aRecommendedRTCUseUTC);
     HRESULT getRecommendedChipset(ChipsetType_T *aChipsetType);
     HRESULT getRecommendedAudioController(AudioControllerType_T *aAudioController);
+    HRESULT getRecommendedAudioCodec(AudioCodecType_T *aAudioCodec);
     HRESULT getRecommendedFloppy(BOOL *aRecommendedFloppy);
     HRESULT getRecommendedUSB(BOOL *aRecommendedUSB);
     HRESULT getRecommendedTFReset(BOOL *aRecommendedTFReset);
@@ -97,6 +98,7 @@ private:
     const StorageBus_T mHDStorageBusType;
     const ChipsetType_T mChipsetType;
     const AudioControllerType_T mAudioControllerType;
+    const AudioCodecType_T mAudioCodecType;
 };
 
 #endif // ____H_GUESTOSTYPEIMPL

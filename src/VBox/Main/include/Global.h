@@ -76,6 +76,7 @@ public:
         const StorageBus_T             hdStorageBusType;
         const ChipsetType_T            chipsetType;
         const AudioControllerType_T    audioControllerType;
+        const AudioCodecType_T         audioCodecType;
     };
 
     static const OSType sOSTypes[];

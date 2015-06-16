@@ -9425,7 +9425,7 @@ and "VAR" for unsetting. -->
         given storage controller</desc>
 
       <param name="controllerType" type="StorageControllerType" dir="in">
-        <desc>The storage controller to the setting for.</desc>
+        <desc>The storage controller type to get the setting for.</desc>
       </param>
 
       <param name="enabled" type="boolean" dir="return">
@@ -9438,7 +9438,7 @@ and "VAR" for unsetting. -->
         hot-plugging devices.</desc>
 
       <param name="controllerType" type="StorageControllerType" dir="in">
-        <desc>The storage controller to check for.</desc>
+        <desc>The storage controller to check the setting for.</desc>
       </param>
 
       <param name="hotplugCapable" type="boolean" dir="return">
@@ -9473,7 +9473,7 @@ and "VAR" for unsetting. -->
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="03f64ba0-4915-e398-caa4-70a05bd341b4"
+    uuid="d7cb0243-97bf-48ac-9d44-1c3bade5ea0f"
     wsmap="struct"
     reservedAttributes="4"
     >
@@ -9577,7 +9577,11 @@ and "VAR" for unsetting. -->
     </attribute>
 
     <attribute name="recommendedAudioController" type="AudioControllerType" readonly="yes">
-      <desc>Recommended audio type.</desc>
+      <desc>Recommended audio controller type.</desc>
+    </attribute>
+
+    <attribute name="recommendedAudioCodec" type="AudioCodecType" readonly="yes">
+      <desc>Recommended audio codec type.</desc>
     </attribute>
 
     <attribute name="recommendedFloppy" type="boolean" readonly="yes">
@@ -18412,9 +18416,35 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="HDA"   value="2"/>
   </enum>
 
+  <enum
+    name="AudioCodecType"
+    uuid="7b406301-f520-420c-9805-8ce11c086370"
+    >
+    <desc>
+      The exact variant of audio codec hardware presented
+      to the guest; see <link to="IAudioAdapter::audioCodec" />.
+    </desc>
+
+    <const name="Null"          value="0">
+      <desc>@c null value. Never used by the API.</desc>
+    </const>
+    <const name="SB16"          value="1">
+      <desc>SB16; this is the only option for the SB16 device.</desc>
+    </const>
+    <const name="STAC9700"      value="2">
+      <desc>A STAC9700 AC'97 codec.</desc>
+    </const>
+    <const name="AD1980"        value="3">
+      <desc>An AD1980 AC'97 codec. Recommended for Linux guests.</desc>
+    </const>
+    <const name="STAC9221"      value="4">
+      <desc>A STAC9221 HDA codec.</desc>
+    </const>
+  </enum>
+
   <interface
     name="IAudioAdapter" extends="$unknown"
-    uuid="40ab4d08-4f91-b43b-f2de-0cb5b239b2da"
+    uuid="aeccc0a8-e0a0-427f-b946-c42063f54d81"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="1"
     >
@@ -18444,7 +18474,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="audioController" type="AudioControllerType">
       <desc>
-        The audio hardware we emulate.
+        The emulated audio controller.
+      </desc>
+    </attribute>
+    <attribute name="audioCodec" type="AudioCodecType">
+      <desc>
+        The exact variant of audio codec hardware presented
+        to the guest.
+        Depending on this value, VirtualBox will provide a different
+        virtual storage controller hardware to the guest.
+        For HDA and SB16, only one variant is available, but for AC'97,
+        there are several.
       </desc>
     </attribute>
     <attribute name="audioDriver" type="AudioDriverType">
