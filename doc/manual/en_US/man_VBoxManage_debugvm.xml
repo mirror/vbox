@@ -32,10 +32,10 @@
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage-debugvm-dumpguestcore">
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-dumpvmcore">
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-      <arg choice="plain">dumpguestcore</arg>
+      <arg choice="plain">dumpvmcore</arg>
       <arg>--filename <replaceable>name</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-info">
@@ -80,6 +80,12 @@
       <command>VBoxManage debugvm</command>
       <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
       <arg choice="plain">osinfo</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-osdmesg">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">osdmesg</arg>
+      <arg>--lines <replaceable>lines</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-debugvm-getregisters">
       <command>VBoxManage debugvm</command>
@@ -133,11 +139,11 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-debugvm-dumpguestcore">
+    <refsect2 id="vboxmanage-debugvm-dumpvmcore">
       <cmdsynopsis>
         <command>VBoxManage debugvm</command>
         <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
-        <arg choice="plain">dumpguestcore</arg>
+        <arg choice="plain">dumpvmcore</arg>
         <arg>--filename <replaceable>name</replaceable></arg>
       </cmdsynopsis>
       <para>
@@ -252,6 +258,7 @@
       </cmdsynopsis>
       <para>
         Make the VMM's debugger facility (re)-detect the guest operating system (OS).
+        This will first load all debugger plug-ins.
       </para>
       <para>
         This corresponds to the <command>detect</command> command in the debugger.
@@ -268,6 +275,25 @@
         Displays information about the guest operating system (OS) previously
         detected by the VMM's debugger facility.
       </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-osdmesg">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">osdmesg</arg>
+        <arg>--lines <replaceable>lines</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Displays the guest OS kernel log, if detected and supported.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--lines <replaceable>lines</replaceable></option></term>
+          <listitem><para>Number of lines of the log to display, counting from
+          the end. The default is infinite.</para></listitem>
+        </varlistentry>
+      </variablelist>
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-getregisters">
@@ -305,7 +331,7 @@
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-debugvm-logdest-setregisters">
+    <refsect2 id="vboxmanage-debugvm-setregisters">
       <cmdsynopsis>
         <command>VBoxManage debugvm</command>
         <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
@@ -386,4 +412,5 @@
   </refsect1>
 
 </refentry>
+
 
