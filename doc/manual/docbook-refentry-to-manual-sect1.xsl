@@ -55,6 +55,8 @@
   </sect1>
 </xsl:template>
 
+<!-- TODO: refsect1 -> sect2 or something... -->
+
 <!-- Remove refentryinfo, keeping the title element. -->
 <xsl:template match="refentryinfo">
   <xsl:if test="./title">
