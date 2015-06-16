@@ -2122,12 +2122,50 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfUninstall(IN INetCfg *pNc)
     return vboxNetCfgWinNetLwfUninstall(pNc, 0);
 }
 
+static void VBoxNetCfgWinFilterLimitWorkaround(void)
+{
+    /*
+     * Need to check if the system has a limit of installed filter drivers. If it
+     * has, bump the limit to 14, which the maximum value supported by Windows 7.
+     * Note that we only touch the limit if it is set to the default value (8).
+     * See @bugref{7899}.
+     */
+    HKEY hNetKey;
+    DWORD dwMaxNumFilters = 0;
+    DWORD cbMaxNumFilters = sizeof(dwMaxNumFilters);
+    LONG hr = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                           _T("SYSTEM\\CurrentControlSet\\Control\\Network"),
+                           0, KEY_QUERY_VALUE | KEY_SET_VALUE, &hNetKey);
+    if (SUCCEEDED(hr))
+    {
+        hr = RegQueryValueEx(hNetKey, _T("MaxNumFilters"), NULL, NULL,
+                             (LPBYTE)&dwMaxNumFilters, &cbMaxNumFilters);
+        if (SUCCEEDED(hr) && cbMaxNumFilters == sizeof(dwMaxNumFilters) && dwMaxNumFilters == 8)
+        {
+            dwMaxNumFilters = 14;
+            hr = RegSetValueEx(hNetKey, _T("MaxNumFilters"), 0, REG_DWORD,
+                             (LPBYTE)&dwMaxNumFilters, sizeof(dwMaxNumFilters));
+            if (SUCCEEDED(hr))
+                NonStandardLog("Adjusted the installed filter limit to 14...\n");
+            else
+                NonStandardLog("Failed to set MaxNumFilters, error code 0x%x\n", hr);
+        }
+        RegCloseKey(hNetKey);
+    }
+    else
+    {
+        NonStandardLog("Failed to open network key, error code 0x%x\n", hr);
+    }
+
+}
+
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetLwfInstall(IN INetCfg *pNc,
                                                        IN LPCWSTR const pInfFullPath)
 {
     HRESULT hr = vboxNetCfgWinNetLwfUninstall(pNc, SUOI_FORCEDELETE);
     if (SUCCEEDED(hr))
     {
+        VBoxNetCfgWinFilterLimitWorkaround();
         NonStandardLog("NetLwf will be installed ...\n");
         hr = vboxNetCfgWinInstallInfAndComponent(pNc, VBOXNETCFGWIN_NETLWF_ID,
                                                  &GUID_DEVCLASS_NETSERVICE,
