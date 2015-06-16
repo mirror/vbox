@@ -153,6 +153,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DEV_VMM_STDERR,
     /** VMSVGA Device group. */
     LOG_GROUP_DEV_VMSVGA,
+    /** USB xHCI Device group. */
+    LOG_GROUP_DEV_XHCI,
     /** Disassembler group. */
     LOG_GROUP_DIS,
     /** Generic driver group. */
