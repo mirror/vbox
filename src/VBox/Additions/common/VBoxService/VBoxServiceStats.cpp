@@ -213,12 +213,19 @@ static void VBoxServiceVMStatsReport(void)
         return;
 
     /* Unfortunately GetSystemTimes is XP SP1 and up only, so we need to use the semi-undocumented NtQuerySystemInformation */
+    bool fCpuInfoAvail = false;
     NTSTATUS rc = gCtx.pfnNtQuerySystemInformation(SystemProcessorPerformanceInformation, pProcInfo, cbStruct, &cbReturned);
     if (    !rc
         &&  cbReturned == cbStruct)
     {
-        for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors && i < VMM_MAX_CPU_COUNT; i++)
+        for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
         {
+            if (i >= VMM_MAX_CPU_COUNT)
+            {
+                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", i);
+                continue;
+            }
+
             if (gCtx.au64LastCpuLoad_Kernel[i] == 0)
             {
                 /* first time */
@@ -245,6 +252,12 @@ static void VBoxServiceVMStatsReport(void)
             req.guestStats.u32CpuLoad_User      = (uint32_t)(deltaUser  * 100 / ullTotalTime);
 
             req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
+            req.guestStats.u32CpuId = i;
+            rc = VbglR3StatReport(&req);
+            if (RT_SUCCESS(rc))
+                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", i);
+            else
+                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
 
             gCtx.au64LastCpuLoad_Idle[i]   = pProcInfo[i].IdleTime.QuadPart;
             gCtx.au64LastCpuLoad_Kernel[i] = pProcInfo[i].KernelTime.QuadPart;
@@ -253,19 +266,10 @@ static void VBoxServiceVMStatsReport(void)
     }
     RTMemFree(pProcInfo);
 
-    for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
+    if (!fCpuInfoAvail)
     {
-        if (i < VMM_MAX_CPU_COUNT)
-        {
-            req.guestStats.u32CpuId = i;
-            rc = VbglR3StatReport(&req);
-            if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics (CPU %u) reported successfully!\n", i);
-            else
-                VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
-        }
-        else
-            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: skipping information for CPU%u\n", i);
+        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: CPU info not available!\n");
+        rc = VbglR3StatReport(&req);
     }
 
 #elif defined(RT_OS_LINUX)
