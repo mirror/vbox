@@ -1139,6 +1139,8 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWrite
          */
         pLockW->release();
 
+        Assert(!pLockW->isWriteLockOnCurrentThread());
+
         LogFlowThisFunc(("Calling mControl->OnSessionEnd()...\n"));
         HRESULT rc = mControl->OnSessionEnd(this, progress.asOutParam());
         LogFlowThisFunc(("mControl->OnSessionEnd()=%08X\n", rc));
