@@ -525,6 +525,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_NETWORKADAPTER,
     /** Main group, INetworkAdapterChangedEvent. */
     LOG_GROUP_MAIN_NETWORKADAPTERCHANGEDEVENT,
+    /** Main group, INopEvent. */
+    LOG_GROUP_MAIN_NOPEVENT,
     /** Main group, IParallelPort. */
     LOG_GROUP_MAIN_PARALLELPORT,
     /** Main group, IParallelPortChangedEvent. */
@@ -829,6 +831,7 @@ typedef enum LOGGROUP
     "DEV_VMM_BACKDOOR", \
     "DEV_VMM_STDERR", \
     "DEV_VMSVGA",   \
+    "DEV_XHCI",     \
     "DIS",          \
     "DRV",          \
     "DRV_ACPI",     \
@@ -1014,6 +1017,7 @@ typedef enum LOGGROUP
     "MAIN_NATREDIRECTEVENT", \
     "MAIN_NETWORKADAPTER", \
     "MAIN_NETWORKADAPTERCHANGEDEVENT", \
+    "MAIN_NOPEVENT", \
     "MAIN_PARALLELPORT", \
     "MAIN_PARALLELPORTCHANGEDEVENT", \
     "MAIN_PCIADDRESS", \
