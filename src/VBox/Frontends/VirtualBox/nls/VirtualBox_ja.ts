@@ -7651,7 +7651,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>ディスクイメージを選択...</translation>
     </message>
 </context>
 <context>
