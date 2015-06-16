@@ -566,7 +566,14 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
     <xsl:if test="$sNormalized = ' ' or $sNormalized = ''">
       <xsl:message terminate="yes">Empty @condition for help-scope remark.</xsl:message>
     </xsl:if>
-    <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sNormalized, ' ')"/>
+    <xsl:choose>
+      <xsl:when test="substring-before($sNormalized, ' ') = 'GLOBAL'">
+        <xsl:text>REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+      </xsl:when>
+      <xsl:otherwise>
+        <xsl:text>HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sNormalized, ' ')"/>
+      </xsl:otherwise>
+    </xsl:choose>
     <xsl:call-template name="calc-scope-const-from-remark-worker">
       <xsl:with-param name="sList" select="substring-after($sNormalized, ' ')"/>
     </xsl:call-template>
@@ -575,7 +582,14 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   <xsl:template name="calc-scope-const-from-remark-worker">
     <xsl:param name="sList"/>
     <xsl:if test="$sList != ''">
-      <xsl:text> | HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
+      <xsl:choose>
+        <xsl:when test="substring-before($sList, ' ') = 'GLOBAL'">
+          <xsl:text>| REFENTRYSTR_SCOPE_GLOBAL</xsl:text>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:text> | HELP_SCOPE_</xsl:text><xsl:value-of select="substring-before($sList, ' ')"/>
+        </xsl:otherwise>
+      </xsl:choose>
       <xsl:call-template name="calc-scope-const-from-remark-worker">
         <xsl:with-param name="sList" select="substring-after($sList, ' ')"/>
       </xsl:call-template>
