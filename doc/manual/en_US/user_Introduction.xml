@@ -1566,8 +1566,8 @@
 
     <para>To experiment with a VM configuration, test different guest OS levels
     or to simply backup a VM, VirtualBox can create a full or a linked copy of
-    an existing VM.<footnote>Cloning support was introduced with VirtualBox
-    4.1.</footnote></para>
+    an existing VM.<footnote><para>Cloning support was introduced with VirtualBox
+    4.1.</para></footnote></para>
     
     <para>A wizard will guide you through the clone process:</para>
 

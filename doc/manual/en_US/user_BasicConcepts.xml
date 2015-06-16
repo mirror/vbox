@@ -420,14 +420,13 @@
               <para>For drag'n drop to work the Guest Additions need to be
               installed on the guest.</para>
 
-              <note>Drag'n drop is disabled by default. This setting can be
+              <para><note><para>Drag'n drop is disabled by default. This setting can be
               changed at any time using the "Drag'n'Drop" menu item in the
-              "Devices" menu of the virtual machine.</note>
+              "Devices" menu of the virtual machine.</para></note></para>
 
-              <para>See <xref linkend="guestadd-dnd"/> for more information.</para>
-
+              <para>See <xref linkend="guestadd-dnd"/> for more information.
               <footnote><para>Experimental support for drag and drop was added
-              with VirtualBox 4.2.</para></footnote>
+              with VirtualBox 4.2.</para></footnote></para>
             </glossdef>
           </glossentry>
 

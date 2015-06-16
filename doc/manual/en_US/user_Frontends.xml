@@ -581,21 +581,21 @@
             Certificate Authority (CA) Certificate. The following example shows how to
             generate a server certificate.<orderedlist>
                 <listitem>
-                Create a CA self signed certificate:
+                <para>Create a CA self signed certificate:
                 <screen>openssl req -new -x509 -days 365 -extensions v3_ca \
-  -keyout ca_key_private.pem -out ca_cert.pem</screen>
+  -keyout ca_key_private.pem -out ca_cert.pem</screen></para>
                 </listitem>
 
                 <listitem>
-                Generate a server private key and a request for signing:
+                <para>Generate a server private key and a request for signing:
                 <screen>openssl genrsa -out server_key_private.pem
-openssl req -new -key server_key_private.pem -out server_req.pem</screen>
+openssl req -new -key server_key_private.pem -out server_req.pem</screen></para>
                 </listitem>
 
                 <listitem>
-                Generate the server certificate:
+                <para>Generate the server certificate:
                 <screen>openssl x509 -req -days 365 -in server_req.pem \
-  -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</screen>
+  -CA ca_cert.pem -CAkey ca_key_private.pem -set_serial 01 -out server_cert.pem</screen></para>
                 </listitem>
             </orderedlist>
             The server must be configured to access the required files:

@@ -724,9 +724,12 @@
           dhcpserver</computeroutput> on the command line; please see <xref
           linkend="vboxmanage-dhcpserver" /> for details.</para>
         </listitem>
-      </itemizedlist></para>
-    <para><note>On Linux and Mac OS X hosts the number of host-only interfaces is
-    limited to 128. There is no such limit for Solaris and Windows hosts.</note></para>
+      </itemizedlist>
+    </para>
+
+    <para><note><para>On Linux and Mac OS X hosts the number of host-only
+    interfaces is limited to 128. There is no such limit for Solaris and
+    Windows hosts.</para></note></para>
   </sect1>
 
   <sect1 id="network_udp_tunnel">
@@ -790,12 +793,11 @@
     the host can see the network traffic which it could not in the normal
     Internal network case.</para>
 
-    <para><note>
-        On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible
-        to bind to ports below 1024 from applications that are not run by 
-        <computeroutput>root</computeroutput>. As a result, if you try to
-        configure such a source UDP port, the VM will refuse to start. 
-      </note></para>
+    <para><note><para>On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is
+    not possible to bind to ports below 1024 from applications that are not run
+    by <computeroutput>root</computeroutput>. As a result, if you try to
+    configure such a source UDP port, the VM will refuse to
+    start.</para></note></para>
   </sect1>
 
   <sect1 id="network_vde">
@@ -936,7 +938,7 @@ VBoxManage modifyvm "VM name" --nicbandwidthgroup2 Limit</screen></para>
         </listitem>
         <listitem>
           <para>Use <emphasis>bridged</emphasis> attachment instead of
-            <emphasis>NAT</emphasis></para>;
+            <emphasis>NAT</emphasis>;</para>
         </listitem>
         <listitem>
           <para>Make sure segmentation offloading is enabled in the guest OS.

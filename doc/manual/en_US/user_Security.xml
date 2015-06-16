@@ -5,147 +5,141 @@
   <title>Security guide</title>
 
   <sect1>
-    <title>Overview</title>
-    <para>
+    <title>General Security Principles</title>
+
+    <para>The following principles are fundamental to using any application
+      securely.
+      <glosslist>
+        <glossentry>
+          <glossterm>Keep Software Up To Date</glossterm>
+          <glossdef>
+            <para>
+              One of the principles of good security practise is to keep all
+              software versions and patches up to date. Activate the VirtualBox
+              update notification to get notified when a new VirtualBox release
+              is available. When updating VirtualBox, do not forget to update
+              the Guest Additions. Keep the host operating system as well as the
+              guest operating system up to date.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Restrict Network Access to Critical Services</glossterm>
+          <glossdef>
+            <para>
+              Use proper means, for instance a firewall, to protect your computer
+              and your guest(s) from accesses from the outside. Choosing the proper
+              networking mode for VMs helps to separate host networking from the
+              guest and vice versa.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Follow the Principle of Least Privilege</glossterm>
+          <glossdef>
+            <para>
+              The principle of least privilege states that users should be given the
+              least amount of privilege necessary to perform their jobs. Always execute VirtualBox
+              as a regular user. We strongly discourage anyone from executing
+              VirtualBox with system privileges.
+            </para>
+            <para>
+              Choose restrictive permissions when creating configuration files,
+              for instance when creating /etc/default/virtualbox, see
+              <xref linkend="linux_install_opts"/>. Mode 0600 would be preferred.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Monitor System Activity</glossterm>
+          <glossdef>
+            <para>
+              System security builds on three pillars: good security protocols, proper
+              system configuration and system monitoring. Auditing and reviewing audit
+              records address the third requirement. Each component within a system
+              has some degree of monitoring capability. Follow audit advice in this
+              document and regularly monitor audit records.
+            </para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm>Keep Up To Date on Latest Security Information</glossterm>
+          <glossdef>
+            <para>
+              Oracle continually improves its software and documentation. Check this
+              note note yearly for revisions.
+            </para>
+          </glossdef>
+        </glossentry>
+
+      </glosslist>
     </para>
-
-    <sect2>
-      <title>General Security Principles</title>
-
-      <para>The following principles are fundamental to using any application
-        securely.
-        <glosslist>
-          <glossentry>
-            <glossterm>Keep Software Up To Date</glossterm>
-            <glossdef>
-              <para>
-                One of the principles of good security practise is to keep all
-                software versions and patches up to date. Activate the VirtualBox
-                update notification to get notified when a new VirtualBox release
-                is available. When updating VirtualBox, do not forget to update
-                the Guest Additions. Keep the host operating system as well as the
-                guest operating system up to date.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Restrict Network Access to Critical Services</glossterm>
-            <glossdef>
-              <para>
-                Use proper means, for instance a firewall, to protect your computer
-                and your guest(s) from accesses from the outside. Choosing the proper
-                networking mode for VMs helps to separate host networking from the
-                guest and vice versa.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Follow the Principle of Least Privilege</glossterm>
-            <glossdef>
-              <para>
-                The principle of least privilege states that users should be given the
-                least amount of privilege necessary to perform their jobs. Always execute VirtualBox
-                as a regular user. We strongly discourage anyone from executing
-                VirtualBox with system privileges.
-              </para>
-              <para>
-                Choose restrictive permissions when creating configuration files,
-                for instance when creating /etc/default/virtualbox, see
-                <xref linkend="linux_install_opts"/>. Mode 0600 would be preferred.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Monitor System Activity</glossterm>
-            <glossdef>
-              <para>
-                System security builds on three pillars: good security protocols, proper
-                system configuration and system monitoring. Auditing and reviewing audit
-                records address the third requirement. Each component within a system
-                has some degree of monitoring capability. Follow audit advice in this
-                document and regularly monitor audit records.
-              </para>
-            </glossdef>
-          </glossentry>
-
-          <glossentry>
-            <glossterm>Keep Up To Date on Latest Security Information</glossterm>
-            <glossdef>
-              <para>
-                Oracle continually improves its software and documentation. Check this
-                note note yearly for revisions.
-              </para>
-            </glossdef>
-          </glossentry>
-
-        </glosslist>
-      </para>
-    </sect2>
   </sect1>
 
   <sect1>
     <title>Secure Installation and Configuration</title>
+
+    <sect2>
+      <title>Installation Overview</title>
+      <para>
+        The VirtualBox base package should be downloaded only from a trusted source,
+        for instance the official website
+        <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
+        The integrity of the package should be verified with the provided SHA256
+        checksum which can be found on the official website.
+      </para>
+      <para>
+        General VirtualBox installation instructions for the supported hosts
+        can be found in <xref linkend="installation"/>.
+      </para>
+      <para>
+        On Windows hosts, the installer allows for disabling USB support, support
+        for bridged networking, support for host-only networking and the Python
+        language bindings, see <xref linkend="installation_windows"/>.
+        All these features are enabled by default but disabling some
+        of them could be appropriate if the corresponding functionality is not
+        required by any virtual machine. The Python language bindings are only
+        required if the VirtualBox API is to be used by external Python
+        applications. In particular USB support and support
+        for the two networking modes require the installation of Windows kernel
+        drivers on the host. Therefore disabling those selected features can
+        not only be used to restrict the user to certain functionality but
+        also to minimize the surface provided to a potential attacker.     </para>
+      <para>
+        The general case is to install the complete VirtualBox package. The
+        installation must be done with system privileges. All VirtualBox binaries
+        should be executed as a regular user and never as a privileged user.
+      </para>
+      <para>
+        The Oracle VM VirtualBox extension pack provides additional features
+        and must be downloaded and installed separately, see
+        <xref linkend="intro-installing"/>. As for the base package, the SHA256
+        checksum of the extension pack should be verified. As the installation
+        requires system privileges, VirtualBox will ask for the system
+        password during the installation of the extension pack.
+      </para>
+    </sect2>
+  
+    <sect2>
+      <title>Post Installation Configuration</title>
+      <para>
+        Normally there is no post installation configuration of VirtualBox components
+        required. However, on Solaris and Linux hosts it is necessary to configure
+        the proper permissions for users executing VMs and who should be able to
+        access certain host resources. For instance, Linux users must be member of
+        the <emphasis>vboxusers</emphasis> group to be able to pass USB devices to a
+        guest. If a serial host interface should be accessed from a VM, the proper
+        permissions must be granted to the user to be able to access that device.
+        The same applies to other resources like raw partitions, DVD/CD drives
+        and sound devices.
+      </para>
+    </sect2>
   </sect1>
-
-  <sect2>
-    <title>Installation Overview</title>
-    <para>
-      The VirtualBox base package should be downloaded only from a trusted source,
-      for instance the official website
-      <ulink url="http://www.virtualbox.org">http://www.virtualbox.org</ulink>.
-      The integrity of the package should be verified with the provided SHA256
-      checksum which can be found on the official website.
-    </para>
-    <para>
-      General VirtualBox installation instructions for the supported hosts
-      can be found in <xref linkend="installation"/>.
-    </para>
-    <para>
-      On Windows hosts, the installer allows for disabling USB support, support
-      for bridged networking, support for host-only networking and the Python
-      language bindings, see <xref linkend="installation_windows"/>.
-      All these features are enabled by default but disabling some
-      of them could be appropriate if the corresponding functionality is not
-      required by any virtual machine. The Python language bindings are only
-      required if the VirtualBox API is to be used by external Python
-      applications. In particular USB support and support
-      for the two networking modes require the installation of Windows kernel
-      drivers on the host. Therefore disabling those selected features can
-      not only be used to restrict the user to certain functionality but
-      also to minimize the surface provided to a potential attacker.     </para>
-    <para>
-      The general case is to install the complete VirtualBox package. The
-      installation must be done with system privileges. All VirtualBox binaries
-      should be executed as a regular user and never as a privileged user.
-    </para>
-    <para>
-      The Oracle VM VirtualBox extension pack provides additional features
-      and must be downloaded and installed separately, see
-      <xref linkend="intro-installing"/>. As for the base package, the SHA256
-      checksum of the extension pack should be verified. As the installation
-      requires system privileges, VirtualBox will ask for the system
-      password during the installation of the extension pack.
-    </para>
-  </sect2>
-
-  <sect2>
-    <title>Post Installation Configuration</title>
-    <para>
-      Normally there is no post installation configuration of VirtualBox components
-      required. However, on Solaris and Linux hosts it is necessary to configure
-      the proper permissions for users executing VMs and who should be able to
-      access certain host resources. For instance, Linux users must be member of
-      the <emphasis>vboxusers</emphasis> group to be able to pass USB devices to a
-      guest. If a serial host interface should be accessed from a VM, the proper
-      permissions must be granted to the user to be able to access that device.
-      The same applies to other resources like raw partitions, DVD/CD drives
-      and sound devices.
-    </para>
-  </sect2>
-
+  
   <sect1>
     <title>Security Features</title>
     <para>This section outlines the specific security mechanisms offered

@@ -361,8 +361,8 @@
         certificates installed in order to prevent user intervention popus which
         will undermine a silent installation.</para>
 
-        <note>On some Windows versions like Windows 2000 and Windows XP the user intervention
-        popups mentioned above always will be displayed, even after importing the Oracle certificates.</note>
+        <note><para>On some Windows versions like Windows 2000 and Windows XP the user intervention
+        popups mentioned above always will be displayed, even after importing the Oracle certificates.</para></note>
 
         <para>Since VirtualBox 4.2 installing those CA certificates on a Windows
         guest can be done in an automated fashion using the
@@ -401,64 +401,72 @@
         <para>In the following example the needed certificates will be extracted from the VirtualBox
         Windows Guest Additions installer on the CD-ROM:</para>
 
-        <sect4>
-          <title>VeriSign Code Signing CA</title>
-          <itemizedlist>
-            <listitem>
-              <para>In the Windows Explorer, right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
-              click on "Properties"</para>
-            </listitem>
-            <listitem>
-              <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
-            </listitem>
-            <listitem>
-              <para>In tab "General" click on "View Certificate"</para>
-            </listitem>
-            <listitem>
-              <para>In tab "Certification Path" select "VeriSign Class 3 Public Primary CA"</para>
-            </listitem>
-            <listitem>
-              <para>Click on "View Certificate"</para>
-            </listitem>
-            <listitem>
-              <para>In tab "Details" click on "Copy to File ..."</para>
-            </listitem>
-            <listitem>
-              <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
-              and save the certificate file to a local path, finish the wizard</para>
-            </listitem>
-            <listitem>
-              <para>Close certificate dialog for "Verisign Class 3 Code Signing
-              2010 CA"</para>
-            </listitem>
-          </itemizedlist>
-        </sect4>
+        <glosslist>
+          <glossentry>
+            <glossterm>VeriSign Code Signing CA</glossterm>
+            <glossdef>
+              <para>Open the Windows Explorer.</para>
+              <itemizedlist>
+                <listitem>
+                  <para>Right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
+                  click on "Properties"</para>
+                </listitem>
+                <listitem>
+                  <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
+                </listitem>
+                <listitem>
+                  <para>In tab "General" click on "View Certificate"</para>
+                </listitem>
+                <listitem>
+                  <para>In tab "Certification Path" select "VeriSign Class 3 Public Primary CA"</para>
+                </listitem>
+                <listitem>
+                  <para>Click on "View Certificate"</para>
+                </listitem>
+                <listitem>
+                  <para>In tab "Details" click on "Copy to File ..."</para>
+                </listitem>
+                <listitem>
+                  <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
+                  and save the certificate file to a local path, finish the wizard</para>
+                </listitem>
+                <listitem>
+                  <para>Close certificate dialog for "Verisign Class 3 Code Signing
+                  2010 CA"</para>
+                </listitem>
+              </itemizedlist>
+            </glossdef>
+          </glossentry>
 
-        <sect4>
-          <title>Oracle Corporation</title>
-          <itemizedlist>
-            <listitem>
-              <para>In the Windows Explorer, right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
-              click on "Properties"</para>
-            </listitem>
-            <listitem>
-              <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
-            </listitem>
-            <listitem>
-              <para>In tab "General" click on "View Certificate"</para>
-            </listitem>
-            <listitem>
-              <para>In tab "Details" click on "Copy to File ..."</para>
-            </listitem>
-            <listitem>
-              <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
-              and save the certificate file to a local path, finish the wizard</para>
-            </listitem>
-            <listitem>
-              <para>Close certificate dialog for "Oracle Corporation"</para>
-            </listitem>
-          </itemizedlist>
-        </sect4>
+          <glossentry>
+            <glossterm>Oracle Corporation</glossterm>
+            <glossdef>
+              <para>Open the Windows Explorer.</para>
+              <itemizedlist>
+                <listitem>
+                  <para>Right click on VBoxWindowsAdditions-&lt;Architecture&gt;.exe,
+                  click on "Properties"</para>
+                </listitem>
+                <listitem>
+                  <para>Go to tab "Digital Signatures", choose "Oracle Corporation" and click on "Details"</para>
+                </listitem>
+                <listitem>
+                  <para>In tab "General" click on "View Certificate"</para>
+                </listitem>
+                <listitem>
+                  <para>In tab "Details" click on "Copy to File ..."</para>
+                </listitem>
+                <listitem>
+                  <para>In the upcoming wizard choose "DER encoded binary X.509 (.CER)"
+                  and save the certificate file to a local path, finish the wizard</para>
+                </listitem>
+                <listitem>
+                  <para>Close certificate dialog for "Oracle Corporation"</para>
+                </listitem>
+              </itemizedlist>
+            </glossdef>
+          </glossentry>
+        </glosslist>
 
         <para>After exporting the two certificates above they can be imported into the
         certificate store using the <computeroutput>certutil.exe</computeroutput>
@@ -646,7 +654,7 @@
           <para><orderedlist>
               <listitem>
                 <para>In order to fully update your guest system, open a
-                terminal and run <screen>yum update</screen></para> as root.
+                terminal and run <screen>yum update</screen> as root.</para>
               </listitem>
 
               <listitem>
@@ -667,7 +675,7 @@
           <para><orderedlist>
               <listitem>
                 <para>In order to fully update your guest system, open a
-                terminal and run <screen>zypper update</screen></para> as root.
+                terminal and run <screen>zypper update</screen> as root.</para>
               </listitem>
 
               <listitem>
@@ -705,7 +713,7 @@
           <para><orderedlist>
               <listitem>
                 <para>In order to fully update your guest system, open a
-                terminal and run <screen>zypper update</screen></para> as root.
+                terminal and run <screen>zypper update</screen> as root.</para>
               </listitem>
 
               <listitem>
@@ -747,8 +755,8 @@
 
               <listitem>
                 <para>In order to fully update your guest system, open a
-                terminal and run <screen>urpmi --auto-update</screen></para>
-                as root.
+                terminal and run <screen>urpmi --auto-update</screen>
+                as root.</para>
               </listitem>
 
               <listitem>
@@ -778,7 +786,7 @@
 
               <listitem>
                 <para>In order to fully update your guest system, open a
-                terminal and run <screen>yum update</screen></para> as root.
+                terminal and run <screen>yum update</screen> as root.</para>
               </listitem>
 
               <listitem>
@@ -1274,14 +1282,16 @@ $</screen>
     the moment only copying of data is supported. Moving or linking is not yet
     implemented.</para></footnote></para>
 
-    <para>When transferring data from the host to the guest OS, the host in this
-    case is the source, whereas the guest OS is the target. However, when doing
-    it the other way around, that is, transferring data from the guest OS to the
-    host, the guest OS this time became the source and the host is the target.</para>
+    <para>When transferring data from the host to the guest OS, the host in
+    this case is the source, whereas the guest OS is the target. However, when
+    doing it the other way around, that is, transferring data from the guest OS
+    to the host, the guest OS this time became the source and the host is the
+    target.</para>
 
-    <para>For security reasons drag'n drop can be configured at runtime
-    on a per-VM basis either using the "Drag'n'Drop" menu item in the "Devices" menu
-    of the virtual machine or VBoxManage: The following four modes are available:
+    <para>For security reasons drag'n drop can be configured at runtime on a
+    per-VM basis either using the "Drag'n'Drop" menu item in the "Devices" menu
+    of the virtual machine or VBoxManage: The following four modes are
+    available:</para>
 
     <para><mediaobject>
       <imageobject>
@@ -1308,7 +1318,7 @@ $</screen>
         drag'n drop operations to both directions, e.g. from the host to the guest
         and vice versa.</para>
       </listitem>
-    </itemizedlist></para>
+    </itemizedlist>
 
     <note><para>Drag'n drop support depends on the frontend being used; at the
     moment only the VirtualBox Manager frontend provides this
@@ -1448,19 +1458,22 @@ $</screen>
       displayed when the Direct3D feature is selected.
       <note><para>Unlike the current basic Direct3D support, the WDDM video
       driver installation does <emphasis role="bold">not</emphasis> require
-      the "Safe Mode".</para></note>
-      <para>The Aero theme is not enabled by default. To enable it<itemizedlist>
+      the "Safe Mode".</para></note></para>
+
+      <para>The Aero theme is not enabled by default. To enable it
+        <itemizedlist>
           <listitem>
             <para>In Windows Vista guest: right-click on the desktop, in the
             context menu select "Personalize", then select "Windows Color and Appearance"
             in the "Personalization" window, in the "Appearance Settings" dialog select
-            "Windows Aero" and press "OK"</para></listitem>
+            "Windows Aero" and press "OK"</para>
+          </listitem>
           <listitem>
             <para>In Windows 7 guest: right-click on the desktop, in the
             context menu select "Personalize" and select any Aero theme
-            in the "Personalization" window</para></listitem>
-          </itemizedlist>
-        </para>
+            in the "Personalization" window</para>
+          </listitem>
+        </itemizedlist>
       </para>
 
       <para>Technically, VirtualBox implements this by installing an

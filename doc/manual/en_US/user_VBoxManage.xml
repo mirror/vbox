@@ -888,7 +888,6 @@ Statistics update:  disabled</screen></para>
             the name of the NAT network this adapter is connected to.</para>
           </listitem>
           
-          This allows you to change the address range occupied by
           <listitem>
             <para><computeroutput>--bridgeadapter&lt;1-N&gt;
             none|&lt;devicename&gt;</computeroutput>: If bridged networking
@@ -4320,11 +4319,11 @@ Value: 2006.01.01</screen>
           used to display CPU and device registers.  The command takes a list
           of registers, each having one of the following forms:
           <itemizedlist>
-            <listitem><computeroutput>register-set.register-name.sub-field</computeroutput></listitem>
-            <listitem><computeroutput>register-set.register-name</computeroutput></listitem>
-            <listitem><computeroutput>cpu-register-name.sub-field</computeroutput></listitem>
-            <listitem><computeroutput>cpu-register-name</computeroutput></listitem>
-            <listitem><computeroutput>all</computeroutput></listitem>
+            <listitem><para><computeroutput>register-set.register-name.sub-field</computeroutput></para></listitem>
+            <listitem><para><computeroutput>register-set.register-name</computeroutput></para></listitem>
+            <listitem><para><computeroutput>cpu-register-name.sub-field</computeroutput></para></listitem>
+            <listitem><para><computeroutput>cpu-register-name</computeroutput></para></listitem>
+            <listitem><para><computeroutput>all</computeroutput></para></listitem>
           </itemizedlist>
           The <computeroutput>all</computeroutput> form will cause all
           registers to be shown (no sub-fields).  The registers names are
@@ -4339,10 +4338,10 @@ Value: 2006.01.01</screen>
           used to change CPU and device registers.  The command takes a list
           of register assignments, each having one of the following forms:
           <itemizedlist>
-            <listitem><computeroutput>register-set.register-name.sub-field=value</computeroutput></listitem>
-            <listitem><computeroutput>register-set.register-name=value</computeroutput></listitem>
-            <listitem><computeroutput>cpu-register-name.sub-field=value</computeroutput></listitem>
-            <listitem><computeroutput>cpu-register-name=value</computeroutput></listitem>
+            <listitem><para><computeroutput>register-set.register-name.sub-field=value</computeroutput></para></listitem>
+            <listitem><para><computeroutput>register-set.register-name=value</computeroutput></para></listitem>
+            <listitem><para><computeroutput>cpu-register-name.sub-field=value</computeroutput></para></listitem>
+            <listitem><para><computeroutput>cpu-register-name=value</computeroutput></para></listitem>
           </itemizedlist>
           The value format should be in the same style as what
           <computeroutput>getregisters</computeroutput> displays, with the

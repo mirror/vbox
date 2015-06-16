@@ -11,36 +11,36 @@
             welcome. A comprehensive list of experimental features follows:</para>
         <itemizedlist>
             <listitem>
-                WDDM Direct3D video driver for Windows guests
+                <para>WDDM Direct3D video driver for Windows guests</para>
             </listitem>
             <listitem>
-                Hardware 3D acceleration support for Windows, Linux, and Solaris 
-                guests
+                <para>Hardware 3D acceleration support for Windows, Linux, and Solaris 
+                guests</para>
             </listitem>
             <listitem>
-                Hardware 2D video playback acceleration support for Windows 
-                guests
+                <para>Hardware 2D video playback acceleration support for Windows 
+                guests</para>
             </listitem>
             <listitem>
-                PCI pass-through (Linux hosts only)
+                <para>PCI pass-through (Linux hosts only)</para>
             </listitem>
             <listitem>
-                Mac OS X guests (Mac hosts only)
+                <para>Mac OS X guests (Mac hosts only)</para>
             </listitem>
             <listitem>
-                ICH9 chipset emulation
+                <para>ICH9 chipset emulation</para>
             </listitem>
             <listitem>
-                EFI firmware
+                <para>EFI firmware</para>
             </listitem>
             <listitem>
-                Host CD/DVD drive pass-through
+                <para>Host CD/DVD drive pass-through</para>
             </listitem>
             <listitem>
-                Support of iSCSI via internal networking
+                <para>Support of iSCSI via internal networking</para>
             </listitem>
             <listitem>
-                Synthetic CPU reporting
+                <para>Synthetic CPU reporting</para>
             </listitem>
         </itemizedlist>
     </sect1>
