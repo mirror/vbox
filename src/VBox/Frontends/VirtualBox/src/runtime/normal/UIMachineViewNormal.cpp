@@ -136,15 +136,17 @@ void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewNormal::resendSizeHint()
 {
-    const QSize sizeHint = guestSizeHint();
+    /* Get the last size hint, taking the scale factor into account. */
+    const QSize sizeHint = scaledBackward(guestSizeHint());
     LogRel(("GUI: UIMachineViewNormal::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
             (int)screenId(), sizeHint.width(), sizeHint.height()));
     /* Temporarily restrict the size to prevent a brief resize to the
      * framebuffer dimensions (see @a UIMachineView::sizeHint()) before
-     * the following resize() is acted upon. */
+     * the following resize() is acted upon.  Expand current limitations
+     * too. */
     setMaximumSize(sizeHint);
     m_sizeHintOverride = sizeHint;
-    sltPerformGuestResize(sizeHint);
+    display().SetVideoModeHint(screenId(), true, false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
 }
 
 void UIMachineViewNormal::adjustGuestScreenSize()

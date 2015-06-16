@@ -229,6 +229,12 @@ void UIMachineWindow::adjustMachineViewSize()
     machineView()->adjustGuestScreenSize();
 }
 
+void UIMachineWindow::sendMachineViewSizeHint()
+{
+    /* Send machine-view size-hint to the guest: */
+    machineView()->resendSizeHint();
+}
+
 #ifdef VBOX_WITH_MASKED_SEAMLESS
 void UIMachineWindow::setMask(const QRegion &region)
 {

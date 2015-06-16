@@ -339,6 +339,14 @@ void UIMachineLogic::adjustMachineWindowsGeometry()
         pMachineWindow->adjustMachineViewSize();
 }
 
+void UIMachineLogic::sendMachineWindowsSizeHints()
+{
+    /* By default, the only thing we need is to
+     * send machine-view(s) size-hint(s) to the guest: */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->sendMachineViewSizeHint();
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogic::updateDockIcon()
 {

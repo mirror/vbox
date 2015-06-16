@@ -286,7 +286,11 @@ bool UISession::powerUp()
         machineLogic()->adjustMachineWindowsGeometry();
     }
     else
+    {
         msgCenter().showModalProgressDialog(progress, machineName(), ":/progress_start_90px.png");
+        /* After VM start, machine-window(s) size-hint(s) should be sent: */
+        machineLogic()->sendMachineWindowsSizeHints();
+    }
 
     /* Check for progress failure: */
     if (!progress.isOk() || progress.GetResultCode() != 0)

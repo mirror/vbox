@@ -127,6 +127,9 @@ public:
     /** Adjusts machine-window(s) geometry if necessary. */
     virtual void adjustMachineWindowsGeometry();
 
+    /** Send machine-window(s) size-hint(s) to the guest. */
+    virtual void sendMachineWindowsSizeHints();
+
     /* Wrapper to open Machine settings / Network page: */
     void openNetworkSettingsDialog() { sltOpenNetworkSettingsDialog(); }
 

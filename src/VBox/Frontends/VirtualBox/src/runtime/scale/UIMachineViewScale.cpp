@@ -152,10 +152,12 @@ void UIMachineViewScale::applyMachineViewScaleFactor()
 
 void UIMachineViewScale::resendSizeHint()
 {
-    const QSize sizeHint = guestSizeHint();
+    const QSize sizeHint = scaledBackward(guestSizeHint());
     LogRel(("GUI: UIMachineViewScale::resendSizeHint: Restoring guest size-hint for screen %d to %dx%d\n",
             (int)screenId(), sizeHint.width(), sizeHint.height()));
-    sltPerformGuestResize(sizeHint);
+    /* Expand current limitations: */
+    setMaxGuestSize(sizeHint);
+    display().SetVideoModeHint(screenId(), true, false, 0, 0, sizeHint.width(), sizeHint.height(), 0);
 }
 
 QSize UIMachineViewScale::sizeHint() const
