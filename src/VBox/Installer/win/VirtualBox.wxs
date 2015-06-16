@@ -425,6 +425,7 @@
                      Absent="allow" AllowAdvertise="no" >
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <MergeRef Id="msm_VBoxNetworkFlt" />
+                <MergeRef Id="msm_VBoxNetworkLwf" />
     <?else ?>
                 <ComponentRef Id="cp_NetFltDriver" />
                 <ComponentRef Id="cp_NetLwfDriver" />
@@ -436,6 +437,7 @@
                      Absent="allow" AllowAdvertise="no" >
     <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                 <MergeRef Id="msm_VBoxNetworkAdp" />
+                <MergeRef Id="msm_VBoxNetworkAdp6" />
     <?else ?>
                 <ComponentRef Id="cp_NetAdpDriver" />
                 <ComponentRef Id="cp_NetAdp6Driver" />

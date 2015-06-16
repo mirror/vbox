@@ -57,7 +57,7 @@ endif
 #
 # List of merge modules to use.
 #
-VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt Python
+VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt NetAdp6 NetLwf Python
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  VBOX_INSTALLER_MERGE_MODULES += COM32On64
 endif
