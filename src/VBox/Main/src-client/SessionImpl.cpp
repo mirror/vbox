@@ -122,7 +122,7 @@ void Session::uninit()
         Assert(mState == SessionState_Locked ||
                mState == SessionState_Spawning);
 
-        HRESULT rc = i_unlockMachine(true /* aFinalRelease */, false /* aFromServer */);
+        HRESULT rc = i_unlockMachine(true /* aFinalRelease */, false /* aFromServer */, &alock);
         AssertComRC(rc);
     }
 
@@ -239,8 +239,7 @@ HRESULT Session::unlockMachine()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CHECK_OPEN();
-
-    return i_unlockMachine(false /* aFinalRelease */, false /* aFromServer */);
+    return i_unlockMachine(false /* aFinalRelease */, false /* aFromServer */, &alock);
 }
 
 // IInternalSessionControl methods
@@ -534,7 +533,7 @@ HRESULT Session::uninitialize()
                         VBOX_E_INVALID_VM_STATE);
 
         /* close ourselves */
-        rc = i_unlockMachine(false /* aFinalRelease */, true /* aFromServer */);
+        rc = i_unlockMachine(false /* aFinalRelease */, true /* aFromServer */, &alock);
     }
     else if (getObjectState().getState() == ObjectState::InUninit)
     {
@@ -1057,19 +1056,21 @@ HRESULT Session::cancelSaveStateWithReason()
  *
  *  @param aFinalRelease    called as a result of FinalRelease()
  *  @param aFromServer      called as a result of Uninitialize()
+ *  @param pLockW           The write lock this object is protected with.
+ *                          Must be acquired already and will be released
+ *                          and later reacquired during the unlocking.
  *
  *  @note To be called only from #uninit(), #UnlockMachine() or #Uninitialize().
- *  @note Locks this object for writing.
  */
-HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer)
+HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWriteLock *pLockW)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aFinalRelease=%d, isFromServer=%d\n",
                       aFinalRelease, aFromServer));
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
+
+    Assert(pLockW->isWriteLockOnCurrentThread());
 
     if (mState != SessionState_Locked)
     {
@@ -1136,13 +1137,13 @@ HRESULT Session::i_unlockMachine(bool aFinalRelease, bool aFromServer)
          *  we need to release the lock to avoid deadlocks. The state is already
          *  SessionState_Closing here, so it's safe.
          */
-        alock.release();
+        pLockW->release();
 
         LogFlowThisFunc(("Calling mControl->OnSessionEnd()...\n"));
         HRESULT rc = mControl->OnSessionEnd(this, progress.asOutParam());
         LogFlowThisFunc(("mControl->OnSessionEnd()=%08X\n", rc));
 
-        alock.acquire();
+        pLockW->acquire();
 
         /*
          *  If we get E_UNEXPECTED this means that the direct session has already

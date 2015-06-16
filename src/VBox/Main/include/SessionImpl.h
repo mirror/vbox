@@ -140,7 +140,7 @@ private:
     HRESULT cancelSaveStateWithReason();
 
 
-    HRESULT i_unlockMachine(bool aFinalRelease, bool aFromServer);
+    HRESULT i_unlockMachine(bool aFinalRelease, bool aFromServer, AutoWriteLock *pLockW);
 
     SessionState_T mState;
     SessionType_T mType;
