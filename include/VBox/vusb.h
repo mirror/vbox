@@ -1087,6 +1087,10 @@ typedef struct VUSBURB
     uint32_t        u32Magic;
     /** The USR state. */
     VUSBURBSTATE    enmState;
+    /** Flag whether the URB is about to be completed,
+     * either by the I/O thread or the cancellation worker.
+     */
+    volatile bool   fCompleting;
     /** URB description, can be null. intended for logging. */
     char           *pszDesc;
 

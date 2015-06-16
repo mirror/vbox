@@ -428,6 +428,7 @@ PVUSBURB vusbRhNewUrb(PVUSBROOTHUB pRh, uint8_t DstAddress, uint32_t cbData, uin
      * (Re)init the URB
      */
     pUrb->enmState = VUSBURBSTATE_ALLOCATED;
+    pUrb->fCompleting = false;
     pUrb->pszDesc = NULL;
     pUrb->VUsb.pNext = NULL;
     pUrb->VUsb.ppPrev = NULL;
@@ -597,7 +598,7 @@ static DECLCALLBACK(int) vusbRhCancelUrbsEp(PVUSBIROOTHUBCONNECTOR pInterface, P
     /*
      * Cancel and reap the URB(s) on an endpoint.
      */
-    LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh));
+    LogFlow(("vusbRhCancelUrbsEp: pRh=%p pUrb=%p\n", pRh, pUrb));
 
     vusbUrbCancelAsync(pUrb, CANCELMODE_UNDO);
 
