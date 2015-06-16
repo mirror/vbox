@@ -21,95 +21,366 @@
   </refentryinfo>
 
   <refmeta>
+    <refentrytitle>VBoxManage-debugvm</refentrytitle>
     <manvolnum>1</manvolnum>
   </refmeta>
 
   <refnamediv>
     <refname>VBoxManage-debugvm</refname>
-    <refpurpose>extension package management</refpurpose>
+    <refpurpose>introspection and guest debugging</refpurpose>
     <refclass>Oracle VM VirtualBox</refclass>
   </refnamediv>
 
   <refsynopsisdiv>
-    <cmdsynopsis id="synopsis-vboxmanage-debugvm-install"> <!-- The 'id' is mandatory and must start with 'synopsis-'. -->
-      <command>VBoxManage debugvm install</command>
-      <arg>--replace</arg>
-      <arg choice="req"><replaceable>tarball</replaceable></arg>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-dumpguestcore">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">dumpguestcore</arg>
+      <arg>--filename <replaceable>name</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-debugvm-uninstall">
-      <command>VBoxManage debugvm uninstall</command>
-      <arg>--force</arg>
-      <arg choice="req"><replaceable>name</replaceable></arg>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-info">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">info</arg>
+      <arg choice="req"><replaceable>item</replaceable></arg>
+      <arg rep="repeat"><replaceable>args</replaceable></arg>
     </cmdsynopsis>
-    <cmdsynopsis id="synopsis-vboxmanage-debugvm-cleanup">
-      <command>VBoxManage debugvm cleanup</command>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-injectnmi">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">injectnmi</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-log">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">log</arg>
+      <group><arg>--release</arg><arg>--debug</arg></group>
+      <arg rep="repeat"><replaceable>group-settings</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-logdest">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">logdest</arg>
+      <group><arg>--release</arg><arg>--debug</arg></group>
+      <arg rep="repeat"><replaceable>destinations</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-logflags">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">logflags</arg>
+      <group><arg>--release</arg><arg>--debug</arg></group>
+      <arg rep="repeat"><replaceable>flags</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-osdetect">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">osdetect</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-osinfo">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">osinfo</arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-getregisters">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">getregisters</arg>
+      <arg>--cpu <replaceable>id</replaceable></arg>
+      <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-setregisters">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">setregisters</arg>
+      <arg>--cpu <replaceable>id</replaceable></arg>
+      <arg rep="repeat"><replaceable>reg-set.reg-name=value</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-show">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">show</arg>
+      <group><arg>--human-readable</arg><arg>--sh-export</arg><arg>--sh-eval</arg><arg>--cmd-set</arg></group>
+      <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
+    </cmdsynopsis>
+    <cmdsynopsis id="synopsis-vboxmanage-debugvm-statistics">
+      <command>VBoxManage debugvm</command>
+      <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+      <arg choice="plain">statistics</arg>
+      <arg>--reset</arg>
+      <arg>--descriptions</arg>
+      <arg>--pattern <replaceable>pattern</replaceable></arg>
     </cmdsynopsis>
   </refsynopsisdiv>
-
   <refsect1>
     <title>Description</title>
 
-    <refsect2 id="vboxmanage-debugvm-install">
+    <para>The "debugvm" commands are for experts who want to tinker with the
+      exact details of virtual machine execution.  Like the VM debugger<remark role="help-manual">
+      described in <xref linkend="ts_debugger" /></remark>, these commands are only useful if you are
+      very familiar with the details of the PC architecture and how to debug
+      software.</para>
+
+    <refsect2 id="vboxmanage-debugvm-common-options">
+      <title>Common options</title>
+      <remark role="help-scope" condition="GLOBAL"/>
+      <para>The subcommands of <command>debugvm</command> all operate on a running virtual
+      machine:</para>
+      <variablelist>
+        <varlistentry>
+          <term><replaceable>uuid|vmname</replaceable></term>
+          <listitem><para>Either the UUID or the name (case sensitive) of a VM.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-dumpguestcore">
       <cmdsynopsis>
-        <command>VBoxManage debugvm install</command>
-        <arg>--replace</arg>
-        <arg choice="req"><replaceable>tarball</replaceable></arg>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">dumpguestcore</arg>
+        <arg>--filename <replaceable>name</replaceable></arg>
       </cmdsynopsis>
       <para>
-        Installs a new extension pack on the system.  This command will fail if an older
-        version of the same extension pack is already installed.  The
-        <option>--replace</option> option can be used to uninstall any
-        old package before the new one is installed.
+        Creates a system dump file of the specified VM.  This file will have
+        the standard ELF core format (with custom sections)<remark role="help-manual">; see
+        <xref linkend="ts_guest-core-format" /></remark>.
+      </para>
+      <para>
+        This corresponds to the <command>writecore</command> command in the debugger.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--replace</option></term><listitem><para>Uninstall existing extension pack version.</para></listitem>
+          <term><option>--filename <replaceable>filename</replaceable></option></term>
+          <listitem><para>The name of the output file.</para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-info">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">info</arg>
+        <arg choice="req"><replaceable>item</replaceable></arg>
+        <arg rep="repeat"><replaceable>args</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Displays info items relating to the VMM, device emulations and
+        associated drivers.
+      </para>
+      <para>
+        This corresponds to the <command>info</command> command in the debugger.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><replaceable>info</replaceable></term>
+          <listitem>
+            <para>Name of the info item to display.  The special name
+            <option>help</option> will list all the available info items and
+            hints about optional arguments.</para>
+          </listitem>
         </varlistentry>
         <varlistentry>
-          <term><replaceable>tarball</replaceable></term>
+          <term><replaceable>args</replaceable></term>
           <listitem>
-            <para>The file containing the extension pack to be installed.</para>
+            <para>Optional argument string for the info item handler.  Most info items
+            does not take any extra arguments.  Arguments not recognized are generally
+            ignored.</para>
           </listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-debugvm-uninstall">
+    <refsect2 id="vboxmanage-debugvm-injectnmi">
       <cmdsynopsis>
-        <command>VBoxManage debugvm uninstall</command>
-        <arg>--force</arg>
-        <arg choice="req"><replaceable>name</replaceable></arg>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">injectnmi</arg>
       </cmdsynopsis>
       <para>
-        Uninstalls an extension pack from the system.  The subcommand will also succeed
-        in the case where the specified extension pack is not present on the system.
-        You can use <computeroutput>VBoxManage list debugvms</computeroutput> to show
-        the names of the extension packs which are currently installed.
+        Causes a non-maskable interrupt (NMI) to be injected into the guest. This
+        might be useful for certain debugging scenarios. What happens exactly is
+        dependent on the guest operating system, but an NMI can crash the whole
+        guest operating system. Do not use unless you know what you're doing.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-log">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">log</arg>
+        <group><arg>--release</arg><arg>--debug</arg></group>
+        <arg rep="repeat"><replaceable>group-settings</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        TODO
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-logdest">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">logdest</arg>
+        <group><arg>--release</arg><arg>--debug</arg></group>
+        <arg rep="repeat"><replaceable>destinations</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        TODO
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-logflags">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">logflags</arg>
+        <group><arg>--release</arg><arg>--debug</arg></group>
+        <arg rep="repeat"><replaceable>flags</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        TODO
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-osdetect">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">osdetect</arg>
+      </cmdsynopsis>
+      <para>
+        Make the VMM's debugger facility (re)-detect the guest operating system (OS).
+      </para>
+      <para>
+        This corresponds to the <command>detect</command> command in the debugger.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-osinfo">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">osinfo</arg>
+      </cmdsynopsis>
+      <para>
+        Displays information about the guest operating system (OS) previously
+        detected by the VMM's debugger facility.
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-getregisters">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">getregisters</arg>
+        <arg>--cpu <replaceable>id</replaceable></arg>
+        <arg rep="repeat"><replaceable>reg-set.reg-name</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Retrieves register values for guest CPUs and emulated devices.
       </para>
       <variablelist>
         <varlistentry>
-          <term><option>--force</option></term>
-          <listitem>
-            <para>Overrides most refusals to uninstall an extension pack</para>
-          </listitem>
+          <term><replaceable>reg-set.reg-name</replaceable></term>
+          <listitem><para>One of more registers, each having one of the following forms:
+            <itemizedlist>
+              <listitem><computeroutput>register-set.register-name.sub-field</computeroutput></listitem>
+              <listitem><computeroutput>register-set.register-name</computeroutput></listitem>
+              <listitem><computeroutput>cpu-register-name.sub-field</computeroutput></listitem>
+              <listitem><computeroutput>cpu-register-name</computeroutput></listitem>
+              <listitem><computeroutput>all</computeroutput></listitem>
+            </itemizedlist>
+            The <replaceable>all</replaceable> form will cause all registers
+            to be shown (no sub-fields).  The registers names are case-insensitive.
+          </para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><replaceable>name</replaceable></term>
-          <listitem>
-            <para>The name of the extension pack to be uninstalled.</para>
+          <term><option>--cpu <replaceable>id</replaceable></option></term>
+          <listitem><para>Selects the CPU register set when specifying just a
+            CPU register (3rd and 4th form).  The default is 0.</para>
           </listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
 
-    <refsect2 id="vboxmanage-debugvm-cleanup">
+    <refsect2 id="vboxmanage-debugvm-logdest-setregisters">
       <cmdsynopsis>
-        <command>VBoxManage debugvm cleanup</command>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">setregisters</arg>
+        <arg>--cpu <replaceable>id</replaceable></arg>
+        <arg rep="repeat"><replaceable>reg-set.reg-name=value</replaceable></arg>
       </cmdsynopsis>
       <para>
-        Used to remove temporariy files and directories that may have been left behind
-        if a previous install or uninstall command failed.
+        Changes register values for guest CPUs and emulated devices.
       </para>
+      <variablelist>
+        <varlistentry>
+          <term><replaceable>reg-set.reg-name=value</replaceable></term>
+          <listitem><para>One of more register assignment, each having one of the following forms:
+            <itemizedlist>
+              <listitem><computeroutput>register-set.register-name.sub-field=value</computeroutput></listitem>
+              <listitem><computeroutput>register-set.register-name=value</computeroutput></listitem>
+              <listitem><computeroutput>cpu-register-name.sub-field=value</computeroutput></listitem>
+              <listitem><computeroutput>cpu-register-name=value</computeroutput></listitem>
+            </itemizedlist>
+            The value format should be in the same style as what <command>getregisters</command>
+            displays, with the exception that both octal and decimal can be used instead of
+            hexadecimal.
+          </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--cpu <replaceable>id</replaceable></option></term>
+          <listitem><para>Selects the CPU register set when specifying just a
+            CPU register (3rd and 4th form).  The default is 0.</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-show">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">show</arg>
+        <group><arg>--human-readable</arg><arg>--sh-export</arg><arg>--sh-eval</arg><arg>--cmd-set</arg></group>
+        <arg rep="repeat"><replaceable>settings-item</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        TODO
+      </para>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-debugvm-statistics">
+      <cmdsynopsis>
+        <command>VBoxManage debugvm</command>
+        <arg choice="req"><replaceable>uuid|vmname</replaceable></arg>
+        <arg choice="plain">statistics</arg>
+        <arg>--reset</arg>
+        <arg>--descriptions</arg>
+        <arg>--pattern <replaceable>pattern</replaceable></arg>
+      </cmdsynopsis>
+      <para>
+        Displays or resets VMM statistics.
+      </para>
+      <para>
+        Retrieves register values for guest CPUs and emulated devices.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--pattern <replaceable>pattern</replaceable></option></term>
+          <listitem><para>DOS/NT-style wildcards patterns for selecting statistics.  Multiple
+            patterns can be specified by using the '|' (pipe) character as separator.</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--reset</option></term>
+          <listitem><para>Select reset instead of display mode.</para></listitem>
+        </varlistentry>
+      </variablelist>
+
     </refsect2>
 
   </refsect1>
