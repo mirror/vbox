@@ -55,8 +55,6 @@ public:
     void i_setBootable(BOOL fBootable);
     void i_rollback();
     void i_commit();
-    HRESULT i_getIDEEmulationPort (LONG DevicePosition, LONG *aPortNumber);
-    HRESULT i_setIDEEmulationPort (LONG DevicePosition, LONG aPortNumber);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)

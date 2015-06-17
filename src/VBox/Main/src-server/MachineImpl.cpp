@@ -9125,17 +9125,6 @@ HRESULT Machine::i_loadStorageControllers(const settings::Storage &data,
         rc = pCtl->COMSETTER(UseHostIOCache)(ctlData.fUseHostIOCache);
         if (FAILED(rc)) return rc;
 
-        /* Set IDE emulation settings (only for AHCI controller). */
-        if (ctlData.controllerType == StorageControllerType_IntelAhci)
-        {
-            if (    (FAILED(rc = pCtl->i_setIDEEmulationPort(0, ctlData.lIDE0MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(1, ctlData.lIDE0SlaveEmulationPort)))
-                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(2, ctlData.lIDE1MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->i_setIDEEmulationPort(3, ctlData.lIDE1SlaveEmulationPort)))
-               )
-                return rc;
-        }
-
         /* Load the attached devices now. */
         rc = i_loadStorageDevices(pCtl,
                                   ctlData,
@@ -10395,17 +10384,6 @@ HRESULT Machine::i_saveStorageControllers(settings::Storage &data)
         rc = pCtl->COMGETTER(UseHostIOCache)(&fUseHostIOCache);
         ComAssertComRCRet(rc, rc);
         ctl.fUseHostIOCache = !!fUseHostIOCache;
-
-        /* Save IDE emulation settings. */
-        if (ctl.controllerType == StorageControllerType_IntelAhci)
-        {
-            if (    (FAILED(rc = pCtl->i_getIDEEmulationPort(0, (LONG*)&ctl.lIDE0MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(1, (LONG*)&ctl.lIDE0SlaveEmulationPort)))
-                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(2, (LONG*)&ctl.lIDE1MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->i_getIDEEmulationPort(3, (LONG*)&ctl.lIDE1SlaveEmulationPort)))
-               )
-                ComAssertComRCRet(rc, rc);
-        }
 
         /* save the devices now. */
         rc = i_saveStorageDevices(pCtl, ctl);

@@ -49,11 +49,7 @@ struct BackupableStorageControllerData
           mInstance(0),
           mPortCount(2),
           fUseHostIOCache(true),
-          fBootable(false),
-          mPortIde0Master(0),
-          mPortIde0Slave(1),
-          mPortIde1Master(2),
-          mPortIde1Slave(3)
+          fBootable(false)
     { }
 
     /** Unique name of the storage controller. */
@@ -70,16 +66,6 @@ struct BackupableStorageControllerData
     BOOL fUseHostIOCache;
     /** Whether it is possible to boot from disks attached to this controller. */
     BOOL fBootable;
-
-    /** The following is only for the SATA controller atm. */
-    /** Port which acts as primary master for ide emulation. */
-    ULONG mPortIde0Master;
-    /** Port which acts as primary slave for ide emulation. */
-    ULONG mPortIde0Slave;
-    /** Port which acts as secondary master for ide emulation. */
-    ULONG mPortIde1Master;
-    /** Port which acts as secondary slave for ide emulation. */
-    ULONG mPortIde1Slave;
 };
 
 struct StorageController::Data
@@ -657,80 +643,6 @@ HRESULT StorageController::getBootable(BOOL *fBootable)
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
-
-HRESULT StorageController::i_getIDEEmulationPort(LONG DevicePosition, LONG *aPortNumber)
-{
-    CheckComArgOutPointerValid(aPortNumber);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
-        return setError(E_NOTIMPL,
-                        tr("Invalid controller type"));
-
-    switch (DevicePosition)
-    {
-        case 0:
-            *aPortNumber = m->bd->mPortIde0Master;
-            break;
-        case 1:
-            *aPortNumber = m->bd->mPortIde0Slave;
-            break;
-        case 2:
-            *aPortNumber = m->bd->mPortIde1Master;
-            break;
-        case 3:
-            *aPortNumber = m->bd->mPortIde1Slave;
-            break;
-        default:
-            return E_INVALIDARG;
-    }
-
-    return S_OK;
-}
-
-HRESULT StorageController::i_setIDEEmulationPort(LONG DevicePosition, LONG aPortNumber)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
-        return setError(E_NOTIMPL,
-                        tr("Invalid controller type"));
-
-    if (aPortNumber < 0 || aPortNumber >= 30)
-        return setError(E_INVALIDARG,
-                        tr("Invalid port number: %ld (must be in range [%lu, %lu])"),
-                        aPortNumber, 0, 29);
-
-    switch (DevicePosition)
-    {
-        case 0:
-            m->bd->mPortIde0Master = aPortNumber;
-            break;
-        case 1:
-            m->bd->mPortIde0Slave = aPortNumber;
-            break;
-        case 2:
-            m->bd->mPortIde1Master = aPortNumber;
-            break;
-        case 3:
-            m->bd->mPortIde1Slave = aPortNumber;
-            break;
-        default:
-            return E_INVALIDARG;
-    }
-
-    return S_OK;
-}
 
 const Utf8Str& StorageController::i_getName() const
 {

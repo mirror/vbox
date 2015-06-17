@@ -1054,11 +1054,7 @@ struct StorageController
           ulPortCount(2),
           ulInstance(0),
           fUseHostIOCache(true),
-          fBootable(true),
-          lIDE0MasterEmulationPort(0),
-          lIDE0SlaveEmulationPort(0),
-          lIDE1MasterEmulationPort(0),
-          lIDE1SlaveEmulationPort(0)
+          fBootable(true)
     {}
 
     bool operator==(const StorageController &s) const;

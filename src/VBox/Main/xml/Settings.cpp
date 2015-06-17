@@ -2125,10 +2125,6 @@ bool StorageController::operator==(const StorageController &s) const
                   && (ulPortCount               == s.ulPortCount)
                   && (ulInstance                == s.ulInstance)
                   && (fUseHostIOCache           == s.fUseHostIOCache)
-                  && (lIDE0MasterEmulationPort  == s.lIDE0MasterEmulationPort)
-                  && (lIDE0SlaveEmulationPort   == s.lIDE0SlaveEmulationPort)
-                  && (lIDE1MasterEmulationPort  == s.lIDE1MasterEmulationPort)
-                  && (lIDE1SlaveEmulationPort   == s.lIDE1SlaveEmulationPort)
                   && (llAttachedDevices         == s.llAttachedDevices)
                 )
            );
@@ -2719,11 +2715,6 @@ void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &
                                                         StorageController &sctl)
 {
     elmStorageController.getAttributeValue("PortCount", sctl.ulPortCount);
-    elmStorageController.getAttributeValue("IDE0MasterEmulationPort", sctl.lIDE0MasterEmulationPort);
-    elmStorageController.getAttributeValue("IDE0SlaveEmulationPort", sctl.lIDE0SlaveEmulationPort);
-    elmStorageController.getAttributeValue("IDE1MasterEmulationPort", sctl.lIDE1MasterEmulationPort);
-    elmStorageController.getAttributeValue("IDE1SlaveEmulationPort", sctl.lIDE1SlaveEmulationPort);
-
     elmStorageController.getAttributeValue("useHostIOCache", sctl.fUseHostIOCache);
 }
 
@@ -5062,10 +5053,10 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
 
         if (sc.controllerType == StorageControllerType_IntelAhci)
         {
-            pelmController->setAttribute("IDE0MasterEmulationPort", sc.lIDE0MasterEmulationPort);
-            pelmController->setAttribute("IDE0SlaveEmulationPort", sc.lIDE0SlaveEmulationPort);
-            pelmController->setAttribute("IDE1MasterEmulationPort", sc.lIDE1MasterEmulationPort);
-            pelmController->setAttribute("IDE1SlaveEmulationPort", sc.lIDE1SlaveEmulationPort);
+            pelmController->setAttribute("IDE0MasterEmulationPort", 0);
+            pelmController->setAttribute("IDE0SlaveEmulationPort", 1);
+            pelmController->setAttribute("IDE1MasterEmulationPort", 2);
+            pelmController->setAttribute("IDE1SlaveEmulationPort", 3);
         }
 
         for (AttachedDevicesList::const_iterator it2 = sc.llAttachedDevices.begin();
