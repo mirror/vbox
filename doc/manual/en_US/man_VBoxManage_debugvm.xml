@@ -140,7 +140,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-dumpvmcore">
-      <title>dumpvmcore</title>
+      <title>debugvm dumpvmcore</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Creates a system dump file of the specified VM.  This file will have
@@ -159,7 +159,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-info">
-      <title>info</title>
+      <title>debugvm info</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Displays info items relating to the VMM, device emulations and
@@ -189,7 +189,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-injectnmi">
-      <title>injectnmi</title>
+      <title>debugvm injectnmi</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Causes a non-maskable interrupt (NMI) to be injected into the guest. This
@@ -200,7 +200,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-log">
-      <title>log</title>
+      <title>debugvm log</title>
       <remark role="help-copy-synopsis"/>
       <para>
         TODO
@@ -208,7 +208,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-logdest">
-      <title>logdest</title>
+      <title>debugvm logdest</title>
       <remark role="help-copy-synopsis"/>
       <para>
         TODO
@@ -216,7 +216,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-logflags">
-      <title>logflags</title>
+      <title>debugvm logflags</title>
       <remark role="help-copy-synopsis"/>
       <para>
         TODO
@@ -224,7 +224,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osdetect">
-      <title>osdetect</title>
+      <title>debugvm osdetect</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Make the VMM's debugger facility (re)-detect the guest operating system (OS).
@@ -236,7 +236,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osinfo">
-      <title>osinfo</title>
+      <title>debugvm osinfo</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Displays information about the guest operating system (OS) previously
@@ -245,7 +245,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-osdmesg">
-      <title>osdmesg</title>
+      <title>debugvm osdmesg</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Displays the guest OS kernel log, if detected and supported.
@@ -260,7 +260,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-getregisters">
-      <title>getregisters</title>
+      <title>debugvm getregisters</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Retrieves register values for guest CPUs and emulated devices.
@@ -290,7 +290,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-setregisters">
-      <title>setregisters</title>
+      <title>debugvm setregisters</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Changes register values for guest CPUs and emulated devices.
@@ -320,7 +320,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-show">
-      <title>show</title>
+      <title>debugvm show</title>
       <remark role="help-copy-synopsis"/>
       <para>
         TODO
@@ -328,7 +328,7 @@
     </refsect2>
 
     <refsect2 id="vboxmanage-debugvm-statistics">
-      <title>statistics</title>
+      <title>debugvm statistics</title>
       <remark role="help-copy-synopsis"/>
       <para>
         Displays or resets VMM statistics.
