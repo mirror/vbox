@@ -48,6 +48,12 @@
 #include "vbox_drv.h"
 #include <ttm/ttm_page_alloc.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+# define PLACEMENT_FLAGS(placement) (placement)
+#else
+# define PLACEMENT_FLAGS(placement) (placement).flags
+#endif
+
 static inline struct vbox_private *
 vbox_bdev(struct ttm_bo_device *bd)
 {
@@ -344,18 +350,30 @@ void vbox_mm_fini(struct vbox_private *vbox)
 void vbox_ttm_placement(struct vbox_bo *bo, int domain)
 {
     u32 c = 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
     bo->placement.fpfn = 0;
     bo->placement.lpfn = 0;
+#else
+    unsigned i;
+#endif
+
     bo->placement.placement = bo->placements;
     bo->placement.busy_placement = bo->placements;
     if (domain & TTM_PL_FLAG_VRAM)
-        bo->placements[c++] = TTM_PL_FLAG_WC | TTM_PL_FLAG_UNCACHED | TTM_PL_FLAG_VRAM;
+        PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_FLAG_WC | TTM_PL_FLAG_UNCACHED | TTM_PL_FLAG_VRAM;
     if (domain & TTM_PL_FLAG_SYSTEM)
-        bo->placements[c++] = TTM_PL_MASK_CACHING | TTM_PL_FLAG_SYSTEM;
+        PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_MASK_CACHING | TTM_PL_FLAG_SYSTEM;
     if (!c)
-        bo->placements[c++] = TTM_PL_MASK_CACHING | TTM_PL_FLAG_SYSTEM;
+        PLACEMENT_FLAGS(bo->placements[c++]) = TTM_PL_MASK_CACHING | TTM_PL_FLAG_SYSTEM;
     bo->placement.num_placement = c;
     bo->placement.num_busy_placement = c;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+    for (i = 0; i < c; ++i)
+    {
+        bo->placements[i].fpfn = 0;
+        bo->placements[i].lpfn = 0;
+    }
+#endif
 }
 
 int vbox_bo_reserve(struct vbox_bo *bo, bool no_wait)
@@ -409,6 +427,9 @@ int vbox_bo_create(struct drm_device *dev, int size, int align,
     ret = ttm_bo_init(&vbox->ttm.bdev, &vboxbo->bo, size,
               ttm_bo_type_device, &vboxbo->placement,
               align >> PAGE_SHIFT, false, NULL, acc_size,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+              NULL,
+#endif
               NULL, vbox_bo_ttm_destroy);
     if (ret)
         return ret;
@@ -436,7 +457,7 @@ int vbox_bo_pin(struct vbox_bo *bo, u32 pl_flag, u64 *gpu_addr)
 
     vbox_ttm_placement(bo, pl_flag);
     for (i = 0; i < bo->placement.num_placement; i++)
-        bo->placements[i] |= TTM_PL_FLAG_NO_EVICT;
+        PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
     ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
     if (ret)
         return ret;
@@ -460,7 +481,7 @@ int vbox_bo_unpin(struct vbox_bo *bo)
         return 0;
 
     for (i = 0; i < bo->placement.num_placement ; i++)
-        bo->placements[i] &= ~TTM_PL_FLAG_NO_EVICT;
+        PLACEMENT_FLAGS(bo->placements[i]) &= ~TTM_PL_FLAG_NO_EVICT;
     ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
     if (ret)
         return ret;
@@ -488,7 +509,7 @@ int vbox_bo_push_sysram(struct vbox_bo *bo)
 
     vbox_ttm_placement(bo, TTM_PL_FLAG_SYSTEM);
     for (i = 0; i < bo->placement.num_placement ; i++)
-        bo->placements[i] |= TTM_PL_FLAG_NO_EVICT;
+        PLACEMENT_FLAGS(bo->placements[i]) |= TTM_PL_FLAG_NO_EVICT;
 
     ret = ttm_bo_validate(&bo->bo, &bo->placement, false, false);
     if (ret)
@@ -505,7 +526,7 @@ int vbox_mmap(struct file *filp, struct vm_area_struct *vma)
     struct vbox_private *vbox;
 
     if (unlikely(vma->vm_pgoff < DRM_FILE_PAGE_OFFSET))
-        return drm_mmap(filp, vma);
+        return -EINVAL;
 
     file_priv = filp->private_data;
     vbox = file_priv->minor->dev->dev_private;

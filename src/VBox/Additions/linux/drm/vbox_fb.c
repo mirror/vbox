@@ -445,7 +445,11 @@ int vbox_fbdev_init(struct drm_device *dev)
         return -ENOMEM;
 
     vbox->fbdev = afbdev;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     afbdev->helper.funcs = &vbox_fb_helper_funcs;
+#else
+    drm_fb_helper_prepare(dev, &afbdev->helper, &vbox_fb_helper_funcs);
+#endif
     ret = drm_fb_helper_init(dev, &afbdev->helper, vbox->cCrtcs, vbox->cCrtcs);
     if (ret)
     {

@@ -53,6 +53,9 @@
 
 #include <linux/export.h>
 #include <drm/drm_crtc_helper.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# include <drm/drm_plane_helper.h>
+#endif
 
 static int vbox_cursor_set2(struct drm_crtc *crtc, struct drm_file *file_priv,
                             uint32_t handle, uint32_t width, uint32_t height,
@@ -442,7 +445,11 @@ static void vbox_connector_destroy(struct drm_connector *pConnector)
     LogFunc(("vboxvideo: %d: connector=%p\n", __LINE__, pConnector));
     pVBoxConnector = to_vbox_connector(pConnector);
     device_remove_file(pConnector->dev->dev, &pVBoxConnector->deviceAttribute);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_remove(pConnector);
+#else
+    drm_connector_unregister(pConnector);
+#endif
     drm_connector_cleanup(pConnector);
     kfree(pConnector);
 }
@@ -536,7 +543,11 @@ int vbox_connector_init(struct drm_device *pDev, unsigned cScreen,
     pConnector->interlace_allowed = 0;
     pConnector->doublescan_allowed = 0;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     drm_sysfs_connector_add(pConnector);
+#else
+    drm_connector_register(pConnector);
+#endif
 
     /* The connector supports hot-plug detection: we promise to call
      * "drm_helper_hpd_irq_event" when hot-plugging occurs. */

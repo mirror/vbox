@@ -63,6 +63,10 @@
 #include <drm/ttm/ttm_memory.h>
 #include <drm/ttm/ttm_module.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+# include <drm/drm_gem.h>
+#endif
+
 /* #include "vboxvideo.h" */
 
 #include "product-generated.h"
@@ -205,7 +209,11 @@ struct vbox_bo
     struct ttm_placement placement;
     struct ttm_bo_kmap_obj kmap;
     struct drm_gem_object gem;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
     u32 placements[3];
+#else
+    struct ttm_place placements[3];
+#endif
     int pin_count;
 };
 #define gem_to_vbox_bo(gobj) container_of((gobj), struct vbox_bo, gem)
