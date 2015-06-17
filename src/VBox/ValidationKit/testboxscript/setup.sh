@@ -303,6 +303,23 @@ test_user() {
     fi
 }
 
+##
+# Test if core dumps are enabled. See https://wiki.ubuntu.com/Apport!
+#
+test_coredumps() {
+    if test "`lsb_release -is`" = "Ubuntu"; then
+        if grep -q "apport" /proc/sys/kernel/core_pattern; then
+            if grep -q "#.*problem_types" /etc/apport/crashdb.conf; then
+                echo "It looks like core dumps are properly configured, good!"
+            else
+                echo "Warning: Core dumps will be not always generated!"
+            fi
+        else
+            echo "Warning: Apport not installed! This package is required for core dump handling!"
+        fi
+    fi
+}
+
 
 ##
 # Grants the user write access to the testboxscript files so it can perform
@@ -471,6 +488,7 @@ check_proxy_config;
 
 maybe_add_testboxscript_user;
 test_user;
+test_coredumps;
 
 grant_user_testboxscript_write_access;
 
