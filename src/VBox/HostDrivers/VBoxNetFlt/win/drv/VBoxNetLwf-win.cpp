@@ -65,6 +65,7 @@ RT_C_DECLS_BEGIN
 /* can include ndis.h right away */
 #  include <ndis.h>
 #endif
+#include <mstcpip.h>
 RT_C_DECLS_END
 
 #if 0
@@ -2182,6 +2183,12 @@ int vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
     return VINF_SUCCESS;
 }
 
+/*
+ * Uncommenting the following line produces debug log messages on IP address changes,
+ * including wired interfaces. No actual calls to a switch port are made. This is for
+ * debug purposes only!
+ * #define VBOXNETLWFWIN_DEBUGIPADDRNOTIF 1
+ */
 static void vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
                                               IN PMIB_UNICASTIPADDRESS_ROW pRow,
                                               IN MIB_NOTIFICATION_TYPE enmNotifType)
@@ -2198,23 +2205,46 @@ static void vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
     else
         return;
 
-    if (pRow && pThis->pSwitchPort->pfnNotifyHostAddress)
+    if (   pRow
+#ifndef VBOXNETLWFWIN_DEBUGIPADDRNOTIF
+        && pThis->pSwitchPort->pfnNotifyHostAddress
+#endif /* !VBOXNETLWFWIN_DEBUGIPADDRNOTIF */
+       )
     {
         switch (pRow->Address.si_family)
         {
             case AF_INET:
+                if (   IN4_IS_ADDR_LINKLOCAL(&pRow->Address.Ipv4.sin_addr)
+                    || pRow->Address.Ipv4.sin_addr.s_addr == IN4ADDR_LOOPBACK)
+                {
+                    Log(("vboxNetLwfWinIpAddrChangeCallback: ignoring %s address (%RTnaipv4)\n",
+                         pRow->Address.Ipv4.sin_addr.s_addr == IN4ADDR_LOOPBACK ? "loopback" : "link-local",
+                         pRow->Address.Ipv4.sin_addr));
+                    break;
+                }
                 Log(("vboxNetLwfWinIpAddrChangeCallback: %s IPv4 addr=%RTnaipv4 on luid=(%u,%u)\n",
                      fAdded ? "add" : "remove", pRow->Address.Ipv4.sin_addr,
                      pRow->InterfaceLuid.Info.IfType, pRow->InterfaceLuid.Info.NetLuidIndex));
+#ifndef VBOXNETLWFWIN_DEBUGIPADDRNOTIF
                 pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded, kIntNetAddrType_IPv4,
                                                          &pRow->Address.Ipv4.sin_addr);
+#endif /* !VBOXNETLWFWIN_DEBUGIPADDRNOTIF */
                 break;
             case AF_INET6:
-                Log(("vboxNetLwfWinIpAddrChangeCallback: %s IPv6 addr=%RTnaipv6 luid=(%u,%u)\n",
+                if (Ipv6AddressScope(pRow->Address.Ipv6.sin6_addr.u.Byte) <= ScopeLevelLink)
+                {
+                    Log(("vboxNetLwfWinIpAddrChangeCallback: ignoring link-local address (%RTnaipv6)\n",
+                         &pRow->Address.Ipv6.sin6_addr));
+                    break;
+                }
+                Log(("vboxNetLwfWinIpAddrChangeCallback: %s IPv6 addr=%RTnaipv6 scope=%d luid=(%u,%u)\n",
                      fAdded ? "add" : "remove", &pRow->Address.Ipv6.sin6_addr,
+                     Ipv6AddressScope(pRow->Address.Ipv6.sin6_addr.u.Byte),
                      pRow->InterfaceLuid.Info.IfType, pRow->InterfaceLuid.Info.NetLuidIndex));
+#ifndef VBOXNETLWFWIN_DEBUGIPADDRNOTIF
                 pThis->pSwitchPort->pfnNotifyHostAddress(pThis->pSwitchPort, fAdded, kIntNetAddrType_IPv6,
                                                          &pRow->Address.Ipv6.sin6_addr);
+#endif /* !VBOXNETLWFWIN_DEBUGIPADDRNOTIF */
                 break;
         }
     }
@@ -2225,7 +2255,12 @@ static void vboxNetLwfWinIpAddrChangeCallback(IN PVOID pvCtx,
 
 void vboxNetLwfWinRegisterIpAddrNotifier(PVBOXNETFLTINS pThis)
 {
-    if (pThis->pSwitchPort && pThis->pSwitchPort->pfnNotifyHostAddress)
+    LogFlow(("==>vboxNetLwfWinRegisterIpAddrNotifier: instance=%p\n", pThis));
+    if (   pThis->pSwitchPort
+#ifndef VBOXNETLWFWIN_DEBUGIPADDRNOTIF
+        && pThis->pSwitchPort->pfnNotifyHostAddress
+#endif /* !VBOXNETLWFWIN_DEBUGIPADDRNOTIF */
+       )
     {
         NETIO_STATUS Status;
         /* First we need to go over all host IP addresses and add them via pfnNotifyHostAddress. */
@@ -2248,6 +2283,7 @@ void vboxNetLwfWinRegisterIpAddrNotifier(PVBOXNETFLTINS pThis)
     }
     else
         pThis->u.s.WinIf.hNotifier = NULL;
+    LogFlow(("<==vboxNetLwfWinRegisterIpAddrNotifier\n"));
 }
 
 void vboxNetLwfWinUnregisterIpAddrNotifier(PVBOXNETFLTINS pThis)
