@@ -659,6 +659,19 @@ usermanual UserManual.pdf:: $(PATH_STAGE_BIN)/UserManual.pdf
 debug-usermanual:
 	$(MAKE) --pretty-command-printing -j1 VBOX_PDFLATEX_INTERACTION=errorstopmode $(PATH_STAGE_BIN)/UserManual.pdf
 
+# validate each processed set of XML files
+define def_vbox_validate_xml
+validatemanual_$(lang): \
+$$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
+	$$(MAKEFILE_CURRENT)
+	$$(QUIET)xmllint --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $$<
+endef
+
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_validate_xml)))
+
+# validate all translations of the manual
+validatemanual: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
+
 
 #
 # SDKRef.pdf
@@ -697,6 +710,12 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 		-e 's|\(\w\)\\QUOTE{}|\1\\CQ{}|g' \
 		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
+
+
+# validate SDK manual
+validatesdkref: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
+	$(MAKEFILE_CURRENT)
+	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $<
 
 
 
@@ -897,6 +916,11 @@ man-experiment: \
 
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-C-help.xsl,)
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-H-help.xsl,)
+
+# validate man page XML source
+validateman: $(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+	$(MAKEFILE_CURRENT)
+	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --noout $<
 
 
 #
