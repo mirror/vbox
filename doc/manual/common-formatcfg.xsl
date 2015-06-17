@@ -55,6 +55,20 @@
   </xsl:attribute>
 </xsl:attribute-set>
 
+<!-- command synopsis -->
+<xsl:variable name="arg.choice.opt.open.str">[</xsl:variable>
+<xsl:variable name="arg.choice.opt.close.str">]</xsl:variable>
+<xsl:variable name="arg.choice.req.open.str">&lt;</xsl:variable>
+<xsl:variable name="arg.choice.req.close.str">&gt;</xsl:variable>
+<xsl:variable name="arg.choice.plain.open.str"><xsl:text> </xsl:text></xsl:variable>
+<xsl:variable name="arg.choice.plain.close.str"><xsl:text> </xsl:text></xsl:variable>
+<xsl:variable name="arg.choice.def.open.str">[</xsl:variable>
+<xsl:variable name="arg.choice.def.close.str">]</xsl:variable>
+<xsl:variable name="arg.rep.repeat.str">...</xsl:variable>
+<xsl:variable name="arg.rep.norepeat.str"></xsl:variable>
+<xsl:variable name="arg.rep.def.str"></xsl:variable>
+<xsl:variable name="arg.or.sep"> | </xsl:variable>
+<xsl:variable name="cmdsynopsis.hanging.indent">4pi</xsl:variable>
 
 <!--
   refentry related layout tweaks.

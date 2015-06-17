@@ -37,6 +37,7 @@
 >
 
   <xsl:import href="string.xsl"/>
+  <xsl:import href="common-formatcfg.xsl"/>
 
   <xsl:variable name="g_nlsChapter">
     <xsl:choose>
@@ -778,43 +779,48 @@
     <!-- separator char if we're not the first child -->
     <xsl:if test="position() > 1">
       <xsl:choose>
+        <xsl:when test="parent::group"><xsl:value-of select="$arg.or.sep"/></xsl:when>
         <xsl:when test="ancestor-or-self::*/@sepchar"><xsl:value-of select="ancestor-or-self::*/@sepchar"/></xsl:when>
         <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
       </xsl:choose>
     </xsl:if>
     <!-- open wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>[</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                                 <xsl:text>{</xsl:text></xsl:when>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.open.str"/></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.open.str"/></xsl:when>
       <xsl:when test="@choice = 'plain'"/>
       <xsl:otherwise><xsl:message terminate="yes">Invalid arg choice: "<xsl:value-of select="@choice"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
+
     <!-- render the arg (TODO: may need to do more work here) -->
     <xsl:apply-templates />
+
     <!-- repeat wrapping -->
     <xsl:choose>
       <xsl:when test="@rep = 'norepeat' or not(@rep) or @rep = ''"/>
-      <xsl:when test="@rep = 'repeat'">                                 <xsl:text>...</xsl:text></xsl:when>
+      <xsl:when test="@rep = 'repeat'">               <xsl:value-of select="$arg.rep.repeat.str"/></xsl:when>
       <xsl:otherwise><xsl:message terminate="yes">Invalid rep choice: "<xsl:value-of select="@rep"/>"</xsl:message></xsl:otherwise>
     </xsl:choose>
     <!-- close wrapping -->
     <xsl:choose>
-      <xsl:when test="@choice = 'opt' or not(@choice) or @choice = ''"> <xsl:text>]</xsl:text></xsl:when>
-      <xsl:when test="@choice = 'req'">                                 <xsl:text>}</xsl:text></xsl:when>
+      <xsl:when test="not(@choice) or @choice = ''">  <xsl:value-of select="$arg.choice.def.close.str"/></xsl:when>
+      <xsl:when test="@choice = 'opt'">               <xsl:value-of select="$arg.choice.opt.close.str"/></xsl:when>
+      <xsl:when test="@choice = 'req'">               <xsl:value-of select="$arg.choice.req.close.str"/></xsl:when>
     </xsl:choose>
   </xsl:template>
 
   <xsl:template match="replaceable">
     <xsl:choose>
-      <xsl:when test="not(ancestor::cmdsynopsis)">
+      <xsl:when test="not(ancestor::cmdsynopsis) or ancestor::arg">
         <xsl:text>\texttt{\textit{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}}</xsl:text>
       </xsl:when>
       <xsl:otherwise>
-        <xsl:text>\textit{</xsl:text>
+        <xsl:text>\textit{&lt;</xsl:text>
         <xsl:apply-templates />
-        <xsl:text>}</xsl:text>
+        <xsl:text>&gt;}</xsl:text>
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -824,6 +830,7 @@
     Generic element text magic.
     -->
   <xsl:template match="//text()">
+
     <xsl:variable name="subst1">
       <xsl:call-template name="str:subst">
         <xsl:with-param name="text" select="." />
@@ -832,10 +839,12 @@
         <xsl:with-param name="disable-output-escaping" select="no" />
       </xsl:call-template>
     </xsl:variable>
+
     <xsl:choose>
       <xsl:when test="(name(..)='screen') or (name(../..)='screen')">
         <xsl:value-of select="." />
       </xsl:when>
+
       <xsl:when test="(name(..) = 'computeroutput') or (name(../..) = 'computeroutput')
                    or (name(..) = 'code')           or (name(../..) = 'code')
                    or (name(..) = 'arg')            or (name(../..) = 'arg')
@@ -900,8 +909,24 @@
             <xsl:with-param name="disable-output-escaping" select="no" />
           </xsl:call-template>
         </xsl:variable>
-        <xsl:value-of select="$subst8" />
+        <xsl:choose>
+          <xsl:when test="parent::arg or parent::command">
+            <xsl:variable name="subst9">
+              <xsl:call-template name="str:subst">
+                <xsl:with-param name="text" select="$subst8" />
+                <xsl:with-param name="replace" select="' '" />
+                <xsl:with-param name="with" select="'~'" />
+                <xsl:with-param name="disable-output-escaping" select="no" />
+              </xsl:call-template>
+            </xsl:variable>
+            <xsl:value-of select="$subst9" />
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="$subst8" />
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:when>
+
       <xsl:when test="(name(..)='address') or (name(../..)='address')">
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
@@ -913,6 +938,7 @@
         </xsl:variable>
         <xsl:value-of select="$subst2" />
       </xsl:when>
+
       <xsl:otherwise>
         <xsl:variable name="subst2">
           <xsl:call-template name="str:subst">
