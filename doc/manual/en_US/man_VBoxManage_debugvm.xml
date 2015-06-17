@@ -270,11 +270,11 @@
           <term><replaceable>reg-set.reg-name</replaceable></term>
           <listitem><para>One of more registers, each having one of the following forms:
             <itemizedlist>
-              <listitem><computeroutput>register-set.register-name.sub-field</computeroutput></listitem>
-              <listitem><computeroutput>register-set.register-name</computeroutput></listitem>
-              <listitem><computeroutput>cpu-register-name.sub-field</computeroutput></listitem>
-              <listitem><computeroutput>cpu-register-name</computeroutput></listitem>
-              <listitem><computeroutput>all</computeroutput></listitem>
+              <listitem><para><computeroutput>register-set.register-name.sub-field</computeroutput></para></listitem>
+              <listitem><para><computeroutput>register-set.register-name</computeroutput></para></listitem>
+              <listitem><para><computeroutput>cpu-register-name.sub-field</computeroutput></para></listitem>
+              <listitem><para><computeroutput>cpu-register-name</computeroutput></para></listitem>
+              <listitem><para><computeroutput>all</computeroutput></para></listitem>
             </itemizedlist>
             The <replaceable>all</replaceable> form will cause all registers
             to be shown (no sub-fields).  The registers names are case-insensitive.
@@ -300,10 +300,10 @@
           <term><replaceable>reg-set.reg-name=value</replaceable></term>
           <listitem><para>One of more register assignment, each having one of the following forms:
             <itemizedlist>
-              <listitem><computeroutput>register-set.register-name.sub-field=value</computeroutput></listitem>
-              <listitem><computeroutput>register-set.register-name=value</computeroutput></listitem>
-              <listitem><computeroutput>cpu-register-name.sub-field=value</computeroutput></listitem>
-              <listitem><computeroutput>cpu-register-name=value</computeroutput></listitem>
+              <listitem><para><computeroutput>register-set.register-name.sub-field=value</computeroutput></para></listitem>
+              <listitem><para><computeroutput>register-set.register-name=value</computeroutput></para></listitem>
+              <listitem><para><computeroutput>cpu-register-name.sub-field=value</computeroutput></para></listitem>
+              <listitem><para><computeroutput>cpu-register-name=value</computeroutput></para></listitem>
             </itemizedlist>
             The value format should be in the same style as what <command>getregisters</command>
             displays, with the exception that both octal and decimal can be used instead of
