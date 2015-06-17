@@ -754,6 +754,11 @@ ifdef VBOX_WITH_DOCS_CHM
 	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
 	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@ $<
 
+ # Manual formatcfg dependencies.
+ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/docbook-htmlhelp-formatcfg.xsl): \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
+
  # Prepare the XSL file for our title page, htmlhelp variant.
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-htmlhelp.xsl): \
 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
@@ -804,6 +809,12 @@ endif # VBOX_WITH_DOCS_CHM
 #  UserManual.html
 #
 ##########################################################################################
+
+# Manual formatcfg dependencies.
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
+	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
 
 # intermediate step to do some variable replacement in the XSL configuration
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl: \

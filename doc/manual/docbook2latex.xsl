@@ -328,7 +328,7 @@
           <xsl:with-param name="texcmd">\section</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
-      <xsl:when test="parent::sect2[@condition='no-toc'] or parent::refsect1 or (parent::section and count(ancestor::section) = 2)">
+      <xsl:when test="parent::sect2[@role='not-in-toc'] or parent::refsect1 or (parent::section and count(ancestor::section) = 2)">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\subsection*</xsl:with-param>
         </xsl:call-template>
@@ -338,7 +338,7 @@
           <xsl:with-param name="texcmd">\subsection</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
-      <xsl:when test="parent::sect3[@condition='no-toc'] or parent::refsect2 or (parent::section and count(ancestor::section) = 3)">
+      <xsl:when test="parent::sect3[@role='not-in-toc'] or parent::refsect2 or (parent::section and count(ancestor::section) = 3)">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\subsubsection*</xsl:with-param>
         </xsl:call-template>
@@ -348,7 +348,7 @@
           <xsl:with-param name="texcmd">\subsubsection</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
-      <xsl:when test="parent::sect4[@condition='no-toc'] or parent::refsect3 or (parent::section and count(ancestor::section) = 4)">
+      <xsl:when test="parent::sect4[@role='not-in-toc'] or parent::refsect3 or (parent::section and count(ancestor::section) = 4)">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\paragraph*</xsl:with-param>
         </xsl:call-template>
@@ -358,7 +358,7 @@
           <xsl:with-param name="texcmd">\paragraph</xsl:with-param>
         </xsl:call-template>
       </xsl:when>
-      <xsl:when test="parent::sect5[@condition='no-toc'] or parent::refsect4 or (parent::section and count(ancestor::section) = 5)">
+      <xsl:when test="parent::sect5[@role='not-in-toc'] or parent::refsect4 or (parent::section and count(ancestor::section) = 5)">
         <xsl:call-template name="title-wrapper">
           <xsl:with-param name="texcmd">\subparagraph*</xsl:with-param>
         </xsl:call-template>
