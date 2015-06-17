@@ -1557,6 +1557,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         pszCtrl = "AC97";
                     break;
                 case AudioControllerType_SB16:
+                    if (details == VMINFO_MACHINEREADABLE)
+                        pszCtrl = "sb16";
+                    else
                         pszCtrl = "SB16";
                     break;
                 case AudioControllerType_HDA:
