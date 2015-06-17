@@ -19,6 +19,14 @@ static SPUFunctions expando_functions = {
 	_cr_expando_table /* THE ACTUAL FUNCTIONS */
 };
 
+static int
+expandoSPUSaveState(void *pData)
+{
+    crDebug("Saving state of Expando SPU.");
+    crDLMSaveState();
+    return 0;
+}
+
 static SPUFunctions *
 expandoSPUInit( int id, SPU *child, SPU *self,
 								 unsigned int context_id,
@@ -47,6 +55,9 @@ expandoSPUInit( int id, SPU *child, SPU *self,
 
 	/* We'll be using the state tracker for each context */
 	crStateInit();
+
+    /* Export optional interfaces for SPU save/restore. */
+    self->dispatch_table.spu_save_state = expandoSPUSaveState;
 
 	return &expando_functions;
 }

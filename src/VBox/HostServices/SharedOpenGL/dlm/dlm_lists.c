@@ -94,6 +94,8 @@ crDLMNewList(GLuint listIdentifier, GLenum mode)
     listState->currentListInfo = listInfo;
     listState->currentListIdentifier = listIdentifier;
     listState->currentListMode = mode;
+
+    crDebug("Display Lists: create new with guest ID %u.", listIdentifier);
 }
 
 

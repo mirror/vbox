@@ -85,6 +85,7 @@ def wrap_struct(functionName):
 	print '	DLMInstanceList *next;'
 	print '	DLMInstanceList *stateNext;'
 	print '	int cbInstance;'
+	print '	VBoxDLOpCode iVBoxOpCode;'
 	print '	void (DLM_APIENTRY *execute)(DLMInstanceList *instance, SPUDispatchTable *dispatchTable);'
 	for (name, type, vecSize) in params:
 		# Watch out for the word "const" (which should be ignored)
@@ -321,6 +322,9 @@ def wrap_compile(functionName):
 	
 	# We need to know instance size in bytes in order to save its state later.
 	print '\tinstance->cbInstance = sizeof(struct instance%s);' % functionName
+	
+	# Set OPCODE.
+	print '\tinstance->iVBoxOpCode = VBOX_DL_OPCODE_%s;' % functionName
 	
 	# If there's a pointer parameter, apply it.
 	if len(pointers) == 1:

@@ -613,90 +613,6 @@ int DLM_APIENTRY crDLMGetReferences(CRDLM *dlm, unsigned long listIdentifier,
     }
 }
 
-CRDLMError DLM_APIENTRY crDLMGetDLMBounds(CRDLM *dlm, unsigned long listIdentifier, CRDLMBounds *bounds)
-{
-	DLMListInfo *listInfo
-		= (DLMListInfo *) crHashtableSearch(dlm->displayLists, listIdentifier);
-	if (listInfo) {
-		*bounds = listInfo->bbox;
-		return GL_NO_ERROR;
-	}
-	else {
-		return GL_INVALID_OPERATION;
-	}
-}
-
-CRDLMError DLM_APIENTRY crDLMGetBounds(unsigned long listIdentifier, CRDLMBounds *bounds)
-{
-    CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	return crDLMGetDLMBounds(listState->dlm, listIdentifier, bounds);
-    }
-    else {
-	return CRDLM_ERROR_STATE;
-    }
-}
-
-
-/**
- * Set the bounding box for a display list.
- */
-void DLM_APIENTRY crDLMSetDLMBounds(CRDLM *dlm, unsigned long listIdentifier,
-               double xmin, double ymin, double zmin,
-               double xmax, double ymax, double zmax)
-{
-	DLMListInfo *listInfo
-		= (DLMListInfo *) crHashtableSearch(dlm->displayLists, listIdentifier);
-	if (!listInfo) {
-		/* allocate a list info now */
-		CRDLMContextState *listState = CURRENT_STATE();
-		listInfo = (DLMListInfo *) crCalloc(sizeof(DLMListInfo));
-		crHashtableReplace(listState->dlm->displayLists,
-											 listIdentifier, listInfo, crdlm_free_list);
-	}
-	if (listInfo) {
-		listInfo->bbox.xmin = xmin;
-		listInfo->bbox.ymin = ymin;
-		listInfo->bbox.zmin = zmin;
-		listInfo->bbox.xmax = xmax;
-		listInfo->bbox.ymax = ymax;
-		listInfo->bbox.zmax = zmax;
-	}
-}
-
-void DLM_APIENTRY crDLMSetBounds(unsigned long listIdentifier,
-               double xmin, double ymin, double zmin,
-               double xmax, double ymax, double zmax)
-{
-    CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	crDLMSetDLMBounds(listState->dlm, listIdentifier,
-	    xmin, ymin, zmin, xmax, ymax, zmax);
-    }
-}
-
-/**
- * Return GL_TRUE if the given list has a valid bounding box
- */
-GLboolean DLM_APIENTRY crDLMListHasDLMBounds(CRDLM *dlm, unsigned long listIdentifier)
-{
-	DLMListInfo *listInfo
-		= (DLMListInfo *) crHashtableSearch(dlm->displayLists, listIdentifier);
-	if (listInfo)
-		return listInfo->bbox.xmin != FLT_MAX;
-	else
-		return GL_FALSE;
-}
-
-GLboolean DLM_APIENTRY crDLMListHasBounds(unsigned long listIdentifier)
-{
-    CRDLMContextState *listState = CURRENT_STATE();
-    if (listState) {
-	return crDLMListHasDLMBounds(listState->dlm, listIdentifier);
-    }
-    return 0;
-}
-
 /*
  * Return id of list currently being compiled.  Returns 0 of there's no
  * current DLM state, or if no list is being compiled. 
@@ -733,7 +649,33 @@ void crdlm_error(int line, const char *file, GLenum error, const char *info)
 		(*ErrorCallback)(line, file, error, info);
 }
 
+static void crDLMSaveListsCb(unsigned long key, void *pData1, void *pData2 /* unused */ )
+{
+    DLMListInfo *pListInfo = (DLMListInfo*)pData1;
+
+    if (pListInfo)
+    {
+        crDebug("Saving Display Lists: found ID=%u, numInstances=%d, references=%p.",
+            key, pListInfo->numInstances, pListInfo->references);
+
+        DLMInstanceList *pInstance = pListInfo->first;
+        while (pInstance) {
+            crDebug("\t%p", pInstance->execute);
+            pInstance = pInstance->next;
+        }
+    }
+    else
+        crError("Saving Display Lists: found record with no data. Skipping.");
+}
+
 int32_t DLM_APIENTRY crDLMSaveState(void)
 {
+    CRDLMContextState *pListState = CURRENT_STATE();
+
+    if (pListState)
+        crHashtableWalk(pListState->dlm->displayLists, crDLMSaveListsCb, (void *)NULL);
+    else
+        crDebug("Saving Display Lists: no data to save.");
+
     return 0;
 }

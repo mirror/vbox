@@ -48,6 +48,10 @@ print ''
 
 print 'struct _copy_list_node;'
 print ''
+print '/* Prototype for SPU internal state load/unload callbacks. */'
+print ''
+print 'typedef int (*SPUStateFunc_t)(void *);'
+print ''
 print '/* The SPU dispatch table */'
 print 'typedef struct _spu_dispatch_table {'
 
@@ -59,6 +63,8 @@ print """
 	struct _spu_dispatch_table *copy_of;
 	int mark;
 	void *server;		
+	SPUStateFunc_t spu_save_state; /* Save SPU internal state callback (optional) */
+	SPUStateFunc_t spu_load_state; /* Load SPU internal state callback (optional) */
 } SPUDispatchTable;
 
 struct _copy_list_node {

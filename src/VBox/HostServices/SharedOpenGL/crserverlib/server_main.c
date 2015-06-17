@@ -1683,8 +1683,13 @@ static int32_t crVBoxServerSaveStatePerform(PSSMHANDLE pSSM)
     }
 
 #ifdef VBOX_WITH_CR_DISPLAY_LISTS
-    rc = crDLMSaveState();
-    AssertRCReturn(rc, rc);
+    if (cr_server.head_spu->dispatch_table.spu_save_state)
+    {
+        rc = cr_server.head_spu->dispatch_table.spu_save_state("NULL");
+        AssertRCReturn(rc, rc);
+    }
+    else
+        crDebug("Do not save %s SPU state: no interface exported.", cr_server.head_spu->name);
 #endif
 
     rc = crServerPendSaveState(pSSM);
