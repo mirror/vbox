@@ -18481,8 +18481,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         The exact variant of audio codec hardware presented
         to the guest.
-        Depending on this value, VirtualBox will provide a different
-        virtual storage controller hardware to the guest.
         For HDA and SB16, only one variant is available, but for AC'97,
         there are several.
       </desc>
