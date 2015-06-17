@@ -374,7 +374,7 @@
         <translation type="obsolete">Dialog i&amp;nformații despre sesiune</translation>
     </message>
     <message>
-        <source>Show Session Information Dialog</source>
+        <source>Show Session Information Window</source>
         <translation type="obsolete">Arată dialogul de informații despre sesiune</translation>
     </message>
     <message>
@@ -462,11 +462,11 @@
         <translation type="obsolete">Activează sau dezactivează conexiuni remote desktop (RDP) către această mașină</translation>
     </message>
     <message>
-        <source>&amp;Install Guest Additions...</source>
-        <translation type="obsolete">&amp;Instalare Guest Additions...</translation>
+        <source>&amp;Insert Guest Additions CD image...</source>
+        <translation type="unfinished">&amp;Instalare Guest Additions...</translation>
     </message>
     <message>
-        <source>Mount the Guest Additions installation image</source>
+        <source>Insert the Guest Additions disk file into the virtual drive</source>
         <translation type="obsolete">Montează imaginea de instalare Guest Additions</translation>
     </message>
     <message>
@@ -736,55 +736,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Webcams</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Insert Guest Additions CD image...</source>
-        <translation type="unfinished"></translation>
+        <comment>new</comment>
+        <translation type="obsolete">&amp;Instalare Guest Additions...</translation>
     </message>
     <message>
-        <source>&amp;VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <source>Insert the Guest Additions disk file into the virtual drive</source>
+        <comment>new</comment>
+        <translation type="obsolete">Montează imaginea de instalare Guest Additions</translation>
     </message>
     <message>
-        <source>&amp;Menu Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Menu Bar Settings...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Menu &amp;Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Status Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Status Bar Settings...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Status &amp;Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Input</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Keyboard</source>
-        <translation type="unfinished">&amp;Tastatură</translation>
-    </message>
-    <message>
-        <source>&amp;Keyboard Settings...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Mouse</source>
+        <source>&amp;Webcams</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -792,24 +754,7 @@
         <translation type="obsolete">Rețea</translation>
     </message>
     <message>
-        <source>&amp;USB Settings...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Shared Folders</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <comment>debug action</comment>
-        <translation type="unfinished">Afișează &amp;log...</translation>
-    </message>
-    <message>
-        <source>E&amp;xtra Data Manager...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display the Extra Data Manager window</source>
+        <source>&amp;VirtualBox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -822,63 +767,6 @@
     </message>
     <message>
         <source>&amp;Minimize</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Full-screen Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Switch between normal and full-screen mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;caled Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>S&amp;cale Factor</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send the %1 sequence to the virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Mouse Integration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable host mouse pointer integration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Optical Drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Floppy Drives</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;USB</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Logging</source>
-        <comment>debug action</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Normal Start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Headless Start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Detachable Start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -923,6 +811,18 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Full-screen Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch between normal and full-screen mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;caled Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Minimize Window</source>
         <translation type="unfinished"></translation>
     </message>
@@ -947,7 +847,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Menu Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Menu Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Display window to configure menu-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Menu &amp;Bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -955,11 +867,39 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Status Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Status Bar Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Display window to configure status-bar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Show Status &amp;Bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Enable status-bar</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;cale Factor</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Input</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard</source>
+        <translation type="unfinished">&amp;Tastatură</translation>
+    </message>
+    <message>
+        <source>&amp;Keyboard Settings...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -969,6 +909,22 @@
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send the %1 sequence to the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mouse</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Mouse Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable host mouse pointer integration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -984,11 +940,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Optical Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Floppy Drives</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure network adapters</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;USB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;USB Settings...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1000,12 +972,26 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Shared Folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Display virtual machine settings window to configure shared folders</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Logging</source>
+        <comment>debug action</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <comment>debug action</comment>
+        <translation type="unfinished">Afișează &amp;log...</translation>
     </message>
     <message>
         <source>%1%</source>
@@ -1048,6 +1034,14 @@
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E&amp;xtra Data Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Extra Data Manager window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1099,7 +1093,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Normal Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Headless Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Start selected virtual machines in the background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Detachable Start</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1192,33 +1198,7 @@
     </message>
 </context>
 <context>
-    <name>UIActionPoolRuntime</name>
-    <message>
-        <source>Enable</source>
-        <comment>Virtual Screen</comment>
-        <translation type="obsolete">Activează</translation>
-    </message>
-    <message>
-        <source>%1%</source>
-        <comment>scale-factor</comment>
-        <translation type="obsolete">%1%</translation>
-    </message>
-</context>
-<context>
     <name>UIAddDiskEncryptionPasswordDialog</name>
-    <message>
-        <source>%1 - Disk Encryption</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message numerus="yes">
-        <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
-        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-        </translation>
-    </message>
     <message>
         <source>Status</source>
         <comment>password table field</comment>
@@ -1237,6 +1217,19 @@
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>%1 - Disk Encryption</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>This virtual machine is password protected. Please enter the %n encryption password(s) below.</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many passwords are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
             <numerusform></numerusform>
             <numerusform></numerusform>
@@ -2670,41 +2663,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>[Optical Drive]</source>
-        <comment>details (storage)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Controller</source>
-        <comment>details (usb)</comment>
-        <translation type="unfinished">Controlor USB</translation>
-    </message>
-    <message>
-        <source>Mini-toolbar Position</source>
-        <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Top</source>
-        <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bottom</source>
-        <comment>details (user interface/mini-toolbar position)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Mini-toolbar</source>
-        <comment>details (user interface)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>details (user interface/mini-toolbar)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Scale-factor</source>
         <comment>details (display)</comment>
         <translation type="unfinished"></translation>
@@ -2718,6 +2676,21 @@
         <source>Enabled</source>
         <comment>details (display/Unscaled HiDPI Video Output)</comment>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>[Optical Drive]</source>
+        <comment>details (storage)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Controller</source>
+        <comment>details (usb)</comment>
+        <translation type="unfinished">Controlor USB</translation>
     </message>
     <message>
         <source>Menu-bar</source>
@@ -2750,8 +2723,28 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Generic Driver, &apos;%1&apos; { %2 }</source>
-        <comment>details (network)</comment>
+        <source>Mini-toolbar Position</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Top</source>
+        <comment>details (user interface/mini-toolbar position)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bottom</source>
+        <comment>details (user interface/mini-toolbar position)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mini-toolbar</source>
+        <comment>details (user interface)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (user interface/mini-toolbar)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4299,7 +4292,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
+        <comment>HDD tooltip</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4313,8 +4307,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
-        <comment>HDD tooltip</comment>
+        <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the display:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4577,38 +4570,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Mini ToolBar:</source>
-        <translation type="obsolete">Minibară:</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="obsolete">Dacă este bifat, afișează Minibara în modul pe tot ecranul și în cel transparent.</translation>
-    </message>
-    <message>
-        <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation type="obsolete">Arată în mod pe tot &amp;ecranul/transparent</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="obsolete">Dacă este bifată, poziționează minibara în partea de sus a ecranului, deși poziția implicită este la baza ecranului.</translation>
-    </message>
-    <message>
-        <source>Show at &amp;Top of Screen</source>
-        <translation type="obsolete">Poziționează &amp;sus</translation>
-    </message>
-    <message>
-        <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Screen</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4621,15 +4582,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>100%</source>
-        <translation type="obsolete">100%</translation>
-    </message>
-    <message>
-        <source>200%</source>
-        <translation type="obsolete">200%</translation>
-    </message>
-    <message>
         <source>%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>HiDPI Support:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4642,10 +4599,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Acceleration:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>HiDPI Support:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4697,12 +4650,24 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remote Display is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site as otherwise your VM will be started with Remote Display disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>%1 MB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>%1%</source>
         <translation type="unfinished">%1%</translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;About %1MB per 5 minute video&lt;/i&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
@@ -4720,8 +4685,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Afișează calea unde vor fi stocate instantaneele acestei mașini virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe disc.</translation>
     </message>
     <message>
-        <source>Basi&amp;c</source>
-        <translation>&amp;Elementar</translation>
+        <source>&amp;Basic</source>
+        <translation type="obsolete">&amp;Elementar</translation>
     </message>
     <message>
         <source>Identification</source>
@@ -4772,8 +4737,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Controlează cantitatea de memorie video oferită mașinii virtuale.</translation>
     </message>
     <message>
-        <source>A&amp;dvanced</source>
-        <translation>&amp;Avansat</translation>
+        <source>&amp;Advanced</source>
+        <translation type="obsolete">&amp;Avansat</translation>
     </message>
     <message>
         <source>Boo&amp;t Order:</source>
@@ -4860,8 +4825,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Director i&amp;nstantanee:</translation>
     </message>
     <message>
-        <source>D&amp;escription</source>
-        <translation>&amp;Descriere</translation>
+        <source>&amp;Description</source>
+        <translation type="obsolete">&amp;Descriere</translation>
     </message>
     <message>
         <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
@@ -4932,10 +4897,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Poziționează &amp;sus</translation>
     </message>
     <message>
-        <source>D&amp;rag&apos;n&apos;Drop:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -4946,6 +4907,22 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Basi&amp;c</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>A&amp;dvanced</source>
+        <translation type="unfinished">A&amp;vansat</translation>
+    </message>
+    <message>
+        <source>D&amp;rag&apos;n&apos;Drop:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;escription</source>
+        <translation type="unfinished">&amp;Descriere</translation>
     </message>
     <message>
         <source>Enc&amp;ryption</source>
@@ -4961,6 +4938,10 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Encryption C&amp;ipher:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4996,16 +4977,12 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Leave Unchanged</source>
         <comment>cipher type</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5016,36 +4993,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>100%</source>
-        <translation type="obsolete">100%</translation>
-    </message>
-    <message>
-        <source>200%</source>
-        <translation type="obsolete">200%</translation>
-    </message>
-    <message>
         <source>Mini ToolBar:</source>
         <translation type="unfinished">Minibară:</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="obsolete">Dacă este bifat, afișează Minibara în modul pe tot ecranul și în cel transparent.</translation>
-    </message>
-    <message>
-        <source>Show in &amp;Fullscreen/Seamless</source>
-        <translation type="obsolete">Arată în mod pe tot &amp;ecranul/transparent</translation>
-    </message>
-    <message>
-        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="obsolete">Dacă este bifată, poziționează minibara în partea de sus a ecranului, deși poziția implicită este la baza ecranului.</translation>
-    </message>
-    <message>
-        <source>Show at &amp;Top of Screen</source>
-        <translation type="unfinished">Poziționează &amp;sus</translation>
-    </message>
-    <message>
-        <source>Allows to modify VM status-bar contents.</source>
-        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
@@ -5057,6 +5006,14 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show at &amp;Top of Screen</source>
+        <translation type="unfinished">Poziționează &amp;sus</translation>
+    </message>
+    <message>
+        <source>Allows to modify VM status-bar contents.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5668,6 +5625,14 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Afișează adresa portului I/O de bază pentru acest port paralel. Valori valide sunt întregi între &lt;tt&gt;0&lt;/tt&gt; și &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
+        <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Connect to existing pipe/socket</source>
         <translation type="unfinished"></translation>
     </message>
@@ -5677,14 +5642,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>&lt;p&gt;In &lt;b&gt;Host Pipe&lt;/b&gt; mode: Holds the path to the serial port&apos;s pipe on the host. Examples: &quot;\\.\pipe\myvbox&quot; or &quot;/tmp/myvbox&quot;, for Windows and UNIX-like systems respectively.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Host Device&lt;/b&gt; mode: Holds the host serial device name. Examples: &quot;COM1&quot; or &quot;/dev/ttyS0&quot;.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;Raw File&lt;/b&gt; mode: Holds the file-path on the host system, where the serial output will be dumped.&lt;/p&gt;&lt;p&gt;In &lt;b&gt;TCP&lt;/b&gt; mode: Holds the TCP &quot;port&quot; when in server mode, or &quot;hostname:port&quot; when in client mode.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6044,34 +6001,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Add USB Controller</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Hot-pluggable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Optical Drive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Add Floppy Drive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Optical &amp;Drive:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted with key:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6096,6 +6025,19 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&amp;Hot-pluggable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose disk image...</source>
+        <comment>This is used for hard disks, optical media and floppies</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Image</source>
         <comment>storage image</comment>
         <translation type="unfinished">Imagine</translation>
@@ -6117,6 +6059,18 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Add USB Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Optical Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add Floppy Drive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Adds new storage controller.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6130,6 +6084,14 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Optical &amp;Drive:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual optical disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6150,11 +6112,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Choose disk image...</source>
-        <comment>This is used for hard disks, optical media and floppies</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6352,6 +6309,14 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Paravirtualization Interface:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6373,14 +6338,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor you have chosen for this VM. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6526,11 +6483,23 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished">&lt;nobr&gt;Stare %1&lt;/nobr&gt;</translation>
     </message>
     <message>
+        <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>USB &amp;1.1 (OHCI) Controller</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>USB &amp;2.0 (EHCI) Controller</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6539,18 +6508,6 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>USB 2.0/3.0 is currently enabled for this virtual machine. However, this requires the &lt;i&gt;%1&lt;/i&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0/3.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6799,12 +6756,12 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Close</source>
-        <translation type="unfinished">Închide</translation>
-    </message>
-    <message>
         <source>Switch</source>
         <translation type="unfinished">Schimbă</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished">Închide</translation>
     </message>
     <message>
         <source>Enable Menu Bar</source>
@@ -7143,15 +7100,15 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">&lt;p&gt;Unul sau mai multe discuri virtuale sau medii CD/DVD sau dischetă înregistrate nu sunt accesibile. Prin urmare, nu veți putea opera mașinile virtuale care fac uz de aceste medii până când ele devin accesibile din nou.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; pentru a deschide fereastra Manager de discuri virtuale și a vedea care medii sunt inaccesibile, sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; pentru a ignora acest mesaj.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este prea vechi: versiunea instalată este %1, versiunea așteptată fiind %2. Unele funcții care necesită Guest Additions (integrarea cursorului, auto redimensionarea ecranului musafir) s-ar putea să nu mai funcționeze corect.&lt;/p&gt;&lt;p&gt;Vă rugăm aduceți Guest Additions la versiunea curentă alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update the Guest Additions to the current version  by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este depășit: versiunea instalată este %1, versiunea așteptată fiind %2. Unele funcții care necesită Guest Additions (integrarea cursorului, auto redimensionarea ecranului musafir) s-ar putea să nu mai funcționeze corect.&lt;/p&gt;&lt;p&gt;Vă rugăm aduceți Guest Additions la versiunea curentă alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of the Guest Additions by choosing &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pachetul VirtualBox Guest Additions instalat pe SO musafir este prea nou pentru acestă versiune a VirtualBox: versiunea instalată este %1, versiunea așteptată fiind %2. Folosirea unei versiuni mai noi a Guest Additions într-o versiune mai veche a VirtualBox nu este suportată.&lt;/p&gt;&lt;p&gt;Vă rugăm instalați versiunea curentă a Guest Additions alegând &lt;b&gt;Instalare Guest Additions&lt;/b&gt; din meniul &lt;b&gt;Dispozitive&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7196,8 +7153,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">&lt;p&gt;Fereastra mașinii virtuale este optimizată pentru lucrul în modul de culori &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt;, dar calitatea culorii al ecranului virtual este în prezent setată la &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vă rugăm deschideți dialogul de proprietăți ecran ale SO musafir și selectați modul de culoare &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt;, dacă este disponibil, pentru cea mai bună performanță posibilă a subsistemului video virtual.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Notați&lt;/b&gt; faptul că unele sisteme de operare ca OS/2, pot rula în mod de culoare 32bit dar reporta 24bit (16 milioane de culori). Trebuie să încercați calități diferite ale culorii pentru a vedea dacă acest mesaj de eroare dispare, sau puteți pur și simplu dezactiva acest mesaj acum dacă sunteți sigur că modul necesar (%4&amp;nbsp;bit) nu este disponibil pe SO musafir.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
@@ -7304,9 +7261,9 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Descarcă</translation>
     </message>
     <message>
-        <source>Mount</source>
+        <source>Insert</source>
         <comment>additions</comment>
-        <translation type="obsolete">Montează</translation>
+        <translation type="unfinished">Montează</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7482,8 +7439,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation>&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -7545,8 +7502,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Su&amp;prascrie</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -8215,6 +8172,15 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Insert</source>
+        <comment>additions-new</comment>
+        <translation type="obsolete">Montează</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8223,24 +8189,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <comment>additions</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8253,6 +8202,18 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Failed to set the extra data for key &lt;i&gt;%1&lt;/i&gt; of machine &lt;i&gt;%2&lt;/i&gt; to value &lt;i&gt;{%3}&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8276,67 +8237,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>The current port forwarding rules are not valid. Rule names should be unique.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Bad password or authentication failure.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from host to guest failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to cancel host to guest drag and drop operation.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Drag and drop operation from guest to host failed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
+        <source>The current port forwarding rules are not valid. Few rules have same host ports and conflicting IP addresses.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8345,6 +8250,14 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the optical drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the floppy drive (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8360,11 +8273,47 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Bad password or authentication failure.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution should be stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=https://www.virtualbox.org&gt;https://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt;, which you can find in the virtual machine log directory, as well as a description of what you were doing when this error happened. Note that you can also access the above file by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to power off the machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to connect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disconnect the network adapter cable of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no optical drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual optical drive?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from host to guest failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to cancel host to guest drag and drop operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Drag and drop operation from guest to host failed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8435,8 +8384,8 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
 <context>
     <name>UINameAndSystemEditor</name>
     <message>
-        <source>N&amp;ame:</source>
-        <translation type="unfinished">&amp;Nume:</translation>
+        <source>&amp;Name:</source>
+        <translation type="obsolete">&amp;Nume:</translation>
     </message>
     <message>
         <source>Holds the name of the virtual machine.</source>
@@ -8457,6 +8406,10 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     <message>
         <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="unfinished">Afișează tipul sistemului de operare pe care plănuiți să îl instalați în această mașină virtuală (denumit sistem de operare musafir).</translation>
+    </message>
+    <message>
+        <source>N&amp;ame:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9392,16 +9345,12 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9563,15 +9512,15 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>UIStatusBarEditorWidget</name>
     <message>
+        <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation type="unfinished">Închide</translation>
     </message>
     <message>
         <source>Enable Status Bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9717,8 +9666,8 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Rezumat</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;https://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -9810,195 +9759,8 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>UIVMInfoDialog</name>
     <message>
-        <source>Session Information Dialog</source>
-        <translation type="obsolete">Dialog informații despre sesiune</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">În&amp;chide</translation>
-    </message>
-    <message>
         <source>%1 - Session Information</source>
-        <translation>%1 - informații despre sesiune</translation>
-    </message>
-    <message>
-        <source>&amp;Details</source>
-        <translation type="obsolete">&amp;Detalii</translation>
-    </message>
-    <message>
-        <source>&amp;Runtime</source>
-        <translation type="obsolete">Timp &amp;rulare</translation>
-    </message>
-    <message>
-        <source>DMA Transfers</source>
-        <translation>Transferuri DMA</translation>
-    </message>
-    <message>
-        <source>PIO Transfers</source>
-        <translation>Transferuri PIO</translation>
-    </message>
-    <message>
-        <source>Data Read</source>
-        <translation>Citire date</translation>
-    </message>
-    <message>
-        <source>Data Written</source>
-        <translation>Scriere date</translation>
-    </message>
-    <message>
-        <source>Data Transmitted</source>
-        <translation>Date transmise</translation>
-    </message>
-    <message>
-        <source>Data Received</source>
-        <translation>Date primite</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <translation type="obsolete">Activat</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation type="obsolete">Dezactivat</translation>
-    </message>
-    <message>
-        <source>Runtime Attributes</source>
-        <translation>Atribute la rulare</translation>
-    </message>
-    <message>
-        <source>Screen Resolution</source>
-        <translation>Rezoluție ecran</translation>
-    </message>
-    <message>
-        <source>Hardware Virtualization</source>
-        <translation type="obsolete">Virtualizare hardware</translation>
-    </message>
-    <message>
-        <source>IDE Hard Disk Statistics</source>
-        <translation type="obsolete">Statistici disc hard ID</translation>
-    </message>
-    <message>
-        <source>CD/DVD Statistics</source>
-        <translation type="obsolete">Statistici CD/DVD</translation>
-    </message>
-    <message>
-        <source>Network Adapter Statistics</source>
-        <translation type="obsolete">Statistici placă de rețea</translation>
-    </message>
-    <message>
-        <source>Adapter 1</source>
-        <translation type="obsolete">Placă 1</translation>
-    </message>
-    <message>
-        <source>Adapter 2</source>
-        <translation type="obsolete">Placă 2</translation>
-    </message>
-    <message>
-        <source>Adapter 3</source>
-        <translation type="obsolete">Placă 3</translation>
-    </message>
-    <message>
-        <source>Adapter 4</source>
-        <translation type="obsolete">Placă 4</translation>
-    </message>
-    <message>
-        <source>Not attached</source>
-        <translation type="obsolete">Neconectat</translation>
-    </message>
-    <message>
-        <source>Hard Disks Statistics</source>
-        <translation type="obsolete">Statistici discuri hard</translation>
-    </message>
-    <message>
-        <source>Primary Master</source>
-        <translation type="obsolete">Primar master</translation>
-    </message>
-    <message>
-        <source>Primary Slave</source>
-        <translation type="obsolete">Primar slave</translation>
-    </message>
-    <message>
-        <source>Secondary Master</source>
-        <translation type="obsolete">Secundar master</translation>
-    </message>
-    <message>
-        <source>Secondary Slave</source>
-        <translation type="obsolete">Secundar slave</translation>
-    </message>
-    <message>
-        <source>Version %1.%2</source>
-        <comment>guest additions</comment>
-        <translation type="obsolete">Versiunea %1.%2</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest additions</comment>
-        <translation>Nedetectat</translation>
-    </message>
-    <message>
-        <source>Not Detected</source>
-        <comment>guest os type</comment>
-        <translation>Nedetectat</translation>
-    </message>
-    <message>
-        <source>Guest Additions</source>
-        <translation></translation>
-    </message>
-    <message>
-        <source>Guest OS Type</source>
-        <translation>Tip SO musafir</translation>
-    </message>
-    <message>
-        <source>Hard Disk Statistics</source>
-        <translation type="obsolete">Statistici disc fix</translation>
-    </message>
-    <message>
-        <source>No Hard Disks</source>
-        <translation type="obsolete">Lipsă discuri fixe</translation>
-    </message>
-    <message>
-        <source>No Network Adapters</source>
-        <translation>Lipsă plăci de rețea</translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">Activat</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">Dezactivat</translation>
-    </message>
-    <message>
-        <source>UIVMInfoDialog</source>
-        <translation type="obsolete">UIVMInfoDialog</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDP server port)</comment>
-        <translation type="obsolete">Indisponibil</translation>
-    </message>
-    <message>
-        <source>Storage Statistics</source>
-        <translation>Statistici stocare</translation>
-    </message>
-    <message>
-        <source>No Storage Devices</source>
-        <translation>Lipsă dispozitive de stocare</translation>
-    </message>
-    <message>
-        <source>Network Statistics</source>
-        <translation>Statistici rețea</translation>
-    </message>
-    <message>
-        <source>Not Available</source>
-        <comment>details report (VRDE server port)</comment>
-        <translation type="unfinished">Indisponibil</translation>
-    </message>
-    <message>
-        <source>Clipboard Mode</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">%1 - informații despre sesiune</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
@@ -10009,12 +9771,87 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>DMA Transfers</source>
+        <translation type="unfinished">Transferuri DMA</translation>
+    </message>
+    <message>
+        <source>PIO Transfers</source>
+        <translation type="unfinished">Transferuri PIO</translation>
+    </message>
+    <message>
+        <source>Data Read</source>
+        <translation type="unfinished">Citire date</translation>
+    </message>
+    <message>
+        <source>Data Written</source>
+        <translation type="unfinished">Scriere date</translation>
+    </message>
+    <message>
+        <source>Data Transmitted</source>
+        <translation type="unfinished">Date transmise</translation>
+    </message>
+    <message>
+        <source>Data Received</source>
+        <translation type="unfinished">Date primite</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="unfinished">Nedetectat</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="unfinished">Nedetectat</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="unfinished">Indisponibil</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation type="unfinished">Atribute la rulare</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation type="unfinished">Rezoluție ecran</translation>
+    </message>
+    <message>
         <source>VM Uptime</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clipboard Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Drag and Drop Mode</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="unfinished">Tip SO musafir</translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation type="unfinished">Statistici stocare</translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation type="unfinished">Lipsă dispozitive de stocare</translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation type="unfinished">Statistici rețea</translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="unfinished">Lipsă plăci de rețea</translation>
     </message>
 </context>
 <context>
@@ -11166,11 +11003,11 @@ Versiunea %1</translation>
         <translation type="obsolete">Deschide dialogul directoare partajate</translation>
     </message>
     <message>
-        <source>&amp;Install Guest Additions...</source>
+        <source>&amp;Insert Guest Additions CD image...</source>
         <translation type="obsolete">&amp;Instalare Guest Additions...</translation>
     </message>
     <message>
-        <source>Mount the Guest Additions installation image</source>
+        <source>Insert the Guest Additions disk file into the virtual drive</source>
         <translation type="obsolete">Montează imaginea de instalare Guest Additions</translation>
     </message>
     <message>
@@ -11543,7 +11380,7 @@ Versiunea %1</translation>
         <translation type="obsolete">Dialog i&amp;nformații despre sesiune</translation>
     </message>
     <message>
-        <source>Show Session Information Dialog</source>
+        <source>Show Session Information Window</source>
         <translation type="obsolete">Arată dialogul de informații despre sesiune</translation>
     </message>
     <message>
@@ -12005,8 +11842,8 @@ Versiunea %1</translation>
         <translation>&lt;restabilește valoarea implicită&gt;</translation>
     </message>
     <message>
-        <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation type="obsolete">Valoarea implicită actuală va fi afișată după acceptarea schimbărilor și redeschiderea acestei ferestre de dialog.</translation>
+        <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
+        <translation type="unfinished">Valoarea implicită actuală va fi afișată după acceptarea schimbărilor și redeschiderea acestei ferestre de dialog.</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -12054,7 +11891,8 @@ Versiunea %1</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished"></translation>
+        <comment>new</comment>
+        <translation type="obsolete">Valoarea implicită actuală va fi afișată după acceptarea schimbărilor și redeschiderea acestei ferestre de dialog.</translation>
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
@@ -13245,6 +13083,16 @@ Versiunea %1</translation>
         <comment>medium</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
+        <comment>medium</comment>
+        <translation type="unfinished"></translation>
+    </message>
     <message numerus="yes">
         <source>%n year(s)</source>
         <translation>
@@ -13793,18 +13641,53 @@ Versiunea %1</translation>
         <translation type="unfinished">USB</translation>
     </message>
     <message>
-        <source>USB Port %1</source>
-        <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>off</source>
         <comment>guest monitor status</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Active</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (VT-x/AMD-V)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Nested Paging)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Inactive</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Paravirtualization Interface</source>
         <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Snapshot</source>
+        <comment>MachineState</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Taking Online Snapshot</source>
+        <comment>MachineState</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13833,51 +13716,6 @@ Versiunea %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>New dynamically allocated storage</source>
-        <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (VT-x/AMD-V)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (Nested Paging)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Inactive</source>
-        <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Taking Snapshot</source>
-        <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Taking Online Snapshot</source>
-        <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>KVM</source>
         <comment>ParavirtProvider</comment>
         <translation type="unfinished"></translation>
@@ -13885,6 +13723,11 @@ Versiunea %1</translation>
     <message>
         <source>Optical</source>
         <comment>DeviceType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New dynamically allocated storage</source>
+        <comment>MediumVariant</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13908,17 +13751,17 @@ Versiunea %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>USB Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>User interface</source>
         <comment>DetailsElementType</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>(Optical Drive)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Encrypted</source>
-        <comment>medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -13930,17 +13773,12 @@ Versiunea %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
+        <source>Encrypted</source>
         <comment>medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
-        <comment>medium</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -14034,13 +13872,13 @@ folosit, daca nu este explicit specificat altfel, atunci când creați noi sau a
     </message>
     <message>
         <source>Resets the virtual machine folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul mașinii virtuale la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
     <message>
         <source>Resets the VDI folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul VDI la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
@@ -14278,11 +14116,11 @@ către cea a sistemului de operare.&lt;/qt&gt;
         <translation type="obsolete">Afișează calea către directorul VDI implicit. Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creați noi sau adăugați discuri hard virtuale existente.</translation>
     </message>
     <message>
-        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <source>Resets the virtual machine folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul mașinii virtuale la valoarea implicită. Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
     <message>
-        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <source>Resets the VDI folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul VDI la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
@@ -14331,7 +14169,7 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">Deschide un dialog de selecție a fișierului bibliotecă de autentificare VRDP.</translation>
     </message>
     <message>
-        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this dialog again.</source>
+        <source>Resets the authentication library file to the default value. The actual default library file will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Resetează fișierul bibliotecă autentificare la valoarea implicită. Valoarea actuală implicită va fi afișată după acceptarea schimbărilor și redeschiderea acestui dialog.</translation>
     </message>
     <message>
@@ -14828,15 +14666,15 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>UUID:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;i&gt;Not&amp;nbsp;Encrypted&lt;/i&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Encrypted with key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14927,8 +14765,8 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Dialog înregistrare VirtualBox</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere Latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că innotek va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și a vă trimite newsletter. În particular, innotek nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de site-ul web VirtualBox.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that innotek will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, innotek will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere Latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că innotek va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și a vă trimite newsletter. În particular, innotek nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de site-ul web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Name</source>
@@ -14975,8 +14813,8 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Nu am putut efectua strângerea de mâini necesară conexiunii.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că Sun Microsystems va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și pentru a vă trimite newsletter. În particular, Sun Microsystems nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de pe site-ul web VirtualBox.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Vă rugăm completați formularul de înregistrare pentru ca noi să știm că folosiți VirtualBox și, opțional, să vă ținem la curent cu noutățile și actualizările VirtualBox. &lt;/p&gt;&lt;p&gt;Introduceți numele dvs complet folosind caractere latine și adresa dvs de e-mail în câmpurile de mai jos. Notați faptul că Sun Microsystems va folosi aceste informații numai pentru a obține statistici de utilizare a produsului și pentru a vă trimite newsletter. În particular, Sun Microsystems nu va retransmite niciodată datele dvs către terți. Informații detaliate despre cum folosim datele dvs personale pot fi găsite în secțiunea &lt;b&gt;Politică de intimiate&lt;/b&gt; din Manualul VirtualBox sau pe pagina &lt;a href=https://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; de pe site-ul web VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
@@ -15349,8 +15187,8 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Caută pe server actualizări VirtualBox</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=https://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
@@ -16178,6 +16016,192 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
+    <name>VBoxVMInformationDlg</name>
+    <message>
+        <source>Session Information Dialog</source>
+        <translation type="obsolete">Dialog informații despre sesiune</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">În&amp;chide</translation>
+    </message>
+    <message>
+        <source>%1 - Session Information</source>
+        <translation type="obsolete">%1 - informații despre sesiune</translation>
+    </message>
+    <message>
+        <source>&amp;Details</source>
+        <translation type="obsolete">&amp;Detalii</translation>
+    </message>
+    <message>
+        <source>&amp;Runtime</source>
+        <translation type="obsolete">Timp &amp;rulare</translation>
+    </message>
+    <message>
+        <source>DMA Transfers</source>
+        <translation type="obsolete">Transferuri DMA</translation>
+    </message>
+    <message>
+        <source>PIO Transfers</source>
+        <translation type="obsolete">Transferuri PIO</translation>
+    </message>
+    <message>
+        <source>Data Read</source>
+        <translation type="obsolete">Citire date</translation>
+    </message>
+    <message>
+        <source>Data Written</source>
+        <translation type="obsolete">Scriere date</translation>
+    </message>
+    <message>
+        <source>Data Transmitted</source>
+        <translation type="obsolete">Date transmise</translation>
+    </message>
+    <message>
+        <source>Data Received</source>
+        <translation type="obsolete">Date primite</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <translation type="obsolete">Activat</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation type="obsolete">Dezactivat</translation>
+    </message>
+    <message>
+        <source>Runtime Attributes</source>
+        <translation type="obsolete">Atribute la rulare</translation>
+    </message>
+    <message>
+        <source>Screen Resolution</source>
+        <translation type="obsolete">Rezoluție ecran</translation>
+    </message>
+    <message>
+        <source>Hardware Virtualization</source>
+        <translation type="obsolete">Virtualizare hardware</translation>
+    </message>
+    <message>
+        <source>IDE Hard Disk Statistics</source>
+        <translation type="obsolete">Statistici disc hard ID</translation>
+    </message>
+    <message>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">Statistici CD/DVD</translation>
+    </message>
+    <message>
+        <source>Network Adapter Statistics</source>
+        <translation type="obsolete">Statistici placă de rețea</translation>
+    </message>
+    <message>
+        <source>Adapter 1</source>
+        <translation type="obsolete">Placă 1</translation>
+    </message>
+    <message>
+        <source>Adapter 2</source>
+        <translation type="obsolete">Placă 2</translation>
+    </message>
+    <message>
+        <source>Adapter 3</source>
+        <translation type="obsolete">Placă 3</translation>
+    </message>
+    <message>
+        <source>Adapter 4</source>
+        <translation type="obsolete">Placă 4</translation>
+    </message>
+    <message>
+        <source>Not attached</source>
+        <translation type="obsolete">Neconectat</translation>
+    </message>
+    <message>
+        <source>Hard Disks Statistics</source>
+        <translation type="obsolete">Statistici discuri hard</translation>
+    </message>
+    <message>
+        <source>Primary Master</source>
+        <translation type="obsolete">Primar master</translation>
+    </message>
+    <message>
+        <source>Primary Slave</source>
+        <translation type="obsolete">Primar slave</translation>
+    </message>
+    <message>
+        <source>Secondary Master</source>
+        <translation type="obsolete">Secundar master</translation>
+    </message>
+    <message>
+        <source>Secondary Slave</source>
+        <translation type="obsolete">Secundar slave</translation>
+    </message>
+    <message>
+        <source>Version %1.%2</source>
+        <comment>guest additions</comment>
+        <translation type="obsolete">Versiunea %1.%2</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest additions</comment>
+        <translation type="obsolete">Nedetectat</translation>
+    </message>
+    <message>
+        <source>Not Detected</source>
+        <comment>guest os type</comment>
+        <translation type="obsolete">Nedetectat</translation>
+    </message>
+    <message>
+        <source>Guest OS Type</source>
+        <translation type="obsolete">Tip SO musafir</translation>
+    </message>
+    <message>
+        <source>Hard Disk Statistics</source>
+        <translation type="obsolete">Statistici disc fix</translation>
+    </message>
+    <message>
+        <source>No Hard Disks</source>
+        <translation type="obsolete">Lipsă discuri fixe</translation>
+    </message>
+    <message>
+        <source>No Network Adapters</source>
+        <translation type="obsolete">Lipsă plăci de rețea</translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">Activat</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>nested paging</comment>
+        <translation type="obsolete">Dezactivat</translation>
+    </message>
+    <message>
+        <source>VBoxVMInformationDlg</source>
+        <translation type="obsolete">VBoxVMInformationDlg</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDP server port)</comment>
+        <translation type="obsolete">Indisponibil</translation>
+    </message>
+    <message>
+        <source>Storage Statistics</source>
+        <translation type="obsolete">Statistici stocare</translation>
+    </message>
+    <message>
+        <source>No Storage Devices</source>
+        <translation type="obsolete">Lipsă dispozitive de stocare</translation>
+    </message>
+    <message>
+        <source>Network Statistics</source>
+        <translation type="obsolete">Statistici rețea</translation>
+    </message>
+    <message>
+        <source>Not Available</source>
+        <comment>details report (VRDE server port)</comment>
+        <translation type="obsolete">Indisponibil</translation>
+    </message>
+</context>
+<context>
     <name>VBoxVMListBox</name>
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
@@ -16834,7 +16858,7 @@ virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe 
     </message>
     <message>
         <source>Resets the snapshot folder path to the default value.
-The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul de instantanee la valoarea implicită.
 Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acet dialog din nou.</translation>
     </message>
@@ -17304,7 +17328,7 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
         <translation type="obsolete">Afișează calea unde vor fi stocate instantaneele acestei mașini virtuale. Notați faptul că instantaneele pot ocupa puțin mai mult spațiu pe disc.</translation>
     </message>
     <message>
-        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this dialog again.</source>
+        <source>Resets the snapshot folder path to the default value. The actual default path will be displayed after accepting the changes and opening this window again.</source>
         <translation type="obsolete">Restează calea către directorul de instantanee la valoarea implicită. Calea implicită actuală va fi afișată după ce acceptați schimbările și deschideți acest dialog din nou.</translation>
     </message>
     <message>
