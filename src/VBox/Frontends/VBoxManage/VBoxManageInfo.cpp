@@ -1482,8 +1482,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     rc = machine->COMGETTER(AudioAdapter)(AudioAdapter.asOutParam());
     if (SUCCEEDED(rc))
     {
-        const char *pszDrv  = "Unknown";
-        const char *pszCtrl = "Unknown";
+        const char *pszDrv   = "Unknown";
+        const char *pszCtrl  = "Unknown";
+        const char *pszCodec = "Unknown";
         BOOL fEnabled;
         rc = AudioAdapter->COMGETTER(Enabled)(&fEnabled);
         if (SUCCEEDED(rc) && fEnabled)
@@ -1556,9 +1557,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         pszCtrl = "AC97";
                     break;
                 case AudioControllerType_SB16:
-                    if (details == VMINFO_MACHINEREADABLE)
-                        pszCtrl = "sb16";
-                    else
                         pszCtrl = "SB16";
                     break;
                 case AudioControllerType_HDA:
@@ -1566,6 +1564,23 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                         pszCtrl = "hda";
                     else
                         pszCtrl = "HDA";
+                    break;
+            }
+            AudioCodecType_T enmCodecType;
+            rc = AudioAdapter->COMGETTER(AudioCodec)(&enmCodecType);
+            switch (enmCodecType)
+            {
+                case AudioCodecType_SB16:
+                    pszCodec = "SB16";
+                    break;
+                case AudioCodecType_STAC9700:
+                    pszCodec = "STAC9700";
+                    break;
+                case AudioCodecType_AD1980:
+                    pszCodec = "AD1980";
+                    break;
+                case AudioCodecType_STAC9221:
+                    pszCodec = "STAC9221";
                     break;
             }
         }
@@ -1583,8 +1598,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
             RTPrintf("Audio:           %s",
                     fEnabled ? "enabled" : "disabled");
             if (fEnabled)
-                RTPrintf(" (Driver: %s, Controller: %s)",
-                    pszDrv, pszCtrl);
+                RTPrintf(" (Driver: %s, Controller: %s, Codec: %s)",
+                    pszDrv, pszCtrl, pszCodec);
             RTPrintf("\n");
         }
     }
