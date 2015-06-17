@@ -843,7 +843,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet $(XSLTPROC_VERBOSE) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml
@@ -856,7 +856,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet $(XSLTPROC_VERBOSE) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
 		--stringparam chunk.section.depth 0 \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
