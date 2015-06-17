@@ -109,6 +109,9 @@ HRESULT Display::FinalConstruct()
     mfu32SupportedOrders = 0;
     mcVideoAccelVRDPRefs = 0;
 
+    mfSeamlessEnabled = false;
+    mpRectVisibleRegion = NULL;
+
 #ifdef VBOX_WITH_CROGL
     mfCrOglDataHidden = false;
 #endif
@@ -156,6 +159,7 @@ void Display::FinalRelease()
     uninit();
 
     videoAccelDestroy(&mVideoAccelLegacy);
+    i_saveVisibleRegion(0, NULL);
 
     if (RTCritSectIsInitialized(&mVideoAccelLock))
     {
@@ -953,6 +957,10 @@ int Display::i_handleDisplayResize(unsigned uScreenId, uint32_t bpp, void *pvVRA
     LogRelFlowFunc(("Calling VRDP\n"));
     mParent->i_consoleVRDPServer()->SendResize();
 
+    /* And re-send the seamless rectangles if necessary. */
+    if (mfSeamlessEnabled)
+        i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
+
     LogRelFlowFunc(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
     return VINF_SUCCESS;
@@ -1124,6 +1132,10 @@ void Display::i_handleUpdateVBVAInputMapping(int32_t xOrigin, int32_t yOrigin, u
     yInputMappingOrigin = yOrigin;
     cxInputMapping      = cx;
     cyInputMapping      = cy;
+
+    /* Re-send the seamless rectangles if necessary. */
+    if (mfSeamlessEnabled)
+        i_handleSetVisibleRegion(mcRectVisibleRegion, mpRectVisibleRegion);
 }
 
 /**
@@ -1248,6 +1260,28 @@ static bool displayIntersectRect(RTRECT *prectResult,
     return false;
 }
 
+int Display::i_saveVisibleRegion(uint32_t cRect, PRTRECT pRect)
+{
+    RTRECT *pRectVisibleRegion = NULL;
+
+    if (pRect == mpRectVisibleRegion)
+        return VINF_SUCCESS;
+    if (cRect != 0)
+    {
+        pRectVisibleRegion = (RTRECT *)RTMemAlloc(cRect * sizeof(RTRECT));
+        if (!pRectVisibleRegion)
+        {
+            return VERR_NO_MEMORY;
+        }
+        memcpy(pRectVisibleRegion, pRect, cRect * sizeof(RTRECT));
+    }
+    if (mpRectVisibleRegion)
+        RTMemFree(mpRectVisibleRegion);
+    mcRectVisibleRegion = cRect;
+    mpRectVisibleRegion = pRectVisibleRegion;
+    return VINF_SUCCESS;
+}
+
 int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
 {
     RTRECT *pVisibleRegion = (RTRECT *)RTMemTmpAlloc(  RT_MAX(cRect, 1)
@@ -1255,6 +1289,12 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
     if (!pVisibleRegion)
     {
         return VERR_NO_TMP_MEMORY;
+    }
+    int rc = i_saveVisibleRegion(cRect, pRect);
+    if (RT_FAILURE(rc))
+    {
+        RTMemTmpFree(pVisibleRegion);
+        return rc;
     }
 
     unsigned uScreenId;
@@ -1268,10 +1308,10 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
             /* Prepare a new array of rectangles which intersect with the framebuffer.
              */
             RTRECT rectFramebuffer;
-            rectFramebuffer.xLeft   = pFBInfo->xOrigin;
-            rectFramebuffer.yTop    = pFBInfo->yOrigin;
-            rectFramebuffer.xRight  = pFBInfo->xOrigin + pFBInfo->w;
-            rectFramebuffer.yBottom = pFBInfo->yOrigin + pFBInfo->h;
+            rectFramebuffer.xLeft   = pFBInfo->xOrigin - xInputMappingOrigin;
+            rectFramebuffer.yTop    = pFBInfo->yOrigin - yInputMappingOrigin;
+            rectFramebuffer.xRight  = rectFramebuffer.xLeft + pFBInfo->w;
+            rectFramebuffer.yBottom = rectFramebuffer.yTop  + pFBInfo->h;
 
             uint32_t cRectVisibleRegion = 0;
 
@@ -1280,10 +1320,10 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
             {
                 if (displayIntersectRect(&pVisibleRegion[cRectVisibleRegion], &pRect[i], &rectFramebuffer))
                 {
-                    pVisibleRegion[cRectVisibleRegion].xLeft -= pFBInfo->xOrigin;
-                    pVisibleRegion[cRectVisibleRegion].yTop -= pFBInfo->yOrigin;
-                    pVisibleRegion[cRectVisibleRegion].xRight -= pFBInfo->xOrigin;
-                    pVisibleRegion[cRectVisibleRegion].yBottom -= pFBInfo->yOrigin;
+                    pVisibleRegion[cRectVisibleRegion].xLeft -= rectFramebuffer.xLeft;
+                    pVisibleRegion[cRectVisibleRegion].yTop -= rectFramebuffer.yTop;
+                    pVisibleRegion[cRectVisibleRegion].xRight -= rectFramebuffer.xLeft;
+                    pVisibleRegion[cRectVisibleRegion].yBottom -= rectFramebuffer.yTop;
 
                     cRectVisibleRegion++;
                 }
@@ -1312,7 +1352,7 @@ int Display::i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect)
                 pCtl->aParms[0].u.pointer.addr = pRectsCopy;
                 pCtl->aParms[0].u.pointer.size = cRect * sizeof(RTRECT);
 
-                int rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
+                rc = i_crCtlSubmit(&pCtl->Hdr, sizeof(*pCtl), i_displayCrCmdFree, pCtl);
                 if (!RT_SUCCESS(rc))
                 {
                     AssertMsgFailed(("crCtlSubmit failed (rc=%Rrc)\n", rc));
@@ -1765,6 +1805,7 @@ HRESULT Display::setSeamlessMode(BOOL enabled)
         if (pVMMDevPort)
             pVMMDevPort->pfnRequestSeamlessChange(pVMMDevPort, !!enabled);
     }
+    mfSeamlessEnabled = enabled;
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
     if (!enabled)

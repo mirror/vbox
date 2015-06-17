@@ -178,6 +178,7 @@ public:
 
     int i_notifyCroglResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
 
+    int  i_saveVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
     int  i_handleQueryVisibleRegion(uint32_t *pcRect, PRTRECT pRect);
 
@@ -395,6 +396,13 @@ private:
 
     bool mfSourceBitmapEnabled;
     bool volatile fVGAResizing;
+
+    /** Are we in seamless mode?  Not saved, as we exit seamless on saving. */
+    bool        mfSeamlessEnabled;
+    /** Last set seamless visible region, number of rectangles. */
+    uint32_t    mcRectVisibleRegion;
+    /** Last set seamless visible region, data.  Freed on final clean-up. */
+    PRTRECT     mpRectVisibleRegion;
 
     bool        mfVideoAccelVRDP;
     uint32_t    mfu32SupportedOrders;
