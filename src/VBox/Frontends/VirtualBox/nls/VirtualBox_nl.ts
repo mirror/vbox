@@ -1038,312 +1038,313 @@
     </message>
     <message>
         <source>Minimize active window</source>
-        <translation type="unfinished"></translation>
+        <translation>Minimaliseren actief venster</translation>
     </message>
     <message>
         <source>Display the Network Operations Manager window</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster Manager Netwerkoperaties</translation>
     </message>
     <message>
         <source>Display a window with product information</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster produktinformatie</translation>
     </message>
     <message>
         <source>&amp;Preferences...</source>
         <comment>global preferences window</comment>
-        <translation type="unfinished">&amp;Voorkeuren...</translation>
+        <translation>&amp;Voorkeuren...</translation>
     </message>
     <message>
         <source>Display the global preferences window</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster Algemene Voorkeuren</translation>
     </message>
     <message>
         <source>Display the virtual machine settings window</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster virtuele machine-instellingen</translation>
     </message>
     <message>
         <source>Display the virtual machine session information window</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine sessie-informatievenster</translation>
     </message>
     <message>
         <source>&amp;Save State</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Staat opslaan</translation>
     </message>
     <message>
         <source>Save the state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslaan staat virtuele machine</translation>
     </message>
     <message>
         <source>Send the ACPI Shutdown signal to the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Stuur ACPI-Shutdownsignaal naar virtuele machine</translation>
     </message>
     <message>
         <source>&amp;Minimize Window</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Minimaliseren venster</translation>
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized</source>
-        <translation type="unfinished"></translation>
+        <translation>Pas de grootte van het gastscherm automatisch aan wanneer het venster van grootte veranderd</translation>
     </message>
     <message>
         <source>Take guest display screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak gastschermafdruk</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine instellingenvenster om videocapture in te stellen</translation>
     </message>
     <message>
         <source>Enable guest display video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Inschakelen videocapture gastscherm</translation>
     </message>
     <message>
         <source>Allow remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Sta Beeldscherm-op-Afstand (remote desktop protocol, RDP) verbindingen naar deze machine toe</translation>
     </message>
     <message>
         <source>Display window to configure menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster om menubalk in te stellen</translation>
     </message>
     <message>
         <source>Enable menu-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Inschakelen menubalk</translation>
     </message>
     <message>
         <source>Display window to configure status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster om statusbalk in te stellen</translation>
     </message>
     <message>
         <source>Enable status-bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Inschakelen statusbalk</translation>
     </message>
     <message>
         <source>Display global preferences window to configure keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon venster algemene instellingen om sneltoetsen in te stellen</translation>
     </message>
     <message>
         <source>&amp;Insert %1</source>
         <comment>that means send the %1 key sequence to the virtual machine</comment>
-        <translation type="unfinished">&amp;Invoeren %1</translation>
+        <translation>&amp;Invoeren %1</translation>
     </message>
     <message>
         <source>&amp;Hard Disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Harde schijven</translation>
     </message>
     <message>
         <source>&amp;Hard Disk Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Instellingen &amp;harde schijven...</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine instellingenvenster omharde schijven in te stellen</translation>
     </message>
     <message>
         <source>&amp;Network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Netwerk</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure network adapters</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine instellingenvenster om netwerkadapters in te stellen</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure USB devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine instellingenvenster om USB-apparaten in te stellen</translation>
     </message>
     <message>
         <source>&amp;Drag and Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Drag-and-drop</translation>
     </message>
     <message>
         <source>Display virtual machine settings window to configure shared folders</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon virtuele machine instellingenvenster om gedeelde mappen in te stellen</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual optical drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Doe het Guest Additions-schijfbestand in het virtuele optische station</translation>
     </message>
     <message>
         <source>%1%</source>
         <comment>scale-factor</comment>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>Enable</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ingeschakelen</translation>
     </message>
     <message>
         <source>Resize to %1x%2</source>
         <comment>Virtual Screen</comment>
-        <translation type="unfinished">Herschalen naar %1x%2</translation>
+        <translation>Herschalen naar %1x%2</translation>
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation type="unfinished">Preview Monitor %1</translation>
+        <translatorcomment>Preview monitor %1</translatorcomment>
+        <translation>Preview Monitor %1</translation>
     </message>
     <message>
         <source>&amp;Connect Network Adapter</source>
-        <translation type="unfinished"></translation>
+        <translation>Ver&amp;binden netwerkadapter</translation>
     </message>
     <message>
         <source>Connect Network Adapter &amp;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbinden netwerkadapter &amp;%1</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation type="unfinished">Er zijn geen USB-apparaten gekoppeld</translation>
+        <translation>Er zijn geen USB-apparaten verbonden</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
-        <translation type="unfinished">Er zijn geen ondersteunde apparaten aan de host-PC verbonden</translation>
+        <translation>Er zijn geen ondersteunde apparaten aan de host-PC verbonden</translation>
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished">Er zijn geen webcams gekoppeld</translation>
+        <translation>Er zijn geen webcams verbonden</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished">Er zijn geen ondersteunde webcams aan de host-PC verbonden</translation>
+        <translation>Er zijn geen ondersteunde webcams aan de host-PC verbonden</translation>
     </message>
     <message>
         <source>Create new virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Aanmaken nieuwe virtuele machine</translation>
     </message>
     <message>
         <source>Add existing virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen bestaande virtuele machine</translation>
     </message>
     <message>
         <source>Rename selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Hernoemen geselecteerde virtuele machine-groep</translation>
     </message>
     <message>
         <source>&amp;Ungroup</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Opheffen groep</translation>
     </message>
     <message>
         <source>Ungroup items of selected virtual machine group</source>
-        <translation type="unfinished"></translation>
+        <translation>Haal items uit de geselecteerde virtuele machine-groep</translation>
     </message>
     <message>
         <source>&amp;Sort</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sorteren</translation>
     </message>
     <message>
         <source>Sort items of selected virtual machine group alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorteer items van geselecteerde virtuele machine-groep alfabetisch</translation>
     </message>
     <message>
         <source>Add new group based on selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen nieuwe groep op basis van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Kloon de geselecteerde virtuele machine</translation>
     </message>
     <message>
         <source>Remove selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijder de geselecteerde virtuele machine</translation>
     </message>
     <message>
         <source>Start selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Start de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Switch to the windows of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Schakel over naar de vensters van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Start selected virtual machines in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Start de geselecteerde virtuele machines op de achtergrond</translation>
     </message>
     <message>
         <source>Start selected virtual machines with option of continuing in background</source>
-        <translation type="unfinished"></translation>
+        <translation>Start de geselecteerde virtuele machines met de optie deze op de achtergrond te laten doorgaan</translation>
     </message>
     <message>
         <source>Suspend execution of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Onderbreek tijdelijk de uitvoering van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Reset selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Reset de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>D&amp;iscard Saved State...</source>
-        <translation type="unfinished"></translation>
+        <translation>Ver&amp;werp opgeslagen staat...</translation>
     </message>
     <message>
         <source>Discard saved state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwerp de opgeslagen staat van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Show log files of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon de logbestanden van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Verversen</translation>
+        <translation>&amp;Verversen</translation>
     </message>
     <message>
         <source>Refresh accessibility state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Actualiseer de toegankelijkheidsstatus van de geselecteerde virtuele machines</translation>
     </message>
     <message>
         <source>S&amp;how in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>To&amp;on in Finder</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Finder</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon de VirtualBox-machinedefinitiebestanden in Finder</translation>
     </message>
     <message>
         <source>S&amp;how in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>To&amp;on in Explorer</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in Explorer</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon de VirtualBox-machinedefinitiebestanden in Explorer</translation>
     </message>
     <message>
         <source>S&amp;how in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>To&amp;on in Bestandsmanager</translation>
     </message>
     <message>
         <source>Show the VirtualBox Machine Definition files in the File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon de VirtualBox-machinedefinitiebestanden in Bestandsmanager</translation>
     </message>
     <message>
         <source>Cr&amp;eate Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak alias op bur&amp;eaublad</translation>
     </message>
     <message>
         <source>Create alias files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Maken aliasbestanden naar de VirtualBox-machinedefinitiebestanden op uw bureaublad</translation>
     </message>
     <message>
         <source>Cr&amp;eate Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak een sn&amp;elkoppeling op bureaublad</translation>
     </message>
     <message>
         <source>Create shortcut files to the VirtualBox Machine Definition files on your desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Snelkoppeling maken naar het VirtualBox-machinedefinitiebestand op het bureaublad</translation>
     </message>
     <message>
         <source>Sort group of first selected virtual machine alphabetically</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorteer de groep van de eerst geselecteerde machine alfabetisch</translation>
     </message>
     <message>
         <source>Save state of selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslaan staat virtuele machines</translation>
     </message>
     <message>
         <source>Send ACPI Shutdown signal to selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Stuur ACPI-Shutdownsignaal naar de geselecteerde virtuele machins</translation>
     </message>
     <message>
         <source>Power off selected virtual machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet de geselecteerde virtuele machines uit</translation>
     </message>
 </context>
 <context>
@@ -1388,24 +1389,24 @@
     <message>
         <source>Status</source>
         <comment>password table field</comment>
-        <translation type="unfinished">Status</translation>
+        <translation>Status</translation>
     </message>
     <message>
         <source>ID</source>
         <comment>password table field</comment>
-        <translation type="unfinished">ID</translation>
+        <translation>ID</translation>
     </message>
     <message>
         <source>Password</source>
         <comment>password table field</comment>
-        <translation type="unfinished">Wachtwoord</translation>
+        <translation>Wachtwoord</translation>
     </message>
     <message numerus="yes">
         <source>&lt;nobr&gt;Used by the following %n hard disk(s):&lt;/nobr&gt;&lt;br&gt;%1</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many hard drives are in the tool-tip and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;nobr&gt;Gebruikt door de volgende %n harde schijf:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
+            <numerusform>&lt;nobr&gt;Gebruikt door de volgende %n harde schijven:&lt;/nobr&gt;&lt;br&gt;%1</numerusform>
         </translation>
     </message>
 </context>
@@ -1526,19 +1527,19 @@
     </message>
     <message>
         <source>Storage Controller (IDE)</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslagcontroller (IDE)</translation>
     </message>
     <message>
         <source>Storage Controller (SATA)</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslagcontroller (SATA)</translation>
     </message>
     <message>
         <source>Storage Controller (SCSI)</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslagcontroller (SCSI)</translation>
     </message>
     <message>
         <source>Storage Controller (SAS)</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslagcontroller (SAS)</translation>
     </message>
 </context>
 <context>
@@ -2208,7 +2209,7 @@
     </message>
     <message>
         <source>Retrieving data ...</source>
-        <translation type="unfinished">Data ophalen...</translation>
+        <translation>Data ophalen...</translation>
     </message>
 </context>
 <context>
@@ -2821,7 +2822,7 @@
     <message>
         <source>Generic Driver, &apos;%1&apos; { %2 }</source>
         <comment>details (network)</comment>
-        <translation type="unfinished">Generiek stuurprogramma, &apos;%1&apos; { %2 }</translation>
+        <translation>Generiek stuurprogramma, &apos;%1&apos; { %2 }</translation>
     </message>
     <message>
         <source>Device Filters</source>
@@ -3250,15 +3251,15 @@
     </message>
     <message>
         <source>Holds the maximum width which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geeft aan welke maximum breedte de gast mag gebruiken.</translation>
     </message>
     <message>
         <source>Holds the maximum height which we would like the guest to use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geeft aan welke maximum hoogte de gast mag gebruiken.</translation>
     </message>
     <message>
         <source>When checked, machine windows will be raised when the mouse pointer moves over them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zullen machine-vensters omhoog komen wanneer de muis er overheen gaat.</translation>
     </message>
 </context>
 <context>
@@ -3309,19 +3310,19 @@
     </message>
     <message>
         <source>Add Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen pakket</translation>
     </message>
     <message>
         <source>Remove Package</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen pakket</translation>
     </message>
     <message>
         <source>Adds new package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt nieuw pakket toe.</translation>
     </message>
     <message>
         <source>Removes selected package.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert geselecteerd pakket.</translation>
     </message>
 </context>
 <context>
@@ -3388,11 +3389,11 @@
     </message>
     <message>
         <source>Host Screensaver:</source>
-        <translation type="unfinished"></translation>
+        <translation>Screensaver host:</translation>
     </message>
     <message>
         <source>&amp;Disable When Running Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Uitschakelen wanneer Virtuele Machines &amp;draaien</translation>
     </message>
 </context>
 <context>
@@ -3447,11 +3448,11 @@
     </message>
     <message>
         <source>Lists all available shortcuts which can be configured.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont alle beschikbare shortcuts die kunnen worden ingesteld.</translation>
     </message>
     <message>
         <source>Holds a sequence to filter the shortcut list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruimte voor een combinatie waarmee shortcutlijst zal worden gefilterd.</translation>
     </message>
 </context>
 <context>
@@ -3778,51 +3779,51 @@
     </message>
     <message>
         <source>Add NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-netwerk toevoegen</translation>
     </message>
     <message>
         <source>Remove NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-netwerk verwijderen</translation>
     </message>
     <message>
         <source>Edit NAT Network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-netwerk bewerken</translation>
     </message>
     <message>
         <source>Adds new NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt NAT-netwerk toe.</translation>
     </message>
     <message>
         <source>Removes selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert geselecteerd NAT-netwerk.</translation>
     </message>
     <message>
         <source>Edits selected NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewerkt geselecteerd NAT-netwerk.</translation>
     </message>
     <message>
         <source>Add Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only netwerk toevoegen</translation>
     </message>
     <message>
         <source>Remove Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only netwerk verwijderen</translation>
     </message>
     <message>
         <source>Edit Host-only Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Host-only netwerk bewerken</translation>
     </message>
     <message>
         <source>Adds new host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt host-only netwerk toe.</translation>
     </message>
     <message>
         <source>Removes selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert  geselecteerd host only netwerk.</translation>
     </message>
     <message>
         <source>Edits selected host-only network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bewerkt geselecteerd host only netwerk.</translation>
     </message>
 </context>
 <context>
@@ -4016,11 +4017,11 @@
     </message>
     <message>
         <source>When checked, manual configuration will be used for this network adapter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld wordt deze netwerkadapter handmatig geconfigureerd.</translation>
     </message>
     <message>
         <source>When checked, the DHCP Server will be enabled for this network on machine start-up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal voor dit netwerk de DHCP-server tijdens de machinestart worden ingeschakeld.</translation>
     </message>
 </context>
 <context>
@@ -4091,23 +4092,23 @@
     </message>
     <message>
         <source>When checked, this network will be enabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zal dit netwerk worden ingeschakeld.</translation>
     </message>
     <message>
         <source>When checked, this network will support DHCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zal dit netwerk DHCP ondersteunen.</translation>
     </message>
     <message>
         <source>When checked, this network will support IPv6.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zal dit netwerk IPv6 ondersteunen.</translation>
     </message>
     <message>
         <source>When checked, this network will be advertised as the default IPv6 route.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zal dit netwerk bekend worden als de default IPv6-route.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont een venster waarin de port-forwardingregels geconfigureerd kunnen worden.</translation>
     </message>
 </context>
 <context>
@@ -4185,11 +4186,11 @@
     </message>
     <message>
         <source>Holds the proxy host.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat de proxyhost.</translation>
     </message>
     <message>
         <source>Holds the proxy port.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat de proxypoort.</translation>
     </message>
 </context>
 <context>
@@ -4245,7 +4246,7 @@
     </message>
     <message>
         <source>Selects how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geeft aan hoe vaak de controle op nieuwe versies moet plaatsvinden. Wilt u deze controle helemaal niet, verwijdert u eenvoudigweg het vinkje in het keuzevak.</translation>
     </message>
 </context>
 <context>
@@ -4620,11 +4621,11 @@
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the hard disks:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Geeft activiteit van de harde schijf weer:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Indicates whether the host keyboard is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Geeft aan of het toetsenbord van de host door het gastbesturingssysteem is afgevangen:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/hostkey_captured_16px.png/&gt;&amp;nbsp;&amp;nbsp;keyboard is captured&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4721,7 +4722,7 @@
     </message>
     <message>
         <source>Selects the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecteert het audiostuurprogramma voor uitvoer. Het &lt;b&gt;Null-audiostuurprogramma&lt;/b&gt; zorgt dat de gast de audiokaart wel ziet, maar daar geen toegang tot zal hebben.</translation>
     </message>
 </context>
 <context>
@@ -5043,67 +5044,67 @@
     </message>
     <message>
         <source>HiDPI Support:</source>
-        <translation type="unfinished"></translation>
+        <translation>HiDPI-ondersteuning:</translation>
     </message>
     <message>
         <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat het VRDP-serverpoortnummer. U mag &lt;tt&gt;0&lt;/tt&gt; (nul) opgeven om poort 3389 te selecteren, de standaardpoort voor RDP.</translation>
     </message>
     <message>
         <source>Selects the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecteert de VRDP-authenticatiemethode.</translation>
     </message>
     <message>
         <source>Holds the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat de tijdslimiet voor authenticatie van de gast, in milliseconden.</translation>
     </message>
     <message>
         <source>When checked, multiple simultaneous connections to the VM are permitted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zullen meerdere gelijktijdige verbindingen met de VM worden toegestaan.</translation>
     </message>
     <message>
         <source>Holds the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Geef hier de bestandsnaam op waaronder VirtalBox de opname moet opslaan.</translation>
     </message>
     <message>
         <source>Selects the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt de resolutie (beeldgrootte) van de opname.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt de &lt;b&gt;horizontale&lt;/b&gt; resolutie (beeldbreedte) van de opname.</translation>
     </message>
     <message>
         <source>Holds the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt de &lt;b&gt;verticale&lt;/b&gt; resolutie (beeldhoogte) van de opname.</translation>
     </message>
     <message>
         <source>Controls the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt het maximale aantal &lt;b&gt;beelden per seconde&lt;/b&gt;. De rest wordt overgeslagen. Deze hoeveelheid verlagen zal het aantal overgeslagen beelden verhogen en daarmee de bestandsgrootte verkleinen.</translation>
     </message>
     <message>
         <source>Controls the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt de &lt;b&gt;kwaliteit&lt;/b&gt;. Een hogere waarde geeft een betere videokwaliteit, maar ook een groter bestand.</translation>
     </message>
     <message>
         <source>Holds the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Deze instelling bepaalt de bitrate in &lt;b&gt;kilobits per seconde&lt;/b&gt;. Een hogere waarde geeft een betere videokwaliteit, maar ook een groter bestand.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to full-screen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>U hebt minder dan &lt;b&gt;%1&lt;/b&gt; aan videogeheugen toegewezen; genoemde hoeveelheid is het minimum dat nodig is om de virtuele machine over te kunnen laten schakelen op schermvullende of naadloze modus.</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
     <message>
         <source>When checked, enables video recording for screen %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld wordt video-opnemen voor scherm %1 ingeschakeld.</translation>
     </message>
 </context>
 <context>
@@ -5259,11 +5260,11 @@
     </message>
     <message>
         <source>Selects the cipher to be used for encrypting the virtual machine disks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat de codering -cipher- die bij de versleuteling van de virtuele machineschijven is gebruikt.</translation>
     </message>
     <message>
         <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of storage space.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat het pad waar snapshots van deze virtuele machine worden opgeslagen. Wees er wel van bewust dat snapshots erg veel ruimte op de harde schijf kunnen innemen.</translation>
     </message>
 </context>
 <context>
@@ -5306,15 +5307,15 @@
     </message>
     <message>
         <source>When checked, show the Mini ToolBar in full-screen and seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld, wordt de miniwerkbalk getoont in schermvullende en naadloze modi.</translation>
     </message>
     <message>
         <source>Show in &amp;Full-screen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon in &amp;Schermvullend/Naadloos</translation>
     </message>
     <message>
         <source>When checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld wordt de miniwerkbalk boven in het scherm weergegeven in plaats van de standaardpositie onder aan het scherm.</translation>
     </message>
 </context>
 <context>
@@ -5482,23 +5483,23 @@
     </message>
     <message>
         <source>Selects how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stelt in hoe deze virtuele adapter is gekoppeld aan het werkelijke netwerk van het host-OS.</translation>
     </message>
     <message>
         <source>Shows additional network adapter options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont of verbergt extra opties voor de netwerkadapter.</translation>
     </message>
     <message>
         <source>Holds the configuration settings for the network attachment driver. The settings should be of the form &lt;b&gt;name=value&lt;/b&gt; and will depend on the driver. Use &lt;b&gt;shift-enter&lt;/b&gt; to add a new entry.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vul hier configuratie-instellingen in voor de netwerkkoppelingsdriver die u zal gebruiken. De instellingen moeten in de vorm zijn &lt;b&gt;naam=waarde&lt;/b&gt; en zijn driver-afhankelijk. Gebruik &lt;b&gt;shift-enter&lt;/b&gt; voor een nieuwe toevoeging.</translation>
     </message>
     <message>
         <source>When checked, the virtual network cable is plugged in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wanneer ingesteld zal de virtuele netwerkkabel worden ingeplugd.</translation>
     </message>
     <message>
         <source>Displays a window to configure port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont een venster waarin de port-forwardingregels geconfigureerd kunnen worden.</translation>
     </message>
 </context>
 <context>
@@ -5550,23 +5551,23 @@
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen IRQ opgegeven.</translation>
+        <translation>Op dit moment is geen IRQ opgegeven.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen I/O-poort opgegeven.</translation>
+        <translation>Op dit moment is geen I/O-poort opgegeven.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Twee of meer pooren hebben dezelfde instellingen.</translation>
+        <translation>Twee of meer poorten hebben dezelfde instellingen.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen poortpad opgegeven.</translation>
+        <translation>Op dit moment is geen poortpad opgegeven.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Op dit moment zijn gelijke poortpaden opgegeven.</translation>
+        <translation>Op dit moment zijn gelijke poortpaden opgegeven.</translation>
     </message>
 </context>
 <context>
@@ -5707,27 +5708,27 @@
     </message>
     <message>
         <source>Add Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen gedeelde map</translation>
     </message>
     <message>
         <source>Edit Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Wijzigen gedeelde map</translation>
     </message>
     <message>
         <source>Remove Shared Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen gedeelde map</translation>
     </message>
     <message>
         <source>Adds new shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt gedeelde map toe.</translation>
     </message>
     <message>
         <source>Edits selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wijzigt gedeelde map.</translation>
     </message>
     <message>
         <source>Removes selected shared folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert gedeelde map.</translation>
     </message>
 </context>
 <context>
@@ -5782,7 +5783,7 @@
     </message>
     <message>
         <source>When checked, this shared folder will be permanent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal deze gedeelde map permanent worden.</translation>
     </message>
 </context>
 <context>
@@ -5867,31 +5868,31 @@
     </message>
     <message>
         <source>Selects the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stelt de status van deze seriële poort in. Selecteert u &lt;b&gt;Niet verbonden&lt;/b&gt; dan zal het gastbesturingssysteem de seriële poort wel detecteren maar zal niet in staat zijn ermee te werken.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will assume that the pipe or socket specified in the &lt;b&gt;Path/Address&lt;/b&gt; field exists and try to use it. Otherwise, the pipe or socket will be created by the virtual machine when it starts.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal de virtuele machine aannemen dat de pipe of socket gespecificeerd in het &lt;b&gt;Pad/Adres&lt;/b&gt;-veld bestaat en proberen het te gebruiken. Niet aangevinkt zal de pipe of socket door de virtuele machine tijdends het opstarten worden aangemaakt.</translation>
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen IRQ opgegeven.</translation>
+        <translation>Op dit moment is geen IRQ opgegeven.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen I/O-poort opgegeven.</translation>
+        <translation>Op dit moment is geen I/O-poort opgegeven.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished">Twee of meer pooren hebben dezelfde instellingen.</translation>
+        <translation>Twee of meer poorten hebben dezelfde instellingen.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished">Op dit moment is geen poortpad opgegeven.</translation>
+        <translation>Op dit moment is geen poortpad opgegeven.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished">Op dit moment zijn gelijke poortpaden opgegeven.</translation>
+        <translation>Op dit moment zijn gelijke poortpaden opgegeven.</translation>
     </message>
 </context>
 <context>
@@ -6319,89 +6320,89 @@
     </message>
     <message>
         <source>Lists all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont een lijst van alle opslagcontrollers voor deze machine, de virtuele images en de hoststations die aangesloten zijn.</translation>
     </message>
     <message>
         <source>Holds the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat de naam van de opslagcontroller die momenteel geselecteerd is in Opslagstructuur.</translation>
     </message>
     <message>
         <source>When checked, allows to use host I/O caching capabilities.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indien ingesteld wordt toegestaan host I/O-cachingsmogelijkheden te gebruiken.</translation>
     </message>
     <message>
         <source>When checked, the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal de virtuele disk niet worden verwijderd wanneer het gastsysteem het uitwerpt.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a solid-state device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal het gastsysteem de virtuele disk beschouwen als een solid-stateapparaat.</translation>
     </message>
     <message>
         <source>When checked, the guest system will see the virtual disk as a hot-pluggable device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal het gastsysteem de virtuele disk beschouwen als een &apos;hot-pluggable&apos;-apparaat.</translation>
     </message>
     <message>
         <source>Image</source>
         <comment>storage image</comment>
-        <translation type="unfinished">Image</translation>
+        <translation>Image</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Expands/Collapses&amp;nbsp;item.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Item&amp;nbsp;Uitklappen/Inklappen&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;hard&amp;nbsp;disk.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Voegt&amp;nbsp;harde&amp;nbsp;schijf&amp;nbsp;toe&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;optical&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Voegt&amp;nbsp;optisch&amp;nbsp;station&amp;nbsp;toe&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Adds&amp;nbsp;floppy&amp;nbsp;drive.&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Voegt&amp;nbsp;diskettestation&amp;nbsp;toe&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Adds new storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt nieuwe opslagcontroller toe.</translation>
     </message>
     <message>
         <source>Removes selected storage controller.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert  nieuwe opslagcontroller.</translation>
     </message>
     <message>
         <source>Adds new storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt nieuwe opslagaansluiting toe.</translation>
     </message>
     <message>
         <source>Removes selected storage attachment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert geselecteerde opslagaansluiting.</translation>
     </message>
     <message>
         <source>Create New Hard Disk...</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak een nieuwe harde schijf aan...</translation>
     </message>
     <message>
         <source>Choose Virtual Hard Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een virtuele harde schijf bestand...</translation>
     </message>
     <message>
         <source>Choose Virtual Optical Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een virtuele optische schijfbestand...</translation>
     </message>
     <message>
         <source>Remove Disk from Virtual Drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijder schijf van virtuele station</translation>
     </message>
     <message>
         <source>Choose Virtual Floppy Disk File...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een virtuele diskette bestand...</translation>
     </message>
     <message>
         <source>Choose disk image...</source>
         <comment>This is used for hard disks, optical media and floppies</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kies een schijf-image...</translation>
     </message>
 </context>
 <context>
@@ -6678,29 +6679,29 @@
     </message>
     <message>
         <source>When checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal het RTC-apparaat de tijd in UTC-formaat rapporteren; anders in locale (host)tijd. Unix verwacht normaal gesproken dat de klok op UTC staat.</translation>
     </message>
     <message>
         <source>%</source>
-        <translation type="unfinished">%</translation>
+        <translation>%</translation>
     </message>
     <message>
         <source>%1 MB</source>
-        <translation type="unfinished">%1 MB</translation>
+        <translation>%1 MB</translation>
     </message>
     <message>
         <source>%1 CPU</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPU</translation>
     </message>
     <message>
         <source>%1 CPUs</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 CPUs</translation>
     </message>
     <message>
         <source>%1%</source>
-        <translation type="unfinished">%1%</translation>
+        <translation>%1%</translation>
     </message>
 </context>
 <context>
@@ -6861,63 +6862,63 @@
     </message>
     <message>
         <source>When chosen, enables the virtual USB OHCI controller of this machine. The USB OHCI controller provides USB 1.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal de virtuele USB-OHCI-controller van deze machine worden ingeschakeld. De USB-OHCI-controller levert ondersteuning voor USB 1.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal de virtuele USB-EHCI-controller van deze machine worden ingeschakeld. De USB-EHCI-controller levert ondersteuning voor USB 2.0.</translation>
     </message>
     <message>
         <source>When chosen, enables the virtual USB xHCI controller of this machine. The USB xHCI controller provides USB 3.0 support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Als dit is ingesteld zal de virtuele USB-xHCI-controller van deze machine worden ingeschakeld. De USB-xHCI-controller levert ondersteuning voor USB 3.0.</translation>
     </message>
     <message>
         <source>Add Empty Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen leeg filter</translation>
     </message>
     <message>
         <source>Add Filter From Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen filter vanuit een appartaat </translation>
     </message>
     <message>
         <source>Edit Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Wijzigen filter</translation>
     </message>
     <message>
         <source>Remove Filter</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijderen filter</translation>
     </message>
     <message>
         <source>Move Filter Up</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaats filter omhoog</translation>
     </message>
     <message>
         <source>Move Filter Down</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaats filter naar beneden</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt een nieuw USB-filter toe waarbij alle velden in het begin leeg zijn. Let op: een dergelijke filter zal met elk aangesloten USB-apparaat overeenkomen.</translation>
     </message>
     <message>
         <source>Adds new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt een nieuw USB-filter toe waarbij de velden de waarden van het geselecteerde USB-apparaat aangesloten op de fysieke PC overnemen.</translation>
     </message>
     <message>
         <source>Edits selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wijzigt geselecteerd USB-filter.</translation>
     </message>
     <message>
         <source>Removes selected USB filter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert geselecteerd USB filter.</translation>
     </message>
     <message>
         <source>Moves selected USB filter up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaatst geselecteerd USB filter omhoog.</translation>
     </message>
     <message>
         <source>Moves selected USB filter down.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verplaatst geselecteerd USB filter naar beneden.</translation>
     </message>
 </context>
 <context>
@@ -7024,35 +7025,35 @@
     </message>
     <message>
         <source>Holds the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor het ID van de leverancier. Het &lt;i&gt;precieze&lt;/i&gt; formaat is&lt;tt&gt;XXXX&lt;/tt&gt; waarbij &lt;tt&gt;X&lt;/tt&gt; een hexadecimaal getal is. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor het ID van het product. Het &lt;i&gt;precieze&lt;/i&gt; formaat is&lt;tt&gt;XXXX&lt;/tt&gt; waarbij &lt;tt&gt;X&lt;/tt&gt; een hexadecimaal getal is. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor het revisienummer. Het &lt;i&gt;precieze&lt;/i&gt; formaat is&lt;tt&gt;IIFF&lt;/&lt;/tt&gt; waarbij &lt;tt&gt;I&lt;/tt&gt; een geheel getal is en &lt;tt&gt;F&lt;/tt&gt; een getal achter de komma. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor de fabrikant als een &lt;i&gt;exacte overeenkomst&lt;/i&gt;. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor de produktnaam als een &lt;i&gt;exacte overeenkomst&lt;/i&gt;. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor het serienummer als een &lt;i&gt;exacte overeenkomst&lt;/i&gt;. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt het filter voor de fysieke host-USB-poort als een &lt;i&gt;exacte overeenkomst&lt;/i&gt;. Een leeg veld zal met elke waarde overeenkomen.</translation>
     </message>
     <message>
         <source>Holds whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation type="unfinished"></translation>
+        <translation>Bepaalt of dit filter werkt voor USB-apparaten die lokaal gekoppeld zijn aan: de fysieke computer. (&lt;i&gt;Nee&lt;/i&gt;), een VRDP computer (&lt;i&gt;Ja&lt;/i&gt;) of beide (&lt;i&gt;Beide&lt;/i&gt;).</translation>
     </message>
 </context>
 <context>
@@ -7097,7 +7098,7 @@
     </message>
     <message>
         <source>&amp;Hard disks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Harde schijven</translation>
     </message>
 </context>
 <context>
@@ -8437,8 +8438,8 @@
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
         <translation>
-            <numerusform>&lt;p&gt;De volgende virtuele machine bevindt zich momenteel in opgeslagen staat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Indien u doorgaat wordt de runtime-staat van de geëxporteerde machine weggegooid. De bestaande machine wordt niet veranderd.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;De volgende virtuele machines bevinden zich momenteel in opgeslagen staat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Indien u doorgaat wordt de runtime-staat van de geëxporteerde machines weggegooid. De bestaande machines worden niet veranderd.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;De volgende %n virtuele machine bevindt zich momenteel in opgeslagen staat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Indien u doorgaat wordt de runtime-staat van de geëxporteerde machine weggegooid. De bestaande machine wordt niet veranderd.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;De volgende %n virtuele machines bevinden zich momenteel in opgeslagen staat: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Indien u doorgaat wordt de runtime-staat van de geëxporteerde machines weggegooid. De bestaande machines worden niet veranderd.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -8636,43 +8637,43 @@
     </message>
     <message>
         <source>&lt;p&gt;One or more disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Eén of meer schijf-imagebestanden zijn nu niet te benaderen. U kunt niet met de virtuele machines die deze bestanden gebruiken werken, totdat zij weer benaderbaar zijn.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Controleren&lt;/b&gt; om de Virtuele Media Manager te openen en te bekijken welk medium niet te benaderen is, of druk op de knop &lt;b&gt;Negeren&lt;/b&gt; om dit bericht te negeren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot will cause the state information saved in it to be lost, and storage data spread over several image files that VirtualBox has created together with the snapshot will be merged into one file. This can be a lengthy process, and the information in the snapshot cannot be recovered.&lt;/p&gt;&lt;/p&gt;Are you sure you want to delete the selected snapshot &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Door het verwijderen van een snapshot wordt ook de informatie over de staat -opgeslagen in het snapshot- weggegooid. De schijfgegevens die VirtualBox heeft aangemaakt met het snapshot -en die verspreid zijn over verschillende bestanden- worden samengevoegd in één bestand. Dit kan een langdurig proces zijn. De informatie in het snapshot kan niet worden hersteld.&lt;/p&gt;&lt;/p&gt;Bent u er zeker van dat u het geselecteerde snapshot &lt;b&gt;%1&lt;/b&gt; wilt verwijderen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting the snapshot %1 will temporarily need more storage space. In the worst case the size of image %2 will grow by %3, however on this filesystem there is only %4 free.&lt;/p&gt;&lt;p&gt;Running out of storage space during the merge operation can result in corruption of the image and the VM configuration, i.e. loss of the VM and its data.&lt;/p&gt;&lt;p&gt;You may continue with deleting the snapshot at your own risk.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Het verwijderen van snapshot %1 kost tijdelijk meer schijfruimte. In het ergste geval zal de omvang van image %2 groeien met %3, er is echter maar %4 vrij.&lt;/p&gt;&lt;p&gt;Geen schijfruimte meer hebben tijdens de samenvoegoperatie kan als gevolg hebben, dat de image en de VM-configuratie corrupt raken. Dit betekent onherstelbaar verlies van deze VM en haar gegevens.&lt;/p&gt;&lt;p&gt;U mag natuurlijk op eigen risico doorgaan met het verwijderen van het snapshot.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Weet u zeker dat u de virtuele harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wilt losmaken?&lt;/p&gt;&lt;p&gt;Hierdoor wordt deze ontkoppeld van de volgende virtuele machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Wilt u de opslageenheid van harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Verwijderen&lt;/b&gt; dan wordt de opslageenheid permanent verwijderd. Deze actie &lt;b&gt;kan niet&lt;/b&gt; teruggedraaid worden.&lt;p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Behouden&lt;/b&gt; dan wordt de harde schijf alleen uit de lijst met bekende harde schijven gehaald maar de opslageendheid blijft onaangetast, waardoor het mogelijk is om de harde schijf op een later moment weer op de lijst te zetten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Het is niet gelukt harde schijf bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te openen.</translation>
     </message>
     <message>
         <source>Failed to close the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Het is niet gelukt harde schijf bestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te sluiten.</translation>
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard disk. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="unfinished"></translation>
+        <translation>U staat op het punt een nieuwe virtuele machine zonder harde schijf aan te maken. U zult niet in staat zijn een besturingssysteem te installeren voordat u een schijf hebt toegevoegd. Tot die tijd kunt u alleen de machine starten met gebruikmaking van een virtuele optische schijf of vanaf het netwerk.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;full-screen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in full-screen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;De virtuele machine schakelt nu over op de &lt;b&gt;schermvullende&lt;/b&gt; modus. U kunt ieder moment terugkeren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;Hosttoets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Besef dat het hoofdmenu verborgen is bij volledig scherm. U kunt dit menu benaderen door op de &lt;b&gt;Hosttoets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not switch the guest display to full-screen mode due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Ignore&lt;/b&gt; to switch to full-screen mode anyway or press &lt;b&gt;Cancel&lt;/b&gt; to cancel the operation.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kan het gastscherm niet laten overschakelen op schermvullend omdat de gast te weinig videogeheugen heeft.&lt;/p&gt;&lt;p&gt;U moet bij de configuratie de virtuele machine minimaal &lt;b&gt;%1&lt;/b&gt; videogeheugen meegeven.&lt;/p&gt;&lt;p&gt;Klik op &lt;b&gt;Negeren&lt;/b&gt; om toch op volledig beeld over te schakelen of klik op&lt;b&gt;Annuleren&lt;/b&gt; om niet over te schakelen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -9235,55 +9236,55 @@
     <name>UIPortForwardingTable</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Naam</translation>
+        <translation>Naam</translation>
     </message>
     <message>
         <source>Protocol</source>
-        <translation type="unfinished">Protocol</translation>
+        <translation>Protocol</translation>
     </message>
     <message>
         <source>Host IP</source>
-        <translation type="unfinished">Host IP</translation>
+        <translation>Host IP</translation>
     </message>
     <message>
         <source>Host Port</source>
-        <translation type="unfinished">Host poort</translation>
+        <translation>Hostpoort</translation>
     </message>
     <message>
         <source>Guest IP</source>
-        <translation type="unfinished">Gast IP</translation>
+        <translation>Gast-IP</translation>
     </message>
     <message>
         <source>Guest Port</source>
-        <translation type="unfinished">Gast poort</translation>
+        <translation>Gastpoort</translation>
     </message>
     <message>
         <source>Contains a list of port forwarding rules.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat een lijst met doorverwijsregels voor een poort.</translation>
     </message>
     <message>
         <source>Add New Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Toevoegen nieuwe regel</translation>
     </message>
     <message>
         <source>Copy Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopieer de geselecteerde regel</translation>
     </message>
     <message>
         <source>Remove Selected Rule</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijder de geselecteerde regel</translation>
     </message>
     <message>
         <source>Adds new port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Voegt een nieuwe doorverwijsregel toe.</translation>
     </message>
     <message>
         <source>Copies selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopieert de geselecteerde doorverwijsregel.</translation>
     </message>
     <message>
         <source>Removes selected port forwarding rule.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijdert  geselecteerde doorverwijsregel.</translation>
     </message>
 </context>
 <context>
@@ -9525,7 +9526,7 @@
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Click&lt;/b&gt; to toggle indicator presence.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; to change indicator position.&lt;/nobr&gt;</source>
-        <translation type="unfinished">&lt;nobr&gt;&lt;b&gt;Klik&lt;/b&gt; om indicator te toggelen.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; om positie van indicator te veranderen.&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Klik&lt;/b&gt; om indicator te toggelen.&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Drag&amp;Drop&lt;/b&gt; om positie van indicator te veranderen.&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -10029,75 +10030,75 @@
     </message>
     <message>
         <source>Copy Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopieer Virtuele Schijf</translation>
     </message>
     <message>
         <source>Hard disk to copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Te kopiëren harde schijf</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the virtual hard disk file that you would like to copy if it is not already selected. You can either choose one from the list or use the folder icon beside the list to select one.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kies een virtuele schijf om te kopiëren als u deze nog niet geselecteerd hebt. U kunt een schijf kiezen uit de lijst of door op de mappenicoon naast de lijst te klikken en daar een schijfbestand te kiezen.&lt;p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file to copy...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een te kopiëren virtuele harde schijf bestand...</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandstype harde schijf</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies het bestandstype dat u voor deze nieuwe virtuele schijf wilt gebruiken. Indien u niet van plan bent deze virtuele schijf met andersoortige virtualisatiesoftware te gebruiken kunt u deze instelling onveranderd laten.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslag op fysieke harde schijf</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies of het nieuwe virtuele schijf bestand naar de maximale grootte moet groeien door gebruik (dynamisch gealloceerd) of dat het op de maximale grootte moet worden aangemaakt (gefixeerde grootte).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Een &lt;b&gt;dynamisch gealloceerd&lt;/b&gt; virtuele schijf bestand zal tijdens gebruik tot de aangegeven maximale grootte groeien (tot een maximum &lt;b&gt;gefixeerde grootte&lt;/b&gt;).Het schijfbestand zal echter niet automatisch krimpen wanneer ruimte wordt vrijgemaakt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aanmaken van een virtuele schijf bestand van &lt;b&gt;gefixeerde grootte&lt;/b&gt; kan op sommige systemen langer duren, maar is vaak sneller in het gebruik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U kunt er ook voor kiezen het virtueel schijfbestand &lt;b&gt;te splitsen&lt;/b&gt; in meerdere bestanden van maximaal twee gigabytes elk. Dit is hoofdzakelijk handig indien u de virtuele machine wilt opslaan op verwijderbare USB-apparaten of op oudere systemen, waarvan sommige niet kunnen omgaan met erg grote bestanden.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf bestand</translation>
     </message>
     <message>
         <source>New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieuw aan te maken harde schijf</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ de naam van de nieuwe virtuele schijf in de ruimte beneden of klik op het mapicoontje, kies een andere map en maak daar het bestand in aan.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf bestand...</translation>
     </message>
     <message>
         <source>Hard disk to &amp;copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Te kopieren harde s&amp;chijf</translation>
     </message>
     <message>
         <source>&amp;New hard disk to create</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nieuw aan te maken harde schijf</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestands&amp;type harde schijf</translation>
     </message>
 </context>
 <context>
@@ -10202,7 +10203,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Please choose the type of clone you wish to create.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full clone&lt;/b&gt;, an exact copy (including all virtual hard disk files) of the original virtual machine will be created.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Linked clone&lt;/b&gt;, a new machine will be created, but the virtual hard disk files will be tied to the virtual hard disk files of original machine and you will not be able to move the new virtual machine to a different computer without moving the original as well.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Kies het type kloon dat u wilt aanmaken.&lt;/p&gt;&lt;p&gt;Indien u kiest voor &lt;b&gt;Volle kloon&lt;/b&gt;, wordt er een exacte kopie (inclusief alle virtuele harde schijf bestanden) van de originele virtuele machine aangemaakt.&lt;/p&gt;&lt;p&gt;Indien u kiest voor &lt;b&gt;Gekoppelde kloon&lt;/b&gt;, wordt er een nieuwe machine aangemaakt, maar de virtuele harde schijf bestanden zullen gebonden zijn aan de virtuele harde schijf bestanden van de originele machine. U zult de nieuwe virtuele machine niet naar een andere computer kunnen verplaatsen, zonder dat ook met de originele virtuele machine te doen.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10562,51 +10563,51 @@
     </message>
     <message>
         <source>Create Virtual Hard Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak een nieuwe virtuele schijf</translation>
     </message>
     <message>
         <source>Hard disk file type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestandstype harde schijf</translation>
     </message>
     <message>
         <source>Please choose the type of file that you would like to use for the new virtual hard disk. If you do not need to use it with other virtualization software you can leave this setting unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies het bestandstype dat u voor deze nieuwe virtuele schijf wilt gebruiken. Indien u niet van plan bent deze virtuele schijf met andersoortige virtualisatiesoftware te gebruiken kunt u deze instelling onveranderd laten.</translation>
     </message>
     <message>
         <source>Storage on physical hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Opslag op fysieke harde schijf</translation>
     </message>
     <message>
         <source>Please choose whether the new virtual hard disk file should grow as it is used (dynamically allocated) or if it should be created at its maximum size (fixed size).</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies of het nieuwe virtuele schijf bestand naar de maximale grootte moet groeien door gebruik (dynamisch gealloceerd) of dat het op de maximale grootte moet worden aangemaakt (gefixeerde grootte).</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; hard disk file will only use space on your physical hard disk as it fills up (up to a maximum &lt;b&gt;fixed size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Een &lt;b&gt;dynamisch gealloceerd&lt;/b&gt; virtuele schijf bestand zal tijdens gebruik tot de aangegeven maximale grootte groeien (tot een maximum &lt;b&gt;gefixeerde grootte&lt;/b&gt;).Het schijfbestand zal echter niet automatisch krimpen wanneer ruimte wordt vrijgemaakt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; hard disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Aanmaken van een virtuele schijf bestand van &lt;b&gt;gefixeerde grootte&lt;/b&gt; kan op sommige systemen langer duren, maar is vaak sneller in het gebruik.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the hard disk file into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;U kunt er ook voor kiezen het virtueel schijfbestand &lt;b&gt;te splitsen&lt;/b&gt; in meerdere bestanden van maximaal twee gigabytes elk. Dit is hoofdzakelijk handig indien u de virtuele machine wilt opslaan op verwijderbare USB-apparaten of op oudere systemen, waarvan sommige niet kunnen omgaan met erg grote bestanden.</translation>
     </message>
     <message>
         <source>Please type the name of the new virtual hard disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ de naam van de nieuwe virtuele schijf in de ruimte beneden of klik op het mapicoontje, kies een andere map en maak daar het bestand in aan.</translation>
     </message>
     <message>
         <source>Choose a location for new virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf bestand...</translation>
     </message>
     <message>
         <source>Select the size of the virtual hard disk in megabytes. This size is the limit on the amount of file data that a virtual machine will be able to store on the hard disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies de grootte van de virtuele harde schijf in megabytes. Deze grootte bepaalt de hoeveelheid bestandsdata die een virtuele machine uiteindelijk op deze schijf kan opslaan.</translation>
     </message>
     <message>
         <source>Hard disk file &amp;type</source>
-        <translation type="unfinished"></translation>
+        <translation>Bestands&amp;type harde schijf</translation>
     </message>
 </context>
 <context>
@@ -10697,27 +10698,27 @@
     </message>
     <message>
         <source>Hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Harde schijf</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can add a virtual hard disk to the new machine. You can either create a new hard disk file or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex storage set-up you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;&lt;p&gt;The recommended size of the hard disk is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Indien u dat wilt, kunt u een virtuele harde schijf aan de nieuwe machine toevoegen. U kunt een geheel nieuw harde schijf bestand aanmaken, één uit de lijst selecteren of met behulp van de mapicoon een bestand op een andere lokatie selecteren.&lt;/p&gt;&lt;p&gt;Indien u een wat meer complexe opslaginstelling nodig hebt, kunt u deze stap ook overslaan en deze instellingen aanbrengen wanneer de machine  is aangemaakt.&lt;/p&gt;&lt;p&gt;De aanbevolen grootte van de harde schijf is &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Do not add a virtual hard disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Voeg virtuele har&amp;de schijf niet toe</translation>
     </message>
     <message>
         <source>&amp;Create a virtual hard disk now</source>
-        <translation type="unfinished"></translation>
+        <translation>Maak nieuwe &amp;virtuele harde schijf nu aan</translation>
     </message>
     <message>
         <source>&amp;Use an existing virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebr&amp;uik een bestaand virtuele harde schijf bestand</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een virtuele harde schijf bestand...</translation>
     </message>
 </context>
 <context>
@@ -10806,19 +10807,19 @@
     </message>
     <message>
         <source>Displays a window to select a different folder.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont een venster waarin een andere map kan worden gekozen.</translation>
     </message>
     <message>
         <source>Displays a window to select a different file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toont een venster waarin een ander bestand kan worden gekozen.</translation>
     </message>
     <message>
         <source>Holds the folder path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat het pad naar de map.</translation>
     </message>
     <message>
         <source>Holds the file path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bevat het bestandspad.</translation>
     </message>
 </context>
 <context>
@@ -11699,7 +11700,7 @@
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
         <translatorcomment>RL - Definitie: &quot;A differencing disk is a virtual hard disk you use to isolate changes to a virtual hard disk or the guest operating system by storing them in a separate file.&quot; Een techterm dus. Niet vertalen.</translatorcomment>
-        <translation type="unfinished">Aankoppelen van deze harde schijf wordt indirect uitgevoerd met gebruik van een nieuw aangemaakte differencing harde schijf.</translation>
+        <translation>Aankoppelen van deze harde schijf wordt indirect uitgevoerd met gebruik van een nieuw aangemaakte differencing harde schijf.</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
@@ -11709,7 +11710,7 @@
     <message>
         <source>This base hard disk is indirectly attached using the following differencing hard disk:</source>
         <comment>medium</comment>
-        <translation type="unfinished">Deze basis harde schijf wordt indirect gekoppeld met gebruik van de volgende differencing harde schijf:</translation>
+        <translation>Deze basis harde schijf is indirect gekoppeld met gebruik van de volgende differencing harde schijf:</translation>
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
@@ -12522,20 +12523,20 @@
     </message>
     <message>
         <source>Please choose a virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een virtuele harde schijf bestand</translation>
     </message>
     <message>
         <source>All virtual hard disk files (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle virtuele harde schijf bestanden (%1)</translation>
     </message>
     <message>
         <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Medium Manager to inspect these files.</source>
         <comment>medium</comment>
-        <translation type="unfinished"></translation>
+        <translation>Enkele bestanden in deze keten van harde schijven zijn niet te benaderen. Gebruik de Virtuele Media Manager om deze bestanden nader te bekijken.</translation>
     </message>
     <message>
         <source>Please choose a location for new virtual hard disk file</source>
-        <translation type="unfinished"></translation>
+        <translation>Kies een lokatie voor het nieuwe virtuele harde schijf bestand</translation>
     </message>
 </context>
 <context>
@@ -13215,19 +13216,19 @@
     </message>
     <message>
         <source>Restore selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Zet het geselecteerde snapshot van de virtuele machine terug</translation>
     </message>
     <message>
         <source>Delete selected snapshot of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwijder het geselecteerde snapshot van de virtuele machine</translation>
     </message>
     <message>
         <source>Display a window with selected snapshot details</source>
-        <translation type="unfinished"></translation>
+        <translation>Toon details van geselecteerde snapshot</translation>
     </message>
     <message>
         <source>Clone selected virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Kloon de geselecteerde virtuele machine</translation>
     </message>
 </context>
 <context>
@@ -13264,7 +13265,7 @@
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation type="unfinished">Snapshot %1</translation>
+        <translation>Snapshot %1</translation>
     </message>
 </context>
 <context>
