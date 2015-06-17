@@ -103,6 +103,9 @@ HRESULT Guest::init(Console *aParent)
     for (unsigned i = 0 ; i < GUESTSTATTYPE_MAX; i++)
         mCurrentGuestStat[i] = 0;
     mVmValidStats = pm::VMSTATMASK_NONE;
+    RT_ZERO(mCurrentGuestCpuUserStat);
+    RT_ZERO(mCurrentGuestCpuKernelStat);
+    RT_ZERO(mCurrentGuestCpuIdleStat);
 
     mMagic = GUEST_MAGIC;
     int vrc = RTTimerLRCreate(&mStatTimer, 1000 /* ms */,
@@ -112,6 +115,8 @@ HRESULT Guest::init(Console *aParent)
     hr = unconst(mEventSource).createObject();
     if (SUCCEEDED(hr))
         hr = mEventSource->init();
+
+    mCpus = 1;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
     try
@@ -702,6 +707,26 @@ HRESULT Guest::i_setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
     if (enmType >= GUESTSTATTYPE_MAX)
         return E_INVALIDARG;
 
+    if (aCpuId < VMM_MAX_CPU_COUNT)
+    {
+        ULONG *paCpuStats;
+        switch (enmType)
+        {
+            case GUESTSTATTYPE_CPUUSER:   paCpuStats = mCurrentGuestCpuUserStat;   break;
+            case GUESTSTATTYPE_CPUKERNEL: paCpuStats = mCurrentGuestCpuKernelStat; break;
+            case GUESTSTATTYPE_CPUIDLE:   paCpuStats = mCurrentGuestCpuIdleStat;   break;
+            default:                      paCpuStats = NULL;                       break;
+        }
+        if (paCpuStats)
+        {
+            paCpuStats[aCpuId] = aVal;
+            aVal = 0;
+            for (uint32_t i = 0; i < mCpus && i < VMM_MAX_CPU_COUNT; i++)
+                aVal += paCpuStats[i];
+            aVal /= mCpus;
+        }
+    }
+
     mCurrentGuestStat[enmType] = aVal;
     mVmValidStats |= indexToPerfMask[enmType];
     return S_OK;
@@ -1079,4 +1104,3 @@ void Guest::i_setSupportedFeatures(uint32_t aCaps)
                      0 /*fFlags*/, &TimeSpecTS);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
 }
-

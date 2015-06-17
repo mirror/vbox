@@ -495,6 +495,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         unconst(mGuest).createObject();
         rc = mGuest->init(this);
         AssertComRCReturnRC(rc);
+    
+        ULONG cCpus = 1;
+        rc = mMachine->COMGETTER(CPUCount)(&cCpus);
+        mGuest->i_setCpuCount(cCpus);
 
         unconst(mKeyboard).createObject();
         rc = mKeyboard->init(this);
