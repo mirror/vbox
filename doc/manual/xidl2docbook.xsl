@@ -5,7 +5,7 @@
         XSLT stylesheet that generates docbook from
         VirtualBox.xidl.
 
-    Copyright (C) 2006-2012 Oracle Corporation
+    Copyright (C) 2006-2015 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -53,22 +53,20 @@
     <xsl:when test="$type">
       <xsl:choose>
         <xsl:when test="//interface[@name=$type]">
-          <xref>
-            <xsl:attribute name="apiref">yes</xsl:attribute>
+          <link>
             <xsl:attribute name="linkend">
               <xsl:value-of select="translate($type, ':', '_')" />
             </xsl:attribute>
             <xsl:value-of select="$type" />
-          </xref>
+          </link>
         </xsl:when>
         <xsl:when test="//enum[@name=$type]">
-          <xref>
-            <xsl:attribute name="apiref">yes</xsl:attribute>
+          <link>
             <xsl:attribute name="linkend">
               <xsl:value-of select="translate($type, ':', '_')" />
             </xsl:attribute>
             <xsl:value-of select="$type" />
-          </xref>
+          </link>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="$type" />
@@ -121,29 +119,28 @@
 
           <xsl:choose>
             <xsl:when test="$wsmap='suppress'">
-              <note>
+              <para><note><para>
                 This interface is not supported in the web service.
-              </note>
+              </para></note></para>
             </xsl:when>
             <xsl:when test="$wsmap='struct'">
-              <note>With the web service, this interface is mapped to a structure. Attributes that return this interface will not return an object, but a complete structure
-              containing the attributes listed below as structure members.</note>
+              <para><note><para>With the web service, this interface is mapped to a structure. Attributes that return this interface will not return an object, but a complete structure
+              containing the attributes listed below as structure members.</para></note></para>
             </xsl:when>
             <xsl:when test="$wsonly='yes'">
-              <note>This interface is supported in the web service only, not in COM/XPCOM.</note>
+              <para><note><para>This interface is supported in the web service only, not in COM/XPCOM.</para></note></para>
             </xsl:when>
           </xsl:choose>
 
           <xsl:if test="$reportExtends">
-            <note>
+            <para><note><para>
                 This interface extends
-                <xref>
-                  <xsl:attribute name="apiref">yes</xsl:attribute>
+                <link>
                   <xsl:attribute name="linkend"><xsl:value-of select="$extends" /></xsl:attribute>
                   <xsl:value-of select="$extends" />
-                </xref>
+                </link>
                 and therefore supports all its methods and attributes as well.
-            </note>
+            </para></note></para>
           </xsl:if>
 
           <xsl:apply-templates select="desc" />
@@ -180,9 +177,9 @@
                     </xsl:if>
                   </programlisting>
                   <xsl:if test="( ($attrtype=($G_setSuppressedInterfaces/@name)) )">
-                    <note>
+                    <para><note><para>
                       This attribute is not supported in the web service.
-                    </note>
+                    </para></note></para>
                   </xsl:if>
                   <xsl:apply-templates select="desc" />
                 </sect3>
@@ -208,9 +205,9 @@
                   </title>
                   <xsl:if test="   (param[@type=($G_setSuppressedInterfaces/@name)])
                                 or (param[@mod='ptr'])" >
-                    <note>
+                    <para><note><para>
                       This method is not supported in the web service.
-                    </note>
+                    </para></note></para>
                   </xsl:if>
                   <!-- make a set of all parameters with in and out direction -->
                   <xsl:variable name="paramsinout" select="param[@dir='in' or @dir='out']" />
@@ -255,9 +252,10 @@
                             <xsl:value-of select="@name" />
                           </glossterm>
                           <glossdef>
-                            <para>
-                              <xsl:apply-templates select="desc" />
-                            </para>
+                            <xsl:if test="not(desc)">
+                              <para/>
+                            </xsl:if>
+                            <xsl:apply-templates select="desc" />
                           </glossdef>
                         </glossentry>
                       </xsl:for-each>
@@ -319,6 +317,9 @@
                 <xsl:value-of select="@name" />
               </glossterm>
               <glossdef>
+                <xsl:if test="not(desc)">
+                  <para/>
+                </xsl:if>
                 <xsl:apply-templates select="desc" />
               </glossdef>
             </glossentry>
@@ -397,7 +398,11 @@
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="desc">
+  <!-- todo: wrapping the entire content in a single para is actually not
+       entirely correct, as it contains empty lines denoting new paragraphs -->
+  <para>
   <xsl:apply-templates />
+  </para>
 </xsl:template>
 
 <xsl:template name="getCurrentInterface">
@@ -410,8 +415,7 @@
 
 <!-- <link to="DeviceType::HardDisk"/> -->
 <xsl:template match="link">
-  <xref>
-    <xsl:attribute name="apiref">yes</xsl:attribute>
+  <link>
     <xsl:variable name="tmp" select="@to" />
     <xsl:variable name="enumNameFromCombinedName">
         <xsl:value-of select="substring-before($tmp, '_')" />
@@ -492,7 +496,7 @@
         </xsl:choose>
       </xsl:otherwise>
     </xsl:choose>
-  </xref>
+  </link>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
@@ -501,9 +505,9 @@
 
 <xsl:template match="note">
   <xsl:if test="not(@internal='yes')">
-    <note>
+    <note><para>
       <xsl:apply-templates />
-    </note>
+    </para></note>
   </xsl:if>
 </xsl:template>
 
@@ -544,7 +548,9 @@
 
 <xsl:template match="li">
   <listitem>
-    <xsl:apply-templates />
+    <para>
+      <xsl:apply-templates />
+    </para>
   </listitem>
 </xsl:template>
 

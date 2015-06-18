@@ -37,7 +37,7 @@
       <mediaobject>
         <imageobject>
           <imagedata align="center" fileref="images/vbox-components.png"
-                     width="12cm" />
+                     width="12cm"/>
         </imageobject>
       </mediaobject>
 
@@ -61,7 +61,7 @@
       This API, which we call the <emphasis role="bold">"Main API"</emphasis>,
       exposes the entire feature set of the virtualization engine below. It is
       completely documented in this SDK Reference -- see <xref
-      linkend="sdkref_classes" /> and <xref linkend="sdkref_enums" /> -- and
+      linkend="sdkref_classes"/> and <xref linkend="sdkref_enums"/> -- and
       available to anyone who wishes to control VirtualBox programmatically.
       We chose the name "Main API" to differentiate it from other programming
       interfaces of VirtualBox that may be publicly accessible.</para>
@@ -113,8 +113,8 @@
                   service (OOWS)"</emphasis>.</para>
 
                   <para>The OO bindings for Java are described in <xref
-                  linkend="javaapi" />, those for Python in <xref lang=""
-                  linkend="glue-python-ws" />.</para>
+                  linkend="javaapi"/>, those for Python in <xref
+                  linkend="glue-python-ws"/>.</para>
                 </listitem>
 
                 <listitem>
@@ -132,7 +132,7 @@
                   client wrapper code from it.</para>
 
                   <para>We describe this further in <xref
-                  linkend="raw-webservice" />, with samples for Java and
+                  linkend="raw-webservice"/>, with samples for Java and
                   Perl.</para>
                 </listitem>
               </orderedlist></para>
@@ -154,7 +154,7 @@
             use the COM/XPCOM API directly. VirtualBox comes with all
             necessary files and documentation to build fully functional COM
             applications. For an introduction, please see <xref
-            linkend="api_com" /> below.</para>
+            linkend="api_com"/> below.</para>
 
             <para>The VirtualBox front-ends (the graphical user interfaces as
             well as the command line), which are all written in C++, use
@@ -345,7 +345,8 @@
 
           <listitem>
             <para><computeroutput>--ssl</computeroutput> (or
-            <computeroutput>-s</computeroutput>): This enables SSL support.</para>
+            <computeroutput>-s</computeroutput>): This enables SSL
+            support.</para>
           </listitem>
 
           <listitem>
@@ -433,7 +434,8 @@
             <para><computeroutput>--keepalive</computeroutput> (or
             <computeroutput>-k</computeroutput>): This specifies the maximum
             number of requests which can be sent in one web service connection,
-            and defaults to 100. This normally does not need to be changed.</para>
+            and defaults to 100. This normally does not need to be
+            changed.</para>
           </listitem>
 
           <listitem>
@@ -502,8 +504,8 @@
 
         <para>As opposed to the COM/XPCOM variant of the Main API, a client
         that wants to use the web service must first log on by calling the
-        <computeroutput>IWebsessionManager::logon()</computeroutput> API (see
-        <xref linkend="IWebsessionManager__logon" />) that is specific to the
+        <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>
+        API that is specific to the
         web service. Logon is necessary for the web service to be stateful;
         internally, it maintains a session for each client that connects to
         it.</para>
@@ -514,7 +516,8 @@
         performs the actual authentication.</para>
 
         <para>For testing purposes, it is recommended that you first disable
-        authentication with this command:<screen>VBoxManage setproperty websrvauthlibrary null</screen></para>
+        authentication with this command:
+        <screen>VBoxManage setproperty websrvauthlibrary null</screen></para>
 
         <para><warning>
             <para>This will cause all logons to succeed, regardless of user
@@ -532,7 +535,7 @@
         role="bold">VRDE authentication</emphasis> of the VirtualBox User
         Manual; the web service uses the same kind of modules as the
         VirtualBox VRDE server. For technical details on VirtualBox external
-        authentication modules see <xref linkend="vbox-auth" /></para>
+        authentication modules see <xref linkend="vbox-auth"/></para>
 
         <para>By default, after installation, the web service uses the
         VBoxAuth module that ships with VirtualBox. This module uses PAM on
@@ -556,11 +559,11 @@
   <chapter>
     <title>Environment-specific notes</title>
 
-    <para>The Main API described in <xref linkend="sdkref_classes" /> and
-    <xref linkend="sdkref_enums" /> is mostly identical in all the supported
+    <para>The Main API described in <xref linkend="sdkref_classes"/> and
+    <xref linkend="sdkref_enums"/> is mostly identical in all the supported
     programming environments which have been briefly mentioned in the
     introduction of this book. As a result, the Main API's general concepts
-    described in <xref linkend="concepts" /> are the same whether you use the
+    described in <xref linkend="concepts"/> are the same whether you use the
     object-oriented web service (OOWS) for JAX-WS or a raw web service
     connection via, say, Perl, or whether you use C++ COM bindings.</para>
 
@@ -570,13 +573,13 @@
     <sect1 id="glue">
       <title>Using the object-oriented web service (OOWS)</title>
 
-      <para>As explained in <xref linkend="webservice-or-com" />, VirtualBox
+      <para>As explained in <xref linkend="webservice-or-com"/>, VirtualBox
       ships with client-side libraries for Java, Python and PHP that allow you
       to use the VirtualBox web service in an intuitive, object-oriented way.
       These libraries shield you from the client-side complications of managed
       object references and other implementation details that come with the
       VirtualBox web service. (If you are interested in these complications,
-      have a look at <xref linkend="raw-webservice" />).</para>
+      have a look at <xref linkend="raw-webservice"/>).</para>
 
       <para>We recommend that you start your experiments with the VirtualBox
       web service by using our object-oriented client libraries for JAX-WS, a
@@ -584,8 +587,8 @@
       interact with VirtualBox in the simplest manner possible.</para>
 
       <para>As "interfaces", "attributes" and "methods" are COM concepts,
-      please read the documentation in <xref linkend="sdkref_classes" /> and
-      <xref linkend="sdkref_enums" /> with the following notes in mind.</para>
+      please read the documentation in <xref linkend="sdkref_classes"/> and
+      <xref linkend="sdkref_enums"/> with the following notes in mind.</para>
 
       <para>The OOWS bindings attempt to map the Main API as closely as
       possible to the Java, Python and PHP languages. In other words, objects
@@ -596,7 +599,7 @@
       call a "getXXX" method, with "XXX" being the attribute name with a
       capitalized first letter. So when the Main API Reference says that
       <computeroutput>IMachine</computeroutput> has a "name" attribute (see
-      <xref linkend="IMachine__name" xreflabel="IMachine::name" />), call
+      <link linkend="IMachine__name">IMachine::name</link>), call
       <computeroutput>getName()</computeroutput> on an IMachine object to
       obtain a machine's name. Unless the attribute is marked as read-only in
       the documentation, there will also be a corresponding "set"
@@ -649,18 +652,20 @@
               <listitem>
                 <para>To start the VirtualBox web service, open a second
                 terminal and change to the directory where the VirtualBox
-                executables are located. Then type:<screen>./vboxwebsrv -v</screen></para>
+                executables are located. Then type:
+                <screen>./vboxwebsrv -v</screen></para>
 
                 <para>The web service now waits for connections and will run
                 until you press Ctrl+C in this second terminal. The -v
                 argument causes it to log all connections to the terminal.
-                (See <xref linkend="runvboxwebsrv" os="" /> for details on how
+                (See <xref linkend="runvboxwebsrv"/> for details on how
                 to run the web service.)</para>
               </listitem>
 
               <listitem>
                 <para>Back in the first terminal and still in the samples
-                directory, to start a simple client example just type:<screen>make run16</screen></para>
+                directory, to start a simple client example just type:
+                <screen>make run16</screen></para>
 
                 <para>if you're on a Java 6 system; on a Java 5 system, run
                 <computeroutput>make run15</computeroutput> instead.</para>
@@ -714,11 +719,12 @@
           objects need to be created, as can be seen in the
           <computeroutput>clienttest</computeroutput> constructor:<orderedlist>
               <listitem>
-                <para>An instance of <xref linkend="IWebsessionManager"
-                xreflabel="IWebsessionManager" />, which is an interface
-                provided by the web service to manage "web sessions" -- that
-                is, stateful connections to the web service with persistent
-                objects upon which methods can be invoked.</para>
+                <para>An instance of
+                <link linkend="IWebsessionManager">IWebsessionManager</link>,
+                which is an interface provided by the web service to manage
+                "web sessions" -- that is, stateful connections to the web
+                service with persistent objects upon which methods can be
+                invoked.</para>
 
                 <para>In the OOWS for JAX-WS, the IWebsessionManager class
                 must be constructed explicitly, and a URL must be provided in
@@ -730,22 +736,21 @@
                 <para>The port number, by default 18083, must match the port
                 number given to the
                 <computeroutput>vboxwebsrv</computeroutput> command line; see
-                <xref linkend="vboxwebsrv-ref" />.</para>
+                <xref linkend="vboxwebsrv-ref"/>.</para>
               </listitem>
 
               <listitem>
-                <para>After that, the code calls <xref
-                linkend="IWebsessionManager__logon"
-                xreflabel="IWebsessionManager::logon()" />, which is the first
-                call that actually communicates with the server. This
-                authenticates the client with the web service and returns an
-                instance of <xref linkend="IVirtualBox"
-                xreflabel="IVirtualBox" />, the most fundamental interface of
-                the VirtualBox web service, from which all other functionality
-                can be derived.</para>
+                <para>After that, the code calls
+                <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>,
+                which is the first call that actually communicates with the
+                server. This authenticates the client with the web service and
+                returns an instance of
+                <link linkend="IVirtualBox">IVirtualBox</link>,
+                the most fundamental interface of the VirtualBox web service,
+                from which all other functionality can be derived.</para>
 
                 <para>If logon doesn't work, please take another look at <xref
-                linkend="websrv_authenticate" />.</para>
+                linkend="websrv_authenticate"/>.</para>
               </listitem>
             </orderedlist></para>
         </sect3>
@@ -755,10 +760,10 @@
 
           <para>The current OOWS for JAX-WS has certain memory management
           related limitations. When you no longer need an object, call its
-          <xref linkend="IManagedObjectRef__release"
-          xreflabel="IManagedObjectRef::release()" /> method explicitly, which
+          <link linkend="IManagedObjectRef__release">IManagedObjectRef::release()</link>
+          method explicitly, which
           frees appropriate managed reference, as is required by the raw
-          web service; see <xref linkend="managed-object-references" /> for
+          web service; see <xref linkend="managed-object-references"/> for
           details. This limitation may be reconsidered in a future version of
           the VirtualBox SDK.</para>
         </sect3>
@@ -769,13 +774,13 @@
 
         <para>VirtualBox comes with two flavors of a Python API: one for web
         service, discussed here, and one for the COM/XPCOM API discussed in
-        <xref linkend="pycom" />. The client code is mostly similar, except
+        <xref linkend="pycom"/>. The client code is mostly similar, except
         for the initialization part, so it is up to the application developer
         to choose the appropriate technology. Moreover, a common Python glue
         layer exists, abstracting out concrete platform access details, see
-        <xref linkend="glue-python" />.</para>
+        <xref linkend="glue-python"/>.</para>
 
-        <para>As indicated in <xref linkend="webservice-or-com" />, the
+        <para>As indicated in <xref linkend="webservice-or-com"/>, the
         COM/XPCOM API gives better performance without the SOAP overhead, and
         does not require a web server to be running. On the other hand, the
         COM/XPCOM Python API requires a suitable Python bridge for your Python
@@ -784,14 +789,16 @@
             <para>On On Mac OS X only the Python versions bundled with the OS
             are officially supported. This means Python 2.3 for 10.4, Python
             2.5 for 10.5 and Python 2.5 and 2.6 for 10.6.</para>
-          </footnote>). On Windows, you can use the Main API from Python if the Win32 extensions
-          package for Python<footnote>
+          </footnote>). On Windows, you can use the Main API from Python if the
+          Win32 extensions package for Python<footnote>
             <para>See <ulink
             url="http://sourceforge.net/project/showfiles.php?group_id=78018">http://sourceforge.net/project/showfiles.php?group_id=78018</ulink>.</para>
-          </footnote> is installed. Version of Python Win32 extensions earlier than 2.16 are known to have bugs,
-          leading to issues with VirtualBox Python bindings, and also some early builds of Python 2.5 for Windows have issues with
-          reporting platform name on some Windows versions, so please make sure to use latest available Python
-          and Win32 extensions.</para>
+          </footnote> is installed. Version of Python Win32 extensions earlier
+          than 2.16 are known to have bugs, leading to issues with VirtualBox
+          Python bindings, and also some early builds of Python 2.5 for Windows
+          have issues with reporting platform name on some Windows versions, so
+          please make sure to use latest available Python and Win32
+          extensions.</para>
 
         <para>The VirtualBox OOWS for Python relies on the Python ZSI SOAP
         implementation (see <ulink
@@ -812,13 +819,15 @@
         contains the glue layer for all target platforms (i.e. XPCOM, MSCOM
         and web services).</para>
 
-        <para>To start the shell, perform the following commands: <screen>/opt/VirtualBox/vboxwebsrv -t 0
+        <para>To start the shell, perform the following commands:
+        <screen>/opt/VirtualBox/vboxwebsrv -t 0
             # start web service with object autocollection disabled
 export VBOX_PROGRAM_PATH=/opt/VirtualBox
             # your VirtualBox installation directory
 export VBOX_SDK_PATH=/home/youruser/vbox-sdk
             # where you've extracted the SDK
-./vboxshell.py -w        </screen>See <xref linkend="vboxshell" /> for more
+./vboxshell.py -w        </screen>
+        See <xref linkend="vboxshell"/> for more
         details on the shell's functionality. For you, as a VirtualBox
         application developer, the vboxshell sample could be interesting as an
         example of how to write code targeting both local and remote cases
@@ -850,9 +859,9 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
       previous chapter.</para>
 
       <para>Generally, when reading the documentation in <xref
-      linkend="sdkref_classes" /> and <xref linkend="sdkref_enums" />, due to
+      linkend="sdkref_classes"/> and <xref linkend="sdkref_enums"/>, due to
       the limitations of SOAP and WSDL lined out in <xref
-      linkend="rawws-conventions" />, please have the following notes in
+      linkend="rawws-conventions"/>, please have the following notes in
       mind:</para>
 
       <para><orderedlist>
@@ -863,9 +872,9 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
             listed in the documentation). So when the documentation says that
             the <computeroutput>IVirtualBox</computeroutput> interface
             supports the <computeroutput>createMachine()</computeroutput>
-            method (see <xref linkend="IVirtualBox__createMachine"
-            xreflabel="IVirtualBox::createMachine()" />), the web service
-            operation is
+            method (see
+            <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>),
+            the web service operation is
             <computeroutput>IVirtualBox_createMachine(...)</computeroutput>,
             and a managed object reference to an
             <computeroutput>IVirtualBox</computeroutput> object must be passed
@@ -923,7 +932,8 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
 
             <listitem>
               <para>Open a terminal in your working directory. Execute the
-              following command:<screen> java org.apache.axis.wsdl.WSDL2Java /path/to/vboxwebService.wsdl</screen></para>
+              following command:
+              <screen>java org.apache.axis.wsdl.WSDL2Java /path/to/vboxwebService.wsdl</screen></para>
 
               <para>The <computeroutput>vboxwebService.wsdl</computeroutput>
               file should be located in the
@@ -932,7 +942,8 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
 
               <para>If this fails, your Apache Axis may not be located on your
               system classpath, and you may have to adjust the CLASSPATH
-              environment variable. Something like this:<screen>export CLASSPATH="/path-to-axis-1_4/lib/*":$CLASSPATH</screen></para>
+              environment variable. Something like this:
+              <screen>export CLASSPATH="/path-to-axis-1_4/lib/*":$CLASSPATH</screen></para>
 
               <para>Use the directory where the Axis JAR files are located.
               Mind the quotes so that your shell passes the "*" character to
@@ -955,7 +966,8 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
 
             <listitem>
               <para>Next, compile the
-              <computeroutput>clienttest.java</computeroutput> source:<screen>javac clienttest.java </screen></para>
+              <computeroutput>clienttest.java</computeroutput>
+              source:<screen>javac clienttest.java </screen></para>
 
               <para>This should yield a "clienttest.class" file.</para>
             </listitem>
@@ -963,12 +975,13 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
             <listitem>
               <para>To start the VirtualBox web service, open a second
               terminal and change to the directory where the VirtualBox
-              executables are located. Then type:<screen>./vboxwebsrv -v</screen></para>
+              executables are located. Then type:
+              <screen>./vboxwebsrv -v</screen></para>
 
               <para>The web service now waits for connections and will run
               until you press Ctrl+C in this second terminal. The -v argument
               causes it to log all connections to the terminal. (See <xref
-              linkend="runvboxwebsrv" os="" /> for details on how to run the
+              linkend="runvboxwebsrv"/> for details on how to run the
               web service.)</para>
             </listitem>
 
@@ -1020,18 +1033,20 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
             <listitem>
               <para>To start the VirtualBox web service, open a second
               terminal and change to the directory where the VirtualBox
-              executables are located. Then type:<screen>./vboxwebsrv -v</screen></para>
+              executables are located. Then type:
+              <screen>./vboxwebsrv -v</screen></para>
 
               <para>The web service now waits for connections and will run
               until you press Ctrl+C in this second terminal. The -v argument
               causes it to log all connections to the terminal. (See <xref
-              linkend="runvboxwebsrv" os="" /> for details on how to run the
+              linkend="runvboxwebsrv"/> for details on how to run the
               web service.)</para>
             </listitem>
 
             <listitem>
               <para>In the first terminal with the Perl sample, run the
-              clienttest.pl script:<screen>perl -I ../lib clienttest.pl</screen></para>
+              clienttest.pl script:
+              <screen>perl -I ../lib clienttest.pl</screen></para>
             </listitem>
           </orderedlist></para>
       </sect2>
@@ -1042,7 +1057,7 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         <para>If you use the raw web service, you need to keep a number of
         things in mind, or you will sooner or later run into issues that are
         not immediately obvious. By contrast, the object-oriented client-side
-        libraries described in <xref linkend="glue" /> take care of these
+        libraries described in <xref linkend="glue"/> take care of these
         things automatically and thus greatly simplify using the web
         service.</para>
 
@@ -1088,7 +1103,7 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
                 argument, representing the object upon which the underlying
                 method is invoked. (Managed object references are explained in
                 detail below; see <xref
-                linkend="managed-object-references" />.)</para>
+                linkend="managed-object-references"/>.)</para>
 
                 <para>So, when one would normally code, in the pseudo-code of
                 an object-oriented language, to invoke a method upon an
@@ -1103,13 +1118,13 @@ result = IMachine_getName(machine);</screen></para>
               <listitem>
                 <para>To make the web service stateful, and objects persistent
                 between method calls, the VirtualBox web service introduces a
-                <emphasis role="bold">session manager</emphasis> (by way of
-                the <xref linkend="IWebsessionManager"
-                xreflabel="IWebsessionManager" /> interface), which manages
-                object references. Any client wishing to interact with the web
-                service must first log on to the session manager and in turn
-                receives a managed object reference to an object that supports
-                the <xref linkend="IVirtualBox" xreflabel="IVirtualBox" />
+                <emphasis role="bold">session manager</emphasis> (by way of the
+                 <link linkend="IWebsessionManager">IWebsessionManager</link>
+                interface), which manages object references. Any client wishing
+                to interact with the web service must first log on to the
+                session manager and in turn receives a managed object reference
+                to an object that supports the
+                <link linkend="IVirtualBox">IVirtualBox</link>
                 interface (the basic interface in the Main API).</para>
               </listitem>
             </orderedlist></para>
@@ -1126,24 +1141,23 @@ result = IMachine_getName(machine);</screen></para>
           number of the VirtualBox web service (to be precise, the underlying
           Main API version number) looks like this:<orderedlist>
               <listitem>
-                <para>A client logs on to the web service by calling <xref
-                linkend="IWebsessionManager__logon"
-                xreflabel="IWebsessionManager::logon()" /> with a valid user
-                name and password. See <xref linkend="websrv_authenticate" />
+                <para>A client logs on to the web service by calling
+                <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>
+                with a valid user name and password. See
+                <xref linkend="websrv_authenticate"/>
                 for details about how authentication works.</para>
               </listitem>
 
               <listitem>
                 <para>On the server side,
                 <computeroutput>vboxwebsrv</computeroutput> creates a session,
-                which persists until the client calls <xref
-                linkend="IWebsessionManager__logoff"
-                xreflabel="IWebsessionManager::logoff()" /> or the session
-                times out after a configurable period of inactivity (see <xref
-                linkend="vboxwebsrv-ref" />).</para>
+                which persists until the client calls
+                <link linkend="IWebsessionManager__logoff">IWebsessionManager::logoff()</link>
+                or the session times out after a configurable period of
+                inactivity (see <xref linkend="vboxwebsrv-ref"/>).</para>
 
                 <para>For the new session, the web service creates an instance
-                of <xref linkend="IVirtualBox" xreflabel="IVirtualBox" />.
+                of <link linkend="IVirtualBox">IVirtualBox</link>.
                 This interface is the most central one in the Main API and
                 allows access to all other interfaces, either through
                 attributes or method calls. For example, IVirtualBox contains
@@ -1162,10 +1176,9 @@ oVirtualBox = webservice.IWebsessionManager_logon("user", "pass");</screen>
                 <para>(The managed object reference "oVirtualBox" is just a
                 string consisting of digits and dashes. However, it is a
                 string with a meaning and will be checked by the web service.
-                For details, see below. As hinted above, <xref
-                linkend="IWebsessionManager__logon"
-                xreflabel="IWebsessionManager::logon()" /> is the
-                <emphasis>only</emphasis> operation provided by the web
+                For details, see below. As hinted above,
+                <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>
+                is the <emphasis>only</emphasis> operation provided by the web
                 service which does not take a managed object reference as the
                 first argument!)</para>
               </listitem>
@@ -1173,12 +1186,13 @@ oVirtualBox = webservice.IWebsessionManager_logon("user", "pass");</screen>
               <listitem>
                 <para>The VirtualBox Main API documentation says that the
                 <computeroutput>IVirtualBox</computeroutput> interface has a
-                <xref linkend="IVirtualBox__version" xreflabel="version" />
+                <link linkend="IVirtualBox__version">version</link>
                 attribute, which is a string. For each attribute, there is a
                 "get" and a "set" method in COM, which maps to according
                 operations in the web service. So, to retrieve the "version"
                 attribute of this <computeroutput>IVirtualBox</computeroutput>
-                object, the web service client does this:<screen>string version;
+                object, the web service client does this:
+                <screen>string version;
 version = webservice.IVirtualBox_getVersion(oVirtualBox);
 
 print version;</screen></para>
@@ -1188,11 +1202,10 @@ print version;</screen></para>
               </listitem>
 
               <listitem>
-                <para>The web service client calls <xref
-                linkend="IWebsessionManager__logoff"
-                xreflabel="IWebsessionManager::logoff()" /> with the
-                VirtualBox managed object reference. This will clean up all
-                allocated resources.</para>
+                <para>The web service client calls
+                <link linkend="IWebsessionManager__logoff">IWebsessionManager::logoff()</link>
+                with the VirtualBox managed object reference. This will clean
+                up all allocated resources.</para>
               </listitem>
             </orderedlist></para>
         </sect3>
@@ -1211,21 +1224,19 @@ print version;</screen></para>
           <para>Managed object references are created in two
           situations:<orderedlist>
               <listitem>
-                <para>When a client logs on, by calling <xref
-                linkend="IWebsessionManager__logon"
-                xreflabel="IWebsessionManager::logon()" />.</para>
+                <para>When a client logs on, by calling
+                <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>.</para>
 
                 <para>Upon logon, the websession manager creates one instance
-                of <xref linkend="IVirtualBox" xreflabel="IVirtualBox" />,
+                of <link linkend="IVirtualBox">IVirtualBox</link>,
                 which can be used for directly performing calls to its
                 methods, or used as a parameter for calling some methods of
-                <xref linkend="IWebsessionManager" xreflabel="IWebsessionManager" />.
-                Creating Main API session objects is performed using <xref
-                linkend="IWebsessionManager__getSessionObject"
-                xreflabel="IWebsessionManager::getSessionObject()" />.</para>
+                <link linkend="IWebsessionManager">IWebsessionManager</link>.
+                Creating Main API session objects is performed using
+                <link linkend="IWebsessionManager__getSessionObject">IWebsessionManager::getSessionObject()</link>.</para>
 
-                <para>(Technically, there is always only one <xref
-                linkend="IVirtualBox" xreflabel="IVirtualBox" /> object, which
+                <para>(Technically, there is always only one
+                <link linkend="IVirtualBox">IVirtualBox</link> object, which
                 is shared between all websessions and clients, as it is a COM
                 singleton. However, each session receives its own managed
                 object reference to it.)</para>
@@ -1235,9 +1246,10 @@ print version;</screen></para>
                 <para>Whenever a web service clients invokes an operation
                 whose COM implementation creates COM objects.</para>
 
-                <para>For example, <xref linkend="IVirtualBox__createMachine"
-                xreflabel="IVirtualBox::createMachine()" /> creates a new
-                instance of <xref linkend="IMachine" xreflabel="IMachine" />;
+                <para>For example,
+                <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>
+                creates a new instance of
+                <link linkend="IMachine">IMachine</link>;
                 the COM object returned by the COM method call is then wrapped
                 into a managed object reference by the web server, and this
                 reference is returned to the web service client.</para>
@@ -1254,9 +1266,9 @@ print version;</screen></para>
           the objects of another.</para>
 
           <para>Managed object references are not destroyed automatically and
-          must be released by explicitly calling <xref
-          linkend="IManagedObjectRef__release"
-          xreflabel="IManagedObjectRef::release()" />. This is important, as
+          must be released by explicitly calling
+          <link linkend="IManagedObjectRef__release">IManagedObjectRef::release()</link>.
+          This is important, as
           otherwise hundreds or thousands of managed object references (and
           corresponding COM objects, which can consume much more memory!) can
           pile up in the web service process and eventually cause it to deny
@@ -1268,13 +1280,12 @@ print version;</screen></para>
           clean up after the managed object references that are returned to
           them.</para>
 
-          <para>When a web service client calls <xref
-          linkend="IWebsessionManager__logoff"
-          xreflabel="IWebsessionManager::logoff()" />, all managed object
-          references created during the session are automatically freed. For
-          short-lived sessions that do not create a lot of objects, logging
-          off may therefore be sufficient, although it is certainly not "best
-          practice".</para>
+          <para>When a web service client calls
+          <link linkend="IWebsessionManager__logoff">IWebsessionManager::logoff()</link>,
+          all managed object references created during the session are
+          automatically freed. For short-lived sessions that do not create a
+          lot of objects, logging off may therefore be sufficient, although it
+          is certainly not "best practice".</para>
         </sect3>
 
         <sect3>
@@ -1320,8 +1331,8 @@ print version;</screen></para>
             allow for writing something like this (in pseudo-C++ code):</para>
 
             <para><screen>webServiceClass service("localhost", 18083); // server and port
-string result = service.SayHello("Peter");  // invoke remote procedure</screen>and
-            would, for these two pseudo-lines, automatically perform these
+string result = service.SayHello("Peter");  // invoke remote procedure</screen>
+            and would, for these two pseudo-lines, automatically perform these
             steps:</para>
 
             <para><orderedlist>
@@ -1383,7 +1394,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>a
             support for parsing WSDL files and somehow integrating the remote
             procedure calls into the native language syntax -- for example,
             like in the Java sample shown in <xref
-            linkend="webservice-java-sample" />.</para>
+            linkend="webservice-java-sample"/>.</para>
 
             <para>For details about how programming languages support web
             services, please refer to the documentation that comes with the
@@ -1400,8 +1411,8 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>a
               <listitem>
                 <para>For <emphasis role="bold">Java, </emphasis> there are
                 several implementations already described in this document
-                (see <xref linkend="glue-jax-ws" /> and <xref
-                linkend="webservice-java-sample" />).</para>
+                (see <xref linkend="glue-jax-ws"/> and <xref
+                linkend="webservice-java-sample"/>).</para>
               </listitem>
 
               <listitem>
@@ -1411,10 +1422,12 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>a
                 to turn any WSDL file into a Perl package that you can import.
                 (You can also import any WSDL file "live" by having it parsed
                 every time the script runs, but that can take a while.) You
-                can then code (again, assuming the above example):<screen>my $result = servicename-&gt;sayHello("Peter");</screen></para>
+                can then code (again, assuming the above example):
+                <screen>my $result = servicename-&gt;sayHello("Peter");</screen>
+                </para>
 
                 <para>A sample that uses SOAP::Lite was described in <xref
-                linkend="raw-webservice-perl" />.</para>
+                linkend="raw-webservice-perl"/>.</para>
               </listitem>
             </orderedlist>
           </sect4>
@@ -1532,7 +1545,8 @@ progress.waitForCompletion(-1)
 mgr.closeMachineSession(session)
         </screen>
         <para>
-          Following code will print all registered machines and their log folders
+          Following code will print all registered machines and their log
+          folders
         </para>
         <screen>from vboxapi import VirtualBoxManager
 mgr = VirtualBoxManager(None, None)
@@ -1759,8 +1773,9 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           call.</para>
 
           <para>The sample program <computeroutput>tstCAPIGlue</computeroutput>
-          can be built using the provided <computeroutput>Makefile</computeroutput>
-          and can be run without arguments.</para>
+          can be built using the provided
+          <computeroutput>Makefile</computeroutput> and can be run without
+          arguments.</para>
 
           <para>It uses the VBoxCAPIGlue library (source code is in directory
           <computeroutput>sdk/bindings/c/glue</computeroutput>, to be used in
@@ -1787,7 +1802,8 @@ print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
           to be initialized before it can be used. The
           <computeroutput>VBoxCAPI_v4_3.h</computeroutput> header provides the
           interface to the C binding, but you can alternatively and more
-          conveniently also include <computeroutput>VBoxCAPIGlue.h</computeroutput>,
+          conveniently also include
+          <computeroutput>VBoxCAPIGlue.h</computeroutput>,
           as this avoids the VirtualBox version dependent header file name and
           makes sure the global variable <code>g_pVBoxFuncs</code> contains a
           pointer to the structure which contains the helper function pointers.
@@ -1876,8 +1892,10 @@ if (!vboxclient)
           <computeroutput>set_</computeroutput> method exists. Let's apply
           these rules to get the <computeroutput>IVirtualBox</computeroutput>
           reference, an <computeroutput>ISession</computeroutput> instance
-          reference and read the <xref linkend="IVirtualBox__revision"
-          xreflabel="IVirtualBox::revision" /> attribute:<screen>rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
+          reference and read the
+          <link linkend="IVirtualBox__revision">IVirtualBox::revision</link>
+          attribute:
+          <screen>rc = IVirtualBoxClient_get_VirtualBox(vboxclient, &amp;vbox);
 if (FAILED(rc) || !vbox)
 {
     PrintErrorInfo(argv[0], "FATAL: could not get VirtualBox reference", rc);
@@ -1901,7 +1919,8 @@ if (SUCCEEDED(rc))
           <code>_</code>as the separator).</para>
 
           <para>So far only attribute getters were illustrated, but generic
-          method calls are straightforward, too:<screen>IMachine *machine = NULL;
+          method calls are straightforward, too:
+          <screen>IMachine *machine = NULL;
 BSTR vmname = ...;
 ...
 /*
@@ -1910,10 +1929,11 @@ BSTR vmname = ...;
 rc = IVirtualBox_FindMachine(vbox, vmname, &amp;machine);</screen></para>
 
           <para>As a more complicated example of a method invocation, let's
-          call <xref linkend="IMachine__launchVMProcess"
-          xreflabel="IMachine::launchVMProcess" /> which returns an
-          IProgress object. Note again that the method name is
-          capitalized:<screen>IProgress *progress;
+          call
+          <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess</link>
+          which returns an IProgress object. Note again that the method name is
+          capitalized:
+          <screen>IProgress *progress;
 ...
 rc = IMachine_LaunchVMProcess(
     machine,       /* this  */
@@ -1924,7 +1944,7 @@ rc = IMachine_LaunchVMProcess(
 );</screen></para>
 
           <para>All objects with their methods and attributes are documented
-          in <xref linkend="sdkref_classes" />.</para>
+          in <xref linkend="sdkref_classes"/>.</para>
         </sect3>
 
         <sect3 id="c-string-handling">
@@ -1940,7 +1960,8 @@ rc = IMachine_LaunchVMProcess(
           <computeroutput>CBSTR</computeroutput>), which is an array type,
           represented by a pointer to the start of the zero-terminated string.
           There are functions for converting between UTF-8 and UTF-16 strings
-          available through <code>g_pVBoxFuncs</code>:<screen>int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
+          available through <code>g_pVBoxFuncs</code>:
+          <screen>int (*pfnUtf16ToUtf8)(CBSTR pwszString, char **ppszString);
 int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);</screen></para>
 
           <para>The ownership of a string determines who is responsible for
@@ -1962,7 +1983,8 @@ int (*pfnUtf8ToUtf16)(const char *pszString, BSTR *ppwszString);</screen></para>
 
           <para>Passing arrays as input parameters to API methods is usually
           done by the following sequence, calling a hypothetical
-          <code>IArrayDemo_PassArray</code> API method:<screen>static const ULONG aElements[] = { 1, 2, 3, 4 };
+          <code>IArrayDemo_PassArray</code> API method:
+          <screen>static const ULONG aElements[] = { 1, 2, 3, 4 };
 ULONG cElements = sizeof(aElements) / sizeof(aElements[0]);
 SAFEARRAY *psa = NULL;
 psa = g_pVBoxFuncs->pfnSafeArrayCreateVector(VT_I4, 0, cElements);
@@ -1972,7 +1994,8 @@ g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
 
           <para>Likewise, getting arrays results from output parameters is done
           using helper functions which manage memory allocations as part of
-          their other functionality:<screen>SAFEARRAY *psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
+          their other functionality:
+          <screen>SAFEARRAY *psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
 ULONG *pData;
 ULONG cElements;
 IArrayDemo_ReturnArray(pThis, ComSafeArrayAsOutTypeParam(psa, ULONG));
@@ -1984,7 +2007,8 @@ g_pVBoxFuncs->pfnSafeArrayDestroy(psa);</screen></para>
           manage the reference counting correctly. The following code snippet
           gets the list of VMs, and passes the first IMachine reference to
           another API function (assuming that there is at least one element
-          in the array, to simplify the example):<screen>SAFEARRAY psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
+          in the array, to simplify the example):
+          <screen>SAFEARRAY psa = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
 IMachine **machines = NULL;
 ULONG machineCnt = 0;
 ULONG i;
@@ -2039,10 +2063,11 @@ free(machines);</screen></para>
 
           <para>The actual event handler implementation is quite tedious, as
           it has to implement a complete API interface. Especially on Windows
-          it is a lot of work to implement the complicated <code>IDispatch</code>
-          interface, requiring to load COM type information and using it
-          in the <code>IDispatch</code> method implementation. Overall this is
-          quite tedious compared to passive event handling.</para>
+          it is a lot of work to implement the complicated
+          <code>IDispatch</code> interface, requiring to load COM type
+          information and using it in the <code>IDispatch</code> method
+          implementation. Overall this is quite tedious compared to passive
+          event handling.</para>
 
           <para>Passive event handling uses a similar event loop structure,
           which requires calling the following function in a loop, and
@@ -2059,15 +2084,16 @@ free(machines);</screen></para>
           if the event at hand is vetoable or not.</para>
 
           <para>The general event handling concepts are described in the API
-          specification (see <xref linkend="events" />), including how to
+          specification (see <xref linkend="events"/>), including how to
           aggregate multiple event sources for processing in one event loop.
           As mentioned, the sample illustrates the practical aspects of how to
           use both types of event handling, active and passive, from a C
           application. Additional hints are in the comments documenting
-          the helper methods in <computeroutput>VBoxCAPI_v4_3.h</computeroutput>.
-          The code complexity of active event handling (and its inherenly
-          platform/compiler specific aspects) should be motivation to use
-          passive event handling whereever possible.</para>
+          the helper methods in
+          <computeroutput>VBoxCAPI_v4_3.h</computeroutput>. The code complexity
+          of active event handling (and its inherenly platform/compiler
+          specific aspects) should be motivation to use passive event handling
+          whereever possible.</para>
         </sect3>
 
         <sect3 id="c-uninitialization">
@@ -2174,8 +2200,9 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
           for the VirtualBox API, making sure they are not replicated endlessly
           if the code refers to them frequently.</para>
 
-          <para>The C API client code should include <computeroutput>VBoxCAPIGlue.h</computeroutput>
-          instead of <computeroutput>VBoxXPCOMCGlue.h</computeroutput> or
+          <para>The C API client code should include
+          <computeroutput>VBoxCAPIGlue.h</computeroutput> instead of
+          <computeroutput>VBoxXPCOMCGlue.h</computeroutput> or
           <computeroutput>VBoxCAPI_v4_3.h</computeroutput>, as this makes sure
           the correct macros and internal translations are selected.</para>
 
@@ -2194,7 +2221,7 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
           independent interface names <code>IUnknown</code> and
           <code>IErrorInfo</code> for the first two respectively. Event queue
           handling should be replaced by using the platform independent way
-          described in <xref linkend="c-eventhandling" />.</para>
+          described in <xref linkend="c-eventhandling"/>.</para>
 
           <para>Finally adjust the string and array handling to use the new
           helpers, as these make sure the code works without changes with
@@ -2238,31 +2265,36 @@ program: program.o VBoxCAPICGlue.o VirtualBox_i.o
       <title>Obtaining basic machine information. Reading attributes</title>
 
       <para>Any program using the Main API will first need access to the
-      global VirtualBox object (see <xref linkend="IVirtualBox"
-      xreflabel="IVirtualBox" />), from which all other functionality of the
-      API is derived. With the OOWS for JAX-WS, this is returned from the
-      <xref linkend="IWebsessionManager__logon"
-      xreflabel="IWebsessionManager::logon()" /> call.</para>
+      global VirtualBox object (see
+      <link linkend="IVirtualBox">IVirtualBox</link>), from which all other
+      functionality of the API is derived. With the OOWS for JAX-WS, this is
+      returned from the
+      <link linkend="IWebsessionManager__logon">IWebsessionManager::logon()</link>
+      call.</para>
 
       <para>To enumerate virtual machines, one would look at the "machines"
-      array attribute in the VirtualBox object (see <xref
-      linkend="IVirtualBox__machines" xreflabel="IVirtualBox::machines" />).
+      array attribute in the VirtualBox object (see
+      <link linkend="IVirtualBox__machines">IVirtualBox::machines</link>).
       This array contains all virtual machines currently registered with the
-      host, each of them being an instance of <xref linkend="IMachine"
-      xreflabel="IMachine" />. From each such instance, one can query
-      additional information, such as the UUID, the name, memory, operating
-      system and more by looking at the attributes; see the attributes list in
-      <xref linkend="IMachine" xreflabel="IMachine documentation" />.</para>
+      host, each of them being an instance of
+      <link linkend="IMachine">IMachine</link>.
+      From each such instance, one can query additional information, such as
+      the UUID, the name, memory, operating system and more by looking at the
+      attributes; see the attributes list in
+      <link linkend="IMachine">IMachine</link> documentation.</para>
 
       <para>As mentioned in the preceding chapters, depending on your
       programming environment, attributes are mapped to corresponding "get"
       and (if the attribute is not read-only) "set" methods. So when the
-      documentation says that IMachine has a "<xref linkend="IMachine__name"
-      xreflabel="name" />" attribute, this means you need to code something
-      like the following to get the machine's name:<screen>IMachine machine = ...;
-String name = machine.getName();</screen>Boolean attribute getters can
-      sometimes be called <computeroutput>isAttribute()</computeroutput> due
-      to JAX-WS naming conventions.</para>
+      documentation says that IMachine has a
+      "<link linkend="IMachine__name">name</link>" attribute, this means you
+      need to code something
+      like the following to get the machine's name:
+      <screen>IMachine machine = ...;
+String name = machine.getName();</screen>
+      Boolean attribute getters can sometimes be called
+      <computeroutput>isAttribute()</computeroutput> due to JAX-WS naming
+      conventions.</para>
     </sect1>
 
     <sect1>
@@ -2287,39 +2319,37 @@ String name = machine.getName();</screen>Boolean attribute getters can
       time, or start a machine at the same time.</para>
 
       <para>These requirements are implemented in the Main API by way of
-      "sessions", in particular, the <xref linkend="ISession"
-      xreflabel="ISession" /> interface. Each process which talks to
+      "sessions", in particular, the <link linkend="ISession">ISession</link>
+      interface. Each process which talks to
       VirtualBox needs its own instance of ISession. In the web service, you
-      can request the creation of such an object by calling <xref
-      linkend="IWebsessionManager__getSessionObject"
-      xreflabel="IWebsessionManager::getSessionObject()" />. More complex
-      management tasks might need multiple instances of ISession, and each call
-      returns a new one.</para>
+      can request the creation of such an object by calling
+      <link linkend="IWebsessionManager__getSessionObject">IWebsessionManager::getSessionObject()</link>.
+      More complex management tasks might need multiple instances of ISession,
+      and each call returns a new one.</para>
 
       <para>This session object must then be used like a mutex semaphore in
       common programming environments. Before you can change machine settings,
-      you must write-lock the machine by calling <xref
-      linkend="IMachine__lockMachine" xreflabel="IMachine::lockMachine()" />
+      you must write-lock the machine by calling
+      <link linkend="IMachine__lockMachine">IMachine::lockMachine()</link>
       with your process's session object.</para>
 
-      <para>After the machine has been locked, the <xref
-      linkend="ISession__machine" xreflabel="ISession::machine" /> attribute
+      <para>After the machine has been locked, the
+      <link linkend="ISession__machine">ISession::machine</link> attribute
       contains a copy of the original IMachine object upon which the session
       was opened, but this copy is "mutable": you can invoke "set" methods on
       it.</para>
 
-      <para>When done making the changes to the machine, you must call <xref
-      linkend="IMachine__saveSettings"
-      xreflabel="IMachine::saveSettings()" />, which will copy the changes you
-      have made from your "mutable" machine back to the real machine and write
-      them out to the machine settings XML file. This will make your changes
-      permanent.</para>
+      <para>When done making the changes to the machine, you must call
+      <link linkend="IMachine__saveSettings">IMachine::saveSettings()</link>,
+      which will copy the changes you have made from your "mutable" machine
+      back to the real machine and write them out to the machine settings XML
+      file. This will make your changes permanent.</para>
 
       <para>Finally, it is important to always unlock the machine again, by
-      calling <xref linkend="ISession__unlockMachine"
-      xreflabel="ISession::unlockMachine()" />. Otherwise, when the calling
-      process end, the machine will receive the "aborted" state, which can
-      lead to loss of data.</para>
+      calling
+      <link linkend="ISession__unlockMachine">ISession::unlockMachine()</link>.
+      Otherwise, when the calling process end, the machine will receive the
+      "aborted" state, which can lead to loss of data.</para>
 
       <para>So, as an example, the sequence to change a machine's memory to
       1024 MB is something like this:<screen>IWebsessionManager mgr ...;
@@ -2337,18 +2367,18 @@ session.unlockMachine();</screen></para>
     <sect1>
       <title>Launching virtual machines</title>
 
-      <para>To launch a virtual machine, you call <xref
-      linkend="IMachine__launchVMProcess"
-      xreflabel="IMachine::launchVMProcess()" />. In doing so, the caller
-      instructs the VirtualBox engine to start a new process with the virtual
-      machine in it, since to the host, each virtual machine looks like a
-      single process, even if it has hundreds of its own processes inside.
-      (This new VM process in turn obtains a write lock on the machine, as
-      described above, to prevent conflicting changes from other processes;
-      this is why opening another session will fail while the VM is
-      running.)</para>
+      <para>To launch a virtual machine, you call
+      <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess()</link>.
+      In doing so, the caller instructs the VirtualBox engine to start a new
+      process with the virtual machine in it, since to the host, each virtual
+      machine looks like single process, even if it has hundreds of its own
+      processes inside. (This new VM process in turn obtains a write lock on
+      the machine, as described above, to prevent conflicting changes from
+      other processes; this is why opening another session will fail while the
+      VM is running.)</para>
 
-      <para>Starting a machine looks something like this:<screen>IWebsessionManager mgr ...;
+      <para>Starting a machine looks something like this:
+      <screen>IWebsessionManager mgr ...;
 IVirtualBox vbox = mgr.logon(user, pass);
 ...
 IMachine machine = ...;  // read-only machine
@@ -2362,8 +2392,8 @@ if (prog.getResultCode() != 0)  // check success
 
       <para>The caller's session object can then be used as a sort of remote
       control to the VM process that was launched. It contains a "console"
-      object (see <xref linkend="ISession__console"
-      xreflabel="ISession::console" />) with which the VM can be paused,
+      object (see <link linkend="ISession__console">ISession::console</link>)
+      with which the VM can be paused,
       stopped, snapshotted or other things.</para>
     </sect1>
 
@@ -2372,17 +2402,17 @@ if (prog.getResultCode() != 0)  // check success
 
       <para>In VirtualBox, "events" provide a uniform mechanism to register
       for and consume specific events. A VirtualBox client can register an
-      "event listener" (represented by the <xref linkend="IEventListener"
-      xreflabel="IEventListener" /> interface), which will then get notified
-      by the server when an event (represented by the <xref linkend="IEvent"
-      xreflabel="IEvent" /> interface) happens.</para>
+      "event listener" (represented by the
+      <link linkend="IEventListener">IEventListener</link> interface), which
+      will then get notified by the server when an event (represented by the
+      <link linkend="IEvent">IEvent</link> interface) happens.</para>
 
       <para>The IEvent interface is an abstract parent interface for all
       events that can occur in VirtualBox. The actual events that the server
-      sends out are then of one of the specific subclasses, for example <xref
-      linkend="IMachineStateChangedEvent"
-      xreflabel="IMachineStateChangedEvent" /> or <xref
-      linkend="IMediumChangedEvent" xreflabel="IMediumChangedEvent" />.</para>
+      sends out are then of one of the specific subclasses, for example
+      <link linkend="IMachineStateChangedEvent">IMachineStateChangedEvent</link>
+      or
+      <link linkend="IMediumChangedEvent">IMediumChangedEvent</link>.</para>
 
       <para>As an example, the VirtualBox GUI waits for machine events and can
       thus update its display when the machine state changes or machine
@@ -2450,10 +2480,14 @@ es.unregisterListener(listener); </screen></para>
     three COM/XPCOM/WS styles of the API.</para>
 
     <para>You can easily extend this shell with your own commands. Create a
-    subdirectory named <computeroutput>.config/VirtualBox/shexts</computeroutput>
-    below your home directory (respectively <computeroutput>.VirtualBox/shexts</computeroutput> on a Windows system and <computeroutput>Library/VirtualBox/shexts</computeroutput> on OS X) and put a Python file implementing your shell
-    extension commands in this directory. This file must contain an array
-    named <computeroutput>commands</computeroutput> containing your command
+    subdirectory named
+    <computeroutput>.config/VirtualBox/shexts</computeroutput> below your home
+    directory (respectively <computeroutput>.VirtualBox/shexts</computeroutput>
+    on a Windows system and
+    <computeroutput>Library/VirtualBox/shexts</computeroutput> on OS X) and put
+    a Python file implementing your shell extension commands in this directory.
+    This file must contain an array named
+    <computeroutput>commands</computeroutput> containing your command
     definitions: <screen>
         commands = {
         'cmd1': ['Command cmd1 help', cmd1],
@@ -3495,7 +3529,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
     <para>Since VirtualBox 4.2 it's possible to transfer files from host to the
     Linux guests by dragging files, directories or text from the host into the
-    guest's screen. This is called <emphasis>drag'n drop (DnD)</emphasis>.</para>
+    guest's screen. This is called <emphasis>drag'n drop
+    (DnD)</emphasis>.</para>
 
     <para>In version 5.0 support for Windows guests has been added, as well as
     the ability to transfer data the other way around, that is, from the guest
@@ -3516,64 +3551,68 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
       drag'n drop operation at least two sides needs to be involved, a
       <emphasis>source</emphasis> and a <emphasis>target</emphasis>:</para>
 
-      <para>The <emphasis>source</emphasis> is the side which provides the data,
-      e.g. is the origin of data. This data can be stored within the source directly
-      or can be retrieved on-demand by the source itself. Other interfaces don't
-      care where the data from this source actually came from.</para>
+      <para>The <emphasis>source</emphasis> is the side which provides the
+      data, e.g. is the origin of data. This data can be stored within the
+      source directly or can be retrieved on-demand by the source itself. Other
+      interfaces don't care where the data from this source actually came
+      from.</para>
 
       <para>The <emphasis>target</emphasis> on the other hand is the side which
       provides the source a visual representation where the user can drop the
-      data the source offers. This representation can be a window (or just a certain
-      part of it), for example.</para>
+      data the source offers. This representation can be a window (or just a
+      certain part of it), for example.</para>
 
       <para>The source and the target have abstract interfaces called
-      <xref linkend="IDnDSource" xreflabel="IDnDSource" /> and
-      <xref linkend="IDnDTarget" xreflabel="IDnDTarget" />. VirtualBox also
+      <link linkend="IDnDSource">IDnDSource</link> and
+      <link linkend="IDnDTarget">IDnDTarget</link>. VirtualBox also
       provides implementations of both interfaces, called
-      <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" /> and
-      <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" />. Both
+      <link linkend="IGuestDnDSource">IGuestDnDSource</link> and
+      <link linkend="IGuestDnDTarget">IGuestDnDTarget</link>. Both
       implementations are also used in the VirtualBox Manager frontend.</para>
     </sect1>
 
     <sect1>
       <title>Supported formats</title>
 
-      <para>As the target needs to perform specific actions depending on the data
-      the source provided, the target first needs to know what type of data it
-      actually is going to retrieve. It might be that the source offers data the
-      target cannot (or intentionally does not want to) support.</para>
+      <para>As the target needs to perform specific actions depending on the
+      data the source provided, the target first needs to know what type of
+      data it actually is going to retrieve. It might be that the source offers
+      data the target cannot (or intentionally does not want to)
+      support.</para>
 
       <para>VirtualBox handles those data types by providing so-called
-      <emphasis>MIME types</emphasis> -- these MIME types were originally defined
-      in <ulink url="https://tools.ietf.org/html/rfc2046">RFC 2046</ulink> and
+      <emphasis>MIME types</emphasis> -- these MIME types were originally
+      defined in
+      <ulink url="https://tools.ietf.org/html/rfc2046">RFC 2046</ulink> and
       are also called <emphasis>Content-types</emphasis>.
-      <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" /> and
-      <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" /> support
+      <link linkend="IGuestDnDSource">IGuestDnDSource</link> and
+      <link linkend="IGuestDnDTarget">IGuestDnDTarget</link> support
       the following MIME types by default:<itemizedlist>
           <listitem>
-            <para><emphasis role="bold">text/uri-list</emphasis> - A list of URIs
-            (Uniform Resource Identifier, see
+            <para><emphasis role="bold">text/uri-list</emphasis> - A list of
+            URIs (Uniform Resource Identifier, see
             <ulink url="https://tools.ietf.org/html/rfc3986">RFC 3986</ulink>)
-            pointing to the file and/or directory paths already transferred from
-            the source to the target.</para>
+            pointing to the file and/or directory paths already transferred
+            from the source to the target.</para>
           </listitem>
           <listitem>
             <para><emphasis role="bold">text/plain;charset=utf-8</emphasis> and
-            <emphasis role="bold">UTF8_STRING</emphasis> - text in UTF8 format.</para>
+            <emphasis role="bold">UTF8_STRING</emphasis> - text in UTF-8
+            format.</para>
           </listitem>
           <listitem>
             <para><emphasis role="bold">text/plain, TEXT</emphasis>
-            and <emphasis role="bold">STRING</emphasis> - plain ASCII text, depending
-            on the source's active ANSI page (if any).</para>
+            and <emphasis role="bold">STRING</emphasis> - plain ASCII text,
+            depending on the source's active ANSI page (if any).</para>
           </listitem>
         </itemizedlist>
       </para>
 
-      <para>If, for whatever reason, a certain default format should not be supported
-      or a new format should be registered,
-      <xref linkend="IDnDSource" xreflabel="IDnDSource" /> and
-      <xref linkend="IDnDTarget" xreflabel="IDnDTarget" /> have methods derived from
-      <xref linkend="IDnDBase" xreflabel="IDnDBase" /> which provide adding,
+      <para>If, for whatever reason, a certain default format should not be
+      supported or a new format should be registered,
+      <link linkend="IDnDSource">IDnDSource</link> and
+      <link linkend="IDnDTarget">IDnDTarget</link> have methods derived from
+      <link linkend="IDnDBase">IDnDBase</link> which provide adding,
       removing and enumerating specific formats.
       <note><para>Registering new or removing default formats on the guest side
       currently is not implemented.</para></note></para>
@@ -3737,9 +3776,8 @@ AuthResult AUTHCALL AuthEntry(
             <computeroutput>vboxjmscom.jar</computeroutput> must be in the
             class path.</para>
 
-            <para>Start your application like this: <programlisting>
- java -cp vboxjmscom.jar;c:\jacob\jacob.jar -Djava.library.path=c:\jacob MyProgram
-              </programlisting></para>
+            <para>Start your application like this:
+            <programlisting>java -cp vboxjmscom.jar;c:\jacob\jacob.jar -Djava.library.path=c:\jacob MyProgram</programlisting></para>
           </listitem>
 
           <listitem>
@@ -3865,44 +3903,44 @@ AuthResult AUTHCALL AuthEntry(
           long-standing issue, preventing 32-bit API clients from invoking
           those operations in the case where no VM is running.
           <itemizedlist>
-            <listitem><xref linkend="IMachine__saveState"
-                xreflabel="IMachine::saveState()" /> replaces
-              <computeroutput>IConsole::saveState()</computeroutput>
+            <listitem><para><link linkend="IMachine__saveState">IMachine::saveState()</link>
+              replaces
+              <computeroutput>IConsole::saveState()</computeroutput></para>
             </listitem>
             <listitem>
-              <xref linkend="IMachine__adoptSavedState"
-                xreflabel="IMachine::adoptSavedState()" /> replaces
-              <computeroutput>IConsole::adoptSavedState()</computeroutput>
+              <para><link linkend="IMachine__adoptSavedState">IMachine::adoptSavedState()</link>
+              replaces
+              <computeroutput>IConsole::adoptSavedState()</computeroutput></para>
             </listitem>
             <listitem>
-              <xref linkend="IMachine__discardSavedState"
-                xreflabel="IMachine::discardSavedState()" /> replaces
-              <computeroutput>IConsole::discardSavedState()</computeroutput>
+              <para><link linkend="IMachine__discardSavedState">IMachine::discardSavedState()</link>
+              replaces
+              <computeroutput>IConsole::discardSavedState()</computeroutput></para>
             </listitem>
             <listitem>
-              <xref linkend="IMachine__takeSnapshot"
-                xreflabel="IMachine::takeSnapshot()" /> replaces
-              <computeroutput>IConsole::takeSnapshot()</computeroutput>
+              <para><link linkend="IMachine__takeSnapshot">IMachine::takeSnapshot()</link>
+              replaces
+              <computeroutput>IConsole::takeSnapshot()</computeroutput></para>
             </listitem>
             <listitem>
-              <xref linkend="IMachine__deleteSnapshot"
-                xreflabel="IMachine::deleteSnapshot()" /> replaces
-              <computeroutput>IConsole::deleteSnapshot()</computeroutput>
+              <para><link linkend="IMachine__deleteSnapshot">IMachine::deleteSnapshot()</link>
+              replaces
+              <computeroutput>IConsole::deleteSnapshot()</computeroutput></para>
             </listitem>
             <listitem>
-              <xref linkend="IMachine__deleteSnapshotAndAllChildren"
-                xreflabel="IMachine::deleteSnapshotAndAllChildren()" /> replaces
-              <computeroutput>IConsole::deleteSnapshotAndAllChildren()</computeroutput>
+              <para><link linkend="IMachine__deleteSnapshotAndAllChildren">IMachine::deleteSnapshotAndAllChildren()</link>
+              replaces
+              <computeroutput>IConsole::deleteSnapshotAndAllChildren()</computeroutput></para>
             </listitem>
             <listitem>
-               <xref linkend="IMachine__deleteSnapshotRange"
-                xreflabel="IMachine::deleteSnapshotRange()" /> replaces
-               <computeroutput>IConsole::deleteSnapshotRange()</computeroutput>
+               <para><link linkend="IMachine__deleteSnapshotRange">IMachine::deleteSnapshotRange()</link>
+               replaces
+               <computeroutput>IConsole::deleteSnapshotRange()</computeroutput></para>
              </listitem>
              <listitem>
-               <xref linkend="IMachine__restoreSnapshot"
-                xreflabel="IMachine::restoreSnapshot()" /> replaces
-               <computeroutput>IConsole::restoreSnapshot()</computeroutput>
+               <para><link linkend="IMachine__restoreSnapshot">IMachine::restoreSnapshot()</link>
+               replaces
+               <computeroutput>IConsole::restoreSnapshot()</computeroutput></para>
              </listitem>
            </itemizedlist>
           Small adjustments to the parameter lists have been made to reduce
@@ -3915,28 +3953,30 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>Two new machine states have been introduced to allow proper
           distinction between saving state and taking a snapshot.
-          <xref linkend="MachineState__Saving" xreflabel="MachineState::Saving" />
+          <link linkend="MachineState__Saving">MachineState::Saving</link>
           now is used exclusively while the VM's state is being saved, without
           any overlaps with snapshot functionality. The new state
-          <xref linkend="MachineState__Snapshotting" xreflabel="MachineState::Snapshotting" />
+          <link linkend="MachineState__Snapshotting">MachineState::Snapshotting</link>
           is used when an offline snapshot is taken and likewise the new state
-          <xref linkend="MachineState__OnlineSnapshotting" xreflabel="MachineState::OnlineSnapshotting" />
+          <link linkend="MachineState__OnlineSnapshotting">MachineState::OnlineSnapshotting</link>
           is used when an online snapshot is taken.</para>
         </listitem>
 
         <listitem>
-          <para>A new event has been introduced, which signals when a snapshot has been
-          restored:
-          <xref linkend="ISnapshotRestoredEvent" xreflabel="ISnapshotRestoredEvent"/>.
+          <para>A new event has been introduced, which signals when a snapshot
+          has been restored:
+          <link linkend="ISnapshotRestoredEvent">ISnapshotRestoredEvent</link>.
           Previously the event
-          <xref linkend="ISnapshotDeletedEvent" xreflabel="ISnapshotDeletedEvent"/> was
-          signalled, which isn't logical (but could be distinguished from actual deletion
-          by the fact that the snapshot was still there).</para>
+          <link linkend="ISnapshotDeletedEvent">ISnapshotDeletedEvent</link>
+          was signalled, which isn't logical (but could be distinguished from
+          actual deletion by the fact that the snapshot was still
+          there).</para>
         </listitem>
 
         <listitem>
-          <para>The method <xref linkend="IVirtualBox__createMedium"
-          xreflabel="IVirtualBox::createMedium()" /> replaces
+          <para>The method
+          <link linkend="IVirtualBox__createMedium">IVirtualBox::createMedium()</link>
+          replaces
           <computeroutput>VirtualBox::createHardDisk()</computeroutput>.
           Adjusting existing code needs adding two parameters with
           value <computeroutput>AccessMode_ReadWrite</computeroutput>
@@ -3947,23 +3987,26 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>The method <xref linkend="IMachine__getStorageControllerByInstance"
-          xreflabel="IMachine::getStorageControllerByInstance()" /> now has an
-          additional parameter (first parameter), for specifying the storage
-          bus which the storage controller must be using. The method was not
-          useful before, as the instance numbers are only unique for a specfic
-          storage bus.</para>
+          <para>The method
+          <link linkend="IMachine__getStorageControllerByInstance">IMachine::getStorageControllerByInstance()</link>
+          now has an additional parameter (first parameter), for specifying the
+          storage bus which the storage controller must be using. The method
+          was not useful before, as the instance numbers are only unique for a
+          specfic storage bus.</para>
         </listitem>
 
         <listitem>
-          <para>The attribute <computeroutput>IMachine::sessionType</computeroutput>
-          has been renamed to <xref linkend="IMachine__sessionName"
-          xreflabel="IMachine::sessionName()" />. This cleans up the confusing
-          terminology (as the session type is something different).</para>
+          <para>The attribute
+          <computeroutput>IMachine::sessionType</computeroutput> has been
+          renamed to
+          <link linkend="IMachine__sessionName">IMachine::sessionName()</link>.
+          This cleans up the confusing terminology (as the session type is
+          something different).</para>
         </listitem>
 
         <listitem>
-          <para>The attribute <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>
+          <para>The attribute
+          <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>
           has been removed. In practice it was not usable because it is too
           global and didn't distinguish between API clients.</para>
         </listitem>
@@ -3971,71 +4014,80 @@ AuthResult AUTHCALL AuthEntry(
         <listitem><para>Drag'n drop APIs were changed as follows:<itemizedlist>
 
           <listitem>
-            <para>Methods for providing host to guest drag'n drop functionality,
-              such as <computeroutput>IGuest::dragHGEnter</computeroutput>,
+            <para>Methods for providing host to guest drag'n drop
+              functionality, such as
+              <computeroutput>IGuest::dragHGEnter</computeroutput>,
               <computeroutput>IGuest::dragHGMove()</computeroutput>,
               <computeroutput>IGuest::dragHGLeave()</computeroutput>,
               <computeroutput>IGuest::dragHGDrop()</computeroutput> and
               <computeroutput>IGuest::dragHGPutData()</computeroutput>,
               have been moved to an abstract base class called
-              <xref linkend="IDnDTarget" xreflabel="IDnDTarget" />. VirtualBox implements
-              this base class in the <xref linkend="IGuestDnDTarget" xreflabel="IGuestDnDTarget" />
+              <link linkend="IDnDTarget">IDnDTarget</link>.
+              VirtualBox implements this base class in the
+              <link linkend="IGuestDnDTarget">IGuestDnDTarget</link>
               interface. The implementation can be used by using the
-              <xref linkend="IGuest__dnDTarget" xreflabel="IGuest::dnDTarget()" /> method.</para>
-            <para>Methods for providing guest to host drag'n drop functionality,
-              such as <computeroutput>IGuest::dragGHPending()</computeroutput>,
+              <link linkend="IGuest__dnDTarget">IGuest::dnDTarget()</link>
+              method.</para>
+            <para>Methods for providing guest to host drag'n drop
+              functionality, such as
+              <computeroutput>IGuest::dragGHPending()</computeroutput>,
               <computeroutput>IGuest::dragGHDropped()</computeroutput> and
               <computeroutput>IGuest::dragGHGetData()</computeroutput>,
               have been moved to an abstract base class called
-              <xref linkend="IDnDSource" xreflabel="IDnDSource" />. VirtualBox implements
-              this base class in the <xref linkend="IGuestDnDSource" xreflabel="IGuestDnDSource" />
+              <link linkend="IDnDSource">IDnDSource</link>.
+              VirtualBox implements this base class in the
+              <link linkend="IGuestDnDSource">IGuestDnDSource</link>
               interface. The implementation can be used by using the
-              <xref linkend="IGuest__dnDSource" xreflabel="IGuest::dnDSource()" /> method.</para>
+              <link linkend="IGuest__dnDSource">IGuest::dnDSource()</link>
+              method.</para>
           </listitem>
 
           <listitem>
-            <para>The <computeroutput>DragAndDropAction</computeroutput> enumeration has been
-              renamed to <xref linkend="DnDAction" xreflabel="DnDAction" />.</para>
+            <para>The <computeroutput>DragAndDropAction</computeroutput>
+            enumeration has been renamed to
+            <link linkend="DnDAction">DnDAction</link>.</para>
           </listitem>
 
           <listitem>
-            <para>The <computeroutput>DragAndDropMode</computeroutput> enumeration has been
-              renamed to <xref linkend="DnDMode" xreflabel="DnDMode" />.</para>
+            <para>The <computeroutput>DragAndDropMode</computeroutput>
+            enumeration has been renamed to
+            <link linkend="DnDMode">DnDMode</link>.</para>
           </listitem>
 
           <listitem>
-            <para>The attribute <computeroutput>IMachine::dragAndDropMode</computeroutput>
-              has been renamed to <xref linkend="IMachine__dnDMode" xreflabel="IMachine::dnDMode()" />.</para>
+            <para>The attribute
+            <computeroutput>IMachine::dragAndDropMode</computeroutput>
+            has been renamed to
+            <link linkend="IMachine__dnDMode">IMachine::dnDMode()</link>.</para>
           </listitem>
 
           <listitem>
-            <para>The event <computeroutput>IDragAndDropModeChangedEvent</computeroutput>
-              has been renamed to <xref linkend="IDnDModeChangedEvent" xreflabel="IDnDModeChangedEvent" />.</para>
-          </listitem>
-
-          <listitem>
-            <para>The callback method <computeroutput>IInternalSessionControl::onDragAndDropModeChange</computeroutput>
-              has been renamed to <xref linkend="IInternalSessionControl__onDnDModeChange" xreflabel="IInternalSessionControl::onDnDModeChange()" />.</para>
+            <para>The event
+            <computeroutput>IDragAndDropModeChangedEvent</computeroutput>
+            has been renamed to
+            <link linkend="IDnDModeChangedEvent">IDnDModeChangedEvent</link>.</para>
           </listitem>
 
           </itemizedlist></para>
         </listitem>
 
-        <listitem><para>IDisplay and IFramebuffer interfaces were changed to allow IFramebuffer
-          object to reside in a separate frontend process:<itemizedlist>
+        <listitem><para>IDisplay and IFramebuffer interfaces were changed to
+          allow IFramebuffer object to reside in a separate frontend
+          process:<itemizedlist>
 
           <listitem><para>
-            IDisplay::ResizeCompleted() has been removed, because the IFramebuffer object
-            does not provide the screen memory anymore.
+            IDisplay::ResizeCompleted() has been removed, because the
+            IFramebuffer object does not provide the screen memory anymore.
           </para></listitem>
 
           <listitem><para>
-            IDisplay::SetFramebuffer() has been replaced with IDisplay::AttachFramebuffer()
-            and IDisplay::DetachFramebuffer().
+            IDisplay::SetFramebuffer() has been replaced with
+            IDisplay::AttachFramebuffer() and IDisplay::DetachFramebuffer().
           </para></listitem>
 
           <listitem><para>
-            IDisplay::GetFramebuffer() has been replaced with IDisplay::QueryFramebuffer().
+            IDisplay::GetFramebuffer() has been replaced with
+            IDisplay::QueryFramebuffer().
           </para></listitem>
 
           <listitem><para>
@@ -4045,158 +4097,208 @@ AuthResult AUTHCALL AuthEntry(
           </para></listitem>
 
           <listitem><para>
-            IDisplay::TakeScreenShot() and IDisplay::TakeScreenShotToArray() have a new parameter
-            <computeroutput>bitmapFormat</computeroutput>. As a consequence of this,
-            IDisplay::TakeScreenShotPNGToArray() has been removed.
+            IDisplay::TakeScreenShot() and IDisplay::TakeScreenShotToArray()
+            have a new parameter
+            <computeroutput>bitmapFormat</computeroutput>. As a consequence of
+            this, IDisplay::TakeScreenShotPNGToArray() has been removed.
           </para></listitem>
 
           <listitem><para>
-            IFramebuffer::RequestResize() has been replaced with IFramebuffer::NotifyChange().
+            IFramebuffer::RequestResize() has been replaced with
+            IFramebuffer::NotifyChange().
           </para></listitem>
 
           <listitem><para>
-            IFramebuffer::NotifyUpdateImage() added to support IFramebuffer objects in a different process.
+            IFramebuffer::NotifyUpdateImage() added to support IFramebuffer
+            objects in a different process.
           </para></listitem>
 
           <listitem><para>
-            IFramebuffer::Lock(), IFramebuffer::Unlock(), IFramebuffer::Address(), IFramebuffer::UsesGuestVRAM()
-            have been removed because  the IFramebuffer object does not provide the screen memory anymore.
+            IFramebuffer::Lock(), IFramebuffer::Unlock(),
+            IFramebuffer::Address(), IFramebuffer::UsesGuestVRAM() have been
+            removed because the IFramebuffer object does not provide the screen
+            memory anymore.
           </para></listitem>
 
           </itemizedlist></para>
         </listitem>
 
-        <listitem><para>IGuestSession, IGuestFile and IGuestProcess interfaces were changed as follows:
+        <listitem><para>IGuestSession, IGuestFile and IGuestProcess interfaces
+        were changed as follows:
           <itemizedlist>
             <listitem>
-              <para>Replaced IGuestSession::directoryQueryInfo and IGuestSession::fileQueryInfo with a new
-                 <xref linkend="IGuestSession__fsObjQueryInfo" xreflabel="IGuestSession::fsObjQueryInfo"/> method
-                 that works on any type of file system object.</para>
+              <para>Replaced IGuestSession::directoryQueryInfo and
+                 IGuestSession::fileQueryInfo with a new
+                 <link linkend="IGuestSession__fsObjQueryInfo">IGuestSession::fsObjQueryInfo</link>
+                 method that works on any type of file system object.</para>
             </listitem>
             <listitem>
-              <para>Replaced IGuestSession::fileRemove, IGuestSession::symlinkRemoveDirectory and
+              <para>Replaced IGuestSession::fileRemove,
+                 IGuestSession::symlinkRemoveDirectory and
                  IGuestSession::symlinkRemoveFile with a new
-                 <xref linkend="IGuestSession__fsObjRemove" xreflabel="IGuestSession::fsObjRemove"/> method that works
-                 on any type of file system object except directories. (fileRemove also worked on any type of object too,
+                 <link linkend="IGuestSession__fsObjRemove">IGuestSession::fsObjRemove</link>
+                 method that works on any type of file system object except
+                 directories. (fileRemove also worked on any type of object
+                 too, though that was not the intent of the method.)</para>
+            </listitem>
+            <listitem>
+              <para>Replaced IGuestSession::directoryRename and
+                 IGuestSession::directoryRename with a new
+                 <link linkend="IGuestSession__fsObjRename">IGuestSession::fsObjRename</link>
+                 method that works on any type of file system object.
+                 (directoryRename and fileRename may already have worked for
+                 any kind of object, but that was never the intent of the
+                 methods.)</para>
+            </listitem>
+            <listitem>
+              <para>Replaced the unimplemented IGuestSession::directorySetACL
+                 and IGuestSession::fileSetACL with a new
+                 <link linkend="IGuestSession__fsObjSetACL">IGuestSession::fsObjSetACL</link>
+                 method that works on all type of file system object. Also
+                 added a UNIX-style mode parameter as an alternative to the
+                 ACL.</para>
+            </listitem>
+            <listitem>
+              <para>Replaced IGuestSession::fileRemove,
+                 IGuestSession::symlinkRemoveDirectory and
+                 IGuestSession::symlinkRemoveFile with a new
+                 <link linkend="IGuestSession__fsObjRemove">IGuestSession::fsObjRemove</link>
+                 method that works on any type of file system object except
+                 directories (fileRemove also worked on any type of object,
                  though that was not the intent of the method.)</para>
             </listitem>
             <listitem>
-              <para>Replaced IGuestSession::directoryRename and IGuestSession::directoryRename with a new
-                 <xref linkend="IGuestSession__fsObjRename" xreflabel="IGuestSession::fsObjRename"/> method that works
-                 on any type of file system object. (directoryRename and fileRename may already have worked for any kind
-                 of object, but that was never the intent of the methods.)</para>
+              <para>Renamed IGuestSession::copyTo to
+              <link linkend="IGuestSession__fileCopyToGuest">IGuestSession::fileCopyToGuest</link>.</para>
             </listitem>
             <listitem>
-              <para>Replaced the unimplemented IGuestSession::directorySetACL and IGuestSession::fileSetACL with a new
-                 <xref linkend="IGuestSession__fsObjSetACL" xreflabel="IGuestSession::fsObjSetACL"/> method that works
-                 on all type of file system object. Also added a UNIX-style mode parameter as an alternative to the ACL.</para>
+              <para>Renamed IGuestSession::copyFrom to
+              <link linkend="IGuestSession__fileCopyFromGuest">IGuestSession::fileCopyFromGuest</link>.</para>
             </listitem>
             <listitem>
-              <para>Replaced IGuestSession::fileRemove, IGuestSession::symlinkRemoveDirectory and
-                 IGuestSession::symlinkRemoveFile with a new
-                 <xref linkend="IGuestSession__fsObjRemove" xreflabel="IGuestSession::fsObjRemove"/> method that works
-                 on any type of file system object except directories (fileRemove also worked on any type of object,
-                 though that was not the intent of the method.)</para>
+              <para>Renamed the CopyFileFlag enum to
+              <link linkend="FileCopyFlag">FileCopyFlag</link>.</para>
             </listitem>
             <listitem>
-              <para>Renamed IGuestSession::copyTo to <xref linkend="IGuestSession__fileCopyToGuest"
-                 xreflabel="IGuestSession::fileCopyToGuest"/>.</para>
+              <para>Renamed the IGuestSession::environment attribute to
+              <link linkend="IGuestSession__environmentChanges">IGuestSession::environmentChanges</link>
+              to better reflect what it does.</para>
             </listitem>
             <listitem>
-              <para>Renamed IGuestSession::copyFrom to <xref linkend="IGuestSession__fileCopyFromGuest"
-                 xreflabel="IGuestSession::fileCopyFromGuest"/>.</para>
+              <para>Changed the
+              <link linkend="IProcess__environment">IGuestProcess::environment</link>
+              to a stub returning E_NOTIMPL since it wasn't doing what was
+              advertised (returned changes, not the actual environment).</para>
             </listitem>
             <listitem>
-              <para>Renamed the CopyFileFlag enum to <xref linkend="FileCopyFlag" xreflabel="FileCopyFlag"/>.</para>
+              <para>Renamed IGuestSession::environmentSet to
+              <link linkend="IGuestSession__environmentScheduleSet">IGuestSession::environmentScheduleSet</link>
+              to better reflect what it does.</para>
             </listitem>
             <listitem>
-              <para>Renamed the IGuestSession::environment attribute to <xref linkend="IGuestSession__environmentChanges"
-                xreflabel="IGuestSession::environmentChanges"/> to better reflect what it does.</para>
+              <para>Renamed IGuestSession::environmentUnset to
+              <link linkend="IGuestSession__environmentScheduleUnset">IGuestSession::environmentScheduleUnset</link>
+              to better reflect what it does.</para>
             </listitem>
             <listitem>
-              <para>Changed the <xref linkend="IProcess__environment" xreflabel="IGuestProcess::environment"/> to
-               a stub returning E_NOTIMPL since it wasn't doing what was advertised (returned changes, not the
-               actual environment).</para>
+              <para>Removed IGuestSession::environmentGet it was only getting
+              changes while giving the impression it was actual environment
+              variables, and it did not represent scheduled unset
+              operations.</para>
             </listitem>
             <listitem>
-              <para>Renamed IGuestSession::environmentSet to <xref linkend="IGuestSession__environmentScheduleSet"
-                xreflabel="IGuestSession::environmentScheduleSet"/> to better reflect what it does.</para>
+              <para>Removed IGuestSession::environmentClear as it duplicates
+              assigning an empty array to the
+              <link linkend="IGuestSession__environmentChanges">IGuestSession::environmentChanges</link>
+              (formerly known as IGuestSession::environment).</para>
             </listitem>
             <listitem>
-              <para>Renamed IGuestSession::environmentUnset to <xref linkend="IGuestSession__environmentScheduleUnset"
-                xreflabel="IGuestSession::environmentScheduleUnset"/> to better reflect what it does.</para>
-            </listitem>
-            <listitem>
-              <para>Removed IGuestSession::environmentGet it was only getting changes while giving the impression it was
-                actual environment variables, and it did not represent scheduled unset operations.</para>
-            </listitem>
-            <listitem>
-              <para>Removed IGuestSession::environmentClear as it duplicates assigning an empty array to the
-                <xref linkend="IGuestSession__environmentChanges" xreflabel="IGuestSession::environmentChanges"/> (formerly
-                known as IGuestSession::environment).</para>
-            </listitem>
-            <listitem>
-              <para>Changed the <xref linkend="IGuestSession__processCreate" xreflabel="IGuestSession::processCreate"/> and
-              <xref linkend="IGuestSession__processCreateEx" xreflabel="IGuestSession::processCreateEx"/> methods to accept
-              arguments starting with argument zero (argv[0]) instead of argument one (argv[1]). (Not yet implemented on the
-              guest additions side, so argv[0] will probably be ignored for a short while.)</para>
+              <para>Changed the
+              <link linkend="IGuestSession__processCreate">IGuestSession::processCreate</link>
+              and
+              <link linkend="IGuestSession__processCreateEx">IGuestSession::processCreateEx</link>
+              methods to accept arguments starting with argument zero (argv[0])
+              instead of argument one (argv[1]). (Not yet implemented on the
+              guest additions side, so argv[0] will probably be ignored for a
+              short while.)</para>
             </listitem>
 
             <listitem>
-              <para>Added a followSymlink parameter to the following methods:<itemizedlist>
-                <listitem><para><xref linkend="IGuestSession__directoryExists"
-                  xreflabel="IGuestSession::directoryExists"/></para></listitem>
-                <listitem><para><xref linkend="IGuestSession__fileExists"
-                  xreflabel="IGuestSession::fileExists"/></para></listitem>
-                <listitem><para><xref linkend="IGuestSession__fileQuerySize"
-                  xreflabel="IGuestSession::fileQuerySize"/></para></listitem>
+              <para>Added a followSymlink parameter to the following methods:
+              <itemizedlist>
+                <listitem><para><link linkend="IGuestSession__directoryExists">IGuestSession::directoryExists</link></para></listitem>
+                <listitem><para><link linkend="IGuestSession__fileExists">IGuestSession::fileExists</link></para></listitem>
+                <listitem><para><link linkend="IGuestSession__fileQuerySize">IGuestSession::fileQuerySize</link></para></listitem>
               </itemizedlist></para>
             </listitem>
             <listitem>
-              <para>The parameters to the <xref linkend="IGuestSession__fileOpen" xreflabel="IGuestSession::fileOpen"/>
-                and <xref linkend="IGuestSession__fileOpenEx" xreflabel="IGuestSession::fileOpenEx"/> methods were
-                altered:<itemizedlist>
-                <listitem><para>The openMode string parameter was replaced by the enum
-                  <xref linkend="FileAccessMode" xreflabel="FileAccessMode"/> and renamed to accessMode.</para></listitem>
-                <listitem><para>The disposition string parameter was replaced by the enum
-                  <xref linkend="FileOpenAction" xreflabel="FileOpenAction"/> and renamed to openAction.</para></listitem>
-                <listitem><para>The unimplemented sharingMode string parameter was replaced by the enum
-                  <xref linkend="FileSharingMode" xreflabel="FileSharingMode"/> (fileOpenEx only).</para></listitem>
-                <listitem><para>Added a flags parameter taking a list of <xref linkend="FileOpenExFlags"
-                  xreflabel="FileOpenExFlags"/> values (fileOpenEx only).</para></listitem>
-                <listitem><para>Removed the offset parameter (fileOpenEx only).</para></listitem>
+              <para>The parameters to the
+                <link linkend="IGuestSession__fileOpen">IGuestSession::fileOpen</link>
+                and
+                <link linkend="IGuestSession__fileOpenEx">IGuestSession::fileOpenEx</link>
+                methods were altered:<itemizedlist>
+                <listitem><para>The openMode string parameter was replaced by
+                  the enum
+                  <link linkend="FileAccessMode">FileAccessMode</link>
+                  and renamed to accessMode.</para></listitem>
+                <listitem><para>The disposition string parameter was replaced
+                  by the enum
+                  <link linkend="FileOpenAction">FileOpenAction</link>
+                  and renamed to openAction.</para></listitem>
+                <listitem><para>The unimplemented sharingMode string parameter
+                  was replaced by the enum
+                  <link linkend="FileSharingMode">FileSharingMode</link>
+                  (fileOpenEx only).</para></listitem>
+                <listitem><para>Added a flags parameter taking a list of
+                <link linkend="FileOpenExFlags">FileOpenExFlags</link> values
+                (fileOpenEx only).</para></listitem>
+                <listitem><para>Removed the offset parameter (fileOpenEx
+                only).</para></listitem>
               </itemizedlist></para>
             </listitem>
 
             <listitem>
-              <para><xref linkend="IFile__seek" xreflabel="IGuestFile::seek"/> now returns the new offset.</para>
+              <para><link linkend="IFile__seek">IGuestFile::seek</link> now
+              returns the new offset.</para>
             </listitem>
             <listitem>
-              <para>Renamed the FileSeekType enum used by <xref linkend="IFile__seek" xreflabel="IGuestFile::seek"/>
-                to <xref linkend="FileSeekOrigin" xreflabel="FileSeekOrigin"/> and added the missing End value
-                and renaming the Set to Begin.</para>
+              <para>Renamed the FileSeekType enum used by
+              <link linkend="IFile__seek">IGuestFile::seek</link>
+                to <link linkend="FileSeekOrigin">FileSeekOrigin</link> and
+                added the missing End value and renaming the Set to
+                Begin.</para>
             </listitem>
             <listitem>
-              <para>Extended the unimplemented <xref linkend="IFile__setACL" xreflabel="IGuestFile::setACL"/>
-                method with a UNIX-style mode parameter as an alternative to the ACL.</para>
+              <para>Extended the unimplemented
+                <link linkend="IFile__setACL">IGuestFile::setACL</link>
+                method with a UNIX-style mode parameter as an alternative to
+                the ACL.</para>
             </listitem>
             <listitem>
-              <para>Renamed the IFile::openMode attribute to <xref linkend="IFile__accessMode" xreflabel="IFile::accessMode"/>
-                and change the type from string to <xref linkend="FileAccessMode" xreflabel="FileAccessMode"/> to reflect
+              <para>Renamed the IFile::openMode attribute to
+                <link linkend="IFile__accessMode">IFile::accessMode</link>
+                and change the type from string to
+                <link linkend="FileAccessMode">FileAccessMode</link> to reflect
                 the changes to the fileOpen methods.</para>
             </listitem>
             <listitem>
-              <para>Renamed the IGuestFile::disposition attribute to <xref linkend="IFile__openAction"
-                xreflabel="IFile::openAction"/> and change the type from string to <xref linkend="FileOpenAction"
-                xreflabel="FileOpenAction"/> to reflect the changes to the fileOpen methods.</para>
+              <para>Renamed the IGuestFile::disposition attribute to
+              <link linkend="IFile__openAction">IFile::openAction</link> and
+              change the type from string to
+              <link linkend="FileOpenAction">FileOpenAction</link> to reflect
+              the changes to the fileOpen methods.</para>
             </listitem>
 
             <!-- Non-incompatible things worth mentioning (stubbed methods/attrs aren't worth it). -->
             <listitem>
-              <para>Added <xref linkend="IGuestSession__pathStyle" xreflabel="IGuestSession::pathStyle"/> attribute.</para>
+              <para>Added
+              <link linkend="IGuestSession__pathStyle">IGuestSession::pathStyle</link>
+              attribute.</para>
             </listitem>
             <listitem>
-              <para>Added <xref linkend="IGuestSession__fsObjExists" xreflabel="IGuestSession::fsObjExists"/> attribute.</para>
+              <para>Added
+              <link linkend="IGuestSession__fsObjExists">IGuestSession::fsObjExists</link>
+              attribute.</para>
             </listitem>
 
           </itemizedlist>
@@ -4204,13 +4306,14 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem><para>
-          IConsole::GetDeviceActivity() returns information about multiple devices.
+          IConsole::GetDeviceActivity() returns information about multiple
+          devices.
         </para></listitem>
 
         <listitem><para>
           IMachine::ReadSavedThumbnailToArray() has a new parameter
-          <computeroutput>bitmapFormat</computeroutput>. As a consequence of this,
-          IMachine::ReadSavedThumbnailPNGToArray() has been removed.
+          <computeroutput>bitmapFormat</computeroutput>. As a consequence of
+          this, IMachine::ReadSavedThumbnailPNGToArray() has been removed.
         </para></listitem>
 
         <listitem><para>
@@ -4230,12 +4333,13 @@ AuthResult AUTHCALL AuthEntry(
         </para></listitem>
 
         <listitem>
-          <para>The method <xref linkend="IWebsessionManager__getSessionObject"
-          xreflabel="IWebsessionManager::getSessionObject()" /> now returns
-          a new <xref linkend="ISession" xreflabel="ISession" /> instance for
-          every invocation. This puts the behavior in line with other binding
-          styles, which never forced the equivalent of establishing another
-          connection and logging in again to get another instance.</para>
+          <para>The method
+          <link linkend="IWebsessionManager__getSessionObject">IWebsessionManager::getSessionObject()</link>
+          now returns a new <link linkend="ISession">ISession</link> instance
+          for every invocation. This puts the behavior in line with other
+          binding styles, which never forced the equivalent of establishing
+          another connection and logging in again to get another
+          instance.</para>
         </listitem>
       </itemizedlist>
     </sect1>
@@ -4246,45 +4350,46 @@ AuthResult AUTHCALL AuthEntry(
       <itemizedlist>
         <listitem>
           <para>The explicit medium locking methods
-            <xref linkend="IMedium__lockRead" xreflabel="IMedium::lockRead()" />
-            and <xref linkend="IMedium__lockWrite" xreflabel="IMedium::lockWrite()" />
+            <link linkend="IMedium__lockRead">IMedium::lockRead()</link>
+            and <link linkend="IMedium__lockWrite">IMedium::lockWrite()</link>
             have been redesigned. They return a lock token object reference
-            now, and calling the <xref linkend="IToken__abandon"
-              xreflabel="IToken::abandon()" /> method (or letting the reference
-            count to this object drop to 0) will unlock it. This eliminates
-            the rather common problem that an API client crash left behind
-            locks, and also improves the safety (API clients can't release
-            locks they didn't obtain).</para>
+            now, and calling the
+            <link linkend="IToken__abandon">IToken::abandon()</link> method (or
+            letting the reference count to this object drop to 0) will unlock
+            it. This eliminates the rather common problem that an API client
+            crash left behind locks, and also improves the safety (API clients
+            can't release locks they didn't obtain).</para>
         </listitem>
 
         <listitem>
-          <para>The parameter list of <xref linkend="IAppliance__write"
-          xreflabel="IAppliance::write()" /> has been changed slightly, to
-          allow multiple flags to be passed.</para>
+          <para>The parameter list of
+          <link linkend="IAppliance__write">IAppliance::write()</link>
+          has been changed slightly, to allow multiple flags to be
+          passed.</para>
         </listitem>
 
         <listitem>
           <para><computeroutput>IMachine::delete</computeroutput>
-          has been renamed to <xref linkend="IMachine__deleteConfig"
-          xreflabel="IMachine::deleteConfig()" />, to improve API client
-          binding compatibility.</para>
+          has been renamed to
+          <link linkend="IMachine__deleteConfig">IMachine::deleteConfig()</link>,
+          to improve API client binding compatibility.</para>
         </listitem>
 
         <listitem>
           <para><computeroutput>IMachine::export</computeroutput>
-          has been renamed to <xref linkend="IMachine__exportTo"
-          xreflabel="IMachine::exportTo()" />, to improve API client binding
-          compatibility.</para>
+          has been renamed to
+          <link linkend="IMachine__exportTo">IMachine::exportTo()</link>,
+          to improve API client binding compatibility.</para>
         </listitem>
 
         <listitem>
-          <para>For <xref linkend="IMachine__launchVMProcess"
-          xreflabel="IMachine::launchVMProcess()"/> the meaning of the
-          <computeroutput>type</computeroutput> parameter has changed slightly.
-          Empty string now means that the per-VM or global default frontend
-          is launched. Most callers of this method should use the empty string
-          now, unless they really want to override the default and launch a
-          particular frontend.</para>
+          <para>For
+          <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess()</link>
+          the meaning of the <computeroutput>type</computeroutput> parameter
+          has changed slightly. Empty string now means that the per-VM or
+          global default frontend is launched. Most callers of this method
+          should use the empty string now, unless they really want to override
+          the default and launch a particular frontend.</para>
         </listitem>
 
         <listitem>
@@ -4292,123 +4397,132 @@ AuthResult AUTHCALL AuthEntry(
 
             <listitem>
               <para>The type of attribute
-              <xref linkend="IMedium__variant" xreflabel="IMedium::variant()"/>
+              <link linkend="IMedium__variant">IMedium::variant()</link>
               changed from <computeroutput>unsigned long</computeroutput>
               to <computeroutput>safe-array MediumVariant</computeroutput>.
-              It is an array of flags instead of a set of flags which were stored inside one variable.
+              It is an array of flags instead of a set of flags which were
+              stored inside one variable.
               </para>
             </listitem>
 
             <listitem>
-              <para>The parameter list for <xref
-              linkend="IMedium__cloneTo"
-              xreflabel="IMedium::cloneTo()" /> was modified.</para>
-              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+              <para>The parameter list for
+              <link linkend="IMedium__cloneTo">IMedium::cloneTo()</link>
+              was modified. The type of parameter variant was changed from
+              unsigned long to safe-array MediumVariant.
+              </para>
             </listitem>
 
             <listitem>
-              <para>The parameter list for <xref
-              linkend="IMedium__createBaseStorage"
-              xreflabel="IMedium::createBaseStorage()" /> was modified.</para>
-              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+              <para>The parameter list for
+              <link linkend="IMedium__createBaseStorage">IMedium::createBaseStorage()</link>
+              was modified. The type of parameter variant was changed from
+              unsigned long to safe-array MediumVariant.
+              </para>
             </listitem>
 
             <listitem>
-              <para>The parameter list for <xref
-              linkend="IMedium__createDiffStorage"
-              xreflabel="IMedium::createDiffStorage()" /> was modified.</para>
-              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+              <para>The parameter list for
+              <link linkend="IMedium__createDiffStorage">IMedium::createDiffStorage()</link>
+              was modified. The type of parameter variant was changed from
+              unsigned long to safe-array MediumVariant.
+              </para>
             </listitem>
 
             <listitem>
-              <para>The parameter list for <xref
-              linkend="IMedium__cloneToBase"
-              xreflabel="IMedium::cloneToBase()" /> was modified.</para>
-              The type of parameter variant was changed from unsigned long to safe-array MediumVariant.
+              <para>The parameter list for
+              <link linkend="IMedium__cloneToBase">IMedium::cloneToBase()</link>
+              was modified. The type of parameter variant was changed from
+              unsigned long to safe-array MediumVariant.
+              </para>
             </listitem>
           </itemizedlist></para>
         </listitem>
 
         <listitem>
           <para>The type of attribute
-          <xref linkend="IMediumFormat__capabilities"
-          xreflabel="IMediumFormat::capabilities()"/>
-          changed from <computeroutput>unsigned long</computeroutput>
-          to <computeroutput>safe-array MediumFormatCapabilities</computeroutput>.
-          It is an array of flags instead of a set of flags which were stored inside one variable.
+          <link linkend="IMediumFormat__capabilities">IMediumFormat::capabilities()</link>
+          changed from <computeroutput>unsigned long</computeroutput> to
+          <computeroutput>safe-array MediumFormatCapabilities</computeroutput>.
+          It is an array of flags instead of a set of flags which were stored
+          inside one variable.
           </para>
         </listitem>
 
         <listitem>
-          <para>The attribute <xref linkend="IMedium__logicalSize"
-          xreflabel="IMedium::logicalSize()" /> now returns the logical
-          size of exactly this medium object (whether it is a base or diff
-          image). The old behavior was no longer acceptable, as each image
-          can have a different capacity.</para>
+          <para>The attribute
+          <link linkend="IMedium__logicalSize">IMedium::logicalSize()</link>
+          now returns the logical size of exactly this medium object (whether
+          it is a base or diff image). The old behavior was no longer
+          acceptable, as each image can have a different capacity.</para>
         </listitem>
 
         <listitem>
-          <para>Guest control APIs - such as <xref linkend="IGuest"
-            xreflabel="IGuest" />, <xref linkend="IGuestSession"
-            xreflabel="IGuestSession" />, <xref linkend="IGuestProcess"
-            xreflabel="IGuestProcess" /> and so on - now emit own events to provide
-            clients much finer control and the ability to write own frontends for
-            guest operations. The event <xref linkend="IGuestSessionEvent"
-            xreflabel="IGuestSessionEvent" /> acts as an abstract base class
-            for all guest control events. Certain guest events contain a
-            <xref linkend="IVirtualBoxErrorInfo" xreflabel="IVirtualBoxErrorInfo" /> member
-            to provide more information in case of an error happened on the
-            guest side.</para>
+          <para>Guest control APIs - such as
+          <link linkend="IGuest">IGuest</link>,
+          <link linkend="IGuestSession">IGuestSession</link>,
+          <link linkend="IGuestProcess">IGuestProcess</link> and so on - now
+          emit own events to provide clients much finer control and the ability
+          to write own frontends for guest operations. The event
+          <link linkend="IGuestSessionEvent">IGuestSessionEvent</link> acts as
+          an abstract base class for all guest control events. Certain guest
+          events contain a
+          <link linkend="IVirtualBoxErrorInfo">IVirtualBoxErrorInfo</link>
+          member to provide more information in case of an error happened on
+          the guest side.</para>
         </listitem>
 
         <listitem>
-          <para>Guest control sessions on the guest started by <xref
-            linkend="IGuest__createSession" xreflabel="IGuest::createSession()" />
-            now are dedicated guest processes to provide more safety and performance
-            for certain operations. Also, the <xref linkend="IGuest__createSession"
-            xreflabel="IGuest::createSession()" /> call does not wait for the
-            guest session being created anymore due to the dedicated guest session
-            processes just mentioned. This also will enable webservice clients to
-            handle guest session creation more gracefully. To wait for a guest
-            session being started, use the newly added attribute <xref
-            linkend="IGuestSession__status" xreflabel="IGuestSession::status()" />
+          <para>Guest control sessions on the guest started by
+            <link linkend="IGuest__createSession">IGuest::createSession()</link>
+            now are dedicated guest processes to provide more safety and
+            performance for certain operations. Also, the
+            <link linkend="IGuest__createSession">IGuest::createSession()</link>
+            call does not wait for the guest session being created anymore due
+            to the dedicated guest session processes just mentioned. This also
+            will enable webservice clients to handle guest session creation
+            more gracefully. To wait for a guest session being started, use the
+            newly added attribute
+            <link linkend="IGuestSession__status">IGuestSession::status()</link>
             to query the current guest session status.</para>
         </listitem>
 
         <listitem>
-          <para>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
+          <para>The <link linkend="IGuestFile">IGuestFile</link>
             APIs are now implemented to provide native guest file access from
             the host.</para>
         </listitem>
 
         <listitem>
-          <para>The parameter list for <xref
-          linkend="IGuest__updateGuestAdditions"
-          xreflabel="IMedium::updateGuestAdditions()" /> was modified.</para>
-          It now supports specifying optional command line arguments for the
-          Guest Additions installer performing the actual update on the guest.
+          <para>The parameter list for
+          <link linkend="IGuest__updateGuestAdditions">IMedium::updateGuestAdditions()</link>
+          was modified. It now supports specifying optional command line
+          arguments for the Guest Additions installer performing the actual
+          update on the guest.
+          </para>
         </listitem>
 
         <listitem>
-          <para>A new event <xref linkend="IGuestUserStateChangedEvent"
-          xreflabel="IGuestUserStateChangedEvent" /> was introduced to provide
-          guest user status updates to the host via event listeners. To use this
-          event there needs to be at least the 4.3 Guest Additions installed on
-          the guest. At the moment only the states "Idle" and "InUse" of the
-          <xref linkend="GuestUserState"
-          xreflabel="GuestUserState" /> enumeration are supported on
-          Windows guests, starting at Windows 2000 SP2.</para>
+          <para>A new event
+          <link linkend="IGuestUserStateChangedEvent">IGuestUserStateChangedEvent</link>
+          was introduced to provide guest user status updates to the host via
+          event listeners. To use this event there needs to be at least the 4.3
+          Guest Additions installed on the guest. At the moment only the states
+          "Idle" and "InUse" of the
+          <link linkend="GuestUserState">GuestUserState</link> enumeration arei
+          supported on Windows guests, starting at Windows 2000 SP2.</para>
         </listitem>
 
         <listitem>
           <para>
-            The attribute <xref linkend="IGuestSession__protocolVersion"
-            xreflabel="IGuestSession::protocolVersion"/> was added to provide a
-            convenient way to lookup the guest session's protocol version it
-            uses to communicate with the installed Guest Additions on the guest.
-            Older Guest Additions will set the protocol version to 1, whereas
-            Guest Additions 4.3 will set the protocol version to 2. This might
-            change in the future as new features arise.</para>
+            The attribute
+            <link linkend="IGuestSession__protocolVersion">IGuestSession::protocolVersion</link>
+            was added to provide a convenient way to lookup the guest session's
+            protocol version it uses to communicate with the installed Guest
+            Additions on the guest. Older Guest Additions will set the protocol
+            version to 1, whereas Guest Additions 4.3 will set the protocol
+            version to 2. This might change in the future as new features
+            arise.</para>
         </listitem>
 
         <listitem>
@@ -4418,11 +4532,13 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>
-            The <xref linkend="IUSBController" xreflabel="IUSBController"/>
-            class is not a singleton of <xref linkend="IMachine" xreflabel="IMachine"/>
-            anymore but <xref linkend="IMachine" xreflabel="IMachine"/> contains
-            a list of USB controllers present in the VM. The USB device filter
-            handling was moved to <xref linkend="IUSBDeviceFilters" xreflabel="IUSBDeviceFilters"/>.
+            The <link linkend="IUSBController">IUSBController</link>
+            class is not a singleton of
+            <link linkend="IMachine">IMachine</link> anymore but
+            <link linkend="IMachine">IMachine</link> contains a list of USB
+            controllers present in the VM. The USB device filter handling was
+            moved to
+            <link linkend="IUSBDeviceFilters">IUSBDeviceFilters</link>.
           </para>
         </listitem>
       </itemizedlist>
@@ -4435,9 +4551,9 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>Guest control APIs for executing guest processes, working with
           guest files or directories have been moved to the newly introduced
-          <xref linkend="IGuestSession" xreflabel="IGuestSession" /> interface which
-          can be created by calling <xref linkend="IGuest__createSession"
-          xreflabel="IGuest::createSession()" />.</para>
+          <link linkend="IGuestSession">IGuestSession</link> interface which
+          can be created by calling
+          <link linkend="IGuest__createSession">IGuest::createSession()</link>.</para>
 
           <para>A guest session will act as a
           guest user's impersonation so that the guest credentials only have to
@@ -4447,102 +4563,101 @@ AuthResult AUTHCALL AuthEntry(
 
           <para>Instead of working with process or directory handles before
           version 4.2, there now are the dedicated interfaces
-          <xref linkend="IGuestProcess" xreflabel="IGuestProcess" />,
-          <xref linkend="IGuestDirectory" xreflabel="IGuestDirectory" /> and
-          <xref linkend="IGuestFile" xreflabel="IGuestFile" />. To retrieve more
+          <link linkend="IGuestProcess">IGuestProcess</link>,
+          <link linkend="IGuestDirectory">IGuestDirectory</link> and
+          <link linkend="IGuestFile">IGuestFile</link>. To retrieve more
           information of a file system object the new interface
-          <xref linkend="IGuestFsObjInfo" xreflabel="IGuestFsObjInfo" /> has been
+          <link linkend="IGuestFsObjInfo">IGuestFsObjInfo</link> has been
           introduced.</para>
 
           <para>Even though the guest control API was changed it is backwards
           compatible so that it can be used with older installed Guest
           Additions. However, to use upcoming features like process termination
-          or waiting for input / output new Guest Additions must be installed when
-          these features got implemented.</para>
+          or waiting for input / output new Guest Additions must be installed
+          when these features got implemented.</para>
 
           <para>The following limitations apply:
             <itemizedlist>
-              <listitem><para>The <xref linkend="IGuestFile" xreflabel="IGuestFile" />
+              <listitem><para>The <link linkend="IGuestFile">IGuestFile</link>
                 interface is not fully implemented yet.</para>
               </listitem>
               <listitem><para>The symbolic link APIs
-                <xref linkend="IGuestSession__symlinkCreate"
-                xreflabel="IGuestSession::symlinkCreate()" />,
-                <xref linkend="IGuestSession__symlinkExists"
-                xreflabel="IGuestSession::symlinkExists()" />,
-                <xref linkend="IGuestSession__symlinkRead"
-                xreflabel="IGuestSession::symlinkRead()" />,
+                <link linkend="IGuestSession__symlinkCreate">IGuestSession::symlinkCreate()</link>,
+                <link linkend="IGuestSession__symlinkExists">IGuestSession::symlinkExists()</link>,
+                <link linkend="IGuestSession__symlinkRead">IGuestSession::symlinkRead()</link>,
                 IGuestSession::symlinkRemoveDirectory() and
                 IGuestSession::symlinkRemoveFile() are not
                 implemented yet.</para>
               </listitem>
               <listitem><para>The directory APIs
-                <xref linkend="IGuestSession__directoryRemove"
-                xreflabel="IGuestSession::directoryRemove()" />,
-                <xref linkend="IGuestSession__directoryRemoveRecursive"
-                xreflabel="IGuestSession::directoryRemoveRecursive()" />,
+                <link linkend="IGuestSession__directoryRemove">IGuestSession::directoryRemove()</link>,
+                <link linkend="IGuestSession__directoryRemoveRecursive">IGuestSession::directoryRemoveRecursive()</link>,
                 IGuestSession::directoryRename() and
                 IGuestSession::directorySetACL() are not
                 implemented yet.</para>
               </listitem>
               <listitem><para>The temporary file creation API
-                <xref linkend="IGuestSession__fileCreateTemp"
-                xreflabel="IGuestSession::fileCreateTemp()" /> is not
-                implemented yet.</para>
+                <link linkend="IGuestSession__fileCreateTemp">IGuestSession::fileCreateTemp()</link>
+                is not implemented yet.</para>
               </listitem>
               <listitem><para>Guest process termination via
-                <xref linkend="IProcess__terminate"
-                xreflabel="IProcess::terminate()" /> is not
-                implemented yet.</para>
+                <link linkend="IProcess__terminate">IProcess::terminate()</link>
+                is not implemented yet.</para>
               </listitem>
               <listitem><para>Waiting for guest process output via
-                <xref linkend="ProcessWaitForFlag__StdOut" xreflabel="ProcessWaitForFlag::StdOut" />
-                and <xref linkend="ProcessWaitForFlag__StdErr" xreflabel="ProcessWaitForFlag::StdErr" />
-                is not implemented yet.</para><para>To wait for process output, <xref linkend="IProcess__read"
-                xreflabel="IProcess::read()" /> with appropriate flags still can be used to periodically
-                check for new output data to arrive. Note that <xref linkend="ProcessCreateFlag__WaitForStdOut"
-                xreflabel="ProcessCreateFlag::WaitForStdOut" /> and / or
-                <xref linkend="ProcessCreateFlag__WaitForStdErr" xreflabel="ProcessCreateFlag::WaitForStdErr" />
-                need to be specified when creating a guest process via <xref linkend="IGuestSession__processCreate"
-                xreflabel="IGuestSession::processCreate()" /> or <xref linkend="IGuestSession__processCreateEx"
-                xreflabel="IGuestSession::processCreateEx()" />.</para>
+                <link linkend="ProcessWaitForFlag__StdOut">ProcessWaitForFlag::StdOut</link>
+                and
+                <link linkend="ProcessWaitForFlag__StdErr">ProcessWaitForFlag::StdErr</link>
+                is not implemented yet.</para>
+                <para>To wait for process output,
+                <link linkend="IProcess__read">IProcess::read()</link> with
+                appropriate flags still can be used to periodically check for
+                new output data to arrive. Note that
+                <link linkend="ProcessCreateFlag__WaitForStdOut">ProcessCreateFlag::WaitForStdOut</link>
+                and / or
+                <link linkend="ProcessCreateFlag__WaitForStdErr">ProcessCreateFlag::WaitForStdErr</link>
+                need to be specified when creating a guest process via
+                <link linkend="IGuestSession__processCreate">IGuestSession::processCreate()</link>
+                or
+                <link linkend="IGuestSession__processCreateEx">IGuestSession::processCreateEx()</link>.</para>
               </listitem>
               <listitem>
-                <para>ACL (Access Control List) handling in general is not implemented yet.</para>
+                <para>ACL (Access Control List) handling in general is not
+                implemented yet.</para>
               </listitem>
             </itemizedlist>
           </para>
         </listitem>
 
         <listitem>
-          <para>The <xref linkend="LockType" xreflabel="LockType" />
-          enumeration now has an additional value <computeroutput>VM</computeroutput>
-          which tells <xref linkend="IMachine__lockMachine"
-          xreflabel="IMachine::lockMachine()" /> to create a full-blown
-          object structure for running a VM. This was the previous behavior
-          with <computeroutput>Write</computeroutput>, which now only creates
-          the minimal object structure to save time and resources (at the
-          moment the Console object is still created, but all sub-objects
-          such as Display, Keyboard, Mouse, Guest are not.</para>
+          <para>The <link linkend="LockType">LockType</link>
+          enumeration now has an additional value
+          <computeroutput>VM</computeroutput> which tells
+          <link linkend="IMachine__lockMachine">IMachine::lockMachine()</link>
+          to create a full-blown object structure for running a VM. This was
+          the previous behavior with <computeroutput>Write</computeroutput>,
+          which now only creates the minimal object structure to save time and
+          resources (at the moment the Console object is still created, but all
+          sub-objects such as Display, Keyboard, Mouse, Guest are not.</para>
         </listitem>
 
         <listitem>
           <para>Machines can be put in groups (actually an array of groups).
           The primary group affects the default placement of files belonging
-          to a VM. <xref linkend="IVirtualBox__createMachine"
-          xreflabel="IVirtualBox::createMachine()"/> and
-          <xref linkend="IVirtualBox__composeMachineFilename"
-          xreflabel="IVirtualBox::composeMachineFilename()"/> have been
-          adjusted accordingly, the former taking an array of groups as an
-          additional parameter and the latter taking a group as an additional
-          parameter. The create option handling has been changed for those two
-          methods, too.</para>
+          to a VM.
+          <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>
+          and
+          <link linkend="IVirtualBox__composeMachineFilename">IVirtualBox::composeMachineFilename()</link>
+          have been adjusted accordingly, the former taking an array of groups
+          as an additional parameter and the latter taking a group as an
+          additional parameter. The create option handling has been changed for
+          those two methods, too.</para>
         </listitem>
 
         <listitem>
           <para>The method IVirtualBox::findMedium() has been removed, since
-          it provides a subset of the functionality of <xref linkend="IVirtualBox__openMedium"
-          xreflabel="IVirtualBox::openMedium()" />.</para>
+          it provides a subset of the functionality of
+          <link linkend="IVirtualBox__openMedium">IVirtualBox::openMedium()</link>.</para>
         </listitem>
 
         <listitem>
@@ -4561,127 +4676,127 @@ AuthResult AUTHCALL AuthEntry(
               </row>
               <row>
                 <entry>PointingHidType</entry>
-                <entry><xref linkend="PointingHIDType" xreflabel="PointingHIDType"/></entry>
+                <entry><link linkend="PointingHIDType">PointingHIDType</link></entry>
               </row>
               <row>
                 <entry>KeyboardHidType</entry>
-                <entry><xref linkend="KeyboardHIDType" xreflabel="KeyboardHIDType"/></entry>
+                <entry><link linkend="KeyboardHIDType">KeyboardHIDType</link></entry>
               </row>
               <row>
                 <entry>IPciAddress</entry>
-                <entry><xref linkend="IPCIAddress" xreflabel="IPCIAddress"/></entry>
+                <entry><link linkend="IPCIAddress">IPCIAddress</link></entry>
               </row>
               <row>
                 <entry>IPciDeviceAttachment</entry>
-                <entry><xref linkend="IPCIDeviceAttachment" xreflabel="IPCIDeviceAttachment"/></entry>
+                <entry><link linkend="IPCIDeviceAttachment">IPCIDeviceAttachment</link></entry>
               </row>
               <row>
                 <entry>IMachine::pointingHidType</entry>
-                <entry><xref linkend="IMachine__pointingHIDType" xreflabel="IMachine::pointingHIDType"/></entry>
+                <entry><link linkend="IMachine__pointingHIDType">IMachine::pointingHIDType</link></entry>
               </row>
               <row>
                 <entry>IMachine::keyboardHidType</entry>
-                <entry><xref linkend="IMachine__keyboardHIDType" xreflabel="IMachine::keyboardHIDType"/></entry>
+                <entry><link linkend="IMachine__keyboardHIDType">IMachine::keyboardHIDType</link></entry>
               </row>
               <row>
                 <entry>IMachine::hpetEnabled</entry>
-                <entry><xref linkend="IMachine__HPETEnabled" xreflabel="IMachine::HPETEnabled"/></entry>
+                <entry><link linkend="IMachine__HPETEnabled">IMachine::HPETEnabled</link></entry>
               </row>
               <row>
                 <entry>IMachine::sessionPid</entry>
-                <entry><xref linkend="IMachine__sessionPID" xreflabel="IMachine::sessionPID"/></entry>
+                <entry><link linkend="IMachine__sessionPID">IMachine::sessionPID</link></entry>
               </row>
               <row>
                 <entry>IMachine::ioCacheEnabled</entry>
-                <entry><xref linkend="IMachine__IOCacheEnabled" xreflabel="IMachine::IOCacheEnabled"/></entry>
+                <entry><link linkend="IMachine__IOCacheEnabled">IMachine::IOCacheEnabled</link></entry>
               </row>
               <row>
                 <entry>IMachine::ioCacheSize</entry>
-                <entry><xref linkend="IMachine__IOCacheSize" xreflabel="IMachine::IOCacheSize"/></entry>
+                <entry><link linkend="IMachine__IOCacheSize">IMachine::IOCacheSize</link></entry>
               </row>
               <row>
                 <entry>IMachine::pciDeviceAssignments</entry>
-                <entry><xref linkend="IMachine__PCIDeviceAssignments" xreflabel="IMachine::PCIDeviceAssignments"/></entry>
+                <entry><link linkend="IMachine__PCIDeviceAssignments">IMachine::PCIDeviceAssignments</link></entry>
               </row>
               <row>
                 <entry>IMachine::attachHostPciDevice()</entry>
-                <entry><xref linkend="IMachine__attachHostPCIDevice" xreflabel="IMachine::attachHostPCIDevice"/></entry>
+                <entry><link linkend="IMachine__attachHostPCIDevice">IMachine::attachHostPCIDevice</link></entry>
               </row>
               <row>
                 <entry>IMachine::detachHostPciDevice()</entry>
-                <entry><xref linkend="IMachine__detachHostPCIDevice" xreflabel="IMachine::detachHostPCIDevice()"/></entry>
+                <entry><link linkend="IMachine__detachHostPCIDevice">IMachine::detachHostPCIDevice()</link></entry>
               </row>
               <row>
                 <entry>IConsole::attachedPciDevices</entry>
-                <entry><xref linkend="IConsole__attachedPCIDevices" xreflabel="IConsole::attachedPCIDevices"/></entry>
+                <entry><link linkend="IConsole__attachedPCIDevices">IConsole::attachedPCIDevices</link></entry>
               </row>
               <row>
                 <entry>IHostNetworkInterface::dhcpEnabled</entry>
-                <entry><xref linkend="IHostNetworkInterface__DHCPEnabled" xreflabel="IHostNetworkInterface::DHCPEnabled"/></entry>
+                <entry><link linkend="IHostNetworkInterface__DHCPEnabled">IHostNetworkInterface::DHCPEnabled</link></entry>
               </row>
               <row>
                 <entry>IHostNetworkInterface::enableStaticIpConfig()</entry>
-                <entry><xref linkend="IHostNetworkInterface__enableStaticIPConfig" xreflabel="IHostNetworkInterface::enableStaticIPConfig()"/></entry>
+                <entry><link linkend="IHostNetworkInterface__enableStaticIPConfig">IHostNetworkInterface::enableStaticIPConfig()</link></entry>
               </row>
               <row>
                 <entry>IHostNetworkInterface::enableStaticIpConfigV6()</entry>
-                <entry><xref linkend="IHostNetworkInterface__enableStaticIPConfigV6" xreflabel="IHostNetworkInterface::enableStaticIPConfigV6()"/></entry>
+                <entry><link linkend="IHostNetworkInterface__enableStaticIPConfigV6">IHostNetworkInterface::enableStaticIPConfigV6()</link></entry>
               </row>
               <row>
                 <entry>IHostNetworkInterface::enableDynamicIpConfig()</entry>
-                <entry><xref linkend="IHostNetworkInterface__enableDynamicIPConfig" xreflabel="IHostNetworkInterface::enableDynamicIPConfig()"/></entry>
+                <entry><link linkend="IHostNetworkInterface__enableDynamicIPConfig">IHostNetworkInterface::enableDynamicIPConfig()</link></entry>
               </row>
               <row>
                 <entry>IHostNetworkInterface::dhcpRediscover()</entry>
-                <entry><xref linkend="IHostNetworkInterface__DHCPRediscover" xreflabel="IHostNetworkInterface::DHCPRediscover()"/></entry>
+                <entry><link linkend="IHostNetworkInterface__DHCPRediscover">IHostNetworkInterface::DHCPRediscover()</link></entry>
               </row>
               <row>
                 <entry>IHost::Acceleration3DAvailable</entry>
-                <entry><xref linkend="IHost__acceleration3DAvailable" xreflabel="IHost::acceleration3DAvailable"/></entry>
+                <entry><link linkend="IHost__acceleration3DAvailable">IHost::acceleration3DAvailable</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedPae</entry>
-                <entry><xref linkend="IGuestOSType__recommendedPAE" xreflabel="IGuestOSType::recommendedPAE"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedPAE">IGuestOSType::recommendedPAE</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedDvdStorageController</entry>
-                <entry><xref linkend="IGuestOSType__recommendedDVDStorageController" xreflabel="IGuestOSType::recommendedDVDStorageController"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedDVDStorageController">IGuestOSType::recommendedDVDStorageController</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedDvdStorageBus</entry>
-                <entry><xref linkend="IGuestOSType__recommendedDVDStorageBus" xreflabel="IGuestOSType::recommendedDVDStorageBus"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedDVDStorageBus">IGuestOSType::recommendedDVDStorageBus</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedHdStorageController</entry>
-                <entry><xref linkend="IGuestOSType__recommendedHDStorageController" xreflabel="IGuestOSType::recommendedHDStorageController"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedHDStorageController">IGuestOSType::recommendedHDStorageController</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedHdStorageBus</entry>
-                <entry><xref linkend="IGuestOSType__recommendedHDStorageBus" xreflabel="IGuestOSType::recommendedHDStorageBus"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedHDStorageBus">IGuestOSType::recommendedHDStorageBus</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedUsbHid</entry>
-                <entry><xref linkend="IGuestOSType__recommendedUSBHID" xreflabel="IGuestOSType::recommendedUSBHID"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedUSBHID">IGuestOSType::recommendedUSBHID</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedHpet</entry>
-                <entry><xref linkend="IGuestOSType__recommendedHPET" xreflabel="IGuestOSType::recommendedHPET"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedHPET">IGuestOSType::recommendedHPET</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedUsbTablet</entry>
-                <entry><xref linkend="IGuestOSType__recommendedUSBTablet" xreflabel="IGuestOSType::recommendedUSBTablet"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedUSBTablet">IGuestOSType::recommendedUSBTablet</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedRtcUseUtc</entry>
-                <entry><xref linkend="IGuestOSType__recommendedRTCUseUTC" xreflabel="IGuestOSType::recommendedRTCUseUTC"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedRTCUseUTC">IGuestOSType::recommendedRTCUseUTC</link></entry>
               </row>
               <row>
                 <entry>IGuestOSType::recommendedUsb</entry>
-                <entry><xref linkend="IGuestOSType__recommendedUSB" xreflabel="IGuestOSType::recommendedUSB"/></entry>
+                <entry><link linkend="IGuestOSType__recommendedUSB">IGuestOSType::recommendedUSB</link></entry>
               </row>
               <row>
                 <entry>INetworkAdapter::natDriver</entry>
-                <entry><xref linkend="INetworkAdapter__NATEngine" xreflabel="INetworkAdapter::NATEngine"/></entry>
+                <entry><link linkend="INetworkAdapter__NATEngine">INetworkAdapter::NATEngine</link></entry>
               </row>
               <row>
                 <entry>IUSBController::enabledEhci</entry>
@@ -4689,47 +4804,47 @@ AuthResult AUTHCALL AuthEntry(
               </row>
               <row>
                 <entry>INATEngine::tftpPrefix</entry>
-                <entry><xref linkend="INATEngine__TFTPPrefix" xreflabel="INATEngine::TFTPPrefix"/></entry>
+                <entry><link linkend="INATEngine__TFTPPrefix">INATEngine::TFTPPrefix</link></entry>
               </row>
               <row>
                 <entry>INATEngine::tftpBootFile</entry>
-                <entry><xref linkend="INATEngine__TFTPBootFile" xreflabel="INATEngine::TFTPBootFile"/></entry>
+                <entry><link linkend="INATEngine__TFTPBootFile">INATEngine::TFTPBootFile</link></entry>
               </row>
               <row>
                 <entry>INATEngine::tftpNextServer</entry>
-                <entry><xref linkend="INATEngine__TFTPNextServer" xreflabel="INATEngine::TFTPNextServer"/></entry>
+                <entry><link linkend="INATEngine__TFTPNextServer">INATEngine::TFTPNextServer</link></entry>
               </row>
               <row>
                 <entry>INATEngine::dnsPassDomain</entry>
-                <entry><xref linkend="INATEngine__DNSPassDomain" xreflabel="INATEngine::DNSPassDomain"/></entry>
+                <entry><link linkend="INATEngine__DNSPassDomain">INATEngine::DNSPassDomain</link></entry>
               </row>
               <row>
                 <entry>INATEngine::dnsProxy</entry>
-                <entry><xref linkend="INATEngine__DNSProxy" xreflabel="INATEngine::DNSProxy"/></entry>
+                <entry><link linkend="INATEngine__DNSProxy">INATEngine::DNSProxy</link></entry>
               </row>
               <row>
                 <entry>INATEngine::dnsUseHostResolver</entry>
-                <entry><xref linkend="INATEngine__DNSUseHostResolver" xreflabel="INATEngine::DNSUseHostResolver"/></entry>
+                <entry><link linkend="INATEngine__DNSUseHostResolver">INATEngine::DNSUseHostResolver</link></entry>
               </row>
               <row>
                 <entry>VBoxEventType::OnHostPciDevicePlug</entry>
-                <entry><xref linkend="VBoxEventType__OnHostPCIDevicePlug" xreflabel="VBoxEventType::OnHostPCIDevicePlug"/></entry>
+                <entry><link linkend="VBoxEventType__OnHostPCIDevicePlug">VBoxEventType::OnHostPCIDevicePlug</link></entry>
               </row>
               <row>
                 <entry>ICPUChangedEvent::cpu</entry>
-                <entry><xref linkend="ICPUChangedEvent__CPU" xreflabel="ICPUChangedEvent::CPU"/></entry>
+                <entry><link linkend="ICPUChangedEvent__CPU">ICPUChangedEvent::CPU</link></entry>
               </row>
               <row>
                 <entry>INATRedirectEvent::hostIp</entry>
-                <entry><xref linkend="INATRedirectEvent__hostIP" xreflabel="INATRedirectEvent::hostIP"/></entry>
+                <entry><link linkend="INATRedirectEvent__hostIP">INATRedirectEvent::hostIP</link></entry>
               </row>
               <row>
                 <entry>INATRedirectEvent::guestIp</entry>
-                <entry><xref linkend="INATRedirectEvent__guestIP" xreflabel="INATRedirectEvent::guestIP"/></entry>
+                <entry><link linkend="INATRedirectEvent__guestIP">INATRedirectEvent::guestIP</link></entry>
               </row>
               <row>
                 <entry>IHostPciDevicePlugEvent</entry>
-                <entry><xref linkend="IHostPCIDevicePlugEvent" xreflabel="IHostPCIDevicePlugEvent"/></entry>
+                <entry><link linkend="IHostPCIDevicePlugEvent">IHostPCIDevicePlugEvent</link></entry>
               </row>
             </tbody>
           </tgroup></table></para>
@@ -4742,24 +4857,26 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
-          <para>The method <xref linkend="IAppliance__importMachines"
-          xreflabel="IAppliance::importMachines()" /> has one more parameter
-          now, which allows to configure the import process in more detail.
+          <para>The method
+          <link linkend="IAppliance__importMachines">IAppliance::importMachines()</link>
+          has one more parameter now, which allows to configure the import
+          process in more detail.
           </para>
         </listitem>
 
         <listitem>
-          <para>The method <xref linkend="IVirtualBox__openMedium"
-          xreflabel="IVirtualBox::openMedium()" /> has one more parameter
-          now, which allows resolving duplicate medium UUIDs without the need
-          for external tools.</para>
+          <para>The method
+          <link linkend="IVirtualBox__openMedium">IVirtualBox::openMedium()</link>
+          has one more parameter now, which allows resolving duplicate medium
+          UUIDs without the need for external tools.</para>
         </listitem>
 
         <listitem>
-          <para>The <xref linkend="INetworkAdapter" xreflabel="INetworkAdapter"/>
+          <para>The <link linkend="INetworkAdapter">INetworkAdapter</link>
           interface has been cleaned up. The various methods to activate an
           attachment type have been replaced by the
-          <xref linkend="INetworkAdapter__attachmentType" xreflabel="INetworkAdapter::attachmentType"/> setter.</para>
+          <link linkend="INetworkAdapter__attachmentType">INetworkAdapter::attachmentType</link>
+          setter.</para>
           <para>Additionally each attachment mode now has its own attribute,
           which means that host only networks no longer share the settings with
           bridged interfaces.</para>
@@ -4771,60 +4888,71 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>This version introduces the guest facilities concept. A guest
-          facility either represents a module or feature the guest is running or
-          offering, which is defined by <xref linkend="AdditionsFacilityType"
-          xreflabel="AdditionsFacilityType"/>. Each facility is member of a
-          <xref linkend="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/>
-          and has a current status indicated by <xref linkend="AdditionsFacilityStatus"
-          xreflabel="AdditionsFacilityStatus"/>, together with a timestamp (in ms) of
-          the last status update.</para>
+          facility either represents a module or feature the guest is running
+          or offering, which is defined by
+          <link linkend="AdditionsFacilityType">AdditionsFacilityType</link>.
+          Each facility is member of a
+          <link linkend="AdditionsFacilityClass">AdditionsFacilityClass</link>
+          and has a current status indicated by
+          <link linkend="AdditionsFacilityStatus">AdditionsFacilityStatus</link>,
+          together with a timestamp (in ms) of the last status update.</para>
           <para>To address the above concept, the following changes were made:
             <itemizedlist>
               <listitem>
                 <para>
-                  In the <xref linkend="IGuest" xreflabel="IGuest"/> interface, the following were removed:
+                  In the <link linkend="IGuest">IGuest</link> interface, the
+                  following were removed:
                   <itemizedlist>
                     <listitem>
-                      <para>the <computeroutput>supportsSeamless</computeroutput> attribute;</para>
+                      <para>the
+                      <computeroutput>supportsSeamless</computeroutput>
+                      attribute;</para>
                     </listitem>
                     <listitem>
-                      <para>the <computeroutput>supportsGraphics</computeroutput> attribute;</para>
+                      <para>the
+                      <computeroutput>supportsGraphics</computeroutput>
+                      attribute;</para>
                     </listitem>
                   </itemizedlist>
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  The function <xref linkend="IGuest__getFacilityStatus" xreflabel="IGuest::getFacilityStatus()"/>
-                  was added. It quickly provides a facility's status without the need to get the facility
-                  collection with <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                  The function
+                  <link linkend="IGuest__getFacilityStatus">IGuest::getFacilityStatus()</link>
+                  was added. It quickly provides a facility's status without
+                  the need to get the facility collection with
+                  <link linkend="IGuest__facilities">IGuest::facilities</link>.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  The attribute <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>
-                  was added to provide an easy to access collection of all currently known guest
-                  facilities, that is, it contains all facilies where at least one status update was
-                  made since the guest was started.
+                  The attribute
+                  <link linkend="IGuest__facilities">IGuest::facilities</link>
+                  was added to provide an easy to access collection of all
+                  currently known guest facilities, that is, it contains all
+                  facilies where at least one status update was made since the
+                  guest was started.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  The interface <xref linkend="IAdditionsFacility" xreflabel="IAdditionsFacility"/>
+                  The interface
+                  <link linkend="IAdditionsFacility">IAdditionsFacility</link>
                   was added to represent a single facility returned by
-                  <xref linkend="IGuest__facilities" xreflabel="IGuest::facilities"/>.
+                  <link linkend="IGuest__facilities">IGuest::facilities</link>.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  <xref linkend="AdditionsFacilityStatus" xreflabel="AdditionsFacilityStatus"/>
+                  <link linkend="AdditionsFacilityStatus">AdditionsFacilityStatus</link>
                   was added to represent a facility's overall status.
                 </para>
               </listitem>
               <listitem>
                 <para>
-                  <xref linkend="AdditionsFacilityType" xreflabel="AdditionsFacilityType"/> and
-                  <xref linkend="AdditionsFacilityClass" xreflabel="AdditionsFacilityClass"/> were
+                  <link linkend="AdditionsFacilityType">AdditionsFacilityType</link> and
+                  <link linkend="AdditionsFacilityClass">AdditionsFacilityClass</link> were
                   added to represent the facility's type and class.
                 </para>
               </listitem>
@@ -4844,8 +4972,7 @@ AuthResult AUTHCALL AuthEntry(
           targeting both local (COM/XPCOM) and remote (SOAP) transports. Now,
           instead of <computeroutput>IWebsessionManager</computeroutput>, the
           new class <computeroutput>VirtualBoxManager</computeroutput> must be
-          used. See <xref linkend="javaapi" xreflabel="Java API chapter" />
-          for details.</para>
+          used. See <xref linkend="javaapi"/> for details.</para>
         </listitem>
 
         <listitem>
@@ -4855,9 +4982,9 @@ AuthResult AUTHCALL AuthEntry(
               <listitem>
                 <para>Replace any
                 <computeroutput>IVirtualBox::openSession(uuidMachine,
-                ...)</computeroutput> API call with the machine's <xref
-                linkend="IMachine__lockMachine"
-                xreflabel="IMachine::lockMachine()" /> call and a
+                ...)</computeroutput> API call with the machine's
+                <link linkend="IMachine__lockMachine">IMachine::lockMachine()</link>
+                call and a
                 <computeroutput>LockType.Write</computeroutput> argument. The
                 functionality is unchanged, but instead of "opening a direct
                 session on a machine" all documentation now refers to
@@ -4868,14 +4995,13 @@ AuthResult AUTHCALL AuthEntry(
               <listitem>
                 <para>Similarly, replace any
                 <computeroutput>IVirtualBox::openExistingSession(uuidMachine,
-                ...)</computeroutput> call with the machine's <xref
-                linkend="IMachine__lockMachine"
-                xreflabel="IMachine::lockMachine()" /> call and a
-                <computeroutput>LockType.Shared</computeroutput> argument.
-                Whereas it was previously impossible to connect a client
-                session to a running VM process in a race-free manner, the new
-                API will atomically either write-lock the machine for the
-                current session or establish a remote link to an existing
+                ...)</computeroutput> call with the machine's
+                <link linkend="IMachine__lockMachine">IMachine::lockMachine()</link>
+                call and a <computeroutput>LockType.Shared</computeroutput>
+                argument. Whereas it was previously impossible to connect a
+                client session to a running VM process in a race-free manner,
+                the new API will atomically either write-lock the machine for
+                the current session or establish a remote link to an existing
                 session. Existing client code which tried calling both
                 <computeroutput>openSession()</computeroutput> and
                 <computeroutput>openExistingSession()</computeroutput> can now
@@ -4885,17 +5011,15 @@ AuthResult AUTHCALL AuthEntry(
               <listitem>
                 <para>Third, replace any
                 <computeroutput>IVirtualBox::openRemoteSession(uuidMachine,
-                ...)</computeroutput> call with the machine's <xref
-                linkend="IMachine__launchVMProcess"
-                xreflabel="IMachine::launchVMProcess()" /> call. The
-                functionality is unchanged.</para>
+                ...)</computeroutput> call with the machine's
+                <link linkend="IMachine__launchVMProcess">IMachine::launchVMProcess()</link>
+                call. The functionality is unchanged.</para>
               </listitem>
 
               <listitem>
-                <para>The <xref linkend="SessionState"
-                xreflabel="SessionState" /> enum was adjusted accordingly:
-                "Open" is now "Locked", "Closed" is now "Unlocked", "Closing"
-                is now "Unlocking".</para>
+                <para>The <link linkend="SessionState">SessionState</link> enum
+                was adjusted accordingly: "Open" is now "Locked", "Closed" is
+                now "Unlocked", "Closing" is now "Unlocking".</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -4910,22 +5034,21 @@ AuthResult AUTHCALL AuthEntry(
               <listitem>
                 <para>Neither
                 <computeroutput>IVirtualBox::createHardDisk()</computeroutput>
-                nor <xref linkend="IVirtualBox__openMedium"
-                xreflabel="IVirtualBox::openMedium()" /> register media
-                automatically any more.</para>
+                nor
+                <link linkend="IVirtualBox__openMedium">IVirtualBox::openMedium()</link>
+                register media automatically any more.</para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__attachDevice"
-                xreflabel="IMachine::attachDevice()" /> and <xref
-                linkend="IMachine__mountMedium"
-                xreflabel="IMachine::mountMedium()" /> now take an IMedium
-                object instead of a UUID as an argument. It is these two calls
-                which add media to a registry now (either a machine registry
-                for machines created with VirtualBox 4.0 or later or the
-                global registry otherwise). As a consequence, if a medium is
-                opened but never attached to a machine, it is no longer added
-                to any registry any more.</para>
+                <para><link linkend="IMachine__attachDevice">IMachine::attachDevice()</link>
+                and
+                <link linkend="IMachine__mountMedium">IMachine::mountMedium()</link>
+                now take an IMedium object instead of a UUID as an argument. It
+                is these two calls which add media to a registry now (either a
+                machine registry for machines created with VirtualBox 4.0 or
+                later or the global registry otherwise). As a consequence, if a
+                medium is opened but never attached to a machine, it is no
+                longer added to any registry any more.</para>
               </listitem>
 
               <listitem>
@@ -4934,9 +5057,8 @@ AuthResult AUTHCALL AuthEntry(
                 getDVDImage(), findFloppyImage() and getFloppyImage() have all
                 been merged into IVirtualBox::findMedium(), and
                 IVirtualBox::openHardDisk(), openDVDImage() and
-                openFloppyImage() have all been merged into <xref
-                linkend="IVirtualBox__openMedium"
-                xreflabel="IVirtualBox::openMedium()" />.</para>
+                openFloppyImage() have all been merged into
+                <link linkend="IVirtualBox__openMedium">IVirtualBox::openMedium()</link>.</para>
               </listitem>
 
               <listitem>
@@ -4953,9 +5075,10 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para>The <xref linkend="ISystemProperties__infoVDSize"
-                xreflabel="ISystemProperties::infoVDSize" /> attribute
-                replaces the <computeroutput>getMaxVDISize()</computeroutput>
+                <para>The
+                <link linkend="ISystemProperties__infoVDSize">ISystemProperties::infoVDSize</link>
+                attribute replaces the
+                <computeroutput>getMaxVDISize()</computeroutput>
                 API call; this now uses bytes instead of megabytes.</para>
               </listitem>
             </itemizedlist></para>
@@ -4964,11 +5087,11 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>Machine management APIs were enhanced as follows:<itemizedlist>
               <listitem>
-                <para><xref linkend="IVirtualBox__createMachine"
-                xreflabel="IVirtualBox::createMachine()" /> is no longer
-                restricted to creating machines in the default "Machines"
-                folder, but can now create machines at arbitrary locations.
-                For this to work, the parameter list had to be changed.</para>
+                <para><link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>
+                is no longer restricted to creating machines in the default
+                "Machines" folder, but can now create machines at arbitrary
+                locations. For this to work, the parameter list had to be
+                changed.</para>
               </listitem>
 
               <listitem>
@@ -4981,18 +5104,20 @@ AuthResult AUTHCALL AuthEntry(
                 <para>To reduce code duplication and for consistency with the
                 aforementioned media APIs,
                 <computeroutput>IVirtualBox::getMachine()</computeroutput> has
-                been merged with <xref linkend="IVirtualBox__findMachine"
-                xreflabel="IVirtualBox::findMachine()" />, and
+                been merged with
+                <link linkend="IVirtualBox__findMachine">IVirtualBox::findMachine()</link>,
+                and
                 <computeroutput>IMachine::getSnapshot()</computeroutput> has
-                been merged with <xref linkend="IMachine__findSnapshot"
-                xreflabel="IMachine::findSnapshot()" />.</para>
+                been merged with
+                <link linkend="IMachine__findSnapshot">IMachine::findSnapshot()</link>.</para>
               </listitem>
 
               <listitem>
                 <para><computeroutput>IVirtualBox::unregisterMachine()</computeroutput>
-                was replaced with <xref linkend="IMachine__unregister"
-                xreflabel="IMachine::unregister()" /> with additional
-                functionality for cleaning up machine files.</para>
+                was replaced with
+                <link linkend="IMachine__unregister">IMachine::unregister()</link>
+                with additional functionality for cleaning up machine
+                files.</para>
               </listitem>
 
               <listitem>
@@ -5007,7 +5132,8 @@ AuthResult AUTHCALL AuthEntry(
 
               <listitem>
                 <para><computeroutput>IConsole::forgetSavedState</computeroutput>
-                has been renamed to <computeroutput>IConsole::discardSavedState()</computeroutput>.</para>
+                has been renamed to
+                <computeroutput>IConsole::discardSavedState()</computeroutput>.</para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -5016,22 +5142,22 @@ AuthResult AUTHCALL AuthEntry(
           <para>All event callbacks APIs were replaced with a new, generic
           event mechanism that can be used both locally (COM, XPCOM) and
           remotely (web services). Also, the new mechanism is usable from
-          scripting languages and a local Java. See <xref linkend="IEvent"
-          xreflabel="events" /> for details. The new concept will require
-          changes to all clients that used event callbacks.</para>
+          scripting languages and a local Java. See
+          <link linkend="IEvent">events</link> for details. The new concept
+          will require changes to all clients that used event callbacks.</para>
         </listitem>
 
         <listitem>
-          <para><computeroutput>additionsActive()</computeroutput> was
-          replaced with <xref linkend="IGuest__additionsRunLevel"
-          xreflabel="additionsRunLevel()" /> and <xref
-          linkend="IGuest__getAdditionsStatus"
-          xreflabel="getAdditionsStatus()" /> in order to support a more
-          detailed status of the current Guest Additions loading/readiness
-          state. <xref linkend="IGuest__additionsVersion"
-          xreflabel="IGuest::additionsVersion()" /> no longer returns the
-          Guest Additions interface version but the installed Guest Additions
-          version and revision in form of
+          <para><computeroutput>additionsActive()</computeroutput> was replaced
+          with
+          <link linkend="IGuest__additionsRunLevel">additionsRunLevel()</link>
+          and
+          <link linkend="IGuest__getAdditionsStatus">getAdditionsStatus()</link>
+          in order to support a more detailed status of the current Guest
+          Additions loading/readiness state.
+          <link linkend="IGuest__additionsVersion">IGuest::additionsVersion()</link>
+          no longer returns the Guest Additions interface version but the
+          installed Guest Additions version and revision in form of
           <computeroutput>3.3.0r12345</computeroutput>.</para>
         </listitem>
 
@@ -5040,22 +5166,19 @@ AuthResult AUTHCALL AuthEntry(
           APIs were extended to require an additional
           <computeroutput>automount</computeroutput> parameter: <itemizedlist>
               <listitem>
-                <para><xref linkend="IVirtualBox__createSharedFolder"
-                xreflabel="IVirtualBox::createSharedFolder()" /></para>
+                <para><link linkend="IVirtualBox__createSharedFolder">IVirtualBox::createSharedFolder()</link></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__createSharedFolder"
-                xreflabel="IMachine::createSharedFolder()" /></para>
+                <para><link linkend="IMachine__createSharedFolder">IMachine::createSharedFolder()</link></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IConsole__createSharedFolder"
-                xreflabel="IConsole::createSharedFolder()" /></para>
+                <para><link linkend="IConsole__createSharedFolder">IConsole::createSharedFolder()</link></para>
               </listitem>
             </itemizedlist> Also, a new property named
-          <computeroutput>autoMount</computeroutput> was added to the <xref
-          linkend="ISharedFolder" xreflabel="ISharedFolder" />
+          <computeroutput>autoMount</computeroutput> was added to the
+          <link linkend="ISharedFolder">ISharedFolder</link>
           interface.</para>
         </listitem>
 
@@ -5070,16 +5193,16 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para><xref linkend="IAppliance__write"
-                xreflabel="IAppliance::write()" /> received an extra parameter
+                <para><link linkend="IAppliance__write">IAppliance::write()</link>
+                received an extra parameter
                 <computeroutput>manifest</computeroutput>, which can suppress
                 creating the manifest file on export.</para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IVFSExplorer__entryList"
-                xreflabel="IVFSExplorer::entryList()" /> received two extra
-                parameters <computeroutput>sizes</computeroutput> and
+                <para><link linkend="IVFSExplorer__entryList">IVFSExplorer::entryList()</link>
+                received two extra parameters
+                <computeroutput>sizes</computeroutput> and
                 <computeroutput>modes</computeroutput>, which contains the
                 sizes (in bytes) and the file access modes (in octal form) of
                 the returned files.</para>
@@ -5099,31 +5222,31 @@ AuthResult AUTHCALL AuthEntry(
           interface: <itemizedlist>
               <listitem>
                 <para><computeroutput>IVRDPServer</computeroutput> has been
-                renamed to <xref linkend="IVRDEServer"
-                xreflabel="IVRDEServer" />.</para>
+                renamed to
+                <link linkend="IVRDEServer">IVRDEServer</link>.</para>
               </listitem>
 
               <listitem>
                 <para><computeroutput>IRemoteDisplayInfo</computeroutput> has
-                been renamed to <xref linkend="IVRDEServerInfo"
-                xreflabel="IVRDEServerInfo" />.</para>
+                been renamed to
+                <link linkend="IVRDEServerInfo">IVRDEServerInfo</link>.</para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__VRDEServer"
-                xreflabel="IMachine::VRDEServer" /> replaces
+                <para><link linkend="IMachine__VRDEServer">IMachine::VRDEServer</link>
+                replaces
                 <computeroutput>VRDPServer.</computeroutput></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IConsole__VRDEServerInfo"
-                xreflabel="IConsole::VRDEServerInfo" /> replaces
+                <para><link linkend="IConsole__VRDEServerInfo">IConsole::VRDEServerInfo</link>
+                replaces
                 <computeroutput>RemoteDisplayInfo</computeroutput>.</para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="ISystemProperties__VRDEAuthLibrary"
-                xreflabel="ISystemProperties::VRDEAuthLibrary" /> replaces
+                <para><link linkend="ISystemProperties__VRDEAuthLibrary">ISystemProperties::VRDEAuthLibrary</link>
+                replaces
                 <computeroutput>RemoteDisplayAuthLibrary</computeroutput>.</para>
               </listitem>
 
@@ -5132,18 +5255,15 @@ AuthResult AUTHCALL AuthEntry(
                 <computeroutput>IVRDEServer</computeroutput> to support
                 generic VRDE properties: <itemizedlist>
                     <listitem>
-                      <para><xref linkend="IVRDEServer__setVRDEProperty"
-                      xreflabel="IVRDEServer::setVRDEProperty" /></para>
+                      <para><link linkend="IVRDEServer__setVRDEProperty">IVRDEServer::setVRDEProperty</link></para>
                     </listitem>
 
                     <listitem>
-                      <para><xref linkend="IVRDEServer__getVRDEProperty"
-                      xreflabel="IVRDEServer::getVRDEProperty" /></para>
+                      <para><link linkend="IVRDEServer__getVRDEProperty">IVRDEServer::getVRDEProperty</link></para>
                     </listitem>
 
                     <listitem>
-                      <para><xref linkend="IVRDEServer__VRDEProperties"
-                      xreflabel="IVRDEServer::VRDEProperties" /></para>
+                      <para><link linkend="IVRDEServer__VRDEProperties">IVRDEServer::VRDEProperties</link></para>
                     </listitem>
                   </itemizedlist></para>
 
@@ -5196,7 +5316,7 @@ AuthResult AUTHCALL AuthEntry(
           <para>The VirtualBox external authentication module interface has
           been updated and made more generic. Because of that,
           <computeroutput>VRDPAuthType</computeroutput> enumeration has been
-          renamed to <xref linkend="AuthType" xreflabel="AuthType" />.</para>
+          renamed to <link linkend="AuthType">AuthType</link>.</para>
         </listitem>
       </itemizedlist>
     </sect1>
@@ -5209,45 +5329,38 @@ AuthResult AUTHCALL AuthEntry(
           <para>The following interfaces were renamed for consistency:
           <itemizedlist>
               <listitem>
-                <para>IMachine::getCpuProperty() is now <xref
-                linkend="IMachine__getCPUProperty"
-                xreflabel="IMachine::getCPUProperty()" />;</para>
+                <para>IMachine::getCpuProperty() is now
+                <link linkend="IMachine__getCPUProperty">IMachine::getCPUProperty()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::setCpuProperty() is now <xref
-                linkend="IMachine__setCPUProperty"
-                xreflabel="IMachine::setCPUProperty()" />;</para>
+                <para>IMachine::setCpuProperty() is now
+                <link linkend="IMachine__setCPUProperty">IMachine::setCPUProperty()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::getCpuIdLeaf() is now <xref
-                linkend="IMachine__getCPUIDLeaf"
-                xreflabel="IMachine::getCPUIDLeaf()" />;</para>
+                <para>IMachine::getCpuIdLeaf() is now
+                <link linkend="IMachine__getCPUIDLeaf">IMachine::getCPUIDLeaf()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::setCpuIdLeaf() is now <xref
-                linkend="IMachine__setCPUIDLeaf"
-                xreflabel="IMachine::setCPUIDLeaf()" />;</para>
+                <para>IMachine::setCpuIdLeaf() is now
+                <link linkend="IMachine__setCPUIDLeaf">IMachine::setCPUIDLeaf()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::removeCpuIdLeaf() is now <xref
-                linkend="IMachine__removeCPUIDLeaf"
-                xreflabel="IMachine::removeCPUIDLeaf()" />;</para>
+                <para>IMachine::removeCpuIdLeaf() is now
+                <link linkend="IMachine__removeCPUIDLeaf">IMachine::removeCPUIDLeaf()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>IMachine::removeAllCpuIdLeafs() is now <xref
-                linkend="IMachine__removeAllCPUIDLeaves"
-                xreflabel="IMachine::removeAllCPUIDLeaves()" />;</para>
+                <para>IMachine::removeAllCpuIdLeafs() is now
+                <link linkend="IMachine__removeAllCPUIDLeaves">IMachine::removeAllCPUIDLeaves()</link>;</para>
               </listitem>
 
               <listitem>
-                <para>the CpuPropertyType enum is now <xref
-                linkend="CPUPropertyType"
-                xreflabel="CPUPropertyType" />.</para>
+                <para>the CpuPropertyType enum is now
+                <link linkend="CPUPropertyType">CPUPropertyType</link>.</para>
               </listitem>
 
               <listitem>
@@ -5258,13 +5371,11 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>When creating a VM configuration with <xref
-          linkend="IVirtualBox__createMachine"
-          xreflabel="IVirtualBox::createMachine()" /> it is now possible to
-          ignore existing configuration files which would previously have
-          caused a failure. For this the
-          <computeroutput>override</computeroutput> parameter was
-          added.</para>
+          <para>When creating a VM configuration with
+          <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>
+          it is now possible to ignore existing configuration files which would
+          previously have caused a failure. For this the
+          <computeroutput>override</computeroutput> parameter was added.</para>
         </listitem>
 
         <listitem>
@@ -5278,8 +5389,8 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>The IoBackendType enumeration was replaced with a boolean flag
-          (see <xref linkend="IStorageController__useHostIOCache"
-          xreflabel="IStorageController::useHostIOCache" />).</para>
+          (see
+          <link linkend="IStorageController__useHostIOCache">IStorageController::useHostIOCache</link>).</para>
         </listitem>
 
         <listitem>
@@ -5291,18 +5402,15 @@ AuthResult AUTHCALL AuthEntry(
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__readSavedThumbnailToArray"
-                xreflabel="IMachine::readSavedThumbnailToArray()" /></para>
+                <para><link linkend="IMachine__readSavedThumbnailToArray">IMachine::readSavedThumbnailToArray()</link></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__querySavedScreenshotInfo"
-                xreflabel="IMachine::querySavedScreenshotPNGSize()" /></para>
+                <para><link linkend="IMachine__querySavedScreenshotInfo">IMachine::querySavedScreenshotPNGSize()</link></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IMachine__readSavedScreenshotToArray"
-                xreflabel="IMachine::readSavedScreenshotPNGToArray()" /></para>
+                <para><link linkend="IMachine__readSavedScreenshotToArray">IMachine::readSavedScreenshotPNGToArray()</link></para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -5325,17 +5433,17 @@ AuthResult AUTHCALL AuthEntry(
           introduced with version 3.1 (in particular, full flexibility with
           attaching CD/DVD drives to arbitrary controllers), we seized the
           opportunity to rework all interfaces dealing with storage media to
-          make the API more flexible as well as logical. The <xref
-          linkend="IStorageController" xreflabel="IStorageController" />,
-          <xref linkend="IMedium" xreflabel="IMedium" />, <xref
-          linkend="IMediumAttachment" xreflabel="IMediumAttachment" /> and,
-          <xref linkend="IMachine" xreflabel="IMachine" /> interfaces were
+          make the API more flexible as well as logical. The
+          <link linkend="IStorageController">IStorageController</link>,
+          <link linkend="IMedium">IMedium</link>,
+          <link linkend="IMediumAttachment">IMediumAttachment</link> and
+          <link linkend="IMachine">IMachine</link> interfaces were
           affected the most. Existing code using them to configure storage and
           media needs to be carefully checked.</para>
 
           <para>All media (hard disks, floppies and CDs/DVDs) are now
-          uniformly handled through the <xref linkend="IMedium"
-          xreflabel="IMedium" /> interface. The device-specific interfaces
+          uniformly handled through the <link linkend="IMedium">IMedium</link>
+          interface. The device-specific interfaces
           (<code>IHardDisk</code>, <code>IDVDImage</code>,
           <code>IHostDVDDrive</code>, <code>IFloppyImage</code> and
           <code>IHostFloppyDrive</code>) have been merged into IMedium; CD/DVD
@@ -5346,14 +5454,14 @@ AuthResult AUTHCALL AuthEntry(
 
           <para><code>IMachine::attachHardDisk</code> and similar methods have
           been renamed and generalized to deal with any type of drive and
-          medium. <xref linkend="IMachine__attachDevice"
-          xreflabel="IMachine::attachDevice()" /> is the API method for adding
-          any drive to a storage controller. The floppy and DVD/CD drives are
-          no longer handled specially, and that means you can have more than
-          one of them. As before, drives can only be changed while the VM is
-          powered off. Mounting (or unmounting) removable media at runtime is
-          possible with <xref linkend="IMachine__mountMedium"
-          xreflabel="IMachine::mountMedium()" />.</para>
+          medium.
+          <link linkend="IMachine__attachDevice">IMachine::attachDevice()</link>
+          is the API method for adding any drive to a storage controller. The
+          floppy and DVD/CD drives are no longer handled specially, and that
+          means you can have more than one of them. As before, drives can only
+          be changed while the VM is powered off. Mounting (or unmounting)
+          removable media at runtime is possible with
+          <link linkend="IMachine__mountMedium">IMachine::mountMedium()</link>.</para>
 
           <para>Newly created virtual machines have no storage controllers
           associated with them. Even the IDE Controller needs to be created
@@ -5371,12 +5479,11 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>Reading the <xref linkend="IMedium__state"
-          xreflabel="IMedium::state" /> attribute no longer
-          automatically performs an accessibility check; a new method <xref
-          linkend="IMedium__refreshState"
-          xreflabel="IMedium::refreshState()" /> does this. The attribute only
-          returns the state any more.</para>
+          <para>Reading the
+          <link linkend="IMedium__state">IMedium::state</link> attribute no
+          longer automatically performs an accessibility check; a new method
+          <link linkend="IMedium__refreshState">IMedium::refreshState()</link>
+          does this. The attribute only returns the state now.</para>
         </listitem>
 
         <listitem>
@@ -5386,7 +5493,8 @@ AuthResult AUTHCALL AuthEntry(
           <computeroutput>IConsole::deleteSnapshot()</computeroutput>.
           IConsole::discardCurrentState and
           IConsole::discardCurrentSnapshotAndState were removed; corresponding
-          new functionality is in <computeroutput>IConsole::restoreSnapshot()</computeroutput>.
+          new functionality is in
+          <computeroutput>IConsole::restoreSnapshot()</computeroutput>.
           Also, when <computeroutput>IConsole::takeSnapshot()</computeroutput>
           is called on a running virtual machine, a live snapshot will be
           created. The old behavior was to temporarily pause the virtual
@@ -5417,13 +5525,11 @@ AuthResult AUTHCALL AuthEntry(
           <para>The parameter lists for the following functions were
           modified:<itemizedlist>
               <listitem>
-                <para><xref linkend="IHost__removeHostOnlyNetworkInterface"
-                xreflabel="IHost::removeHostOnlyNetworkInterface()" /></para>
+                <para><link linkend="IHost__removeHostOnlyNetworkInterface">IHost::removeHostOnlyNetworkInterface()</link></para>
               </listitem>
 
               <listitem>
-                <para><xref linkend="IHost__removeUSBDeviceFilter"
-                xreflabel="IHost::removeUSBDeviceFilter()" /></para>
+                <para><link linkend="IHost__removeUSBDeviceFilter">IHost::removeUSBDeviceFilter()</link></para>
               </listitem>
             </itemizedlist></para>
         </listitem>
@@ -5447,7 +5553,7 @@ AuthResult AUTHCALL AuthEntry(
           inheritance has been introduced for some classes, so explicit
           casting is no longer needed to call methods from a parent class. In
           particular, IHardDisk and other classes now properly derive from
-          <xref linkend="IMedium" xreflabel="IMedium" />.</para>
+          <link linkend="IMedium">IMedium</link>.</para>
         </listitem>
 
         <listitem>
@@ -5477,8 +5583,9 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>The type of <xref linkend="IVirtualBoxErrorInfo__resultCode"
-          xreflabel="IVirtualBoxErrorInfo::resultCode" /> changed from
+          <para>The type of
+          <link linkend="IVirtualBoxErrorInfo__resultCode">IVirtualBoxErrorInfo::resultCode</link>
+          changed from
           <computeroutput>result</computeroutput> to
           <computeroutput>long</computeroutput>.</para>
         </listitem>
@@ -5494,16 +5601,16 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>The method IConsole::powerDownAsync was renamed to <xref
-          linkend="IConsole__powerDown" xreflabel="IConsole::powerDown" />,
+          <para>The method IConsole::powerDownAsync was renamed to
+          <link linkend="IConsole__powerDown">IConsole::powerDown</link>,
           and the previous method with that name was deleted. So effectively a
           parameter was added.</para>
         </listitem>
 
         <listitem>
-          <para>In the <xref linkend="IFramebuffer"
-          xreflabel="IFramebuffer" /> interface, the following were
-          removed:<itemizedlist>
+          <para>In the
+          <link linkend="IFramebuffer">IFramebuffer</link> interface, the
+          following were removed:<itemizedlist>
               <listitem>
                 <para>the <computeroutput>operationSupported</computeroutput>
                 attribute;</para>
@@ -5526,7 +5633,7 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>In the <xref linkend="IDisplay" xreflabel="IDisplay" />
+          <para>In the <link linkend="IDisplay">IDisplay</link>
           interface, the following were removed:<itemizedlist>
               <listitem>
                 <para>the
@@ -5639,14 +5746,13 @@ AuthResult AUTHCALL AuthEntry(
           <itemizedlist>
             <listitem>
               <para>The HostNetworkInterfaceType enum has been renamed to
-              <xref linkend="HostNetworkInterfaceMediumType"
-              xreflabel="HostNetworkInterfaceMediumType" /></para>
+              <link linkend="HostNetworkInterfaceMediumType">HostNetworkInterfaceMediumType</link></para>
             </listitem>
 
             <listitem>
               <para>The IHostNetworkInterface::type attribute has been renamed
-              to <xref linkend="IHostNetworkInterface__mediumType"
-              xreflabel="IHostNetworkInterface::mediumType" /></para>
+              to
+              <link linkend="IHostNetworkInterface__mediumType">IHostNetworkInterface::mediumType</link></para>
             </listitem>
 
             <listitem>
@@ -5656,15 +5762,14 @@ AuthResult AUTHCALL AuthEntry(
 
             <listitem>
               <para>In the IHost interface, createHostNetworkInterface() has
-              been renamed to <xref
-              linkend="IHost__createHostOnlyNetworkInterface"
-              xreflabel="createHostOnlyNetworkInterface()" /></para>
+              been renamed to
+              <link linkend="IHost__createHostOnlyNetworkInterface">createHostOnlyNetworkInterface()</link></para>
             </listitem>
 
             <listitem>
               <para>Similarly, removeHostNetworkInterface() has been renamed
-              to <xref linkend="IHost__removeHostOnlyNetworkInterface"
-              xreflabel="removeHostOnlyNetworkInterface()" /></para>
+              to
+              <link linkend="IHost__removeHostOnlyNetworkInterface">removeHostOnlyNetworkInterface()</link></para>
             </listitem>
           </itemizedlist>
         </listitem>
@@ -5706,19 +5811,18 @@ AuthResult AUTHCALL AuthEntry(
               iSCSI). The IHardDisk2::format attribute can be used to find out
               the back-end that is in use for a particular hard disk image.
               ISystemProperties::hardDiskFormats[] contains a list of all
-              back-ends supported by the system. <xref
-              linkend="ISystemProperties__defaultHardDiskFormat"
-              xreflabel="ISystemProperties::defaultHardDiskFormat" /> contains
-              the default system format.</para>
+              back-ends supported by the system.
+              <link linkend="ISystemProperties__defaultHardDiskFormat">ISystemProperties::defaultHardDiskFormat</link>
+              contains the default system format.</para>
             </listitem>
 
             <listitem>
-              <para>In addition, the new <xref linkend="IMedium"
-              xreflabel="IMedium" /> interface is a generic interface for hard
-              disk, DVD and floppy images that contains the attributes and
-              methods shared between them. It can be considered a parent class
-              of the more specific interfaces for those images, which are now
-              IHardDisk2, IDVDImage2 and IFloppyImage2.</para>
+              <para>In addition, the new
+              <link linkend="IMedium">IMedium</link> interface is a generic
+              interface for hard disk, DVD and floppy images that contains the
+              attributes and methods shared between them. It can be considered
+              a parent class of the more specific interfaces for those images,
+              which are now IHardDisk2, IDVDImage2 and IFloppyImage2.</para>
 
               <para>In each case, the "2" versions of these interfaces replace
               the earlier versions that did not have the "2" suffix.
@@ -5742,16 +5846,17 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para><xref linkend="IGuestOSType" xreflabel="IGuestOSType" /> was
+          <para><link linkend="IGuestOSType">IGuestOSType</link> was
           extended to group operating systems into families and for 64-bit
           support.</para>
         </listitem>
 
         <listitem>
-          <para>The <xref linkend="IHostNetworkInterface"
-          xreflabel="IHostNetworkInterface" /> interface was completely
-          rewritten to account for the changes in how Host Interface
-          Networking is now implemented in VirtualBox 2.1.</para>
+          <para>The
+          <link linkend="IHostNetworkInterface">IHostNetworkInterface</link>
+          interface was completely rewritten to account for the changes in how
+          Host Interface Networking is now implemented in VirtualBox
+          2.1.</para>
         </listitem>
 
         <listitem>
@@ -5760,16 +5865,16 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>Added <xref linkend="IHost__getProcessorFeature"
-          xreflabel="IHost::getProcessorFeature()" /> and <xref
-          linkend="ProcessorFeature" xreflabel="ProcessorFeature" />
+          <para>Added
+          <link linkend="IHost__getProcessorFeature">IHost::getProcessorFeature()</link>
+          and <link linkend="ProcessorFeature">ProcessorFeature</link>
           enumeration.</para>
         </listitem>
 
         <listitem>
-          <para>The parameter list for <xref
-          linkend="IVirtualBox__createMachine"
-          xreflabel="IVirtualBox::createMachine()" /> was modified.</para>
+          <para>The parameter list for
+          <link linkend="IVirtualBox__createMachine">IVirtualBox::createMachine()</link>
+          was modified.</para>
         </listitem>
 
         <listitem>
@@ -5777,18 +5882,18 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>New attributes in IMachine: <xref
-          linkend="IMachine__accelerate3DEnabled"
-          xreflabel="accelerate3DEnabled" />, HWVirtExVPIDEnabled, 
-          <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>, <xref
-          linkend="IMachine__CPUCount" xreflabel="CPUCount" />.</para>
+          <para>New attributes in IMachine:
+          <link linkend="IMachine__accelerate3DEnabled">accelerate3DEnabled</link>,
+          HWVirtExVPIDEnabled, 
+          <computeroutput>IMachine::guestPropertyNotificationPatterns</computeroutput>,
+          <link linkend="IMachine__CPUCount">CPUCount</link>.</para>
         </listitem>
 
         <listitem>
-          <para>Added <xref linkend="IConsole__powerUpPaused"
-          xreflabel="IConsole::powerUpPaused()" /> and <xref
-          linkend="IConsole__getGuestEnteredACPIMode"
-          xreflabel="IConsole::getGuestEnteredACPIMode()" />.</para>
+          <para>Added
+          <link linkend="IConsole__powerUpPaused">IConsole::powerUpPaused()</link>
+          and
+          <link linkend="IConsole__getGuestEnteredACPIMode">IConsole::getGuestEnteredACPIMode()</link>.</para>
         </listitem>
 
         <listitem>

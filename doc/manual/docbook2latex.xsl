@@ -620,12 +620,23 @@
 
   <xsl:template match="xref">
     <xsl:choose>
-      <xsl:when test="@xreflabel">
-        <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{', @xreflabel, '}}')" />
+      <xsl:when test="@endterm">
+        <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{', @endterm, '}}')" />
       </xsl:when>
-      <xsl:when test="@apiref='yes'">
+      <xsl:otherwise>
+        <xsl:value-of select="concat($g_nlsChapter, ' \ref{', @linkend, '}, \textit{\nameref{', @linkend, '}}, ', $g_nlsPage, ' \pageref{', @linkend, '}')" />
+      </xsl:otherwise>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="link">
+    <xsl:choose>
+      <xsl:when test="@endterm">
+        <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{', @endterm, '}}')" />
+      </xsl:when>
+      <xsl:when test="./text()">
         <xsl:value-of select="concat('\hyperref[', @linkend, ']{\mbox{')" />
-        <xsl:apply-templates />
+        <xsl:apply-templates select="./text()"/>
         <xsl:value-of select="'}}'" />
       </xsl:when>
       <xsl:otherwise>
