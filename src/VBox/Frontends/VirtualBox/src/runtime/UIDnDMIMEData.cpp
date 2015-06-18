@@ -20,17 +20,13 @@
 #else  /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 /* Qt includes: */
-# include <QApplication>
 # include <QFileInfo>
-# include <QKeyEvent>
 # include <QMimeData>
 # include <QStringList>
-# include <QTimer>
 # include <QUrl>
 
 /* GUI includes: */
 # include "UIDnDMIMEData.h"
-# include "UIMessageCenter.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -44,7 +40,7 @@ UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
     : m_pDnDHandler(pDnDHandler)
     , m_lstFormats(lstFormats)
     , m_defAction(defAction)
-    , m_curAction(Qt::DropAction::IgnoreAction)
+    , m_curAction(Qt::IgnoreAction)
     , m_actions(actions)
     , m_enmState(Dragging)
     , m_vaData(QVariant::Invalid)
@@ -65,7 +61,7 @@ QStringList UIDnDMIMEData::formats(void) const
 
 bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
 {
-    bool fRc = (m_curAction != Qt::DropAction::IgnoreAction);
+    bool fRc = (m_curAction != Qt::IgnoreAction);
     LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool, curAction=0x%x)\n",
                  strMIMEType.toStdString().c_str(), fRc, QMimeData::hasFormat(strMIMEType), m_curAction));
     return fRc;
@@ -96,7 +92,7 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type 
     /* On non-Windows our state gets updated via an own event filter
      * (see UIDnDMimeData::eventFilter). This filter will update the current
      * operation state for us (based on the mouse buttons). */
-    if (m_curAction == Qt::DropAction::IgnoreAction)
+    if (m_curAction == Qt::IgnoreAction)
     {
         LogFlowFunc(("Current drop action is 0x%x, so can't drop yet\n", m_curAction));
         fCanDrop = false;
