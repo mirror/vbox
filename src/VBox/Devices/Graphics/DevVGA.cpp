@@ -6772,13 +6772,16 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"ShowBootMenu\" as integer failed"));
 
-#if defined(DEBUG) && !defined(DEBUG_sunlover)
+#if defined(DEBUG) && !defined(DEBUG_sunlover) && !defined(DEBUG_michael)
     /* Disable the logo abd menu if all default settings. */
     if (   LogoHdr.fu8FadeIn
         && LogoHdr.fu8FadeOut
         && LogoHdr.u16LogoMillies == 0
         && LogoHdr.fu8ShowBootMenu == 2)
-        LogoHdr.fu8FadeIn = LogoHdr.fu8FadeOut = LogoHdr.fu8ShowBootMenu = 0;
+    {
+        LogoHdr.fu8FadeIn = LogoHdr.fu8FadeOut = 0;
+        LogoHdr.u16LogoMillies = 500;
+    }
 #endif
 
     /* Delay the logo a little bit */
