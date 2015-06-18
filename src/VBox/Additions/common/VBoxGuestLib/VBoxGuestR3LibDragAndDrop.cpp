@@ -1302,19 +1302,19 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
     AssertPtrReturn(pCtx,                             VERR_INVALID_POINTER);
     AssertReturn(obj.GetType() == DnDURIObject::File, VERR_INVALID_PARAMETER);
 
-    uint32_t cbBuf = _64K; /** @todo Make this configurable? */
-    void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
-    if (!pvBuf)
-        return VERR_NO_MEMORY;
-
-    RTCString strPath = obj.GetDestPath();
-
     int rc = obj.Open(DnDURIObject::Source, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
     {
         LogFunc(("Opening file \"%s\" failed with rc=%Rrc\n", obj.GetSourcePath().c_str(), rc));
         return rc;
     }
+
+    uint32_t cbBuf = _64K;           /** @todo Make this configurable? */
+    void *pvBuf = RTMemAlloc(cbBuf); /** @todo Make this buffer part of PVBGLR3GUESTDNDCMDCTX? */
+    if (!pvBuf)
+        return VERR_NO_MEMORY;
+
+    RTCString strPath = obj.GetDestPath();
 
     LogFlowFunc(("strFile=%s (%zu), cbSize=%RU64, fMode=0x%x\n", strPath.c_str(), strPath.length(), obj.GetSize(), obj.GetMode()));
     LogFlowFunc(("uProtocol=%RU32, uClientID=%RU32\n", pCtx->uProtocol, pCtx->uClientID));
@@ -1328,12 +1328,12 @@ static int vbglR3DnDGHSendFile(PVBGLR3GUESTDNDCMDCTX pCtx, DnDURIObject &obj)
         MsgHdr.hdr.u32Function = DragAndDropSvc::GUEST_DND_GH_SND_FILE_HDR;
         MsgHdr.hdr.cParms      = 6;
 
-        MsgHdr.uContext.SetUInt32(0); /* Context ID; unused at the moment. */
+        MsgHdr.uContext.SetUInt32(0);                                                    /* Context ID; unused at the moment. */
         MsgHdr.pvName.SetPtr((void *)strPath.c_str(), (uint32_t)(strPath.length() + 1));
         MsgHdr.cbName.SetUInt32((uint32_t)(strPath.length() + 1));
-        MsgHdr.uFlags.SetUInt32(0);   /* Flags; unused at the moment. */
-        MsgHdr.fMode.SetUInt32(obj.GetMode());
-        MsgHdr.cbTotal.SetUInt64(obj.GetSize());
+        MsgHdr.uFlags.SetUInt32(0);                                                      /* Flags; unused at the moment. */
+        MsgHdr.fMode.SetUInt32(obj.GetMode());                                           /* File mode */
+        MsgHdr.cbTotal.SetUInt64(obj.GetSize());                                         /* File size (in bytes). */
 
         rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(MsgHdr)), &MsgHdr, sizeof(MsgHdr));
         if (RT_SUCCESS(rc))
@@ -1469,7 +1469,7 @@ static int vbglR3DnDGHProcessURIMessages(PVBGLR3GUESTDNDCMDCTX pCtx,
         Assert(strRootDest.isNotEmpty());
 
         void *pvToSend = (void *)strRootDest.c_str();
-        uint32_t cbToSend = (uint32_t)strRootDest.length() + 1;
+        uint32_t cbToSend = (uint32_t)strRootDest.length() + 1; /* Include string termination. */
 
         rc = vbglR3DnDGHSendDataInternal(pCtx, pvToSend, cbToSend,
                                          /* Include total bytes of all file paths,
