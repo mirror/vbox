@@ -695,6 +695,7 @@ struct AudioAdapter
     AudioAdapter()
         : fEnabled(true),
           controllerType(AudioControllerType_AC97),
+          codecType(AudioCodecType_STAC9700),
           driverType(AudioDriverType_Null)
     {}
 
@@ -703,6 +704,7 @@ struct AudioAdapter
         return     (this == &a)
                 || (    (fEnabled        == a.fEnabled)
                      && (controllerType  == a.controllerType)
+                     && (codecType       == a.codecType)
                      && (driverType      == a.driverType)
                      && (properties      == a.properties)
                    );
@@ -710,6 +712,7 @@ struct AudioAdapter
 
     bool                    fEnabled;
     AudioControllerType_T   controllerType;
+    AudioCodecType_T        codecType;
     AudioDriverType_T       driverType;
     settings::StringsMap properties;
 };

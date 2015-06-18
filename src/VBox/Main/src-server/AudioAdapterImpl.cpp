@@ -32,7 +32,8 @@ struct AudioAdapterData
     AudioAdapterData() :
         mEnabled(false),
         mAudioDriver(AudioDriverType_Null),
-        mAudioController(AudioControllerType_AC97)
+        mAudioController(AudioControllerType_AC97),
+        mAudioCodec(AudioCodecType_STAC9700)
     {}
 
     BOOL mEnabled;
@@ -506,6 +507,7 @@ HRESULT AudioAdapter::i_loadSettings(const settings::AudioAdapter &data)
 
     mData->m->mEnabled = data.fEnabled;
     mData->m->mAudioController = data.controllerType;
+    mData->m->mAudioCodec = data.codecType;
     mData->m->mAudioDriver = data.driverType;
 
     settings::StringsMap::const_iterator cit = data.properties.begin();
@@ -534,6 +536,7 @@ HRESULT AudioAdapter::i_saveSettings(settings::AudioAdapter &data)
 
     data.fEnabled = !!mData->m->mEnabled;
     data.controllerType = mData->m->mAudioController;
+    data.codecType = mData->m->mAudioCodec;
     data.driverType = mData->m->mAudioDriver;
 
     settings::StringsMap::const_iterator cit = mData->m->properties.begin();

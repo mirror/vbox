@@ -2650,6 +2650,38 @@ void MachineConfigFile::readAudioAdapter(const xml::ElementNode &elmAudioAdapter
             throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
     }
 
+    if (elmAudioAdapter.getAttributeValue("codec", strTemp))
+    {
+        if (strTemp == "SB16")
+            aa.codecType = AudioCodecType_SB16;
+        else if (strTemp == "STAC9700")
+            aa.codecType = AudioCodecType_STAC9700;
+        else if (strTemp == "AD1980")
+            aa.codecType = AudioCodecType_AD1980;
+        else if (strTemp == "STAC9221")
+            aa.codecType = AudioCodecType_STAC9221;
+        else
+            throw ConfigFileError(this, &elmAudioAdapter, N_("Invalid value '%s' in AudioAdapter/@codec attribute"), strTemp.c_str());
+    }
+    else
+    {
+        /* No codec attribute provided; use defaults. */
+        switch (aa.controllerType)
+        {
+            case AudioControllerType_AC97:
+                aa.codecType = AudioCodecType_STAC9700;
+                break;
+            case AudioControllerType_SB16:
+                aa.codecType = AudioCodecType_SB16;
+                break;
+            case AudioControllerType_HDA:
+                aa.codecType = AudioCodecType_STAC9221;
+                break;
+            default:
+                Assert(false);  /* We just checked the controller type above. */
+        }
+    }
+
     if (elmAudioAdapter.getAttributeValue("driver", strTemp))
     {
         // settings before 1.3 used lower case so make sure this is case-insensitive
@@ -4715,6 +4747,33 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             break;
     }
     pelmAudio->setAttribute("controller", pcszController);
+
+    const char *pcszCodec;
+    switch (hw.audioAdapter.codecType)
+    {
+        /* Only write out the setting for non-default AC'97 codec
+         * and leave the rest alone.
+         */
+#if 0
+        case AudioCodecType_SB16:
+            pcszCodec = "SB16";
+            break;
+        case AudioCodecType_STAC9221:
+            pcszCodec = "STAC9221";
+            break;
+        case AudioCodecType_STAC9700:
+            pcszCodec = "STAC9700";
+            break;
+#endif
+        case AudioCodecType_AD1980:
+            pcszCodec = "AD1980";
+            break;
+        default:
+            /* Don't write out anything if unknown. */
+            pcszCodec = NULL;
+    }
+    if (pcszCodec)
+        pelmAudio->setAttribute("codec", pcszCodec);
 
     if (m->sv >= SettingsVersion_v1_10)
     {
