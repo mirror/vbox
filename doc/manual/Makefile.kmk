@@ -598,7 +598,7 @@ local out_dir := $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)
 $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
 		$$(out_dir)/%: $(VBOX_PATH_MANUAL_SRC)/$(lang)/% | $$$$(dir $$$$@)
 	$$(call MSG_L1,Copying temporary $$< => $$@)
-	$$(QUIET)$$(INSTALL_STAGING) -- '$$<' '$$(@D)'
+	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
 endef
 
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_pdf)))
