@@ -664,7 +664,7 @@ define def_vbox_validate_xml
 validatemanual_$(lang): \
 $$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$$(MAKEFILE_CURRENT)
-	$$(QUIET)xmllint --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $$<
+	$$(QUIET)xmllint --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $$(filter %.xml,$$^)
 endef
 
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_validate_xml)))
@@ -715,7 +715,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 # validate SDK manual
 validatesdkref: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
 		$(MAKEFILE_CURRENT)
-	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $<
+	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --xinclude --noout $(filter %.xml,$^)
 
 
 
@@ -931,7 +931,7 @@ $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-H-help.xsl,)
 # validate man page XML source
 validateman: $(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
 		$(MAKEFILE_CURRENT)
-	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --noout $<
+	$(QUIET)xmllint --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd --noout $(filter %.xml,$^)
 
 
 #
