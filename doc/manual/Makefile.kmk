@@ -175,7 +175,8 @@ VBOX_MANUAL_XML_REFENTRY_FILES = \
 # Targets
 #
 
-BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE)
+BLDDIRS += $(VBOX_PATH_MANUAL_OUTBASE) $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/, $(VBOX_MANUAL_LANGUAGES))
+
 
 if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK))
  if defined(VBOX_ONLY_SDK) || defined(VBOX_WITH_DOCS_SDKREF)
@@ -266,7 +267,6 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 
  BLDDIRS += \
  	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/,\
- 		$(VBOX_MANUAL_LANGUAGES) \
  		$(addsuffix /images, $(VBOX_MANUAL_LANGUAGES)) \
  		$(addsuffix /html-single, $(VBOX_MANUAL_LANGUAGES)) \
  		$(addsuffix /html-chunks, $(VBOX_MANUAL_LANGUAGES)) \
@@ -531,12 +531,6 @@ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTR
 , $(evalcall2 def_vbox_refentry_to_user_sect1,$(lang),$(file))))
 
 
-$(VBOX_DOC_XIDL_SRC_TMP): $(VBOX_DOC_XIDL_SRC) $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,Generating $@)
-	$(QUIET)$(SED) -e 's|@a \+\(\w\+\)|<tt>\1</tt>|g' \
-	       -e 's|@c \+\(\w\+\)|<tt>\1</tt>|g' \
-	       --output $@ $<
-
 # Generates the VBoxManage command overview include file (shared between
 # languages) from the refsynopsisdiv section of the man pages.
 $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)): \
@@ -558,33 +552,6 @@ $(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(MAKEFILE_CUR
                '</remark>'
 
 
-
-# generate SDKRef_apiref.xml as a docbook file excerpt that will be referenced from the SDKRef.xml.
-$(VBOX_MANUAL_APIREF_TMP): $(VBOX_DOC_XIDL_SRC_TMP) $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl
-	$(call MSG_L1,Generating $@)
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude -o $@ $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl $(VBOX_DOC_XIDL_SRC_TMP)
-
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: \
-		$(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef.xml $(VBOX_MANUAL_APIREF_TMP) \
-		| $$(dir $$@)
-	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
-	$(QUIET)$(RM) -f $@ $@.tmp
-	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
-	               --output $@.tmp $<
-	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/!d' \
-	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' \
-	               --output $@ $@.tmp
-	$(QUIET)$(SED) -e 's/<?xml version=\"1.0\" encoding=\"utf-8\"?>//g' --append $@ $(VBOX_MANUAL_APIREF_TMP)
-	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/,$$!d' \
-	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' --append $@ $@.tmp
-#	$(QUIET)$(MV) -f $@.tmp $@
-	$(QUIET)$(RM) -f -- "$@.tmp"
 
 
 ##########################################################################################
@@ -701,27 +668,46 @@ validatemanual:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
 #
 # SDKRef.pdf
 #
-$(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex \
-		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ucs.sty) \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) | $$(dir $$@)
-# PDF generation via Latex: generate the .tex file
-	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/docs
-	$(call MSG_L1,pdflatex $< (three passes))
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
-	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
-	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
-	$(QUIET)$(SED) -n \
-		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
-		$(basename $<).log
-	$(QUIET)$(CP) $(<D)/SDKRef.pdf $@
-	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
-# generate temporary LaTeX source from processed XML
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
+# Replace <tt> tags in VirtualBox.xidl.
+$(VBOX_DOC_XIDL_SRC_TMP): $(VBOX_DOC_XIDL_SRC) $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_L1,Generating $@)
+	$(QUIET)$(SED) -e 's|@a \+\(\w\+\)|<tt>\1</tt>|g' \
+	       -e 's|@c \+\(\w\+\)|<tt>\1</tt>|g' \
+	       --output $@ $<
+
+# Generate SDKRef_apiref.xml as a docbook file excerpt that will be referenced from the SDKRef.xml.
+$(VBOX_MANUAL_APIREF_TMP): $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl $(VBOX_DOC_XIDL_SRC_TMP)
+	$(call MSG_L1,Generating $@)
+	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@ $< $(VBOX_DOC_XIDL_SRC_TMP)
+
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: $(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef.xml $(VBOX_MANUAL_APIREF_TMP)
+	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
+	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
+	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
+	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
+	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
+	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
+	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+	               --output $@.tmp $<
+	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/!d' \
+	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' \
+	               --output $@ $@.tmp
+	$(QUIET)$(SED) -e 's/<?xml version=\"1.0\" encoding=\"utf-8\"?>//g' --append $@ $(VBOX_MANUAL_APIREF_TMP)
+	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/,$$!d' \
+	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' --append $@ $@.tmp
+#	$(QUIET)$(MV) -f $@.tmp $@
+	$(QUIET)$(RM) -f -- "$@.tmp"
+	$(call MSG_L1,Validating $@)
+	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd  $@
+
+# Turn SDKRef.xml into latex.
+$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
 		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_SDKREF_LATEX_FILES_TARGET))
 #	generate TeX source from processed docbook and store it in SDKRef.tex.tmp
@@ -736,13 +722,27 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
 
+# Turn SDKRef.tex into a PDF.
+$(VBOX_PATH_SDK)/docs/SDKRef.pdf: \
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex \
+		$(if $(VBOX_OSE),,$(VBOX_PATH_MANUAL_OUTBASE)/en_US/ucs.sty) \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) | $$(dir $$@)
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SDK)/docs
+	$(call MSG_L1,pdflatex $< (three passes))
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
+	$(QUIET)$(REDIRECT) -C $(<D) -- $(VBOX_PDFLATEX_CMD) SDKRef.tex
+	$(QUIET)$(SED) -ne '/Warning: Hyper reference/p' $(basename $<).log
+	$(QUIET)$(SED) -n \
+		-e '/Warning: There were \(undefined references\|multiply-defined labels\)/{p; q 1}' \
+		$(basename $<).log
+	$(QUIET)$(CP) $(<D)/SDKRef.pdf $@
+	$(call MSG_L1,Fresh LaTeX-generated PDF is now at $@)
 
-# validate SDK manual
-validatesdkref: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
-	$(call MSG_L1,Validating $(filter %.xml,$^))
-	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd  $(filter %.xml,$^)
 
+# Handy aliases.
+validate-sdkref:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml
+sdkref:: $(VBOX_PATH_SDK)/docs/SDKRef.pdf
 
 
 ifdef VBOX_WITH_DOCS_CHM
