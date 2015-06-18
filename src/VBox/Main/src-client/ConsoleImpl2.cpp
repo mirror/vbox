@@ -2694,6 +2694,8 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         {
             AudioControllerType_T audioController;
             hrc = audioAdapter->COMGETTER(AudioController)(&audioController);               H();
+            AudioCodecType_T audioCodec;
+            hrc = audioAdapter->COMGETTER(AudioCodec)(&audioCodec);                         H();
             switch (audioController)
             {
                 case AudioControllerType_AC97:
@@ -2704,6 +2706,15 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigInteger(pInst, "Trusted",          1); /* boolean */
                     hrc = pBusMgr->assignPCIDevice("ichac97", pInst);                       H();
                     InsertConfigNode(pInst,    "Config", &pCfg);
+                    switch (audioCodec)
+                    {
+                        case AudioCodecType_STAC9700:
+                            InsertConfigString(pCfg,   "Codec", "STAC9700");
+                            break;
+                        case AudioCodecType_AD1980:
+                            InsertConfigString(pCfg,   "Codec", "AD1980");
+                            break;
+                    }
                     break;
                 }
                 case AudioControllerType_SB16:

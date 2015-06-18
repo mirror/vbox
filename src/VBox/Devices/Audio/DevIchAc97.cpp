@@ -2075,18 +2075,18 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validations.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Type\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Codec\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for the AC'97 device"));
 
     /*
-     * Determine the chip type.
+     * Determine the codec model.
      */
-    char szType[20];
-    int rc = CFGMR3QueryStringDef(pCfg, "Type", &szType[0], sizeof(szType), "STAC9700");
+    char szCodec[20];
+    int rc = CFGMR3QueryStringDef(pCfg, "Codec", &szCodec[0], sizeof(szCodec), "STAC9700");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("AC'97 configuration error: Querying \"Type\" as string failed"));
+                                N_("AC'97 configuration error: Querying \"Codec\" as string failed"));
 
     /*
      * The AD1980 codec (with corresponding PCI subsystem vendor ID) is whitelisted
@@ -2094,15 +2094,15 @@ static DECLCALLBACK(int) ichac97Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      * 48 kHz rate, which is exactly what we need.
      */
     bool fChipAD1980 = false;
-    if (!strcmp(szType, "STAC9700"))
+    if (!strcmp(szCodec, "STAC9700"))
         fChipAD1980 = false;
-    else if (!strcmp(szType, "AD1980"))
+    else if (!strcmp(szCodec, "AD1980"))
         fChipAD1980 = true;
     else
     {
         return PDMDevHlpVMSetError(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES, RT_SRC_POS,
-                                   N_("AC'97 configuration error: The \"Type\" value \"%s\" is unsupported"),
-                                   szType);
+                                   N_("AC'97 configuration error: The \"Codec\" value \"%s\" is unsupported"),
+                                   szCodec);
     }
 
     /*
