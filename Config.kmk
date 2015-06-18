@@ -646,7 +646,7 @@ VBOX_WITH_S3 = 1
 if1of ($(KBUILD_TARGET), darwin linux solaris win)
  VBOX_WITH_DRAG_AND_DROP = 1
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
-  VBOX_WITH_DRAG_AND_DROP_GH = 1
+  VBOX_WITH_DRAG_AND_DROP_GH = $(VBOX_WITH_DRAG_AND_DROP)
  endif
 endif
 # Enables use of merge modules in the windows installer. This will increase
