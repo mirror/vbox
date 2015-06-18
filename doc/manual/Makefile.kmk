@@ -955,12 +955,15 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp: \
 	$(QUIET)$(APPEND) -n "$@" \
        	'' \
 		'PCREFENTRY     g_apHelpEntries[] = ' \
-		'{' \
-               $(foreach refentry,$(filter %.xml,$^) \
-		, '    &g_$(subst -,_,$(tolower $(patsubst man_%,%,$(notdir $(basename $(refentry)))))), ') \
-		'};'\
+		'{'
+	$(foreach refentry,$(filter %.xml,$^) \
+		,$(NLTAB)$(QUIET)$(APPEND) -n "$@" \
+		'    &g_$(subst -,_,$(tolower $(patsubst man_%,%,$(notdir $(basename $(refentry)))))), ')
+	$(QUIET)$(APPEND) -n "$@" \
+		'};' \
 		'const uint32_t g_cHelpEntries = RT_ELEMENTS(g_apHelpEntries);' \
                ''
+# The above APPEND stuff trigger some kind of problem on some boxes when not split up...
 
 $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-H-help.xsl \
