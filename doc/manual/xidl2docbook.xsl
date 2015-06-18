@@ -101,6 +101,7 @@
  - - - - - - - - - - - - - - - - - - - - - - -->
 
 <xsl:template match="/idl">
+ <book> <!-- Need a single top-level element for xi:include, we'll skip it using xpointer. -->
   <chapter id="sdkref_classes">
     <title>Classes (interfaces)</title>
     <xsl:for-each select="//interface">
@@ -336,7 +337,7 @@
       </sect1>
     </xsl:for-each>
   </chapter>
-
+ </book>
 </xsl:template>
 
 <!-- - - - - - - - - - - - - - - - - - - - - - -
