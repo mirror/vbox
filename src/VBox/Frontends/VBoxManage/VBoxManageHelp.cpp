@@ -43,8 +43,9 @@
 #ifndef VBOX_ONLY_DOCS
 enum HELP_CMD_VBOXMANAGE    g_enmCurCommand = HELP_CMD_VBOXMANAGE_INVALID;
 /** The scope maskt for the current subcommand. */
-uint64_t                    g_fCurSubcommandScope = UINT64_MAX;
-
+uint64_t                    g_fCurSubcommandScope = REFENTRYSTR_SCOPE_GLOBAL;
+/** String of spaces that can be used for indentation.   */
+static const char           g_szSpaces[] = "                                                ";
 
 /**
  * Sets the current command.
@@ -57,7 +58,7 @@ void setCurrentCommand(enum HELP_CMD_VBOXMANAGE enmCommand)
 {
     Assert(g_enmCurCommand == HELP_CMD_VBOXMANAGE_INVALID);
     g_enmCurCommand       = enmCommand;
-    g_fCurSubcommandScope = UINT64_MAX;
+    g_fCurSubcommandScope = REFENTRYSTR_SCOPE_GLOBAL;
 }
 
 
@@ -103,8 +104,9 @@ static uint32_t getScreenWidth(PRTSTREAM pStrm)
  * @param   pStrm           The output stream.
  * @param   psz             The string table string to print.
  * @param   cchMaxWidth     The maximum output width.
+ * @param   fFlags          String flags that may affect formatting.
  */
-static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWidth)
+static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWidth, uint64_t fFlags)
 {
     uint32_t    cLinesWritten;
     size_t      cch     = strlen(psz);
@@ -141,16 +143,19 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
         uint32_t cchIndent = 0;
         while (*psz == ' ')
             cchIndent++, psz++;
+        Assert(cchIndent + 4 + 1 <= RT_ELEMENTS(g_szSpaces));
+
         if (cchIndent + 8 >= cchMaxWidth)
             cchMaxWidth += cchIndent + 8;
 
         /* Work our way thru the string, line by line. */
+        uint32_t cchHangingIndent = 0;
         cLinesWritten = 0;
         do
         {
-            RTStrmWrite(pStrm, pszIndent, cchIndent);
-            size_t offLine       = cchIndent;
-            bool   fPendingSpace = false;
+            RTStrmWrite(pStrm, g_szSpaces, cchIndent + cchHangingIndent);
+            size_t   offLine       = cchIndent + cchHangingIndent;
+            bool     fPendingSpace = false;
             do
             {
                 const char *pszSpace = strchr(psz, ' ');
@@ -182,6 +187,10 @@ static uint32_t printString(PRTSTREAM pStrm, const char *psz, uint32_t cchMaxWid
             } while (offLine < cchMaxWidth && *psz != '\0');
             RTStrmPutCh(pStrm, '\n');
             cLinesWritten++;
+
+            /* Set up hanging indent if relevant. */
+            if (fFlags & REFENTRYSTR_FLAGS_SYNOPSIS)
+                cchHangingIndent = 4;
         } while (*psz != '\0');
     }
     return cLinesWritten;
@@ -222,9 +231,12 @@ static uint32_t printStringTable(PRTSTREAM pStrm, PCREFENTRYSTRTAB pStrTab, uint
     for (uint32_t i = 0; i < pStrTab->cStrings; i++)
     {
         uint64_t fCurScope = pStrTab->paStrings[i].fScope;
-        if (fCurScope == REFENTRYSTR_SCOPE_SAME)
-            fCurScope = fPrevScope;
-        if (fCurScope & fScope)
+        if ((fCurScope & REFENTRYSTR_SCOPE_MASK) == REFENTRYSTR_SCOPE_SAME)
+        {
+            fCurScope &= ~REFENTRYSTR_SCOPE_MASK;
+            fCurScope |= (fPrevScope & REFENTRYSTR_SCOPE_MASK);
+        }
+        if (fCurScope & REFENTRYSTR_SCOPE_MASK & fScope)
         {
             const char *psz = pStrTab->paStrings[i].psz;
             if (psz && !isEmptyString(psz))
@@ -235,7 +247,7 @@ static uint32_t printStringTable(PRTSTREAM pStrm, PCREFENTRYSTRTAB pStrTab, uint
                     RTStrmPutCh(pStrm, '\n');
                     cLinesWritten++;
                 }
-                cLinesWritten += printString(pStrm, psz, cchWidth);
+                cLinesWritten += printString(pStrm, psz, cchWidth, fCurScope & REFENTRYSTR_FLAGS_MASK);
             }
             else
                 cPendingBlankLines++;
@@ -254,7 +266,8 @@ static uint32_t printStringTable(PRTSTREAM pStrm, PCREFENTRYSTRTAB pStrTab, uint
  *
  * @returns Number of lines written.
  * @param   enmCommand          The command.
- * @param   fSubcommandScope    The subcommand scope, UINT64_MAX for all.
+ * @param   fSubcommandScope    The subcommand scope, REFENTRYSTR_SCOPE_GLOBAL
+ *                              for all.
  * @param   pStrm               The output stream.
  */
 static uint32_t printBriefCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand, uint64_t fSubcommandScope, PRTSTREAM pStrm)
@@ -300,7 +313,8 @@ void printUsage(PRTSTREAM pStrm)
  * Prints full help for a command or subcommand.
  *
  * @param   enmCommand          The command.
- * @param   fSubcommandScope    The subcommand scope, UINT64_MAX for all.
+ * @param   fSubcommandScope    The subcommand scope, REFENTRYSTR_SCOPE_GLOBAL
+ *                              for all.
  * @param   pStrm               The output stream.
  */
 static void printFullCommandOrSubcommandHelp(enum HELP_CMD_VBOXMANAGE enmCommand, uint64_t fSubcommandScope, PRTSTREAM pStrm)
@@ -342,7 +356,7 @@ void printHelp(PRTSTREAM pStrm)
 RTEXITCODE errorNoSubcommand(void)
 {
     Assert(g_enmCurCommand != HELP_CMD_VBOXMANAGE_INVALID);
-    Assert(g_fCurSubcommandScope == UINT64_MAX);
+    Assert(g_fCurSubcommandScope == REFENTRYSTR_SCOPE_GLOBAL);
 
     return errorSyntax("No subcommand specified");
 }
@@ -359,7 +373,7 @@ RTEXITCODE errorNoSubcommand(void)
 RTEXITCODE errorUnknownSubcommand(const char *pszSubcommand)
 {
     Assert(g_enmCurCommand != HELP_CMD_VBOXMANAGE_INVALID);
-    Assert(g_fCurSubcommandScope == UINT64_MAX);
+    Assert(g_fCurSubcommandScope == REFENTRYSTR_SCOPE_GLOBAL);
 
     /* check if help was requested. */
     if (   strcmp(pszSubcommand, "--help") == 0
@@ -386,7 +400,7 @@ RTEXITCODE errorUnknownSubcommand(const char *pszSubcommand)
 RTEXITCODE errorTooManyParameters(char **papszArgs)
 {
     Assert(g_enmCurCommand != HELP_CMD_VBOXMANAGE_INVALID);
-    Assert(g_fCurSubcommandScope != UINT64_MAX);
+    Assert(g_fCurSubcommandScope != REFENTRYSTR_SCOPE_GLOBAL);
 
     /* check if help was requested. */
     if (papszArgs)

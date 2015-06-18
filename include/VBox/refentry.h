@@ -42,12 +42,19 @@
  *          search and replace a single ASCII character. */
 #define REFENTRY_NBSP               '\b'
 
-/** @name REFENTRYSTR_SCOPE_XXX - Common string scoping.
+/** @name REFENTRYSTR_SCOPE_XXX - Common string scoping and flags.
  * @{ */
-/** Same scope as previous string table entry. */
+/** Same scope as previous string table entry, flags are reset and can be
+ *  ORed in. */
 #define REFENTRYSTR_SCOPE_SAME      UINT64_C(0)
 /** Global scope. */
-#define REFENTRYSTR_SCOPE_GLOBAL    UINT64_MAX
+#define REFENTRYSTR_SCOPE_GLOBAL    UINT64_C(0x00ffffffffffffff)
+/** Scope mask. */
+#define REFENTRYSTR_SCOPE_MASK      UINT64_C(0x00ffffffffffffff)
+/** Flags mask. */
+#define REFENTRYSTR_FLAGS_MASK      UINT64_C(0xff00000000000000)
+/** Command synopsis, special hanging indent rules applies. */
+#define REFENTRYSTR_FLAGS_SYNOPSIS  RT_BIT_64(63)
 /** @} */
 
 /** String table entry for a re.   */

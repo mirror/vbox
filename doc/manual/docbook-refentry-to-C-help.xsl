@@ -164,14 +164,25 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
   <xsl:template match="cmdsynopsis">
     <xsl:if test="text()"><xsl:message terminate="yes">cmdsynopsis with text is not supported.</xsl:message></xsl:if>
     <xsl:text>
-    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text>,
+    {   </xsl:text><xsl:call-template name="calc-scope-cmdsynopsis"/><xsl:text> | REFENTRYSTR_FLAGS_SYNOPSIS,
         "</xsl:text><xsl:call-template name="emit-indentation"/><xsl:apply-templates select="*|@*"/><xsl:text>" },</xsl:text>
   </xsl:template>
 
   <xsl:template match="sbr">
     <xsl:text>" },
-    {   REFENTRYSTR_SCOPE_SAME,
-        "    </xsl:text><xsl:call-template name="emit-indentation"/>
+    {   REFENTRYSTR_SCOPE_SAME | REFENTRYSTR_FLAGS_SYNOPSIS,
+        "    </xsl:text><xsl:call-template name="emit-indentation"/> <!-- hardcoded in VBoxManageHelp.cpp too -->
+  </xsl:template>
+
+  <xsl:template match="cmdsynopsis/command">
+    <xsl:text>" },
+    {   REFENTRYSTR_SCOPE_SAME | REFENTRYSTR_FLAGS_SYNOPSIS,
+        "</xsl:text><xsl:call-template name="emit-indentation"/>
+    <xsl:apply-templates select="node()|@*"/>
+  </xsl:template>
+
+  <xsl:template match="cmdsynopsis/command[1]" priority="2">
+    <xsl:apply-templates select="node()|@*"/>
   </xsl:template>
 
   <xsl:template match="command|option|computeroutput">
@@ -233,18 +244,7 @@ static const REFENTRY </xsl:text><xsl:value-of select="$sDataBaseSym"/><xsl:text
 
     <!-- Format the text in the section -->
     <xsl:for-each select="./*[name() != 'title']">
-      <xsl:choose>
-        <xsl:when test="self::remark[@scope = 'help-copy-synopsis']">
-          <xsl:variable name="sSrcId" select="concat('synopsis-', @condition)"/>
-          <xsl:if test="not(/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId])">
-            <xsl:message terminate="yes">Could not find any cmdsynopsis with id=<xsl:value-of select="$sSrcId"/> in refsynopsisdiv.</xsl:message>
-          </xsl:if>
-          <xsl:apply-templates select="/refentry/refsynopsisdiv/cmdsynopsis[@id = $sSrcId]"/>
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:apply-templates select="."/>
-        </xsl:otherwise>
-      </xsl:choose>
+      <xsl:apply-templates select="."/>
     </xsl:for-each>
 
     <!-- Add two blank lines, unless we're the last element in this refsect1. -->
@@ -446,16 +446,10 @@ Only supported on: refsect1, refsect2, refsynopsisdiv/cmdsynopsis</xsl:message>
   </xsl:template>
 
   <!--
-    Fail on misplaced scoping remarks.
+    Execute synopsis copy remark (avoids duplication for complicated xml).
     -->
   <xsl:template match="remark[@role = 'help-copy-synopsis']">
-    <xsl:choose>
-      <xsl:when test="parent::refsect2"/>
-      <xsl:otherwise>
-        <xsl:message terminate="yes">Misplaced remark/@role=help-copy-synopsis element.
-Only supported on: refsect2</xsl:message>
-      </xsl:otherwise>
-    </xsl:choose>
+    <xsl:message terminate="yes">remark/@role=help-copy-synopsis is not supported by this stylesheet. Must preprocess input!</xsl:message>
   </xsl:template>
 
   <!--

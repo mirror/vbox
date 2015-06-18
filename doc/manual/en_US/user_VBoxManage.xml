@@ -4521,9 +4521,9 @@ Value: 2006.01.01</screen>
     network or host-only interface name.</para>
   </sect1>
 
-  <xi:include href="man_VBoxManage_debugvm.xml" xpointer="element(/1)"
+  <xi:include href="user_man_VBoxManage-debugvm.xml" xpointer="element(/1)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
-  <xi:include href="man_VBoxManage_extpack.xml" xpointer="element(/1)"
+  <xi:include href="user_man_VBoxManage-extpack.xml" xpointer="element(/1)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>

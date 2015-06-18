@@ -100,11 +100,13 @@ endif
 
 # xsltproc with the catalog trick if applicable.
 ifdef VBOX_XML_CATALOG
- VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -- $(VBOX_XSLTPROC)
- VBOX_XMLLINT_WITH_CAT     = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -- $(VBOX_XMLLINT)
+ VBOX_XSLTPROC_WITH_CAT    = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -- \
+ 	$(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS)
+ VBOX_XMLLINT_WITH_CAT     = $(REDIRECT) -E "XML_CATALOG_FILES=$(VBOX_XML_CATALOG)" -- \
+	$(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS)
 else
- VBOX_XSLTPROC_WITH_CAT    = $(VBOX_XSLTPROC)
- VBOX_XMLLINT_WITH_CAT     = $(VBOX_XMLLINT)
+ VBOX_XSLTPROC_WITH_CAT    = $(VBOX_XSLTPROC) --nonet --xinclude $(VBOX_XSLTPROC_OPTS)
+ VBOX_XMLLINT_WITH_CAT     = $(VBOX_XMLLINT) --nonet --xinclude --noout $(VBOX_XMLLINT_OPTS)
 endif
 
 VBOXMANAGEHELP_PATH       ?= $(PATH_STAGE_BIN)/VBoxManageHelp$(SUFF_EXE)
@@ -164,8 +166,8 @@ endef
 
 ## List of refentry files (manpages).
 VBOX_MANUAL_XML_REFENTRY_FILES = \
-	man_VBoxManage_debugvm.xml \
-	man_VBoxManage_extpack.xml
+	man_VBoxManage-debugvm.xml \
+	man_VBoxManage-extpack.xml
 
 
 #
@@ -282,6 +284,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  	$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/, \
  		$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG) \
                $(VBOX_MANUAL_XML_REFENTRY_FILES) \
+               $(addprefix user_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+               $(patsubst man_%,%.1,$(basename $(VBOX_MANUAL_XML_REFENTRY_FILES))) \
  		$(VBOX_MANUAL_LATEX_FILES_TARGET) \
 		$(VBOX_MANUAL_PNG_FILES_$(lang)) \
  		$(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
@@ -465,7 +469,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 # TODO: figure why the rule below doesn't cause kmk to rebuild the manual when a man page changes!
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES), \
 $(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MANUAL_SRC)/$(lang)/user_VBoxManage.xml \
-	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 	$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml ))
 
@@ -473,7 +477,7 @@ $(eval $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/user_VBoxManage.xml: $(VBOX_PATH_MAN
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxManage.xml): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : \
 		$(VBOX_PATH_MANUAL_SRC)/% \
-               $$(addprefix $$(@D)/,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+               $$(addprefix $$(@D)/user_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
                $$(addprefix $$(@D)/overview_,$$(filter man_VBoxManage%,$$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
 		$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
@@ -509,17 +513,23 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxMan
 		"$<"
 	$(QUIET)$(RM) -f $@.dumpopts $@.screen
 
-
+##
 # Morph man pages into manual sections.
-$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$(VBOX_MANUAL_XML_REFENTRY_FILES))): \
-		$(VBOX_PATH_MANUAL_OUTBASE)/% : $(VBOX_PATH_MANUAL_SRC)/% \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
-		$(VBOX_VERSION_STAMP) | $$(dir $$@)
-	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output $@ \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl $<
+# $(evalcall2 def_vbox_refentry_to_user_sect1)
+# @param    1   The XSLT source file (relative to Makefile dir).
+# @param    2   Optional output subdirectory.
+define def_vbox_refentry_to_user_sect1
+$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/user_$(2): \
+		$$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl \
+		$$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		$$(VBOX_VERSION_STAMP) | $$(dir $$@)
+	$$(call MSG_GENERATE,,$$@,$$<)
+	$$(QUIET)$$(RM) -f "$$@"
+	$$(QUIET)$$(VBOX_XSLTPROC_WITH_CAT) --output $$@ $$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manual-sect1.xsl $$<
+endef
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+, $(evalcall2 def_vbox_refentry_to_user_sect1,$(lang),$(file))))
 
 
 $(VBOX_DOC_XIDL_SRC_TMP): $(VBOX_DOC_XIDL_SRC) $(MAKEFILE_CURRENT) | $$(dir $$@)
@@ -536,7 +546,7 @@ $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FIL
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
                | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xml,$^))
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output "$@" $< $(filter %.xml,$^)
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --output "$@" $< $(filter %.xml,$^)
 
 $(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml: $(MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,)
@@ -652,7 +662,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.t
 #   generate TeX source from processed docbook and store it in UserManual.tex.tmp;
 #   pass current language to xsltproc in TARGETLANG variable (extract it from the
 #   current directory, should become "de_DE" or the like)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG $(notdir $(@D)) \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --stringparam TARGETLANG $(notdir $(@D)) \
 		-o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #   for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
@@ -681,8 +691,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
 		$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_L1,Validating $$<)
-	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) $$(VBOX_XMLLINT_OPTS) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
-		--xinclude --noout $$<
+	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$<
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
 endef
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_validate_xml))
@@ -717,7 +726,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D/),$(VBOX_SDKREF_LATEX_FILES_TARGET))
 #	generate TeX source from processed docbook and store it in SDKRef.tex.tmp
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) $(XSLTPROC_VERBOSE) --xinclude --nonet --stringparam TARGETLANG en_US \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --stringparam TARGETLANG en_US \
 		-o $@.tmp $(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl $<
 #	for pretty quotes, replace " with `` or '' depending on whether it's at the start of a word;
 #   the \QUOTE{} was inserted by docbook2latex.xsl for all quotes _outside_ of screen sections
@@ -733,8 +742,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.tex: $(addprefix $(VBOX_PATH_MANUAL_OUT
 validatesdkref: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_SDKREF_XML_FILES)) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
 	$(call MSG_L1,Validating $(filter %.xml,$^))
-	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) $(VBOX_XMLLINT_OPTS) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
-		--xinclude --noout $(filter %.xml,$^)
+	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd  $(filter %.xml,$^)
 
 
 
@@ -798,7 +806,7 @@ ifdef VBOX_WITH_DOCS_CHM
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output $(@D)/ \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --output $(@D)/ \
 		--stringparam htmlhelp.chm \
 		$(subst /,\\,$(@D)/../VirtualBox.chm) \
 		$(HTMLHELPOPTS) $(@D)/../docbook-htmlhelp-formatcfg.xsl \
@@ -864,7 +872,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet $(XSLTPROC_VERBOSE) \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml
@@ -877,7 +885,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
-	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet $(XSLTPROC_VERBOSE) \
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) \
 		--output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html \
 		--stringparam chunk.section.depth 0 \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
@@ -934,27 +942,47 @@ endif # if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX
 
 
 #
-# VBoxManage man pages.
+# VBoxManage man pages (parts also required by VBoxManage build-in help).
 #
-$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-man.xsl,)
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-manpage.xsl,)
 
-man-experiment: \
-		$(VBOX_PATH_MANUAL_SRC)/en_US/man_VBoxManage_extpack.xml \
-		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-man.xsl \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK)
-	$(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet --output z:/tmp/vboxmanage-extpack.1 \
-		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-man.xsl \
-		$(VBOX_PATH_MANUAL_SRC)/en_US/man_VBoxManage_extpack.xml
+##
+# Emits rules for preprocessing refentry sources (applying remarks element),
+# and for producing the actual man pages.
+# $(evalcall2 def_vbox_refentry_to_manpage)
+# @param    1   The language
+# @param    2   The file name (no path).
+define def_vbox_refentry_to_manpage
+$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2): \
+		$$(VBOX_PATH_MANUAL_SRC)/$(1)/$(2) \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl \
+		$$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,,$$@,$$<)
+	$$(QUIET)$$(RM) -f "$$@"
+	$$(QUIET)$$(VBOX_XSLTPROC_WITH_CAT) --output $$@ \
+		$$(VBOX_PATH_MANUAL_SRC)/docbook-refentry-to-manpage-preprocessing.xsl $$<
+ ifdef VBOX_WITH_XMLLINT
+	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd $$@
+ endif
 
-$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-C-help.xsl,)
-$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-H-help.xsl,)
+$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(patsubst man_%,%.1,$(basename $(2))): \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/$(1)/$(2) \
+		$$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-manpage.xsl \
+		$$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
+		$$(VBOX_VERSION_STAMP) | $$$$(dir $$$$@)
+	$$(call MSG_GENERATE,,$$@,$$<)
+	$$(QUIET)$$(RM) -f "$$@"
+	$$(QUIET)$$(VBOX_XSLTPROC_WITH_CAT) --output $$@ $$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-manpage.xsl $$<
+endef
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+, $(evalcall2 def_vbox_refentry_to_manpage,$(lang),$(file))))
 
-# validate man page XML source
-validateman: $(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
-	$(call MSG_L1,Validating $(filter %.xml,$^))
-	$(QUIET)$(VBOX_XMLLINT_WITH_CAT) $(VBOX_XMLLINT_OPTS) --dtdvalid $(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
-		--noout $(filter %.xml,$^)
+
+# Handy aliases.
+validate-manpages:: $(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_REFENTRY_FILES))
+man-experiment:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(foreach file,$(VBOX_MANUAL_XML_REFENTRY_FILES) \
+			,$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/$(patsubst man_%,%.1,$(basename $(file)))))
 
 
 #
@@ -973,10 +1001,13 @@ help-experiment: \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h
 
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-C-help.xsl,)
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-refentry-to-H-help.xsl,)
+
 $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-C-help.xsl \
-		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(filter man_VBoxManage_%,$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE)
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'/* Autogenerated by $<, do not edit! */' \
@@ -985,20 +1016,21 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp: \
 		'#include "VBoxManageBuiltInHelp.h"' \
 		''
 	$(foreach refentry,$(filter %.xml,$^) \
-	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet $< $(refentry))
+	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) $< $(refentry))
 	$(QUIET)$(APPEND) -n "$@" \
        	'' \
 		'PCREFENTRY     g_apHelpEntries[] = ' \
 		'{' \
-               $(foreach refentry,$(filter %.xml,$^), '    &g_$(tolower $(patsubst man_%,%,$(notdir $(basename $(refentry))))), ') \
+               $(foreach refentry,$(filter %.xml,$^) \
+		, '    &g_$(subst -,_,$(tolower $(patsubst man_%,%,$(notdir $(basename $(refentry)))))), ') \
 		'};' \
 		'const uint32_t g_cHelpEntries = RT_ELEMENTS(g_apHelpEntries);' \
                ''
 
 $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/docbook-refentry-to-H-help.xsl \
-		$(addprefix $(VBOX_PATH_MANUAL_SRC)/en_US/,$(filter man_VBoxManage_%,$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
-		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE)
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(filter man_VBoxManage-%,$(VBOX_MANUAL_XML_REFENTRY_FILES))) \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 	$(QUIET)$(APPEND) -tn "$@" \
 		'/* Autogenerated by $<, do not edit! */' \
@@ -1014,13 +1046,13 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h: \
                '{' \
                '    HELP_CMD_VBOXMANAGE_INVALID = 0,'
 	$(foreach refentry,$(filter %.xml,$^) \
-	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
+	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) \
 		--stringparam 'g_sMode' 'cmd' $< $(refentry))
 	$(QUIET)$(APPEND) -n "$@" \
 		'    HELP_CMD_VBOXMANAGE_END' \
 		'} HELP_CMD_VBOXMANAGE;'
 	$(foreach refentry,$(filter %.xml,$^) \
-	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) --xinclude --nonet \
+	,$(NLTAB)$(QUIET)$(REDIRECT) -a+to "$@" -- $(VBOX_XSLTPROC_WITH_CAT) \
 		--stringparam 'g_sMode' 'subcmd' $< $(refentry))
 	$(QUIET)$(APPEND) -n "$@" \
 		'' \
