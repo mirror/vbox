@@ -681,7 +681,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
 		$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
 	$$(call MSG_L1,Validating $$<)
-	$$(VBOX_XMLLINT_WITH_CAT) $$(VBOX_XMLLINT_OPTS) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
+	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) $$(VBOX_XMLLINT_OPTS) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
 		--xinclude --noout $$<
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
 endef
