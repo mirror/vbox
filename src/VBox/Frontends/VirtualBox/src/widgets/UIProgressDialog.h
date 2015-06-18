@@ -57,6 +57,16 @@ public:
     /* API: Run stuff: */
     int run(int aRefreshInterval);
 
+signals:
+
+    /** Notifies listeners about wrapped CProgress change.
+      * @param iOperations  holds the number of operations CProgress have,
+      * @param strOperation holds the description of the current CProgress operation,
+      * @param iOperation   holds the index of the current CProgress operation,
+      * @param iPercent     holds the percentage of the current CProgress operation. */
+    void sigProgressChange(ulong iOperations, QString strOperation,
+                           ulong iOperation, ulong iPercent);
+
 public slots:
 
     /* Handler: Show stuff: */

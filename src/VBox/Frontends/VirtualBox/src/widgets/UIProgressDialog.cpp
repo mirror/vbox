@@ -337,6 +337,10 @@ void UIProgressDialog::handleTimerEvent()
         /* Then cancel button: */
         m_fCancelEnabled = m_progress.GetCancelable();
         m_pCancelBtn->setEnabled(m_fCancelEnabled);
+
+        /* Notify listeners about the operation progress update: */
+        emit sigProgressChange(m_cOperations, m_progress.GetOperationDescription(),
+                               m_progress.GetOperation() + 1, m_progress.GetPercent());
     }
     else
         m_pEtaLbl->setText(m_strCancel);
