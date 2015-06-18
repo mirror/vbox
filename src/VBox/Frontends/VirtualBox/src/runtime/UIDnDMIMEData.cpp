@@ -44,6 +44,7 @@ UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
     : m_pDnDHandler(pDnDHandler)
     , m_lstFormats(lstFormats)
     , m_defAction(defAction)
+    , m_curAction(Qt::DropAction::IgnoreAction)
     , m_actions(actions)
     , m_enmState(Dragging)
     , m_vaData(QVariant::Invalid)
@@ -55,36 +56,6 @@ UIDnDMIMEData::UIDnDMIMEData(UIDnDHandler *pDnDHandler,
     for (int i = 0; i < lstFormats.size(); i++)
         LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toAscii().constData()));
 #endif
-
-     /**
-     * This is unbelievable hacky, but I didn't find another way. Stupid
-     * Qt QDrag interface is so less verbose, that we in principle know
-     * nothing about what happens when the user drag something around. It
-     * is possible that the target on the host requests data
-     * (@sa retrieveData) while the mouse button still is pressed. This
-     * isn't something we should support, because it would mean transferring
-     * the data from the guest while the mouse is still moving (think of
-     * transferring a 2GB file from the guest to the host ...). So the idea is
-     * to detect the mouse release event and only after this happened, allow
-     * data to be retrieved. Unfortunately the QDrag object eats all events
-     * while a drag is going on (see QDragManager in the Qt src's).
-     *
-     * So what we now are going to do is installing an event filter after the
-     * QDrag::exec is called, so that this event filter then would be
-     * the last in the event filter queue and therefore called before the
-     * one installed by the QDrag object (which then in turn would
-     * munch all events).
-     *
-     ** @todo Test this on all supported platforms (X11 works).
-     *
-     * Note: On Windows the above hack is not needed because as soon as Qt calls
-     *       OLE's DoDragDrop routine internally (via QtDrag::exec), no mouse
-     *       events will come through anymore. At this point DoDragDrop is modal
-     *       and will take care of all the input handling. */
-#ifndef RT_OS_WINDOWS
-    /* Install the event filter in a deferred way. */
-    QTimer::singleShot(0, this, SLOT(sltInstallEventFilter()));
-#endif
 }
 
 QStringList UIDnDMIMEData::formats(void) const
@@ -94,9 +65,9 @@ QStringList UIDnDMIMEData::formats(void) const
 
 bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
 {
-    bool fRc = m_lstFormats.contains(strMIMEType);
-    LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool)\n",
-                 strMIMEType.toStdString().c_str(), fRc, QMimeData::hasFormat(strMIMEType)));
+    bool fRc = (m_curAction != Qt::DropAction::IgnoreAction);
+    LogFlowFunc(("%s: %RTbool (QtMimeData: %RTbool, curAction=0x%x)\n",
+                 strMIMEType.toStdString().c_str(), fRc, QMimeData::hasFormat(strMIMEType), m_curAction));
     return fRc;
 }
 
@@ -111,8 +82,8 @@ bool UIDnDMIMEData::hasFormat(const QString &strMIMEType) const
  */
 QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type vaType) const
 {
-    LogFlowFunc(("state=%RU32, mimeType=%s, type=%d (%s)\n", m_enmState, strMIMEType.toStdString().c_str(),
-                 vaType, QVariant::typeToName(vaType)));
+    LogFlowFunc(("state=%RU32, curAction=0x%x, defAction=0x%x, mimeType=%s, type=%d (%s)\n",
+                 m_enmState, m_curAction, m_defAction, strMIMEType.toStdString().c_str(), vaType, QVariant::typeToName(vaType)));
 
     bool fCanDrop = true;
 
@@ -125,49 +96,48 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type 
     /* On non-Windows our state gets updated via an own event filter
      * (see UIDnDMimeData::eventFilter). This filter will update the current
      * operation state for us (based on the mouse buttons). */
-    if (m_enmState != Dropped)
+    if (m_curAction == Qt::DropAction::IgnoreAction)
     {
-        LogFlowFunc(("Not yet in 'dropped' state, so can't drop yet\n"));
+        LogFlowFunc(("Current drop action is 0x%x, so can't drop yet\n", m_curAction));
         fCanDrop = false;
     }
 #endif
 
-    /* Do we support the requested MIME type? */
-    if (   fCanDrop
-        && !m_lstFormats.contains(strMIMEType))
+    if (fCanDrop)
     {
-        LogRel3(("DnD: Unsupported MIME type=%s\n", strMIMEType.toStdString().c_str()));
-        fCanDrop = false;
+        /* Do we support the requested MIME type? */
+        if (!m_lstFormats.contains(strMIMEType))
+        {
+            LogRel(("DnD: Unsupported MIME type '%s'\n", strMIMEType.toStdString().c_str()));
+            fCanDrop = false;
+        }
+
+        /* Supported types. See below in the switch statement. */
+        if (!(
+              /* Plain text. */
+                 vaType == QVariant::String
+              /* Binary data. */
+              || vaType == QVariant::ByteArray
+                 /* URI list. */
+              || vaType == QVariant::List))
+        {
+            LogRel(("DnD: Unsupported data type '%s'\n", QVariant::typeToName(vaType)));
+            fCanDrop = false;
+        }
     }
 
-    /* Supported types. See below in the switch statement. */
-    if (   fCanDrop
-        && !(
-             /* Plain text. */
-                vaType == QVariant::String
-             /* Binary data. */
-             || vaType == QVariant::ByteArray
-             /* URI list. */
-             || vaType == QVariant::List))
-    {
-        LogRel3(("DnD: Unsupported data type=%d (%s)\n", vaType, QVariant::typeToName(vaType)));
-        fCanDrop = false;
-    }
-
-    LogRel3(("DnD: State=%ld, fCanDrop=%RTbool\n", m_enmState, fCanDrop));
+    LogRel3(("DnD: State=%ld, Action=0x%x, fCanDrop=%RTbool\n", m_enmState, m_curAction, fCanDrop));
 
     if (!fCanDrop)
     {
         LogFlowFunc(("Skipping request, state=%RU32 ...\n", m_enmState));
-        return QMimeData::retrieveData(strMIMEType, vaType);
+        return QVariant(QVariant::Invalid); /* Return a NULL variant. */
     }
 
-    /* Note: The const_cast is used because this function needs to be const (otherwise
-     *       Qt won't call it), but we need the stuff in an unconst'ed way. */
-    int rc = const_cast<UIDnDMIMEData *>(this)->retrieveDataInternal(strMIMEType, vaType);
+    QVariant vaData = emit getData(strMIMEType, vaType);
 
-    LogFlowFunc(("Returning rc=%Rrc, state=%RU32\n", rc, m_enmState));
-    return m_vaData;
+    LogRel3(("DnD: Returning data of type '%s'\n", vaData.typeName()));
+    return vaData;
 }
 
 #ifndef RT_OS_WINDOWS
@@ -179,15 +149,6 @@ bool UIDnDMIMEData::eventFilter(QObject *pObject, QEvent *pEvent)
     {
         switch (pEvent->type())
         {
-            case QEvent::MouseMove:
-            {
-                QMouseEvent *pMouseEvent = (QMouseEvent*)(pEvent);
-                AssertPtr(pMouseEvent);
-                LogFlowFunc(("MouseMove: x=%d, y=%d\n", pMouseEvent->globalX(), pMouseEvent->globalY()));
-
-                break;
-            }
-
             case QEvent::MouseButtonRelease:
             {
                 LogFlowFunc(("MouseButtonRelease\n"));
@@ -222,11 +183,12 @@ bool UIDnDMIMEData::eventFilter(QObject *pObject, QEvent *pEvent)
         qApp->removeEventFilter(this);
     }
 
-    /* Do normal processing by Qt. */
-    return QObject::eventFilter(pObject, pEvent);
+    /* Propagate further. */
+    return false;
 }
 #endif /* !RT_OS_WINDOWS */
 
+#if 0
 int UIDnDMIMEData::setData(const QString &mimeType)
 {
     LogFlowFunc(("mimeType=%s, dataType=%s\n",
@@ -277,26 +239,7 @@ int UIDnDMIMEData::setData(const QString &mimeType)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
-int UIDnDMIMEData::retrieveDataInternal(const QString &strMIMEType, QVariant::Type vaType)
-{
-    LogFlowFunc(("state=%RU32, mimeType=%s, type=%d (%s)\n", m_enmState,
-                  strMIMEType.toStdString().c_str(), vaType, QVariant::typeToName(vaType)));
-
-    AssertPtr(m_pDnDHandler);
-    int rc = m_pDnDHandler->retrieveData(m_defAction, strMIMEType, vaType, m_vaData);
-    if (RT_SUCCESS(rc))
-    {
-        /* Nothing to do here yet. */
-    }
-    else if (rc == VERR_CANCELLED)
-        m_enmState = Canceled;
-    else
-        m_enmState = Error;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
+#endif
 
 /**
  * Issued by the QDrag object as soon as the current drop action has changed.
@@ -306,18 +249,6 @@ int UIDnDMIMEData::retrieveDataInternal(const QString &strMIMEType, QVariant::Ty
 void UIDnDMIMEData::sltDropActionChanged(Qt::DropAction dropAction)
 {
     LogFlowFunc(("dropAction=0x%x\n", dropAction));
-    m_defAction = dropAction;
+    m_curAction = dropAction;
 }
-
-#ifndef RT_OS_WINDOWS
-/**
- * Issued by ourselves to install the event filter.
- */
-void UIDnDMIMEData::sltInstallEventFilter(void)
-{
-    LogFlowFunc(("Installing event filter ...\n"));
-    AssertPtr(qApp);
-    qApp->installEventFilter(this);
-}
-#endif
 

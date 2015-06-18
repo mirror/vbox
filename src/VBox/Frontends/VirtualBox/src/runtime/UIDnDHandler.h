@@ -61,6 +61,20 @@ public:
         DNDMODE_32BIT_HACK = 0x7fffffff
     } DNDMODE;
 
+    /**
+     * Drag and drop data set from the source.
+     */
+    typedef struct UIDnDDataSource
+    {
+        /** List of formats supported by the source. */
+        QStringList         lstFormats;
+        /** List of allowed drop actions from the source. */
+        QVector<KDnDAction> vecActions;
+        /** Default drop action from the source. */
+        KDnDAction          defaultAction;
+
+    } UIDnDDataSource;
+
     /* Frontend -> Target. */
     Qt::DropAction             dragEnter(ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
     Qt::DropAction             dragMove (ulong screenId, int x, int y, Qt::DropAction proposedAction, Qt::DropActions possibleActions, const QMimeData *pMimeData);
@@ -68,8 +82,9 @@ public:
     void                       dragLeave(ulong screenId);
 
     /* Source -> Frontend. */
-    int                        dragIsPending(ulong screenId);
-    int                        dragStart(const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions);
+    int                        dragCheckPending(ulong screenId);
+    int                        dragStart(ulong screenId);
+    int                        dragStop(ulong screenID);
     int                        retrieveData(Qt::DropAction  dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
 
 public:
@@ -78,6 +93,16 @@ public:
     static QVector<KDnDAction> toVBoxDnDActions(Qt::DropActions actions);
     static Qt::DropAction      toQtDnDAction(KDnDAction action);
     static Qt::DropActions     toQtDnDActions(const QVector<KDnDAction> &vecActions);
+
+public slots:
+
+    QVariant                   sltGetData(const QString &strMimeType, QVariant::Type vaType);
+
+protected:
+
+    int                        dragStartInternal(const QStringList &lstFormats, Qt::DropAction defAction, Qt::DropActions actions);
+    int                        retrieveDataInternal(Qt::DropAction dropAction, const QString &strMimeType, QVariant::Type vaType, QVariant &vaData);
+    void                       setMode(DNDMODE enmMode);
 
 protected:
 
@@ -92,17 +117,13 @@ protected:
     CDnDTarget        m_dndTarget;
     /** Current transfer direction. */
     DNDMODE           m_enmMode;
+    /** Current data from the source (if any).
+     *  At the momenet we only support one source at a time. */
+    UIDnDDataSource   m_dataSource;
     /** Flag indicating if a drag operation is pending currently. */
     bool              m_fIsPending;
     QMutex            m_ReadLock;
     QMutex            m_WriteLock;
-
-    /** List of formats supported by the source. */
-    QStringList       m_lstFormats;
-    /** Default drop action from the source. */
-    Qt::DropAction    m_defAction;
-    /** List of allowed drop actions from the source. */
-    Qt::DropActions   m_actions;
 
 #ifndef RT_OS_WINDOWS
     /** Pointer to MIMEData instance used for handling

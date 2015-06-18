@@ -956,18 +956,31 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # ifdef VBOX_WITH_DRAG_AND_DROP_GH
+            QPointer<UIMachineView> pView = m_views[uScreenId];
+            bool fHandleDnDPending = RT_BOOL(mouseButtons.testFlag(Qt::LeftButton));
+
+            /* Mouse pointer outside VM window? */
             if (   cpnt.x() < 0
                 || cpnt.x() > iCw - 1
                 || cpnt.y() < 0
                 || cpnt.y() > iCh - 1)
             {
-                bool fHandleDnDPending
-                    = RT_BOOL(mouseButtons.testFlag(Qt::LeftButton));
                 if (fHandleDnDPending)
                 {
-                    m_views[uScreenId]->dragIsPending();
-                    return true;
+                    LogRel2(("DnD: Drag and drop operation from guest to host started\n"));
+
+                    int rc = pView->dragCheckPending();
+                    if (RT_SUCCESS(rc))
+                    {
+                        pView->dragStart();
+                        return true; /* Bail out -- we're done here. */
+                    }
                 }
+            }
+            else /* Inside VM window? */
+            {
+                if (fHandleDnDPending)
+                    pView->dragStop();
             }
 # endif
 #endif /* VBOX_WITH_DRAG_AND_DROP */

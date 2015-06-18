@@ -62,9 +62,9 @@ public:
 
     UIDnDMIMEData(UIDnDHandler *pDnDHandler, QStringList formats, Qt::DropAction defAction, Qt::DropActions actions);
 
-public:
+signals:
 
-    int setData(const QString &mimeType);
+     int getData(const QString &strMIMEType, QVariant::Type vaType) const;
 
 public slots:
 
@@ -77,27 +77,22 @@ protected:
 
     virtual bool hasFormat(const QString &mimeType) const;
 
-    virtual QVariant retrieveData(const QString &mimeType, QVariant::Type type) const;
+    virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type vaType) const;
 
 #ifndef RT_OS_WINDOWS
     bool eventFilter(QObject *pObject, QEvent *pEvent);
 #endif
     /** @}  */
 
-    int retrieveDataInternal(const QString &strMIMEType, QVariant::Type vaType);
-
-protected slots:
-
-#ifndef RT_OS_WINDOWS
-    void sltInstallEventFilter(void);
-#endif
-
 protected:
 
     UIDnDHandler     *m_pDnDHandler;
 
     QStringList       m_lstFormats;
+    /** Default action on successful drop operation. */
     Qt::DropAction    m_defAction;
+    /** Current action, based on QDrag's status. */
+    Qt::DropAction    m_curAction;
     Qt::DropActions   m_actions;
 
     mutable State     m_enmState;

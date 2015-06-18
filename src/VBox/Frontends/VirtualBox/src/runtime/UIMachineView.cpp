@@ -544,6 +544,9 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+    , m_fIsDraggingFromGuest(false)
+#endif
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -1419,6 +1422,17 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 }
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
+bool UIMachineView::dragAndDropCanAccept(void) const
+{
+    bool fAccept =  m_pDnDHandler
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+                 && !m_fIsDraggingFromGuest
+#endif
+                 && machine().GetDnDMode() != KDnDMode_Disabled;
+    LogRelFunc(("fAccept=%RTbool\n", fAccept));
+    return fAccept;
+}
+
 bool UIMachineView::dragAndDropIsActive(void) const
 {
     return (   m_pDnDHandler
@@ -1429,7 +1443,7 @@ void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropIsActive())
+    if (!dragAndDropCanAccept())
         return;
 
     /* Get mouse-pointer location. */
@@ -1452,7 +1466,7 @@ void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropIsActive())
+    if (!dragAndDropCanAccept())
         return;
 
     /* Get mouse-pointer location. */
@@ -1475,7 +1489,7 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropIsActive())
+    if (!dragAndDropCanAccept())
         return;
 
     m_pDnDHandler->dragLeave(screenId());
@@ -1483,21 +1497,68 @@ void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
     pEvent->accept();
 }
 
-void UIMachineView::dragIsPending(void)
+int UIMachineView::dragCheckPending(void)
 {
-    if (!dragAndDropIsActive())
-        return;
+    int rc;
 
-    /** @todo Add guest->guest DnD functionality here by getting
-     *        the source of guest B (when copying from B to A). */
-    m_pDnDHandler->dragIsPending(screenId());
+    if (!dragAndDropIsActive())
+        rc = VERR_ACCESS_DENIED;
+    else if (!m_fIsDraggingFromGuest)
+    {
+        /** @todo Add guest->guest DnD functionality here by getting
+         *        the source of guest B (when copying from B to A). */
+        rc = m_pDnDHandler->dragCheckPending(screenId());
+        if (RT_SUCCESS(rc))
+            m_fIsDraggingFromGuest = true;
+    }
+    else /* Already dragging, so report success. */
+        rc = VINF_SUCCESS;
+
+    LogRel3(("DnD: dragCheckPending ended with rc=%Rrc\n", rc));
+    return rc;
+}
+
+int UIMachineView::dragStart(void)
+{
+    int rc;
+
+    if (!dragAndDropIsActive())
+        rc = VERR_ACCESS_DENIED;
+    else if (!m_fIsDraggingFromGuest)
+        rc = VERR_WRONG_ORDER;
+    else
+    {
+        /** @todo Add guest->guest DnD functionality here by getting
+         *        the source of guest B (when copying from B to A). */
+        rc = m_pDnDHandler->dragStart(screenId());
+
+        m_fIsDraggingFromGuest = false;
+    }
+
+    LogRel3(("DnD: dragStart ended with rc=%Rrc\n", rc));
+    return rc;
+}
+
+int UIMachineView::dragStop(void)
+{
+    int rc;
+
+    if (!dragAndDropIsActive())
+        rc = VERR_ACCESS_DENIED;
+    else if (!m_fIsDraggingFromGuest)
+        rc = VERR_WRONG_ORDER;
+    else
+        rc = m_pDnDHandler->dragStop(screenId());
+
+    LogRel3(("DnD: dragStop ended with rc=%Rrc\n", rc));
+    return rc;
 }
 
 void UIMachineView::dropEvent(QDropEvent *pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
-    if (!dragAndDropIsActive())
+    if (!dragAndDropCanAccept())
         return;
 
     /* Get mouse-pointer location. */

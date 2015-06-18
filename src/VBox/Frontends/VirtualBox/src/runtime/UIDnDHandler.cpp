@@ -103,7 +103,7 @@ Qt::DropAction UIDnDHandler::dragEnter(ulong screenID, int x, int y,
                                           toVBoxDnDActions(possibleActions),
                                           pMimeData->formats().toVector());
     if (m_dndTarget.isOk())
-        m_enmMode = DNDMODE_HOSTTOGUEST;
+        setMode(DNDMODE_HOSTTOGUEST);
 
     /* Set the DnD action returned by the guest. */
     return toQtDnDAction(result);
@@ -200,7 +200,7 @@ Qt::DropAction UIDnDHandler::dragDrop(ulong screenID, int x, int y,
      * the end of the current transfer direction. So reset the current
      * mode as well here.
      */
-    m_enmMode = DNDMODE_UNKNOWN;
+    setMode(DNDMODE_UNKNOWN);
 
     return toQtDnDAction(result);
 }
@@ -212,7 +212,7 @@ void UIDnDHandler::dragLeave(ulong screenID)
     if (m_enmMode == DNDMODE_HOSTTOGUEST)
     {
         m_dndTarget.Leave(screenID);
-        m_enmMode = DNDMODE_UNKNOWN;
+        setMode(DNDMODE_UNKNOWN);
     }
 }
 
@@ -220,22 +220,18 @@ void UIDnDHandler::dragLeave(ulong screenID)
  * Source -> Frontend.
  */
 
-int UIDnDHandler::dragStart(const QStringList &lstFormats,
-                            Qt::DropAction defAction, Qt::DropActions actions)
+int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
+                                    Qt::DropAction defAction, Qt::DropActions actions)
 {
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
 
-    m_lstFormats = lstFormats;
-    m_defAction  = defAction;
-    m_actions    = actions;
-
-    LogFlowFunc(("m_defAction=0x%x\n", m_defAction));
-    LogFlowFunc(("Number of formats: %d\n", m_lstFormats.size()));
+    LogFlowFunc(("defAction=0x%x\n", defAction));
+    LogFlowFunc(("Number of formats: %d\n", lstFormats.size()));
 # ifdef DEBUG
-    for (int i = 0; i < m_lstFormats.size(); i++)
-        LogFlowFunc(("\tFormat %d: %s\n", i, m_lstFormats.at(i).toAscii().constData()));
+    for (int i = 0; i < lstFormats.size(); i++)
+        LogFlowFunc(("\tFormat %d: %s\n", i, lstFormats.at(i).toAscii().constData()));
 # endif
 
 # ifdef RT_OS_WINDOWS
@@ -243,18 +239,18 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
     UIDnDDropSource *pDropSource = new UIDnDDropSource(m_pParent);
     if (!pDropSource)
         return VERR_NO_MEMORY;
-    UIDnDDataObject *pDataObject = new UIDnDDataObject(this, m_lstFormats);
+    UIDnDDataObject *pDataObject = new UIDnDDataObject(this, lstFormats);
     if (!pDataObject)
         return VERR_NO_MEMORY;
 
     DWORD dwOKEffects = DROPEFFECT_NONE;
-    if (m_actions)
+    if (actions)
     {
-        if (m_actions & Qt::CopyAction)
+        if (actions & Qt::CopyAction)
             dwOKEffects |= DROPEFFECT_COPY;
-        if (m_actions & Qt::MoveAction)
+        if (actions & Qt::MoveAction)
             dwOKEffects |= DROPEFFECT_MOVE;
-        if (m_actions & Qt::LinkAction)
+        if (actions & Qt::LinkAction)
             dwOKEffects |= DROPEFFECT_LINK;
     }
 
@@ -275,12 +271,16 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
         return VERR_NO_MEMORY;
 
     /* Note: pMData is transferred to the QDrag object, so no need for deletion. */
-    m_pMIMEData = new UIDnDMIMEData(this, m_lstFormats, m_defAction, m_actions);
+    m_pMIMEData = new UIDnDMIMEData(this, lstFormats, defAction, actions);
     if (!m_pMIMEData)
     {
         delete pDrag;
         return VERR_NO_MEMORY;
     }
+
+    /* Invoke this handler as data needs to be retrieved. */
+    connect(m_pMIMEData, SIGNAL(getData(QString, QVariant::Type)),
+            this, SLOT(sltGetData(QString, QVariant::Type)));
 
     /* Inform the MIME data object of any changes in the current action. */
     connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
@@ -291,7 +291,8 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
      * This does not block Qt's event loop, however (on Windows it would).
      */
     pDrag->setMimeData(m_pMIMEData);
-    Qt::DropAction dropAction = pDrag->exec(m_actions, m_defAction);
+    LogFlowFunc(("Executing modal drag'n drop operation ...\n"));
+    Qt::DropAction dropAction = pDrag->exec(actions, defAction);
     LogRel3(("DnD: Ended with dropAction=%ld\n", UIDnDHandler::toVBoxDnDAction(dropAction)));
 
     /* Note: The UIDnDMimeData object will not be not accessible here anymore,
@@ -312,7 +313,7 @@ int UIDnDHandler::dragStart(const QStringList &lstFormats,
     return rc;
 }
 
-int UIDnDHandler::dragIsPending(ulong screenID)
+int UIDnDHandler::dragCheckPending(ulong screenID)
 {
     int rc;
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
@@ -330,7 +331,7 @@ int UIDnDHandler::dragIsPending(ulong screenID)
             return VINF_SUCCESS;
     }
 
-    QMutexLocker AutoWriteLock(&m_ReadLock);
+    QMutexLocker AutoWriteLock(&m_WriteLock);
     m_fIsPending = true;
     AutoWriteLock.unlock();
 
@@ -347,64 +348,36 @@ int UIDnDHandler::dragIsPending(ulong screenID)
      */
     CGuest guest = m_pSession->guest();
 
-    QVector<QString> vecFmtGuest;
-    QVector<KDnDAction> vecActions;
-    KDnDAction defaultAction = m_dndSource.DragIsPending(screenID, vecFmtGuest, vecActions);
-    LogFlowFunc(("defaultAction=%d, numFormats=%d, numActions=%d\n", defaultAction,
-                 vecFmtGuest.size(), vecActions.size()));
+    /* Clear our current data set. */
+    m_dataSource.lstFormats.clear();
+    m_dataSource.vecActions.clear();
 
-    QStringList lstFmtNative;
-    if (defaultAction != KDnDAction_Ignore)
-    {
-        LogRel3(("DnD: Number of supported guest actions: %d\n", vecActions.size()));
-        for (int i = 0; i < vecActions.size(); i++)
-            LogRel3(("\tAction %d: 0x%x\n", i, vecActions.at(i)));
+    /* Ask the guest if there is a drag and drop operation pending (on the guest). */
+    QVector<QString> vecFormats;
+    m_dataSource.defaultAction = m_dndSource.DragIsPending(screenID, vecFormats, m_dataSource.vecActions);
 
-        /**
-         * Do guest -> host format conversion, if needed.
-         * On X11 this already maps to the Xdnd protocol.
-         ** @todo What about the MacOS Carbon Drag Manager? Needs testing.
-         *
-         * See: https://www.iana.org/assignments/media-types/media-types.xhtml
-         */
-        LogRel3(("DnD: Number of supported guest formats: %d\n", vecFmtGuest.size()));
-        for (int i = 0; i < vecFmtGuest.size(); i++)
+    LogRel3(("DnD: Default action is: 0x%x\n", m_dataSource.defaultAction));
+    LogRel3(("DnD: Number of supported guest actions: %d\n", m_dataSource.vecActions.size()));
+        for (int i = 0; i < m_dataSource.vecActions.size(); i++)
+            LogRel3(("\tAction %d: 0x%x\n", i, m_dataSource.vecActions.at(i)));
+
+    LogRel3(("DnD: Number of supported guest formats: %d\n", vecFormats.size()));
+        for (int i = 0; i < vecFormats.size(); i++)
         {
-            const QString &strFmtGuest = vecFmtGuest.at(i);
+            const QString &strFmtGuest = vecFormats.at(i);
             LogRel3(("\tFormat %d: %s\n", i, strFmtGuest.toAscii().constData()));
-# ifdef RT_OS_WINDOWS
-            /* CF_TEXT -> Regular text. */
-            if (   strFmtGuest.contains("text/plain", Qt::CaseInsensitive)
-                && !lstFmtNative.contains("text/plain"))
-            {
-                lstFmtNative << "text/plain";
-            }
-            /* CF_HDROP -> URI list. */
-            else if (   strFmtGuest.contains("text/uri-list", Qt::CaseInsensitive)
-                     && !lstFmtNative.contains("text/uri-list"))
-            {
-                lstFmtNative << "text/uri-list";
-            }
-# else /* RT_OS_WINDOWS */
-
-            /* On non-Windows just do a 1:1 mapping. */
-            lstFmtNative << strFmtGuest;
-#  ifdef RT_OS_MACOS
-            /** @todo Does the 1:1 format mapping apply on OS X? Needs testing! */
-#  endif
-
-# endif /* !RT_OS_WINDOWS */
         }
 
-        LogRel3(("DnD: Number of supported host formats: %d\n", lstFmtNative.size()));
-        for (int i = 0; i < lstFmtNative.size(); i++)
-            LogRel3(("\tFormat %d: %s\n", i, lstFmtNative.at(i).toAscii().constData()));
-    }
-
-    if (!lstFmtNative.isEmpty())
+    if (   m_dataSource.defaultAction != KDnDAction_Ignore
+        && vecFormats.size())
     {
-        rc = dragStart(lstFmtNative,
-                       toQtDnDAction(defaultAction), toQtDnDActions(vecActions));
+        for (int i = 0; i < vecFormats.size(); i++)
+        {
+            const QString &strFormat = vecFormats.at(i);
+            m_dataSource.lstFormats << strFormat;
+        }
+
+        rc = VINF_SUCCESS; /* There's a valid pending drag and drop operation on the guest. */
     }
     else /* No format data from the guest arrived yet. */
         rc = VERR_NO_DATA;
@@ -425,22 +398,62 @@ int UIDnDHandler::dragIsPending(ulong screenID)
     return rc;
 }
 
-/**
- * Called by UIDnDMIMEData (Linux, OS X, Solaris) or UIDnDDataObject (Windows)
- * to start retrieving the actual data from the guest. This function will block
- * and show a modal progress dialog until the data transfer is complete.
- *
- * @return IPRT return code.
- * @param dropAction            Drop action to perform.
- * @param strMimeType           MIME data type.
- * @param vaType                Qt's variant type of the MIME data.
- * @param vaData                The actual MIME data.
- * @param pParent               Pointer to parent widget.
- */
-int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
-                               const QString        &strMimeType,
-                                     QVariant::Type  vaType,
-                                     QVariant       &vaData)
+int UIDnDHandler::dragStart(ulong screenID)
+{
+    int rc;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
+    LogFlowFuncEnter();
+
+    /* Sanity checks. */
+    if (   !m_dataSource.lstFormats.size()
+        ||  m_dataSource.defaultAction == KDnDAction_Ignore
+        || !m_dataSource.vecActions.size())
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    setMode(DNDMODE_GUESTTOHOST);
+
+    rc = dragStartInternal(m_dataSource.lstFormats,
+                           toQtDnDAction(m_dataSource.defaultAction), toQtDnDActions(m_dataSource.vecActions));
+
+#else /* !VBOX_WITH_DRAG_AND_DROP_GH */
+
+    NOREF(screenID);
+
+    rc = VERR_NOT_SUPPORTED;
+
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int UIDnDHandler::dragStop(ulong screenID)
+{
+    int rc;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
+    m_fIsPending = false;
+    rc = VINF_SUCCESS;
+
+#else /* !VBOX_WITH_DRAG_AND_DROP_GH */
+
+    NOREF(screenID);
+
+    rc = VERR_NOT_SUPPORTED;
+
+#endif /* VBOX_WITH_DRAG_AND_DROP_GH */
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
+                                       const QString        &strMimeType,
+                                             QVariant::Type  vaType,
+                                             QVariant       &vaData)
 {
     LogFlowFunc(("Retrieving data as type=%s (variant type=%ld)\n",
                  strMimeType.toAscii().constData(), vaType));
@@ -517,8 +530,35 @@ int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
         rc = VERR_GENERAL_FAILURE; /** @todo Fudge; do a GetResultCode() to rc translation. */
     }
 
+    setMode(DNDMODE_UNKNOWN);
+
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+void UIDnDHandler::setMode(DNDMODE enmMode)
+{
+    QMutexLocker AutoWriteLock(&m_WriteLock);
+    m_enmMode = enmMode;
+    LogFlowFunc(("Mode is now: %RU32\n", m_enmMode));
+}
+
+/**
+ * Called by UIDnDMIMEData (Linux, OS X, Solaris) to start retrieving the actual data
+ * from the guest. This function will block and show a modal progress dialog until
+ * the data transfer is complete.
+ *
+ * @return QVariant with data retrieved, if any.
+ * @param strMimeType           MIME data type.
+ * @param vaType                Qt's variant type of the MIME data.
+ */
+QVariant UIDnDHandler::sltGetData(const QString        &strMimeType,
+                                        QVariant::Type  vaType)
+{
+    QVariant vaData;
+    int rc = retrieveDataInternal(Qt::CopyAction, strMimeType, vaType, vaData);
+    LogFlowFuncLeaveRC(rc);
+    return vaData;
 }
 
 /*
