@@ -78,10 +78,23 @@ protected:
     virtual bool hasFormat(const QString &mimeType) const;
 
     virtual QVariant retrieveData(const QString &strMIMEType, QVariant::Type vaType) const;
+    /** @}  */
 
-#ifndef RT_OS_WINDOWS
-    bool eventFilter(QObject *pObject, QEvent *pEvent);
-#endif
+protected:
+
+    /** @name Internal helper functions.
+     * @{ */
+
+    /**
+     * Sets the object's MIME data according to the given
+     * MIME type and data.
+     *
+     * @returns IPRT status code.
+     * @param   strMIMEType             MIME type to set.
+     * @param   vaData                  Data to set.
+     * @remark
+     */
+    int setData(const QString &strMIMEType, const QVariant &vaData);
     /** @}  */
 
 protected:

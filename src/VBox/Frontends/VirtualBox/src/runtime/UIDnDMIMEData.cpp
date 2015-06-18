@@ -140,59 +140,10 @@ QVariant UIDnDMIMEData::retrieveData(const QString &strMIMEType, QVariant::Type 
     return vaData;
 }
 
-#ifndef RT_OS_WINDOWS
-bool UIDnDMIMEData::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-    bool fRemoveFilter = false;
-
-    if (pEvent)
-    {
-        switch (pEvent->type())
-        {
-            case QEvent::MouseButtonRelease:
-            {
-                LogFlowFunc(("MouseButtonRelease\n"));
-                m_enmState = Dropped;
-
-                fRemoveFilter = true;
-                break;
-            }
-
-            case QEvent::KeyPress:
-            {
-                /* ESC pressed? */
-                if (static_cast<QKeyEvent*>(pEvent)->key() == Qt::Key_Escape)
-                {
-                    LogRel2(("DnD: ESC pressed, cancelling drag and drop operation\n"));
-                    m_enmState = Canceled;
-
-                    fRemoveFilter = true;
-                }
-                break;
-            }
-
-            default:
-                break;
-        }
-    }
-
-    if (fRemoveFilter)
-    {
-        LogFlowFunc(("Removing event filter ...\n"));
-        AssertPtr(qApp);
-        qApp->removeEventFilter(this);
-    }
-
-    /* Propagate further. */
-    return false;
-}
-#endif /* !RT_OS_WINDOWS */
-
-#if 0
-int UIDnDMIMEData::setData(const QString &mimeType)
+int UIDnDMIMEData::setData(const QString &strMIMEType, const QVariant &vaData)
 {
     LogFlowFunc(("mimeType=%s, dataType=%s\n",
-                 mimeType.toAscii().constData(), m_vaData.typeName()));
+                 strMIMEType.toAscii().constData(), vaData.typeName()));
 
     int rc = VINF_SUCCESS;
 
@@ -200,19 +151,19 @@ int UIDnDMIMEData::setData(const QString &mimeType)
     {
         case QVariant::String: /* Plain text. */
         {
-            QMimeData::setText(m_vaData.toString());
+            QMimeData::setText(vaData.toString());
             break;
         }
 
         case QVariant::ByteArray: /* Raw byte data. */
         {
-            QMimeData::setData(mimeType, m_vaData.toByteArray());
+            QMimeData::setData(strMIMEType, vaData.toByteArray());
             break;
         }
 
         case QVariant::StringList: /* URI. */
         {
-            QList<QVariant> lstData = m_vaData.toList();
+            QList<QVariant> lstData = vaData.toList();
             QList<QUrl> lstURL;
             for (int i = 0; i < lstData.size(); i++)
             {
@@ -239,7 +190,6 @@ int UIDnDMIMEData::setData(const QString &mimeType)
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
 
 /**
  * Issued by the QDrag object as soon as the current drop action has changed.
