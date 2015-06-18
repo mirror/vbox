@@ -50,6 +50,7 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <iprt/param.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 
 #include "DBGFInternal.h"
 
@@ -309,6 +310,78 @@ static uint32_t dbgfR3GetRamRangeCount(PVM pVM)
 
 
 /**
+ * Gets the guest-CPU context suitable for dumping into the core file.
+ *
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pDbgfCpu    Where to dump the guest-CPU data.
+ */
+static void dbgfR3GetCoreCpu(PCPUMCTX pCtx, PDBGFCORECPU pDbgfCpu)
+{
+#define DBGFCOPYSEL(a_dbgfsel, a_cpumselreg) \
+    do { \
+        (a_dbgfsel).uBase  = (a_cpumselreg).u64Base; \
+        (a_dbgfsel).uLimit = (a_cpumselreg).u32Limit; \
+        (a_dbgfsel).uAttr  = (a_cpumselreg).Attr.u; \
+        (a_dbgfsel).uSel   = (a_cpumselreg).Sel; \
+    } while (0)
+
+    pDbgfCpu->rax             = pCtx->rax;
+    pDbgfCpu->rbx             = pCtx->rbx;
+    pDbgfCpu->rcx             = pCtx->rcx;
+    pDbgfCpu->rdx             = pCtx->rdx;
+    pDbgfCpu->rsi             = pCtx->rsi;
+    pDbgfCpu->rdi             = pCtx->rdi;
+    pDbgfCpu->r8              = pCtx->r8;
+    pDbgfCpu->r9              = pCtx->r9;
+    pDbgfCpu->r10             = pCtx->r10;
+    pDbgfCpu->r11             = pCtx->r11;
+    pDbgfCpu->r12             = pCtx->r12;
+    pDbgfCpu->r13             = pCtx->r13;
+    pDbgfCpu->r14             = pCtx->r14;
+    pDbgfCpu->r15             = pCtx->r15;
+    pDbgfCpu->rip             = pCtx->rip;
+    pDbgfCpu->rsp             = pCtx->rsp;
+    pDbgfCpu->rbp             = pCtx->rbp;
+    DBGFCOPYSEL(pDbgfCpu->cs, pCtx->cs);
+    DBGFCOPYSEL(pDbgfCpu->ds, pCtx->ds);
+    DBGFCOPYSEL(pDbgfCpu->es, pCtx->es);
+    DBGFCOPYSEL(pDbgfCpu->fs, pCtx->fs);
+    DBGFCOPYSEL(pDbgfCpu->gs, pCtx->gs);
+    DBGFCOPYSEL(pDbgfCpu->ss, pCtx->ss);
+    pDbgfCpu->cr0             = pCtx->cr0;
+    pDbgfCpu->cr2             = pCtx->cr2;
+    pDbgfCpu->cr3             = pCtx->cr3;
+    pDbgfCpu->cr4             = pCtx->cr4;
+    AssertCompile(RT_ELEMENTS(pDbgfCpu->dr) == RT_ELEMENTS(pCtx->dr));
+    for (unsigned i = 0; i < RT_ELEMENTS(pDbgfCpu->dr); i++)
+        pDbgfCpu->dr[i] = pCtx->dr[i];
+    pDbgfCpu->gdtr.uAddr      = pCtx->gdtr.pGdt;
+    pDbgfCpu->gdtr.cb         = pCtx->gdtr.cbGdt;
+    pDbgfCpu->idtr.uAddr      = pCtx->idtr.pIdt;
+    pDbgfCpu->idtr.cb         = pCtx->idtr.cbIdt;
+    DBGFCOPYSEL(pDbgfCpu->ldtr, pCtx->ldtr);
+    DBGFCOPYSEL(pDbgfCpu->tr,   pCtx->tr);
+    pDbgfCpu->sysenter.cs     = pCtx->SysEnter.cs;
+    pDbgfCpu->sysenter.eip    = pCtx->SysEnter.eip;
+    pDbgfCpu->sysenter.esp    = pCtx->SysEnter.esp;
+    pDbgfCpu->msrEFER         = pCtx->msrEFER;
+    pDbgfCpu->msrSTAR         = pCtx->msrSTAR;
+    pDbgfCpu->msrPAT          = pCtx->msrPAT;
+    pDbgfCpu->msrLSTAR        = pCtx->msrLSTAR;
+    pDbgfCpu->msrCSTAR        = pCtx->msrCSTAR;
+    pDbgfCpu->msrSFMASK       = pCtx->msrSFMASK;
+    pDbgfCpu->msrKernelGSBase = pCtx->msrKERNELGSBASE;
+    pDbgfCpu->msrApicBase     = pCtx->msrApicBase;
+    pDbgfCpu->aXcr[0]         = pCtx->aXcr[0];
+    pDbgfCpu->aXcr[1]         = pCtx->aXcr[1];
+    AssertCompile(sizeof(pDbgfCpu->ext) == sizeof(*pCtx->pXStateR3));
+    memcpy(&pDbgfCpu->ext, pCtx->pXStateR3, sizeof(pDbgfCpu->ext));
+
+#undef DBGFCOPYSEL
+}
+
+
+/**
  * Worker function for dbgfR3CoreWrite() which does the writing.
  *
  * @returns VBox status code
@@ -345,7 +418,7 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
     uint64_t const offCoreDescriptor  = offLoadSections   + cbLoadSections;
     uint64_t const cbCoreDescriptor   = Elf64NoteSectionSize(g_pcszCoreVBoxCore, sizeof(CoreDescriptor));
     uint64_t const offCpuDumps        = offCoreDescriptor + cbCoreDescriptor;
-    uint64_t const cbCpuDumps         = pVM->cCpus * Elf64NoteSectionSize(g_pcszCoreVBoxCpu, sizeof(CPUMCTX));
+    uint64_t const cbCpuDumps         = pVM->cCpus * Elf64NoteSectionSize(g_pcszCoreVBoxCpu, sizeof(DBGFCORECPU));
     uint64_t const offMemory          = offCpuDumps       + cbCpuDumps;
 
     uint64_t const offNoteSectionData = offCoreDescriptor;
@@ -428,19 +501,37 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
     /*
      * Write the CPU context note headers and data.
      */
-    /** @todo r=ramshankar: Dump a more standardized CPU structure rather than
-     *        dumping CPUMCTX and bump the core file version number. */
     Assert(RTFileTell(hFile) == offCpuDumps);
+    PDBGFCORECPU pDbgfCoreCpu = (PDBGFCORECPU)RTMemAlloc(sizeof(*pDbgfCoreCpu));
+    if (RT_UNLIKELY(!pDbgfCoreCpu))
+    {
+        LogRel((DBGFLOG_NAME ": failed to alloc %u bytes for DBGFCORECPU\n", sizeof(*pDbgfCoreCpu)));
+        return VERR_NO_MEMORY;
+    }
+
     for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
-        PCPUMCTX pCpuCtx = CPUMQueryGuestCtxPtr(&pVM->aCpus[iCpu]);
-        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, g_pcszCoreVBoxCpu, pCpuCtx, sizeof(CPUMCTX));
+        PVMCPU      pVCpu = &pVM->aCpus[iCpu];
+        PCPUMCTX    pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
+        if (RT_UNLIKELY(!pCtx))
+        {
+            LogRel((DBGFLOG_NAME ": CPUMQueryGuestCtxPtr failed for vCPU[%u]\n", iCpu));
+            RTMemFree(pDbgfCoreCpu);
+            return VERR_INVALID_POINTER;
+        }
+
+        RT_BZERO(pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
+        dbgfR3GetCoreCpu(pCtx, pDbgfCoreCpu);
+        rc = Elf64WriteNoteHdr(hFile, NT_VBOXCPU, g_pcszCoreVBoxCpu, pDbgfCoreCpu, sizeof(*pDbgfCoreCpu));
         if (RT_FAILURE(rc))
         {
             LogRel((DBGFLOG_NAME ": Elf64WriteNoteHdr failed for vCPU[%u] rc=%Rrc\n", iCpu, rc));
+            RTMemFree(pDbgfCoreCpu);
             return rc;
         }
     }
+    RTMemFree(pDbgfCoreCpu);
+    pDbgfCoreCpu = NULL;
 
     /*
      * Write memory ranges.

@@ -47,7 +47,97 @@ RT_C_DECLS_BEGIN
 /** DBGCORECOREDESCRIPTOR::u32Magic. */
 #define DBGFCORE_MAGIC          UINT32_C(0xc01ac0de)
 /** DBGCORECOREDESCRIPTOR::u32FmtVersion. */
-#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010001)
+#define DBGFCORE_FMT_VERSION    UINT32_C(0x00010002)
+
+/**
+ * An x86 segment selector.
+ */
+typedef struct DBGFCORESEL
+{
+    uint64_t        uBase;
+    uint32_t        uLimit;
+    uint32_t        uAttr;
+    uint16_t        uSel;
+    uint16_t        uReserved;
+} VBOXX86SEL;
+AssertCompileSizeAlignment(DBGFCORESEL, 8);
+
+/**
+ * A gdtr/ldtr descriptor.
+ */
+typedef struct DBGFCOREXDTR
+{
+    uint64_t        uAddr;
+    uint32_t        cb;
+    uint32_t        uReserved0;
+} DBGFXDTR;
+AssertCompileSizeAlignment(DBGFCORESEL, 8);
+
+/**
+ * A simpler to parse CPU dump than CPUMCTX.
+ *
+ * Please bump DBGFCORE_FMT_VERSION by 1 if you make any changes to this
+ * structure.
+ */
+typedef struct DBGFCORECPU
+{
+    uint64_t            rax;
+    uint64_t            rbx;
+    uint64_t            rcx;
+    uint64_t            rdx;
+    uint64_t            rsi;
+    uint64_t            rdi;
+    uint64_t            r8;
+    uint64_t            r9;
+    uint64_t            r10;
+    uint64_t            r11;
+    uint64_t            r12;
+    uint64_t            r13;
+    uint64_t            r14;
+    uint64_t            r15;
+    uint64_t            rip;
+    uint64_t            rsp;
+    uint64_t            rbp;
+    DBGFCORESEL         cs;
+    DBGFCORESEL         ds;
+    DBGFCORESEL         es;
+    DBGFCORESEL         fs;
+    DBGFCORESEL         gs;
+    DBGFCORESEL         ss;
+    uint64_t            cr0;
+    uint64_t            cr2;
+    uint64_t            cr3;
+    uint64_t            cr4;
+    uint64_t            dr[8];
+    DBGFCOREXDTR        gdtr;
+    DBGFCOREXDTR        idtr;
+    VBOXX86SEL          ldtr;
+    VBOXX86SEL          tr;
+    union
+    {
+        uint64_t        cs;
+        uint64_t        eip;
+        uint64_t        esp;
+    } sysenter;
+    uint64_t            msrEFER;
+    uint64_t            msrSTAR;
+    uint64_t            msrPAT;
+    uint64_t            msrLSTAR;
+    uint64_t            msrCSTAR;
+    uint64_t            msrSFMASK;
+    uint64_t            msrKernelGSBase;
+    uint64_t            msrApicBase;
+    uint64_t            aXcr[2];
+    X86XSAVEAREA        ext;
+} DBGFCORECPU;
+/** Pointer to a DBGF-core CPU. */
+typedef DBGFCORECPU *PDBGFCORECPU;
+/** Pointer to the const DBGF-core CPU. */
+typedef const DBGFCORECPU *PCDBGFCORECPU;
+AssertCompileMemberAlignment(DBGFCORECPU, cr0,     8);
+AssertCompileMemberAlignment(DBGFCORECPU, msrEFER, 8);
+AssertCompileMemberAlignment(DBGFCORECPU, ext,     8);
+AssertCompileSizeAlignment(DBGFCORECPU, 8);
 
 /**
  * The DBGF Core descriptor.
