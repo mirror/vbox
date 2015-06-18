@@ -432,7 +432,7 @@
   -&gt; Number of vCPUs etc.
 [ Note Header, type NT_VBOXCPU ] - one for each vCPU
 [ vCPU 1 Note Header ]
-  [ CPUMCTX - vCPU 1 dump ]
+  [ DBGFCORECPU - vCPU 1 dump ]
 [ Additional Notes + Data ] - currently unused
 [ Memory dump ]</screen></para>
 
@@ -443,7 +443,7 @@
       <para>The relevant data structures and definitions can be found in the
       VirtualBox sources under the following header files:
       <computeroutput>include/VBox/dbgfcorefmt.h</computeroutput>,
-      <computeroutput>include/VBox/cpumctx.h</computeroutput> and
+      <computeroutput>include/iprt/x86.h</computeroutput> and
       <computeroutput>src/VBox/Runtime/include/internal/ldrELFCommon.h</computeroutput>.</para>
 
       <para>The VM core file can be inspected using
