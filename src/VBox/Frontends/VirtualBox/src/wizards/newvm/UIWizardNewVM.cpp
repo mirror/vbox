@@ -103,6 +103,8 @@ bool UIWizardNewVM::createVM()
 
     /* Selecting recommended Audio Controller: */
     m_machine.GetAudioAdapter().SetAudioController(type.GetRecommendedAudioController());
+    /* And the Audio Codec: */
+    m_machine.GetAudioAdapter().SetAudioCodec(type.GetRecommendedAudioCodec());
     /* Enabling audio by default: */
     m_machine.GetAudioAdapter().SetEnabled(true);
 
