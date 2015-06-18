@@ -157,6 +157,7 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$2$(notdir $1): $$(VBOX_PATH_MANUAL_SRC)/$1 | $$$$(
 		-e 's|@VBOX_PATH_DOCBOOK@|$$(VBOX_PATH_DOCBOOK)|g' \
 		-e 's|@VBOX_PATH_MANUAL_SRC@|$$(VBOX_PATH_MANUAL_SRC)|g' \
 		-e 's|@VBOX_PATH_MANUAL_OUTBASE@|$$(VBOX_PATH_MANUAL_OUTBASE)|g' \
+		-e 's|@VBOX_PATH_MANUAL_OUT_LANG@|$$(VBOX_PATH_MANUAL_OUTBASE)$(if $2,/$(patsubst %/,%,$2),)|g' \
 		\
 		-e 's|@CFGPATH@|$$(VBOX_PATH_MANUAL_SRC)|g' \
 		-e 's|@TARGETPATH@|$$(@D)|g' \
@@ -754,6 +755,13 @@ ifdef VBOX_WITH_DOCS_CHM
  # DocBook XML files, as defined above, then feed that into the
  # Microsoft Help Compiler.
  #
+ $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-htmlhelp-formatcfg.xsl,$(lang)/))
+
+ # Manual formatcfg dependencies for the above.
+ $(foreach lang,$(VBOX_MANUAL_LANGUAGES), $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/docbook-htmlhelp-formatcfg.xsl): \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
+ 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
+
  $(PATH_STAGE_BIN)/VirtualBox.chm: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/VirtualBox.chm
 	$(QUIET)$(CP) $< $@
 	$(call MSG_L1,Fresh CHM is now at $@)
@@ -771,21 +779,6 @@ ifdef VBOX_WITH_DOCS_CHM
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(VBOX_HHC) $(subst /,\\,$<)
 
-
- # intermediate step to do some variable replacement in the XSL configuration
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/docbook-htmlhelp-formatcfg.xsl): \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-htmlhelp-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,,$@,$<)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
-	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
-	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@ $<
-
- # Manual formatcfg dependencies.
- $(foreach lang,$(VBOX_MANUAL_LANGUAGES), $(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/docbook-htmlhelp-formatcfg.xsl): \
- 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
- 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
-
  # Prepare the XSL file for our title page, htmlhelp variant.
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/titlepage-htmlhelp.xsl): \
 		$(VBOX_PATH_MANUAL_SRC)/titlepage-htmlhelp.xml $(MAKEFILE_CURRENT) | $$(dir $$@)
@@ -793,7 +786,6 @@ ifdef VBOX_WITH_DOCS_CHM
 	$(QUIET)$(RM) -f $@.tmp $@
 	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet -o $@.tmp $(VBOX_PATH_DOCBOOK)/template/titlepage.xsl $<
 	$(QUIET)$(MV) -f $@.tmp $@
-
 
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htmlhelp.hhp): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp: \
