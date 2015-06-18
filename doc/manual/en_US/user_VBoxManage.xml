@@ -94,8 +94,8 @@
           </footnote> like this:</para>
 
         <screen>$ VBoxManage createvm --name "SUSE 10.2" --register
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Virtual machine 'SUSE 10.2' is created.
@@ -321,8 +321,8 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
     <para>You will get information similar to the following:</para>
 
     <para><screen>$ VBoxManage showvminfo "Windows XP"
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Name:            Windows XP
@@ -2800,8 +2800,8 @@ VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
 
     <para>which would return</para>
 
-    <screen>VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+    <screen>VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Value: 2006.01.01</screen>

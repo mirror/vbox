@@ -13,7 +13,7 @@
   An odd minor version number represents an internal development or test build.
   In addition, each build contains a revision number.</para>
 
-<!--$VIRTUALBOX_CHANGELOG_IMPL-->
+<!--@VIRTUALBOX_CHANGELOG_IMPL@-->
 
   <sect1>
     <title>Older Change log details</title>

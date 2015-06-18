@@ -47,7 +47,7 @@
     <sect1 id="KnownProblems">
       <title>Known Issues</title>
       <para>The following section describes known problems with VirtualBox
-      $VBOX_VERSION_STRING. Unless marked otherwise, these issues are planned to
+      @VBOX_VERSION_STRING@. Unless marked otherwise, these issues are planned to
       be fixed in later releases.</para>
     
       <itemizedlist>

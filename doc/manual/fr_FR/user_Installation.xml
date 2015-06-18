@@ -393,7 +393,7 @@
         Ubuntu Raring 32 bits. Utilisez <computeroutput>dpkg</computeroutput>
         pour installer le paquet Debian&#xA0;:</para>
 
-        <screen>sudo dpkg -i VirtualBox-4.3_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
+        <screen>sudo dpkg -i VirtualBox-4.3_@VBOX_VERSION_STRING@_Ubuntu_raring_i386.deb</screen>
 
         <para>On vous demandera d'accepter la licence d'utilisation Personelle
         et d'évaluation de VirtualBox. Sauf si vous répondez "oui" l'installation
@@ -719,13 +719,13 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
       <computeroutput>zonename</computeroutput>. Exécutez les
       commandes suivantes&#xA0;:</para>
 
-      <screen>gunzip -cd VirtualBox-$VBOX_VERSION_STRING-SunOS.tar.gz | tar xvf -</screen>
+      <screen>gunzip -cd VirtualBox-@VBOX_VERSION_STRING@-SunOS.tar.gz | tar xvf -</screen>
 
       <para>À partir de VirtualBox 3.1, le paquet noyau de VirtualBox n'est plus
       distinct et il a été intégré au paquet principal.
       Installez le paquet VirtualBox en utilisant&#xA0;:</para>
 
-      <screen>pkgadd -d VirtualBox-$VBOX_VERSION_STRING-SunOS.pkg</screen>
+      <screen>pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS.pkg</screen>
 
       <note>
         <para>Si vous utilisez les Espaces Solaris, pour n'installer VirtualBox
@@ -819,7 +819,7 @@ virtualbox virtualbox/delete-old-modules boolean true</screen>La première ligne
       <para>Extrayez le paquet tar.gz comme décrit dans l'installation normale.
       Puis ouvrez une session administrateur en terminal et exécutez&#xA0;:</para>
 
-      <screen>pkgadd -d VirtualBox-$VBOX_VERSION_STRING-SunOS-x86 -n -a autoresponse SUNWvbox</screen>
+      <screen>pkgadd -d VirtualBox-@VBOX_VERSION_STRING@-SunOS-x86 -n -a autoresponse SUNWvbox</screen>
 
       <para>Pour effectuer une désinstallation non interactive, ouvrez une session
       administrateur en terminal et exécutez&#xA0;:</para>

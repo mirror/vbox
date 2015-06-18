@@ -3,14 +3,14 @@
   "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <book>
   <bookinfo>
-    <title>$VBOX_PRODUCT<superscript>®</superscript></title>
+    <title>@VBOX_PRODUCT@<superscript>®</superscript></title>
 
     <subtitle>Manuel de l'utilisateur</subtitle>
 
     <edition>Version
-    $VBOX_VERSION_STRING</edition>
+    @VBOX_VERSION_STRING@</edition>
 
-    <corpauthor>$VBOX_VENDOR</corpauthor>
+    <corpauthor>@VBOX_VENDOR@</corpauthor>
 
     <othercredit class="translator">
       <contrib>Traducteur</contrib>
@@ -21,9 +21,9 @@
     <address>http://www.virtualbox.org</address>
 
     <copyright>
-      <year>2004-$VBOX_C_YEAR</year>
+      <year>2004-@VBOX_C_YEAR@</year>
 
-      <holder>$VBOX_VENDOR</holder>
+      <holder>@VBOX_VENDOR@</holder>
     </copyright>
   </bookinfo>
 

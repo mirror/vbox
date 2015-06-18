@@ -4,7 +4,7 @@
 <chapter id="Introduction">
   <title>First steps</title>
 
-  <para>Welcome to $VBOX_PRODUCT!</para>
+  <para>Welcome to @VBOX_PRODUCT@!</para>
 
   <para>VirtualBox is a cross-platform virtualization application. What does
   that mean? For one thing, it installs on your existing Intel or AMD-based

@@ -430,13 +430,13 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/$f/
 		$(VBOX_PATH_MANUAL_OUTBASE)/% : $(VBOX_PATH_MANUAL_SRC)/% $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_L1,Pre-processing [1] $(@F) to $@)
 	$(QUIET)$(RM) -f $@ $@.tmp
-	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+	$(QUIET)$(SED) -e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+	               -e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+	               -e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+	               -e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+	               -e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+	               -e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+	               -e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 	               --output $@.tmp $<
 	$(QUIET)$(MV) -f $@.tmp $@
 
@@ -445,24 +445,24 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeL
 		$(VBOX_PATH_MANUAL_SRC)/% $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml | $$(dir $$@)
 	$(call MSG_L1,Pre-processing [3] $(@F) to $@)
 	$(QUIET)$(RM) -f $@ $@.tmp $@.tmp2
-	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+	$(QUIET)$(SED) -e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+	               -e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+	               -e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+	               -e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+	               -e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+	               -e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+	               -e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 	               --output $@.tmp $<
-	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/!d' \
-	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' \
+	$(QUIET)$(SED) -e '1,/<!--@VIRTUALBOX_CHANGELOG_IMPL@-->/!d' \
+	               -e 's/<!--@VIRTUALBOX_CHANGELOG_IMPL@-->//' \
 	               --output $@ $@.tmp
-	var=`$(SED) -n '/!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/p' $<`; \
+	var=`$(SED) -n '/!--@VIRTUALBOX_CHANGELOG_IMPL@-->/p' $<`; \
 		test -n "$${var}" \
 		&& $(SED) -e 's/<?xml version=\"1.0\" encoding=\"UTF-8\"?>//g' \
 			--append $@ $(VBOX_PATH_MANUAL_SRC)/user_ChangeLogImpl.xml; \
        	true
-	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->/,$$!d' \
-	               -e 's/<!--\$$VIRTUALBOX_CHANGELOG_IMPL-->//' --append $@ $@.tmp
+	$(QUIET)$(SED) -e '/<!--@VIRTUALBOX_CHANGELOG_IMPL@-->/,$$!d' \
+	               -e 's/<!--@VIRTUALBOX_CHANGELOG_IMPL@-->//' --append $@ $@.tmp
 	$(QUIET)$(RM) -f -- "$@.tmp"
 
 # TODO: figure why the rule below doesn't cause kmk to rebuild the manual when a man page changes!
@@ -499,13 +499,13 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_VBoxMan
 	$(QUIET)$(SED) \
 		-e '/@VBOX_MANAGE_OUTPUT@/{' -e 'r $@.screen' -e 'd' -e '}' \
                \
-		-e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-		-e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-		-e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-		-e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		-e 's|@VBOX_PATH_DOCBOOK@|$(VBOX_PATH_DOCBOOK)|g' \
 		-e 's|@VBOX_PATH_MANUAL_SRC@|$(VBOX_PATH_MANUAL_SRC)|g' \
 		--output "$@" \
@@ -684,20 +684,20 @@ $(VBOX_MANUAL_APIREF_TMP): $(VBOX_PATH_MANUAL_SRC)/xidl2docbook.xsl $(VBOX_DOC_X
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/SDKRef.xml: $(VBOX_PATH_MANUAL_SRC)/en_US/SDKRef.xml $(VBOX_MANUAL_APIREF_TMP)
 	$(call MSG_L1,Pre-processing [2] $(@F) to $@)
 	$(QUIET)$(RM) -f $@ $@.tmp
-	$(QUIET)$(SED) -e 's/\$$VBOX_VERSION_MAJOR/$(VBOX_VERSION_MAJOR)/g' \
-	               -e 's/\$$VBOX_VERSION_MINOR/$(VBOX_VERSION_MINOR)/g' \
-	               -e 's/\$$VBOX_VERSION_BUILD/$(VBOX_VERSION_BUILD)/g' \
-	               -e 's/\$$VBOX_VERSION_STRING/$(VBOX_VERSION_STRING)/g' \
-	               -e 's/\$$VBOX_VENDOR/$(VBOX_VENDOR)/g' \
-	               -e 's/\$$VBOX_PRODUCT/$(VBOX_PRODUCT)/g' \
-	               -e 's/\$$VBOX_C_YEAR/$(VBOX_C_YEAR)/g' \
+	$(QUIET)$(SED) -e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+	               -e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+	               -e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+	               -e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+	               -e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+	               -e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+	               -e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 	               --output $@.tmp $<
-	$(QUIET)$(SED) -e '1,/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/!d' \
-	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' \
+	$(QUIET)$(SED) -e '1,/<!--@VIRTUALBOX_MAIN_API_REFERENCE@-->/!d' \
+	               -e 's/<!--@VIRTUALBOX_MAIN_API_REFERENCE@-->//' \
 	               --output $@ $@.tmp
 	$(QUIET)$(SED) -e 's/<?xml version=\"1.0\" encoding=\"utf-8\"?>//g' --append $@ $(VBOX_MANUAL_APIREF_TMP)
-	$(QUIET)$(SED) -e '/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->/,$$!d' \
-	               -e 's/<!--\$$VIRTUALBOX_MAIN_API_REFERENCE-->//' --append $@ $@.tmp
+	$(QUIET)$(SED) -e '/<!--@VIRTUALBOX_MAIN_API_REFERENCE@-->/,$$!d' \
+	               -e 's/<!--@VIRTUALBOX_MAIN_API_REFERENCE@-->//' --append $@ $@.tmp
 #	$(QUIET)$(MV) -f $@.tmp $@
 	$(QUIET)$(RM) -f -- "$@.tmp"
 	$(call MSG_L1,Validating $@)

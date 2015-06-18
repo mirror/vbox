@@ -3,20 +3,20 @@
 "http://www.oasis-open.org/docbook/xml/4.3/docbookx.dtd">
 <book>
   <bookinfo>
-    <title>$VBOX_PRODUCT<superscript>®</superscript></title>
+    <title>@VBOX_PRODUCT@<superscript>®</superscript></title>
 
     <subtitle>Programming Guide and Reference</subtitle>
 
-    <edition>Version $VBOX_VERSION_STRING</edition>
+    <edition>Version @VBOX_VERSION_STRING@</edition>
 
-    <corpauthor>$VBOX_VENDOR</corpauthor>
+    <corpauthor>@VBOX_VENDOR@</corpauthor>
 
     <address>http://www.virtualbox.org</address>
 
     <copyright>
-      <year>2004-$VBOX_C_YEAR</year>
+      <year>2004-@VBOX_C_YEAR@</year>
 
-      <holder>$VBOX_VENDOR</holder>
+      <holder>@VBOX_VENDOR@</holder>
     </copyright>
   </bookinfo>
 
@@ -1198,7 +1198,7 @@ version = webservice.IVirtualBox_getVersion(oVirtualBox);
 print version;</screen></para>
 
                 <para>And it will print
-                "$VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD".</para>
+                "@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@".</para>
               </listitem>
 
               <listitem>
@@ -2541,7 +2541,7 @@ es.unregisterListener(listener); </screen></para>
     already running. Your new command will now be available.</para>
   </chapter>
 
-  <!--$VIRTUALBOX_MAIN_API_REFERENCE-->
+  <!--@VIRTUALBOX_MAIN_API_REFERENCE@-->
 
   <chapter id="hgcm">
     <title>Host-Guest Communication Manager</title>

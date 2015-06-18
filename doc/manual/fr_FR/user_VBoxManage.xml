@@ -78,8 +78,8 @@
           </footnote> comme ceci&#xA0;:</para>
 
         <screen>$ VBoxManage createvm --name "SUSE 10.2" --register
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Virtual machine 'SUSE 10.2' is created.
@@ -143,7 +143,9 @@ Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 
     en cas de doute, vérifiez la sortie de <computeroutput>VBoxManage</computeroutput>
     pour voir les commandes disponibles sur votre hôte en particulier.</para>
 
-    <screen>$VBOX_MANAGE_OUTPUT</screen>
+    <screen>@VBOX_MANAGE_OUTPUT@</screen> <!-- the whole line is replaced later -->
+    <xi:include href="../user_VBoxManage_CommandsOverview.xml" xpointer="element(/1)"
+      xmlns:xi="http://www.w3.org/2001/XInclude" />
 
     <para>À chaque fois que vous appelez VBoxManage, une seule commande peut être
     exécutée. Toutefois, une commande peut supporter plusieurs sous-commandes
@@ -305,8 +307,8 @@ Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 
     <para>Vous aurez des informations ressemblant à ce qui suit&#xA0;:</para>
 
     <para><screen>$ VBoxManage showvminfo "Windows XP"
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Name:            Windows XP
@@ -2532,8 +2534,8 @@ VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
 
     <para>qui renverrait</para>
 
-    <screen>VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+    <screen>VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Value: 2006.01.01</screen>

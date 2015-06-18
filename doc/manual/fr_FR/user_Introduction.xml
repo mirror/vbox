@@ -4,7 +4,7 @@
 <chapter id="Introduction">
   <title>Premiers pas</title>
 
-  <para>Bienvenue à $VBOX_PRODUCT!</para>
+  <para>Bienvenue à @VBOX_PRODUCT@!</para>
 
   <para>VirtualBox est une application de virtualisation de plateformes croisées.
   Qu'est-ce que cela veut dire&#xA0;? D'une part, il s'installe sur vos ordinateurs

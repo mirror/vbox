@@ -934,9 +934,9 @@
         paramétrage des suppléments invité après les avoir installé.</para>
 
         <para>À partir de la version 3.1.0, vous pouvez désinstaller les 
-        suppléments en appelant <screen>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING/uninstall.sh</screen>Merci
+        suppléments en appelant <screen>/opt/VBoxGuestAdditions-@VBOX_VERSION_STRING@/uninstall.sh</screen>Merci
         de remplacer 
-        <computeroutput>/opt/VBoxGuestAdditions-$VBOX_VERSION_STRING</computeroutput>
+        <computeroutput>/opt/VBoxGuestAdditions-@VBOX_VERSION_STRING@</computeroutput>
         par le bon répertoire d'installation des suppléments invité.</para>
       </sect3>
     </sect2>
@@ -1646,8 +1646,8 @@ $</screen>
     pour voir <emphasis>toutes</emphasis> les propriétés invité disponible pour 
     une Vm donnée en fonction, listées avec leurs valeurs respectives, utilisez
     ceci&#xA0;:<screen>$ VBoxManage guestproperty enumerate "Windows Vista III"
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Name: /VirtualBox/GuestInfo/OS/Product, value: Windows Vista Business Edition,
@@ -1661,27 +1661,27 @@ Name: /VirtualBox/GuestAdd/InstallDir,
     suppléments invité, timestamp: 1229098279269739000, flags:
 Name: /VirtualBox/GuestAdd/Revision, value: 40720,
     timestamp: 1229098279345664000, flags:
-Name: /VirtualBox/GuestAdd/Version, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD,
+Name: /VirtualBox/GuestAdd/Version, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@,
     timestamp: 1229098279479515000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxControl.exe, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxControl.exe, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279651731000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxHook.dll, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxHook.dll, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279804835000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxDisp.dll, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxDisp.dll, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279880611000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxMRXNP.dll, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxMRXNP.dll, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279882618000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxService.exe, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxService.exe, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279883195000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxTray.exe, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxTray.exe, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279885027000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxGuest.sys, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxGuest.sys, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279886838000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxMouse.sys, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxMouse.sys, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279890600000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxSF.sys, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxSF.sys, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279893056000, flags:
-Name: /VirtualBox/GuestAdd/Components/VBoxVideo.sys, value: $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILDr40720,
+Name: /VirtualBox/GuestAdd/Components/VBoxVideo.sys, value: @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@r40720,
     timestamp: 1229098279895767000, flags:
 Name: /VirtualBox/GuestInfo/OS/LoggedInUsers, value: 1,
     timestamp: 1229099826317660000, flags:
@@ -1705,8 +1705,8 @@ Name: /VirtualBox/GuestInfo/OS/LoggedInUsersList, value: username,
     <para>To query the value of a single property, use the "get" subcommand
     like this:<screen>$ VBoxManage guestproperty get "Windows Vista III"
          "/VirtualBox/GuestInfo/OS/Product"
-VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2005-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Value: Windows Vista Business Edition</screen></para>
@@ -1716,8 +1716,8 @@ Value: Windows Vista Business Edition</screen></para>
     suppléments invité de VirtualBox 2.2 ou supérieur. S'il est lancé avec un
     invité Linux, cet outil exige les privilèges administrateur pour des raisons
     de sécurité&#xA0;:<screen>$ sudo VBoxControl guestproperty enumerate
-VirtualBox suppléments invité Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_VERSION_MINOR.$VBOX_VERSION_BUILD
-(C) 2009-$VBOX_C_YEAR $VBOX_VENDOR
+VirtualBox suppléments invité Command Line Management Interface Version @VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@.@VBOX_VERSION_BUILD@
+(C) 2009-@VBOX_C_YEAR@ @VBOX_VENDOR@
 All rights reserved.
 
 Name: /VirtualBox/GuestInfo/OS/Release, value: 2.6.28-18-generic,
