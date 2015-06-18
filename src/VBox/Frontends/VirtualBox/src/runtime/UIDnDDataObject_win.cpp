@@ -286,7 +286,7 @@ STDMETHODIMP UIDnDDataObject::GetData(FORMATETC *pFormatEtc, STGMEDIUM *pMedium)
         int rc;
         if (!mVaData.isValid())
         {
-            /* Note:  We're usig Qt::MoveAction because this speed up the whole operation
+            /* Note:  We're usig Qt::MoveAction because this speeds up the whole operation
              *        significantly: Instead of copying the data from the temporary location to
              *        the final destination we just move it.
              *
