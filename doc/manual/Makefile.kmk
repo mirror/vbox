@@ -287,10 +287,13 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
  		$(notdir $(VBOX_MANUAL_TEX_UNICODE_FILES)) \
 		$(addprefix HTMLHelp/,$(VBOX_MANUAL_PNG_FILES_$(lang))) \
                html-single/UserManual.html \
-               $(addprefix html-chunks/ HTMLHelp/, index.html go01.html) \
+               $(addprefix HTMLHelp/,    index.html go01.html) \
+               $(addprefix html-chunks/, index.html go01.html) \
                $(foreach n,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 \
 			,html-chunks/ch$(n).html \
+			html-chunks/re$(n).html \
 			HTMLHelp/ch$(n).html \
+			HTMLHelp/re$(n).html \
 			$(foreach d2,0 1 2 3 4 5 6 7 8 9,$(foreach d1,0 1 2 3 4 5 6 7 8 9,HTMLHelp/ch$(n)s$(d2)$(d1).html)) ) \
                $(foreach n,a b c \
 			,html-chunks/ap$(n).html \
@@ -307,6 +310,8 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                validatemanual.run \
 		)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
+ 	$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/overview_,$(VBOX_MANUAL_XML_REFENTRY_FILES)) \
+ 	$(VBOX_PATH_MANUAL_OUTBASE)/user_VBoxManage_CommandsOverview.xml \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/UserManual_$(f).pdf) \
  	$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_STAGE_BIN)/VirtualBox_$(f).chm) \
  	$(PATH_STAGE_BIN)/UserManual.pdf \
@@ -637,8 +642,10 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.p
 # generate temporary LaTeX source from processed XML
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.tex): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.tex : \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
+		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.xml \
 		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
+		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D)/,$(VBOX_MANUAL_LATEX_FILES_TARGET))
@@ -678,9 +685,6 @@ $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
 endef
 $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_validate_xml)))
-ifdef VBOX_HAVE_XMLLINT
-  OTHERS += $(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run)
-endif
 validatemanual:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
 
 
@@ -784,9 +788,10 @@ ifdef VBOX_WITH_DOCS_CHM
 
  $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/HTMLHelp/htmlhelp.hhp): \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/HTMLHelp/htmlhelp.hhp: \
-		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
+		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.xml \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/docbook-htmlhelp-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/titlepage-htmlhelp.xsl \
+		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK)
 	$(call MSG_L1,xsltproc $<,=> $@)
 	$(QUIET)$(RM) -f $@
@@ -851,9 +856,9 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
@@ -864,9 +869,9 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.xml \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/en_US/,$(VBOX_MANUAL_PNG_FILES_en_US)) \
+		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) \
 		| $$(dir $$@)
 	$(call MSG_L1,xsltproc $<)
