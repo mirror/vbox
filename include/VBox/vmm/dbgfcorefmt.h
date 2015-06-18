@@ -38,7 +38,8 @@ RT_C_DECLS_BEGIN
  * @ingroup grp_dbgf
  *
  * @todo Add description of the core file format and how the structures in this
- *       file relate to it.  Point to CPUMCTX in cpum.h for the CPU state.
+ *       file relate to it.  Point to X86XSAVEAREA in x86.h for the CPU's
+ *       FPU/SSE/AVX/XXX state.
  * @todo Add the note names.
  *
  * @{
