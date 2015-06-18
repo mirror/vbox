@@ -667,6 +667,37 @@ static DECLCALLBACK(int) vdScriptHandlerOpen(PVDSCRIPTARG paScriptArgs, void *pv
     return rc;
 }
 
+/**
+ * Returns the speed in KB/s from the amount of and the time in nanoseconds it
+ * took to complete the test.
+ *
+ * @returns Speed in KB/s
+ * @param   cbIo     Size of the I/O test
+ * @param   tsNano   Time in nanoseconds it took to complete the test.
+ */
+static uint64_t tstVDIoGetSpeedKBs(uint64_t cbIo, uint64_t tsNano)
+{
+    /*
+     * Blow up the value until we can do the calculation without getting 0 as
+     * a result.
+     */
+    uint64_t cbIoTemp = cbIo;
+    uint64_t uSpeedKBs;
+    unsigned cRounds = 0;
+    while (cbIoTemp < tsNano)
+    {
+        cbIoTemp *= 1000;
+        cRounds++;
+    }
+
+    uSpeedKBs = ((cbIoTemp / tsNano) * RT_NS_1SEC) / 1024;
+
+    while (cRounds-- > 0)
+        uSpeedKBs /= 1000;
+
+    return uSpeedKBs;
+}
+
 static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUser)
 {
     int rc = VINF_SUCCESS;
@@ -954,7 +985,7 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDSCRIPTARG paScriptArgs, void *pvUs
                 }
 
                 NanoTS = RTTimeNanoTS() - NanoTS;
-                uint64_t SpeedKBs = (uint64_t)(cbIo / (NanoTS / 1000000000.0) / 1024);
+                uint64_t SpeedKBs = tstVDIoGetSpeedKBs(cbIo, NanoTS);
                 RTTestValue(pGlob->hTest, "Throughput", SpeedKBs, RTTESTUNIT_KILOBYTES_PER_SEC);
 
                 for (unsigned i = 0; i < cMaxTasksOutstanding; i++)
