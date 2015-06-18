@@ -439,6 +439,10 @@ Utf8Str GuestDnDSource::i_guestErrorToString(int guestRc)
                                       "the appropriate rights."));
             break;
 
+        case VERR_TIMEOUT:
+            strError += Utf8StrFmt(tr("The guest was not able to fetch the drag and drop data within time."));
+            break;
+
         default:
             strError += Utf8StrFmt(tr("Drag and drop error from guest (%Rrc)"), guestRc);
             break;
@@ -847,15 +851,7 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         if (RT_SUCCESS(rc))
         {
             rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CANCELLED)
-                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
-                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
-                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
-                                                   GuestDnDSource::i_hostErrorToString(rc));
-            }
-            else
+            if (RT_SUCCESS(rc))
                 rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, VINF_SUCCESS);
         }
 
@@ -870,10 +866,21 @@ int GuestDnDSource::i_receiveRawData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 #undef REGISTER_CALLBACK
 #undef UNREGISTER_CALLBACK
 
-    if (rc == VERR_CANCELLED)
+    if (RT_FAILURE(rc))
     {
-        int rc2 = sendCancel();
-        AssertRC(rc2);
+        if (rc == VERR_CANCELLED)
+        {
+            int rc2 = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+            AssertRC(rc2);
+
+            rc2 = sendCancel();
+            AssertRC(rc2);
+        }
+        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        {
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR,
+                                           rc, GuestDnDSource::i_hostErrorToString(rc));
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -938,17 +945,13 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
         rc = pInst->hostCall(Msg.getType(), Msg.getCount(), Msg.getParms());
         if (RT_SUCCESS(rc))
         {
+            LogFlowFunc(("Waiting ...\n"));
+
             rc = waitForEvent(msTimeout, pCtx->mCallback, pCtx->mpResp);
-            if (RT_FAILURE(rc))
-            {
-                if (rc == VERR_CANCELLED)
-                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
-                else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
-                    rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, rc,
-                                                   GuestDnDSource::i_hostErrorToString(rc));
-            }
-            else
+            if (RT_SUCCESS(rc))
                 rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_COMPLETE, VINF_SUCCESS);
+
+            LogFlowFunc(("Waiting ended with rc=%Rrc\n", rc));
         }
 
     } while (0);
@@ -968,10 +971,21 @@ int GuestDnDSource::i_receiveURIData(PRECVDATACTX pCtx, RTMSINTERVAL msTimeout)
 
     int rc2;
 
-    if (rc == VERR_CANCELLED)
+    if (RT_FAILURE(rc))
     {
-        rc2 = sendCancel();
-        AssertRC(rc2);
+        if (rc == VERR_CANCELLED)
+        {
+            rc2 = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_CANCELLED, VINF_SUCCESS);
+            AssertRC(rc2);
+
+            rc2 = sendCancel();
+            AssertRC(rc2);
+        }
+        else if (rc != VERR_GSTDND_GUEST_ERROR) /* Guest-side error are already handled in the callback. */
+        {
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR,
+                                           rc, GuestDnDSource::i_hostErrorToString(rc));
+        }
     }
 
     if (RT_FAILURE(rc))
@@ -1135,11 +1149,14 @@ DECLCALLBACK(int) GuestDnDSource::i_receiveURIDataCallback(uint32_t uMsg, void *
             AssertReturn(DragAndDropSvc::CB_MAGIC_DND_GH_EVT_ERROR == pCBData->hdr.u32Magic, VERR_INVALID_PARAMETER);
 
             pCtx->mpResp->reset();
+
             if (RT_SUCCESS(pCBData->rc))
                 pCBData->rc = VERR_GENERAL_FAILURE; /* Make sure some error is set. */
-            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc);
+
+            rc = pCtx->mpResp->setProgress(100, DragAndDropSvc::DND_PROGRESS_ERROR, pCBData->rc,
+                                           GuestDnDSource::i_guestErrorToString(pCBData->rc));
             if (RT_SUCCESS(rc))
-                rcCallback = pCBData->rc;
+                rcCallback = VERR_GSTDND_GUEST_ERROR;
             break;
         }
 #endif /* VBOX_WITH_DRAG_AND_DROP_GH */
