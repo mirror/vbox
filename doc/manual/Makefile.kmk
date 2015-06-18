@@ -838,31 +838,14 @@ endif # VBOX_WITH_DOCS_CHM
 #  UserManual.html
 #
 ##########################################################################################
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-html-one-page-formatcfg.xsl,en_US/)
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-html-chunks-formatcfg.xsl,en_US/)
 
 # Manual formatcfg dependencies.
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
 	$(VBOX_PATH_MANUAL_SRC)/common-formatcfg.xsl \
 	$(VBOX_PATH_MANUAL_SRC)/common-html-formatcfg.xsl
-
-# intermediate step to do some variable replacement in the XSL configuration
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl: \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-html-one-page-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,Pre-processing $(@F) to $@)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
-	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
-	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
-
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-chunks-formatcfg.xsl: \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-html-chunks-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,Pre-processing $(@F) to $@)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
-	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
-	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
 
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-html-one-page-formatcfg.xsl \
@@ -900,9 +883,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip: \
 		-9 -r $@ html-single html-chunks $(VBOX_MANUAL_PNG_FILES_en_US)
 
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-single/UserManual.html
-
 html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
-
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
@@ -934,7 +915,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
-cl-html: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
+cl-html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
 
 
 
@@ -997,7 +978,7 @@ OTHERS += \
 OTHER_CLEAN += \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h
-help-experiment: \
+help-experiment:: \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp \
 	$(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.h
 
