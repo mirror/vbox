@@ -879,32 +879,19 @@ html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/html-chunks/index.html
 html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 
 
-##########################################################################################
 #
-#  ChangeLog.html
+# ChangeLog.html
 #
-##########################################################################################
-
-# intermediate step to do some variable replacement in the XSL configuration
-$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl: \
-		$(VBOX_PATH_MANUAL_SRC)/docbook-changelog-formatcfg.xsl $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_L1,Pre-processing $(@F) to $@)
-	$(QUIET)$(RM) -f $@.tmp $@
-	$(QUIET)$(SED) -e 's|\$$DOCBOOKPATH|$(VBOX_PATH_DOCBOOK)|g' \
-	               -e 's|\$$CFGPATH|$(VBOX_PATH_MANUAL_SRC)|g' \
-	               -e 's|\$$TARGETPATH|$(@D)|g' --output $@.tmp $<
-	$(QUIET)$(MV) -f $@.tmp $@
-
 # This XSLT rule depends on $(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml, which is build by the complex rule
 #    $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/user_ChangeLog.xml): ...
 # much further above. That rule takes en_US/user_ChangeLog.xml and replaces $VIRTUALBOX_CHANGELOG_IMPL
 # with the actual change log contained in user_ChangeLogImpl.xml
+#
+$(evalcall2 def_vbox_replace_paths_in_xslt,docbook-changelog-formatcfg.xsl,en_US/)
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
-	$(QUIET)$(VBOX_XSLTPROC) --xinclude --nonet --output $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html \
-		$(@D)/docbook-changelog-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
+	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --output "$@" "$<" $(filter %.xml,$^)
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
 cl-html:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html
