@@ -306,12 +306,10 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
                	$(foreach s,01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20,HTMLHelp/ap$(n)s$(s).html) ) \
                HTMLHelp/toc.hhc \
                HTMLHelp/htmlhelp.hhp \
-		docbook-htmlhelp-formatcfg.xsl \
-		docbook-html-one-page-formatcfg.xsl \
-		docbook-html-chunks-formatcfg.xsl \
  		titlepage-htmlhelp.xsl \
 		UserManual.pdf \
 		VirtualBox.chm \
+               ChangeLog.html \
                validatemanual.run \
 		)) \
  	$(VBOX_PATH_MANUAL_OUTBASE)/$(VBOX_MANUAL_XML_CHANGELOG) \
@@ -890,7 +888,8 @@ html-zip:: $(VBOX_PATH_MANUAL_OUTBASE)/en_US/UserManual.zip
 $(evalcall2 def_vbox_replace_paths_in_xslt,docbook-changelog-formatcfg.xsl,en_US/)
 $(VBOX_PATH_MANUAL_OUTBASE)/en_US/ChangeLog.html: \
 		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/docbook-changelog-formatcfg.xsl \
-		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml
+		$(VBOX_PATH_MANUAL_OUTBASE)/en_US/user_ChangeLog.xml \
+		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) | $$(dir $$@)
 	$(QUIET)$(VBOX_XSLTPROC_WITH_CAT) --output "$@" "$<" $(filter %.xml,$^)
 	$(call MSG_L1,Fresh ChangeLog.html is now at $@)
 
