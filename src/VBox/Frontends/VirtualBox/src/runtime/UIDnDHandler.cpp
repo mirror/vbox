@@ -454,6 +454,14 @@ int UIDnDHandler::dragStop(ulong screenID)
     return rc;
 }
 
+int UIDnDHandler::retrieveData(      Qt::DropAction  dropAction,
+                               const QString        &strMimeType,
+                                     QVariant::Type  vaType,
+                                     QVariant       &vaData)
+{
+    return retrieveDataInternal(dropAction, strMimeType, vaType, vaData);
+}
+
 int UIDnDHandler::retrieveDataInternal(      Qt::DropAction  dropAction,
                                        const QString        &strMimeType,
                                              QVariant::Type  vaType,
