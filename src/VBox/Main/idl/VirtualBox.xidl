@@ -3240,7 +3240,7 @@
       </desc>
 
       <param name="identifiers" type="wstring" dir="return" safearray="yes">
-        The list of password identifiers required for export on success.
+        <desc>The list of password identifiers required for export on success.</desc>
       </param>
     </method>
 
@@ -3250,10 +3250,10 @@
       </desc>
 
       <param name="passwordId" type="wstring" dir="in">
-        The password identifier to get the medium identifiers for.
+        <desc>The password identifier to get the medium identifiers for.</desc>
       </param>
       <param name="identifiers" type="uuid" mod="string" dir="return" safearray="yes">
-        The list of medium identifiers returned on success.
+        <desc>The list of medium identifiers returned on success.</desc>
       </param>
     </method>
 

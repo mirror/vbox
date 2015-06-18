@@ -5,7 +5,7 @@
      It is still the only sort-of-documentation available about what is valid
      XIDL syntax.
 
-     Copyright (C) 2008-2013 Oracle Corporation
+     Copyright (C) 2008-2015 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -75,6 +75,8 @@
     <!ATTLIST interface wrap-hint-server CDATA #IMPLIED>
     <!-- DTrace has a probe name length limit, so dtracename helps dealing with excessivly long names. -->
     <!ATTLIST interface dtracename CDATA #IMPLIED>
+    <!ATTLIST interface reservedAttributes CDATA #IMPLIED>
+    <!ATTLIST interface reservedMethods CDATA #IMPLIED>
   <!ELEMENT class (interface)>                                <!-- done -->
     <!ATTLIST class name CDATA #REQUIRED>
     <!ATTLIST class uuid CDATA #REQUIRED>
