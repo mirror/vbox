@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<chapter> <!-- HACK ALERT! Seems we must have a single top level element for xi:include to work.
+                           So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
   <sect1>
     <title>Version 5.0.0 Release Candidate 1 (2015-06-01)</title>
 
@@ -12423,4 +12425,5 @@
     </itemizedlist>
 
   </sect1>
+</chapter>
 
