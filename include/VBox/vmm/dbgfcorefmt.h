@@ -58,7 +58,8 @@ typedef struct DBGFCORESEL
     uint32_t        uLimit;
     uint32_t        uAttr;
     uint16_t        uSel;
-    uint16_t        uReserved;
+    uint16_t        uReserved0;
+    uint32_t        uReserved1;
 } VBOXX86SEL;
 AssertCompileSizeAlignment(DBGFCORESEL, 8);
 
