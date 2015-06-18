@@ -3,8 +3,35 @@
 
 <xsl:import href="$DOCBOOKPATH/htmlhelp/htmlhelp.xsl"/>
 <xsl:import href="$CFGPATH/common-formatcfg.xsl"/>
+<xsl:import href="$CFGPATH/common-html-formatcfg.xsl"/>
 
 <xsl:include href="$TARGETPATH/titlepage-htmlhelp.xsl"/>
+
+<!-- Override the style sheet stuff from common-html-formatcfg.xsl, we don't
+     the same as the html-chunks and html-one-page.  Also, the microsoft
+     help viewer may have limited CSS support, depending on which browser
+     version it emulated, so keep it simple. -->
+<xsl:template name="user.head.content">
+ <style type="text/css">
+  <xsl:comment>
+   .cmdsynopsis p
+   {
+     padding-left: 3.4em;
+     text-indent: -2.2em;
+   }
+   p.nextcommand
+   {
+     margin-top:    0px;
+     margin-bottom: 0px;
+   }
+   p.lastcommand
+   {
+     margin-top:    0px;
+   }
+  </xsl:comment>
+ </style>
+</xsl:template>
+
 
 <!-- for some reason, the default docbook stuff doesn't wrap simple <arg> elements
      into HTML <code>, so with a default CSS a cmdsynopsis ends up with a mix of
