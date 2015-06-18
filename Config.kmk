@@ -1850,24 +1850,6 @@ ifeq ($(VBOX_XSLTPROC),)
  endif
 endif
 
-# libxml XML linter.
-ifeq ($(VBOX_XMLLINT),)
- ifeq ($(KBUILD_HOST),win)
-   VBOX_XMLLINT := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xmllint.exe)
- endif
- ifeq ($(VBOX_XMLLINT),)
-  VBOX_XMLLINT := $(VBOX_HAVE_XMLLINT)
- endif
- ifneq ($(VBOX_XMLLINT),)
-  VBOX_HAVE_XMLLINT := 1
- else
-  VBOX_XMLLINT := xmllint
-  VBOX_HAVE_XMLLINT :=
- endif
-else
- VBOX_HAVE_XMLLINT := 1
-endif
-
 # bin2c (convert binary files into C arrays)
 VBOX_BIN2C      ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
@@ -2564,6 +2546,30 @@ ifdef VBOX_WITH_WARNINGS_AS_ERRORS
  VBOX_VCC_WERR ?= -WX
  VBOX_VCC_LD_WERR ?= ## @todo later also: -WX
 endif
+
+
+#
+# Misc stuff that should be after including DynamicConfig.kmk.
+#
+
+# libxml XML linter.
+ifeq ($(VBOX_XMLLINT),)
+ ifeq ($(KBUILD_HOST),win)
+  VBOX_XMLLINT := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xmllint.exe)
+ endif
+ ifeq ($(VBOX_XMLLINT),)
+  VBOX_XMLLINT := $(VBOX_HAVE_XMLLINT)
+ endif
+ ifneq ($(VBOX_XMLLINT),)
+  VBOX_HAVE_XMLLINT := 1
+ else
+  VBOX_XMLLINT := xmllint
+  VBOX_HAVE_XMLLINT :=
+ endif
+else
+ VBOX_HAVE_XMLLINT := 1
+endif
+
 
 
 #
