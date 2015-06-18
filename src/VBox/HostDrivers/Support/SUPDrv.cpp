@@ -3759,6 +3759,10 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  *                                really can use VT-x or not.
  *
  * @remarks Must be called with preemption disabled.
+ *          The caller is also expected to check that the CPU is an Intel (or
+ *          VIA) CPU -and- that it supports VT-x.  Otherwise, this function
+ *          might throw a #GP fault as it tries to read/write MSRs that may not
+ *          be present!
  */
 SUPR0DECL(int) SUPR0GetVmxUsability(bool *pfIsSmxModeAmbiguous)
 {
