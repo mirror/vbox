@@ -2272,7 +2272,8 @@ es.unregisterListener(listener); </screen></para>
     already running. Your new command will now be available.</para>
   </chapter>
 
-  <!--@VIRTUALBOX_MAIN_API_REFERENCE@-->
+  <xi:include href="SDKRef_apiref.xml" xpointer="xpointer(/book/*)"
+    xmlns:xi="http://www.w3.org/2001/XInclude" />
 
   <chapter id="hgcm">
     <title>Host-Guest Communication Manager</title>
