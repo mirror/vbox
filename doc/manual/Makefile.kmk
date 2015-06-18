@@ -588,7 +588,7 @@ ifndef VBOX_OSE
 # copy ucs.sty and related files
 $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/ucs.sty):
 	$(call MSG_L1,Copying unicode support for LaTeX)
-	$(QUIET)$(INSTALL_STAGING) -- $(VBOX_MANUAL_TEX_UNICODE_FILES) "$(@D)"
+	$(QUIET)$(INSTALL_STAGING) -m0644 -- $(VBOX_MANUAL_TEX_UNICODE_FILES) "$(@D)"
 endif
 
 # copy the PNG files.
@@ -601,7 +601,7 @@ $(addprefix $$(out_dir)/,$(VBOX_MANUAL_PNG_FILES_$(lang))): \
 	$$(QUIET)$$(INSTALL_STAGING) -m0644 -- '$$<' '$$(@D)'
 endef
 
-$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_cp_images_pdf)))
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_cp_images_pdf))
 
 
 ##########################################################################################
@@ -645,7 +645,7 @@ $(foreach f,$(VBOX_MANUAL_LANGUAGES),$(VBOX_PATH_MANUAL_OUTBASE)/$f/UserManual.t
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.xml \
 		$(VBOX_PATH_MANUAL_SRC)/docbook2latex.xsl \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
-		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/en_US/validatemanual.run,) \
+		$(if $(VBOX_HAVE_XMLLINT),$(VBOX_PATH_MANUAL_OUTBASE)/%/validatemanual.run,) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK) $(MAKEFILE_CURRENT)
 	$(call MSG_L1,Generating $@ from DocBook XML)
 	$(QUIET)$(RM) -f $(addprefix $(@D)/,$(VBOX_MANUAL_LATEX_FILES_TARGET))
@@ -678,13 +678,14 @@ define def_vbox_validate_xml
 validatemanual_$(lang):: $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run
 $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/validatemanual.run: \
 		$$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/UserManual.xml \
+		$$(addprefix $$(VBOX_PATH_MANUAL_OUTBASE)/$(lang)/,$$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$$(VBOX_XML_CATALOG) $$(VBOX_XML_CATALOG_DOCBOOK) $$(MAKEFILE_CURRENT) | $$$$(dir $$$$@)
-	$$(call MSG_L1,Validating $$(filter %.xml,$$^))
-	$$(QUIET)$$(VBOX_XMLLINT_WITH_CAT) $$(VBOX_XMLLINT_OPTS) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
-		--xinclude --noout $$(filter %.xml,$$^)
+	$$(call MSG_L1,Validating $$<)
+	$$(VBOX_XMLLINT_WITH_CAT) $$(VBOX_XMLLINT_OPTS) --dtdvalid $$(VBOX_PATH_DOCBOOK_DTD)/docbookx.dtd \
+		--xinclude --noout $$<
 	$$(QUIET)$$(APPEND) -t "$$@" "done"
 endef
-$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(eval $(def_vbox_validate_xml)))
+$(foreach lang,$(VBOX_MANUAL_LANGUAGES),$(evalcall2 def_vbox_validate_xml))
 validatemanual:: $(foreach lang,$(VBOX_MANUAL_LANGUAGES),validatemanual_$(lang))
 
 
@@ -791,6 +792,7 @@ ifdef VBOX_WITH_DOCS_CHM
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/UserManual.xml \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/docbook-htmlhelp-formatcfg.xsl \
 		$(VBOX_PATH_MANUAL_OUTBASE)/%/titlepage-htmlhelp.xsl \
+		$(VBOX_PATH_MANUAL_OUTBASE)/%/validatemanual.run \
 		$(addprefix $(VBOX_PATH_MANUAL_OUTBASE)/%/,$(VBOX_MANUAL_XML_FILES_INCL_CHANGELOG)) \
 		$(VBOX_XML_CATALOG) $(VBOX_XML_CATALOG_DOCBOOK)
 	$(call MSG_L1,xsltproc $<,=> $@)
