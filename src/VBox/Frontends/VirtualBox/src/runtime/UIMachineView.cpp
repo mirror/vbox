@@ -1503,6 +1503,7 @@ int UIMachineView::dragCheckPending(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
     {
         /** @todo Add guest->guest DnD functionality here by getting
@@ -1513,6 +1514,9 @@ int UIMachineView::dragCheckPending(void)
     }
     else /* Already dragging, so report success. */
         rc = VINF_SUCCESS;
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogRel3(("DnD: dragCheckPending ended with rc=%Rrc\n", rc));
     return rc;
@@ -1524,6 +1528,7 @@ int UIMachineView::dragStart(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
         rc = VERR_WRONG_ORDER;
     else
@@ -1534,6 +1539,9 @@ int UIMachineView::dragStart(void)
 
         m_fIsDraggingFromGuest = false;
     }
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogRel3(("DnD: dragStart ended with rc=%Rrc\n", rc));
     return rc;
@@ -1545,10 +1553,14 @@ int UIMachineView::dragStop(void)
 
     if (!dragAndDropIsActive())
         rc = VERR_ACCESS_DENIED;
+#ifdef VBOX_WITH_DRAG_AND_DROP_GH
     else if (!m_fIsDraggingFromGuest)
         rc = VERR_WRONG_ORDER;
     else
         rc = m_pDnDHandler->dragStop(screenId());
+#else
+    rc = VERR_NOT_SUPPORTED;
+#endif
 
     LogRel3(("DnD: dragStop ended with rc=%Rrc\n", rc));
     return rc;
