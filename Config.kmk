@@ -1837,10 +1837,10 @@ VBOX_IASLCMD   ?= $(firstword $(wildcard $(KBUILD_DEVTOOLS_HST)/bin/iasl$(HOSTSU
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
 ifeq ($(VBOX_XSLTPROC),)
  ifeq ($(KBUILD_HOST),win)
-   VBOX_XSLTPROC := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xsltproc.exe)
-   ifeq ($(VBOX_XSLTPROC),)
-    VBOX_XSLTPROC := $(KBUILD_DEVTOOLS)/win.x86/bin/xsltproc.exe
-   endif
+  VBOX_XSLTPROC := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xsltproc.exe)
+  ifeq ($(VBOX_XSLTPROC),)
+   VBOX_XSLTPROC := $(KBUILD_DEVTOOLS)/win.x86/bin/xsltproc.exe
+  endif
  else ifeq ($(KBUILD_HOST),os2)
   VBOX_XSLTPROC  := BEGINLIBPATH="$(KBUILD_DEVTOOLS_HST)/bin;$$BEGINLIBPATH" $(KBUILD_DEVTOOLS_HST)/bin/xsltproc.exe
  else ifeq ($(KBUILD_HOST),haiku)
@@ -1849,6 +1849,17 @@ ifeq ($(VBOX_XSLTPROC),)
   VBOX_XSLTPROC  := xsltproc$(HOSTSUFF_EXE)
  endif
 endif
+
+# libxml XML linter.
+ifeq ($(VBOX_XMLLINT),)
+ ifeq ($(KBUILD_HOST),win)
+   VBOX_XMLLINT := $(wildcard $(KBUILD_DEVTOOLS)/$(KBUILD_HOST).$(KBUILD_HOST_ARCH)/libxslt/10128/bin/xmllint.exe)
+ endif
+ ifeq ($(VBOX_XMLLINT),)
+  VBOX_XMLLINT := $(VBOX_HAVE_XMLLINT)
+ endif
+endif
+VBOX_HAVE_XMLLINT := $(if $(VBOX_XMLLINT),1,)
 
 # bin2c (convert binary files into C arrays)
 VBOX_BIN2C      ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
@@ -2523,8 +2534,9 @@ ifdef VBOX_PATH_PREFIX_MINGW64
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-maybe-uninitialized     ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-maybe-uninitialized,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_USER_LABEL_PREFIX           ?= $(shell echo "__USER_LABEL_PREFIX__" | $(VBOX_PATH_PREFIX_MINGW64)g++ -m64 -E -xc++ - | $(SED) -e "/^$(HASH)/d")'
 endif
-	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX  ?= $(if $(which flex),1,)'
-	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON ?= $(if $(which bison),1,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_FLEX    ?= $(if $(which flex),1,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_BISON   ?= $(if $(which bison),1,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_HAVE_XMLLINT ?= $(which xmllint)'
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
 	$(QUIET)$(ECHO) '=========== END OF $@ ========='
