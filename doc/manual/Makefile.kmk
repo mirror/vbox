@@ -958,7 +958,7 @@ $(VBOX_PATH_MANUAL_OUTBASE)/VBoxManageBuiltInHelp.cpp: \
 		'{' \
                $(foreach refentry,$(filter %.xml,$^) \
 		, '    &g_$(subst -,_,$(tolower $(patsubst man_%,%,$(notdir $(basename $(refentry)))))), ') \
-		'};' \
+		'};'\
 		'const uint32_t g_cHelpEntries = RT_ELEMENTS(g_apHelpEntries);' \
                ''
 
