@@ -403,6 +403,8 @@ int UIDnDHandler::dragStart(ulong screenID)
     int rc;
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
 
+    NOREF(screenID);
+
     LogFlowFuncEnter();
 
     /* Sanity checks. */
@@ -434,6 +436,8 @@ int UIDnDHandler::dragStop(ulong screenID)
 {
     int rc;
 #ifdef VBOX_WITH_DRAG_AND_DROP_GH
+
+    NOREF(screenID);
 
     m_fIsPending = false;
     rc = VINF_SUCCESS;
@@ -557,6 +561,7 @@ QVariant UIDnDHandler::sltGetData(const QString        &strMimeType,
 {
     QVariant vaData;
     int rc = retrieveDataInternal(Qt::CopyAction, strMimeType, vaType, vaData);
+    NOREF(rc);
     LogFlowFuncLeaveRC(rc);
     return vaData;
 }
