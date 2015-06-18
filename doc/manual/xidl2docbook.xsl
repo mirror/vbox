@@ -30,6 +30,14 @@
 
   <xsl:strip-space elements="*"/>
 
+ <!-- - - - - - - - - - - - - - - - - - - - - - -
+  Keys for more efficiently looking up of types.
+ - - - - - - - - - - - - - - - - - - - - - - -->
+
+<xsl:key name="G_keyEnumsByName"        match="//enum[@name]"       use="@name"/>
+<xsl:key name="G_keyInterfacesByName"   match="//interface[@name]"  use="@name"/>
+<xsl:key name="G_keyResultsByName"      match="//result[@name]"     use="@name"/>
+
 <!-- - - - - - - - - - - - - - - - - - - - - - -
   global XSLT variables
  - - - - - - - - - - - - - - - - - - - - - - -->
@@ -52,7 +60,7 @@
   <xsl:choose>
     <xsl:when test="$type">
       <xsl:choose>
-        <xsl:when test="//interface[@name=$type]">
+        <xsl:when test="count(key('G_keyInterfacesByName',$type)) > 0">
           <link>
             <xsl:attribute name="linkend">
               <xsl:value-of select="translate($type, ':', '_')" />
@@ -60,7 +68,7 @@
             <xsl:value-of select="$type" />
           </link>
         </xsl:when>
-        <xsl:when test="//enum[@name=$type]">
+        <xsl:when test="count(key('G_keyEnumsByName',$type)) > 0">
           <link>
             <xsl:attribute name="linkend">
               <xsl:value-of select="translate($type, ':', '_')" />
@@ -424,11 +432,11 @@
         <xsl:value-of select="substring-after($tmp, '_')" />
     </xsl:variable>
     <xsl:choose>
-      <xsl:when test="//interface[@name=$tmp] or //enum[@name=$tmp]"><!-- link to interface only -->
+      <xsl:when test="count(key('G_keyInterfacesByName',$tmp)) > 0 or count(key('G_keyEnumsByName',$tmp)) > 0"><!-- link to interface only -->
         <xsl:attribute name="linkend"><xsl:value-of select="@to" /></xsl:attribute>
         <xsl:value-of select="$tmp" />
       </xsl:when>
-      <xsl:when test="//enum[@name=$enumNameFromCombinedName]">
+      <xsl:when test="count(key('G_keyEnumsByName',$enumNameFromCombinedName)) > 0">
         <xsl:attribute name="linkend">
           <xsl:value-of select="concat($enumNameFromCombinedName, '__', $enumValueFromCombinedName)" />
         </xsl:attribute>
@@ -463,19 +471,16 @@
         <xsl:variable name="autotextsuffix">
           <xsl:choose>
             <!-- if link points to a method, append "()" -->
-            <xsl:when test="//interface[@name=$if]/method[@name=$member]">
+            <xsl:when test="key('G_keyInterfacesByName',$if)/method[@name=$member]">
               <xsl:value-of select="'()'" />
             </xsl:when>
             <!-- if link points to a safearray attribute, append "[]" -->
-            <xsl:when test="//interface[@name=$if]/attribute[@name=$member]/@safearray = 'yes'">
+            <xsl:when test="key('G_keyInterfacesByName',$if)/attribute[@name=$member]/@safearray = 'yes'">
               <xsl:value-of select="'[]'" />
             </xsl:when>
-            <xsl:when test="//interface[@name=$if]/attribute[@name=$member]">
-            </xsl:when>
-            <xsl:when test="//enum[@name=$if]/const[@name=$member]">
-            </xsl:when>
-            <xsl:when test="//result[@name=$tmp]">
-            </xsl:when>
+            <xsl:when test="key('G_keyInterfacesByName',$if)/attribute[@name=$member]"/>
+            <xsl:when test="key('G_keyEnumsByName',$if)/const[@name=$member]"/>
+            <xsl:when test="count(key('G_keyResultsByName',$tmp)) > 0"/>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat('Invalid link pointing to &quot;', $tmp, '&quot;')" />
