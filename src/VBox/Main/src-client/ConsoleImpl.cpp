@@ -6246,10 +6246,18 @@ HRESULT Console::i_resume(Reason_T aReason, AutoWriteLock &alock)
              * Host resume may be called multiple times successively. We don't want to VMR3Resume->vmR3Resume->vmR3TrySetState()
              * to assert on us, hence check for the VM state here and bail if it's already in the 'running' state.
              * See @bugref{3495}.
+             *
+             * Also, don't resume the VM unless it was paused previously due to a host-suspend operation.
+             * See @bugref{7836}.
              */
             enmReason = VMRESUMEREASON_HOST_RESUME;
-            if (VMR3GetStateU(ptrVM.rawUVM()) == VMSTATE_RUNNING)
+            VMSTATE enmVMState = VMR3GetStateU(ptrVM.rawUVM());
+            if (   enmVMState == VMSTATE_RUNNING
+                || (   enmVMState == VMSTATE_SUSPENDED
+                    && VMR3GetSuspendReason(ptrVM.rawUVM()) != VMSUSPENDREASON_HOST_SUSPEND))
+            {
                 return S_OK;
+            }
         }
         else if (aReason == Reason_Snapshot)
             enmReason = VMRESUMEREASON_STATE_SAVED;

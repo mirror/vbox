@@ -342,6 +342,7 @@ EXPORTS
     VMR3GetCpuCoreAndPackageIdFromCpuId
     VMR3GetStateName
     VMR3GetStateU
+    VMR3GetSuspendReason
     VMR3GetVM
     VMR3HotPlugCpu
     VMR3HotUnplugCpu
