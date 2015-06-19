@@ -495,7 +495,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         unconst(mGuest).createObject();
         rc = mGuest->init(this);
         AssertComRCReturnRC(rc);
-    
+
         ULONG cCpus = 1;
         rc = mMachine->COMGETTER(CPUCount)(&cCpus);
         mGuest->i_setCpuCount(cCpus);
@@ -1104,7 +1104,7 @@ int Console::i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const 
         {
             guestJudgement = AuthGuestNotReacted;
 
-            // @todo r=dj locking required here for m_pVMMDev?
+            /** @todo r=dj locking required here for m_pVMMDev? */
             PPDMIVMMDEVPORT pDevPort;
             if (    (m_pVMMDev)
                  && ((pDevPort = m_pVMMDev->getVMMDevPort()))
@@ -1254,7 +1254,7 @@ int Console::i_VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const 
         }
     }
 
-    // @todo r=dj locking required here for m_pVMMDev?
+    /** @todo r=dj locking required here for m_pVMMDev? */
     if (   fProvideGuestCredentials
         && m_pVMMDev)
     {
@@ -1329,7 +1329,7 @@ void Console::i_VRDPClientConnect(uint32_t u32ClientId)
     {
         pPort->pfnVRDPChange(pPort,
                              true,
-                             VRDP_EXPERIENCE_LEVEL_FULL); // @todo configurable
+                             VRDP_EXPERIENCE_LEVEL_FULL); /** @todo configurable */
     }
 
     NOREF(u32ClientId);
