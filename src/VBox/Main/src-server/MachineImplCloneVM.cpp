@@ -102,7 +102,7 @@ struct MachineCloneVMPrivate
     /* MachineCloneVM::start helper: */
     HRESULT createMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const;
     inline void updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight) const;
-    inline HRESULT addSaveState(const ComObjPtr<Machine> &machine, ULONG &uCount, ULONG &uTotalWeight);
+    inline HRESULT addSaveState(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight);
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
     HRESULT queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
                                        bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
@@ -199,7 +199,7 @@ void MachineCloneVMPrivate::updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAtta
     }
 }
 
-HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, ULONG &uCount, ULONG &uTotalWeight)
+HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight)
 {
     Bstr bstrSrcSaveStatePath;
     HRESULT rc = machine->COMGETTER(StateFilePath)(bstrSrcSaveStatePath.asOutParam());
@@ -207,7 +207,14 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, U
     if (!bstrSrcSaveStatePath.isEmpty())
     {
         SAVESTATETASK sst;
-        sst.snapshotUuid     = machine->i_getSnapshotId();
+        if (fAttachCurrent)
+        {
+            /* Make this saved state part of "current state" of the target
+             * machine, whether it is part of a snapshot or not. */
+            sst.snapshotUuid.clear();
+        }
+        else
+            sst.snapshotUuid = machine->i_getSnapshotId();
         sst.strSaveStateFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
         int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
@@ -240,7 +247,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
                                                           bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight)
 {
     /* This mode is pretty straightforward. We didn't need to know about any
-     * parent/children relationship and therefor simply adding all directly
+     * parent/children relationship and therefore simply adding all directly
      * attached images of the source VM as cloning targets. The IMedium code
      * take than care to merge any (possibly) existing parents into the new
      * image. */
@@ -308,7 +315,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             llMedias.append(mtc);
         }
         /* Add the save state files of this machine if there is one. */
-        rc = addSaveState(machine, uCount, uTotalWeight);
+        rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
     }
 
@@ -345,9 +352,10 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
      * included.
      *
      * Note: This still leads to media chains which can have the same medium
-     * included. This case is handled in "run" and therefor not critical, but
+     * included. This case is handled in "run" and therefore not critical, but
      * it leads to wrong progress infos which isn't nice. */
 
+    Assert(!fAttachLinked);
     HRESULT rc = S_OK;
     std::map<ComPtr<IMedium>, uint32_t> mediaHist; /* Our usage histogram for the medias */
     for (size_t i = 0; i < machineList.size(); ++i)
@@ -411,8 +419,15 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
             llMedias.append(mtc);
         }
         /* Add the save state files of this machine if there is one. */
-        rc = addSaveState(machine, uCount, uTotalWeight);
+        rc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
+        /* If this is the newly created current state, make sure that the
+         * saved state is also attached to it. */
+        if (fCreateDiffs)
+        {
+            rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
+            if (FAILED(rc)) return rc;
+        }
     }
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
@@ -484,6 +499,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
      * list. */
+    Assert(!fAttachLinked);
     HRESULT rc = S_OK;
     for (size_t i = 0; i < machineList.size(); ++i)
     {
@@ -548,8 +564,15 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
             llMedias.append(mtc);
         }
         /* Add the save state files of this machine if there is one. */
-        rc = addSaveState(machine, uCount, uTotalWeight);
+        rc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
+        /* If this is the newly created current state, make sure that the
+         * saved state is also attached to it. */
+        if (fCreateDiffs)
+        {
+            rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
+            if (FAILED(rc)) return rc;
+        }
     }
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
@@ -981,8 +1004,6 @@ HRESULT MachineCloneVM::run()
                 throw p->setError(E_FAIL,
                                   p->tr("Could not find data to snapshots '%s'"), d->snapshotId.toString().c_str());
 
-
-
         if (d->mode == CloneMode_MachineState)
         {
             if (sn.uuid.isValid() && !sn.uuid.isZero())
@@ -1007,9 +1028,6 @@ HRESULT MachineCloneVM::run()
 
                 /* Current state is under root snapshot. */
                 trgMCF.uuidCurrentSnapshot = sn.uuid;
-                /* There will be created a new differencing image based on this
-                 * snapshot. So reset the modified state. */
-                trgMCF.fCurrentStateModified = false;
             }
             /* The snapshot will be the root one. */
             trgMCF.llFirstSnapshot.clear();
@@ -1395,6 +1413,33 @@ HRESULT MachineCloneVM::run()
             if (FAILED(rc)) throw rc;
             rc = d->pTrgMachine->i_loadMachineDataFromSettings(trgMCF, &d->pTrgMachine->mData->mUuid);
             if (FAILED(rc)) throw rc;
+
+            /* Fix up the "current state modified" flag to what it should be,
+             * as the value guessed in i_loadMachineDataFromSettings can be
+             * quite far off the logical value for the cloned VM. */
+            if (d->mode == CloneMode_MachineState)
+                d->pTrgMachine->mData->mCurrentStateModified = FALSE;
+            else if (   d->mode == CloneMode_MachineAndChildStates
+                && sn.uuid.isValid()
+                && !sn.uuid.isZero())
+            {
+                if (!d->pOldMachineState.isNull())
+                {
+                    /* There will be created a new differencing image based on
+                     * this snapshot. So reset the modified state. */
+                    d->pTrgMachine->mData->mCurrentStateModified = FALSE;
+                }
+                else
+                    d->pTrgMachine->mData->mCurrentStateModified = p->mData->mCurrentStateModified;
+            }
+            else if (d->mode == CloneMode_AllStates)
+                d->pTrgMachine->mData->mCurrentStateModified = p->mData->mCurrentStateModified;
+
+            /* If the target machine has saved state we MUST adjust the machine
+             * state, otherwise saving settings will drop the information. */
+            if (trgMCF.strStateFile.isNotEmpty())
+                d->pTrgMachine->i_setMachineState(MachineState_Saved);
+
             /* save all VM data */
             bool fNeedsGlobalSaveSettings = false;
             rc = d->pTrgMachine->i_saveSettings(&fNeedsGlobalSaveSettings, Machine::SaveS_Force);
